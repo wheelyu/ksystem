@@ -1,0 +1,184 @@
+LOCAL
+PGM_FIELDS
+lurtb		INT2		2
+lssurangka2     STRING          21
+lssumesin2      STRING          21
+lokx            STRING          21
+ltglretur	DATE		4
+lpiktglbyrakh	DATE		4
+
+MAP(mjoinssubekas2)
+ssurangka       lssurangka2     REPLACE
+ssunobuk2	lssunobuk2	REPLACE
+DBCALCS(djoinssubekas2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ssumridx tldnobbm
+        DBC_MAP         mjoinssubekas2
+
+MAP(mjoinssubekas2x)
+ssumesin        lssumesin2      REPLACE
+ssunobuk2	lssunobuk2	REPLACE
+ssubrg	        lssubrg	        REPLACE
+DBCALCS(djoinssubekas2x)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ssurmidx tldbrdoto
+        DBC_MAP         mjoinssubekas2x
+
+MAP(mjointldb)
+tldnourt        lurtb           REPLACE
+DBCALCS(djointldb)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukurtidx    tlmnobuk
+        DBC_MAP         mjointldb
+
+MAP(mjoinpikretur)
+piktglbyrakh	lpiktglbyrakh	REPLACE	
+DBCALCS(djoinpikretur)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	pikdatbukidx   gv_dtpiu lssunobuk2	
+	DBC_MAP		mjoinpikretur		
+	
+IMAGE(tmptranst)
+/-----------------------------------\
+|/----s.UPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| t.No        :_________________  ||
+|| t.NoMesin   :__________________ ||
+|| t.NoRangka  :__________________ ||_
+|| t.TglTrk    :____________	   || 
+|| t.Latitude  :____________       ||
+|| t.Longitude :____________       ||
+|| t.Jnsbiayaan:__________________ ||
+||              ____________       ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tldnourt        PROTECT                 INPUTRI         1
+tldnobbm        QRCODE                  INPUTRI         2
+tldbrdoto       PROTECT                 INPUTRI         3
+tldcab		PROTECT			INPUTRI		4
+ltglretur	PROTECT {DD-MM-YY}			INPUTRI		5
+tldperdis4      PROTECT                 INPUTRI         6
+tldperdis5      PROTECT                 INPUTRI         7
+ljnspembia2	PROTECT			INPUTRI		7
+ltombolgmaps    TOMBOL                  INPUTRI         8
+
+DEFAULTS(tmptranst)
+tldtglfak       INIT_ADD        {g_tgltrn}
+tldplg          INIT_ADD        {g_usrkode}
+lokx		INIT		OK 
+
+lTTDSURVEY      INIT            TTDSURVEY
+
+EDITS(tmptranst)
+e.Mandatory     tldnobbm        MANDATORY
+e.Dupkey        tldnobbm        DUPKEY          tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}
+e.Validatecab	tldcab		VALIDATE 	cabkodidx mcabmokas 0	
+
+CALCS()
+curtb           lurtb + 1
+cjointld0b      djointldb == 0 && g_curcmd == 1
+cjointld1b      djointldb == 1 && g_curcmd == 1
+cbknSISTEMb     tldsat != "SISTEM" 
+cmampatb        MAMPAT(tldnobbm)
+cadakoordinat2  tldperdis4 != BLANKS && tldperdis5 != BLANKS
+cjoinssubekas2  djoinssubekas2 == 1
+cjoinssubekas2x djoinssubekas2x == 1
+cjoinpikretur	djoinpikretur == 1
+
+MAP(mcabmokas)
+cabkode		tldcab		REPLACE
+lssunobuk2      lssunobuk2      REPLACE_IF cjoinssubekas2
+lssunobuk2      lssunobuk2      REPLACE_IF cjoinssubekas2x
+lpiktglbyrakh   ltglretur       REPLACE_IF cjoinpikretur
+
+cBLANKS		lssunobuk2	DO_CALC
+cBLANKS		lbtdnobuk	DO_CALC
+cBLANKS		ljnspembia2	DO_CALC
+ljnspembia      ljnspembia2     REPLACE_IF cdjoinbtdmb
+cMB             ljnspembia2     DO_CALC_IF cMBkond
+cMBU            ljnspembia2     DO_CALC_IF cMBUkond
+
+SPCALCS(spgmaps2)
+DO_LIB_IF cadakoordinat2 ap_shmap(tldperdis4,tldperdis5);
+
+
+MAP(murtb)
+gv_int1         tldnourt        REPLACE_IF cjointld0b
+curtb           tldnourt        DO_CALC_IF cjointld1b
+
+MAP(mampatb)
+cmampatb        tldnobbm        DO_CALC
+lssurangka2     tldbrdoto       REPLACE_IF cjoinssubekas2
+lssumesin2     	tldnobbm        REPLACE_IF cjoinssubekas2x
+lssubrg         tldbrg          REPLACE_IF cjoinssubekas2x
+
+MAP(mupdfotospmb)
+g_fotolat1      tldperdis1      REPLACE
+g_fotolon1      tldperdis2      REPLACE
+g_tgltrn        tldtgl2         REPLACE
+g_usrkode       tldukrwrn       REPLACE
+cOK             tldsisbrg       DO_CALC
+DBCALCS(dupdfotospmb)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx       tldprm
+        DBC_MAP         mupdfotospmb
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldnobbm      DO_MAP SHOW murtb
+AFTER_INPUT     cur_field=tldnobbm      DO_MAP SHOW mampatb
+CLICKED         cur_field=ltombolgmaps          DO_SPCALCS spgmaps2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbknSISTEMb
+SFL_COND	cunitbekas
+SFL_LINES(1)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tldnobuk tldoto
+SFL_UPLFLD_DBCALCS dupdfotospmb
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+tldbukurtidx    tlmnobuk   
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat        	tldperdis4      REPLACE
+g_lon         	tldperdis5      REPLACE
+tlmcab		tldcab		REPLACE
+
+CALCS()
+cplus1b		tlmtotal + 1
+cmins1b		tlmtotal - 1
+
+
+MAP(mupdtlmaddb)
+cplus1b		tlmtotal	DO_CALC
+
+MAP(mupdtlmupdb)
+cmins1b		tlmtotal	DO_CALC
+
+
+SPCALCS(sptrans2addb)
+DO_LIB		ap_dbclc(DNAME dupdtlmaddb, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmaddb);
+
+SPCALCS(sptrans2updb)
+DO_LIB		ap_dbclc(DNAME dupdtlmupdb, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupdb);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2addb
+	PST_DELCMD	sptrans2updb
+

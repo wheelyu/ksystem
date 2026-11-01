@@ -1,0 +1,69 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ /---------s.UPLOAD--------------\
+ |                               |
+ |                               |
+ |                               |
+ |                               |
+ |                               |
+ |                               |
+ \-------------------------------/
+ /-------------------------------\
+  ____________
+  t.Upload    : ___  
+  t.NoBuk     : _________________
+  t.Kontraktor: _________________
+  t.JenisKont : _________________
+  t.TotalNego : _________________
+                t.HargaPpn                           
+  t.JenisBiaya: _________________                           
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+luplok2         TOMBOL          INPUTRI 7
+tkdjenis	NOCHANGE	INPUTRI	1
+tkdnobuk	PROTECT		INPUTRI	2
+tkdnoll		ALLCAPS		INPUTRI	3
+tkdjwbstr1	PROTECT 	INPUTRI	4
+tkdjml 		NUMERIC		INPUTRI	5
+tkdjwbstr2	NOCHANGE	INPUTRI	6
+
+DEFAULTS(tmptranst)
+luplok2         INIT            "UPLOAD OK"
+IF cpengaduan tkdjwbstr2	DFALT_SCAN	BLANKS 
+					TERMINA "TERMIN 50 45 5"
+					TERMINB "TERMIN 45 50 5"
+					TERMINC "TERMIN 40 55 5"
+IF c500 tkdjwbstr2	DFALT_SCAN	BLANKS
+					ALTERNATIF1 "ALTERNATIF 1"
+					ALTERNATIF2 "ALTERNATIF 2"
+IF c1000 tkdjwbstr2	DFALT_SCAN	BLANKS
+					ALTERNATIF "ALTERNATIF"
+
+EDITS(tmptranst)
+e.Mandatory	tkdnoll		MANDATORY
+/*e.Mandatory	tkdjwbstr1 	MANDATORY*/
+e.Mandatory	tkdjml     	MANDATORY
+e.Mandatory	tkdjwbstr2 	MANDATORY_IF cpembangunan
+e.Validate      tkdnoll VALIDATE_IF cnotga cmpsuptykod mcmp2 scmp {Pgv_dtsup} {PlKONTRAKTOR}
+e.Validate      tkdnoll VALIDATE_IF cga cmpsuptykod mcmp2 scmp {Pgv_dtsup} {Pgv_DN}
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF caktiva
+CLICKED         cur_field=luplok2       DO_SPCALCS supdkunfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD mtsnobuk tmpkode 
+SFL_UPLFLD_DBCALCS dupdtkdfoto
+SFL_UPLREADONLY
+SFL_TARGET
+        tkddatbukll lNEGOSIASI mtsnobuk 
+SFL_MAP
+	lNEGOSIASI	tkddata		REPLACE
+	mtsnobuk	tkdnobuk	REPLACE 
+	gv_OPEN		tkdsts		REPLACE

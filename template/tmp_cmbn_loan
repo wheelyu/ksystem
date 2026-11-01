@@ -1,0 +1,131 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.No        _____  t.Status _____||
+||t.CabCair   ______ ______________||   
+||t.Pinjaman  __________________.__||   
+||t.Tenor2w   ___                  ||
+||t.JkWaktu   ___                  ||
+||t.Bunga     ____.__              ||
+||t.Bagi1     ____.__              ||
+||t.RateAss   ____.__              ||
+||t.Kbru      _______              ||
+||t.BgPinj    __________________.__||
+||t.Adm       __________________.__||
+||t.Cair2w    __________________.__||   
+||t.Asuransi  __________________.__||
+||t.Angsuran  __________________.__||
+||t.Jtp1      __________________.__||
+||t.TglAkh    __________________.__||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdnourt    	NOCHANGE      	 	INPUTRI 1
+mtdsts      	ALLCAPS       	 	INPUTRI 1
+mtdcab		ALLCAPS			INPUTRI	1
+lnamacabcair	PROTECT			INPUTRI	1
+mtdjml3      	NUMERIC       	 	INPUTRI 1
+mtdjml     	NUMERIC       	 	INPUTRI 1
+mtdtmp1		NUMERIC			INPUTRI 1
+mtdtmp2		NUMERIC			INPUTRI 1
+
+mtdjmlren	NUMERIC			INPUTRI 1
+mtdjmlpos	NUMERIC			INPUTRI 1
+mtdperdism	NUMERIC			INPUTRI 1
+
+
+mtdperdis    	NUMERIC       	 	INPUTRI 1
+mtdhrgnet    	NUMERIC       	 	INPUTRI 1
+mtdhrg       	NUMERIC       	 	INPUTRI 1
+mtdsatbsr    	NUMERIC       	 	INPUTRI 1
+mtdjml2    	NUMERIC       	 	INPUTRI 1 
+mtdtglfak  	NONE {DD-MM-YYYY}	INPUTRI 1 
+mtdtgl2    	PROTECT {DD-MM-YYYY}	INPUTRI 1 
+
+
+
+
+
+DEFAULTS(tmptranst)
+mtdsts		INIT		INPG
+mtscab		INIT		PST30
+
+EDITS(tmptranst)
+e.Mandatory	mtdcab	MANDATORY
+e.Mandatory	mtdhrg	MANDATORY
+e.Mandatory	mtdsatbsr	MANDATORY
+e.Mandatory	mtdhrgnet	MANDATORY
+e.Mandatory	mtdperdis	MANDATORY
+e.Mandatory	mtdjml		MANDATORY
+e.Mandatory	mtdjml2		MANDATORY
+e.Mandatory	mtdtglfak	MANDATORY
+e.ValidateCab	mtdcab		VALIDATE cabkodidx mcabloan
+
+MAP(mcabloan)
+cabnama		lnamacabcair	REPLACE
+
+CALCS()
+cldjoinmtd0	djoinmtd2 == 0 && g_curcmd == 1
+cldjoinmtd1	djoinmtd2 == 1 && g_curcmd == 1
+
+
+
+cmtdtmp1	mtdjml /  12
+cmtdperdis2	((mtdjml3 * mtdtmp2) / 100) * mtdtmp1
+cadm1persen	(mtdjml3 * 1) / 100
+ccair		mtdjml3 - mtdhrgnet
+cass		((mtdjmlpos / 1000) * (mtdjml3 + (mtdperdis / mtdjmlren))) + mtdperdism 
+cass0		((mtdjmlpos / 1000) * (mtdjml3 + (mtdperdis / 1))) + mtdperdism 
+cadabagi	mtdjmlren != 0
+cadabagi0	mtdjmlren == 0
+ctambl5		DO_LIB ap_tambl(mtdtglfak,lmtdjml,&mtdtgl2);
+
+cangbl		(mtdjml3 + mtdperdis + mtdsatbsr) / mtdjml
+cadatenor1	mtdjml != 0
+cbunga		((((((mtdjml * mtdjml2) - (mtdhrg+mtdhrgnet+mtdsatbsr)) / (mtdhrg+mtdhrgnet+mtdsatbsr)) * 100) / mtdjml) * 12)
+
+MAP(murut1)
+cisimtd1        mtdnourt        DO_CALC_IF cldjoinmtd0
+ctammtd1        mtdnourt        DO_CALC_IF cldjoinmtd1
+
+tkmdata		mtddata		REPLACE
+tkmbuk2		mtdbrg		REPLACE
+tkmtype		mtdukrwrn	REPLACE
+
+MAP(mhitloan)
+cmtdtmp1	mtdtmp1		DO_CALC
+cmtdperdis2	mtdperdis	DO_CALC
+cadm1persen	mtdhrgnet	DO_CALC
+ccair		mtdhrg		DO_CALC
+cass		mtdsatbsr	DO_CALC_IF cadabagi
+cass0		mtdsatbsr	DO_CALC_IF cadabagi0
+cangbl		mtdjml2		DO_CALC_IF cadatenor1
+mtdjml		lmtdjml		REPLACE
+ctambl5		mtdtgl2		DO_CALC
+cbunga		mtdtotdism		DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=mtdnourt	DO_MAP SHOW murut1
+
+
+AFTER_INPUT	cur_field=mtdjml   	DO_MAP SHOW mhitloan
+AFTER_INPUT	cur_field=mtdtmp2  	DO_MAP SHOW mhitloan
+AFTER_INPUT	cur_field=mtdperdism  	DO_MAP SHOW mhitloan
+AFTER_INPUT	cur_keybd=EN       	DO_MAP SHOW mhitloan
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)      
+SFL_TITLE(tmptranst)
+SFL_TARGET	
+mtdbukurtidx   tkmnobuk
+
+SFL_MAP	
+tkmdata		mtddata		REPLACE
+tkmnobuk	mtdnobuk 	REPLACE
+tkmtype		mtdplg		REPLACE
+tkmcab		mtdcab		REPLACE
+
+

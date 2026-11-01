@@ -1,0 +1,130 @@
+LOCAL
+PGM_FIELDS
+
+lFORMBAST	STRING		21
+lnamareview	STRING		21
+
+MAP(mjoinpsireview)
+psinama		lnamareview	REPLACE
+
+DBCALCS(djoinpsireview)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx spknohp3
+	DBC_MAP		mjoinpsireview
+
+CALCS()
+cdjoinpsireview		djoinpsireview == 1
+
+IMAGE(tmptranst)
+	________
+/--------------------------------------------------------\
+| t.FotoSerahTerimAgen          t.FotoFormBast + KTP     |
+| /-------s.UPLOAD-------\      /-------s.UPLOAD2------\ |
+| |                      |      |                      | |
+| |                      |      |                      | |
+| |                      |      |                      | |
+| |                      |      |                      | |
+| |                      |      |                      | |
+| |                      |      |                      | |
+| |                      |      |                      | |
+| \----------------------/      \----------------------/ |
+|       spasi                                            |
+|t.ReviewSPVHOKliknsc                                    |
+|/------------------------------------------------------\|
+||t.FotoSerahTerima     : __                            ||
+||t.FotoFormBAST        : __                            ||
+||t.KesesuaianBarang    : __                            ||
+||      spasi                                           ||
+||t.NipReview           : _____________________         ||
+||t.NamaReview          : _____________________         ||
+|\------------------------------------------------------/|
+\--------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spknobuk		PROTECT UNSEEN			INPUTRI	1
+
+spkkode7		NOCHANGE			INPUTRI	2
+spkkode8		NOCHANGE			INPUTRI 3
+spkkode9		NOCHANGE			INPUTRI 4
+
+spknohp3		PROTECT				INPUTRI 5
+spknama2		PROTECT				INPUTRI 6
+
+DEFAULT(tmptranst)
+lSTAGEN		INIT	STAGEN
+lFORMBAST	INIT	FORMBAST
+
+spkkode7	DFALT_SCAN_BLANKS
+					YA "YA"
+					TDK "TIDAK"
+
+spkkode8	DFALT_SCAN_BLANKS
+					YA "YA"
+					TDK "TIDAK"
+
+spkkode9	DFALT_SCAN_BLANKS
+					YA "YA"
+					TDK "TIDAK"
+
+EDITS(tmptranst)
+e.Mandatory	spkkode7	MANDATORY
+e.Mandatory	spkkode8	MANDATORY
+e.Mandatory	spkkode9	MANDATORY
+
+MAP(misireview)
+g_usrkode	spknohp3	REPLACE
+lnamareview	spknama2	REPLACE_IF cdjoinpsireview
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkkode7	DO_MAP SHOW misireview
+
+CALCS()
+ctandafoto3	"FOTOSTAGEN"
+ctandafoto4	"FOTOFORMBAST"
+cYA		g_grpnam == "KLIKNSCHMCHEAD" && tkmsts == "INPG" && tkmbuk2 == "REVHO3"
+cSPVaja		tkmbuk2 == "RVDONE" && tkmsts == "INPG" && (g_grpnam == "DIGMKTSPV" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" || g_grpnam == "M2WAM")
+
+MAP(mupdspkfoto3)
+ctandafoto3	spkfoto3	DO_CALC
+
+MAP(mupdspkfoto4)
+ctandafoto4	spkfoto4	DO_CALC
+
+DBCALCS(dupdspkfoto3)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	spkprmidx spkprm
+	DBC_MAP		mupdspkfoto3
+
+DBCALCS(dupdspkfoto4)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	spkprmidx spkprm
+	DBC_MAP		mupdspkfoto4
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD	spknobuk	lSTAGEN
+SFL_UPLFLD2	spknobuk	lFORMBAST
+SFL_UPLFLD_DBCALCS dupdspkfoto3
+SFL_UPLFLD2_DBCALCS dupdspkfoto4
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPL_DIRFLD2 tkmtgl
+SFL_UPL_COND cSPVaja
+SFL_COND cstagen
+SFL_TARGET
+	spkdatbuktyp	lTUKARPOINT	tkmnobuk
+
+CALCS()
+ckond1		g_grpnam != "KLIKNSCHMCHEAD"
+ckond2		g_grpnam == "KLIKNSCHMCHEAD" && tkmbuk2 == "RVDONE"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND c0
+	PMT_UPDALL_COND cYA
+	PMT_UPD_MSG
+			IF ckond1	t.ReviewHanyaOlehKliknscHead
+			IF ckond2	t.SPVKBA/NSO/MSOIsiDetilAwal
+	PMT_DEL_COND c0
+

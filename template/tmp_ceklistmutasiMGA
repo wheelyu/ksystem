@@ -1,0 +1,81 @@
+IMAGE(tmptranst) 
+/--t------------t-----------------t------------------------t------------t-------\                               
+|No|i.NoFak     |t.NoBt           |i.Brg                   |t.Kat       |i.Cab  |
+\--.------------.-----------------.------------------------.------------.-------/                               
+
+
+IMAGE(tmptrans) 
+|__|____________|_________________|________________________|____________|_______|
+												   
+    
+FIELD(tmptrans)
+ppdnourt        NOCHANGE	            INPUTRI     1 
+ppdnomst2       ALLCAPS SCROLL        	INPUTRI     2  
+ppdnopsn        PROTECT               	INPUTRI     3  
+
+ppdbrg          PROTECT SCROLL 	        INPUTRI     4  /* kode barang */
+ppdkat	        PROTECT SCROLL		    INPUTRI	    5
+ppdlok          PROTECT SCROLL 	        INPUTRI     6  /* Lokasi */
+
+EDITS(tmptrans)
+e.MandatoryBrg ppdbrg 		MANDATORY
+e.MandatoryBuk ppdnomst2 	MANDATORY
+
+e.ValidatePik ppdnomst2 VALIDATE_IF ctambah pikdatbukidx mpik2 0 {Pgv_dtpiu}
+e.ValidateJmn ppdnomst2 VALIDATE_IF ctambah jmnplgnoidx mjmn 0 {Ppikplg}
+e.Validatebtm ppdnopsn VALIDATE btmbukidx mbtm2 0
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=ppdkat        	DO_SKIP_IF cjkmtr   
+BEFORE_INPUT 	cur_field=ppdnomst2     	DO_MAP SHOW murut
+AFTER_INPUT	cur_field=ppdnomst2		DO_MAP SHOW
+		IF cnofakok mdum
+		ELSE HKCURSOR STAY
+		HKMSG Bukan Faktur MGA
+AFTER_INPUT	cur_field=ppdnomst2		DO_MAP SHOW
+		IF cnofakok1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Faktur Tidak INPG
+AFTER_INPUT	cur_field=ppdnomst2		DO_MAP SHOW
+		IF cnofakok2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Faktur Belum WO / Blm Periode Lelang JTP Blm > 15 Hari
+AFTER_INPUT	cur_field=ppdnomst2		DO_MAP SHOW
+		IF cnofakok3 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Faktur Sudah Ada di Nobuk Lelang Lain
+
+AFTER_INPUT	cur_keybd=EN 			DO_MAP SHOW
+		IF cpersenok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Tidakbolehdibawah110persen
+
+AFTER_INPUT     cur_keybd=EN			DO_MAP SHOW
+                IF cnofakok mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bukan Faktur MGA
+AFTER_INPUT     cur_keybd=EN			DO_MAP SHOW
+                IF cnofakok1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Faktur Tidak INPG
+AFTER_INPUT     cur_keybd=EN			DO_MAP SHOW
+                IF cnofakok2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Faktur Belum WO / Blm Periode Lelang JTP Blm 15 Hari
+AFTER_INPUT     cur_keybd=EN			DO_MAP SHOW
+                IF cnofakok3 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Faktur Sudah Ada di Nobuk Lelang Lain
+
+SUBFILE(tmptrans)
+SFL_LINES(1)    
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND	ckirimsmg
+SFL_TARGET
+ppdbuk2bbmid   tlmnoasal
+
+SFL_MAP
+tlmnoasal	ppdnobuk	REPLACE
+tlmtgl   	ppdtglfak	REPLACE
+tlmdata         ppddata         REPLACE

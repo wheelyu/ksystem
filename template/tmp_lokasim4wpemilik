@@ -1,0 +1,135 @@
+LOCAL
+PGM_FIELDS
+lnamaprop	STRING		31
+lnamakota	STRING		31
+lnamakec	STRING		31
+lnamakel	STRING		31
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------\
+|/---------------------------------------------------------------------\|
+||                                t.DataPemilik                        ||
+|\---------------------------------------------------------------------/|
+|/---------------------------------------------------------------------\|
+||t.Nama            :_________________________________________________ ||
+||t.TempatLahir     :_________________________________________________ ||
+||t.TglLahir        :_________________________________________________ ||
+||t.Pekerjaan       :_________________________________________________ ||
+||t.WargaNegara     :_________________________________________________ ||
+||t.Alamat          :_________________________________________________ ||
+||                  t.rt ________  t.rw ________                       ||
+||t.Provinsi        :____________  ___________________________________ ||
+||t.Kota            :____________  ___________________________________ ||
+||t.Kec             :____________  ___________________________________ ||
+||t.Kel             :____________  ___________________________________ ||
+||t.Noktp           :_________________________________________________ ||
+||t.NoHP            :___________________________                       ||
+|\---------------------------------------------------------------------/|
+\-----------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tlmplg 		PROTECT			INPUTRI		1
+sviket		TEXTAREA ALLCAPS	INPUTRI		2
+svitgl1		NOLIMIT {DD-MM-YYYY}	INPUTRI		4
+svistr1		ALLCAPS			INPUTRI		5
+svistr2		ALLCAPS			INPUTRI		6
+sviket2         TEXTAREA ALLCAPS	INPUTRI		7
+svistr3		ALLCAPS			INPUTRI		8
+svistr4		ALLCAPS			INPUTRI		9
+
+svistr5		ALLCAPS			INPUTRI		10
+lnamaprop	PROTECT			INPUTRI		11
+svistr6		ALLCAPS			INPUTRI		12
+lnamakota	PROTECT			INPUTRI		13
+svistr7		ALLCAPS			INPUTRI		14
+lnamakec	PROTECT			INPUTRI		15
+svistr8		ALLCAPS			INPUTRI		16
+lnamakel	PROTECT			INPUTRI		17
+svistr9		ALLCAPS			INPUTRI		18
+svistr10	DIGITS			INPUTRI		19
+
+EDITS(tmptranst)
+e.Validate              svistr5         VALIDATE dtmdtkodidx mprop sdtm {Pgv_dtkota}
+e.Validate              svistr6         VALIDATE tbldtdtmkod mkota stbl {Pgv_dtkota} {Psvistr5}
+e.Validate              svistr7         VALIDATE tbddatkodidx mkec stbd {Pgv_dtkota} {Psvistr5} {Psvistr6}
+e.Validate              svistr8         VALIDATE tbtdattypkod mkel stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr5} {Psvistr6} {Psvistr7}
+e.Mandatory		sviket          MANDATORY
+e.Mandatory		svitgl1         MANDATORY
+e.Mandatory		svistr1         MANDATORY
+e.Mandatory		svistr2         MANDATORY
+e.Mandatory		sviket2         MANDATORY
+e.Mandatory		svistr3         MANDATORY
+e.Mandatory		svistr4         MANDATORY
+e.Mandatory		svistr5         MANDATORY
+e.Mandatory		svistr6         MANDATORY
+e.Mandatory		svistr7         MANDATORY
+e.Mandatory		svistr8         MANDATORY
+e.Mandatory		svistr9         MANDATORY
+e.Mandatory		svistr10         MANDATORY
+
+
+MAP(mprop)
+dtmkode         svistr5          REPLACE
+dtmket          lnamaprop        REPLACE
+
+MAP(mkota)
+tblkode         svistr6          REPLACE
+tblket          lnamakota        REPLACE
+
+MAP(mkec)
+tbdkode         svistr7          REPLACE
+tbdket          lnamakec         REPLACE
+
+MAP(mkel)
+tbtkode         svistr8          REPLACE
+tbtket          lnamakel         REPLACE
+
+CALCS()
+chitrt		DO_LIB ap_strln(svistr3,&llongrt);
+chitrw		DO_LIB ap_strln(svistr4,&llongrw);
+chitktp		DO_LIB ap_strln(svistr9,&llongktp);
+clongrt		llongrt==3
+clongrw		llongrw==3
+clongktp	llongktp==16
+
+MAP(mhitrt)
+chitrt		llongrt		DO_CALC
+
+MAP(mhitrw)
+chitrw		llongrw		DO_CALC
+
+MAP(mhitktp)
+chitktp		llongktp	DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svistr3	DO_MAP SHOW mhitrt
+AFTER_INPUT	cur_field=svistr3	DO_MAP SHOW
+		 IF clongrt mdum
+                ELSE HKCURSOR STAY
+                HKMSG  Panjang Nomor RT Harus 3 Karakter
+
+AFTER_INPUT	cur_field=svistr4	DO_MAP SHOW mhitrw
+AFTER_INPUT     cur_field=svistr4       DO_MAP SHOW
+                 IF clongrw mdum
+                ELSE HKCURSOR STAY
+                HKMSG  Panjang Nomor RW Harus 3 Karakter
+
+AFTER_INPUT     cur_field=svistr9       DO_MAP SHOW mhitktp
+AFTER_INPUT     cur_field=svistr9       DO_MAP SHOW
+                 IF clongktp mdum
+                ELSE HKCURSOR STAY
+                HKMSG  Panjang Nomor KTP Harus 16 Karakter
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp tlmdata tlmnobuk lPEMILIK
+SFL_MAP
+tlmdata		svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lPEMILIK	svitype		REPLACE
+tlmplg		svinama		REPLACE

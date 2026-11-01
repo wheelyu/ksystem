@@ -1,0 +1,113 @@
+LOCAL
+PGM_FIELDS
+lsvinourtx	INT2		2
+lsvitype_4	STRING		11
+lsvistr1_2	STRING		31
+lsvistr2_2	STRING		31
+lenter5		STRING		11
+lentar		STRING		11
+
+MAP(mjoinsvix)
+svinourt	lsvinourtx	REPLACE
+
+DBCALCS(djoinsvix)
+        DBC_COMMAND     JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp    tlmdata tlmnobuk lsvitype_4
+	DBC_MAP		mjoinsvix
+
+IMAGE(tmptranst)
+/-------------------------------------------\
+ /-----------------------------------------\
+ |t.NIPLglHd : _______ ___________________ |
+ |t.Apr      : _______                     |
+ |t.DetailPerbaikan                        |
+ |t.PenyelesaianGugatan ___                |
+ |t.SangkutanSdm        ___                |
+ |t.NIPLglGM : _______ ___________________ |
+ |t.Apr      : _______  ___                |
+ \-----------------------------------------/
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr1         PROTECT         INPUTRI 1
+lsvistr1_2      PROTECT         INPUTRI 2
+svistr3         NOCHANGE        INPUTRI 3
+sviyt1		NOCHANGE	INPUTRI 4
+sviyt2		NOCHANGE	INPUTRI 4
+svistr2         PROTECT         INPUTRI 5
+lsvistr2_2      PROTECT         INPUTRI 6
+svistr4         NOCHANGE        INPUTRI 7
+lentar		NOCHANGE	INPUTRI	8
+
+DEFAULTS(tmptranst)
+lenter5		INIT			"TAB+ENTER"
+lsvitype_4	INIT			ACCIR
+svistr3		DFALT_SCAN_BLANKS	ACC TACC BACK
+svistr4		DFALT_SCAN_BLANKS	ACC TACC
+sviyt1		DFALT_SCAN_BLANKS	Y T
+sviyt2		DFALT_SCAN_BLANKS	Y T
+lentar		INIT			"ENTR"
+
+CALCS()
+ctambah8	g_curcmd == 1
+cubah8		tlmsts == "INPG" && tlmsts2 == "GM"
+cback		svistr3 == "BACK"
+cbback		svistr3 != "BACK"
+
+EDITS(tmptranst)
+e.Mandatory     svistr3         MANDATORY_IF ctambah8
+e.Mandatory     sviyt1          MANDATORY_IF cback 
+e.Mandatory     sviyt2          MANDATORY_IF cback 
+e.Validate	svistr1		VALIDATE psikodidx mpsi5 0
+e.Validate      svistr2         VALIDATE psikodidx mpsi5_1 0
+
+MAP(mpsi5)
+psikode		svistr1		REPLACE
+psinama		lsvistr1_2	REPLACE
+
+MAP(mpsi5_1)
+psikode		svistr2		REPLACE
+psinama		lsvistr2_2	REPLACE
+
+CALCS()
+cdjoinsvix0		djoinsvix == 0 && g_curcmd == 1
+cdjoinsvix1		djoinsvix == 1 && g_curcmd == 1
+c1f			1
+cnourt1b        	lsvinourtx + 1
+chd			tlmsts2 == "HD"
+cgm			tlmsts2 == "GM"
+cbolehback		(svistr3 == "BACK" && (sviyt1 == "Y" || sviyt2 == "Y")) || svistr3 != "BACK"
+
+MAP(mnourt1b)
+c1f             svinourt        DO_CALC_IF cdjoinsvix0
+cnourt1b        svinourt        DO_CALC_IF cdjoinsvix1
+g_usrkode	svistr1		REPLACE_IF ctambah8
+
+MAP(musinp1)
+g_usrkode       svistr2         REPLACE_IF cubah8
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=svistr3       DO_MAP SHOW mnourt1b
+BEFORE_INPUT	cur_field=svistr4	DO_MAP SHOW musinp1
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF ctambah8
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF cbback
+BEFORE_INPUT	cur_field=sviyt2	DO_SKIP_IF cbback
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF chd
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF cgm
+
+AFTER_INPUT     cur_field=sviyt2       DO_MAP SHOW
+                IF cbolehback musinp1
+                ELSE HKCURSOR STAY
+                HKMSG t.SalahSatuHarusY
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp    tlmdata tlmnobuk lsvitype_4
+SFL_MAP
+tlmdata         svidata         REPLACE
+lsvitype_4      svitype         REPLACE
+tlmnobuk        svinobuk        REPLACE

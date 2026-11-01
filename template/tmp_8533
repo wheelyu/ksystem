@@ -1,0 +1,94 @@
+/**************************************************************************/
+LOCAL
+PGM_FIELDS
+lBIAJTPM4W	STRING	11
+lBIAJTPM4W21	STRING	21
+lbgkhusus	DFLOAT	8
+
+MAP(mjoinnhm)
+nhmbgstd	lbunga		REPLACE
+
+DBCALCS(djoinnhm)
+	DBC_COMMAND	JOIN	
+	DBC_TARGET	nhmdatbukidx gv_bukutamu piknobtm
+	DBC_MAP		mjoinnhm
+
+MAP(mjoinaktbiajtp)
+akttotal	lbgkhusus	REPLACE
+
+DBCALCS(djoinaktbiajtp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx piknobuk lBIAJTPM4W lBIAJTPM4W21
+	DBC_MAP		mjoinaktbiajtp
+
+
+CALCS()
+cjoinnhm	djoinnhm==1
+cadmin		100000
+cbgjalan	tlmjmlctk * (lbunga/100) / 360 * piksispok
+ctotal		tldjml + tldhrg
+cinpg0		tlmsts!="INPG"
+cinpg1		tlmsts=="INPG"
+cbungakosong	tldhrg>0
+cBLANK		BLANKS
+cm4wkhs		tlmdvs=="M4W" && djoinaktbiajtp==1 && tldhrg == BLANKS
+cbknm4wkhs	tlmdvs=="M4W" && djoinaktbiajtp==0 && tldhrg == BLANKS
+
+IMAGE(tmptranst) 
+/----------------------------------\
+| t.BiAdm     _____________.__     |
+| t.BgaJln    _____________.__     |
+| t.Total     _____________.__     |
+| t.Nobuk201  ________________     |
+|             _________            |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldjml   	PROTECT		INPUTRI		1
+tldhrg   	PROTECT		INPUTRI		2
+tldsubtot	PROTECT		INPUTRI		3
+tldbrg		ALLCAPS		INPUTRI		4
+lenter   	ALLCAPS		INPUTRI		5
+
+DEFAULTS(tmptranst)
+lBIAJTPM4W	INIT		BIAJTPM4W
+lBIAJTPM4W21	INIT		BIAJTPM4W
+
+
+EDITS(tmptranst)
+t.Nobuk201	tldbrg		VALIDATE_IF cinpg1 bkmstsdatno mbkm {Pgv_CLSD} {Pgv_dtkmlain}
+
+MAP(mbkm)
+bkmnobuk	tldbrg		REPLACE
+
+MAP(mtmptrans)
+cBLANK		lbunga		DO_CALC
+lbunga		lbunga		REPLACE_IF cjoinnhm
+cadmin		tldjml		DO_CALC
+cbgjalan	tldhrg		DO_CALC_IF cbknm4wkhs
+lbgkhusus	tldhrg		REPLACE_IF cm4wkhs
+ctotal		tldsubtot	DO_CALC
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldbrg	DO_SKIP_IF cinpg0
+BEFORE_INPUT	cur_field=lenter	DO_MAP SHOW mtmptrans
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mtmptrans
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF cbungakosong mdum
+                ELSE HKCURSOR STAY
+                     HKMSG Nominal Bunga Kosong, Hubungi HO
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldbukurtidx	tlmnobuk l1
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+l1		tldnourt	REPLACE
+tlmdvs		tlddvs		REPLACE
+tlmcab		tldcab		REPLACE

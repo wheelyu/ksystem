@@ -1,0 +1,62 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket : ________________________||
+||        _____                   ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		10
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+
+MAP(mupdsvisrtsppd)
+cY              sviyt1          DO_CALC
+
+DBCALCS(dupdsvisrtsppd)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvisrtsppd
+
+CALCS()
+csrtsppd	tmpkode == "SRTSPPD" && btmstr2=="TRANSFER"
+csrtsppd1	sviyt1 != "Y"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csrtsppd
+SFL_UPLFLD_DBCALCS dupdsvisrtsppd
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND csrtsppd1
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk lcount
+
+SPCALCS(spsppd)
+DO_LIB ap_nxpst(l4461,lm4461det2);
+
+POSTING(tmptrans)
+        PST_ADDCMD spsppd
+        PST_UPDCMD spsppd
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

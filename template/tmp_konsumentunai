@@ -1,0 +1,276 @@
+LOCAL
+PGM_FIELDS
+lbtmtypjltunai               STRING  5
+lkethsl3t                STRING  21
+
+MAP(mjoinbtm713t)
+btmtypjl        lbtmtypjltunai      REPLACE
+
+DBCALCS(djoinbtm713t)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmplgbukidx   mtdsat mtdgrup
+        DBC_MAP         mjoinbtm713t
+
+
+
+DBCALCS(djointldhslverifttg3t)                                            
+        DBC_COMMAND     JOIN    
+        DBC_TARGET      tldbukbrglok    mtdnobuk   mtdnoll lhslverif
+
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+  t.BertemuKon     : __________________        _
+  t.TypePembln     : ____  _____________ 
+  t.UntYgDambl	   : ______________  ___
+  t.NomnlTghKrm	   : ______________  ___
+  t.UangKonsAda	   : ___________________
+  t.KlyknUnit      : _____
+  t.WjbUpload
+||/-s.UPLOAD-----\||
+|||              |||
+|||              |||
+|||              |||
+|||              |||
+|||              |||
+||\--------------/||
+|/-------------------------------------------\|
+  t.HasilVerifKONS : ____  _____________
+|\-------------------------------------------/|
+|/-----i.ENTER-------------------------------\|
+______
+|\-------------------------------------------/|
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkhasil2	NOCHANGE SCROLL	INPUTRI 22      /*Bertemu konsumen*/
+spknobuk        PROTECT UNSEEN  INPUTRI 22
+lbtmtypjltunai        PROTECT COLOR=cred,cyellow,cgreen  INPUTRI 27      /*tipe pembelian*/  
+spknohp8        NOCHANGE SCROLL  INPUTRI 28      /*tipe pembelian*/  
+spkkat6		PROTECT	COLOR=cred,cyellow,cgreen  INPUTRI 29      /*unit motor yg diambil 713*/
+spkkat4		NOCHANGE	SCROLL	INPUTRI 30      /*unit motor yg diambil*/
+spkjrk4		PROTECT COLOR=cred,cyellow,cgreen	INPUTRI 36      /*Nominal Tagih Kirim 713*/
+spkkat10        NOCHANGE SCROLL 	INPUTRI 37      /*Nominal Tagih Kirim*/
+spkfoto8        NOCHANGE SCROLL  INPUTRI 38      /*uang konsumen ada*/
+spkfoto9        NOCHANGE SCROLL INPUTRI 39      /*Kelayakan unit*/
+spkkode2        PROTECT COLOR=cred,cyellow,cgreen  INPUTRI 50      /*Hasil verifikasi*/
+lkethsl3t        PROTECT SCROLL COLOR=cred,cyellow,cgreen  INPUTRI 50
+lENTER          NOCHANGE        INPUTRI 51
+
+MAP(mjoinbtmppmtunai)
+btmtypmtr       lbtmtypmtr      REPLACE
+
+DBCALCS(djoinbtmppmt)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              btmbukidx       lppmnoll
+        DBC_MAP                 mjoinbtmppmtunai
+
+
+CALCS()
+cbertemu2t        spkhasil2 != "TIDAK" && spkjrk4>0
+ctypemotort         djoinppmmtd == 1 && djoinbtmppmt == 1
+cbertemut        spkhasil2 != "TIDAK"
+ctdkbertemut     spkhasil2 == "TIDAK"
+cjoinbtm713t     djoinbtm713t == 1        
+ctghkrm0tunai        (spkhasil2 == "P1" || spkhasil2 == "P2" || spkhasil2 == "P1P2" ) &&  (spkjrk4 <= 0 || spkjrk4==BLANKS)
+
+DEFAULTS(tmptranst)
+spktglft        INIT_ADD        {g_tgltrn}                                                                                                              
+spktglft        INIT_UPDATE        {g_tgltrn}
+
+spkfoto8         DFALT_SCAN BLANKS       Y "YA"
+                                        T "TIDAK"
+
+spknohp8        DFALT_SCAN BLANKS       Y "SESUAI"
+                                        T "TIDAK SESUAI"
+
+spkkat4        DFALT_SCAN BLANKS       Y "SESUAI"                                                                                                      
+                                        T "TIDAK SESUAI"
+
+
+
+
+spkkat10        DFALT_SCAN BLANKS       Y "SESUAI"                                                                                                      
+                                        T "TIDAK SESUAI"
+
+  spkhasil2     DFALT_SCAN      TIDAK
+                                        P1
+                                        P2
+                                        P1P2
+
+spkfoto9         DFALT_SCAN BLANKS       Y "LAYAK"                                                                                                      
+                                        T "TIDAK LAYAK"
+
+
+lKETTOLAKSURVEY         INIT            KETTOLAKSURVEY
+
+EDITS(tmptranst)
+
+
+e.MandatoryTypePembelian	spknohp8       MANDATORY_IF cbertemut
+e.MandatoryUnitygdiambil	spkkat4       MANDATORY_IF cbertemut
+e.MandatoryNominalTghKirim	spkkat10       MANDATORY_IF cbertemu2t
+e.MandatoryKelayakanUnit	spkfoto9       MANDATORY_IF cbertemut
+
+e.Mandatorykonspngjn		spkhasil2        MANDATORY_IF cbertemut
+e.MandatoryUangKonsAda        	spkfoto8    	MANDATORY_IF cbertemu2t
+e.Validate                      spknobuk     VALIDATE ppmbukidx mppmkons2tunai 0
+
+
+MAP(mppmkons2tunai)
+lbtmtypmtr      spkkat6         REPLACE_IF ctypemotort
+lbtmtypjltunai       lbtmtypjltunai        REPLACE_IF cjoinbtm713t 
+ltagihkirim     spkjrk4         REPLACE
+spkhasil2       lspkhasil2      REPLACE
+
+
+CALCS()
+chapusfoto3tunai      g_grpnam == "ADH" || g_grpnam == "IT" || g_grpnam == "DRIVER" || g_grpnam == "RI" || mtshcex_1 == g_usrkode
+chslveriftunai       spkhasil2 == "TIDAK" || spknohp8 == "T" || spkkat4 == "T" || spkkat10 == "T"  || spkfoto8 == "T" || spkfoto9 == "T"
+chslverif2tunai      spkhasil2 != "TIDAK" && spknohp8 == "Y" && spkkat4 == "Y" && spkkat10 != "T" && spkfoto8 != "T" && spkfoto9 != "T"
+        
+
+cYtunai              "Y"
+cTidaktunai          "T"
+
+ckonsct           "KONS"
+
+ckode7ct          "KONS.1"
+ckode7okct         spkhasil2 == "TIDAK"
+ckode10ct          "KONS.4"
+ckode10okct         spknohp8 == "T"
+ckode11ct          "KONS.5"
+ckode11okct         spkkat4 == "T"
+ckode15ct          "KONS.9"
+ckode15okct         spkfoto8 == "T"
+ckode17ct           "KONS.10"
+ckode17okct         spkkat10 == "T"
+ckode16ct          "AKL.1"
+ckode16okct         spkfoto9 == "T"
+
+cgabungketct     STRIP(lkode7)+" "+STRIP(lkode10)+" "+STRIP(lkode11)+" "+STRIP(lkode15)+" "+STRIP(lkode16)+" "+STRIP(lkode17)
+cdokumentasict   STRIP(lkons)
+
+MAP(mgabungket3tunai)
+
+ckode7ct          lkode7           DO_CALC_IF ckode7okct
+ckode10ct         lkode10          DO_CALC_IF ckode10okct
+ckode11ct         lkode11          DO_CALC_IF ckode11okct
+ckode15ct         lkode15          DO_CALC_IF ckode15okct
+ckode17ct         lkode16          DO_CALC_IF ckode17okct
+ckode16ct         lkode17          DO_CALC_IF ckode16okct
+
+ckonsct           lkons           DO_CALC_IF chslveriftunai
+cBLANKS           lkons           DO_CALC_IF chslverif2tunai
+
+cgabungketct      lgabungket      DO_CALC
+cdokumentasict    lgabungan       DO_CALC
+
+MAP(maddtldalasanblk4t)                                                                                                                                  
+mtdnobuk         tldnobuk       REPLACE                                                                                                                 
+mtdnoll          tldbrg         REPLACE
+lhslverif        tldlok         REPLACE
+lgabungan        tldgrup        REPLACE
+lgabungket       tldket         REPLACE
+
+MAP(mupdtldcekling3t)
+lgabungan        tldgrup        REPLACE
+lgabungket       tldket         REPLACE
+
+MAP(mhasilverif3t)
+cTidaktunai      spkkode2        DO_CALC_IF chslveriftunai
+cYtunai     spkkode2        DO_CALC_IF chslverif2tunai
+cbalik  lkethsl3t        DO_CALC_IF chslveriftunai
+ckirim  lkethsl3t        DO_CALC_IF chslverif2tunai
+
+
+MAP(misispkkat6t)
+lbtmtypmtr	spkkat6		REPLACE_IF ctypemotor
+lbtmtypjltunai       lbtmtypjltunai        REPLACE_IF cjoinbtm713t 
+ltagihkirim     spkjrk4         REPLACE
+spkhasil2       lspkhasil2      REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=spkhasil2      DO_MAP SHOW misispkkat6t
+BEFORE_INPUT    cur_field=lbtmtypjltunai     DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spknohp8      DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spkkat6       DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spkkat4       DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spkjrk4       DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spkfoto9       DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spkkat10      DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT    cur_field=spkkat10      DO_SKIP_IF ctghkrm0tunai
+BEFORE_INPUT    cur_field=spkfoto8      DO_SKIP_IF ctdkbertemut
+BEFORE_INPUT 	cur_field=spkfoto8          DO_SKIP_IF ctghkrm0tunai
+AFTER_INPUT	cur_field=spkfoto8	DO_MAP SHOW mhasilverif3t
+
+MAP(mjointkm3t)
+tkmkode		ltkmkode		REPLACE
+
+DBCALCS(djointkmmts3t)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkmbukidx	mtsnobuk_1
+	DBC_MAP		mjointkm3t
+
+MAP(mjointbd618t)
+tbdkode2        ltbdkode2       REPLACE
+
+DBCALCS(djointbd618t)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lVERAKL61821 g_grpnam
+        DBC_MAP         mjointbd618t
+
+
+
+CALCS()
+chanyaakl3tunai        ((djointkmmts3t == 1 && ltkmkode  == g_usrkode && (ppmtk_2=="T" || (ppmtk_2=="K" && ppmfinexin_2=="EX"))) || (djointbd618t == 1 && (ltbdkode2 == "LIHAT" || ltbdkode2 == "UBAH" ) && ppmtk_2=="T" || (ppmtk_2=="K" && ppmfinexin_2=="EX")))
+        /********************FOTo KELAYAKAN UNIT****************************/
+MAP(mupdfotobsn5T)
+gv_int1              spklmkrj     REPLACE
+
+DBCALCS(dupdfotobsn5T)
+DBC_COMMAND        UPDATE
+DBC_TARGET         spkprmidx   spkprm
+DBC_MAP            mupdfotobsn5T
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND chanyaakl3tunai
+SFL_UPL_DIRFLD spktglft
+SFL_UPL_CAMERAONLY
+SFL_UPLFLD     spknobuk spkhasil2
+SFL_UPL_DELCOND chapusfoto3tunai
+SFL_UPLFLD_DBCALCS dupdfotobsn5T
+SFL_TARGET
+	spkdatbuktyp	gv_datasurvey /*mtdnobuk*/ mtdplg   lVERAKL618
+
+SFL_MAP
+gv_datasurvey		spkdata			REPLACE
+mtdplg   		spknobuk		REPLACE
+lVERAKL618		spktype			REPLACE
+mtdplg              	spknoasal               REPLACE
+
+
+CALCS()
+cveriflingk3t     djointldhslverifttg3t == 0 /*&& (spkhasil2 == "TIDAK" || spktgg4 == "T" || spknohp6 == "T" || spknohp8 == "T" || spkkat4 == "T" ||                        spkkat5 == "T" || spkkat7 == "T" || spkkat8 == "T" || spkfoto8 == "T")*/
+
+cdjointldupd3t    djointldhslverifttg3t == 1 /*&& (spktgg3 == "T" || spknohp9 == "T" || spkfoto3 == "T" || spktgg2 == "T" || spknohp10 == "T" || spkfoto == "T" || spkhasil2 == "TIDAK" || spktgg4 == "T" || spknohp6 == "T" || spknohp8 == "T" || spkkat4 == "T" || spkkat5 == "T" || spkkat7 == "T" || spkkat8 == "T" || spkfoto8 == "T" || spkfoto9 == "T")*/
+
+SPCALCS(sphasiltunai)
+DO_LIB ap_dbclc(DNAME dmapmgabungketkonsumentunai,DCOMMAND MAPMAP,DMAP mgabungket3tunai);
+DO_LIB_IF cveriflingk3t ap_dbclc(DNAME daddtldalasanblk4tunai,DCOMMAND ADD,DFILE tld,DMAP maddtldalasanblk4t); 
+
+SPCALCS(sphasiltunaia)
+DO_LIB ap_dbclc(DNAME dmapmgabungket3tunai,DCOMMAND MAPMAP,DMAP mgabungket3tunai);
+DO_LIB_IF cdjointldupd3t ap_dbclc(DNAME dupdtldcekling3tunai,DCOMMAND UPDATE_RANGE,DTARGET tldbukbrglok mtdnobuk mtdplg lhslverif,DMAP mupdtldcekling3t);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD sphasiltunai
+        PST_UPDCMD sphasiltunaia 

@@ -1,0 +1,114 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------------\
+|------t----------------------t----------------------t----------------t-------------t------------t------------|
+| i.No |i.Ktp                 |i.Nama                |t.Notelp        |t.TglFU      |t.SumberRef |t.PlanFU    |
+\------.----------------------.----------------------.----------------.-------------.------------.------------/
+
+IMAGE(tmptrans)
+|______|______________________|______________________|________________|_____________|____________|____________|
+
+FIELD(tmptrans)
+aktdf1                  ALLCAPS            INPUTRI 1
+aktnobuk                ALLCAPS            INPUTRI 2
+aktket			ALLCAPS		   INPUTRI 3
+aktkode2		ALLCAPS		   INPUTRI 4
+akttgl 			NONE NOLIMIT {DD-MM-YYYY} INPUTRI 5
+aktcrtusr		ALLCAPS		   INPUTRI 6
+aktlok			ALLCAPS	           INPUTRI 7		
+
+DEFAULTS(tmptrans)
+lTMPAO		INIT	TMPAO
+lTMPCOUNTER	INIT	TMPCOUNTER
+lTMPSALES	INIT	TMPSALES
+lTMPMO		INIT	TMPMO
+lTMPCMO		INIT	TMPCMO
+lTMPADHCNTR	INIT	TMPADHCNTR
+
+CALCS()
+cspkao		tkmtype == "SPKAO"
+cspkcntr	tkmtype == "SPKCNTR"
+cspksales	tkmtype == "SPKSALES"
+cspkmo		tkmtype == "SPKMO"
+cspkcmo		tkmtype == "SPKCMO"
+cspkadhcntr	tkmtype == "SPKADHCNTR"
+cpanjangktp16   DO_LIB ap_strln(aktnobuk,&lpanjangktp);
+cpjgktp		lpanjangktp == 16 
+cpanjanghp2	DO_LIB ap_strln(aktkode2,&lpanjanghp2);
+cpjghp		lpanjanghp2 >= 11 && lpanjanghp2 <= 13 
+
+EDITS(tmptrans)
+e.Mandatory	aktnobuk	MANDATORY
+e.Mandatory	aktket		MANDATORY
+e.Mandatory	aktkode2	MANDATORY
+e.Mandatory	akttgl		MANDATORY
+e.Mandatory	aktcrtusr	MANDATORY
+e.Validate	aktcrtusr	VALIDATE_IF cspkao tbldtdtmkod mtmpsum stbl {Pgv_dttemplate} {PlTMPAO}
+e.Validate	aktcrtusr	VALIDATE_IF cspkcntr tbldtdtmkod mtmpsum stbl {Pgv_dttemplate} {PlTMPCOUNTER}
+e.Validate	aktcrtusr	VALIDATE_IF cspksales tbldtdtmkod mtmpsum stbl {Pgv_dttemplate} {PlTMPSALES}
+e.Validate	aktcrtusr	VALIDATE_IF cspkmo tbldtdtmkod mtmpsum stbl {Pgv_dttemplate} {PlTMPMO}
+e.Validate	aktcrtusr	VALIDATE_IF cspkcmo tbldtdtmkod mtmpsum stbl {Pgv_dttemplate} {PlTMPCMO}
+e.Validate	aktcrtusr	VALIDATE_IF cspkadhcntr tbldtdtmkod mtmpsum stbl {Pgv_dttemplate} {PlTMPADHCNTR}
+e.Validate	aktlok		VALIDATE_IF cspkao tbldtdtmkod mtmpspk stbl {Pgv_dttemplate} {PlTMPAO}
+e.Validate	aktlok		VALIDATE_IF cspkcntr tbldtdtmkod mtmpspk stbl {Pgv_dttemplate} {PlTMPCOUNTER}
+e.Validate	aktlok		VALIDATE_IF cspksales tbldtdtmkod mtmpspk stbl {Pgv_dttemplate} {PlTMPSALES}
+e.Validate	aktlok		VALIDATE_IF cspkmo tbldtdtmkod mtmpspk stbl {Pgv_dttemplate} {PlTMPMO}
+e.Validate	aktlok		VALIDATE_IF cspkcmo tbldtdtmkod mtmpspk stbl {Pgv_dttemplate} {PlTMPCMO}
+e.Validate	aktlok		VALIDATE_IF cspkadhcntr tbldtdtmkod mtmpspk stbl {Pgv_dttemplate} {PlTMPADHCNTR}
+
+MAP(mtmpsum)
+tblkode		aktcrtusr	REPLACE
+
+MAP(mtmpspk)
+tblkode		aktlok		REPLACE
+
+MAP(mpanjangktp)
+cpanjangktp16        lpanjangktp        DO_CALC
+
+MAP(mpanjanghp2)
+cpanjanghp2        lpanjanghp2         DO_CALC
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=aktnobuk	DO_MAP SHOW mpanjangktp
+AFTER_INPUT     cur_field=aktnobuk      DO_MAP SHOW
+		IF cpjgktp mdum
+		ELSE HKCURSOR STAY
+		HKMSG PANJANG KTP HARUS 16 
+
+AFTER_INPUT	cur_field=aktkode2	DO_MAP SHOW mpanjanghp2
+AFTER_INPUT     cur_field=aktkode2      DO_MAP SHOW
+		IF cpjghp mdum
+		ELSE HKCURSOR STAY
+		HKMSG PANJANG NO TLP HARUS 11
+
+AFTER_INPUT	cur_field=akttgl 	DO_MAP SHOW
+		IF ctglmaju3	mdum
+		ELSE HKCURSOR STAY
+		HKMSG TANGGAL FU HARUS DIATAS HARI INI	
+
+SUBFILE(tmptrans)
+SFL_LINES(11)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+aktkodtypidx	tkmplg tkmtype lREFF
+SFL_MAP	
+	tkmtype		aktdata		REPLACE
+	tkmplg          aktkode         REPLACE
+	lREFF           akttype         REPLACE
+	aktnobuk	aktbrg		REPLACE
+	tkmtgl		aktcrttgl	REPLACE
+
+MAP(maddsviref)
+tkmnobuk	svinobuk	REPLACE
+tkmtype		svidata		REPLACE
+lREFF		svitype		REPLACE
+tkmtgl		svitgl1		REPLACE
+aktnobuk	svikode		REPLACE
+aktket		svinama		REPLACE
+
+SPCALCS(spdetailref)
+DO_LIB          ap_dbclc(DNAME daddsviref,DCOMMAND ADD, DFILE svi,DMAP maddsviref);
+
+
+POSTING(tmptrans)
+PST_ADDCMD      spdetailref
+

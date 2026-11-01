@@ -1,0 +1,281 @@
+LOCAL
+PGM_FIELDS
+lsviotopemakai714       STRING  21
+ltombolupload           STRING  31
+/*
+lpekerjaancapacity	STRING	21
+lftmcab			STRING	21
+
+MAP(mjoinftmkerjacapacity)
+ftmdvs		lpekerjaancapacity	REPLACE		
+ftmcab		lftmcab			REPLACE
+
+DBCALCS(djoinftmkerjacapacity)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ftmdatbukidx	gv_capacityH1 btmnobuk  
+	DBC_MAP		mjoinftmkerjacapacity
+*/
+
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   t.PenggunaDana
+   spasi                   _
+   t.NIK Pengguna        : ___________________
+   i.Nama                : ___________________
+   t.NoTlp               : ___________________
+   i.Alamatktp           : ________________ 
+   i.RT                  : ____ i.RW : ____
+   i.Prop                : ________________ 
+   i.Kota                : ________________ 
+   i.Kec                 : ________________ 
+   i.Kel                 : ________________ 
+   t.Hub dengan PM       : ________________
+   t.Pekerjaan Pengguna  : ________________
+   spasi
+   /--------s.UPLOAD----------------\
+   |                                |
+   |                         	    |
+   |                                |
+   |                                |
+   |                                |
+   |                                |
+   |                                |
+   |                                |
+   \--------------------------------/
+   /--------------------------------\
+   !t.Lat   : ___.__________________|
+   !t.Lon   : ___.__________________|
+   !t.Tgl   : __________________    |
+   !t.jam   : __________________    |
+   |              ___   ________   _|
+   \--------------------------------/
+   spasi
+| \----------------------------------------------------------------------------------------------/ |
+| /----------------------------------------------------------------------------------------------\ |
+   spasi
+   t.CMSSesuai        : __  ______
+   t.AnalisaCMS       : _________________________________________________________________________
+                        ______
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+g_usrkode               UNSEEN                          INPUTRI 1
+ftmkode1                DIGITS  SCROLL                  INPUTRI 2
+ftmnama1                ALLCAPS SCROLL                  INPUTRI 3
+ftmno4                  DIGITS  SCROLL                  INPUTRI 4
+ftmalamat1              ALLCAPS SCROLL                  INPUTRI 5
+ftmkode6                ALLCAPS SCROLL                  INPUTRI 6
+ftmkode7                ALLCAPS SCROLL                  INPUTRI 7
+ftmbrg                  ALLCAPS SCROLL                  INPUTRI 8
+ftmplg                  ALLCAPS SCROLL                  INPUTRI 9
+ftmsup                  ALLCAPS SCROLL                  INPUTRI 10
+ftmlok                  ALLCAPS SCROLL                  INPUTRI 11
+ftmkode2                ALLCAPS SCROLL                  INPUTRI 12
+ftmkode3                ALLCAPS SCROLL                  INPUTRI 13
+ftmjml1                 PROTECT NUMERIC {99,999999999}  INPUTRI 14 
+ftmjml2                 PROTECT NUMERIC {99,999999999}  INPUTRI 15 
+ftmtgl1                 PROTECT {DD-MM-YYYY}            INPUTRI 16
+ftmjam1                 PROTECT SCROLL                  INPUTRI 17
+ftmyt2                  PROTECT SCROLL                  INPUTRI 18
+ltombolupload           TOMBOL                          INPUTRI 19
+ftmnofak                UNSEEN                          INPUTRI 24
+/*-----------------------------------------------------------------*/
+ftmtype4                ALLCAPS SCROLL                  INPUTRI 20
+lftmtype4               NOCHANGE                        INPUTRI 21
+ftmalamat2              TEXTAREA SCROLL                 INPUTRI 22
+lenter                  NOCHANGE                        INPUTRI 23
+
+IMAGE(tmptrans)
+
+CALCS()
+coranglain              lftmdvspurpose == "KLRGLAIN" || lftmdvspurpose == "ORANGLAIN" || lftmdvspurpose == "TEMAN"
+cbukanoranglain         (lftmdvspurpose != "KLRGLAIN" && lftmdvspurpose != "ORANGLAIN" && lftmdvspurpose != "TEMAN") || g_scrnumstr == "724" 
+
+DEFAULTS(tmptranst)
+ftmtype4        	DFALT_SCAN_BLANKS       Y " "
+			                        T " "
+lPEMAKAI713             INIT            "PEMAKAI"
+ltombolupload           INIT            "UPLOAD"
+
+EDITS(tmptranst)
+t.validate g_usrkode VALIDATE usrkodidx mdana
+e.Mandatory             ftmkode1                MANDATORY_IF coranglain
+e.Mandatory             ftmnama1                MANDATORY_IF coranglain
+e.Mandatory             ftmno4                  MANDATORY_IF coranglain
+e.Mandatory             ftmalamat1              MANDATORY_IF coranglain
+e.Mandatory             ftmkode6                MANDATORY_IF coranglain
+e.Mandatory             ftmkode7                MANDATORY_IF coranglain
+e.Mandatory             ftmbrg                  MANDATORY_IF coranglain
+e.Mandatory             ftmplg                  MANDATORY_IF coranglain
+e.Mandatory             ftmsup                  MANDATORY_IF coranglain
+e.Mandatory             ftmlok                  MANDATORY_IF coranglain
+e.Mandatory             ftmkode2                MANDATORY_IF coranglain
+e.Mandatory             ftmkode3                MANDATORY_IF coranglain
+
+MAP(mdana)
+lftmdvspurpose          lftmdvspurpose          REPLACE
+CALCS()
+cdjoinftmpurposepemakai djoinftmpurpose == 1
+cok2                    "OK"
+cadalonlat2             ftmjml2!=0 && (g_fotodate1==g_tgltrn || g_grpnam=="RI" || g_grpnam=="IT")
+csdhupload2             ftmyt1=="Y"
+
+
+MAP(mupdftmrmhpemakai)
+gv_Y            ftmyt1           REPLACE
+cSYSTIME        ftmjam1          DO_CALC
+
+DBCALCS(dupdftmrmhpemakai)
+        DCOMMAND UPDATE
+        DTARGET ftmdatbukidx   lPEMAKAI713 btmnobuk
+        DMAP mupdftmrmhpemakai
+
+
+MAP(mupdftmrmhpemakaiok)
+g_fotolat1      ftmjml1          REPLACE
+g_fotolon1      ftmjml2          REPLACE
+g_tgltrn        ftmtgl1          REPLACE 
+cok2            ftmyt2           DO_CALC_IF cadalonlat2
+
+DBCALCS(dupdftmrmhpemakaiok)
+        DCOMMAND UPDATE
+        DTARGET ftmdatbukidx   lPEMAKAI713 btmnobuk
+        DMAP mupdftmrmhpemakaiok
+
+SPCALCS(spcaluplpemakaiok)
+dupdftmrmhpemakaiok
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=ftmkode1         DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmnama1         DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmno4           DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmalamat1       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmkode6         DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmkode7         DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmbrg           DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmplg           DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmsup           DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmlok           DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmkode2         DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT cur_field=ftmkode3         DO_SKIP_IF cbukanoranglain
+
+BEFORE_INPUT cur_field=ftmtype4 	DO_SKIP_IF cmasih713
+BEFORE_INPUT cur_field=ftmalamat2 	DO_SKIP_IF cmasih713
+
+AFTER_INPUT  cur_field=ftmalamat2 	DO_MAP SHOW mhitunganalisa
+BEFORE_INPUT cur_field=ftmkode1 DO_MAP SHOW
+	IF cdjoinftmpurposepemakai	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.IsiPurposeDahulu
+
+AFTER_INPUT cur_field=ftmalamat2 DO_MAP SHOW
+        IF canalisa50   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF canalisa50    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_field=ftmtype4 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+	IF cmodalkerja mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.Tidakdapatdipilih
+
+CLICKED  cur_field=ltombolupload DO_SPCALCS IF csdhupload2 spcaluplpemakaiok
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPLFLD_DBCALCS dupdftmrmhpemakai
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk   ftmno2
+SFL_UPL_DELCOND c0
+SFL_TARGET
+	ftmdatbukidx   lPEMAKAI713 btmnobuk
+
+SFL_MAP
+gv_datasurvey  		ftmno1			REPLACE
+btmnobuk		ftmnofak		REPLACE
+lPEMAKAI713		ftmdata			REPLACE
+lPEMAKAI713		ftmno2			REPLACE
+gv_INPG			ftmsts			REPLACE
+
+MAP(mjoinsvipemakai714)
+svioto		lsviotopemakai714	REPLACE
+
+DBCALCS(djoinsvipemakai714)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey btmnobuk lPEMAKAI713
+	DBC_MAP		mjoinsvipemakai714
+
+MAP(mmapmappemakai724)
+ftmtype4        ljawaban        REPLACE
+lPEMAKAI713     l724DETAIL3     REPLACE
+
+CALCS()
+cdjoinsvipemakai7140  djoinsvipemakai714==0 && ljawaban=="Y"
+cdjoinsvipemakai7141  djoinsvipemakai714==1 && (ljawaban=="T" || ljawaban=="Y")
+
+MAP(maddsvipemakai714)
+gv_datasurvey         	svidata                 REPLACE
+btmnobuk              	svinobuk                REPLACE
+lPEMAKAI713         	svitype                 REPLACE
+lPEMAKAI713          	svikode                 REPLACE
+
+
+ftmkode1                svistr4                 REPLACE
+ftmnama1                svinama                 REPLACE
+ftmno4                  svistr2                 REPLACE
+ftmalamat1              sviket3                 REPLACE
+ftmkode6                svistr31                REPLACE
+ftmkode7                svistr32                REPLACE
+ftmbrg                  svistr8                 REPLACE
+ftmplg                  svistr9                 REPLACE
+ftmsup                  svistr10                REPLACE
+ftmlok                  svistr1                 REPLACE
+ftmkode2                svistr5                 REPLACE
+ftmkode3                svistr6                 REPLACE
+ftmjml1                 svidf1                  REPLACE
+ftmjml2                 svidf2                  REPLACE
+ftmtgl1                 svitgl2                 REPLACE
+ftmyt2                  sviyt2                  REPLACE
+
+SPCALCS(sppemakai714)
+        DO_LIB ap_dbclc (DNAME dmappemakai724,DCOMMAND MAPMAP,DMAP mmapmappemakai724);
+        DO_LIB_IF cdjoinsvipemakai7141 ap_dbclc (DNAME ddelsvipemakai714,DCOMMAND DELETE,DTARGET sviotoidx lsviotopemakai714);
+        DO_LIB_IF cdjoinsvipemakai7140 ap_dbclc (DNAME daddsvipemakai714,DCOMMAND ADD,DFILE svi,DMAP maddsvipemakai714);
+        DO_LIB ap_nxpst(l4461,lm4461det3);
+
+        
+POSTING(tmptrans)
+        PST_UPDCMD sppemakai714
+
+
+CALCS()
+ctambah_pemakai713 btmsts == "713" && djoinftmpemakai==0 && g_scrnumstr=="687" && btmbichek!="SO" && btmbichek!="SH"
+cubah_pemakai713   ((btmsts=="713" && g_scrnumstr=="687") || (btmsts == "714" && g_scrnumstr=="714") || (btmsts == "714" && g_scrnumstr=="724")) 
+		   && djoinftmpemakai==1
+chapus_pemakai713  btmsts == "713" && djoinftmpemakai==1 && g_scrnumstr=="687"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ctambah_pemakai713
+        PMT_UPDALL_COND cubah_pemakai713
+        PMT_DEL_COND    chapus_pemakai713
+
+

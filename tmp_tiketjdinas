@@ -1,0 +1,147 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+|! i.Ket          : _______________!|
+|! i.Tanggal      : _______________!|
+|! t.BeliTiket    : _______________!|
+|! t.Rute         : _______________!|
+!! t.Transportasi : _______________!|
+|! t.Armada       : _______________!|
+|! i.Biaya        : _______________!|
+|! i.Rek          : _______________!|
+|! i.KetRek       : _______________!|
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bkdket                  TEXTAREA                 INPUTRI         1
+bkdtgl                  NOLIMIT {DD-MM-YY}      INPUTRI		 2
+bkdbrg 			ALLCAPS		INPUTRI		4  
+bkdmua 			ALLCAPS		INPUTRI		5  
+bkddep 			NOCHANGE		INPUTRI		6  
+bkddvs 			ALLCAPS		INPUTRI		7  
+bkdjml			NUMERIC 		INPUTRI		8  
+bkdnobbm		ALLCAPS  		INPUTRI		9  
+bbgket  	 	PROTECT 		INPUTRI		10 
+
+EDITS(tmptranst)
+e.Mandatory bkdket      MANDATORY
+e.Mandatory bkdtgl      MANDATORY
+e.Mandatory bkdjml      MANDATORY
+e.Mandatory bkdbrg      MANDATORY
+e.ValidateBbm   bkdnobbm        VALIDATE bbggolnoidx mbbg2 sbbgRL {Pgv_05}
+
+CALCS()
+csdhada		bkdbrg != BLANKS
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW murut
+BEFORE_INPUT    cur_field=bkdbrg    DO_SKIP_IF csdhada
+
+
+MAP(mbbg2)
+bbgno           bkdnobbm        REPLACE
+bbgket          bbgket          REPLACE
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+bkdsts          INIT_ADD                OPEN
+lbkdjml         INIT_UPDATE             {bkdjml}
+bkdnobbm        INIT_ADD                {lREKJLND}
+bkdbrg		DFALT_SCAN		BLANKS
+					BELISENDIRI
+					DIBELIKAN_GA
+bkddep 		DFALT_SCAN	BLANKS
+				KERETA
+				BUS
+				PESAWAT
+MAP(mupdbkdtiket)
+cY              bkdfl           DO_CALC
+
+DBCALCS(dupdbkdtiket)
+        DCOMMAND UPDATE
+        DTARGET bkdprmidx bkdprm
+        DMAP mupdbkdtiket   
+
+CALCS()
+cTIKET   	tmpkode == "TIKET"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cTIKET
+SFL_UPLFLD_DBCALCS dupdbkdtiket   
+SFL_UPLFLD bkmnobuk     bkdbukll
+
+SFL_TARGET
+	bkdbuklloto    bkmnobuk   lBIAYA 
+
+SFL_MAP
+bkmdata         bkddata         REPLACE
+bkmnobuk        bkdnobuk        REPLACE
+lBIAYA          bkdbukll        REPLACE
+lBIAYA          bkdgrup         REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cOPEN_SAJA
+  PMT_UPDALL_COND  cOPEN_SAJA
+  PMT_DEL_COND  cOPEN_SAJA
+
+
+CALCS()
+c3totalbi                bkdjml + bkmbia
+c3totalbi2               bkmbia - lbkdjml + bkdjml
+c3totalbi3               bkmbia - bkdjml
+cbkmpend		 bkmbia - bkmpokok
+ctiketga		 bkdjml + bkmperppn 
+ctiketga2		 bkmperppn - lbkdjml + bkdjml
+ctiketga3		 bkmperppn - bkdjml
+colehGA			 bkdbrg =="DIBELIKAN_GA"  && bkmjns =="BS"
+csendiri 		 bkdbrg =="BELISENDIRI"
+
+MAP(mupdbkmc)
+c3totalbi                bkmbia          DO_CALC_IF csendiri
+cbkmpend		 bkmpend	 DO_CALC_IF cPBS
+ctiketga		 bkmperppn	 DO_CALC_IF colehGA
+
+MAP(mupdbkmc2)
+c3totalbi2               bkmbia          DO_CALC_IF csendiri
+cbkmpend		 bkmpend	 DO_CALC_IF cPBS
+ctiketga2		 bkmperppn	 DO_CALC_IF colehGA
+
+MAP(mupdbkmc3)
+c3totalbi3               bkmbia          DO_CALC_IF csendiri
+cbkmpend		 bkmpend	 DO_CALC_IF cPBS
+ctiketga3		 bkmperppn	 DO_CALC_IF colehGA
+
+
+SPCALCS(spcaladd3)
+DO_LIB ap_dbclc(DNAME dupdbkmadd3,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmc);
+
+SPCALCS(spcalupd3)
+DO_LIB ap_dbclc(DNAME dupdbkmupd3,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmc2);
+
+SPCALCS(spcaldel3)
+DO_LIB ap_dbclc(DNAME dupdbkmdel3,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmc3);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladd3
+        PST_UPDCMD      spcalupd3
+        PST_DELCMD      spcaldel3
+
+
+
+
+

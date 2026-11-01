@@ -1,0 +1,54 @@
+LOCAL
+PGM_FIELDS
+
+lnamausrdet4	STRING		31
+
+IMAGE(tmptranst)
+/-------------------------------------------------------\
+ /-----------------------------------------------------\
+  t.Nobukfee _________________________________________
+  t.User     _________  ______________________________
+ \-----------------------------------------------------/
+\-------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svikode		ALLCAPS		INPUTRI		1
+svistr1		PROTECT		INPUTRI		2
+lnamausrdet4	PROTECT		INPUTRI		3
+
+DEFAULTS(tmptranst)
+svistr1		INIT		{g_usrkode}
+svistr1		INIT_UPDATE	{g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory		svikode		MANDATORY
+NIP User tdk Ada	svistr1		VALIDATE psmkodidx mpsmtmptrans
+
+MAP(mpsmtmptrans)
+psmnama		lnamausrdet4		REPLACE
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp tlmdata tlmnobuk lfeepca
+SFL_MAP
+tlmdata		svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lfeepca		svitype		REPLACE
+
+DBCALCS(djointmptrans)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp tlmdata tlmnobuk lfeepca
+
+CALCS()
+caddtmptrans	tlmsts=="INPG" && tlmsts2=="FINA" && djointmptrans==0
+cupdtmptrans	tlmsts=="INPG" && tlmsts2=="FINA"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND  caddtmptrans
+        PMT_UPDALL_COND cupdtmptrans
+        PMT_DEL_COND  ctdkboleh
+

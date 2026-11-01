@@ -1,0 +1,267 @@
+LOCAL
+PGM_FIELDS
+lrtmkode				STRING		21
+lMODEL					STRING		11
+ltbdkode				STRING		21
+lBRG1406				STRING		11
+lBLANKS11				STRING		11
+lketstr1				STRING		101
+lketstr2				STRING		101
+lketstr3				STRING		101
+
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| i.No          _________           ||
+|| i.Kat         ___________________ ||
+|| t.Brgkode2    ___________________ ||
+|| i.Thn         __________          ||
+|| t.Bro/ket     ___________________ ||
+|| t.HrgBroket   ________________.__ ||
+|| t.HrgPsrlama  ________________.__ ||
+|| t.Hargaajukan ________________.__ ||
+||     								 ||
+|| t.Ket         ___________________ ||
+|| t.Url1         __________________ ||
+|| t.Url2         __________________ ||
+|| t.Url3         __________________ ||
+|/-------------UPLOAD----------------\|
+||                                	 ||
+||                                   ||
+|\-----------------------------------/|
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	mtdnourt    			PROTECT              INPUTRI              1 /* Jumlah Barang */
+	mtdkat      			PROTECT       		 INPUTRI              2 /* Kategori */
+	mtdbrg      			ALLCAPS 		     INPUTRI   			3
+	mtdgrup2    			ALLCAPS              INPUTRI              4 /* Tahun Motor*/
+	mtdnoll     			PROTECT              INPUTRI              5/* Nama Finco lain*/
+	mtdtmp1     			NUMERIC              INPUTRI              6 /* Harga Finco Lain */
+	mtdjml2     			NUMERIC PROTECT      INPUTRI              7 /* Harga Pasaran */
+	mtdjml3     			NUMERIC              INPUTRI              8 /* Harga Pasaran */
+	mtdket      			TEXTAREA SCROLL      INPUTRI              11 /* Keterangan*/
+	lketstr1				TEXTAREA SCROLL	     INPUTRI 			  12
+	lketstr2    			TEXTAREA SCROLL      INPUTRI              13
+	lketstr3    			TEXTAREA SCROLL      INPUTRI              14
+
+
+CALCS()
+chrgpersen	(mtdnoll=="HARGA MARKET-PLACE" && mtdgrup2 < THBLS_YYYY(g_tgltrn) && mtdjml3 >= (mtdtmp1 * 0.9) && mtdjml3 <= mtdtmp1) 
+||(mtdnoll=="HARGA BROSUR" && mtdgrup2 == THBLS_YYYY(g_tgltrn) && mtdjml3 >= (mtdtmp1 * 0.8) && mtdjml3 <= (mtdtmp1 * 0.85))
+chrgb	"HARGA BROSUR"
+chrgm	"HARGA MARKET-PLACE"
+ccekhrgm		mtdgrup2 < THBLS_YYYY(g_tgltrn)
+ccekhrgb                mtdgrup2 ==  THBLS_YYYY(g_tgltrn)
+cnospmb			mtdkat != "SPMB"
+ckosongin	g_curcmd==0
+
+
+DEFAULTS(tmptranst)
+ltomdet_d    		INIT   	"1d.Isi Barang"
+mtdsatbsr  			INIT	1
+mtdkat				INIT	SPMB
+lSURVEY				INIT	"SURVEY"
+lMASTERBRG1406  	INIT    MASTERBRG1406
+lMODEL				INIT	"MODEL"
+lBRG1406			INIT	"BRG1406"
+lBLANKS11			INIT	BLANKS
+
+
+MAP(maddket)
+mtsnobuk		ketnobuk	REPLACE
+gv_infolain		ketdata		REPLACE
+lketstr1	ketstr1 REPLACE
+lketstr2	ketstr2 REPLACE
+lketstr3	ketstr3 REPLACE
+DEBUG ldum ldum REPLACE
+
+MAP(mupdket)
+lketstr1	ketstr1 REPLACE
+lketstr2	ketstr2 REPLACE
+lketstr3	ketstr3 REPLACE
+DEBUG ldum ldum REPLACE
+
+MAP(mjoinket)
+ketstr1	lketstr1	REPLACE
+ketstr2	lketstr2	REPLACE
+ketstr3	lketstr3	REPLACE
+
+
+DBCALCS(djoinket)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ketdatbukkod   gv_infolain  mtsnobuk  
+		DBC_MAP		mjoinket
+
+DBCALCS(djoinketupd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ketdatbukkod   gv_infolain  mtsnobuk  
+
+
+MAP(mjointbdhrglama)
+tbdkode		ltbdkode		REPLACE
+
+MAP(mjoinrtmhrglama)
+rtmkode		lrtmkode		REPLACE
+
+MAP(mjoinbrc)
+brcdf2		lbrcdf2		REPLACE
+
+DBCALCS(djointbdhrglama)
+DBC_COMMAND	JOIN
+DBC_TARGET      tbddtmstidx	gv_dttabel gv_survey21 lAREAFIXHARPAS mtsnoasal
+DBC_MAP		mjointbdhrglama
+
+DBCALCS(djoinrtmhrglama)
+DBC_COMMAND	JOIN
+DBC_TARGET      rtmdtkod2tgl   lBRG1406 lBRG1406 mtdbrg
+DBC_MAP		mjoinrtmhrglama
+
+DBCALCS(djoinbrc)
+DBC_COMMAND	JOIN
+DBC_TARGET      brcdttypidx	lMODEL lrtmkode ltbdkode gv_BEKAS mtdgrup2
+DBC_MAP		mjoinbrc
+
+EDITS(tmptranst)
+e.Mandatory mtdkat 		MANDATORY
+e.Mandatory	mtdgrup2	MANDATORY
+e.Mandatory	mtdjml3		MANDATORY
+
+e.ValidateMerk mtdbrg VALIDATE tbddatkodidx  mtbdMerk stbd {Pgv_dttabel} {PlSURVEY} {PlMASTERBRG1406}
+
+CALCS()
+cdjoinketurl g_curcmd==0 && djoinket==1
+
+MAP(mtbdMerk)
+tbdkode		mtdbrg		REPLACE
+cBLANKS		lketstr1 DO_CALC_IF ckosongin
+cBLANKS		lketstr2 DO_CALC_IF ckosongin
+cBLANKS		lketstr3 DO_CALC_IF ckosongin
+
+lketstr1	lketstr1 REPLACE_IF cdjoinketurl
+lketstr2	lketstr2 REPLACE_IF cdjoinketurl
+lketstr2	lketstr2 REPLACE_IF cdjoinketurl
+
+
+MAP(mjoinmts6bulan)
+mtssts		lmts6bulan	REPLACE
+mtsstsapr	lmtsstsapr6bulan	REPLACE
+mtsdari		lmtsdari6bulan	REPLACE
+mtstgl		lmtstgl6bulan	REPLACE
+
+DBCALCS(djoinmts6bulan)	
+	DBC_COMMAND	JOIN
+	DBC_TARGET	mtsbukidx aktnobuk
+	DBC_MAP		mjoinmts6bulan
+
+CALCS()
+cdjoinbrc1	 djointbdhrglama==1 && djoinrtmhrglama==1 && djoinbrc==1
+cdjoinmts6bulan1	djoinmts6bulan==1 && lmtstgl6bulan>=20241101 && lmtsdari6bulan=="HARGAPSR" && ((lmts6bulan=="CLSD" && lmtsstsapr6bulan=="OK") || (lmts6bulan=="OPEN" && (lmtsstsapr6bulan=="" || lmtsstsapr6bulan=="IN" || lmtsstsapr6bulan=="OK")))	
+caddket g_curcmd==1
+cupdket	g_curcmd==2 && djoinketupd==1
+
+
+MAP(mharga)
+lbrcdf2		mtdjml2		REPLACE_IF cdjoinbrc1
+
+
+chrgm		mtdnoll		DO_CALC_IF ccekhrgm
+chrgb           mtdnoll         DO_CALC_IF ccekhrgb
+
+MAP(mscanakt6bln)
+c1	lada6bulan	DO_CALC_IF cdjoinmts6bulan1
+
+DBCALCS(dbscanakt6bln)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	aktbrgtglidx   laktbrg lHRGPSR lHRGPSR21 ltgl6bulan
+	DBC_LAST_TARGET	aktbrgtglidx   laktbrg lHRGPSR lHRGPSR21 g_tgltrn
+	DBC_SUM_MAP	mscanakt6bln
+
+CALCS()
+cgabung         STRIP(mtsnoasal) + STRIP(mtdbrg)
+ctdkada6bln	lada6bulan==0 || (mtdgrup2!="2010" && mtdgrup2!="2011" && mtdgrup2!="2012" && mtdgrup2!="2013" && mtdgrup2!="2014" && mtdgrup2!="2015" && mtdgrup2!="2016" && mtdgrup2!="2017" && mtdgrup2!="2018" && mtdgrup2!="2019" && mtdgrup2!="2020" && mtdgrup2!="2021" && mtdgrup2!="2022" && mtdgrup2!="2023" && mtdgrup2!="2024" && mtdgrup2!="2025" && mtdgrup2!="2026") || g_grpnam!="TUTUP"
+cjalanscan	laktbrg!=BLANKS
+
+MAP(mgabung)
+cgabung		laktbrg		DO_CALC
+c0		lada6bulan	DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=mtdbrg  	DO_MAP SHOW murut  
+AFTER_INPUT	cur_field=mtdbrg	DO_MAP SHOW mgabung
+AFTER_INPUT	cur_field=mtdgrup2	DO_MAP SHOW mharga
+AFTER_INPUT     cur_field=mtdgrup2      DO_SCAN IF cjalanscan dbscanakt6bln
+/*AFTER_INPUT	cur_field=mtdbrg	DO_MAP SHOW
+		IF cjoinmtd1u mdum
+		ELSE HKCURSOR STAY
+		HKMSG h.BrgDup*/
+AFTER_INPUT    cur_field=mtdjml3       DO_MAP SHOW 
+				IF chrgpersen mdum
+				ELSE HKCURSOR STAY
+                HKMSG t.BatasPengajuan
+
+
+AFTER_INPUT     cur_field=mtdgrup2        DO_MAP SHOW
+                IF ctdkada6bln mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MasihAda6Bulan
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ctdkada6bln mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MasihAda6Bulan
+
+BEFORE_INPUT    cur_field=lketstr1      DO_SKIP_IF cnospmb
+BEFORE_INPUT    cur_field=lketstr2      DO_SKIP_IF cnospmb
+BEFORE_INPUT    cur_field=lketstr3      DO_SKIP_IF cnospmb
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+     mtdbukurtidx        	  mtsnobuk
+
+SFL_MAP 
+     mtsnobuk         	mtdnobuk
+     mtssts	 	mtdsts
+     mtstgl	 	mtdtglfak
+     mtsdvs		mtddvs
+     mtsdari		mtdlok
+     mtsscr             mtdscr 
+     mtsdata            mtddata
+	 
+SFL_UPLFLD mtsnobuk
+SFL_UPL_DIRFLD mtstgl
+SFL_UPLFLD_DBCALCS duppdmtsupload
+SFL_UPL_DELCOND c0
+
+SPCALCS(spaddisibarang)
+DO_LIB_IF caddket ap_dbclc(DNAME daddketurl,DCOMMAND ADD,DFILE ket,DMAP maddket);
+
+SPCALCS(spupdisibarang)
+DO_LIB_IF cupdket ap_dbclc(DNAME dupdketurl,DCOMMAND UPDATE,DTARGET ketdatbukkod   gv_infolain  mtsnobuk,DMAP mupdket);
+
+
+SPCALCS(spdelisibarang)
+DO_LIB  ap_dbclc(DNAME ddelketurl,DCOMMAND DELETE,DTARGET ketdatbukkod   gv_infolain  mtsnobuk);
+DO_LIB ap_dbclc(DNAME ddelakt,DCOMMAND DELETE_RANGE,DTARGET aktbukotoidx   mtsnobuk);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD spaddisibarang
+        PST_UPDCMD spupdisibarang
+		PST_DELCMD spdelisibarang
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadadatmtd
+	PMT_UPDALL_COND	cmtsOPENKP1x
+	PMT_DEL_COND	cmtsOPENKP1x
+
+	 

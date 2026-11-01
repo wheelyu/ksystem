@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+||t.VoidResc                           ||
+|\-------------------------------------/|
+|/-------------------------------------\|
+|| t.Pil        ________________       ||
+|| i.NipIn      ________________       ||
+|| t.Ket        ________________       ||
+|| t.TglResch   ________________       ||
+|| t.Approval   _________              ||
+||              __________             ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spktgg                  NOCHANGE                INPUTRI 1       /*Pilihan Void-Reschedule*/
+spknama                 PROTECT                 INPUTRI 2       /*Nip Penginput*/
+spkket                  TEXTAREA                INPUTRI 3       /*Keterangan*/
+spktglft                NOLIMIT {DD-MM-YYYY}    INPUTRI 4       /*Tanggal Reschedule*/
+spkhasil                NOCHANGE                INPUTRI 5       /*Approval*/
+lenter                  NOCHANGE                INPUTRI 6       /*Enter*/
+
+CALCS()
+cjkvoid                 spktgg == "VOID"
+cjikaresch              spktgg == "RESCHEDULE"
+cbkninput               ((tlmtype2 == "APRVOID" || tlmtype2 == "APRRESCH") && (g_usrkode == tlmplg || g_usrkode == tlmkode || g_usrkode == tlmbisnis))
+cbknatasan              ((tlmtype2 == "UPLSPK"  || tlmtype2 == "APRSPK" || tlmtype2 == "PRNNTLN") && g_usrkode == tlmbisnis) ||
+                        ((tlmtype2 == "UPLSPK"  || tlmtype2 == "APRSPK" || tlmtype2 == "PRNNTLN") && g_usrkode != tlmbisnis)
+
+DEFAULTS(tmptranst)
+spktgg                          DFALT_SCAN_BLANKS       VOID
+                                                        RESCHEDULE
+
+spkhasil                        DFALT_SCAN_BLANKS       ACC
+                                                        TACC
+
+EDITS(tmptranst)
+e.Wajib isi Keterangan          spkket                  MANDATORY
+e.Wajib isi Tanggal             spktglft                MANDATORY_IF cjikaresch
+
+MAP(misivoid)
+tlmplg          spknama          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT                    cur_field=spktgg        DO_MAP SHOW misivoid
+BEFORE_INPUT                    cur_field=spktglft      DO_SKIP_IF cjkvoid
+
+BEFORE_INPUT                    cur_field=spktgg        DO_SKIP_IF cbkninput 
+BEFORE_INPUT                    cur_field=spkket        DO_SKIP_IF cbkninput 
+BEFORE_INPUT                    cur_field=spktglft      DO_SKIP_IF cbkninput 
+
+BEFORE_INPUT                    cur_field=spkhasil      DO_SKIP_IF cbknatasan
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET     
+        spkdatbuktyp lSPKPDCA tlmnobuk lRESVOID
+SFL_MAP
+        lSPKPDCA        spkdata
+        tlmnobuk        spknobuk
+        lRESVOID        spktype

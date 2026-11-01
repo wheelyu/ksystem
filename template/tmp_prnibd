@@ -1,0 +1,183 @@
+LOCAL
+PGM_FIELDS
+lenterprn		STRING		7
+ldoneprn		STRING		7
+lPRNIBD			STRING		11
+lnamafile		STRING		256
+lfields              	STRING          201
+lpos1                 	INT2              2
+lpos2                 	INT2              2
+lpos3                 	INT2              2
+lpos4                 	INT2              2
+lpos5                 	INT2              2
+lpos6                 	INT2              2
+ldatetype             	INT2              2
+   lmap                  STRING                21
+   lnamacalc             STRING                50
+   ljmlgagal             INT2                  2
+lKetPRN         	STRING		21
+lKetPRN2        	STRING		21
+lKetPRN2a       	STRING		21
+lKetPRNFINAL    	STRING		21
+
+lblndpn			DATE		8
+ltgl5			DATE		8
+
+
+
+CALCS()
+cnamafile_uplibd        "docupload/" + THBLS(tlmtgl) + "/" + STRIP(tlmnobuk) + "/" + g_uploadeddoc
+cfields			"mtdcab+mtdket+mtdkat+mtdthnstr+mtdjml+mtdnomesin"
+/*cfields			"tldcab+tldstr4+tldbrg+tldth+tldsatbsr+tldjml3"*/
+/*ctlddata		"ACTBNSDLR"*/
+clblndpn		DO_LIB ap_tambl(tlmtgl,l1,&lblndpn);
+ctgl5blndpn		THBLS_YYYY(lblndpn) + THBLS_MM(lblndpn) + "05"
+
+IMAGE(tmptranst)
+/------------------------------------------------\
+ /----------------------------------------------\
+  spasi
+  		_______________
+  t.NoBuk 	_______________
+					_______
+ \----------------------------------------------/
+
+ /----------------DOCUPLOAD---------------------\
+
+
+
+
+ \----------------------------------------------/
+				_______ _______
+\------------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+
+FIELDS(tmptranst)
+tlddata		PROTECT		INPUTRI	1
+tldnobuk        PROTECT        	INPUTRI 2
+lenterprn	TOMBOL		INPUTRI	4
+tldstr1		PROTECT		INPUTRI	5
+ldoneprn	TOMBOL		INPUTRI	6
+
+DEFAULTS(tmptranst)
+tlddata		INIT		"PRNIBD"
+lPRNIBD		INIT		"PRNIBD"
+lenterprn	INIT		"ENTER"
+ldoneprn	INIT		"PRN"
+lnamafile	INIT		{cnamafile_uplibd}
+lpos1		INIT		1
+lpos2		INIT		2
+lpos3		INIT		3
+lpos4		INIT		4
+lpos5		INIT		5
+lpos6		INIT		6
+lfields		INIT		{cfields}
+lmap		INIT		"mapprn"
+lblndpn		INIT		{clblndpn}
+ltgl5		INIT		{ctgl5blndpn}
+lKetPRN         INIT		"PRN target BD"
+lKetPRN2        INIT		"Cek PRN AM"
+lKetPRN2a       INIT		"PRN target BD"
+lKetPRNFINAL    INIT		"ISI TGT BD"
+
+
+
+MAP(mapprn)
+tlmnobuk		mtdnobuk	REPLACE
+/*
+ctlddata		tlddata		DO_CALC
+tlmnobuk		tldnobuk	REPLACE
+tldjml3			tldukrwrn	REPLACE
+*/
+
+MAP(maddprn)
+lPRNIBD		tlddata		REPLACE
+tlmnobuk	tldnobuk	REPLACE
+
+
+CALCS()
+chanyadetailprn	tlddata == lPRNIBD 
+
+DBCALCS(ddetailprn)
+DBC_COMMAND	JOIN
+DBC_TARGET	tldbukbrglok    tlmnobuk
+DBC_SELECT	chanyadetailprn
+
+CALCS()
+cAMPRN		(g_usrkode != tlmplg && g_usrkode != tlmdari) && tlmsts == "OPEN" && tldstr1 != "OK" && /*((g_tgltrn == ltgl5 && kettype_1 == "SUDAH") || g_tgltrn != ltgl5) && */ddetailprn == 0
+cAMPRN2		g_usrkode != tlmplg && g_usrkode != tlmdari && tlmsts == "OPEN" && tldstr1 == "OK"
+cOK		"OK"
+/*chariplus3	g_tgltrn + 3*/
+/*cSUDAH		"SUDAH"*/
+
+MAP(muplprn)
+cOK		tldstr1		DO_CALC
+
+DBCALCS(duplprn)
+DBC_COMMAND	UPDATE
+DBC_TARGET	tldprmidx	tldprm
+DBC_MAP		muplprn
+
+
+/*
+MAP(mupdketfinal)
+cSUDAH		kettype		DO_CALC
+*/
+/*
+CALCS()
+cupdabk1	abkkym == tlmplg && (abkkym2 == tlmnobuk || abkkym2 == lKetPRN) && abkscr == "329"
+cupdabkfinal	(abkkym == tlmplg || abkkym == tlmdari) && (abkkym2 == lKetPRN2 || abkkym2 == lKetPRN || abkkym2 == tlmnobuk) && abkscr == "329"
+*/
+
+
+
+
+/***********************	ADD TLD SEBELUM PRN	*************************/
+SPCALCS(saddprn)
+DO_LIB_IF cAMPRN		ap_dbclc(DNAME addtldprn,DCOMMAND ADD,DFILE tld,DMAP maddprn);
+/***********************	NGE PRN		*************************/
+SPCALCS(sdoprn)
+DO_LIB				ap_dbclc(DNAME dhpstldprn,DCOMMAND DELETE, DTARGET tldprmidx tldprm);
+DO_LIB_IF cAMPRN2 ap_arfld(lfields,lpos1,lpos2,lpos3,lpos4,lpos5,lpos6);
+DO_LIB_IF cAMPRN2 ap_imtab(lnamafile,lfields,ldatetype,lmap,lnamacalc,&ljmlgagal);
+DO_LIB_IF cAMPRN2 ap_nxpst(l4664,lmnextprn);
+DO_LIB         	  ap_nxpst(l4664,lmnexthitung);
+
+
+
+HOOKS(tmptranst)
+CLICKED		cur_field=lenterprn	DO_SPCALCS saddprn
+CLICKED		cur_field=ldoneprn	DO_SPCALCS sdoprn
+
+CALCS()
+/*cprnibd		tlmgrup == BLANKS && tlmsts == "OPEN" && tlmperdis == 0 && (g_usrkode == tlmplg || g_grpnam == "IT" || g_grpnam == "RI") && tlmdata == "TGTBNSDLR" && kettype_1 != BLANKS && dcekkuncianact == 1*//* &&
+		((g_tgltrn == ltgl5 && kettype_1 == "SUDAH") || g_tgltrn != ltgl5)*/
+csdhprn		tldstr1 == "OK"
+cselectibdprn	tldnobuk == tlmnobuk
+cprnibd		tlmsts == "OPEN" && tlmplg != g_usrkode && tlmdari != g_usrkode && dcekkuncian2 == 1 && dcekkuncianact == 1 && (tlmperppn != 5 || (tlmperppn == 5 && tlmuntuk != "BELUM"))
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD          tlmtgl
+SFL_DOCUPLFLD tldnobuk
+SFL_DOCUPLFLD_DBCALCS duplprn
+SFL_DOCUPL_DELCOND csdhprn
+SFL_COND cprnibd
+SFL_SELECT	cselectibdprn
+SFL_TARGET
+tldstsbrgukr   lPRNIBD 
+
+
+
+
+
+/*
+SFL_MAP
+tlmnobuk	tldnobuk
+tlmtgl		tldtglfak
+*/

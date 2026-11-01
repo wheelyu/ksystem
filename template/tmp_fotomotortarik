@@ -1,0 +1,115 @@
+LOCAL
+PGM_FIELDS
+laktdata        STRING  11
+lnama		STRING  21
+lnip		STRING  21
+lakttype 	STRING  11
+
+IMAGE(tmptranst)
+/--------------------------------\
+|/--------s.UPLOAD--------------\|
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+|\------------------------------/|
+|/------------------------------\|
+||t.Berkas   ___________________||
+||           ___________________||
+||           ___________________||
+||           ___________________||
+||           _______            ||
+||t.AccDca   _______            ||
+||t.NipDca   _____________      ||
+||t.NamaDca  _____________      ||
+|\------------------------------/|
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktnobuk        NOCHANGE                INPUTRI 3
+akttgl          PROTECT                 INPUTRI 1
+aktket          PROTECT                 INPUTRI 1
+aktcab		PROTECT			INPUTRI	1
+akttype2        PROTECT                 INPUTRI 1
+aktdk		ALLCAPS                 INPUTRI 1
+aktlok		PROTECT			INPUTRI 4
+lnama 		PROTECT			INPUTRI 4
+
+DEFAULTS(tmptranst)
+laktdata        INIT            	FOTOMTRTRK
+aktdk		DFALT_SCAN_BLANK 	Y
+					T
+lnip    	INIT            	{aktlok}
+lakttype 	INIT 			{akttype}
+
+EDITS(tmptranst)
+e.ValidatePs1   aktlok VALIDATE psikodidx mpsi spsi
+
+CALCS()
+cYY             "Y"
+csdhYY          akttype2 != "Y" || (akttype2 !="Y" && aktdk == "T")
+ctampilfoto	akttype2 != "Y" || (akttype2 =="Y")
+chnyasekali	akttype2 != "Y"
+chnyasekalix	akttype2 == "Y"
+chnydca         tlmsts!="CLSD" && (g_grpnam=="ARDCA" || g_grpnam=="BPI" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="COLLHEAD" || g_grpnam=="REMDVH" || g_grpnam=="REMDCA" || g_grpnam=="SYOMAHEAD" || g_grpnam=="ADHSYOMA") && akttype2 =="Y" 
+cselain4	akttype != "KIRI" && akttype != "KANAN" && akttype != "DEPAN" && akttype != "BELAKANG" 
+cTacc		aktdk == "T"
+
+MAP(mupdakt)
+cYY             akttype2    	DO_CALC
+g_tgltrn        akttgl	    	REPLACE_IF cselain4
+cBLANKS		aktdk	    	DO_CALC
+
+MAP(mupdakttype)
+cBLANKS		akttype2	DO_CALC_IF cTacc
+g_usrkode	aktlok		REPLACE
+
+DBCALCS(dupdakt)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx aktprm
+        DBC_MAP         mupdakt
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=aktdk DO_MAP SHOW mupdakttype
+
+MAP(mpsi)
+psinama		lnama		REPLACE
+
+IMAGE(transheader)
+/--------------------------------------------\
+| FOTO MOTOR LENGKAP                         |
+\--------------------------------------------/
+
+IMAGE(transfooter)
+/--------------------------------------------\
+| INFORMASI TAMBAHAN !                       |
+| Jika Tacc Dca, maka Hapus Dahulu Fotonya   |
+| Kemudian Upload foto motor terbaru terbaru |
+\--------------------------------------------/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_HEADER(transheader)
+SFL_FOOTER(transfooter)
+SFL_UPL_COND 	chnyasekali
+SFL_UPL_DIRFLD 	akttgl
+SFL_UPL_DELCOND csdhYY
+SFL_UPLFLD_DBCALCS dupdakt
+SFL_UPLFLD aktnobuk akttype akttgl
+SFL_UPL_CAMERAONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+        aktbrgtglidx   tlmnoasal laktdata
+SFL_SELECT ctampilfoto
+SFL_MAP
+tlmnobuk   aktkode   REPLACE
+SFL_UPL_COND_MSG IF chnyasekalix "HANYA BOLEH UPLOAD FOTO SATU KALI"
+
+PERMIT(tmptrans)
+PMT_ADD_COND            c0
+PMT_UPDALL_COND         chnydca
+PMT_DEL_COND            cITRI

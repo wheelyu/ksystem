@@ -1,0 +1,152 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.JnsEvent   : ____________                         !                   |
+|       !t.Nobuk911   : _____________________ __________     !                   |
+|       !t.Media      : ___________                          !                   |
+|       !t.Prop       : ___________   __________________     !                   |
+|       !t.Kota       : ___________   __________________     !                   |
+|       !t.Cab        : ______                               !                   |
+|       !t.GrupAkun   : ______________________               !                   |
+|       !t.Akun/Area  : ___________________________          !                   |
+|       !t.NipRef     : _______________                      !                   |
+|       !t.NamaRef    : ___________________________          !                   |
+|       !t.HubPelamar : __  _______________________          !                   |
+|       !t.JmlFlw     : ______                               !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdkode         NOCHANGE                INPUTRI 1
+psdstr5         ALLCAPS                 INPUTRI 2
+psdtgl1         PROTECT {DD-MM-YY}      INPUTRI 3
+psdstr3         NOCHANGE                INPUTRI 4
+psdstr1         ALLCAPS SCROLL          INPUTRI 5
+lnama_prop      PROTECT SCROLL          INPUTRI 6
+psdstr2         ALLCAPS SCROLL          INPUTRI 7
+lnama_kota      PROTECT SCROLL          INPUTRI 8
+psdtype2        PROTECT SCROLL          INPUTRI 9
+lpsdket2        PROTECT SCROLL          INPUTRI 10
+psdket          ALLCAPS SCROLL          INPUTRI 11
+psdstr4         ALLCAPS SCROLL          INPUTRI 12
+lpsdket2a       ALLCAPS SCROLL          INPUTRI 13
+psdtot3         NOCHANGE SCROLL         INPUTRI 14
+lhubplmr        PROTECT SCROLL          INPUTRI 15
+psdtot          DIGITS                  INPUTRI 16
+
+CALCS()
+csosmed         psdstr3=="INSTAGRAM" || psdstr3=="FACEBOOK" || psdstr3=="BROSUR"
+crefkry         psdstr3=="REF_KARYAWAN"
+cinstagram      psdstr3=="INSTAGRAM" || psdstr3=="FACEBOOK"
+cbukan_ig       (psdstr3!="INSTAGRAM" && psdstr3!="FACEBOOK")
+cbukan_ref      psdstr3!="REF_KARYAWAN"
+cnonrefkry      psdstr3=="REF_NON_KARYAWAN"
+cbnonrefkry     psdstr3!="REF_NON_KARYAWAN"
+cjikawii        psdkode=="WII"
+cbukanwii       psdkode!="WII"
+cjika1          psdtot2==1
+cjika2          psdtot2==2
+cLOKER          "LOKER"
+cNONLOKER               "NONLOKER"
+cKERABAT        "KERABAT"
+cORANGTUA       "ORANGTUA"
+cPASANGAN       "PASANGAN"
+chubplmr1       psdtot3==1
+chubplmr2       psdtot3==2
+chubplmr3       psdtot3==3
+
+DEFAULTS(tmptranst)
+psdtot3         DFALT_SCAN_BLANKS       1 "KERABAT"
+                                        2 "ORANGTUA"
+                                        3 "PASANGAN"
+                                        
+EDITS(tmptranst)
+t.Mandatory psdkode MANDATORY
+t.Mandatory psdstr1 MANDATORY
+t.Mandatory psdstr2 MANDATORY
+t.Mandatory psdstr3 MANDATORY
+t.Mandatory psdstr5 MANDATORY_IF cjikawii
+t.Mandatory psdket  MANDATORY_IF csosmed
+t.Mandatory psdstr4 MANDATORY_IF crefkry
+t.Mandatory psdtot MANDATORY_IF cinstagram
+t.Mandatory lpsdket2a MANDATORY_IF cnonrefkry
+t.Mandatory psdtot3 MANDATORY_IF cnonrefkry
+t.Validate psdkode VALIDATE tbddatkodidx mtbd_event stbd {Pgv_dttabel} {Pgv_personal} {PlEVENT21}
+t.Validate psdstr5 VALIDATE tlmbukidx mtlm_911
+t.Validate psdstr3 VALIDATE tbddatkodidx mtbd_media stbd {Pgv_dttabel} {Pgv_personal} {Pgv_dtmedsos}
+t.Validate psdstr1 VALIDATE dtmdtkodidx mdtm_e sdtm {Pgv_dtkota}
+t.Validate psdstr2 VALIDATE tbldtdtmkod mtbl_e stblKota {Pgv_dtkota} {Ppsdstr1}
+t.Validate psdstr4 VALIDATE_IF crefkry psikodidx mbtm_e
+
+MAP(mtbd_event)
+tbdkode         psdkode         REPLACE
+cLOKER          lloker          DO_CALC_IF cjika1
+cNONLOKER       lloker          DO_CALC_IF cjika2
+cKERABAT        lhubplmr        DO_CALC_IF chubplmr1
+cORANGTUA       lhubplmr        DO_CALC_IF chubplmr2
+cPASANGAN       lhubplmr        DO_CALC_IF chubplmr3
+psdket2         lpsdket2        REPLACE
+psdket2         lpsdket2a       REPLACE_IF cnonrefkry
+cBLANKS         lpsdket2        DO_CALC_IF cnonrefkry
+
+MAP(mtbd_media)
+tbdkode         psdstr3         REPLACE
+
+MAP(mtlm_911)
+tlmnobuk        psdstr5         REPLACE
+tlmsts          psdsts          REPLACE
+tlmdata         ltlmdata        REPLACE
+
+MAP(mbtm_e)
+psikode         psdstr4         REPLACE
+
+MAP(mdtm_e)
+dtmkode         psdstr1         REPLACE
+dtmket          lnama_prop      REPLACE
+
+MAP(mtbl_e)
+tblkode         psdstr2         REPLACE
+tblket          lnama_kota      REPLACE
+
+MAP(misipsdket2a)
+lpsdket2a       psdket2         REPLACE
+
+CALCS()
+cstatus_bisa    (psdkode=="WII" && ltlmdata=="APHRD" && (psdsts=="INPG" || psdsts=="RCLS" || psdsts=="CLSD")) || psdkode!="WII"
+ckhususgl	(btmflag1=="GLN" && psdstr3=="GLINTS") || btmflag1!="GLN"
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdstr4       DO_SKIP_IF cbukan_ref
+BEFORE_INPUT    cur_field=psdtot        DO_SKIP_IF cbukan_ig
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF crefkry
+BEFORE_INPUT    cur_field=lpsdket2a     DO_SKIP_IF cbnonrefkry
+BEFORE_INPUT    cur_field=psdtot3       DO_SKIP_IF cbnonrefkry
+BEFORE_INPUT    cur_field=psdstr5       DO_SKIP_IF cbukanwii
+AFTER_INPUT     cur_field=lpsdket2a     DO_MAP SHOW misipsdket2a
+AFTER_INPUT     cur_field=psdstr5       DO_MAP SHOW
+                IF cstatus_bisa mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.911HrsInpgRclsClsd
+                
+AFTER_INPUT     cur_field=psdstr3       DO_MAP SHOW
+                IF ckhususgl mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MediaHarusGLints
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF ckhususgl mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MediaHarusGLints
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psddattypidx lEVENT11 lEVENT11 btmnobuk
+
+SFL_MAP
+lEVENT11        psddata         REPLACE
+lEVENT11        psdtype         REPLACE
+btmnobuk        psdpsmkode      REPLACE

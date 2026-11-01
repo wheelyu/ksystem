@@ -1,0 +1,107 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|t.inapJdinas                       |
+|/---------------------------------\|
+||i.Ket        : ________________  ||
+||i.Tanggal    : ________________  ||
+||t.s/d        : ________________  || 
+||i.Hari       : ________________  || 
+||t.Jabatan    : ________________  || 
+||t.Propinsi   : ________________  || 
+||i.Plafon     : _____________.__  || 
+||i.Total      : _____________.__  ||
+||i.Rek        : ________________  ||
+||t.SisaBudget : _____________.__  ||
+||i.KetRek     : ________________  ||
+||t.Upload     : ________________  ||
+|\---------------------------------/|
+| /------s.UPLOAD-----------------\ |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| \-------------------------------/ |
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bkdket   		TEXTAREA ALLCAPS       	INPUTRI 1
+bkdtgl    		NOLIMIT {DD-MM-YY}     	INPUTRI 2
+bkdtglgj  		NOLIMIT {DD-MM-YY}     	INPUTRI 3
+bkddf1    		PROTECT                	INPUTRI 4
+bkdbrg  		PROTECT                	INPUTRI 5
+bkdcabat  		PROTECT                	INPUTRI 6
+bkdhrg    		PROTECT                	INPUTRI 7
+bkdjml    		NUMERIC                	INPUTRI 8
+bkdnobbm  		PROTECT                	INPUTRI 9
+bkddf2			PROTECT			INPUTRI 10
+bbgket    		PROTECT                	INPUTRI 11
+bkdfl			PROTECT			INPUTRI	12
+
+DEFAULTS(tmptranst)
+bkdsts		INIT_ADD		OPEN
+lbkdjml         INIT_UPDATE             {bkdjml}
+bkdnobbm	INIT_ADD		{lREKINAP}
+bkdnobbm	INIT_UPDATE		{lREKINAP}
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW murut
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW mrmdgab
+AFTER_INPUT     cur_field=bkdtglgj   DO_LIB_IF cjoinrmdmasterinap2 ap_ambts(gv_INPG,lrmdgabmasterinap2,lgolongansdm,lNol,lNol,&lhasil1hotel,&lhasil2kost,&lhasil3inap,&lhasilstr1,lhasilstr2);
+
+AFTER_INPUT     cur_field=bkdtglgj   DO_LIB_IF cjoinrmdmasterinap ap_ambts(gv_INPG,lrmdgabmasterinap,lgolongansdm,lNol,lNol,&lhasil1hotel,&lhasil2kost,&lhasil3inap,&lhasilstr1,lhasilstr2);
+/*
+BEFORE_INPUT    cur_field=bkdjml     DO_LIB_IF cjoinrmdmasterinapx ap_ambts(gv_INPG,lrmdgabmasterinap,lgolongansdm,lNol,lNol,&lhasil1hotel,&lhasil2kost,&lhasil3inap,&lhasilstr1,lhasilstr2);
+*/
+
+BEFORE_INPUT    cur_field=bkdjml    DO_MAP SHOW misibiayainap
+AFTER_INPUT     cur_field=bkdjml                DO_MAP SHOW
+                IF clbhplafon      mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PlafonMelebihi
+
+AFTER_INPUT     cur_field=bkdtgl                DO_MAP SHOW
+                IF clbhplafon      mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PlafonMelebihi
+
+AFTER_INPUT     cur_field=bkdtgl                DO_MAP SHOW
+                IF cjoininap      mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.InapLebih
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cjoininap	 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.InapLebih
+
+EDITS(tmptranst)
+e.Mandatory bkdket  	MANDATORY
+e.Mandatory bkdtgl   	MANDATORY
+e.Mandatory bkdtglgj	MANDATORY
+e.Mandatory bkdjml  	MANDATORY
+e.Mandatory bkdnobbm	MANDATORY
+e.ValidateBbm   bkdnobbm        VALIDATE bbggolnoidx mbbg3 sbbgRL {Pgv_05}
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_COND cINAP
+SFL_UPL_DIRFLD  bkmtgl
+SFL_UPLFLD         bkmnobuk   bkdbukll
+SFL_UPLFLD_DBCALCS dupdbkdbiaya    
+SFL_UPL_DELCOND  cbkdbiaya1  
+
+SFL_TARGET
+	bkdbuklloto    bkmnobuk   lINAP               
+
+SFL_MAP
+bkmdata         bkddata         REPLACE
+bkmnobuk        bkdnobuk        REPLACE
+lINAP		bkdbukll	REPLACE
+lINAP           bkdgrup         REPLACE
+
+

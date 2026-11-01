@@ -1,0 +1,204 @@
+LOCAL
+PGM_FIELDS
+lnamauser	STRING		61
+lbtmnobuk	STRING		21
+lbtmtgl		DATE		4
+ljmlbtm		INT2		2
+lbtmtglpros1	DATE		4
+lnhmfinco	STRING		21
+lpkjaminput	TIME		4
+lpkjampst	TIME		4
+
+CALCS()
+c707add		aktkode2=="707ADD" && akttgl == g_tgltrn && aktlok == "A"
+c707		aktkode2=="707" && akttgl == g_tgltrn && aktlok == "P"
+
+MAP(mjoininputpk)
+nhmfinco		lnhmfinco	REPLACE
+
+DBCALCS(djoininputpk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	nhmdatbukidx	lbukutamu svidtmkode
+	DBC_MAP		mjoininputpk
+
+MAP(mjoinjaminput)
+aktjam		lpkjaminput		REPLACE
+DBCALCS(djoinjaminput)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx 	lnhmfinco lSLA lSLA21 
+	DBC_SELECT	c707add
+	DBC_MAP		mjoinjaminput
+
+MAP(mjoinjampst)
+aktjam		lpkjampst		REPLACE
+DBCALCS(djoinjampst)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx 	lnhmfinco lSLA lSLA21
+	DBC_SELECT 	c707
+	DBC_MAP		mjoinjampst
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||                     	 __ _____ ||
+||t.NoBukti   ___________________ ||
+||t.Tgl       ___________________ ||
+||t.NoBukutamu___________________ ||
+||t.Ktp       ___________________ ||
+||t.NamaDeb   ___________________ ||
+||t.NipUser   ___________________ ||
+||t.NamaUser  ___________________ ||
+||t.Enter     __________          ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt		PROTECT			INPUTRI 	1
+svistr4                 PROTECT                 INPUTRI         2
+svinobuk                PROTECT                 INPUTRI         3
+svitgl1			PROTECT			INPUTRI		4
+svidtmkode              ALLCAPS SCROLL          INPUTRI         5
+svitblkode		PROTECT			INPUTRI		6
+svinama                 PROTECT                 INPUTRI         7
+svikode			PROTECT	             	INPUTRI		8
+lnamauser		PROTECT			INPUTRI		9
+lenter			NOCHANGE		INPUTRI 	10
+
+DEFAULTS(tmptranst)
+lenter			INIT		ENTER
+
+EDITS(tmptranst)
+No Buku Tamu Harus Diisi  svikode		MANDATORY
+
+e.ValidateNobtm                 svidtmkode         VALIDATE	btmbukidx mbtmok
+e.validateid			svitblkode	VALIDATE	psmktpidx mpsmid 0
+e.validateuser			svikode		VALIDATE	psikodidx mpsiusr 0
+
+MAP(mbtmok)
+btmnobuk	lbtmnobuk	REPLACE
+btmnobuk        svidtmkode      REPLACE
+btmplg          svitblkode      REPLACE
+btmlok		svikode		REPLACE
+btmtgl		lbtmtgl		REPLACE
+btmtglpros1	lbtmtglpros1	REPLACE
+
+CALCS()
+cjoinbtm	btmlok == tkmplg && lbtmtglpros1 == g_tgltrn
+
+MAP(mpsmid)
+psmnama		svinama		REPLACE
+
+MAP(mpsiusr)
+psinama		lnamauser	REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp	tkmtype tkmnobuk lDET3      
+
+CALCS()
+cisi3           tkmtotal > 0
+cjoinjam	djoininputpk == 1 && djoinjaminput == 1 && djoinjampst == 1 && ((lpkjampst - lpkjaminput) <= 30)
+cjoinjamtole	djoininputpk == 1 && djoinjaminput == 1 && djoinjampst == 1 && ((lpkjampst - lpkjaminput) > 30)  /*&& 
+		((lpkjampst - lpkjaminput) <= ((lmenit15x * 0.20) + lmenit15x)))*/
+cseljaminputpk	lpkjampst - lpkjaminput
+
+MAP(mmap)
+tkmnobuk	svinobuk	REPLACE
+tkmtype 	svidata 	REPLACE
+lDET3   	svitype 	REPLACE
+gv_OPEN		svistr4		REPLACE
+g_tgltrn	svitgl1		REPLACE
+l1		svinourt	REPLACE_IF cjoininpk_0urt
+curut		svinourt	DO_CALC_IF cjoininpk_1urt
+cseljaminputpk	svidf1		DO_CALC_IF cjoinjam
+lmenit36x	svidf1		REPLACE_IF cjoinjamtole
+DEBUG		ldum	ldum	REPLACE
+
+/*CALCS()
+cjaminputpk	tkmtotal + svidf1
+
+MAP(mupdtkm3)
+cjaminputpk           tkmtotal        DO_CALC
+*/
+
+MAP(mupdtkmdel3)
+cmenitdel15           tkmtotal        DO_CALC_IF cisi3
+
+CALCS()
+cnobukbtm	svidtmkode == lbtmnobuk
+MAP(mscandekode)
+c1		ljmlbtm		DO_CALC_IF cnobukbtm
+
+DBCALCS(djoindetkode)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	svidatbuktyp tkmtype tkmnobuk lDET3 
+	DBC_SUM_MAP	mscandekode
+
+CALCS()
+cjoindetkode0		(ljmlbtm == 0  && g_curcmd == 1) ||g_curcmd != 1
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svidtmkode	DO_SCAN djoindetkode
+AFTER_INPUT	cur_field=svidtmkode 	DO_MAP SHOW
+		IF cjamtarget mdum	
+		ELSE HKCURSOR STAY
+		HKMSG JAM SUDAH LEWAT DARI JAM TARGET
+
+AFTER_INPUT	cur_field=svidtmkode	DO_MAP
+		IF cjoindetkode0 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Nobuksudahada
+
+AFTER_INPUT	cur_field=svidtmkode	DO_MAP SHOW
+		IF cjoinbtm mdum
+		ELSE HKCURSOR STAY
+		HKMSG No Bukutamu Bukan Inputan Anda / Tanggal Bukutamu Bukan Hari Ini
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cjoinbtm mdum
+		ELSE HKCURSOR STAY
+		HKMSG No Bukutamu Bukan Inputan Anda / Tanggal Bukutamu Bukan Hari Ini
+
+CALCS()
+cIPK            "INPUT_PK"
+
+MAP(maddaktipk)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cIPK            akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_usrkode       aktkode2        REPLACE
+cIPK            aktbrg          DO_CALC
+DEBUG	ldum	ldum		REPLACE
+
+MAP(maddtkdinput)
+svinobuk	tkdnobuk	REPLACE
+tkmtype		tkddata		REPLACE
+svitype		tkdnoll		REPLACE
+svinourt	tkdnourt	REPLACE
+gv_OPEN		tkdsts		REPLACE
+lpkjaminput	tkdjml		REPLACE
+lpkjampst	tkdjml2		REPLACE
+cseljaminputpk	tkdjml3		DO_CALC_IF cjoinjam
+lmenit36x	tkdjml3		REPLACE_IF cjoinjamtole
+
+
+SPCALCS(spdetail3)
+        DO_LIB		ap_dbclc(DNAME dmap3,DCOMMAND MAPMAP,DMAP mmap);
+	/*DO_LIB          ap_dbclc(DNAME dupdtkm3,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP mupdtkm3);*/
+	DO_LIB ap_dbclc(DNAME daddaktipk,DCOMMAND ADD,DFILE akt,DMAP maddaktipk);
+	DO_LIB 		ap_dbclc(DNAME dadd1,DCOMMAND ADD,DFILE tkd, DMAP maddtkdinput);
+
+SPCALCS(spdetaildel3)
+        DO_LIB          ap_dbclc(DNAME dupdtkmdel3,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP mupdtkmdel3);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spdetail3
+	PST_DELCMD	spdetaildel3
+
+

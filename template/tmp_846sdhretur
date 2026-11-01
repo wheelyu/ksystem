@@ -1,0 +1,103 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------------\|
+|| t.TipeUnit      : ____________	                                                       ||
+|| t.NobukPenarikan: ______________                                                            ||
+|| t.Nofaktur      : _____________________                                                     ||
+|| t.SegmenMtr     : _____________________                                                     ||
+|| t.RekapEst      : _____________________                                                     ||
+|| t.Body          : _____________________   t.Nominal : _________   t.NominalAct : _________  ||
+|| t.Mekanik       : _____________________   t.Nominal : _________   t.NominalAct : _________  ||
+|| t.Kelistrikan   : _____________________   t.Nominal : _________   t.NominalAct : _________  ||
+|| t.Mesin         : _________________       t.Nominal : _________   t.NominalAct : _________  ||
+|| t.SuratSurat    : _________________       t.Nominal : _________   t.NominalAct : _________  ||
+|| t.StsUpl        : ____                                                                      ||
+||				 ______				                               ||
+||                                                                                             ||
+|\---------------------------------------------------------------------------------------------/|
+|/--------------------------------\                                                             |
+||t.UplDOC                        |                                                             |
+|\--------------------------------/                                                             |
+|/----------DOCUPLOAD-------------\                                                             |
+||                                |                                                             |
+||                                |                                                             |
+|\--------------------------------/                                                             |
+\-----------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkmlok1     PROTECT                         INPUTRI 1
+tkmplg      PROTECT                         INPUTRI 2
+tkmbuk1     PROTECT                         INPUTRI 2
+tkmtype     PROTECT                         INPUTRI 2
+tkmlok2     NOCHANGE                        INPUTRI 3 /*REKAP*/
+
+tkmbuk2     NOCHANGE                        INPUTRI 4 /*Body*/
+tkmtotal    PROTECT                         INPUTRI 5
+tkmdf3      DIGITS                          INPUTRI 5
+
+tkmlokjl    NOCHANGE                        INPUTRI 6 /*Mekanik*/
+tkmjml      PROTECT                         INPUTRI 7
+tkmdf4      DIGITS                          INPUTRI 7
+
+tkmdvs      NOCHANGE                        INPUTRI 8 /*Kelistrikan*/
+tkmjml2     PROTECT                         INPUTRI 9
+tkmdf5      DIGITS                          INPUTRI 9
+
+tkmusrapr   NOCHANGE                        INPUTRI 10 /*Mesin*/
+tkmdf1      PROTECT                         INPUTRI 11
+tkmdf6      DIGITS                          INPUTRI 11
+
+tkmcab      NOCHANGE                        INPUTRI 12 /*Surat*/
+tkmdf2      PROTECT                         INPUTRI 13
+tkmdf7      DIGITS                          INPUTRI 13
+
+tkmstsapr   PROTECT                         INPUTRI 14
+
+lenter      NOCHANGE                        INPUTRI 14
+
+DEFAULTS(tmptranst)
+lenter      INIT     "OK"
+tkmlok2     DFALT_SCAN_BLANKS SESUAI
+                              TIDAK_SESUAI
+tkmbuk2     DFALT_SCAN_BLANKS SESUAI
+                              TIDAK_SESUAI
+tkmlokjl    DFALT_SCAN_BLANKS SESUAI
+                              TIDAK_SESUAI
+tkmdvs      DFALT_SCAN_BLANKS SESUAI
+                              TIDAK_SESUAI
+tkmusrapr   DFALT_SCAN_BLANKS SESUAI
+                              TIDAK_SESUAI
+tkmcab      DFALT_SCAN_BLANKS SESUAI
+                              TIDAK_SESUAI
+
+EDITS(tmptranst)
+e.Mandatorydoc       tkmstsapr       MANDATORY
+
+MAP(mupdtkmsdhrtr)
+lOK         tkmstsapr                  REPLACE
+
+DBCALCS(dupdtkmsdhrtr)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkmprmidx   tkmprm
+	DBC_MAP         mupdtkmsdhrtr
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD  tlmtgl
+SFL_DOCUPLFLD tkmplg
+SFL_DOCUPLFLD_DBCALCS   dupdtkmsdhrtr
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tkmdtkdstlok   lMOTORTARIK tlmnobuk gv_OPEN  
+
+SFL_MAP
+lMOTORTARIK tkmdata     REPLACE
+tlmnobuk    tkmkode     REPLACE
+gv_OPEN     tkmsts      REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cOPEN

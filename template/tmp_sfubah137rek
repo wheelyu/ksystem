@@ -1,0 +1,172 @@
+/*
+LOCAL
+PGM_FIELDS
+*/
+
+DBCALCS(djointbdreksalaha)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx       gv_dttabel   gv_personal lREKSALAH tkmbuk2
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+|!t.NoBukti     :________________       !|
+|!t.Tgl       _ :___________ t.Sts _____!|
+||i.Bank        :_______________________||
+||i.Rekeningbank:_______________        ||
+||i.NipInput    :_______________        ||
+||i.NamaRek                             ||
+||  ____________________________________||
+||t.KetTolakan                          ||
+||  ____________________________________||
+|\--------------------------------------/|
+|t.FotoBukuTabungan                      |
+|/---------s.UPLOAD---------------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+|t.RekAtasNamaPribadi                    |
+|t.ApabilaRekTidakAktifFUBANK            |
+|t.ApabilaNamaBedaBankKTPFUBANK          |
+|t.Digit0KhususBniTdkInput               |
+|t.BsiHanyaUtkAceh                       |
+\----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmnobuk		PROTECT				INPUTRI 1
+tkmkode 		NOCHANGE UNSEEN			INPUTRI 2
+tkmtgl			PROTECT NOLIMIT {DD-MM-YY}	INPUTRI 3
+tkmsts			PROTECT				INPUTRI	4
+tkmbuk1			ALLCAPS				INPUTRI	5
+tkmbuk2			DIGITS				INPUTRI	6
+tkmplg			PROTECT				INPUTRI	7
+tkmnama			ALLCAPS				INPUTRI 8
+lhslcekrek		TEXTAREA PROTECT		INPUTRI	9
+
+CALCS()
+cpkbankptok2    (djointbdbtsbankpt==1 && djointbtbtsbankpt2==1 && djoincab_bank==1 && djointbdbtsbsi==0) ||
+                (djointbdbtsbankpt==0 && djoincab_bank==1 && djointbdbtsbsi==0) ||
+                tkmbuk1=="BANK_BSI"
+cnonacehpt2     (tkmbuk1=="BANK_BSI" && djoincab_bank==1 && djointbdbtsbsi==1) || (tkmbuk1!="BANK_BSI" && djoincab_bank==1 && djointbdbtsbsi==0)
+cpkbankdanamon2 (tkmbuk1=="BANK_DANAMON" && djointbtbtsdanamon==1) || djointbtbtsdanamon==0 || lharike==6
+
+cpanjang2       DO_LIB ap_strln(tkmbuk2,&lpanjang2);
+cnik1a          (tkmbuk1=="BNI" && ldigit1!="0") || tkmbuk1!="BNI"
+ce1za		djointbdreksalaha==0
+cnobuk7d2       STRIP(btmnobuk) + "-"
+csel7dcekrek	tkmlok1=="REKENING"
+
+DEFAULTS(tmptranst)
+tkmlok1			INIT		"REKENING"
+tkmplg          INIT    {g_usrkode}
+
+EDITS(tmptranst)
+t.ValidateBank  tkmbuk1 VALIDATE tbddatkodidx mtbdrek137 stbdbanksdm {Pgv_dttabel} {Pgv_BANK} {Pgv_BANK}
+e.Mandatory tkmbuk1     MANDATORY
+e.Mandatory tkmbuk2     MANDATORY
+e.Mandatory tkmnama     MANDATORY
+
+
+MAP(mtbdrek137)
+tbdkode		tkmbuk1		REPLACE
+
+MAP(mmap_rekening2)
+cOK		tkmstsapr	DO_CALC
+
+MAP(mcaripanjang2)
+cpanjang2       lpanjang2        DO_CALC
+
+MAP(mnobuk7d2)
+cnobuk7d2	tkmnobuk	DO_CALC_IF ctambah
+g_tgltrn        tkmtgl          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT   cur_field=tkmbuk1       DO_MAP SHOW mmap_rekening2
+AFTER_INPUT    cur_field=tkmbuk1       DO_MAP SHOW
+               IF cpkbankptok2 mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.Pt0405MandiriPt0910Bca
+
+AFTER_INPUT    cur_field=tkmbuk1      DO_MAP SHOW
+               IF cnonacehpt2  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT    cur_field=tkmbuk1      DO_LIB ap_hrike(g_tgltrn,&lharike);
+AFTER_INPUT    cur_field=tkmbuk1      DO_MAP SHOW
+               IF cpkbankdanamon2 mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.CabJabDanamon
+
+AFTER_INPUT    cur_field=tkmbuk1      DO_MAP SHOW
+               IF cnonacehpt2 mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT     cur_field=tkmbuk2       DO_LIB ap_amstr(tkmbuk2,ln1,ln1,&ldigit1);
+AFTER_INPUT     cur_field=tkmbuk2       DO_MAP SHOW mcaripanjang2
+AFTER_INPUT    cur_field=tkmbuk2      DO_MAP SHOW
+               IF cnik1a  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BNINolTdkPerluDitulis
+
+AFTER_INPUT     cur_field=tkmbuk2     DO_MAP SHOW
+                IF ce1za   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW mnobuk7d2
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cnonacehpt2 mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT    cur_keybd=EN	  DO_MAP SHOW
+               IF cnik1a  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BNINolTdkPerluDitulis
+
+AFTER_INPUT	cur_keybd=EN	  DO_MAP SHOW
+                IF ce1za   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cpkbankptok2 mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.Pt0405MandiriPt0910Bca
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cnonacehpt2  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cpkbankdanamon2 mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.CabJabDanamon
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkmnobuk
+SFL_SORT_UPDOWN DOWN
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD      gv_sftabungan11  btmplg
+SFL_UPL_DELCOND c0
+SFL_COND cubah7dcekrek
+SFL_SELECT csel7dcekrek
+SFL_TARGET
+tkmdtkdstlok lubah137 btmnobuk 
+SFL_MAP
+lubah137	tkmdata		REPLACE
+btmnobuk	tkmkode		REPLACE
+gv_OPEN		tkmsts		REPLACE

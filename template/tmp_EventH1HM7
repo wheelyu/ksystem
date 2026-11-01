@@ -1,0 +1,118 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Matprom Desain
+  t.UplSpanduk           t.UplBanner
+  /--s.UPLOAD------\     /--s.UPLOAD2-----\
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  \----------------/     \----------------/
+   ________________       ________________
+
+  t.UplBrosur       
+  /--s.UPLOAD3-----\
+  |                |
+  |                |
+  |                |
+  |                |
+  |                |
+  |                |
+  \----------------/
+   ________________ 
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc: ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lSPANDUK        ALLCAPS NOCHANGE		        INPUTRI	1
+lBANNER         ALLCAPS NOCHANGE		        INPUTRI	2
+lBROSUR 	ALLCAPS NOCHANGE                        INPUTRI	2
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts          PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 3
+tkdket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhm7ok    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+tkdtotsj        INIT_UPDATE     0
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+
+tkdjenisaw         DFALT_LIST      ACC TACC
+tkdsts INIT            {gv_OPEN}
+CALCS()
+cdetailhm7ok            tlmkode == g_usrkode && tkdnourt > 0 && tkdjml > 0 && tkdjml2 > 0 && tkdjml3 > 0 && 
+                        (tkdsts == gv_OPEN || tkdsts == gv_TACC) 
+                        /*
+                        && djoindetailhm8 == 1 && lstatusdetail == gv_ok && 
+                        (ltkdjenis == "TIDAK" || ltkdjenis == "YA" && djoindetailahm7ahass == 1) && djoindetailahm7pj == 1 && 
+                        (((tlmuntuk == lSHOWEVENT || tlmuntuk == lPPRT || tlmuntuk == lPAMERAN) && ((tkdtype == "ADA" && tkdjml4 > 0 && tkdsisstr != "") || (tkdtype2 == "ADA" && tkdjml5 > 0 && tkdjenisaw != ""))) || 
+                        (tlmuntuk != lSHOWEVENT && tlmuntuk != lPPRT && tlmuntuk != lPAMERAN)) && tkdtotjsa == 1
+                        
+cdetaildisplaybelumok   tkdtype2 == "ADA" && tkdjenisaw == ""
+cdisplaybelumok         tkdtype2 == "ADA" && tkdjml5 == 0
+cdetailridingbelumok    tkdtype == "ADA" && tkdsisstr == ""
+cridingbelumok          tkdtype == "ADA" && tkdjml4 == 0
+
+cridingdisplaybelumok   (tlmuntuk == lSHOWEVENT || tlmuntuk == lPPRT || tlmuntuk == lPAMERAN) && tkdtype != "ADA" && tkdtype2 != "ADA"
+*/
+
+EDITS(tmptranst)
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+HOOKS(tmptranst)
+
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+CLICKED         cur_field=ltombolhm7ok  DO_SPCALCS spdetailokhm7
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl 
+SFL_UPL_DIRFLD3 tlmtgl 
+SFL_UPLFLD  tkdnobuk lSPANDUK
+SFL_UPLFLD2 tkdnobuk lBANNER
+SFL_UPLFLD3 tkdnobuk lBROSUR
+SFL_UPLFLD_DBCALCS dtambahuploadfoto1
+SFL_UPLFLD2_DBCALCS dtambahuploadfoto2
+SFL_UPLFLD3_DBCALCS dtambahuploadfoto3
+SFL_UPL_COND cuploadfotook
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNBTLHM7 tlmnobuk
+        
+MAP(mupdinfodetailhm7)
+lUPLOADBROSURDULU       tkdrek          REPLACE_IF cfoto3kosong
+lUPLOADBANNERDULU       tkdrek          REPLACE_IF cfoto2kosong
+lUPLOADSPANDUKDULU      tkdrek          REPLACE_IF cfoto1kosong
+lSELESAIKANHMIN8DULU    tkdrek          REPLACE_IF cdjoindetailhm8apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm7)
+        DO_LIB_IF cdetailhm7ok          ap_dbclc(DNAME dupddetailreqhm7,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm7, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm7, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm7,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm7);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

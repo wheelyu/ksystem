@@ -1,0 +1,623 @@
+SCREEN 2915 APP_TYPE  t.1000635ProsPikAng 
+SCR_ENTER_COND cstsisi
+SCR_ENTER_MSG Hub Ary Cahyadi
+
+CALCS()
+cstsisi		g_usrkode == "1000635" || g_usrkode == "1004315"
+
+LOCAL
+PGM_FIELDS
+lanhbyrpk	DFLOAT		8
+lanhbyrbg	DFLOAT		8
+lversi		STRING		11
+lnobuk 		STRING		 21 
+ltamangbyrbg	DFLOAT		8
+ltamangbyrpk	DFLOAT		8
+
+lANG             STRING      5
+lBLI             STRING      5
+lANG11         STRING      11
+lBLI11         STRING      11
+lfieldfak       STRING      20
+lfieldtglang    STRING      20
+lfieldke        STRING      20
+lfieldFM        STRING      20
+lfieldANG        STRING      20
+lfieldpokok     STRING      20
+lfieldbg        STRING      20
+lnamaidx        STRING      20
+lfieldsispokakh STRING		20
+lfieldakumbgakh STRING		20
+lfieldthbl      STRING		20
+lnamamapA        STRING		20
+lnamamapB        STRING		20
+lbulanke        INT2  		2
+lhapusflg       INT2  		2
+lakumpokke      DFLOAT  		8
+ltypebunga      INT2             2
+lpokokawal      DFLOAT           8
+lpil		INT2		2
+lcab    	STRING		21
+lstatus		STRING		5
+ltype		INT2		2
+lPREDIKSIBG	STRING		11
+lthbl		STRING		11
+l0000		STRING		11
+ldum		STRING		2
+
+langpokok	DFLOAT		8
+ltamang		DFLOAT		8
+ldarinhm	DFLOAT		8
+lnhmtotpok	DFLOAT		8
+lnhmumasal	DFLOAT		8
+lBUKUTAMU	STRING		11
+
+DBCALCS(djoinang)
+	DBC_COMMAND	JOIN
+        DBC_TARGET      angbukstsidx   piknobuk lANG11 
+  
+DBCALCS(djoinang2)
+	DBC_COMMAND	JOIN
+        DBC_TARGET      angbukstsidx   piknobuk lBLI11 
+  
+DBCALCS(djoinakr)
+	DBC_COMMAND	JOIN
+        DBC_TARGET      akrdatbukth   lPREDIKSIBG piknobuk lthbl
+DBCALCS(djoinangpred)
+	DBC_COMMAND	JOIN
+        DBC_TARGET      angdatbukidx   lBLI11 anhnobuk anhke
+
+MAP(mjoinnhm)
+nhmtotpok	lnhmtotpok	REPLACE
+nhmumasal	lnhmumasal	REPLACE
+
+DBCALCS(djoinnhm)
+	DBC_COMMAND	JOIN
+        DBC_TARGET      nhmdatbukidx  lBUKUTAMU piknobtm
+	DBC_MAP		mjoinnhm
+
+
+IMAGE(master) {BASE_ROW=1} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+| | i.Pil   : __                                                                                 | |
+| | i.Kode  : _____________________                                                              | |
+| | t.Cab   : ___________ t.Status __________  t.Type ____                                       | |
+| \----------------------------------------------------------------------------------------------/ |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+lpil     	NUMERIC             INPUTRI  	1
+lnobuk   	ALLCAPS             INPUTRI  	2
+lcab     	ALLCAPS             INPUTRI  	2
+lstatus  	ALLCAPS             INPUTRI  	2
+ltype    	NUMERIC             INPUTRI  	2
+
+DEFAULTS(master)
+ltype		INIT	3
+lversi		INIT	20092024
+lANG		INIT	ANG
+lANG11		INIT	ANG
+lBLI		INIT	BLI
+lBLI11		INIT	BLI
+lnamamapA	INIT	maddang
+lnamamapB	INIT	maddangg1
+lnobuk		INIT	01200301932
+lstatus		INIT	INPG
+lcab		INIT	DPR31
+lPREDIKSIBG	INIT	PREDIKSIBG
+l0000		INIT	0000
+lBUKUTAMU	INIT	BUKUTAMU
+
+CALCS()
+cpil1		lpil == 1
+cpil2		lpil == 2
+cpil3		lpil == 3
+cpil4		lpil == 4
+cthbl		THBLS(g_tgltrn)
+
+EDITS(master)
+e.Mandatory 	ltype MANDATORY_IF cpil2
+
+MAP(mthbl)
+cthbl		lthbl		DO_CALC
+
+
+HOOKS(master)
+BEFORE_INPUT	cur_field=lnobuk	DO_SKIP_IF cpil2
+BEFORE_INPUT	cur_field=lcab   	DO_SKIP_IF cpil1
+BEFORE_INPUT	cur_field=lstatus   	DO_SKIP_IF cpil1
+AFTER_INPUT	cur_field=lpil   	DO_MAP SHOW mthbl
+
+
+
+CALCS()
+cangke1		angke == 1
+cbkn1		angke > 1
+cblmada         djoinang == 0 && piktybg != "M"
+cblmada2        djoinang2 == 0 && piktybg != BLANKS 
+cstsclsd	angsts == "CLSD"
+cjoinangpred	djoinangpred == 1
+
+MAP(maddang)
+gv_INPG		angsts	 	REPLACE_IF cangke1
+gv_OPEN		angsts	 	REPLACE_IF cbkn1
+angpokok	angsispok	REPLACE
+angbunga	angsisbg	REPLACE
+lANG		angtype		REPLACE
+pikangbl	angbsr		REPLACE
+piktybg		angtypfm	REPLACE
+
+
+MAP(maddangg1)
+gv_INPG		angsts	 	REPLACE_IF cangke1
+gv_OPEN		angsts	 	REPLACE_IF cbkn1
+angpokok	angsispok	REPLACE
+angbunga	angsisbg	REPLACE
+lBLI		angtype		REPLACE
+pikangbl	angbsr		REPLACE
+piktybg		angtypfm	REPLACE
+
+
+
+
+
+IMAGE(trans) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8} 
+| __________________|________|_____|__________|__.__|_____________|__|__|
+
+FIELD(trans)
+piknobuk		NONE		INPUTRI 1
+piksts			NONE		INPUTRI 2
+pikdata 		PROTECT		INPUTRI 3
+piktglang1              PROTECT	{DD-MM-YYYY}	INPUTRI 4
+pikperbgm               PROTECT         INPUTRI 5
+lpokokawal              PROTECT         INPUTRI 6
+piklama                 PROTECT         INPUTRI 7
+pikke                   PROTECT         INPUTRI 8
+
+EDITS(trans)
+e.Validatefaktur	piknobuk VALIDATE pikdatbukidx    mpik {Pgv_dtpiu}
+
+CALCS()
+cpokokawal            piktotpok - pikum
+
+MAP(mpik)
+piknobuk		piknobuk	REPLACE
+cpokokawal               lpokokawal      DO_CALC
+
+CALCS()
+cpil1b		djoinang == 0
+
+
+SUBFILE(trans)
+SFL_COND   cpil1
+SFL_SELECT cpil1b
+SFL_LINES(15)    
+
+SFL_TARGET
+pikdatbukidx   gv_dtpiu lnobuk
+
+IMAGE(trans2) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8} 
+|____________________ | __________________|________|_______|
+
+FIELD(trans2)
+angprm			NONE		INPUTRI 1
+angnobuk		NONE		INPUTRI 2
+angke			NONE		INPUTRI 3
+angsts	 		PROTECT		INPUTRI 4
+
+EDITS(trans2)
+e.Validatefaktur	angprm VALIDATE angprmidx    mang 0
+
+MAP(mang)
+angnobuk	angnobuk	REPLACE
+
+CALCS()
+cbawah		angke <= pikke
+csama		angke == pikke + 1
+catas		angke > pikke + 1 
+cisi0		0
+cBLI		"BLI"
+
+MAP(mupdang)
+gv_CLSD		angsts		REPLACE_IF cbawah
+gv_INPG         angsts          REPLACE_IF csama
+gv_OPEN		angsts		REPLACE_IF catas
+cisi0		angsispok	DO_CALC_IF cstsclsd
+cisi0		angsisbg 	DO_CALC_IF cstsclsd
+
+SUBFILE(trans2)
+SFL_COND   cpil1
+SFL_LINES(15)    
+
+SFL_TARGET
+angdatbukidx	lANG11 lnobuk
+
+
+IMAGE(transg1) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8} 
+|___________ | __________________________________|
+
+FIELD(transg1)
+cabkode			NONE		INPUTRI 1
+cabnama 		NONE		INPUTRI 2
+
+SUBFILE(transg1)
+SFL_COND   cpil2
+SFL_LINES(15)    
+
+SFL_TARGET
+cabkodidx	lcab
+
+
+IMAGE(trans2g1) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8}
+|___________ | _______|______________________|________________|_______________|______|_____________|_________|
+
+FIELD(trans2g1)
+piksts 			NONE		INPUTRI 1
+pikcab  		NONE		INPUTRI 2
+piknobuk		NONE		INPUTRI 2
+piktybg			NONE		INPUTRI 2
+piktglang1		NONE		INPUTRI 2
+pikperbgm 		NONE		INPUTRI 2
+piktotpok 		NONE		INPUTRI 2
+pikum     		NONE		INPUTRI 2
+
+CALCS()
+cspil2	((piktybg == "M" && piktglang1 != BLANKS) || (piktybg != "M" && piktglang1 != BLANKS )) /*&& piknobuk =="31231108737"*/ 
+
+SUBFILE(trans2g1)
+SFL_COND   cpil2
+SFL_SELECT	cspil2
+SFL_LINES(15)    
+
+SFL_TARGET
+pikdatcabtgl gv_dtpiu cabkode
+
+
+IMAGE(transg2) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8} 
+|___________ | ________|____________________|_______________|____________|______________|
+
+FIELD(transg2)
+akrdata			NONE		INPUTRI 1
+akrcab  		NONE		INPUTRI 2
+akrnobuk		NONE		INPUTRI 2
+akrthbl 		NONE		INPUTRI 2
+akrawl  		NONE		INPUTRI 2
+akrawlbunga  		NONE		INPUTRI 2
+   
+/*cspil3	akrnobuk == "01200300338"
+CALCS()
+cspil3	akrnobuk == "01200302620"
+SFL_SELECT	cspil3
+*/
+  
+SUBFILE(transg2)
+SFL_LINES(2)    
+SFL_COND   cpil3
+SFL_TARGET
+akrcabstsidx   lPREDIKSIBG lcab lthbl
+
+
+
+IMAGE(trans2g2) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8}
+|___________ |________________| __________|___________|_________________|________________|________________|
+
+FIELD(trans2g2)
+angke  			NONE		INPUTRI 1
+angpokok		NONE		INPUTRI 1
+angdata			NONE		INPUTRI 1
+angcab  		NONE		INPUTRI 1
+angnobuk		NONE		INPUTRI 1
+angbyrpok		NONE		INPUTRI 1
+angbyrbg		NONE		INPUTRI 1
+
+SUBFILE(trans2g2)
+SFL_COND   cpil3
+SFL_LINES(15)    
+
+SFL_TARGET
+angdatbukidx   lBLI11 akrnobuk
+
+
+IMAGE(transg3) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8} 
+|___________ | _______|_____________________|_______________|____________|______________|
+
+FIELD(transg3)
+akrdata			NONE		INPUTRI 1
+akrcab  		NONE		INPUTRI 2
+akrnobuk		NONE		INPUTRI 2
+akrthbl 		NONE		INPUTRI 2
+akrawl  		NONE		INPUTRI 2
+akrawlbunga  		NONE		INPUTRI 2
+
+SUBFILE(transg3)
+SFL_COND   cpil4
+SFL_LINES(2)    
+
+SFL_TARGET
+akrcabstsidx   lPREDIKSIBG lcab lthbl
+
+IMAGE(trans2g3) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8}
+|___________ |________________| __________|___________|
+
+FIELD(trans2g3)
+anhke  			NONE		INPUTRI 1
+anhnobuk		NONE		INPUTRI 1
+anhbyrbg		NONE		INPUTRI 1
+anhbyrpk 		NONE		INPUTRI 1
+
+SUBFILE(trans2g3)
+SFL_COND   cpil4
+SFL_LINES(15)    
+
+SFL_TARGET
+anhbukotourt   akrnobuk
+
+
+CALCS()
+cnol  		0
+cANG		"ANG"  
+cnamaidx  	"angdatbukidx"
+cfieldfak 	"angnobuk"
+cfieldtglang 	"angtgljtp"  
+cfieldke     	"angke"     
+cfieldFM     	"angnofm"      
+cfieldANG     	"angdata"     
+cfieldpokok  	"angpokok"   
+cfieldbg     	"angbunga"     
+cfieldthbl	"angthbl"
+ctype6		6
+ctype2		2
+cnoF		piktybg != "F"
+ctypeF		piktybg == "F"
+
+cdarinhm	lnhmtotpok - lnhmumasal
+c0		0
+cjoinnhm1	djoinnhm == 1 && lnhmtotpok - lnhmumasal > 0
+
+MAP(mmap)
+ctype6		ltypebunga	DO_CALC_IF cnoF
+ctype2		ltypebunga	DO_CALC_IF ctypeF
+cANG         	lANG         DO_CALC   
+cnamaidx     	lnamaidx      DO_CALC
+cfieldfak    	lfieldfak     DO_CALC
+cfieldtglang 	lfieldtglang  DO_CALC
+cfieldke     	lfieldke      DO_CALC
+cfieldFM     	lfieldFM      DO_CALC
+cfieldANG    	lfieldANG      DO_CALC
+cfieldpokok  	lfieldpokok   DO_CALC
+cfieldbg     	lfieldbg      DO_CALC
+cfieldthbl	lfieldthbl      DO_CALC
+cnol 		lhapusflg       DO_CALC
+
+
+DBCALCS(dmapmap)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmap
+
+MAP(mmapg1)
+ltype 		ltypebunga	REPLACE
+cBLI         	lBLI         DO_CALC   
+cnamaidx     	lnamaidx      DO_CALC
+cfieldfak    	lfieldfak     DO_CALC
+cfieldtglang 	lfieldtglang  DO_CALC
+cfieldke     	lfieldke      DO_CALC
+cfieldFM     	lfieldFM      DO_CALC
+cfieldANG    	lfieldANG      DO_CALC
+cfieldpokok  	lfieldpokok   DO_CALC
+cfieldbg     	lfieldbg      DO_CALC
+cfieldthbl	lfieldthbl      DO_CALC
+cnol 		lhapusflg       DO_CALC
+
+
+DBCALCS(dmapmapg1)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapg1
+
+
+MAP(mmap2g1)
+c0		lnhmtotpok	DO_CALC
+c0		lnhmumasal	DO_CALC
+c0		ldarinhm	DO_CALC
+
+lnhmtotpok	lnhmtotpok	REPLACE_IF cjoinnhm1
+lnhmumasal	lnhmumasal	REPLACE_IF cjoinnhm1
+cdarinhm	ldarinhm	DO_CALC
+
+DBCALCS(dmapmap2g1)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmap2g1
+
+
+CALCS()
+clangbyrbg	ltamangbyrbg + angsisbg
+clangbyrpk	ltamangbyrpk + angsispok
+
+MAP(mmapg2)
+ldum	ldum	REPLACE
+c0		ltamang		DO_CALC
+c0		lanhbyrpk	DO_CALC
+c0		lanhbyrbg	DO_CALC
+c0		ltamangbyrbg	DO_CALC
+c0		ltamangbyrpk	DO_CALC
+
+DBCALCS(dmapmapg2)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapg2
+
+
+
+MAP(mmapmap2)
+angnobuk	angnobuk	REPLACE
+
+DBCALCS(dmapmap2)
+	DBC_COMMAND	MAPMAP	
+	DBC_MAP		mmapmap2
+
+MAP(mmapg3)
+ldum	ldum	REPLACE
+DBCALCS(dmapmapg3)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapg3
+
+MAP(mmap2g3)
+ldum	ldum	REPLACE
+DBCALCS(dmapmap2g3)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmap2g3
+
+
+CALCS()
+cke1		1
+
+MAP(maddangM)
+piknobuk	angnobuk	REPLACE
+lANG		angtype		REPLACE
+lANG11		angdata		REPLACE
+piktgljtp	angtgljtp	REPLACE
+pikangbl	angbsr		REPLACE
+piksispok	angpokok	REPLACE
+piksispok	angsispok	REPLACE
+cke1		angke		DO_CALC
+
+
+CALCS()
+ctypeM		piktybg == "M"
+cjoinakr0	djoinakr == 0
+cjoinakr1	djoinakr == 1
+cakrawl		piktotpok - pikumriil
+
+MAP(maddakr)
+lPREDIKSIBG	akrdata		REPLACE
+piknobuk	akrnobuk	REPLACE
+g_tgltrn	akrtgl		REPLACE
+lthbl		akrthbl		REPLACE
+gv_INPG		akrsts		REPLACE
+
+MAP(mupdakr)
+pikcab		akrcab		REPLACE
+piktotpok	akrawl		REPLACE
+ldarinhm	akrawl		REPLACE_IF cjoinnhm1
+cakrawl		akrawl		DO_CALC
+pikperbgf	akrawlbunga	REPLACE
+pikstspiubli	akrstspiu	REPLACE
+piksts       	akrsts   	REPLACE
+
+
+
+CALCS()
+ctamang		angbsr * angke
+cisi2		angke >= 2
+cangsispok	angpokok - ltamang
+cangbyrbg	(akrawlbunga * angsispok) / 100 / 12
+cangbyrpok	angbsr - angbyrbg
+
+MAP(mmap2g2)
+ldum	ldum	REPLACE
+ctamang	ltamang	DO_CALC_IF cisi2
+
+clangbyrbg	ltamangbyrbg	DO_CALC
+clangbyrpk	ltamangbyrpk	DO_CALC
+
+DBCALCS(dmapmap2g2)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmap2g2
+
+MAP(mupdang2g2)
+akrawl		langpokok	REPLACE
+akrawl		angtotsispok	REPLACE
+cangsispok	ldum     	DO_CALC
+cangbyrbg	ldum    	DO_CALC
+cangbyrpok	ldum		DO_CALC
+
+ltamangbyrbg	angbyrbg	REPLACE
+ltamangbyrpk	angbyrpok	REPLACE
+
+MAP(mupdang2g3)
+anhbyrbg	angdf1		REPLACE
+anhbyrpk	angdf2		REPLACE
+
+SPCALCS(sptrans)
+dmapmap
+DO_LIB_IF cblmada ap_htrbg(ltypebunga,lfieldFM,piknobuk,lfieldfak,piktglang1,lfieldtglang,lANG,lfieldANG,pikperbgm,piklama,lpokokawal,lnamaidx,lfieldpokok,lfieldbg,lfieldke,lfieldthbl,lbulanke,&lakumpokke,lnamamapA,lhapusflg,lfieldsispokakh,lfieldakumbgakh);
+DO_LIB_IF ctypeM ap_dbclc(DNAME daddang, DCOMMAND ADD,DFILE ang,DMAP maddangM);
+
+SPCALCS(sptrans2)
+dmapmap2
+DO_LIB             ap_dbclc(DNAME dupdang,DCOMMAND UPDATE,DBC_TARGET angprmidx angprm, DMAP mupdang);
+
+SPCALCS(sptransg1)
+dmapmapg1
+
+CALCS()
+cokbli	angdata == "BLI"
+
+SPCALCS(sptrans2g1)
+dmapmap2g1
+DO_LIB_IF cjoinakr0	ap_dbclc(DNAME daddakr,DCOMMAND ADD,DBC_FILE akr, DMAP maddakr);
+DO_LIB_IF cjoinakr1	ap_dbclc(DNAME dupdakr,DCOMMAND UPDATE,DBC_TARGET akrdatbukth   lPREDIKSIBG piknobuk lthbl, DMAP mupdakr);
+DO_LIB	           ap_dbclc(DNAME ddelang,DCOMMAND DELETE_RANGE,DBC_TARGET angbukstsidx piknobuk lBLI11,DBC_COND cokbli);
+DO_LIB_IF cblmada2 ap_htrbg(ltypebunga,lfieldFM,piknobuk,lfieldfak,piktglang1,lfieldtglang,lBLI,lfieldANG,akrawlbunga,piklama,akrawl,lnamaidx,lfieldpokok,lfieldbg,lfieldke,lfieldthbl,lbulanke,&lakumpokke,lnamamapB,lhapusflg,lfieldsispokakh,lfieldakumbgakh);
+
+
+SPCALCS(sptransg2)
+dmapmapg2
+
+SPCALCS(sptrans2g2)
+dmapmap2g2
+DO_LIB    ap_dbclc(DNAME dupdang2g2,DCOMMAND UPDATE,DBC_TARGET angprmidx angprm, DMAP mupdang2g2);
+
+SPCALCS(sptransg3)
+dmapmapg3
+
+SPCALCS(sptrans2g3)
+dmapmap2g3
+DO_LIB_IF cjoinangpred    ap_dbclc(DNAME dupdang2g3,DCOMMAND UPDATE,DBC_TARGET angdatbukidx lBLI11 anhnobuk anhke, DMAP mupdang2g3);
+
+POSTING(trans)
+	PST_COMMAND sptrans
+
+POSTING(trans2)
+	PST_COMMAND sptrans2
+
+POSTING(transg1)
+	PST_COMMAND sptransg1
+
+POSTING(trans2g1)
+	PST_COMMAND sptrans2g1
+
+POSTING(transg2)
+	PST_COMMAND sptransg2
+
+POSTING(trans2g2)
+	PST_COMMAND sptrans2g2
+
+
+POSTING(transg3)
+	PST_COMMAND sptransg3
+
+POSTING(trans2g3)
+	PST_COMMAND sptrans2g3
+
+
+
+
+END_SCREEN

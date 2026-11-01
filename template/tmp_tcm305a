@@ -1,0 +1,297 @@
+LOCAL
+PGM_FIELDS
+luruttcm		INT2		2
+lnobuk 			STRING		21
+lbiajns			STRING		21
+lnsc			STRING		21
+lbianobbm		STRING		21
+lketisi2		STRING		61
+l1			INT2		2
+l2			INT2		2
+l3			INT2		2
+l4			INT2		2
+l5			INT2		2
+l6			INT2		2
+ltanggal		STRING		3
+lbulan			STRING		3
+ltahun			STRING		5
+lstanggal		STRING		12
+ls1tanggal		STRING		12
+ltlmtotal		DFLOAT		8
+ltkdnobuktrf		STRING		21
+lTRF305			STRING		11
+
+MAP(mjointcmu)
+tcmnourt     luruttcm  REPLACE
+
+DBCALCS(djointcmu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	tcmbukurtidx   lnobuk 
+        DBC_MAP         mjointcmu
+
+MAP(misibia)
+bianobbm	lbianobbm		REPLACE
+
+DBCALCS(djoinbia)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      biadatstskod gv_dtbank lnsc gv_INPG tcmnobbm
+	DBC_MAP		misibia
+
+MAP(misiket)
+ketisi2	         lketisi2	        REPLACE
+
+DBCALCS(djoinket)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      ketdatbukkod    gv_dtbank tcmnocair
+        DBC_MAP         misiket
+
+MAP(mjointlmTO)
+tlmtotal	ltlmtotal		REPLACE
+
+DBCALCS(djointlmTO)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmbukidx	bkmnobuk2
+	DBC_MAP		mjointlmTO
+
+MAP(mtkdtrf)
+tkdnobuk	ltkdnobuktrf	REPLACE
+
+DBCALCS(djointkdtrf)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatllidx	lTRF305 bkmnobuk
+	DBC_MAP		mtkdtrf
+
+IMAGE(tmptranst) 
+/------------------------------------\
+|/----------------------------------\|
+|| i.Ty        : ___                ||
+|| i.NoCek     : __________________ ||
+|| i.KasBank   : __________________ ||
+|| i.Rek       : __________________ ||
+|| i.Jtp       : __________________ ||
+|| t.RekKnsmn  : __________________ ||
+|| t.Nama      : __________________ ||
+|| i.Bank      : __________________ ||
+|| t.Tntrf     : __________________ ||
+|| i.BiayaAdm  : __________________ ||
+|| i.Total     : __________________ ||
+|| i.Kode      : __________________ ||
+|| i.Sts       : _________________  ||
+|| i.Ket       :                    ||
+|| ________________________________ ||
+|\----------------------------------/|
+\------------------------------------/
+IMAGE(tmptrans) 
+                                    
+FIELD(tmptranst)
+   tcmtype       NOCHANGE                   INPUTRI    1 /* Type O/S */
+   tcmnocek      NOCHANGE                    INPUTRI    2 /* nomor cek */
+   tcmnobbm	 ALLCAPS                    INPUTRI    3 /* Kode Rekening */
+   tcmbbm2	 NOCHANGE                    INPUTRI    4 /* Kode Rekening */
+   tcmtgljtp     NONE NOLIMIT {DD-MM-YY}    INPUTRI    5 /* Tanggal jt */
+   tcmnocair	 ALLCAPS SCROLL             INPUTRI    6 /* Keterangan */
+   tcmnamcard	 PROTECT SCROLL             INPUTRI    7 /* Keterangan */
+   tcmbbm1 	 PROTECT SCROLL             INPUTRI    8 /* Kode Rekening */
+   tcmtotbuk     NUMERIC                    INPUTRI    9 /* Nilai Cek */
+   tcmbiacard    NUMERIC                    INPUTRI    9 /* Nilai Cek */
+   tcmtotal      NOCHANGE                   INPUTRI    9 /* Nilai Cek */
+   tcmbukinv     PROTECT                    INPUTRI    10
+   tcmnobtl      PROTECT                    INPUTRI    10
+   tcmket        ALLCAPS SCROLL             INPUTRI    11
+
+HELP(tmptranst)
+h.TypeTcm tcmtype
+
+CALCS()
+cTN            	 tcmtype == "TN" 
+cTB            	 tcmtype == "TB" 
+ctrfbank	 tcmbbm2 != BLANKS
+ckondtrf	 djointkmapr == 1
+/*cnamatrfsama	(btmstr2_1 == "TRANSFER" && tcmbbm2 != BLANKS && tcmnamcard != BLANKS && tcmnamcard == lpsmnamadeb) ||
+		(btmstr2_1 != "TRANSFER") ||
+		(g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "FINBANKCO")*/
+
+EDITS(tmptranst)
+e.MandatoryRekKasBank tcmnobbm MANDATORY
+e.MandatoryTot tcmtotal MANDATORY
+e.Mandatoryrek tcmnocair MANDATORY_IF ckondtrf
+e.Mandatoryrek tcmbbm2 MANDATORY_IF ckondtrf
+e.ValidateBbm tcmnobbm VALIDATE_IF cTB bbgbbtnoidx mbbg sbbgKB4 {Pgv_BK}
+e.ValidateBbm tcmnobbm VALIDATE_IF cTN bbgbbtnoidx mbbg sbbgKB {Pgv_KS}
+e.ValidateBia tcmnocair VALIDATE_IF ctrfbank biadatstskod mbiabank sbials {Pgv_dtbank} {Plbiajns} {Pgv_INPG}
+
+CALCS()
+cadaket		djoinket == 1
+cTRANSFER	"TRANSFER"
+cadabia		djoinbia == 1
+
+MAP(mbiabank)
+biakode		tcmnocair	REPLACE
+biacab		tcmbbm1		REPLACE
+cTRANSFER	tcmkota		DO_CALC
+bianip		tcmmua		REPLACE
+lketisi2	tcmnamcard	REPLACE_IF cadaket
+
+MAP(mbbg)
+bbgno		tcmnobbm	REPLACE
+lbianobbm	tcmbbm2		REPLACE_IF cadabia
+
+CALCS()
+ctypetransfer	btmstr2_1 == "TRANSFER"
+ctypetunai	btmstr2_1 == "TUNAI"
+
+DEFAULTS(tmptranst)
+tcmdk         	INIT            K
+tcmsts		INIT		OPEN
+IF ctypetransfer tcmtype  	DFALT_SCAN   	TB "Transfer Bank"
+IF ctypetunai    tcmtype	DFALT_SCAN	TN "Tunai"
+lbiajns		INIT		KONSUMEN
+lnsc		INIT		NSC
+lTRF305		INIT		TRF305
+l1		INIT		1
+l2		INIT		2
+l3		INIT		3
+l4		INIT		4
+l5		INIT		5
+l6		INIT		6
+
+CALCS(master)
+cjointcmu0       djointcmu == 0 && g_curcmd == 1 && tcmnourt == 0
+cjointcmu1       djointcmu  == 1 && g_curcmd == 1 && tcmnourt == 0
+curuttcm       	 luruttcm + 1
+ctgljtp_ksg	 tcmtgljtp == BLANKS
+ctanggal		DO_LIB  ap_amstr(ls1tanggal,l1,l2,ltanggal);
+cbulan			DO_LIB  ap_amstr(ls1tanggal,l3,l2,lbulan);
+ctahun			DO_LIB  ap_amstr(ls1tanggal,l5,l4,ltahun);
+cgabtgl			ltanggal + "-"+ lbulan +"-" + ltahun
+ctcmket			STRIP(lstanggal) + " " + "PENCAIRAN" + " " + STRIP(bkmnobuk) + " " + STRIP(bkmdvs) + " " + STRIP(tcmnamcard)
+ckond_takeover		bkmbkjln == "TAKEOVER" && bkmnobuk2 != BLANKS && djointlmTO == 1
+
+MAP(muruttcm)
+bkmnobuk	lnobuk		REPLACE
+csatu       	tcmnourt   	DO_CALC_IF cjointcmu0
+curuttcm      	tcmnourt   	DO_CALC_IF cjointcmu1
+bkmtgl          tcmtgljtp       REPLACE_IF ctgljtp_ksg
+bkmnobuk	tcmnocek	REPLACE
+
+MAP(mketerangan)
+g_tgltrn	ls1tanggal	REPLACE
+ctanggal	ltanggal	DO_CALC
+cbulan		lbulan		DO_CALC
+ctahun		ltahun		DO_CALC
+cgabtgl		lstanggal	DO_CALC
+ctcmket		tcmket		DO_CALC
+
+CALCS()
+ctcmtotal	tcmtotbuk + tcmbiacard
+
+MAP(mhitakh)
+ctcmtotal	tcmtotal	DO_CALC
+
+CALCS()
+csisa_takeover		bkmjmld - ltlmtotal
+
+MAP(mtakeover)
+csisa_takeover	tcmtotbuk	DO_CALC_IF ckond_takeover
+csisa_takeover	tcmtotal	DO_CALC_IF ckond_takeover
+
+CALCS()
+cnonbca		djointkmapr == 0
+charusisi	tcmtotal != 0
+cnonbank	g_grpnam != "FINBANK" && g_grpnam != "FINBANKCO"
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tcmnocair 	DO_SKIP_IF cnonbca
+BEFORE_INPUT	cur_field=tcmbiacard 	DO_SKIP_IF cnonbank
+AFTER_INPUT	cur_field=tcmnocair 	DO_MAP SHOW mketerangan
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW muruttcm
+AFTER_INPUT	cur_field=tcmtotbuk 	DO_MAP SHOW mhitakh
+AFTER_INPUT	cur_field=tcmbiacard 	DO_MAP SHOW mhitakh
+BEFORE_INPUT	cur_field=tcmtotbuk	DO_MAP SHOW mtakeover
+AFTER_INPUT	cur_field=tcmtotbuk	DO_MAP SHOW mtakeover
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF charusisi  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG Nominal harus di isi
+/*AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cnamatrfsama mdum
+		ELSE HKCURSOR STAY
+			HKMSG Nama Beda, Hubungi FINBANKCO Untuk Tambah Beda Nama
+*/
+SUBFILE(tmptrans)
+SFL_LINES(1)    
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tcmbukurtidx			bkmnobuk
+SFL_MAP_MAP(mdet_tcm)
+
+MAP(mdet_tcm)
+     bkmnobuk         tcmnobuk          REPLACE
+     bkmtgl           tcmtgl            REPLACE
+     bkmkode          tcmkode           REPLACE
+     bkmjns           tcmtype2          REPLACE
+     bkmscr           tcmscr            REPLACE
+     bkmcab           tcmcab            REPLACE
+     bkmgrup          tcmgrup           REPLACE
+     bkmdvs           tcmdvs            REPLACE
+     bkmbisnis        tcmbisnis         REPLACE
+
+CALCS()
+caddbkm1	   bkmtotal + tcmtotbuk + tcmbiacard
+cupdbkm1	   bkmtotal + tcmtotbuk - ~tcmtotbuk + tcmbiacard - ~tcmbiacard
+cupdbkmd1	   bkmtotal - tcmtotbuk - tcmbiacard
+
+MAP(mupdbkma2)
+caddbkm1	  bkmtotal	DO_CALC
+
+MAP(mupdbkmu2)
+cupdbkm1	  bkmtotal     DO_CALC
+
+MAP(mupdbkmd2)
+cupdbkmd1	  bkmtotal	DO_CALC
+
+CALCS()
+cOPENksg        bkmsts == "OPEN" && bkmnobbm == BLANKS && (tcmbukinv == BLANKS || tcmbukinv == "TAKEOVER")
+		&& (djointkmapr == 0 || 
+		    (djointkmapr == 1 && bkmkodeapr == "APR_TRANSCAIR" && (bkmdvs == "M2W" || bkmdvs == "M2W4W")) ||
+		    (djointkmapr == 1 && bkmkodeapr == "APR_CAIRM4W" && bkmdvs == "M4W"))
+		&& ((btmstr2_1 == "TRANSFER" && (g_grpnam == "FINBANK" || g_grpnam == "FINBANKCO")) ||
+		    (btmstr2_1 == "TUNAI" && (g_grpnam != "FINBANK" && g_grpnam != "FINBANKCO")) ||
+		    (g_grpnam == "IT" || g_grpnam == "RI"))
+		&& ((bkmnobuk != BLANKS && djointkdtrf == 0) || (bkmdk != "Y"))
+cOPENksg1       bkmsts == "OPEN" && (bkmstsapr != "OK" || (((bkmnobuk != BLANKS && djointkdtrf == 1) || (bkmdk == "Y")))) && tcmbukinv != "TAKEOVER"
+		&& ((btmstr2_1 == "TRANSFER" && (g_grpnam == "FINBANK" || g_grpnam == "FINBANKCO")) ||
+                    (btmstr2_1 == "TUNAI" && (g_grpnam != "FINBANK" && g_grpnam != "FINBANKCO")) ||
+                    (g_grpnam == "IT" || g_grpnam == "RI"))
+cOPENksg2	bkmsts == "OPEN" && bkmnobbm == BLANKS && tcmbukinv == BLANKS
+		&& (djointkmapr == 0 || 
+		    (djointkmapr == 1 && bkmkodeapr == "APR_TRANSCAIR" && (bkmdvs == "M2W" || bkmdvs == "M2W4W")) ||
+		    (djointkmapr == 1 && bkmkodeapr == "APR_CAIRM4W" && bkmdvs == "M4W"))
+		&& ((btmstr2_1 == "TRANSFER" && (g_grpnam == "FINBANK" || g_grpnam == "FINBANKCO")) ||
+                    (btmstr2_1 == "TUNAI" && (g_grpnam != "FINBANK" && g_grpnam != "FINBANKCO")) ||
+                    (g_grpnam == "IT" || g_grpnam == "RI"))
+		&& ((bkmnobuk != BLANKS && djointkdtrf == 0) || (bkmdk != "Y"))
+cmsgadatkdtrf	djointkdtrf == 1 && ((bkmnobuk == BLANKS && djointkdtrf == 1) || (bkmdk == "Y")) 
+
+SPCALCS(spcaladd1)
+DO_LIB 	ap_dbclc(DNAME dupdbkma2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma2);
+
+SPCALCS(spcalupd1)
+DO_LIB 	ap_dbclc(DNAME dupdbkmu2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmu2);
+
+SPCALCS(spcaldel1)
+DO_LIB 	ap_dbclc(DNAME dupdbkmd2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd2);
+
+POSTING(tmptrans)
+        PST_ADDCMD  	spcaladd1
+	PST_UPDCMD 	spcalupd1
+	PST_DELCMD 	spcaldel1
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cOPENksg
+	PMT_ADD_MSG IF	cmsgadatkdtrf  Bentuk Detail Dari Posting 317
+	PMT_UPDALL_COND	cOPENksg1
+	PMT_DEL_COND	cOPENksg2
+
+

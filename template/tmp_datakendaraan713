@@ -1,0 +1,93 @@
+LOCAL
+PGM_FIELDS
+ldum	STRING	1
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /-------------------------------------------\/-------------------------------------------------\ |
+   i.Kodemotor      : _____________________     i.Merkmotor      : _____________________     
+   t.TglJtpPajak    : _____________________     i.Tahunmotor     : _________
+   i.Anbpkb         : _____________________  _
+| \-------------------------------------------/\-------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+ftmdvs 		ALLCAPS SCROLL			INPUTRI 2
+ftmkat 		PROTECT  SCROLL			INPUTRI 3
+ftmtgl1		NONE {DD-MM-YY} NOLIMIT		INPUTRI 4
+ftmbrg		ALLCAPS SCROLL			INPUTRI 5
+ftmplg 		ALLCAPS SCROLL			INPUTRI 6
+lenter			NOCHANGE			INPUTRI	7
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+EDITS(tmptranst)
+e.validateBrg	ftmdvs	        VALIDATE brgstdtkatbr mbrg713 sbrgTyp {Pgv_INPG} {Pgt_dtmodel} {Plspmb} 
+e.validate 	ftmbrg 	VALIDATE tbddatkodidx mtbd3_3713 stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+e.validate 	ftmplg 	VALIDATE tbddatkodidx mtbd3_2713 stbd {Pgv_dttabel} {Pgv_kunjungan1} {Pgv_bpkb21}  /* ok */
+
+e.Mandatory                     ftmdvs         MANDATORY
+e.Mandatory                     ftmkat         MANDATORY
+e.Mandatory                     ftmtgl1         MANDATORY
+e.Mandatory                     ftmbrg         MANDATORY
+e.Mandatory                     ftmplg         MANDATORY
+
+MAP(mtbd3_2713)
+tbdkode         ftmplg         REPLACE
+
+MAP(mtbd3_3713)
+tbdkode         ftmbrg         REPLACE
+
+MAP(mbrg713)
+brgkode         ftmdvs		REPLACE
+brgkat2		ftmkat		REPLACE
+
+CALCS()
+cinim2wsaja713	btmdvsjl=="M2W" || btmdvsjl=="M2W4W"
+ctahunbenar	ftmbrg>="2010" && ftmbrg<="2024"
+MAP(mdum)
+ldum		ldum	REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=ftmdvs  DO_MAP SHOW mmapjaminput
+
+AFTER_INPUT cur_field=ftmbrg DO_MAP SHOW
+        IF ctahunbenar     mdum
+        ELSE HKCURSOR STAY
+        HKMSG t.Min2010
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF ctahunbenar    mdum
+        ELSE HKCURSOR STAY
+        HKMSG t.Min2010
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_COND	cinim2wsaja713
+SFL_SHOW_NEXT
+SFL_TARGET
+        ftmdatbukidx   gv_dtkendaraan btmnobuk
+
+SFL_MAP
+gv_datasurvey           ftmno1                  REPLACE
+btmnobuk                ftmnofak                REPLACE
+gv_dtkendaraan          ftmno2                  REPLACE
+gv_INPG                 ftmsts                  REPLACE
+gv_dtkendaraan          ftmdata                 REPLACE
+
+SPCALCS(spdatakendaraan714)
+        DO_LIB ap_nxpst(l4461,lm4461det3);
+
+SPCALCS(spdatakendaraan714a)
+        DO_LIB ap_nxpst(l4461,lm4461det3);
+
+POSTING(tmptrans)
+        PST_UPDCMD spdatakendaraan714
+        PST_ADDCMD spdatakendaraan714a
+

@@ -1,0 +1,92 @@
+LOCAL
+PGM_FIELDS
+lttdnama	STRING	21
+lttdjab		STRING	21
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk:____________________    ||
+||i.Nip  :_______ ____________	  ||
+||i.Jab  :____________________	  ||
+||i.Ket  :____________________	  ||
+||        _____________           ||
+|\--------------------------------/|
+|/--SIGNATURE---------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode		NOCHANGE                        INPUTRI         1
+aktcab 		PROTECT                         INPUTRI         2
+lttdnama	PROTECT                         INPUTRI         2
+lttdjab		PROTECT                         INPUTRI         2
+aktket 		PROTECT                         INPUTRI         2
+akttgl2		PROTECT	NOLIMIT	{DD-MM-YY}	INPUTRI	        3
+
+CALCS()
+cSYSTIME	SYSTIME
+cnobuk2x	STRIP(btmnobuk) + "SVI1"
+cKETTTD		"Survey sudah ditandatangani"
+cjoinaktttdsurvey       djoinpsdsurvey == 1 && djoinpsdsurvey2 == 1 && djoinsvisrvyklrg == 1
+
+EDITS(tmptranst)
+e.Validate	aktcab	VALIDATE psikodidx mpusrttd 0
+
+MAP(mpusrttd)
+psinama		lttdnama	REPLACE
+psijabatan	lttdjab		REPLACE
+
+MAP(mupdttdkonsumen)
+g_tgltrn        akttgl2         REPLACE
+cSYSTIME        aktjam          DO_CALC
+llon            akttotal        REPLACE
+llat            aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+g_grpnam        aktcrtusr       REPLACE
+cKETTTD		aktket			DO_CALC
+
+DBCALCS(dupdttdkonsumen)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	aktprmidx   aktprm
+	DBC_MAP		mupdttdkonsumen
+
+MAP(mupdttdkonsumenhps)
+cBLANKS         akttgl2         DO_CALC
+cBLANKS         aktjam          DO_CALC
+cBLANKS         akttotal        DO_CALC
+cBLANKS         aktjml          DO_CALC
+cBLANKS         aktcab          DO_CALC
+cBLANKS		aktcrtusr	DO_CALC
+cBLANKS         aktket          DO_CALC
+
+DBCALCS(dupdttdkonsumenhps)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdkonsumenhps
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cjoinaktttdsurvey
+SFL_SGNFLD	aktbrg  
+SFL_SGNFLD_DBCALCS dupdttdkonsumen
+SFL_SGNFLD_DELDBCALCS dupdttdkonsumenhps
+SFL_TARGET
+aktkodtypidx	btmnobuk	gv_clnkry11 lTTD136
+SFL_MAP
+btmnobuk        aktkode         REPLACE
+gv_clnkry11     aktdata         REPLACE
+lTTD136         akttype         REPLACE
+cnobuk2x        aktbrg          DO_CALC
+

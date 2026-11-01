@@ -1,0 +1,115 @@
+IMAGE(tmptranst)
+/-------t-------------t-------------\
+|i.Urt  |i.Type       |t.CabPrior   |
+\-------.-------------.-------------/
+
+IMAGE(tmptrans)
+|_______|_____________|_____________|
+
+FIELD(tmptrans)
+cadtot1		NOCHANGE	INPUTRI		1
+cadkode		PROTECT		INPUTRI		2
+cadarea		ALLCAPS		INPUTRI		3
+
+EDITS(tmptrans)
+e.Mandatory	cadtot1		MAND_PLUS
+e.Mandatory	cadarea		MANDATORY
+e.ValidateCab	cadarea		VALIDATE_BUF3 cabstspst2id mcabprior scabLBT {Pgv_INPG} {Pcabpst2}
+
+MAP(mcabprior)
+#cabkode	cadarea		REPLACE
+#cabnama	lnamacab	REPLACE
+#cabpst2	lcabpst2	REPLACE
+
+CALCS()
+cgrupdlrsama	((cadarea != BLANKS && lcabpst2 == cabpst2) || cadarea == BLANKS)
+cjoincadprior04	djoincadprior04 == 1
+cpriorv1	"PRIORITAS0" + FLD_TO_STRING(lcadtot1_int2)
+cpriorv2	"PRIORITAS" + FLD_TO_STRING(lcadtot1_int2)
+curutv1		cadtot1 >= 1 && cadtot1 <= 9
+curutv2		cadtot1 >= 10 && cadtot1 <= 99
+cpriordup01	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadkode != cadkode)) && djoincadprior01 == 0) || (g_curcmd == 2 && ~cadkode == cadkode))
+cpriordup02	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadarea != cadarea)) && djoincadprior02 == 0) || (g_curcmd == 2 && ~cadarea == cadarea))
+cpriordup03	((g_curcmd == 1 && djoincadprior03 == 0 && cadtot1 == 1) || (g_curcmd == 1 && djoincadprior03 == 1) || (g_curcmd != 1))
+cpriordup04	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadtot1 != cadtot1)) && cadtot1 == lcadtot1_04 + 1) || (g_curcmd == 2 && ~cadtot1 == cadtot1))
+ccabstok01	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadarea != cadarea)) && djoincadstok01 == 1) || (g_curcmd == 2 && ~cadarea == cadarea))
+ccadtot1	lcadtot1_04 + 1
+curutprior01	g_curcmd == 1 && djoincadprior04 == 0
+curutprior02	g_curcmd == 1 && djoincadprior04 == 1
+cnominal0	0
+
+MAP(misiprior)
+cadtot1		lcadtot1_int2	REPLACE
+cpriorv1	cadkode		DO_CALC_IF curutv1
+cpriorv2	cadkode		DO_CALC_IF curutv2
+
+MAP(murutprior)
+cnominal0	lcadtot1_04	DO_CALC
+lcadtot1_04	lcadtot1_04	REPLACE_IF cjoincadprior04
+c1		cadtot1		DO_CALC_IF curutprior01
+ccadtot1	cadtot1		DO_CALC_IF curutprior02
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=cadtot1	DO_MAP murutprior
+AFTER_INPUT	cur_field=cadtot1	DO_MAP misiprior
+AFTER_INPUT	cur_keybd=EN		DO_MAP misiprior
+
+AFTER_INPUT	cur_field=cadtot1	DO_MAP SHOW
+		IF cpriordup01 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Nomor Urut Prioritas ini Sudah terisi
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup01 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Nomor Urut Prioritas ini Sudah terisi
+AFTER_INPUT	cur_field=cadarea	DO_MAP SHOW
+		IF cgrupdlrsama mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Dealer Harus sama dengan Cabang Awalnya
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cgrupdlrsama mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Dealer Harus sama dengan Cabang Awalnya
+AFTER_INPUT	cur_field=cadarea	DO_MAP SHOW
+		IF cpriordup02 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Prioritas ini Sudah Pernah Diinput
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup02 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Prioritas ini Sudah Pernah Diinput
+AFTER_INPUT	cur_field=cadtot1	DO_MAP SHOW
+		IF cpriordup03 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Dulu Urutan Pertama Cabang Prioritas
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup03 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Dulu Urutan Pertama Cabang Prioritas
+AFTER_INPUT	cur_field=cadtot1	DO_MAP SHOW
+		IF cpriordup04 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Nomor Urut secara berurutan dari nomor terakhir ditambah satu
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup04 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Nomor Urut secara berurutan dari nomor terakhir ditambah satu
+AFTER_INPUT	cur_field=cadarea	DO_MAP SHOW
+		IF ccabstok01 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Cabang ini tidak menjadi cabang stok sendiri
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ccabstok01 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Cabang ini tidak menjadi cabang stok sendiri
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cdealer2
+SFL_TARGET
+	cadcabdtidx	cabkode lCABPRIOR lPRIORITAS
+SFL_MAP
+cabkode		cadkdcab	REPLACE
+lCABPRIOR	caddata		REPLACE
+lPRIORITAS	cadtype		REPLACE

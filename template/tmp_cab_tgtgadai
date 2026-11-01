@@ -1,0 +1,57 @@
+DBCALCS(djoincadtgtmga)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	cabkode lTGTMGA lTGTMGA21 cadkode
+
+IMAGE(tmptranst)
+/----------t-----------------t---------------t-----------\
+|  t.Kode  |t.TargetMin(Unit)|t.TargetMax(Rp)|t.UsiaBulan|
+\----------.-----------------.---------------.-----------/
+
+IMAGE(tmptrans)
+|__________|_________________|_______________|___________|
+
+FIELD(tmptrans)
+   cadkode      ALLCAPS                 INPUTRI         1
+   cadtot3	NUMERIC			INPUTRI		2
+   cadtot2      NUMERIC                 INPUTRI         5
+   cadstr1	ALLCAPS			INPUTRI		4
+
+DEFAULTS(tmptrans)
+cadkode         INIT_ADD        {cthbl}
+caddata         INIT            TGTMGA
+cadtype         INIT            TGTMGA
+
+EDITS(tmptrans)
+e.Mandatory     cadkode         MANDATORY
+
+CALCS()
+cjoincadtgtmga0		(djoincadtgtmga == 0 && g_curcmd==1) || g_curcmd!=1
+ctgtcabgadai		cabpst == "PST40" && tmpkode == "TGTMGA"
+
+MAP(mdumdum)
+lTGTMGA		lTGTMGA		REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cjoincadtgtmga0  mdumdum
+                ELSE HKCURSOR STAY
+                HKMSG Type & Tahun Bulan ini sdh ada
+BEFORE_INPUT    cur_field=cadkode       DO_SKIP_IF cadd
+
+SUBFILE(tmptrans)
+SFL_LINES(5)   
+SFL_TITLE(tmptranst)
+SFL_COND	ctgtcabgadai
+SFL_TARGET
+cadcabdtidx     cabkode lTGTMGA lTGTMGA21
+
+SFL_MAP
+cabkode          cadkdcab  REPLACE
+
+CALCS()
+cjoincadtgtmga		g_grpnam == "RI" || g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RAS" || g_grpnam == "RASMGR" || g_grpnam=="BMMGADAI"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cjoincadtgtmga
+        PMT_UPDALL_COND cjoincadtgtmga
+        PMT_DEL_COND    cjoincadtgtmga 

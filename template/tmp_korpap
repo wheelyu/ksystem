@@ -1,0 +1,42 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+  t.Nip       : _______________
+  t.Tgl       : _______________
+  t.TglKoreksi: _______________
+  t.Alasan    : _______________
+                 _______
+ \--------------------------------/
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnoll         PROTECT                         INPUTRI 2
+tkdtgl          PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 4
+tkdtgl2         ALLCAPS NOLIMIT {DD-MM-YYYY}    INPUTRI 4
+tkdket          TEXTAREA ALLCAPS                INPUTRI 5
+lENTER          NOCHANGE                        INPUTRI 6
+
+CALCS()
+ch11            (tlmdvs == "M2W" && tlmdari == "PAP" && tkdtgl2 <= ltglakhbl) || tlmdvs == "H1"
+
+DEFAULT(tmptranst)
+lKORTGL821      INIT    "KORTGL821"
+tkdnoll         INIT    {g_usrkode}
+tkdtgl          INIT    {g_tgltrn}
+lENTER          INIT    ENTER
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tkdnoll      	DO_MAP SHOW 
+		IF ch11 mjual
+		ELSE HKCURSOR STAY
+                HKMSG Tanggal Koreksi Tidak Boleh Lebih Dari Akhir Bulan Ini
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET tkddatbukll  lKORTGL821 tlmnobuk 
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+lKORTGL821	tkddata		REPLACE
+

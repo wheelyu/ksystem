@@ -1,0 +1,144 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+ t.KBS 1 DP Lokasi
+/-----------------------------------\
+||i.PerluKBS : ___________________ ||
+||t.Jns      : ___________________ ||
+||i.Rek      : ___________________ ||
+||i.TotHl    : ___________________ ||
+||i.SisaPLafon : _________________ ||
+/-------------s.UPLOAD--------------\
+|                                   |
+|                                   |
+|                                   |
+|                                   |
+|                                   |
+|                                   |
+\-----------------------------------/
+\-----------------------------------/
+ /---------------------------------\
+  t.Info     : ___________________
+  t.Status   : ___________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________
+  t.AlsanTacc : ___________________
+  i.Enter    : _____
+  _________________________________
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      ALLCAPS	NOCHANGE	                INPUTRI	1
+tkdjwbstr2      ALLCAPS NOCHANGE                        INPUTRI 2
+tkdjenis        ALLCAPS SCROLL                           INPUTRI 3
+ltotalhl        PROTECT                                 INPUTRI 3
+lsisaplafon     PROTECT                                 INPUTRI 3
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 3
+tkdsts          PROTECT                                 INPUTRI 3
+tkdjenisaw      ALLCAPS SCROLL                          INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 3
+tkdket          TEXTAREA                                INPUTRI 4
+lenter          NOCHANGE                                INPUTRI 5
+ltombolhm12ok   TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 40
+
+DEFAULTS(tmptranst)
+IF cbukankbr    tkdjwbstr1      DFALT_LIST      YA TIDAK
+IF ckbr         tkdjwbstr1      DFALT_LIST      TIDAK
+tkdjwbstr2	DFALT_SCAN      REK_BIAYA "REKENING BIAYA"
+				AMBIL_HL  "AMBIL HL"
+tkdtotsj        INIT            1
+tkdtotsj        INIT_UPDATE     0
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+MAP(mrek)
+bbgno			tkdjenis  	REPLACE
+
+EDITS(tmptranst)
+e.Mandatory             tkdjwbstr1      MANDATORY
+e.Mandatory 	        tkdjwbstr2      MANDATORY_IF copsiya
+e.Mandatory 	        tkdjenis        MANDATORY_IF crekbiaya
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+e.ValidateBbm           tkdjenis        VALIDATE_IF crekbiaya bbggolnoidx mrek sbbgRL {Pgv_05}
+
+CALCS()
+cuploadkbs1ok               tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdjwbstr1 == "YA"
+camkawilatauopsitidak       lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode || tkdjwbstr1 == "TIDAK"
+camkawilatauopsitidakambilhl lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode || tkdjwbstr1 == "TIDAK" || tkdjwbstr2 == "AMBIL_HL"
+
+cdetailopsiyahm12ok         tlmkode == g_usrkode && tkdnourt > 0 && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdjwbstr1 != "" && tkdjwbstr1 == "YA"
+cbknblank	tkdjenis != BLANKS
+
+MAP(mresetrek)
+cBLANKS         tkdjwbstr2      DO_CALC_IF copsitidak
+cBLANKS         tkdjenis        DO_CALC_IF copsitidakambilhl
+lrekening	lrekening	REPLACE_IF cdjointbt
+lrekening       lrekening       REPLACE_IF cdjointbt1
+lrekening       tkdjenis        REPLACE_IF cdjointbt
+lrekening       tkdjenis       REPLACE_IF cdjointbt1
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdjwbstr1    DO_MAP SHOW mresetrek
+AFTER_INPUT	cur_field=tkdjwbstr2    DO_MAP SHOW mresetrek
+AFTER_INPUT     cur_field=tkdjwbstr2    DO_MAP SHOW mresetrek
+AFTER_INPUT	cur_field=tkdjwbstr1    DO_MAP
+                IF copsiyatidakok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Harus Jawab YA / TIDAK
+
+BEFORE_INPUT    cur_field=tkdjwbstr2    DO_SKIP_IF camkawilatauopsitidak
+BEFORE_INPUT    cur_field=tkdjenis      DO_SKIP_IF camkawilatauopsitidakambilhl
+BEFORE_INPUT    cur_field=tkdjenis      DO_SKIP_IF cbknblank
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF camkawil
+
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+CLICKED         cur_field=ltombolhm12ok DO_SPCALCS spdetailokhm12
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPLFLD      tkdnobuk lKBS1
+SFL_UPLFLD_DBCALCS dtambahjumlahupload
+SFL_UPL_COND cuploadkbs1ok
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF copsitidak Hanya Bisa Upload Bila Butuh KBS 
+                        IF cdalamkondisiupdate Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNBTLHM12 tlmnobuk
+
+
+MAP(mupdinfodetailhm12)
+lUPLOADKBS1DULU         tkdrek          REPLACE_IF ctidakadafoto 
+/*
+lPROSESREVIEWRINCIBIAYA tkdrek          REPLACE_IF cdetailrincireview
+lMINIMAL1RINCIBIAYA     tkdrek          REPLACE_IF ctidakadarincianbiaya
+*/
+lISIOPSIPERLUKBS1       tkdrek          REPLACE_IF ctkdjwbstr1kosong
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm12)
+        DO_LIB_IF cdetailopsitidak    	ap_dbclc(DNAME dupdabkclsdkawilaccopsitidak,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdkawil);
+        DO_LIB_IF cdetailopsitidak    	ap_dbclc(DNAME dupdabkclsdamaccopsitidak,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdam);
+	DO_LIB_IF cdetailopsitidak     	ap_dbclc(DNAME dupdabkclsdpicnsoaccopsitidak,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdpicnso);
+        DO_LIB_IF cdetailopsitidak     	ap_dbclc(DNAME dupddetailokaccopsitidak, DCOMMAND UPDATE, DTARGET tkdotoidx tkdoto, DMAP mupddetailok);
+        DO_LIB_IF cdetailopsitidak     	ap_dbclc(DNAME dupdtlmmasteraccopsitidak,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmaster);
+        DO_LIB_IF cdetailopsitidak      ap_dbclc(DNAME dupdestbiayamasterhm12,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdestbiayamaster);
+        DO_LIB_IF cdetailopsitidak      ap_dbclc(DNAME dhapusrincianbiayahm12,DCOMMAND DELETE_RANGE,DTARGET tkddatbukll lEVNH1AHM12 tlmnobuk);
+
+        DO_LIB_IF cdetailopsiyahm12ok   ap_dbclc(DNAME dupddetailreqhm12,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm12, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm12, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm12,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm12);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru
+

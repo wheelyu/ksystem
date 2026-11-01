@@ -1,0 +1,168 @@
+LOCAL
+PGM_FIELDS
+lnamaklikns	STRING	21
+lSURVEY         STRING  21
+lINPUTKIIKNSS   STRING  21
+
+/* 
+MAP(mjoinpsitld)
+psidep          lpsidep         REPLACE
+
+DBCALCS(djoinpsitld)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx tldlok
+        DBC_MAP         mjoinpsitld
+
+DBCALCS(djointbdubah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel lSURVEY lINPUTKIIKNSS g_usrkode
+*/
+
+MAP(mjoincadspvKLIK)
+cadbrg		lnipspvKLIK	REPLACE
+
+DBCALCS(djoincadspvKLIK)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	lNAS lSPVKLIKNSS lthbl21 btmsales
+	DBC_MAP		mjoincadspvKLIK
+
+MAP(mjoincadsheadKLIK)
+cadbrg		lnipsheadKLIK	REPLACE
+
+DBCALCS(djoincadsheadKLIK)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	lNAS lSPVKLIKNSS lthbl21 lnipspvKLIK
+	DBC_MAP		mjoincadsheadKLIK
+
+IMAGE(tmptranst)
+/-----------------------------------------\
+|t.NoBt      _____________________        |
+|t.NoKlik    _____________________        |
+|t.TypeLeads _____________________        |
+|t.InfoLeads _____________________        |
+|t.NipAdmin  _____________________        |
+|t.NamaAdmin _____________________        |
+|t.SumberPC  _____________________        |
+|t.IdSPK     _________________________    |
+|t.BukAdm    ___________ _________	  |
+|t.BukSpv    ___________ _________	  |
+|t.BukShead  ___________ _________	  |
+|t.Enter     ______                       |
+\-----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        PROTECT	        INPUTRI 1
+tldbrg          ALLCAPS SCROLL	INPUTRI 2
+tldkirim        PROTECT         INPUTRI 3
+tldket          PROTECT         INPUTRI 4
+tldlok          ALLCAPS SCROLL  INPUTRI 6
+lnamaklikns     PROTECT         INPUTRI 7
+tldukrwrn       PROTECT         INPUTRI 8
+tldkirim        ALLCAPS         INPUTRI 9
+tldgrup		ALLCAPS		INPUTRI	10 /* ket buka kunci adm */
+btmsales	PROTECT		INPUTRI	11
+tldgrup2	ALLCAPS		INPUTRI	12 /* ket buka kunci spv */
+lnipspvKLIK	PROTECT		INPUTRI	13
+tldlok2		ALLCAPS		INPUTRI	14 /* ket buka kunci subhead */
+lnipsheadKLIK	PROTECT		INPUTRI	15
+lenter          ALLCAPS         INPUTRI 50
+
+DEFAULTS(tmptranst)
+lSURVEY			INIT		SURVEY
+lINPUTKIIKNSS		INIT		INPUTKIIKNSS
+lNAS			INIT		NAS
+lSPVKLIKNSS		INIT		SPVKLIKNSS
+tldgrup			DFALT_SCAN_BLANKS	SUDAH
+tldgrup2		DFALT_SCAN_BLANKS	SUDAH
+tldlok2			DFALT_SCAN_BLANKS	SUDAH
+
+MAP(mjointldc)
+tldnourt        	lsvturt         REPLACE
+
+DBCALCS(djointldc)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldbukbrglok   bkmnobuk
+        DBC_MAP         mjointldc
+
+CALCS()
+cdjointldc0             djointldc == 0
+cdjointldc1             djointldc == 1
+curt1d                  lsvturt + 1
+cblhisi                 g_grpnam=="DIGMKTDVH" || g_grpnam=="KLIKNSSHMCM2WHEAD" || g_grpnam=="HMCSPV" ||  g_grpnam=="DIGMKT" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ROOT" || g_grpnam == "RAS"
+/* chanyadigi1          djointbdubah == 1 */
+/* chanyadigi           (djoinpsitld == 1 && lpsidep == "DIGITALDANACEPAT") || g_usrkode=="1523157" */
+cbukutamu               tlddata == btmdata
+cadaisiklikns	        btmrekomen!=BLANKS
+cklikns_HO     	        g_grpnam!="IT" && g_grpnam!="RAS" && g_usrkode!="2215292"
+cadaisi1                tldlok!=" " && g_usrkode!="1523157"
+cadaisi2                tldbrg!=" " && g_usrkode!="1523157"
+cdjoincadspvKLIK	btmsales != BLANKS && djoincadspvKLIK == 1
+cdjoincadsheadKLIK	btmsales != BLANKS && djoincadspvKLIK == 1 && lnipspvKLIK != BLANKS && djoincadsheadKLIK == 1
+cbukanadm		g_usrkode != btmsales && g_grpnam != "RAS" && g_grpnam != "IT" && g_grpnam != "RI"
+cbukanspv		g_usrkode != lnipspvKLIK && g_grpnam != "RAS" && g_grpnam != "IT" && g_grpnam != "RI"
+cbukanshead		g_usrkode != lnipsheadKLIK && g_grpnam != "RAS" && g_grpnam != "IT" && g_grpnam != "RI"
+
+EDITS(tmptranst)
+e.Mandatory     	tldlok                  MANDATORY
+t.KryNull       	tldlok                  VALIDATE psikodidx mpsiC  0
+t.KryNull		btmsales		VALIDATE psikodidx mpsiD  0
+e.Mandatory		tldgrup			MANDATORY_IF cadakunciadm
+e.Mandatory		tldgrup2		MANDATORY_IF cadakuncispv
+e.Mandatory		tldlok2			MANDATORY_IF cadakuncishead
+
+MAP(mpsiC)
+psikode			tldlok			REPLACE
+psinama         	lnamaklikns     	REPLACE
+
+MAP(mpsiD)
+psinama			lnamaklikns		REPLACE
+g_strksg		lnipspvKLIK		REPLACE
+lnipspvKLIK		lnipspvKLIK		REPLACE_IF cdjoincadspvKLIK
+g_strksg		lnipsheadKLIK		REPLACE
+lnipsheadKLIK		lnipsheadKLIK		REPLACE_IF cdjoincadsheadKLIK
+
+MAP(murutd)
+c1              	tldnourt        	DO_CALC_IF cdjointldc0
+curt1d          	tldnourt        	DO_CALC_IF cdjointldc1
+btmrekomen		tldbrg			REPLACE_IF cadaisiklikns
+btmcab                  tldcab                  REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldlok        DO_MAP SHOW murutd
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF cklikns_HO
+BEFORE_INPUT    cur_field=tldlok        DO_SKIP_IF cadaisi1
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF cadaisi2
+BEFORE_INPUT	cur_field=tldgrup	DO_SKIP_IF cbukanadm 
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF cbukanspv
+BEFORE_INPUT	cur_field=tldlok2	DO_SKIP_IF cbukanshead
+
+/*
+AFTER_INPUT     cur_field=tldlok        DO_MAP SHOW
+                IF chanyadigi1 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaDivDigital
+*/
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cblhisi mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.JikaSdhJualCairTdkBlh
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbukutamu
+SFL_TARGET
+tldbukbbmidx    btmnobuk lKLIKNS
+
+SFL_MAP
+btmnobuk        tldnobuk        REPLACE
+/* btmrekomen	tldbrg		REPLACE */
+btmcab		tldcab		REPLACE
+btmdvs		tlddvs		REPLACE
+gv_bukutamu     tlddata         REPLACE
+gv_OPEN         tldsts          REPLACE
+lKLIKNS         tldnobbm        REPLACE
+
+

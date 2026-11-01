@@ -1,0 +1,99 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------\
+|t.SuratJaminan                                             |
+|________________________________                           |                          
+|/--s.UPLOAD----------------------\/-----------------------\|
+||                                ||t.TglUpl  : __________ ||
+||                                ||t.TglKrm  : __________ ||
+||                                ||t.User    : __________ ||
+||                                ||t.NipAcc  : __________ ||
+||                                ||t.OkUp    : __________ ||
+||                                ||t.AccHrd  : __________ ||
+||                                ||t.JmlTacc : __________ ||
+||                                || ______ ______         ||
+||                                |\-----------------------/|
+||                                |                         |
+|\--------------------------------/                         |
+|i.Ket : ___________________________________________________|
+\-----------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdket		PROTECT			INPUTRI 1 
+psdtgl2		PROTECT {DD-MM-YY}	INPUTRI	2 /*Tgl*/ 
+psdtgl1   	ALLCAPS {DD-MM-YY}	INPUTRI 3 /*Tgl Krm*/
+psdstr1		PROTECT			INPUTRI 4 /*User*/
+psdstr5		PROTECT			INPUTRI 7  /*Nip acc*/	
+psdtype		PROTECT			INPUTRI	8 
+psdtype2	PROTECT			INPUTRI 9 
+psdtot          PROTECT                 INPUTRI 10
+luploadtaccx		TOMBOL			INPUTRI 11
+luploadaccx		TOMBOL			INPUTRI 12
+psdket2  		ALLCAPS SCROLL		INPUTRI 13 
+
+CALCS()
+ctotkosong       psdtot==BLANKS
+ctotada          psdtot!=BLANKS
+cplus            psdtot+1
+ctaccb           psdtype2=="TACC"
+
+
+DEFAULTS(tmptranst)
+luploadtaccx	INIT		TACC
+luploadaccx	INIT		ACC
+l_count4	INIT		1
+
+EDITS(tmptranst)
+t.Mandatory psdtgl1	MANDATORY
+e.Mandatory     psdket2 MANDATORY_IF ctaccb
+
+MAP(mupdoksdm211)
+cOK		psdtype		DO_CALC
+g_usrkode	psdstr1		REPLACE
+g_tgltrn	psdtgl2		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+DBCALCS(dupdoksdm211)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdoksdm211
+
+MAP(mupdtaccsdm211)
+ctacc1		psdtype2 	DO_CALC
+cBLANKS		psdtype		DO_CALC
+g_usrkode	psdstr5		REPLACE
+cplus           psdtot          DO_CALC_IF ctotada
+c1              psdtot          DO_CALC_IF ctotkosong
+
+
+MAP(mupdaccsdm211)
+cacc1		psdtype2 	DO_CALC
+cacc1		psdtype		DO_CALC
+g_usrkode	psdstr5		REPLACE
+g_tgltrn	psdtgl2		REPLACE
+
+CALCS()
+cada_kirim1a	(UPLEXIST(l_count10) == 1  || UPLEXIST(l_count10) == 0) && (g_grpnam=="HRDHEAD"|| g_grpnam=="HRDSPV" || g_usrkode=="1802178" || g_grpnam=="RI") && hrmcab2=="PENGIRIMAN" && hrmket2=="ACC_BERKAS"
+
+SPCALCS(supdpsd2tacc)
+	DO_LIB_IF cada_kirim1a ap_dbclc(DNAME dupdtaccsdm2a,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdtaccsdm211);
+
+SPCALCS(supdpsd3acc)
+	DO_LIB_IF cada_kirim1a ap_dbclc(DNAME dupdaccsdm3a,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdaccsdm211);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtaccx	DO_SPCALCS supdpsd2tacc
+CLICKED		cur_field=luploadaccx	DO_SPCALCS supdpsd3acc  
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF cbkn_accfoto
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_COND    cbolehupload
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  psdpsmkode
+SFL_UPLFLD_DBCALCS dupdoksdm211 
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+	psddatpsmkod  ldtijazah11 hrmnobuk  gv_jnsjmn 

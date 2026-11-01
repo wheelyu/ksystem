@@ -1,0 +1,608 @@
+LOCAL
+PGM_FIELDS
+lrevhogci       STRING  11
+lrevdvhgci      STRING  11
+lDTMITRA	STRING	11
+lKONSUMEN	STRING	11
+lNEW		STRING	11
+ltombuplgci     STRING  11
+lvergci		STRING	11
+ltompjgci       STRING  21
+ltomdvhgci      STRING  21
+lMOBIL		STRING	21
+lMULTIGUNA	STRING	21
+lTHN4W		STRING	21
+ljnsmbl		STRING	21
+l2provgci       STRING  21
+l2kotagci       STRING  21
+l2kecgci        STRING  21
+l2kelgci        STRING  21
+lkodertgci	STRING	21
+lmerk		STRING	21
+ltype		STRING	21
+ljns		STRING	21
+lth		STRING	21
+lnamamitra3	STRING	61
+lpanjang	INT2	 2
+
+/*========== JOIN TYPE, MERK dan JENIS ==========*/
+DBCALCS(djointypeada)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdatkodtyp    gv_dttabel gv_barang gv_merk21 lmerk gv_m4w21 ltype
+
+/*========== JOIN FILE KET ==========*/
+MAP(mjoinketmobil)
+ketstr1		lmerk		REPLACE
+ketstr2		ltype		REPLACE
+ketstr3		ljns		REPLACE
+ketstr4		lth		REPLACE
+DBCALCS(djoinketmobil)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketdatbukkod lGCIRT tkmnobuk svikode
+	DBC_MAP		mjoinketmobil
+
+CALCS()
+ctkdgcirt	 tkdnoll == "GCIRT"
+
+DBCALCS(djointkdgcirt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      tkdbukidx svinobuk gv_OPEN svinourt 
+	DBC_SELECT      ctkdgcirt
+
+/*========== JOIN PSM GCI ==========*/
+MAP(mktpgcirt)
+psmnama		lnamamitra3	REPLACE
+DBCALCS(dktpgcirt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmktpidx svikode
+	DBC_MAP		mktpgcirt
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.GCIRT			     ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+|		___		      |
+| t.Ktpcln      ______________________|
+| t.Namacln	______________________|
+| t.Provinsi    __________  __________|
+| t.Kota        __________  __________|
+| t.Kec         __________  __________|
+| t.Kel         __________  __________|
+| t.NoTelp	______________________|
+| t.Alamat	______________________|
+| t.RT		____	    t.RW _____|
+| t.MerkType	__________  __________|
+| t.Jnsthn	__________  __________|
+| t.HslKunj	______________________|
+|				______|
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.Brosur                         ___|
+|\-----------------------------------/|
+|/-------------UPLOAD3---------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.FotoKtp  			   ___|
+|\-----------------------------------/|
+|/-------------UPLOAD----------------\|
+||                     		     ||
+||                                   ||
+||                     		     ||
+||                     		     ||
+||                     		     ||
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.FotoSelfie                     ___|
+|\-----------------------------------/|
+|/-------------UPLOAD2---------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||      
+|\-----------------------------------/|
+		             _________
+|/-----------------------------------\|
+| t.TglFt       __________	      |
+| t.LongSelfie  ____._____  ____._____|
+| t.LongKantor  ____._____  ____._____|
+| t.Jarak       __________.___________|
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.RevHO       __________ __ ________|
+|               ______________________|
+| t.RevDVH      __ ___________________|
+|               ______________________|
+| ________________   ________________ |
+|       __                 __         |
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	PROTECT			INPUTRI	 1  /*No Urut*/
+svikode		ALLCAPS			INPUTRI  2  /*Kode Mitra*/
+lnamamitra3	ALLCAPS			INPUTRI  3  /*Nama Mitra*/
+svistr2         ALLCAPS         	INPUTRI  4  /*Provinsi*/
+l2provgci       PROTECT         	INPUTRI  5
+svistr3         ALLCAPS         	INPUTRI  6  /*Kota*/
+l2kotagci       PROTECT         	INPUTRI  7
+svistr4         ALLCAPS         	INPUTRI  8  /*Kecamatan*/
+l2kecgci        PROTECT         	INPUTRI  9
+svistr5         ALLCAPS         	INPUTRI 10  /*Kelurahan*/
+l2kelgci        PROTECT         	INPUTRI 11
+svistr8		NUMERIC			INPUTRI 12  /*No Telepon*/
+svinama		TEXTAREA		INPUTRI	13  /*Alamat Mitra*/
+svistr6         ALLCAPS         	INPUTRI 14  /*RT*/
+svistr7         ALLCAPS         	INPUTRI 15  /*RW*/
+lmerk		ALLCAPS			INPUTRI 16  /*Merk*/
+ltype		ALLCAPS			INPUTRI 17  /*Tipe*/
+ljns		ALLCAPS			INPUTRI 18  /*Jenis*/
+lth		ALLCAPS			INPUTRI 19  /*Tahun*/
+sviket		TEXTAREA		INPUTRI 20  /*Hasil Kunjungan*/
+lenter		ALLCAPS			INPUTRI 21  /*Tombol Enter*/
+
+svistr33	PROTECT			INPUTRI 22  /*Tanda sudah Upload Brosur*/
+svistr31	PROTECT			INPUTRI 23  /*Tanda sudah Upload KTP*/
+svistr32        PROTECT         	INPUTRI 24  /*Tanda sudah Upload Selfie*/
+ltombuplgci	TOMBOL			INPUTRI	25  /*Tombol Upload OK*/
+
+svitgl2		PROTECT {DD-MM-YYYY}	INPUTRI 26  /*Tgl Foto Selfie*/
+svidf2          PROTECT         	INPUTRI 27  /*Long selfie*/
+svidf3          PROTECT         	INPUTRI 28  /*Lat selfie*/
+svidf4          PROTECT         	INPUTRI 29  /*Long kantor*/
+svidf5          PROTECT         	INPUTRI	30  /*Lat kantor*/
+svidf6          PROTECT         	INPUTRI 31  /*Jarak*/
+
+svitype2        PROTECT         	INPUTRI 32 /*NIP Rev HO*/
+svistr34        NOCHANGE        	INPUTRI 33 /*ket Rev SPV*/
+lrevhogci       PROTECT         	INPUTRI 34
+sviket2         TEXTAREA        	INPUTRI 35 /*isi ket review HO*/
+svistr35        NOCHANGE        	INPUTRI 36 /*ket Rev DVH*/
+lrevdvhgci      PROTECT         	INPUTRI 37
+sviket3         TEXTAREA        	INPUTRI 38 /*isi ket review DVH*/
+
+ltompjgci       TOMBOL          	INPUTRI 39
+ltomdvhgci      TOMBOL          	INPUTRI 41
+svistr36        PROTECT         	INPUTRI 40
+svistr37        PROTECT         	INPUTRI 42
+
+DEFAULTS(tmptranst)
+lvergci			INIT			2606.18v1
+svistr1			DFALT_SCAN_BLANKS	BERTEMU
+						TIDAK
+svistr34		DFALT_SCAN_BLANKS	1 "ACC"
+						2 "TACC"
+svistr35		DFALT_SCAN_BLANKS	1 "ACC"
+						2 "TACC"
+ltompjgci               INIT                    "SELESAI REV PJ HO"
+ltomdvhgci              INIT                    "SELESAI REV DVH"
+lkodertgci              INIT             	KODERT
+lDTMITRA		INIT			DTMITRA
+lKONSUMEN		INIT			KONSUMEN
+lNEW			INIT			NEW
+lMOBIL			INIT			MOBIL
+lMULTIGUNA      	INIT                    MULTIGUNA
+lTHN4W          	INIT                    TAHUNMOBIL
+ljnsmbl			INIT			JENISMOBIL
+ltombuplgci		INIT			"UPLOAD OK"
+IF chnypjho svitype2    INIT_UPDATE             {g_usrkode}
+
+CALCS()
+ctambahgci		g_curcmd == 1
+cbtsgci	        	svidf1 < 3
+ctdgci	        	svidf1 + 1
+ctanda2ok		svidf1 == 3 && svidf2 != BLANKS && svidf3 != BLANKS && sviyt1 == "Y" && sviyt2 == "Y" && svistr38 == "Y" 
+clonglatgci		sviyt2 == "Y" && svistr31 != "OK" && svistr32 != "OK"
+csdhuplgci		djointkdgcirt==1 && svistr31 != "OK" && svistr32 != "OK" && svistr33 != "OK" && 
+			sviyt1 == "Y" && sviyt2 == "Y" && svistr38 == "Y" && svidf2 != BLANKS && svidf3 != BLANKS
+c3201			"3201"
+ctypeada        	djointypeada == 1 || ltype == BLANKS  || ltype != BLANKS
+cpanjang        	DO_LIB ap_strln(svikode,&lpanjang);
+cpjktp			lpanjang == 16
+cjoinurtgcirt0		djoinurutgcirt==0 && g_curcmd==1
+cjoinurtgcirt1 		djoinurutgcirt==1 && g_curcmd==1
+curtgcirt1      	FLD_TO_STRING(svinourt) + "FTGCIRT"
+curtgcirt2      	FLD_TO_STRING(svinourt) + "SFGCIRT"
+curtgcirt3              FLD_TO_STRING(svinourt) + "BRSGCIRT"
+cjoinketmobil		djoinketmobil == 1
+crev1gci        	svistr34 == "1" && svitype == "GCIRT"
+crev1agci       	svistr35 == "1" && svitype == "GCIRT"
+crev2gci        	svistr34 == "2" && svitype == "GCIRT"
+crev2agci       	svistr35 == "2" && svitype == "GCIRT"
+cdktpgcirt		dktpgcirt == 1
+cpjhosdhrevgci		svistr34 != BLANKS
+cdvhsdhrevgci		svistr35 != BLANKS
+
+EDIT(tmptranst)
+e.KTP Calon Tidak Boleh Kosong		svikode		MANDATORY
+e.Nama Calon Tidak Boleh Kosong		lnamamitra3	MANDATORY
+e.Provinsi Tidak Boleh Kosong		svistr2		MANDATORY
+e.Kota Tidak Boleh Kosong  	        svistr3         MANDATORY
+e.Kecamatan Tidak Boleh Kosong          svistr4         MANDATORY
+e.Kelurahan Tidak Boleh Kosong          svistr5         MANDATORY
+e.RT Tidak Boleh Kosong		        svistr6         MANDATORY
+e.RW Tidak Boleh Kosong 	        svistr7         MANDATORY
+e.Nomor Telpon Tidak Boleh Kosong       svistr8         MANDATORY
+e.Alamat Tidak Boleh Kosong             svinama         MANDATORY
+e.Belum Isi Keterangan			sviket		MANDATORY
+e.Wajib Isi Merk			lmerk           MANDATORY
+e.Wajib Isi Type			ltype           MANDATORY
+e.Wajib Isi Jenis			ljns            MANDATORY
+e.Wajib Isi Tahun			lth             MANDATORY
+
+e.Validate Prov				svistr2         VALIDATE dtmdtkodidx m1dtmbku3 sdtm {Pgv_dtkota}
+e.Validate Kota				svistr3         VALIDATE tbldtdtmkod m1tbl4bku3 stbl {Pgv_dtkota} {Psvistr2}
+e.Validate Kec				svistr4         VALIDATE tbddatkodidx m1tbdbku3 stbd {Pgv_dtkota} {Psvistr2} {Psvistr3}
+e.Validate Kel				svistr5         VALIDATE tbtdattypkod m1tbtbku3 stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr2} {Psvistr3} {Psvistr4}
+t.validateRT           			svistr6 	VALIDATE tbddatkodidx mtbdrtgci stbd {Pgv_dttabel} {Pgv_personal} {Plkodertgci}
+t.validateRW            		svistr7 	VALIDATE tbddatkodidx mtbdrwgci stbd {Pgv_dttabel} {Pgv_personal} {Plkodertgci}
+
+e.Validate Merk				lmerk         	VALIDATE tbddatkodidx mtbdmerk stbd {Pgv_dttabel} {Pgv_barang} {Pgv_MERK}
+e.Validate Type          		ltype		VALIDATE_IF ctypeada tbtdatkodtyp   mtbttype stbt {Pgv_dttabel} {Pgv_barang} {Pgv_merk21} {Plmerk} {Pgv_m4w21}
+e.Validate jenis         		ljns            VALIDATE tbddatkodidx mtbdjns stbd {Pgv_dttabel} {Pgv_barang} {Pljnsmbl}
+e.Validate Tahun        		lth		VALIDATE tbddatkodidx mtbdTHN stbdon  {Pgv_dttabel} {PlMULTIGUNA} {PlTHN4W}
+
+MAP(mpanjangktp)
+cpanjang	lpanjang	DO_CALC
+
+MAP(m1dtmbku3)
+dtmkode         svistr2         REPLACE
+dtmket          l2provgci       REPLACE
+lnamamitra3	lnamamitra3	REPLACE_IF cdktpgcirt
+/*cOK             svistr31        DO_CALC_IF ctanda2ok
+cOK             svistr32        DO_CALC_IF ctanda2ok*/
+cBLANKS         lrevhogci       DO_CALC
+cBLANKS         lrevdvhgci      DO_CALC
+cACC            lrevhogci       DO_CALC_IF crev1gci
+cTACC           lrevhogci       DO_CALC_IF crev2gci
+cACC            lrevdvhgci      DO_CALC_IF crev1agci
+cTACC           lrevdvhgci      DO_CALC_IF crev2agci
+lmerk           lmerk           REPLACE_IF cjoinketmobil
+ltype           ltype           REPLACE_IF cjoinketmobil
+ljns            ljns            REPLACE_IF cjoinketmobil
+lth             lth             REPLACE_IF cjoinketmobil
+
+MAP(m1tbl4bku3)
+tblkode         svistr3         REPLACE
+tblket          l2kotagci       REPLACE
+
+MAP(m1tbdbku3)
+tbdkode         svistr4         REPLACE
+tbdket          l2kecgci        REPLACE
+
+MAP(m1tbtbku3)
+tbtkode         svistr5         REPLACE
+tbtket          l2kelgci        REPLACE
+
+MAP(mtbdrtgci)
+tbdkode         svistr6         REPLACE
+
+MAP(mtbdrwgci)
+tbdkode         svistr7         REPLACE
+
+MAP(mtbdmerk)
+tbdkode         lmerk           REPLACE
+
+MAP(mtbttype)
+tbtkode         ltype           REPLACE
+
+MAP(mtbdjns)
+tbdkode         ljns            REPLACE
+
+MAP(mtbdTHN)
+tbdkode         lth	        REPLACE
+
+MAP(mketjenismobil)
+cBLANKS         lnamamitra3     DO_CALC_IF ctambahgci
+cBLANKS         lmerk           DO_CALC_IF ctambahgci
+cBLANKS         ltype           DO_CALC_IF ctambahgci
+cBLANKS         ljns            DO_CALC_IF ctambahgci
+cBLANKS         lth             DO_CALC_IF ctambahgci
+cBLANKS		l2provgci	DO_CALC_IF ctambahgci
+cBLANKS		l2kotagci	DO_CALC_IF ctambahgci
+cBLANKS		l2kecgci	DO_CALC_IF ctambahgci
+cBLANKS		l2kelgci	DO_CALC_IF ctambahgci
+
+MAP(murtgcirt)
+l1              svinourt        REPLACE_IF cjoinurtgcirt0
+curut           svinourt        DO_CALC_IF cjoinurtgcirt1
+curtgcirt1      svistr9         DO_CALC
+curtgcirt2      svistr10        DO_CALC
+curtgcirt3	svitype3	DO_CALC
+
+MAP(mhslrevgci)
+cACC            lrevhogci       DO_CALC_IF crev1gci
+cTACC           lrevhogci       DO_CALC_IF crev2gci
+cACC            lrevdvhgci      DO_CALC_IF crev1agci
+cTACC           lrevdvhgci      DO_CALC_IF crev2agci
+
+/*===== upd data tkd, svi =====*/
+MAP(mupdtkdgci)
+l73             tkdjml3         REPLACE_IF csdhuplgci
+
+DBCALCS(dupdgcirt)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_TARGET      tkddatbukll svidata svinobuk lGCIRT21
+	DBC_MAP         mupdtkdgci
+
+MAP(mtandaokgci)
+cOK             svistr31        DO_CALC_IF ctanda2ok
+cOK             svistr32        DO_CALC_IF ctanda2ok
+cOK		svistr33	DO_CALC_IF ctanda2ok
+
+/*===== add & upd tkd review =====*/
+MAP(mmapgci)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+
+MAP(mupdrevpjhogci)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum       REPLACE
+DBCALCS(dupdrevpjhogci)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhogci
+
+MAP(mupdrevdvhgci)
+ctam1           tkdjml          DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhgci)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhgci
+
+MAP(muprevdpjhogci1)
+lOK             svistr36                REPLACE_IF cpjhosdhrevgci
+
+MAP(mupdrevdvhgci1)
+lOK             svistr37                REPLACE_IF cdvhsdhrevgci
+
+MAP(mupdrevabkpjhogci2)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhgci2)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spupdmenitgci)
+dupdgcirt
+DO_LIB		ap_dbclc(DNAME dtandaokgci,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mtandaokgci);
+
+SPCALCS(spupdrevpjhogci)
+DO_LIB          		ap_dbclc(DNAME dmapgci1,DCOMMAND MAPMAP,DMAP mmapgci);
+DO_LIB          		ap_dbclc(DNAME dupdokgci1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhogci1);
+dupdrevpjhogci
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjgci2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhogci2);
+
+SPCALCS(spupdrevdvhgci)
+DO_LIB          		ap_dbclc(DNAME dmapgci2,DCOMMAND MAPMAP,DMAP mmapgci);
+DO_LIB          		ap_dbclc(DNAME dupdokgci2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhgci1);
+dupdrevdvhgci
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhgci2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhgci2);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svikode	DO_MAP SHOW mketjenismobil
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW mpanjangktp
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF cpjktp		mdum
+		ELSE 
+		HKCURSOR STAY
+		HKMSG Panjang KTP Harus 16 Digit
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW murtgcirt
+
+CLICKED		cur_field=ltombuplgci	DO_SPCALCS spupdmenitgci
+
+BEFORE_INPUT    cur_field=svikode       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lnamamitra3   DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr2       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr3       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr4       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr8       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svinama       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr6       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr7       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lmerk         DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ljns          DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltype         DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lth           DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltombuplgci   DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=lrevhogci     DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35      DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=lrevdvhgci    DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cdvh
+
+AFTER_INPUT     cur_field=svistr34      DO_MAP SHOW mhslrevgci
+AFTER_INPUT     cur_field=svistr35      DO_MAP SHOW mhslrevgci
+
+CLICKED         cur_field=ltompjgci     DO_SPCALCS spupdrevpjhogci
+CLICKED         cur_field=ltomdvhgci    DO_SPCALCS spupdrevdvhgci
+
+/*====== tanda sudah upload foto ktp ======*/
+MAP(mupdsvigci)
+ctdgci	        svidf1             DO_CALC_IF cbtsgci
+cY		sviyt1	           DO_CALC
+DBCALCS(dupdsvigci)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvigci
+
+/*====== tanda sudah upload foto selfie ======*/
+MAP(mupdsvigci2)
+ctdgci          svidf1             DO_CALC_IF cbtsgci
+cY		sviyt2		   DO_CALC
+cfototgl1	svitgl2		   DO_CALC_IF clonglatgci
+cfotolon1       svidf2             DO_CALC_IF clonglatgci
+cfotolat1       svidf3             DO_CALC_IF clonglatgci
+llonkel         svidf4             REPLACE_IF clonglatgci
+llatkel         svidf5             REPLACE_IF clonglatgci
+cjalanap        svidf6             DO_CALC_IF cadajarak
+cjarak          svidf6             DO_CALC
+DBCALCS(dupdsvigci2)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvigci2
+
+/*====== tanda sudah upload foto brosur ======*/
+MAP(mupdsvigci3)
+ctdgci          svidf1             DO_CALC_IF cbtsgci
+cY              svistr38           DO_CALC
+DBCALCS(dupdsvigci3)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvigci3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD      svinobuk   svistr9   /*upload foto ktp*/
+SFL_UPLFLD2     svinobuk   svistr10  /*upload foto selfie*/
+SFL_UPLFLD3     svinobuk   svitype3  /*upload foto brosur*/
+SFL_UPLFLD_DBCALCS  dupdsvigci
+SFL_UPLFLD2_DBCALCS dupdsvigci2
+SFL_UPLFLD3_DBCALCS dupdsvigci3
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lGCIRT
+SFL_MAP
+tkmnobuk        svinobuk
+lSPKADH11       svidata
+lGCIRT	        svitype
+
+/*===== add data tkd, psm, alm =====*/
+MAP(maddtkdgci)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+lGCIRT21	tkdnoll		REPLACE
+gv_OPEN         tkdsts          REPLACE
+tkmplg          tkdstr1         REPLACE
+tkmtgl          tkdtgl          REPLACE
+svinourt        tkdnourt        REPLACE
+
+MAP(maddpsm3201)
+svikode         psmkode         REPLACE
+svikode         psmktp          REPLACE
+lnamamitra3     psmnama         REPLACE
+lKONSUMEN       psmdataplg      REPLACE
+lDTMITRA        psmdatasup      REPLACE
+gv_OPEN         psmstssup       REPLACE
+gv_INPG         psmstsplg       REPLACE
+lNEW            psmstsbill      REPLACE
+g_tgltrn	psmtgl		REPLACE
+
+MAP(maddalm3201)
+gv_psmktp       almdata         REPLACE
+svikode         almbukoto       REPLACE
+svistr2         almprop         REPLACE
+svistr3         almkota         REPLACE
+svistr4         almkec          REPLACE
+svistr5         almkel          REPLACE
+svistr6         almrt           REPLACE
+svistr7         almrw           REPLACE
+svinama         almjalan        REPLACE
+c3201           almscr          DO_CALC
+svinourt	almnourt	REPLACE
+
+MAP(maddketmobil)
+tkmnobuk        ketnobuk        REPLACE
+svikode	        ketkode         REPLACE
+lGCIRT 		ketdata         REPLACE
+lSPKADH11       kettype         REPLACE
+tkmtgl          kettgl1         REPLACE
+c968            ketscr          DO_CALC
+lmerk           ketstr1         REPLACE
+ltype           ketstr2         REPLACE
+ljns            ketstr3         REPLACE
+lth             ketstr4         REPLACE
+svinourt	ketnourt	REPLACE
+
+/*======= upd psm, alm, ket ========*/
+MAP(mupdpsm3201)
+svikode         psmkode         REPLACE
+svikode         psmktp          REPLACE
+lnamamitra3     psmnama         REPLACE
+lKONSUMEN       psmdataplg      REPLACE
+lDTMITRA        psmdatasup      REPLACE
+gv_OPEN         psmstssup       REPLACE
+gv_INPG         psmstsplg       REPLACE
+lNEW            psmstsbill      REPLACE
+g_tgltrn	psmtgl		REPLACE
+
+MAP(mupdalm3201)
+gv_psmktp       almdata         REPLACE
+svikode         almbukoto       REPLACE
+svistr2         almprop         REPLACE
+svistr3         almkota         REPLACE
+svistr4         almkec          REPLACE
+svistr5         almkel          REPLACE
+svistr6         almrt           REPLACE
+svistr7         almrw           REPLACE
+svinama         almjalan        REPLACE
+c3201           almscr          DO_CALC
+
+MAP(mupdketmobil)
+tkmnobuk        ketnobuk        REPLACE
+svikode	        ketkode         REPLACE
+lGCIRT 		ketdata         REPLACE
+lSPKADH11       kettype         REPLACE
+tkmtgl          kettgl1         REPLACE
+c968            ketscr          DO_CALC
+lmerk           ketstr1         REPLACE
+ltype           ketstr2         REPLACE
+ljns            ketstr3         REPLACE
+lth             ketstr4         REPLACE
+
+/*===== add tkd tanda hitung review =====*/
+MAP(maddtkdrevgci)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+SPCALCS(spaddgcirt)
+DO_LIB          ap_dbclc(DNAME daddtkdgci,DCOMMAND ADD,DFILE tkd,DMAP maddtkdgci);
+DO_LIB          ap_dbclc(DNAME daddpsmgci,DCOMMAND ADD,DFILE psm,DMAP maddpsm3201);
+DO_LIB          ap_dbclc(DNAME daddalmgci,DCOMMAND ADD,DFILE alm,DMAP maddalm3201);
+DO_LIB          ap_dbclc(DNAME daddketgci,DCOMMAND ADD,DFILE ket,DMAP maddketmobil);
+
+SPCALCS(spupdtkdgci1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdgci1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevgci);
+DO_LIB          	    ap_dbclc(DNAME dupdpsmgci,DCOMMAND UPDATE,DTARGET psmkodidx ~svikode,DMAP mupdpsm3201);
+DO_LIB          	    ap_dbclc(DNAME dupdalmgci,DCOMMAND UPDATE,DTARGET almdatotourt gv_psmktp ~svikode svinourt,DMAP mupdalm3201);
+DO_LIB          	    ap_dbclc(DNAME dupdketgci,DCOMMAND UPDATE,DTARGET ketbukurtidx lGCIRT svinobuk svinourt,DMAP mupdketmobil);
+
+POSTING(tmptrans)
+PST_ADDCMD 	spaddgcirt
+PST_UPDCMD	spupdtkdgci1

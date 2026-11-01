@@ -1,0 +1,108 @@
+LOCAL
+PGM_FIELDS
+laktcab		STRING		61
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk   :____________________ ||__
+||i.NoFak   :____________________ ||
+||i.Cab     :_______  ___________ ||
+||t.Tanggal :____________________ ||
+||t.tglspjb :____________________ ||
+||t.ctkspjb :_______              ||
+||t.uplspjb :_______              ||
+||t.tglu    :_______              ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.TtdSpjb                       ||
+|\--------------------------------/|
+|/--SIGNATURE---------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.UplSpjb                       ||
+|\--------------------------------/|
+|/----s.UPLOAD--------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode		PROTECT                 INPUTRI         1
+aktdata		PROTECT			INPUTRI		1
+aktkode2	PROTECT                 INPUTRI         2
+aktcab		PROTECT                 INPUTRI         3
+laktcab		PROTECT			INPUTRI		4
+akttgl		PROTECT                 INPUTRI         5
+akttgl2		PROTECT                 INPUTRI         6
+aktjml		PROTECT			INPUTRI		7
+akttype2	PROTECT			INPUTRI		8
+aktcrttgl	PROTECT			INPUTRI		9
+/*aktjam		PROTECT			INPUTRI		9*/
+
+EDITS(tmptranst)
+e.ValidateCab   aktcab    VALIDATE cabkodidx mcabakt 0
+
+MAP(mcabakt)
+cabnama         laktcab        REPLACE
+
+
+DEFAULTS(tmptranst)
+lTTDDIGITAL             INIT            TTDDIGITAL
+lSPJB			INIT		SPJB
+aktdata                 INIT            TTDDIGITAL
+akttype                 INIT            SPJB
+
+MAP(mupduplfttmptrans)
+cOK                     akttype2      DO_CALC
+g_tgltrn		aktcrttgl     REPLACE
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx aktprm
+        DBC_MAP         mupduplfttmptrans
+
+/*
+CALCS()
+cjamkosong	aktjam==BLANKS
+
+MAP(mupduplttdtmptrans)
+lSYSTIME		aktjam		REPLACE_IF cjamkosong
+
+DBCALCS(dupduplttdtmptrans)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	aktprmidx aktprm
+	DBC_MAP		mupduplttdtmptrans
+*/
+
+CALCS()
+cjoinaktspjb	djoinaktspjb==1
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SGNFLD	aktkode 
+SFL_UPLFLD      akttype aktkode
+SFL_UPL_DIRFLD  mtstgl
+SFL_UPL_DELCOND chapusfoto
+SFL_UPLFLD_DBCALCS dupduplfttmptrans
+/* SFL_SGNUPL_DBCALCS dupduplttdtmptrans */
+SFL_COND	cjoinaktspjb
+SFL_TARGET
+aktkodtypidx    mtsnobuk lTTDDIGITAL lSPJB
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+

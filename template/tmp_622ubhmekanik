@@ -1,0 +1,69 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk    : _________________  ||
+||t.Mekanik  : ________________   ||
+||t.Nama     : _________________  ||
+||t.Tanggal  : _________________  ||
+||t.Ket      : _________________  ||
+||t.NipInp   : _________________  ||
+||t.Nama     : _________________  ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk                        NOCHANGE                        INPUTRI         2
+tkdsisstr                       ALLCAPS                         INPUTRI         3
+lnamaNip                        PROTECT                         INPUTRI         4
+tkdtgl                          PROTECT {DD-MM-YY}              INPUTRI         5
+tkdket                          PROTECT                         INPUTRI         6
+tkdjwbstr1                      PROTECT                         INPUTRI         7
+lnamaInput                      PROTECT                         INPUTRI         8
+
+CALCS()
+cketnipmek      "UBAH NIP MEKANIK"
+cbolehakses     (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="AHASSHEAD" || g_grpnam=="AHASSSPV" || g_grpnam=="AHASSDVH") &&
+                tlmgrup == "PENDING"
+cHanyaMekac     ljabatanc == "AHASSMEKANIK"
+
+EDITS(tmptranst)
+e.validate      tkdsisstr       VALIDATE        psistscabkod mpsitranscA spsiBKL {Pgv_INPG} {Ptlmcab}
+e.validate      tkdjwbstr1      VALIDATE        psikodidx mpsitranscB
+
+MAP(mpsitranscA)
+psikode         tkdsisstr       REPLACE
+psinama         lnamaNip        REPLACE
+psijabatan      ljabatanc       REPLACE
+
+MAP(mpsitranscB)
+psikode         tkdjwbstr1      REPLACE
+psinama         lnamaInput      REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tkdsisstr     DO_MAP
+                IF cHanyaMekac mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaMekanik
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cHanyaMekac mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaMekanik
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cbolehakses
+SFL_TARGET
+        tkddatbukll   lUBHNIPMEK tlmnobuk
+SFL_MAP
+lUBHNIPMEK      tkddata         REPLACE
+tlmdari         tkdnoll         REPLACE
+tlmnobuk        tkdnobuk        REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_usrkode       tkdjwbstr1      REPLACE
+cketnipmek      tkdket          DO_CALC
+
+

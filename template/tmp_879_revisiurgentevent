@@ -1,0 +1,104 @@
+IMAGE(tmptranst) 
+/-----------------------------------------------------\
+ /---------------------------------------------------\
+ t.NoBuk       : ____________________  t.Sts: ________
+ t.TipeRevisi  : ___________     t.TipeEvent: ________
+ t.TglInput    : __________ 
+ t.TglMulai    : __________  t.TglSelesai : __________
+ t.Keterangan  : _____________________________________
+ t.NipApr1     : __________   t.Review      : ________
+ t.Alasan      : _____________________________________
+ t.NipApr2     : __________   t.Review2     : ________
+ t.Alasan2     : _____________________________________
+ i.TekanEnter  : ______
+ \---------------------------------------------------/
+\-----------------------------------------------------/
+_
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldlok          PROTECT                         INPUTRI         1
+tldsts          NOCHANGE                        INPUTRI         1
+tldkat          NOCHANGE                        INPUTRI         1
+tldbrg          ALLCAPS                         INPUTRI         1
+tldtglfak       PROTECT {DD-MM-YYYY}            INPUTRI         1
+tldtgl2         ALLCAPS NOLIMIT {DD-MM-YYYY}    INPUTRI         2
+tldtgl3         ALLCAPS NOLIMIT {DD-MM-YYYY}    INPUTRI         3
+tldstr5         ALLCAPS                         INPUTRI         4
+tldplg          PROTECT                         INPUTRI         4
+tldstr2         ALLCAPS NOCHANGE                       INPUTRI         5
+tldket2         TEXTAREA                        INPUTRI         6
+lnipmkthead         PROTECT                         INPUTRI         6
+tldukrwrn         ALLCAPS  NOCHANGE                       INPUTRI         7
+tldket          TEXTAREA                        INPUTRI         7
+lenter          NOCHANGE                        INPUTRI         7
+tldjml          UNSEEN                          INPUTRI         7
+
+DEFAULTS(tmptranst)
+tlddata         INIT_UPDATE     {lDTCOEH1}
+tldstr2         DFALT_LIST      ACC TACC
+tldukrwrn         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory     tldbrg          MANDATORY
+e.Validate      tldbrg          VALIDATE tbddtmstidx mtipeevent stbd2 {Pgv_dttabel} {Pgv_infoumum} {PlTIPEAKTIVITAS} {PlBLANKS} {PlCOEBTL}
+e.Mandatory     tldtgl2         MANDATORY
+e.Mandatory     tldtgl3         MANDATORY
+e.Mandatory     tldstr5         MANDATORY
+e.Mandatory     tldstr2         MANDATORY_IF cammktgkawil
+e.Mandatory     tldukrwrn         MANDATORY_IF cmktheadho
+e.Mandatory     tldket2         MANDATORY_IF ctldstr2tacc
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF cammktgkawil
+BEFORE_INPUT    cur_field=tldtgl2       DO_SKIP_IF cammktgkawil
+AFTER_INPUT     cur_field=tldtgl2       DO_MAP SHOW mtgl
+BEFORE_INPUT    cur_field=tldtgl3       DO_SKIP_IF cammktgkawil
+BEFORE_INPUT    cur_field=tldstr5       DO_SKIP_IF cammktgkawil
+BEFORE_INPUT    cur_field=tldstr2       DO_SKIP_IF cpicnsoho
+AFTER_INPUT     cur_field=tldstr2       DO_MAP SHOW
+                IF ctldstr2valid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Review Harus ACC atau TACC    
+BEFORE_INPUT    cur_field=tldket2       DO_SKIP_IF cpicnsoho
+AFTER_INPUT     cur_field=tldket2       DO_MAP SHOW mhitungpanjangalasantldstr5
+AFTER_INPUT	cur_field=tldket2       DO_MAP
+		IF cpanjangalasanrevisiurgentok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Alasan Minimal 10 Karakter
+
+BEFORE_INPUT    cur_field=tldukrwrn       DO_SKIP_IF cmkthead
+AFTER_INPUT     cur_field=tldukrwrn       DO_MAP SHOW
+                IF ctldukrwrnvalid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Review Harus ACC atau TACC       
+
+BEFORE_INPUT    cur_field=tldket       DO_SKIP_IF cmkthead
+AFTER_INPUT     cur_field=tldket       DO_MAP SHOW mhitungpanjangalasantldstr4
+AFTER_INPUT	cur_field=tldket       DO_MAP
+		IF cpanjangalasanrevisiurgentokho mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Alasan Minimal 10 Karakter
+
+AFTER_INPUT	cur_keybd=EN            DO_MAP menterrevisiurgentevent
+AFTER_INPUT	cur_keybd=EN            DO_MAP mtgl
+
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+                IF crentangblplus1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Harus Dalam Rentang M+1 Bulan Dari Tanggal Terbentuk Master COE
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+                IF ctglmulaislsok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Mulai Tidak Boleh Lebih Dari Tanggal Selesai Dan Sebaliknya
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ccondrevvoidurgentevent
+SFL_SELECT cselrevisiurgentevent
+SFL_SORT_BY_FIELD tldkat
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+        tldbukurtidx tkmnobuk

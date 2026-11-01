@@ -1,0 +1,97 @@
+LOCAL
+PGM_FIELDS
+ltomdet2d_d	STRING		21
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NaskahPrg                      ||
+||             ___________         ||
+||t.TgtMli     ___________         ||
+||t.TglSls     ___________         ||
+||t.Ket        ___________________ ||
+||t.KorHead    ___________         ||
+||t.OkUp       ___________         ||
+|\---------------------------------/|
+|/---DOCUPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+| _________________                 |
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobbm 	PROTECT          	INPUTRI		1
+tldtglfak	NONE NOLIMIT {DD-MM-YYYY}	INPUTRI		1
+tldtgl2  	NONE NOLIMIT {DD-MM-YYYY}	INPUTRI		2
+tldket   	ALLCAPS SCROLL   	INPUTRI		3
+tldbrg   	PROTECT          	INPUTRI		4
+tldukrwrn	NOCHANGE         	INPUTRI		5
+
+ltomdet2d_d	TOMBOL          	INPUTRI		10
+
+DEFAULT(tmptranst)
+tldnobbm	INIT_ADD         	"PEKERJAAN_AWAL"
+ltomdet2d_d	INIT         		"d.KoreksiHead"       
+tldbrg  	DFALT_SCAN_BLANKS	REV_INT "REVISI INTERNAL"
+					KOR_EKS "KOREKSI EKSTERNAL"
+					FINAL   "FINAL LEGAL"
+
+CALCS()
+chead		g_curcmd == 2 && (g_grpnam == "ADHHEAD" || g_grpnam == "LEGALHEAD")
+ctglkrg		tldtglfak >= g_tgltrn
+ctglmax3	tldtglfak + 3 >= tldtgl2 && tldtgl2 >= tldtglfak
+
+EDIT(tmptranst)
+e.Mandatory	tldtglfak	MANDATORY_IF ctambah
+e.Mandatory	tldtgl2  	MANDATORY_IF cubah  
+e.Mandatory	tldbrg   	MANDATORY_IF chead  
+e.Mandatory	tldket   	MANDATORY_IF chead  
+
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldtglfak	DO_MAP SHOW
+		IF ctglkrg mdum
+		ELSE HKCURSOR STAY
+		HKMSG Tdk Boleh Kurang Dari Tgl Hari Ini
+AFTER_INPUT	cur_keybd=EN       	DO_MAP SHOW
+		IF ctglkrg mdum
+		ELSE HKCURSOR STAY
+		HKMSG Tdk Boleh Kurang Dari Tgl Hari Ini
+
+AFTER_INPUT	cur_field=tldtgl2  	DO_MAP SHOW
+		IF ctglmax3 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Maks 3hari dari Tgl Awal & Tdk boleh kurang dari tgl awal         
+AFTER_INPUT	cur_keybd=EN       	DO_MAP SHOW
+		IF ctglmax3 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Maks 3hari dari Tgl Awal & Tdk boleh kurang dari tgl awal         
+
+
+MAP(mupdtldnasakh)
+gv_ok		tldukrwrn	REPLACE
+DBCALCS(dupdtldnasakh)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tldprmidx tldprm
+	DBC_MAP		mupdtldnasakh
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_DOCUPLFLD tlmnobuk tldoto
+SFL_DOCUPLFLD_DBCALCS dupdtldnasakh
+SFL_TARGET
+tldbukbrgoto tlmnobuk lprg
+
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+lprg		tldsts		REPLACE 
+
+

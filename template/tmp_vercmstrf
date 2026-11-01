@@ -1,0 +1,57 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket : ________________________||
+||t.CMSSesuai : ___ _             ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt2			NOCHANGE		INPUTRI		2 
+lenter			NOCHANGE		INPUTRI		10
+
+CALCS()
+cisivercmstrf		btmstr2=="TRANSFER" && btmdvsjl=="M2W" && g_scrnumstr=="714" && btmsts=="714"
+cvercmstrf		svikode=="BKTBPKB" || svikode=="SRTSPPD" || svikode=="PERTRANSFER" || svikode=="SRHTRMBPKB"
+
+DEFAULTS(tmptranst)
+sviyt2		DFALT_SCAN_BLANKS	Y "Y"
+					T "T"
+
+MAP(mupdsvivercmstrf)
+cY              sviyt1          DO_CALC
+
+DBCALCS(dupdsvivercmstrf)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvivercmstrf
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cvercmstrf
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPLFLD_DBCALCS dupdsvivercmstrf
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cisivercmstrf
+  PMT_DEL_COND  c0
+

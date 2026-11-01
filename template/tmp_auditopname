@@ -1,0 +1,172 @@
+LOCAL
+PGM_FIELDS
+lnamabrg2aud        STRING          31
+lBR		    STRING	    21
+lAKTAUDITSO	    STRING	    11
+lsistem		    STRING	    21
+ltldnourt	    STRING	    21
+
+MAP(mscanstokaudit)
+brdsisa		lstokbarangfast		REPLACE_IF cadaauditfast
+
+DBCALCS(dscanstokaudit)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brdstscabbrg    gv_INPG	tlmcab tldbrg tldlok
+        DBC_SUM_MAP     mscanstokaudit
+
+CALCS()
+cinpgaud	tlmsts == "INPG"
+crecon1		tlmsts == "CLS1"
+crecon2		tlmsts == "CLS2"
+cnolls		(g_curcmd == 1 && tldgrup2 == "INTI") || (g_curcmd == 2 && tldbrdoto == BLANKS && tldnoll != "SISTEM" && tldgrup2 == "INTI")
+cnolls1		(g_curcmd == 1 && tldgrup2 == "FASTMOVING")|| (g_curcmd == 2 && tldbrdoto  == BLANKS && tldnoll != "SISTEM" && tldgrup2 == "FASTMOVING")
+ctdkblank	tldbrdoto != BLANKS
+ckususINPG	tlmsts == "INPG"
+
+
+IMAGE(tmptranst)
+/------t---------t----------t-----------t-----------t------------t---------t-----t---------t----------t-----------t--------\
+|t.User|t.Gedung |t.lkslain |t.lokasi   |t.Brg2     |t.NamaBrg   |t.Inputan|t.Jml|t.Selisih|t.Kondisi |t.Text     |t.temuan|
+\------.---------.----------.-----------.-----------.------------.---------.-----.---------.----------.-----------.--------/
+IMAGE(tmptrans)
+|______|_________|__________|___________|___________|____________|_________|_____|_________|__________|___________|________|
+
+FIELDS(tmptrans)
+/*tldnourt                PROTECT                 INPUTRI         1*/
+tldlok2                 PROTECT                 INPUTRI         1
+tldgrup2		ALLCAPS			INPUTRI		2
+tldbrdoto 		ALLCAPS			INPUTRI		2
+tldlok			ALLCAPS			INPUTRI		2
+tldbrg                  ALLCAPS                 INPUTRI         2
+lnamabrg2aud            PROTECT                 INPUTRI         3
+tldnoll			PROTECT			INPUTRI		3
+tldjml                  NUMERIC                 INPUTRI         4
+tldsubtot		PROTECT			INPUTRI		5
+tldbisnis		ALLCAPS			INPUTRI		6
+tldket			ALLCAPS			INPUTRI		7
+tlddvs			ALLCAPS			INPUTRI		8
+/*tldkat                  PROTECT                 INPUTRI         5*/
+
+DEFAULTS(tmptrans)
+lsistem			INIT		SISTEM
+lAKTAUDITSO		INIT		AKTAUDITSO
+lBR			INIT		BR
+tldtglfak               INIT_ADD        {g_tgltrn}
+tldlok2                 INIT_ADD        {g_usrkode}
+tldlok2                 INIT_UPDATE     {g_usrkode}
+tldgrup2		DFALT_LIST	INTI
+					FASTMOVING
+tlddvs			DFALT_SCAN	BLANKS
+					TEMUAN_LAIN
+					DO_BELUM_INPUT
+
+tldbisnis		DFALT_SCAN	BAIK
+					BURUK
+
+IF cinpgaud   tldnoll			INIT_ADD	"MANUAL"
+IF crecon1 tldnoll			INIT_ADD	"RECON1"
+IF crecon2 tldnoll			INIT_ADD	"RECON2"
+IF ckosongaud tldnoll			INIT_UPDATE	"SISTEM"
+tldsts			INIT_ADD	"AHS1"
+IF cjointld1bat tldnourt	INIT_ADD	{curtbat}
+
+
+EDITS(tmptrans)
+e.ValidateppdBrg2 tldbrg VALIDATE brgstsdatbrg mbrg2aud {Pgv_INPG} {Pgv_dtbarang}
+e.Validatelokasi tldlok VALIDATE_IF cnolls tbddtmstidx mtbdlok stbd2 {Pgv_dttabel} {Pgv_barang} {PlLOKAHASS} {PlBR} {Ptlmcab}
+e.Validatelokasi tldlok VALIDATE_IF cnolls1 tbddtmstidx mtbdlok stbd2 {Pgv_dttabel} {Pgv_barang} {PlFASTMOVING} {PlBR} {Ptlmcab}
+
+MAP(mtbdlok)
+tbdkode		tldlok		REPLACE
+
+MAP(mbrg2aud)
+brgkode         tldbrg          REPLACE
+brgnama         lnamabrg2aud    REPLACE
+
+MAP(mmaptldstokaudit)
+lstokbarangfast	tldperdis7	REPLACE_IF ckususINPG
+lsystime	tldperdism	REPLACE_IF ckususINPG
+tldoto		ltldoto		REPLACE
+tldnourt	ltldnourt	REPLACE
+DEBUG	ldum	ldum		REPLACE
+
+MAP(mupdtkdauditopname)
+lstokbarangfast tkdjml2	REPLACE
+
+MAP(mmaplokasi2)
+tldbrdoto	tldlok	REPLACE_IF ctdkblank
+
+MAP(mmapkosong)
+lblanks1		lparam1	REPLACE
+
+MAP(maddaktaudit)
+tlmnobuk        aktnobuk        REPLACE
+tlmnobuk        aktkode         REPLACE
+tldbrg          aktbrg          REPLACE
+lAKTAUDITSO     aktdata         REPLACE
+tldcab          aktcab          REPLACE
+tldlok          aktlok          REPLACE
+tldnourt        akturt          REPLACE
+tldnourt	akttype		REPLACE
+lsystime	aktjam		REPLACE
+g_tgltrn	akttgl		REPLACE
+tldoto		aktbukoto	REPLACE
+tldoto		aktkode2	REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+MAP(mupdaktjam)
+lsystime	aktjam		REPLACE
+g_tgltrn	akttgl		REPLACE
+
+CALCS()
+cksgmanual	(tldnoll == "SISTEM" || (tldnoll == "MANUAL" && tlmsts != "INPG" ) || (tldnoll == "RECON1" && tlmsts != "CLS1") || (tldnoll == "RECON2" && tlmsts != "CLS2")) && tldbrdoto == BLANKS
+cksgmanual1	tldnoll == "SISTEM"
+cksginpg	((tldnoll == "SISTEM" || tldnoll == "MANUAL") && tlmsts != "INPG") || (tldnoll == "RECON1" && tlmsts != "CLS1") || (tldnoll == "RECON2" && tlmsts != "CLS2")
+ckusistem	(g_curcmd == 2 && tldnoll == "SISTEM" || tldnoll == BLANKS) || tldnoll == "SISTEM"
+ctdkinpg	0
+cOpnametambah	g_curcmd == 1
+cOpnameubah	g_curcmd == 2 && tldnoll == "SISTEM"
+cOpnameubah2	g_curcmd == 2 && tldnoll != "SISTEM"
+cfilter		lparam1 == tldbrg || lparam1 == BLANKS
+
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldjml	DO_SCAN	dscanstokaudit
+AFTER_INPUT	cur_field=tldjml	DO_MAP SHOW	mmaptldstokaudit
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW	mmaptldstokaudit
+AFTER_INPUT 	cur_field=tldbrdoto	DO_MAP SHOW	mmaplokasi2
+AFTER_INPUT 	cur_field=tldbisnis	DO_MAP SHOW	mmapkosong
+BEFORE_INPUT    cur_field=tldbrdoto        DO_SKIP_IF cksgmanual1
+BEFORE_INPUT    cur_field=tldlok        DO_SKIP_IF cksgmanual
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF cksgmanual
+BEFORE_INPUT    cur_field=tldjml        DO_SKIP_IF cksginpg
+BEFORE_INPUT    cur_field=tldgrup2      DO_SKIP_IF ckusistem
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(15)
+SFL_SORT_BY_FIELD  tldbrg
+SFL_COND        cauditfast
+SFL_SELECT	cfilter
+SFL_TARGET
+tldbukbrgoto    tlmnobuk  lAHS1
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+
+SPCALCS(spupdauditopname)
+DO_LIB_IF ctdkinpg ap_dbclc(DNAME dupdtkdauidopname,DCOMMAND UPDATE,DTARGET tkdbukllsts tldnobuk tldbrg,DMAP mupdtkdauditopname);
+DO_LIB_IF cOpnametambah  ap_dbclc(DNAME daddaktaudit2, DCOMMAND ADD, DFILE akt, DMAP maddaktaudit);
+
+SPCALCS(spupdauditopnameakt)
+DO_LIB_IF cOpnameubah  ap_dbclc(DNAME dupdaktaudit1, DCOMMAND UPDATE_RANGE,DTARGET aktkod2typid ltldoto lAKTAUDITSO, DMAP mupdaktjam);
+DO_LIB_IF cOpnameubah2  ap_dbclc(DNAME dupdaktaudit12, DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx tlmnobuk lAKTAUDITSO ltldnourt, DMAP mupdaktjam);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spupdauditopname
+	PST_UPDCMD	spupdauditopnameakt

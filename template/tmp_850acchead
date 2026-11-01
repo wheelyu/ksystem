@@ -1,0 +1,81 @@
+IMAGE(tmptranst)
+/--------------------------------------------\
+|/------------------------------------------\|
+||t.Tgl	       : _________		    ||
+||t.Status     : _______		    ||
+||t.AccHead    : _____                      ||
+||t.Pilihan    : _____________________	    ||
+||t.Ket        : _________________________  ||
+|\------------------------------------------/|
+\--------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+akttgl		PROTECT			INPUTRI 1
+akttype		PROTECT 		INPUTRI 1	
+akttype2	ALLCAPS SCROLL		INPUTRI 1
+aktbrg		ALLCAPS	SCROLL		INPUTRI 2
+aktket		TEXTAREA		INPUTRI 3
+
+CALCS()
+ctidak          akttype2 == "T"
+ciya            akttype2 == "Y"
+cheadT          "T"
+cheadY          "Y"
+cACC1           akttype2 == "Y"
+cTACC1          akttype2 == "T" && aktbrg != BLANKS
+copen2          akttype == "OPEN"
+cdel22          g_grpnam == "IT" || g_grpnam == "RI"
+
+DEFAULTS(tmptranst)
+akttgl		INIT			{g_tgltrn}
+akttype		INIT			"OPEN"
+akttype2	DFALT_SCAN		Y
+					T
+aktbrg   	DFALT_SCAN_BLANKS    REVISI_INDIKASI
+                                     REVISI_PUNISHMENT
+
+EDITS(tmptranst)
+e.Mandatory     aktbrg  MANDATORY_IF ctidak
+e.Mandatory1	aktket	MANDATORY_IF ctidak
+
+MAP(mupdmstrhead)
+cheadY              tlmstsapr        DO_CALC_IF cACC1
+cheadT              tlmstsapr        DO_CALC_IF cTACC1
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=aktbrg	DO_SKIP_IF ciya
+BEFORE_INPUT            cur_field=aktket        DO_SKIP_IF ciya
+AFTER_INPUT     	cur_field=aktket      	DO_MAP  SHOW    mcekpjg20
+AFTER_INPUT     	cur_field=aktbrg        DO_MAP SHOW
+                				IF crevind2  mdum
+                				ELSE HKCURSOR STAY
+                				HKMSG t.InputSdhAda
+AFTER_INPUT     	cur_field=aktket      	DO_MAP  SHOW
+                                    		IF cpjgket mdumakt
+                                    		ELSE HKCURSOR STAY
+                                    		HKMSG t.Minimal20Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	aktkodtypidx   tlmnobuk lACCHEAD
+SFL_MAP
+tlmnobuk        aktkode                 REPLACE
+lACCHEAD        aktdata                 REPLACE
+
+SPCALCS(spupdhead)
+        DO_LIB    ap_dbclc(DNAME dupdtlmmasterhead,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdmstrhead);
+
+POSTING(tmptrans)
+  PST_ADDCMD      spupdhead
+
+PERMIT(tmptrans)
+PMT_UPDALL_COND copen2
+PMT_DEL_COND    cdel22
+
+

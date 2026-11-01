@@ -1,0 +1,195 @@
+LOCAL
+PGM_FIELDS
+ltypealmx                STRING          11
+ljalanx                  STRING          61
+lrt3x			 STRING		 5
+lrw3x			 STRING		 5
+lprop3x             	 STRING          21
+lkota3x                  STRING          21
+lkec3x                   STRING          21
+lkel3x                   STRING          21
+lkdpos3x		 STRING		 11
+lalmkirim_tmp		STRING		11
+
+CALCS()
+cblanksx		BLANKS
+
+MAP(mjoinalmktpx)
+cblanksx		ljalanx	DO_CALC
+cblanksx		lrt3x	DO_CALC
+cblanksx		lrw3x	DO_CALC
+cblanksx		lprop3x	DO_CALC
+cblanksx		lkota3x	DO_CALC
+cblanksx		lkec3x	DO_CALC
+cblanksx		lkel3x	DO_CALC
+cblanksx		lkdpos3x	DO_CALC
+almjalan	ljalanx	REPLACE
+almrt		lrt3x	REPLACE
+almrw		lrw3x	REPLACE
+almprop		lprop3x	REPLACE
+almkota		lkota3x	REPLACE
+almkec		lkec3x	REPLACE
+almkel		lkel3x	REPLACE
+almkdpos	lkdpos3x	REPLACE
+
+DBCALCS(djoinalmktpx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx btmplg ltypealmx
+	DBC_MAP		mjoinalmktpx
+
+MAP(mjoinalmtinggalx)
+cblanksx		ljalanx	DO_CALC
+cblanksx		lrt3x	DO_CALC
+cblanksx		lrw3x	DO_CALC
+cblanksx		lprop3x	DO_CALC
+cblanksx		lkota3x	DO_CALC
+cblanksx		lkec3x	DO_CALC
+cblanksx		lkel3x	DO_CALC
+cblanksx		lkdpos3x	DO_CALC
+almjalan	ljalanx	REPLACE
+almrt		lrt3x	REPLACE
+almrw		lrw3x	REPLACE
+almprop		lprop3x	REPLACE
+almkota		lkota3x	REPLACE
+almkec		lkec3x	REPLACE
+almkel		lkel3x	REPLACE
+almkdpos	lkdpos3x	REPLACE
+
+DBCALCS(djoinalmtinggalx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx btmplg ltypealmx
+	DBC_MAP		mjoinalmtinggalx
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   t.AlmKirim  : _________________
+   i.Alamat    : _____________________________________________________________
+   i.RT        : ____            i.RW         : ____
+   i.Propinsi  : _______________ _____________________________________________
+   i.Kota      : _______________ _____________________________________________
+   i.Kec       : _______________ _____________________________________________
+   i.Kel       : _______________ _____________________________________________
+   i.KodePos   : ________                            
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+almnama2		ALLCAPS SCROLL			INPUTRI	1
+almjalan		ALLCAPS SCROLL			INPUTRI	2
+almrt			ALLCAPS	SCROLL			INPUTRI	3
+almrw			ALLCAPS SCROLL			INPUTRI	4
+almprop			ALLCAPS SCROLL			INPUTRI 5
+almnamprop		PROTECT QPROTECT		INPUTRI 6
+almkota			ALLCAPS SCROLL			INPUTRI 7
+almnamkota		PROTECT QPROTECT 		INPUTRI 8
+almkec			ALLCAPS SCROLL			INPUTRI 9
+almnamkec		PROTECT QPROTECT		INPUTRI 10
+almkel			ALLCAPS SCROLL			INPUTRI 11
+almnamkel		PROTECT QPROTECT		INPUTRI 12
+almkdpos		ALLCAPS SCROLL			INPUTRI 13
+
+IMAGE(tmptrans) 
+
+CALCS()
+cokex		djoinalmktpx==1 || djoinalmtinggalx==1
+ckreditalm	btmtypjl != "T"
+ctunaialm	btmtypjl == "T"
+cbknbaru	almnama2 != "BARU"
+calmbaru	almnama2 == "BARU"
+calmbaru2	almnama2 == "BARU" && almnama2 != ~almnama2
+cblankalmbr	BLANKS
+
+DEFAULT(tmptranst)
+IF ckreditalm almnama2		DFALT_SCAN    PSMTINGGAL
+IF ctunaialm  almnama2		DFALT_SCAN    PSMTINGGAL BARU
+
+lalmkirim_tmp	INIT	ALAMATKIRI
+
+EDITS(tmptranst)
+e.Mandatory		almrt	MANDATORY_IF calmbaru
+e.Mandatory		almrw	MANDATORY_IF calmbaru
+e.Mandatory		almjalan MANDATORY_IF calmbaru
+e.Mandatory		almprop	MANDATORY_IF calmbaru
+e.Mandatory		almkota	MANDATORY_IF calmbaru
+e.Mandatory		almkec	MANDATORY_IF calmbaru
+e.Mandatory		almkel	MANDATORY_IF calmbaru
+e.validatePropinsi3	almprop VALIDATE dtmdtkodidx  mdtm3x 0 {Pgv_dtkota}
+e.validateKota3		almkota VALIDATE tbldtdtmkod mtbl3x 0 {Pgv_dtkota} {Palmprop}
+e.validateKec3		almkec VALIDATE tbddatkodidx mtbd3x 0 {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel3		almkel VALIDATE tbtdattypkod mtbt3x 0 {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(mtbt3x)
+tbtkode			almkel 			REPLACE
+tbtket			almnamkel		REPLACE
+
+MAP(mtbd3x)
+tbdkode			almkec 			REPLACE
+tbdket			almnamkec		REPLACE
+
+MAP(mtbl3x)
+tblkode			almkota 		REPLACE
+tblket			almnamkota		REPLACE
+
+MAP(mdtm3x)
+dtmkode			almprop 		REPLACE
+dtmket			almnamprop		REPLACE
+
+MAP(malmx)
+almnama2		ltypealmx		REPLACE
+lrt3x			almrt			REPLACE_IF cokex
+lrw3x			almrw			REPLACE_IF cokex
+ljalanx			almjalan		REPLACE_IF cokex
+lprop3x			almprop			REPLACE_IF cokex
+lkota3x			almkota			REPLACE_IF cokex
+lkec3x			almkec			REPLACE_IF cokex
+lkel3x			almkel			REPLACE_IF cokex
+lkdpos3x		almkdpos		REPLACE_IF cokex
+
+MAP(malmblank)
+cblankalmbr		almrt			DO_CALC
+cblankalmbr		almrw			DO_CALC
+cblankalmbr		almjalan		DO_CALC
+cblankalmbr		almprop			DO_CALC
+cblankalmbr		almkota			DO_CALC
+cblankalmbr		almkec			DO_CALC
+cblankalmbr		almkel			DO_CALC
+cblankalmbr		almkdpos		DO_CALC
+cblankalmbr		almnamprop		DO_CALC
+cblankalmbr		almnamkota		DO_CALC
+cblankalmbr		almnamkec		DO_CALC
+cblankalmbr		almnamkel		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=almnama2	DO_MAP SHOW malmx
+AFTER_INPUT		cur_field=almnama2	DO_MAP SHOW
+			IF calmbaru2 malmblank
+BEFORE_INPUT		cur_field=almrt		DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almrw		DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almjalan	DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almprop	DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almkota	DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almkec	DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almkel	DO_SKIP_IF cbknbaru
+BEFORE_INPUT		cur_field=almkdpos	DO_SKIP_IF cbknbaru
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_TARGET
+almdatbukidx   lalmkirim_tmp btmnobuk
+
+SFL_MAP
+btmnobuk	almnobuk	REPLACE
+btmplg		almbukoto	REPLACE
+lalmkirim_tmp	almdata		REPLACE
+
+CALCS()
+calm0x		(btmsts=="611" || btmsts == "681") && djoinalmkirim==0
+calm1x		(btmsts=="611" || btmsts == "681") && djoinalmkirim==1 && ((btmsoa == "GC" && btmjnsdeb == "INSTANSI" && (djoinastmtr == 0 || (djoinastmtr == 1 && lbtpjnsdeb_stnk != "ALMKIRIM"))) || (btmjnsdeb != "INSTANSI") || (btmsoa != "GC"))
+
+PERMIT(tmptrans)
+PMT_ADD_COND	calm0x
+PMT_UPDALL_COND calm1x
+PMT_DEL_COND 	c0

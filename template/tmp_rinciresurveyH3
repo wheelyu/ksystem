@@ -1,0 +1,46 @@
+MAP(mjoinpsmdeb)
+psmnama         lnamadeb        REPLACE
+
+DBCALCS(djoinpsmdeb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx pikplg
+        DBC_MAP         mjoinpsmdeb
+
+CALCS()
+cjoinpsmdeb     djoinpsmdeb==1
+
+IMAGE(tmptranst)
+/--------------------t--------------------t-----------------------------t------------t--------\
+|t.buk               |t.Fak               |t.Nama                       |t.TglKirim   |t.Sts  |
+\--------------------.--------------------.-----------------------------.------------.--------/
+
+IMAGE(tmptrans)
+|____________________|____________________|_____________________________|____________|________|
+
+FIELDS(tmptrans)
+        mtsnobuk        NOCHANGE                        INPUTRI         1
+        mtsnoasal       PROTECT                         INPUTRI         2
+        lnamadeb        PROTECT                         INPUTRI         3
+        mtstgl          PROTECT                         INPUTRI         4
+        mtssts          PROTECT                         INPUTRI         5
+
+
+EDITS(tmptrans)
+t.ValidateFak	mtsnoasal	VALIDATE pikdatbukidx mpik 0 {Pgv_dtpiu}
+
+MAP(mpik)
+pikplg			pikplg		REPLACE
+lnamadeb		lnamadeb	REPLACE_IF cjoinpsmdeb
+
+CALCS()
+cplhresurvey		mtscab==tlmcab && (mtsdvs=="HMC" || mtsdvs=="M2W") 
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+/*
+SFL_COND   cadakunjungan
+*/
+SFL_SELECT cplhresurvey
+SFL_TARGET
+mtsdattglidx lresurvey tlmtgl

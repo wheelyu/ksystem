@@ -1,0 +1,80 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.UplBuktiWaAktif                 ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.NoBuk      : ___________________ ||
+||t.Tanggal    : ___________________ ||
+||t.Status     : ___________________ ||
+||t.NoLamaWa   : ___________________ ||
+||t.NoBaruWa   : ___________________ ||
+||t.Ket        : ___________________ ||
+||t.Valid      : ___________________ ||
+|| spasi			     ||
+||               ___________________ ||
+||spasi				     ||
+||spasi				     ||
+||t.SebelumUpload		     ||
+||t.TekanTKemudianEnter		     ||
+||t.UploadBukti			     ||
+||t.ApprovalVYStatusIN		     ||
+||t.StatusINmenjadiOKPosting	     ||
+|\-----------------------------------/|
+|/----------s.UPLOAD-----------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tlmnobuk	PROTECT			INPUTRI 1
+tlmtgl		PROTECT {DD-MM-YYYY}	INPUTRI 2
+tlmsts		PROTECT			INPUTRI 3
+tlmpst		PROTECT			INPUTRI 4
+tlmgrup2	PROTECT			INPUTRI 5
+tlmuntuk	PROTECT			INPUTRI 6
+tlmdari		PROTECT			INPUTRI 7
+lenter		ALLCAPS			INPUTRI 8
+
+DEFAULTS(tmptranst)
+tkdtgl		INIT	{g_tgltrn}
+tkdsts		INIT	"INPG"
+tkdnoll		INIT	BUKTI_WA
+
+MAP(mupdtkd2)
+lOK		tkdtype		REPLACE
+
+DBCALCS(dupdtkd2)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx tkdprm
+	DBC_MAP		mupdtkd2
+
+DBCALCS(djointkdcekwa)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll lUPLWA tlmnobuk
+
+CALCS()
+cdjointkdcekwa		djointkdcekwa == 0
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD tkdtgl
+SFL_UPLFLD tkdoto tkdnoll
+SFL_UPLFLD_DBCALCS dupdtkd2
+SFL_UPL_DELCOND c0
+SFL_TITLE(tmptranst)
+SFL_TARGET	tkddatbukll lUPLWA tlmnobuk
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+lUPLWA		tkddata		REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND cdjointkdcekwa
+PMT_UPDALL_COND c0
+PMT_DEL_COND cboleh

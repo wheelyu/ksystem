@@ -1,0 +1,143 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+|/-------s.UPLOAD-----------\!
+||                          !!__
+||                          !!
+||                          !!
+||                          !!
+||                          !!
+||                          |!
+|\--------------------------/|
+|/--------------------------\|
+||t.UploadOk : __           ||
+|\--------------------------/|
+|t.FotoJlsTdkBlur	     |
+|/--------------------------\|
+|i.Ket  _________________   ||
+!!t.Lat : ___.______________||
+!!t.Lon : ___.______________||
+|\--------------------------/|
+|/--------------------------\|
+||t.HslCek		    ||
+||t.Np	: __________	    ||
+||t.Nama: __________________||
+||t.Jabatan: _______________||
+||t.Approval: ______	    ||
+||t.Ket	: 		    ||
+||____________________ _____||
+|\--------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdplg			PROTECT 		INPUTRI		1
+mtdperdis5		PROTECT			INPUTRI		2
+lSRTTRMMTR              NOCHANGE                INPUTRI         3
+g_fotolat1		ALLCAPS {99,999999999}  INPUTRI		4
+g_fotolon1              ALLCAPS {99,999999999}  INPUTRI		5
+lnip 			NOCHANGE		INPUTRI		6
+lnama			PROTECT			INPUTRI		7
+ljabatan		PROTECT			INPUTRI		8
+lapproval		NOCHANGE		INPUTRI		9
+lketerangan		TEXTAREA		INPUTRI		10
+lENTER			NOCHANGE		INPUTRI		11
+
+DEFAULTS(tmptranst)
+lapproval		DFALT_SCAN_BLANKS	ACC TACC
+lnip			INIT_UPDATE		{g_usrkode}
+
+EDITS(tmptranst)
+e.ValidateFakt		mtdplg			VALIDATE	ppmbukidx mppm_trmmtr 0 
+e.ValidateNip		lnip			VALIDATE	psikodidx mpsi 0
+e.Mandatory		lapproval		MANDATORY
+e.Mandatory		lketerangan		MANDATORY_IF ctacc
+
+MAP(mjointldtrmmtr)
+tldstr1			lnip			REPLACE
+tldstr2			ltldstr2		REPLACE
+tldket			ltldket			REPLACE
+
+DBCALCS(djointldtrmmtr)
+DBC_COMMAND		JOIN
+DBC_TARGET		tldbukbrglok mtdnobuk mtdplg lSRTTRMMTR
+DBC_MAP			mjointldtrmmtr
+
+CALCS()
+cdjointldtrmmtr		djointldtrmmtr==1
+cdjointldtrmmtr_1	djointldtrmmtr==1 && g_curcmd==0
+cdjointldtrmmtr0	djointldtrmmtr==0
+
+MAP(mppm_trmmtr)
+cBLANKS			lnip		DO_CALC_IF cdjointldcur0
+cBLANKS			lnama		DO_CALC_IF cdjointldcur0
+cBLANKS			ljabatan	DO_CALC_IF cdjointldcur0
+cBLANKS			lapproval	DO_CALC_IF cdjointldcur0
+cBLANKS			lapproval_lama	DO_CALC_IF cdjointldcur0
+cBLANKS			lketerangan	DO_CALC_IF cdjointldcur0
+piknobuk		piknobuk	REPLACE
+lnip			lnip		REPLACE_IF cdjointldtrmmtr_1
+lnama			lnama		REPLACE_IF cdjointldtrmmtr_1
+ljabatan		ljabatan	REPLACE_IF cdjointldtrmmtr_1
+ltldstr2		lapproval	REPLACE_IF cdjointldtrmmtr_1
+ltldstr2		lapproval_lama	REPLACE_IF cdjointldtrmmtr_1
+ltldket			lketerangan	REPLACE_IF cdjointldtrmmtr_1
+DEBUG			ldum ldum	REPLACE
+
+MAP(maddtldtrmmtr)
+mtddata			tlddata		REPLACE
+mtdnobuk		tldnobuk	REPLACE
+gv_INPG			tldsts		REPLACE
+mtdplg			tldbrg		REPLACE
+lSRTTRMMTR		tldlok		REPLACE
+lnip			tldstr1		REPLACE
+lapproval		tldstr2		REPLACE
+lketerangan		tldket		REPLACE
+chitung1		tldperdis	DO_CALC
+DEBUG			ldum ldum	REPLACE
+lFTDOKUM		tldkat		REPLACE
+
+MAP(mupdtldtrmmtr)
+g_usrkode		tldstr1		REPLACE
+lapproval		tldstr2		REPLACE
+lketerangan		tldket		REPLACE
+DEBUG			ldum ldum	REPLACE
+
+SPCALCS(supdtldtrmmtr)
+DO_LIB_IF cdjointldtrmmtr ap_dbclc(DNAME dupdtldtrmmtr,DCOMMAND UPDATE_RANGE,DTARGET tldbukbrglok mtdnobuk mtdplg lSRTTRMMTR,DMAP mupdtldtrmmtr);
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=lENTER	DO_SPCALCS supdtldtrmmtr
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW
+						IF csdhfttrmmtr mdum
+						ELSE HKCURSOR STAY
+						HKMSG UPLOAD FOTO TERLEBIH DAHULU
+
+MAP(mupdmtdBAST4)
+chitung1		mtdperdis5		DO_CALC
+g_fotolon1		mtdtmp1			REPLACE
+g_fotolat1		mtdtmp2			REPLACE
+
+DBCALCS(dupdmtdBAST4)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	mtdbukurtidx	mtdnobuk mtdnourt
+	DBC_MAP		mupdmtdBAST4
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND charusupload
+SFL_UPL_DIRFLD mtdtglfak
+SFL_UPLFLD tbtkode mtdgrup
+SFL_UPLFLD_DBCALCS dupdmtdBAST4
+SFL_UPL_CAMERAONLY
+
+SFL_TARGET
+tbtdattypkod   gv_dttemplate mtsdvs_1 gt_tmpfotopk lRMHDPN lRMHDPN lRMHDPN
+
+SPCALCS(spaddtldtrmmtr)
+DO_LIB_IF cdjointldtrmmtr0	ap_dbclc(DNAME daddtldtrmmtr,DCOMMAND ADD,DFILE tld,DMAP maddtldtrmmtr);
+
+POSTING(transa2g3)
+	PST_UPDCMD 	spaddtldtrmmtr

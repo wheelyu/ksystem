@@ -1,0 +1,129 @@
+LOCAL
+PGM_FIELDS
+lenter		STRING		21
+ltldnourt	INT2		2
+lKOREKSIFRAUD	STRING		21
+
+
+MAP(mjointld)
+tldnourt        ltldnourt       REPLACE
+
+DBCALCS(djointld2)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukbrgoto tkmnobuk gv_INPG lKOREKSIFRAUD
+        DBC_MAP         mjointld
+
+DBCALCS(djoinhslresv)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp lRESURVEY tkmkode lresurvey l1
+
+IMAGE(tmptranst)
+/---------------------------------\
+|/-------------------------------\|
+||t.Nourt   :____                ||
+||t.NipInp  :____________________||
+||i.Login   :____________________||
+||t.NoBuk   :____________________||
+||t.Pilihan :____________________||
+||t.Ket                          ||
+||:                              ||
+||:                              ||
+||:______________________________||
+||                         ______||
+|\-------------------------------/|
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt        NOCHANGE        INPUTRI 1
+tldplg          PROTECT         INPUTRI 2
+tldlok2         PROTECT         INPUTRI 3
+tldnobuk        PROTECT         INPUTRI 4
+tldstr1         NOCHANGE        INPUTRI 5
+tldket          TEXTAREA        INPUTRI 6
+lenter          NOCHANGE        INPUTRI 7
+
+
+DEFAULTS(tmptranst)
+lenter          INIT            ENTER
+tlddata         INIT            VERRESRV
+tldlok2         INIT            {g_grpnam}
+tldsts          INIT            INPG
+tldplg          INIT            {g_usrkode}
+lKOREKSIFRAUD	INIT		KOREKSIFRAUD
+tldstr1         DFALT_SCAN      BLANKS
+                                UBAHSTATUS
+
+EDITS(tmptranst)
+e.Mandatory     tldstr1         MANDATORY
+e.Mandatory     tldket          MANDATORY
+t.ValidateNip   tldplg          VALIDATE psmdtkodidx mpsinip2  {Pgv_dtkaryawan} {Pgv_INPG}
+
+MAP(mpsinip2)
+psmkode         tldplg          REPLACE
+
+CALCS()
+cjointld_0      djointld2 == 0 && g_curcmd==1
+cjointld_1      djointld2 == 1 && g_curcmd==1
+c01             "01"
+c02             "02"
+csatu2x         1
+cplus2x         ltldnourt + 1
+cTIDAKFRAUD	"TIDAKFRAUD"
+cjoinhslresv	djoinhslresv==1
+/* 
+cbtssts         djointldsts==0 || tldstr1=="UBAHKUNCI" || g_grpnam == "IT"
+cbtstgl         djointldkunci==0 || tldstr1=="UBAHSTATUS"
+*/
+
+MAP(misiuruty)
+csatu2x         tldnourt        DO_CALC_IF cjointld_0
+cplus2x         tldnourt        DO_CALC_IF cjointld_1
+
+MAP(misitransc2)
+tkmnobuk        tldnobuk        REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldnourt      DO_MAP misiuruty
+AFTER_INPUT     cur_field=tldstr1       DO_MAP SHOW misitransc2
+
+/*
+AFTER_INPUT     cur_field=tldstr1     DO_MAP  SHOW
+                IF cbtssts mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Max 1 kali input ubah status
+
+AFTER_INPUT     cur_field=tldstr1     DO_MAP  SHOW
+                IF cbtstgl mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Max 1 kali input mundur tanggal
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+	tldbukbrgoto   tkmnobuk gv_INPG lKOREKSIFRAUD
+
+
+MAP(mupdtkmtransc2)
+gv_VOID		tkmsts		REPLACE
+
+MAP(mupdmtstransc2)
+cTIDAKFRAUD	mtsgrup		DO_CALC
+
+MAP(mupdsvitransc2)
+c01             svistr1         DO_CALC
+c02             svistr38        DO_CALC
+
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dupdtkmresv,DCOMMAND UPDATE,DTARGET tkmbukidx tkmnobuk,DMAP mupdtkmtransc2);
+DO_LIB ap_dbclc(DNAME dupdmtsresv,DCOMMAND UPDATE,DTARGET mtsbukidx tkmkode,DMAP mupdmtstransc2);
+DO_LIB_IF cjoinhslresv ap_dbclc(DNAME dupdsviresv,DCOMMAND UPDATE,DTARGET svidatbuktyp lRESURVEY tkmkode lresurvey l1,DMAP mupdsvitransc2);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans
+
+

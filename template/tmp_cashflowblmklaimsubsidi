@@ -1,0 +1,61 @@
+
+LOCAL
+PGM_FIELDS
+
+lstskrm		STRING		5
+
+/*---------JOIN----------*/
+
+MAP(mjoinppmstskrm)
+ppmstskrm         lstskrm       REPLACE
+
+DBCALCS(djoinppmstskrm)
+DBC_COMMAND     JOIN
+DBC_TARGET      ppmbukidx ppsnobuk2
+DBC_MAP         mjoinppmstskrm
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.CabStok      : ______            ||
+||i.NoFak        : __________________||_
+||i.TglFak       : __________        ||
+||t.StsKrm       : __________        ||
+||t.Tipe         : __________        ||
+||t.Kode         : _________________ ||
+||t.Nominal      : _________         ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ppscab           NOCHANGE SCROLL            INPUTRI         1
+   ppsnobuk2        NOCHANGE SCROLL            INPUTRI         2
+   ppsnobuk         UNSEEN	               INPUTRI         2
+   ppstglbuk        PROTECT {DD-MM-YY}         INPUTRI         3
+   lstskrm          NOCHANGE SCROLL            INPUTRI         4
+   ppstype          NOCHANGE SCROLL            INPUTRI         5
+   ppsgrup          NOCHANGE SCROLL            INPUTRI         6
+   ppsjml           NOCHANGE SCROLL            INPUTRI         7
+   
+CALCS()
+csubsidi	ppstype == "SUBSIDI" && ppsstsdaf == BLANKS
+cdjoinppmstskrm djoinppmstskrm == 1
+
+EDITS(tmptranst)
+e.Validate ppsnobuk  VALIDATE ppsbukidx mppssubsd 0
+
+MAP(mppssubsd)
+ppsnobuk	ppsnobuk	REPLACE
+lstskrm		lstskrm		REPLACE_IF cdjoinppmstskrm
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(6)
+SFL_TITLE(tmptranst)
+SFL_SELECT csubsidi
+SFL_TARGET ppsdatstscab gv_dtpiu gv_INPG cabkode
+
+

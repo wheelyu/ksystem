@@ -1,0 +1,260 @@
+SCREEN 3007 QUERY_TYPE s.SetupBahasa
+SCR_FILE bhs
+SCR_LOGFLD bhskode  
+SCR_IMAGE_MAP mimage
+
+LOCAL
+PGM_FIELDS
+l0		INT2		2
+lcp       	STRING	          30
+lcp2       	STRING	          30
+lcp3       	STRING	          30
+lcp4       	STRING	          30
+lnoscr     	STRING	          9
+ltext1		STRING		  2
+lpil		INT2		  2
+lbhs1		STRING		  5
+lbhs 		STRING		  20
+lfilnam		STRING	          4
+lfilnamtxt	STRING	          20
+lnamacalc	STRING	          20
+lprt     	STRING	          20
+lgab_field    		STRING		100
+ldelimiter	INT2   		  2
+ldefdte   	INT2  		  2
+lrata           INT2              2
+lfile_bhs		STRING	        4
+lcalc_bhs		STRING	        30
+lfile    		STRING	        10
+ldelimiter		INT2   		2
+ldefdte   		INT2  		2
+lrata                   INT2            2
+
+CALCS()
+ca	   	"a"
+cplgksg		stsplg == "0000"
+cplgisi		stsplg != "0000"
+cpil1_plgisi	lpil == 1 && stsplg != "0000"
+cpil1_plgksg	lpil == 1 && stsplg == "0000"
+
+MAP(mimage)
+ca         g_master_type    DO_CALC_IF cplgisi 
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+| | i.Data       : __________                       i.User     : _____________                   | |
+| | i.NoPrtPlg   : _____                            i.Typ      : ____                            | |
+| | i.Tgl        : __________  _____                                                             | |
+| |                                                                                              | |
+| | i.KodeXml    : ______________________________                                                | |
+| | i.Indonesia  : _____________________________________________________________________________ | |
+| | i.English    : _____________________________________________________________________________ | |
+| \----------------------------------------------------------------------------------------------/ |
+spasi
+| /----------------------------------------------------------------------------------------------\ |
+| | i.Warna      : _________________                                                             | |
+| | i.ScriptAwl  : _____________________________________________________________________________ | |
+| | i.ScriptAkh  : _____________________________________________________________________________ | |
+| |                                                                                              | |
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+bhsdata              PROTECT QPROTECT   INPUTRI     1
+bhsusrcrt            PROTECT            INPUTRI     2
+
+bhsprt               ALLCAPS            INPUTRI     3
+bhstype              PROTECT            INPUTRI     4
+bhstglcrt            NOCHANGE NOLIMIT {DD-MM-YY}    INPUTRI     5
+bhsjam               PROTECT {99:99}    INPUTRI     6
+
+bhskode              NONE               INPUTRI     7
+bhsketina            ALPHANUMERIC SCROLL       	INPUTRI     9
+bhsketeng            ALPHANUMERIC  SCROLL       	INPUTRI     10
+
+bhskdfont            NONE SCROLL       	INPUTRI     11
+bhsfont1             PROTECT SCROLL     INPUTRI     12
+bhsfont2             PROTECT SCROLL     INPUTRI     13
+
+
+IMAGE(mastera) {IMG_DEFAULT=master} {IMG_EDITS=master} {IMG_HOOKS=master} {IMG_HELP=master} 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+| | i.Data       : __________                       i.User     : _____________                   | |
+| | i.NoPrtPlg   : _____  Test                      i.Typ      : ____                            | |
+| | i.Tgl        : __________  _____                                                             | |
+| |                                                                                              | |
+| | i.KodeXml    : ______________________________                                                | |
+| | i.Indonesia  : _____________________________________________________________________________ | |
+| | i.English    : _____________________________________________________________________________ | |
+| \----------------------------------------------------------------------------------------------/ |
+spasi
+| /----------------------------------------------------------------------------------------------\ |
+| | i.Warna      : _________________                                                             | |
+| | i.ScriptAwl  : _____________________________________________________________________________ | |
+| | i.ScriptAkh  : _____________________________________________________________________________ | |
+| |                                                                                              | |
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(mastera)
+bhsdata              PROTECT QPROTECT   INPUTRI     1
+bhsusrcrt            PROTECT QPROTECT   INPUTRI     2
+
+bhsprt               PROTECT QPROTECT   INPUTRI     3
+bhstype              PROTECT            INPUTRI     3
+bhstglcrt            NOCHANGE NOLIMIT {DD-MM-YY}    INPUTRI     4
+bhsjam               PROTECT {99:99}    INPUTRI     5
+
+bhskode              NONE               INPUTRI     8
+bhsketina            NONE SCROLL       	INPUTRI     9
+bhsketeng            NONE SCROLL       	INPUTRI     10
+
+bhskdfont            NONE SCROLL       	INPUTRI     11
+bhsfont1             PROTECT SCROLL     INPUTRI     12
+bhsfont2             PROTECT SCROLL     INPUTRI     13
+
+CALCS()
+cbkn0000	stsplg != "0000"
+
+DEFAULTS(master)
+l0		INIT		0
+bhsdata	        INIT		BHS
+bhsdata	        INIT_UPDATE	BHS
+bhstglcrt	INIT		SYSDATE
+bhsjam	        INIT		SYSTIME
+bhsusrcrt	INIT		{g_usrkode}
+bhsprt  	INIT		{stsplg}
+IF cbkn0000 bhsprt  INIT_QUERY	{stsplg}
+ldelimiter	INIT      	1
+ldefdte		DFALT_LIST	1 2 3 4
+lrata		DFALT_LIST	0 1
+lfilnam		INIT		bhs
+
+CALCS()
+cbknspasi	bhskode != "spasi"
+ct		"t"
+ct2		"t."
+ckodeksg	bhskode == BLANKS && bhsprt != "0000" 
+cksg		bhskdfont == BLANKS
+cBLANKS		BLANKS
+
+EDITS(master)
+e.Mandatory bhskode MANDATORY
+e.Dupkey bhskode DUPKEY bhskodidx 
+e.Mandatory bhsketina MANDATORY_IF cbknspasi
+e.ValidateFont bhskdfont VALIDATE_DUP ketdatbukkod mket sket {Pgv_warnabhs} {Pgv_warnabhs21} 
+
+
+MAP(mket)
+ketkode		bhskdfont	REPLACE
+ketisi		bhsfont1	REPLACE
+ketisi2		bhsfont2	REPLACE
+
+MAP(mtype)
+ct		bhstype		DO_CALC_IF cplgisi
+ct2		bhskode		DO_CALC_IF ckodeksg
+
+MAP(mfont)
+cBLANKS		bhsfont1	DO_CALC_IF cksg
+cBLANKS		bhsfont2	DO_CALC_IF cksg
+
+HOOKS(master)
+AFTER_INPUT	cur_field=bhstglcrt	DO_MAP SHOW mtype
+AFTER_INPUT	cur_field=bhskdfont	DO_MAP SHOW mfont
+
+IMAGE(report) 
+/------------------------------------------------------\                      
+|   i.No Prt    : _________                            |
+|   i.Pil       : ___   i.1XmlIndo                     |
+|                       i.2XmlEng                      |
+|                       i.3txt                         |
+|   i.Nama      : ________________                     |
+|                                                      |
+\------------------------------------------------------/
+
+FIELD(report)
+    lprt            ALLCAPS            INPUTRI          1
+    lpil            NOCHANGE           INPUTRI          2
+    lfilnamtxt      NOCHANGE           INPUTRI ZERO     3
+
+CALCS()
+cpil1		lpil == 1
+cpil2		lpil == 2
+cpil3		lpil == 3
+cid		"id"
+cen		"en"
+cnamtxt		"bhs.txt" 
+cnamtxt2	"bhs" + STRIP(stsplg) + ".txt" 
+cnamfile	"bhs" + STRIP(stsplg)
+cnamfileksg	"bhs" 
+cplg000		 bhsprt == "0000" || bhsprt == BLANKS 
+cplg111		 bhsprt == lprt    
+cnam_plg000	"cplg000"
+cnam_plgisi	"cplg111"
+ccp_prt		"cp bhs.txt bhs" + STRIP(stsplg) + ".txt" 
+ccp2		"cp" + " " + STRIP(lfile) + "_" + STRIP(lbhs) + ".xml" + " txtumum"
+ccp3		"cp" + " " + STRIP(lfile) + "_" + STRIP(lbhs) + ".xml" + " txtumum\/datawl"
+cmv4		"cp" + " " + STRIP(lfile) + "_" + STRIP(lbhs) + ".xml" + " prg"
+cmv42		"cp" + " " + STRIP(lfile) + "_" + STRIP(lbhs) + ".xml" + " prt" + STRIP(lprt)
+
+
+DEFAULTS(report)
+lpil		DFALT_LIST 	1 2 3
+lprt		INIT		{stsplg}
+ldelimiter	INIT      	1
+ldefdte		DFALT_LIST	1 
+lrata		DFALT_LIST	0
+
+MAP(mbhs)
+cnamfile	lfile     	DO_CALC_IF cplgisi
+cnamfileksg	lfile     	DO_CALC_IF cplgksg
+cnam_plg000	lnamacalc	DO_CALC_IF cplgksg
+cnam_plgisi	lnamacalc	DO_CALC_IF cplgisi
+cnamtxt		lfilnamtxt	DO_CALC_IF cplgksg
+cnamtxt2	lfilnamtxt	DO_CALC_IF cplgisi
+
+cid		lbhs		DO_CALC_IF cpil1
+cen		lbhs		DO_CALC_IF cpil2
+ccp_prt		lcp		DO_CALC_IF cplgisi
+ccp2		lcp2		DO_CALC_IF cplgksg
+ccp3		lcp3		DO_CALC_IF cplgksg
+cmv4		lcp4		DO_CALC_IF cplgksg
+cmv42		lcp4		DO_CALC_IF cplgisi
+
+
+CALCS()
+cbhs       	"bhs"
+c0		0
+/*
+cbhs_ok		bhsprt == lprt     
+clbhsOk  	"cbhs_ok"
+*/
+cnamtxt3	STRIP(lprt)
+
+MAP(mtxt)
+cbhs       	lfile_bhs       	DO_CALC
+/*clbhsOk    	lcalc_bhs	   	DO_CALC*/
+cnamtxt    	lnoscr          	DO_CALC
+
+HOOKS(report)
+AFTER_INPUT	cur_field=lpil		DO_MAP SHOW IF cpil1 mbhs
+AFTER_INPUT	cur_field=lpil		DO_LIB_IF cpil1_plgisi ap_flexp(lfilnam,ldelimiter,ldefdte,lrata,lnamacalc,g_strksg,g_strksg,g_strksg,l0);
+AFTER_INPUT	cur_field=lpil		DO_LIB_IF cpil1_plgksg ap_flexp(lfilnam,ldelimiter,ldefdte,lrata,lnamacalc,g_strksg,g_strksg,g_strksg,l0);
+AFTER_INPUT	cur_field=lpil		DO_LIB_IF cpil1_plgisi ap_systm(lcp); 
+
+AFTER_INPUT	cur_field=lfilnamtxt	DO_LIB_IF cpil1 ap_tx2xm(lfilnamtxt,lbhs);    /* membuat bhs.txt menjadi bhs_in.xml*/
+AFTER_INPUT	cur_field=lfilnamtxt 	DO_LIB_IF cpil1_plgksg ap_systm(lcp2); 
+AFTER_INPUT	cur_field=lfilnamtxt 	DO_LIB_IF cpil1_plgksg ap_systm(lcp3); 
+AFTER_INPUT	cur_field=lfilnamtxt 	DO_LIB_IF cpil1 ap_systm(lcp4); 
+
+/* Pilihan 2*/
+AFTER_INPUT	cur_field=lpil		DO_MAP SHOW IF cpil3 mtxt
+AFTER_INPUT	cur_field=lpil		DO_LIB_IF cpil3 ap_flexp(lfile_bhs,ldelimiter,ldefdte,lrata,lcalc_bhs,lgab_field,lnoscr,g_strksg,l0);
+
+RTREE(report1)
+RT_COND c0
+USES_SCRIPT(scr3007.rptdesign)
+
+END_SCREEN

@@ -1,0 +1,53 @@
+LOCAL
+PGM_FIELDS
+ldum                 INT2               2
+
+IMAGE(tmptranst)
+/--------t----------t--------------t---------\
+|t.Kode  |t.CabHrg  |i.Nama        |t.MinDpGr|
+\--------.----------.--------------.---------/
+
+IMAGE(tmptrans)
+|________|__________|______________|_____.___|
+
+FIELD(tmptrans)
+	cadkdcab	PROTECT		INPUTRI		1
+	cadarea		ALLCAPS		INPUTRI		2
+	lnamacab	PROTECT		INPUTRI		3
+	cadtot1		NUMERIC		INPUTRI		4
+
+DEFAULTS(tmptrans)
+	caddata		INIT		CABHRG
+	cadtype		INIT		HARGA
+	cadkode		INIT		HARGA
+
+EDITS(tmptrans)
+	e.Mandatory	cadarea		MANDATORY
+	e.ValidateCab	cadarea		VALIDATE_BUF3 cabstskodidx mcabharga scabLBT {Pgv_INPG}
+
+MAP(mdum)
+ldum      ldum   REPLACE
+
+CALCS()
+cmin7ok    cadtot1 >= 7
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=cadtot1  	DO_MAP SHOW 
+  		IF cmin7ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG h.Minimal7     
+
+
+MAP(mcabharga)
+	#cabkode		cadarea		REPLACE
+	#cabnama		lnamacab	REPLACE
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cdealer2
+SFL_TARGET
+	cadcabdtidx	cabkode lCABHRG lHARGA lHARGA
+SFL_MAP
+	cabkode		cadkdcab	REPLACE
+

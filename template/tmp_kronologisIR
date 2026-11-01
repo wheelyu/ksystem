@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+lketkode_1  	STRING	21
+lentr 		STRING	11
+ldum		STRING	31
+lpanjang	INT2	2
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+ /-----t.Harus5w1h--------------------------------------------------------\ 
+ | __________________________________________________                     |
+ | __________________________________________________                     |
+ |                                                                        | 
+ |__________                                                              | 
+ \------------------------------------------------------------------------/ 
+\--------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketisi		TEXTAREA	INPUTRI 1
+ketisi2         TEXTAREA        INPUTRI 1
+lentr 		NOCHANGE	INPUTRI	2
+
+DEFAULT(tmptranst)
+lketkode_1  	INIT		KRONOLOGIS
+lentr 		INIT		"TABENTR"
+
+EDITS(tmptranst)
+e.Mandatory	ketisi		MANDATORY
+
+CALCS()
+cpanjang	DO_LIB ap_strln(ketisi,&lpanjang);
+cpjgkronologis	lpanjang >= 120 && lpanjang <= 250
+
+MAP(mpanjangkrono)
+cpanjang	lpanjang	DO_CALC
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=ketisi	DO_MAP SHOW mpanjangkrono
+AFTER_INPUT	cur_field=ketisi	DO_MAP SHOW
+		IF cpjgkronologis mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Min120
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF cpjgkronologis mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Min120
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	ketdatbukkod   tlmdata tlmnobuk lketkode_1
+
+SFL_MAP
+tlmnobuk	ketnobuk	REPLACE
+tlmdata		ketdata		REPLACE
+lketkode_1  	ketkode		REPLACE
+
+MAP(mupdtlmusr1)
+c1      tlmperdisd          DO_CALC
+DEBUG	ldum	ldum	REPLACE
+
+SPCALCS(spcalupdusr1)
+DO_LIB ap_dbclc(DNAME dupdtlmusr1,DCOMMAND UPDATE,DTARGET tlmbukidx ketnobuk,DMAP mupdtlmusr1);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcalupdusr1

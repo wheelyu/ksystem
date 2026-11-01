@@ -1,0 +1,62 @@
+LOCAL
+PGM_FIELDS
+lversi2		STRING		11
+
+MAP(mjoinnhm)
+nhmjns		lnhmjns		REPLACE
+
+DBCALCS(djoinnhm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	nhmdatbukidx gv_bukutamu piknobtm
+	DBC_MAP		mjoinnhm
+
+MAP(mjoinast)
+astrangka	lnorangka	REPLACE
+astmesin	lnomesin	REPLACE
+
+DBCALCS(djoinast)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	astdatkodidx lASSET pikplg lBPKB lnhmjns
+	DBC_MAP		mjoinast
+
+CALCS()
+cjoinnhm	djoinnhm==1
+cjoinast	djoinast==1
+
+IMAGE(tmptranst)
+/---------------t--------t------------------t-----------------------t-----------t------------------t------------------\
+| t.Nofak       |t.Status|t.KTP             | t.NamaDeb             | t.TglTrk  | t.NoRangka       | t.NoMesin        |
+\---------------.--------.------------------.-----------------------.-----------.------------------.------------------/
+
+IMAGE(tmptrans)
+|_______________|________|__________________|_______________________|___________|__________________|__________________|
+
+FIELDS(tmptrans)
+piknobuk  	PROTECT			INPUTRI 1
+piksts		PROTECT			INPUTRI 2
+pikplg		PROTECT UNSEEN		INPUTRI	3
+lnamadeb	PROTECT			INPUTRI 4
+piktglbyrakh	PROTECT	{DD-MM-YYYY}	INPUTRI 5
+lnorangka	PROTECT			INPUTRI 6
+lnomesin	PROTECT			INPUTRI 7
+
+DEFAULTS(tmptrans)
+lversi2		INIT		221021v1
+
+EDITS(tmptrans)
+e.Validate 	pikplg	VALIDATE psmktpidx mpsmdet
+
+MAP(mpsmdet)
+psmnama		lnamadeb	REPLACE
+lnhmjns		lnhmjns		REPLACE_IF cjoinnhm
+lnorangka	lnorangka	REPLACE_IF cjoinast
+
+CALCS()
+clokasim4w	pikdvs=="M4W" && pikkolext==tlmnobuk 
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SELECT clokasim4w
+SFL_TARGET_GTE
+pikdtjnstjtp gv_dtpiu gv_INPG {gv_dtpiu} {lTRK1}

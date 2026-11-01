@@ -1,0 +1,475 @@
+LOCAL
+PGM_FIELDS
+lpropinsi	STRING		21
+lkota		STRING		21
+lkec		STRING		21
+lkel		STRING		21
+
+lpropinsi3      STRING          21
+lkota3          STRING          21
+lkec3           STRING          21
+lkel3           STRING          21
+
+lpsinama	STRING		31
+lpsinamaacc	STRING		31
+lnourt		INT2		2
+lnourtktp	INT2		2
+lnourttgl	INT2		2
+lsvinobuk	STRING		21
+lbtmnobuk	STRING		21
+lbtmcab		STRING		21
+lalmnama2	STRING		21
+lalmnama2a	STRING		21
+lENTER		STRING		11
+
+DBCALCS(djoinalmktp)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	almdatotourt   gv_psmktp svinobuk
+
+DBCALCS(djoinalmtinggal)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      almdatotourt   gt_psmtinggal svinobuk
+
+MAP(mjointkdbtm)
+tkdket		lalasanubah	REPLACE
+tkdnoll		lnobukakt	REPLACE
+tkdjwbstr1	laccpkakt	REPLACE
+tkdsisstr	lnipaccpk	REPLACE
+
+DBCALCS(djointkdbtm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkdbukidx	svinobuk gv_CLSD svinourt
+        DBC_MAP         mjointkdbtm
+
+CALCS()
+cdjoinalmktp1		djoinalmktp==1 && svitblkode=="ALMKTP" && lbtmnobuk==BLANKS
+cdjoinalmtinggal1	djoinalmtinggal==1 && svitblkode=="ALMTINGGAL" && lbtmnobuk==BLANKS
+cdjoinalmktpu		djoinalmktp==1 && svitblkode=="ALMKTP" && lbtmnobuk!=BLANKS
+cdjoinalmtinggalu	djoinalmtinggal==1 && svitblkode=="ALMTINGGAL" && lbtmnobuk!=BLANKS
+cbtmakt			btmdata=="BUKUTAMU" && (btmsts=="712" || btmsts=="713" || btmsts=="714")
+
+MAP(mbtmakt)
+btmnobuk        lbtmnobuk       REPLACE
+btmcab		lbtmcab		REPLACE
+
+DBCALCS(djoinbtmakt)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmplgbukidx psmktp
+        DBC_SELECT      cbtmakt
+        DBC_MAP         mbtmakt
+
+MAP(mjoinalmsvy)
+almnama2	lalmnama2	REPLACE
+
+DBCALCS(djoinalmsvy)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatotobuk gv_almsurvey lsvinobuk lbtmnobuk
+	DBC_MAP		mjoinalmsvy
+
+MAP(mjoinalmkrm)
+almnama2        lalmnama2a      REPLACE
+
+DBCALCS(djoinalmkrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatotobuk gt_almkirim lsvinobuk lbtmnobuk
+        DBC_MAP         mjoinalmkrm
+
+MAP(mjoinalmtgh)
+almnama	        lalmnama2a      REPLACE
+
+DBCALCS(djoinalmtgh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatotobuk lALMTAGIH lsvinobuk lbtmnobuk
+        DBC_MAP         mjoinalmtgh
+
+IMAGE(tmptranst)
+
+/---------------------------------------------------------------------------------------------------\
+|/------------------------------------------------\/-----------------------------------------------\|
+|| __________      ________________ _             || i.Alamattinggal : _____                       ||
+|| t.Alamat     : ______________________________  || t.Alamat     : ______________________________ ||
+|| i.RT         : ____            i.RW   : ____   || i.RT         : ____            i.RW   : ____  ||
+|| i.Propinsi   : ______________  ______________  || i.Propinsi   : ______________  ______________ ||
+|| i.Kota       : ______________  ______________  || i.Kota       : ______________  ______________ ||
+|| i.Kec        : ______________  ______________  || i.Kec        : ______________  ______________ ||
+|| i.Kel        : ______________  ______________  || i.Kel        : ______________  ______________ ||
+|| i.KodePos    : ______________                  || i.KodePos    : ______________                 ||
+|| spasi                                          || t.NobukAktifPk : ________________             ||
+|| t.Nip        : ________  _____________________ || t.AccUbahAlmPk : ____                         ||
+|| t.TanggalUbah: ___________                     || t.Nip          : _______ _____________________||
+|| t.AlasanPerubahan                              || spasi                                         ||
+||  ____________________________________          || __________                                    ||
+|\------------------------------------------------/\-----------------------------------------------/|
+\---------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svitblkode              NOCHANGE                        INPUTRI 1
+svinobuk		PROTECT				INPUTRI	1
+lsvinobuk		PROTECT	UNSEEN			INPUTRI	1
+sviyt1			NOCHANGE			INPUTRI	1
+
+sviket			ALLCAPS 			INPUTRI	2
+sviket2                 PROTECT 			INPUTRI 3
+
+svistr1                 NUMERIC                         INPUTRI 4
+svistr2                 NUMERIC                         INPUTRI 5
+svitype2		PROTECT				INPUTRI	6
+svinama			PROTECT				INPUTRI	7
+
+svistr3                 PROTECT SCROLL                  INPUTRI 8
+lpropinsi               PROTECT                         INPUTRI 9
+svistr4                 PROTECT                         INPUTRI 10
+lpropinsi3              PROTECT                         INPUTRI 11
+
+svistr5                 ALLCAPS SCROLL                  INPUTRI 12
+lkota                   PROTECT                         INPUTRI 13
+svistr6                 PROTECT                         INPUTRI 14
+lkota3                  PROTECT                         INPUTRI 14
+
+svistr7                 ALLCAPS SCROLL                  INPUTRI 15
+lkec                    PROTECT                         INPUTRI 16
+svistr8                 PROTECT                         INPUTRI 17
+lkec3                   PROTECT                         INPUTRI 18
+
+svistr9                 ALLCAPS SCROLL                  INPUTRI 19
+lkel                    PROTECT                         INPUTRI 20
+svistr10                PROTECT                         INPUTRI 21
+lkel3                   PROTECT                         INPUTRI 22
+
+svidtmkode              ALLCAPS SCROLL                  INPUTRI 23
+sviket3			PROTECT				INPUTRI	24
+lnobukakt		PROTECT				INPUTRI	26
+svikode			PROTECT				INPUTRI	25
+lpsinama		PROTECT				INPUTRI	26
+
+laccpkakt		NOCHANGE			INPUTRI	27
+svitgl1			PROTECT {DD-MM-YYYY}		INPUTRI	28
+lnipaccpk		PROTECT				INPUTRI 29
+lpsinamaacc		PROTECT				INPUTRI	30
+
+lalasanubah		TEXTAREA			INPUTRI	31
+lENTER			NOCHANGE			INPUTRI	32
+
+CALCS()
+caddktp		g_curcmd==1 && svitblkode=="ALMKTP"
+caddtinggal	g_curcmd==1 && svitblkode=="ALMTINGGAL"
+caddtinggalya   g_curcmd==1 && svitblkode=="ALMTINGGAL" && sviyt1=="Y"
+cabaikan	svitblkode=="blm pakai"
+cadddata        g_curcmd==1
+cksngadd	g_curcmd==0
+cupdktp		g_curcmd==2
+cjointkdbtm	g_curcmd==0 && djointkdbtm==1
+cupdtkdbtm	g_curcmd==2 && djointkdbtm==1
+cdjoinalmsvyktp	djoinbtmakt==1 && lbtmcab==svitype3 && djoinalmsvy==1 && lalmnama2=="PSMKTP" && svitblkode=="ALMKTP"
+cdjoinalmsvytgl	djoinbtmakt==1 && lbtmcab==svitype3 && djoinalmsvy==1 && lalmnama2=="PSMTINGGAL" && svitblkode=="ALMTINGGAL"
+cdjoinalmkrmktp	djoinbtmakt==1 && lbtmcab==svitype3 && djoinalmkrm==1 && lalmnama2a=="PSMKTP" && svitblkode=="ALMKTP"
+cdjoinalmkrmtgl	djoinbtmakt==1 && lbtmcab==svitype3 && djoinalmkrm==1 && lalmnama2a=="PSMTINGGAL" && svitblkode=="ALMTINGGAL"
+cdjoinalmtghktp	djoinbtmakt==1 && lbtmcab==svitype3 && djoinalmtgh==1 && lalmnama2a=="PSMKTP" && svitblkode=="ALMKTP"
+cdjoinalmtghtgl	djoinbtmakt==1 && lbtmcab==svitype3 && djoinalmtgh==1 && lalmnama2a=="ALAMAT_TINGGAL" && svitblkode=="ALMTINGGAL"
+cadanipacc	lnipaccpk!=BLANKS
+cjoinbtmakt	djoinbtmakt==1
+
+DEFAULTS(tmptranst)
+lENTER          INIT    ENTER
+svikode         INIT    {g_usrkode}
+lsvinobuk       INIT    {psmktp}
+svitgl1         INIT    {g_tgltrn}
+
+svitblkode      DFALT_SCAN      BLANKS
+                                ALMKTP
+                                ALMTINGGAL
+sviyt1          DFALT_SCAN      BLANKS
+                                Y "Alamat Tinggal Sesuai KTP"
+                                T "Alamat Tinggal Tidak Sesuai KTP"
+laccpkakt       DFALT_SCAN      BLANKS ACC
+
+EDITS(tmptranst)
+e.mandatory	sviyt1		MANDATORY_IF caddtinggal
+e.mandatory	svitblkode	MANDATORY
+e.Mandatory	sviket		MANDATORY
+e.Mandatory	svistr1		MANDATORY
+e.Mandatory	svistr2		MANDATORY
+e.Mandatory	svistr9		MANDATORY
+e.Mandatory	svidtmkode	MANDATORY
+e.Mandatory	lalasanubah	MANDATORY
+e.Mandatory	laccpkakt	MANDATORY_IF cupdktp
+
+e.validate	lsvinobuk	VALIDATE_DUP_IF caddktp	almdatotourt malmktp {Pgv_psmktp} 
+
+e.validate      lsvinobuk       VALIDATE_DUP_IF caddtinggalya almdatotourt malmktptinggal {Pgv_psmktp}
+e.validate      lsvinobuk       VALIDATE_DUP_IF caddtinggal    almdatotourt malmktp {Pgt_psmtinggal}
+
+e.validate	svikode	VALIDATE	psikodidx	mpsi4
+e.validatePropinsi1     svistr3 VALIDATE dtmdtkodidx  mdtm4 sdtm {Pgv_dtkota}
+e.validatePropinsi2     svistr4 VALIDATE_IF cabaikan dtmdtkodidx  mdtm5 sdtm {Pgv_dtkota}
+e.validateKota1         svistr5 VALIDATE tbldtkodidx mtbl4 stbl {Pgv_dtkota}
+e.validateKota2         svistr6 VALIDATE_IF cabaikan tbldtkodidx mtbl5 stbl {Pgv_dtkota}
+
+e.validateKec1          svistr7 VALIDATE tbddatkodidx mtbd4 stbd {Pgv_dtkota} {Psvistr3} {Psvistr5}
+e.validateKec2          svistr8 VALIDATE_IF cabaikan tbddatkodidx mtbd5 stbd {Pgv_dtkota} {Psvistr4} {Psvistr6}
+
+e.validateKel1          svistr9 VALIDATE tbtdattypkod mtbt4 stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr3} {Psvistr5} {Psvistr7}
+e.validateKel2          svistr10 VALIDATE_IF cabaikan tbtdattypkod mtbt5 stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr4} {Psvistr6} {Psvistr8}
+
+/*
+t.ValidateKel1          svistr9  VALIDATE_SEARCH tbtkodeidx mtbt4 stbtkel
+*/
+
+t.validateRT            svistr1 VALIDATE tbddatkodidx mtbdrt4 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            svistr2 VALIDATE tbddatkodidx mtbdrw4 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+e.validate		lnipaccpk VALIDATE_IF cadanipacc psikodidx	mpsi5
+
+MAP(mpsi4)
+psinama		lpsinama	REPLACE
+
+MAP(mpsi5)
+psinama		lpsinamaacc	REPLACE
+
+MAP(mtbdrt4)
+tbdkode         svistr1         REPLACE
+cBLANKS                 lalasanubah             DO_CALC_IF cksngadd
+cBLANKS                 lnobukakt               DO_CALC_IF cksngadd
+cBLANKS                 laccpkakt               DO_CALC_IF cksngadd
+cBLANKS                 lnipaccpk               DO_CALC_IF cksngadd
+lalasanubah             lalasanubah             REPLACE_IF cjointkdbtm
+lnobukakt               lnobukakt               REPLACE_IF cjointkdbtm
+laccpkakt               laccpkakt               REPLACE_IF cjointkdbtm
+lnipaccpk               lnipaccpk               REPLACE_IF cjointkdbtm
+
+MAP(mtbdrw4)
+tbdkode         svistr2         REPLACE
+
+MAP(mtbt5)
+tbtkode                 svistr10                REPLACE
+tbtket                  lkel3                   REPLACE
+tbtkat			svistr3			REPLACE
+
+MAP(mtbt4)
+tbtkode                 svistr9                 REPLACE_IF cadddata
+tbtket                  lkel                    REPLACE_IF cadddata
+tbtkat			svidtmkode		REPLACE_IF cadddata
+tbtcab			svitype3		REPLACE_IF cadddata
+tbttbdkode              svistr7                 REPLACE_IF cadddata
+tbttblkode              svistr5                 REPLACE_IF cadddata
+tbtdtmkode              svistr3                 REPLACE_IF cadddata
+
+MAP(mtbd5)
+tbdkode                 svistr8                REPLACE
+tbdket                  lkec3                  REPLACE
+
+MAP(mtbd4)
+tbdkode                 svistr7                 REPLACE
+tbdket                  lkec                    REPLACE
+
+MAP(mtbl5)
+tblkode                 svistr6                 REPLACE
+tblket                  lkota3                  REPLACE
+tbldtmkode              svistr4                 REPLACE
+
+MAP(mtbl4)
+tblkode                 svistr5                REPLACE
+tblket                  lkota                  REPLACE
+tbldtmkode              svistr3                REPLACE
+
+MAP(mdtm5)
+dtmkode                 svistr4                 REPLACE
+dtmket                  lpropinsi3              REPLACE
+
+
+MAP(mdtm4)
+dtmkode                 svistr3                 REPLACE
+dtmket                  lpropinsi               REPLACE
+
+MAP(malmktp)
+almjalan		sviket2		REPLACE
+almprop			svistr4		REPLACE
+almkota			svistr6		REPLACE
+almkec			svistr8		REPLACE
+almkel			svistr10	REPLACE
+almkdpos		sviket3		REPLACE
+almrt			svitype2	REPLACE
+almrw			svinama		REPLACE
+
+MAP(malmktptinggal)
+almjalan                sviket          REPLACE
+almprop                 svistr3         REPLACE
+almkota                 svistr5         REPLACE
+almkec                  svistr7         REPLACE
+almkel                  svistr9         REPLACE
+almkdpos                svidtmkode      REPLACE
+almrt                   svistr1         REPLACE
+almrw                   svistr2         REPLACE
+
+CALCS()
+cubahktp        svitblkode=="ALMKTP"
+cubahtinggal    svitblkode=="ALMTINGGAL"
+cnourtktp	lnourtktp+1
+cnourttgl	lnourttgl+1
+
+MAP(mmapisidetail)
+lUBAHKTP        svitype         REPLACE_IF cubahktp
+lUBAHTIGL       svitype         REPLACE_IF cubahtinggal
+
+almjalan                sviket2         REPLACE_IF cadd
+almprop                 svistr4         REPLACE_IF cadd
+almkota                 svistr6         REPLACE_IF cadd
+almkec                  svistr8         REPLACE_IF cadd
+almkel                  svistr10        REPLACE_IF cadd
+almkdpos                sviket3         REPLACE_IF cadd
+almrt                   svitype2        REPLACE_IF cadd
+almrw                   svinama         REPLACE_IF cadd
+
+MAP(mmapisinourt)
+cnourtktp	lnourtktp	DO_CALC
+cnourttgl	lnourttgl	DO_CALC
+lnourtktp	lnourt		REPLACE_IF cubahktp
+lnourttgl	lnourt		REPLACE_IF cubahtinggal
+lnourt		svinourt	REPLACE
+
+MAP(mscansviktp)
+c1	lnourtktp		DO_CALC
+
+DBCALCS(dbscansviktp)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	svidatbuktyp   lUBAHALM psmktp lUBAHKTP
+	DBC_SUM_MAP	mscansviktp
+
+MAP(mscansvitinggal)
+c1      lnourttgl		DO_CALC
+
+DBCALCS(dbscansvitinggal)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp   lUBAHALM psmktp lUBAHTIGL
+        DBC_SUM_MAP     mscansvitinggal
+
+
+MAP(mkosongdulu)
+cBLANKS		sviyt1		 DO_CALC
+cBLANKS		sviket		 DO_CALC
+cBLANKS         sviket2          DO_CALC
+cBLANKS         svistr1          DO_CALC
+cBLANKS         svistr2          DO_CALC
+cBLANKS         svitype2         DO_CALC
+cBLANKS         svinama          DO_CALC
+cBLANKS         svistr3          DO_CALC
+cBLANKS         lpropinsi        DO_CALC
+cBLANKS         svistr4          DO_CALC
+cBLANKS         lpropinsi3       DO_CALC
+cBLANKS         svistr5          DO_CALC
+cBLANKS         lkota            DO_CALC
+cBLANKS         svistr6          DO_CALC
+cBLANKS         lkota3           DO_CALC
+cBLANKS         svistr7          DO_CALC
+cBLANKS         lkec             DO_CALC
+cBLANKS         svistr8          DO_CALC
+cBLANKS         lkec3            DO_CALC
+cBLANKS         svistr9          DO_CALC
+cBLANKS         lkel             DO_CALC
+cBLANKS         svistr10         DO_CALC
+cBLANKS         lkel3            DO_CALC
+cBLANKS         svidtmkode       DO_CALC
+cBLANKS         sviket3          DO_CALC
+cBLANKS		lalasanubah	 DO_CALC
+
+MAP(misinipacc)
+g_usrkode	lnipaccpk	REPLACE
+lnipaccpk	lnipaccpkx	REPLACE
+laccpkakt	laccpkaktx	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svitblkode	DO_MAP SHOW mkosongdulu
+BEFORE_INPUT	cur_field=sviket	DO_MAP	SHOW mmapisidetail
+AFTER_INPUT	cur_field=sviket	DO_SCAN dbscansviktp
+AFTER_INPUT     cur_field=sviket        DO_SCAN dbscansvitinggal
+AFTER_INPUT	cur_field=sviket	DO_MAP	SHOW mmapisinourt
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF caddktp
+BEFORE_INPUT	cur_field=laccpkakt	DO_SKIP_IF cadddata
+AFTER_INPUT	cur_field=laccpkakt	DO_MAP SHOW misinipacc
+
+
+BEFORE_INPUT	cur_field=sviket	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svistr5	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svistr7	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svistr9	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svidtmkode	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF caddtinggalya
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF caddtinggalya
+
+BEFORE_INPUT	cur_field=svitblkode	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=sviket	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=svistr5	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=svistr7	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=svistr9	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=svidtmkode	DO_SKIP_IF cupdktp
+BEFORE_INPUT	cur_field=lalasanubah	DO_SKIP_IF cupdktp
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svitgl1 svioto
+SFL_SORT_UPDOWN DOWN
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp   lUBAHALM psmktp
+SFL_MAP
+lUBAHALM	svidata		REPLACE
+psmktp		svinobuk	REPLACE
+
+MAP(mupdalm)
+sviket		almjalan	REPLACE
+svistr1		almrt		REPLACE
+svistr2		almrw		REPLACE
+svistr3		almprop		REPLACE
+svistr5		almkota		REPLACE
+svistr7		almkec		REPLACE
+svistr9		almkel		REPLACE
+svidtmkode	almkdpos	REPLACE
+
+MAP(mupdpsmtinggal)
+sviyt1		psmstspek	REPLACE
+
+MAP(maddtkdbtm)
+lUBAHALM	tkddata		REPLACE
+psmktp		tkdnobuk	REPLACE
+gv_CLSD		tkdsts 		REPLACE
+lnourt		tkdnourt	REPLACE
+lalasanubah	tkdket		REPLACE
+lbtmnobuk	tkdnoll		REPLACE
+
+MAP(mmapmap)
+lbtmnobuk	lbtmnobuk	REPLACE_IF cjoinbtmakt
+
+MAP(mupdtkdbtm)
+lnipaccpkx	tkdsisstr	REPLACE
+laccpkaktx	tkdjwbstr1	REPLACE
+lnipaccpkx	lnipaccpk	REPLACE
+laccpkaktx	laccpkakt	REPLACE
+
+SPCALCS(spadd)
+	DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);	
+        DO_LIB_IF cdjoinalmktp1 ap_dbclc (DNAME dupdalmktp,DCOMMAND UPDATE_RANGE,DTARGET almdatotourt   gv_psmktp lsvinobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmtinggal1 ap_dbclc (DNAME dupdalmtinggal,DCOMMAND UPDATE_RANGE,DTARGET almdatotourt   gt_psmtinggal lsvinobuk,DMAP mupdalm);
+	DO_LIB ap_dbclc(DNAME daddtkdbtm,DCOMMAND ADD,DFILE tkd,DMAP maddtkdbtm);
+	DO_LIB ap_dbclc (DNAME dupdpsmtinggal,DCOMMAND UPDATE,DTARGET psmktpidx   lsvinobuk,DMAP mupdpsmtinggal);
+
+SPCALCS(spupd)
+	DO_LIB ap_dbclc(DNAME dmapmapa,DCOMMAND MAPMAP,DMAP mmapmap);	
+	DO_LIB_IF cupdtkdbtm ap_dbclc(DNAME dupdtkdbtm,DCOMMAND UPDATE,DTARGET tkdbukidx svinobuk gv_CLSD svinourt,DMAP mupdtkdbtm);
+        DO_LIB_IF cdjoinalmktpu ap_dbclc (DNAME dupdalmktpu,DCOMMAND UPDATE_RANGE,DTARGET almdatotourt   gv_psmktp lsvinobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmtinggalu ap_dbclc (DNAME dupdalmtinggalu,DCOMMAND UPDATE_RANGE,DTARGET almdatotourt   gt_psmtinggal lsvinobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmsvyktp ap_dbclc (DNAME dupdalmsvyktp,DCOMMAND UPDATE_RANGE,DTARGET almdatotobuk gv_almsurvey lsvinobuk lbtmnobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmsvytgl ap_dbclc (DNAME dupdalmsvytgl,DCOMMAND UPDATE_RANGE,DTARGET almdatotobuk gv_almsurvey lsvinobuk lbtmnobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmkrmktp ap_dbclc (DNAME dupdalmkrmktp,DCOMMAND UPDATE_RANGE,DTARGET almdatotobuk gt_almkirim lsvinobuk lbtmnobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmkrmtgl ap_dbclc (DNAME dupdalmkrmtgl,DCOMMAND UPDATE_RANGE,DTARGET almdatotobuk gt_almkirim lsvinobuk lbtmnobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmtghktp ap_dbclc (DNAME dupdalmtghktp,DCOMMAND UPDATE_RANGE,DTARGET almdatotobuk lALMTAGIH lsvinobuk lbtmnobuk,DMAP mupdalm);
+	DO_LIB_IF cdjoinalmtghtgl ap_dbclc (DNAME dupdalmtghtgl,DCOMMAND UPDATE_RANGE,DTARGET almdatotobuk lALMTAGIH lsvinobuk lbtmnobuk,DMAP mupdalm);
+
+POSTING(tmptrans)
+        PST_ADDCMD spadd
+        PST_UPDCMD spupd
+

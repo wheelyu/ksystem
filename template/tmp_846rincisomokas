@@ -1,0 +1,445 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+|| t.NoMesin      : __________________   __________________                  ||
+|| t.NoRangka 	  : __________________	 __________________                  ||
+|| t.StokSis      : ______________                                           ||
+|| t.Barcode      : ______________ _____                                     ||
+|| t.NoPK         : ______________	                                     ||
+|| t.Nofaktur	  : ______________                                           ||
+|| t.NoPolisi 	  : ______________                                           ||
+|| t.TipeMotor    : ______________                                           ||
+|| t.TglByrAkh 	  : ______________                                           ||
+|| t.TglTarik     : ______________	                                     ||
+|| t.TglRetur     : ______________	                                     ||
+|| t.KetRetur     : ______________  _____  ___________                       ||
+|| t.TipePenarik  : ____  t.Akt:____  ______  ______________  ____  ______   ||
+|| t.Stnk         : ______________	                                     ||
+|| t.SuratTarik   : ______________	                                     ||
+|| t.HariEndap    : ______________	                                     ||
+|| t.KondisiMotor : _______________________                                  ||
+||                  ______                                                   ||
+|\---------------------------------------------------------------------------/|
+||spasi                                                                      ||
+|/----------s.UPLOAD------------------------------------\                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+||                                                      |                    ||
+|\------------------------------------------------------/                    ||
+|                   /--------\                                                |
+|                      ____                                                   |
+|                   \--------/                                                |
+\-----------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr1             QRCODE                                INPUTRI 1
+svikode             ALLCAPS                               INPUTRI 2
+                
+svidtmkode          QRCODE                                INPUTRI 3
+svitblkode          ALLCAPS                               INPUTRI 4
+                
+svitype             PROTECT                               INPUTRI 5
+                
+svistr2             PROTECT                               INPUTRI 6
+svistr31            PROTECT                               INPUTRI 7
+                
+svistr4             PROTECT                               INPUTRI 8
+svistr10            PROTECT                               INPUTRI 9 /*faktur*/
+svitype2            PROTECT                               INPUTRI 10
+svistr5             PROTECT                               INPUTRI 11 /*tipemotor*/
+ltglbyrakh          PROTECT NOLIMIT {DD-MM-YYYY}          INPUTRI 12
+svitgl1             NONE    NOLIMIT {DD-MM-YYYY}          INPUTRI 13
+svitgl2             PROTECT NOLIMIT {DD-MM-YYYY}          INPUTRI 14 /*tgl retur*/
+
+svistr6             PROTECT                               INPUTRI 15 /*ket retur*/
+svitype3            PROTECT                               INPUTRI 15 /*lokasi*/
+svinama             PROTECT                               INPUTRI 15 /*temuan lain*/
+
+svistr33            PROTECT                               INPUTRI 16
+svistr7             NOCHANGE                              INPUTRI 16 /*tipe penarik act*/
+svistr9             ALLCAPS                               INPUTRI 17 /*nip penarik*/
+lnamapenarik        PROTECT                               INPUTRI 18
+lstatuspenarik      PROTECT                               INPUTRI 19
+lsubdeptpenarik     PROTECT                               INPUTRI 20
+                      
+svistr8             NOCHANGE                              INPUTRI 21
+svistr3             NOCHANGE                              INPUTRI 22
+svidf1              PROTECT                               INPUTRI 23
+sviket              TEXTAREA                              INPUTRI 24
+
+lenter              NOCHANGE                              INPUTRI 25
+
+svistr32            PROTECT                               INPUTRI 25
+
+DEFAULTS(tmptranst)
+svistr7        DFALT_SCAN_BLANKS   INT
+                                   EXT
+svistr8        DFALT_SCAN_BLANKS   ADA
+                                   TDK_ADA
+svistr3        DFALT_SCAN_BLANKS   ADA
+                                   TDK_ADA
+lenter         INIT                "OK"
+
+/*EDITS(tmptranst)
+e.Mandatoryft       svistr32       MANDATORY */
+
+CALCS()
+cendap  	     tlmtgl - svitgl1 + 1
+cmesinbrdmks         brdnomesin == svikode 
+cnokabrdmks          brdnorangka == svitblkode
+cnobrgmks            btmtypmtr  == lnobrg 
+/*cnosinkamks          ppdnomesin == svikode || ppdnorangka == svitblkode*/
+
+MAP(mjoinbrdmesinmks)
+brdnorangka     lnokabrd        REPLACE
+brdbrg          lnobrg          REPLACE
+brdhrg          lhrgbrd         REPLACE
+brdlok          llokbrd         REPLACE 
+
+DBCALCS(djoinbrdmesinmks)
+        DBC_COMMAND    JOIN
+        DBC_TARGET     brdstscabbrg   gv_INPG  
+        DBC_SELECT     cmesinbrdmks
+        DBC_MAP        mjoinbrdmesinmks
+
+MAP(mjoinbrdnokamks)
+brdnomesin      lnosinbrd       REPLACE
+brdhrg          lhrgbrd         REPLACE
+brdlok          llokbrd         REPLACE 
+brdbrg          lnobrg          REPLACE
+
+DBCALCS(djoinbrdnokamks)
+        DBC_COMMAND    JOIN
+        DBC_TARGET     brdstscabbrg   gv_INPG  
+        DBC_SELECT     cnokabrdmks
+        DBC_MAP        mjoinbrdnokamks
+
+MAP(mjointbdlokmks)
+tbdlv2      lcablok         REPLACE
+
+DBCALCS(djointbdlokmks)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx  gv_dttabel  lBARANG  lLOKBEKAS  llokbrd
+        DBC_MAP         mjointbdlokmks
+
+/*MAP(mjoinppdnosinmks)
+ppdnobuk        lnofakppd      REPLACE 
+ppdlok          llokppd        REPLACE
+ppdhrg          lhrgppd        REPLACE */
+/*
+DBCALCS(djoinppdnosinmks)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppddatcabtgl   lDATAPIU 
+        DBC_SELECT      cnosinkamks
+        DBC_MAP         mjoinppdnosinmks
+
+MAP(mjoinppmmks)
+ppmnoll     lnopk           REPLACE
+ppmsts      lstsppm         REPLACE
+ppmstskrm   lstskrmppm      REPLACE */
+/*
+DBCALCS(djoinppmmks)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppmbukidx   lnofakppd
+        DBC_MAP         mjoinppmmks */
+
+MAP(mjoinssumokas)
+ssunopol        lnopol      REPLACE 
+ssunobuk2       lnofakssu   REPLACE
+
+DBCALCS(djoinssumks)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ssumridx   svikode 
+        DBC_MAP         mjoinssumokas
+
+MAP(mjointlmmokas)
+tlmplg       lnopenarik         REPLACE
+tlmbisnis    ltipepnrk          REPLACE
+tlmnobuk     lnobuk738          REPLACE
+tlmkode      lkode738           REPLACE
+tlmtgl       ltglopen738        REPLACE
+
+DBCALCS(djointlmmokas)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdataslsts   lPENARIKAN lnofakssu
+        DBC_MAP         mjointlmmokas
+
+MAP(mjointlmestmokas)
+tlmnobuk     lnobuk739          REPLACE
+tlmtotppn    ltotbody           REPLACE
+tlmtotpph    ltotmek            REPLACE
+tlmperppn    ltotlistrik        REPLACE
+tlmperpph    ltotmesin          REPLACE
+tlmperdis    ltotsurat          REPLACE
+
+DBCALCS(djointlmestmokas)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdataslsts   lESTIMASI lnofakssu
+        DBC_MAP         mjointlmestmokas
+
+MAP(mjoinpsimokas)
+psinama         lnamapenarik            REPLACE
+psists          lstatuspenarik          REPLACE
+psisdep         lsubdeptpenarik         REPLACE
+
+DBCALCS(djoinpsimokas)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx   svistr9
+        DBC_MAP         mjoinpsimokas
+
+MAP(mjoinpikmokas)
+piktglbyrakh            ltglretur       REPLACE
+piknobtm                lnopk           REPLACE
+piksispok               lsispok         REPLACE
+pikstspiubli            lusia           REPLACE
+
+DBCALCS(djoinpikmokas)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      pikdatbukidx   lDATAPIU lnofakssu
+        DBC_MAP         mjoinpikmokas
+
+MAP(mjoinbkmmokas)
+bkmtgl          ltglbyrakh            REPLACE
+
+DBCALCS(djoinbkmmokas)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      bkmdatbsstke   lDATAKMPIU lnofakssu
+        DBC_MAP         mjoinbkmmokas
+
+MAP(mjoinbtmmks)
+btmtypmtr2      lnamamtr        REPLACE
+
+DBCALCS(djoinbtmmks)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      btmdatstsoto   lBUKUTAMU gv_INPG
+    DBC_SELECT      cnobrgmks
+    DBC_MAP         mjoinbtmmks 
+
+MAP(mjoinbrgmks)
+brgnama         lnamamtr        REPLACE
+brgkat5         ltipemtr        REPLACE
+
+DBCALCS(djoinbrgmks)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      brgdatkodidx   lMODEL lnobrg
+    DBC_MAP         mjoinbrgmks
+
+DBCALCS(djointldtmlainmks)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldstskodbrg   lTMLAINMKS  gv_OPEN  tlmnobuk  svistr10
+
+MAP(mjoinsvinourtmks)
+	svinourt	lsvinour		REPLACE
+
+DBCALCS(djoinsvinourtmks)
+    DBC_COMMAND     JOIN_LAST_SFL
+    DBC_TARGET      svidatbuktyp lRINCISO tlmnobuk
+    DBC_MAP	    mjoinsvinourtmks
+
+CALCS()
+cjoinbrdnosinmks      djoinbrdmesinmks == 1 && svikode != BLANKS
+cjoinbrdnokamks       djoinbrdnokamks == 1 && svikode == BLANKS
+/*cjoinppdnosinmks      djoinppdnosinmks == 1 && (svikode != BLANKS || svitblkode != BLANKS)
+ctadappd              djoinppdnosinmks == 0 || lnofakppd == BLANKS */
+/*cjoinppmmks           djoinppmmks == 1 */
+cjoinssumks           djoinssumks == 1
+cjointlmmks           djointlmmokas == 1
+cjointlmestmks        djointlmestmokas == 1
+cjoinpikmks           djoinpikmokas == 1
+cjoinbkmmks           djoinbkmmokas == 1
+cjoinpsimks           djoinpsimokas == 1
+cjointbdlokmks        djointbdlokmks == 1
+cjoinbtmmokas         djoinbtmmks == 1 || djoinbrgmks == 1
+cadabarcodemks        svistr1 != BLANKS || svidtmkode != BLANKS
+ctdkbarcodemks        svistr1 == BLANKS && svidtmkode == BLANKS
+cscanbarcodemks       svistr31 == "SC"
+ctdkscanbarcodemks    svistr31 == "MN"
+cadanorasinmks        svikode != BLANKS && svitblkode != BLANKS   
+ctdknorasinmks        svikode == BLANKS || svitblkode == BLANKS    
+cdjoinketurt0mks      g_curcmd == 1 && djoinsvinourtmks == 0
+cdjoinketurt1mks      g_curcmd == 1 && djoinsvinourtmks == 1
+ctambhsvikodmks       STRIP(tlmnobuk) + "-"+ FLD_TO_STRING(svinourt) 
+ctambahnobuksvimks    g_curcmd == 1
+ctambahsviurtmks      lsvinour + 1
+ctadatglrtr           svitgl2 == BLANKS
+cadatglrtr            svitgl2 != BLANKS
+cblmretur             svistr6 == "BELUM RETUR" && g_curcmd == 1
+csdhretur             svistr6 == "SUDAH RETUR" && g_curcmd == 1
+ctmlainmks            svinama == "TEMUAN_LAIN" && (svistr6 == "SUDAH RETUR" || svistr6 == "BELUM RETUR") && g_curcmd == 1 && djointldtmlainmks == 0
+cintsys               djointlmmokas == 1 && ltipepnrk == "INTERNAL"
+cextsys               djointlmmokas == 1 && (ltipepnrk == "EKSTERNAL" || ltipepnrk == "PENDAMPINGAN")
+cadatgltarik          svitgl1 != BLANKS
+ccabbeda              svitype3 != tlmcab
+cqrmesin              svistr1 != BLANKS
+cqrrangka             svidtmkode != BLANKS
+ctpsport              djoinbrgmks == 1 && ltipemtr == "SPORT"
+cSPORT1               "SPORT1"
+ctpcub                djoinbrgmks == 1 && ltipemtr == "CUB"
+cCUB                  "CUB"
+ctpmatic              djoinbrgmks == 1 && ltipemtr == "MATIC"
+cMATIC                "MATIC" 
+
+MAP(misisvinourtmks)
+c1      	        svinourt        DO_CALC_IF cdjoinketurt0mks
+ctambahsviurtmks  	svinourt        DO_CALC_IF cdjoinketurt1mks
+ctambhsvikodmks         lnobukbru    	DO_CALC_IF ctambahnobuksvimks
+DEBUG   ldum    ldum    REPLACE
+
+MAP(mqrmesinmks)
+svistr1         svikode         REPLACE_IF  cqrmesin
+
+MAP(mqrrangkamks)
+svidtmkode      svitblkode      REPLACE_IF  cqrrangka
+
+MAP(maddnokamks)
+lnokabrd        svitblkode      REPLACE_IF  cjoinbrdnosinmks
+lada            svitype         REPLACE_IF  cadanorasinmks
+ltdkada         svitype         REPLACE_IF  ctdknorasinmks
+
+MAP(maddnosinmks)
+lnosinbrd       svikode         REPLACE_IF  cjoinbrdnokamks 
+lada            svitype         REPLACE_IF  cadanorasinmks
+ltdkada         svitype         REPLACE_IF  ctdknorasinmks
+
+MAP(maddsvirinmokas)   
+lscan           svistr31        REPLACE_IF  cadabarcodemks 
+lmanual         svistr31        REPLACE_IF  ctdkbarcodemks 
+lada            svistr2         REPLACE_IF  cscanbarcodemks
+ltdkada         svistr2         REPLACE_IF  ctdkscanbarcodemks
+
+/*lnofakppd       svistr10         REPLACE_IF  cjoinppdnosinmks */
+lnofakssu       svistr10         REPLACE_IF  cjoinssumks
+/*lnopk           svistr4          REPLACE_IF  cjoinppmmks*/
+lnopk           svistr4          REPLACE_IF  cjoinpikmks
+lnopol          svitype2         REPLACE_IF  cjoinssumks
+ltglbyrakh      ltglbyrakh       REPLACE_IF  cjoinbkmmks
+ltglretur       svitgl2          REPLACE_IF  cjoinpikmks
+lblmrtr         svistr6          REPLACE_IF  ctadatglrtr
+lsdhrtr         svistr6          REPLACE_IF  cadatglrtr
+lnamamtr        svistr5          REPLACE_IF  cjoinbtmmokas
+lcablok         svitype3         REPLACE_IF  cjointbdlokmks
+ltemuan         svinama          REPLACE_IF  ccabbeda
+lnopenarik      svistr9          REPLACE_IF  cjointlmmks
+
+MAP(mpenarik)
+lnamapenarik    lnamapenarik     REPLACE_IF  cjoinpsimks
+lstatuspenarik  lstatuspenarik   REPLACE_IF  cjoinpsimks
+lsubdeptpenarik lsubdeptpenarik  REPLACE_IF  cjoinpsimks
+
+MAP(mendap)
+linternal       svistr33         REPLACE_IF  cintsys
+leksternal      svistr33         REPLACE_IF  cextsys
+cendap          svidf1           DO_CALC_IF cadatgltarik
+
+MAP(maddtldblmretur)
+lBLMRETUR       tlddata         REPLACE
+tlmnobuk        tldplg          REPLACE
+lnobuk738       tldsat          REPLACE
+ltglopen738     tldtglfak       REPLACE
+svistr10        tldbrg          REPLACE
+svistr6         tldkat          REPLACE
+svitype3        tldcab          REPLACE
+svistr9         tlddvs          REPLACE
+ltipepnrk       tldbisnis       REPLACE
+lkode738        tldkirim        REPLACE
+lusia           tldstr1         REPLACE
+lsispok         tldjml          REPLACE
+gv_OPEN         tldsts          REPLACE
+DEBUG   ldum    ldum    REPLACE
+
+MAP(maddtkmsdhretur)
+lnobuk739       tkmplg          REPLACE_IF cjointlmestmks 
+ltotbody        tkmtotal        REPLACE
+ltotmek         tkmjml          REPLACE
+ltotlistrik     tkmjml2         REPLACE
+ltotmesin       tkmdf1          REPLACE
+ltotsurat       tkmdf2          REPLACE
+cSPORT1         tkmtype         DO_CALC_IF ctpsport
+cCUB            tkmtype         DO_CALC_IF ctpcub
+cMATIC          tkmtype         DO_CALC_IF ctpmatic
+svistr6         tkmlok1         REPLACE
+svistr10        tkmbuk1         REPLACE
+lMOTORTARIK     tkmdata         REPLACE
+tlmnobuk        tkmkode         REPLACE
+gv_OPEN         tkmsts          REPLACE
+lnobukbru       tkmnobuk        REPLACE
+DEBUG   ldum    ldum    REPLACE
+
+MAP(maddtldtmlainmks)
+lTMLAINMKS      tlddata         REPLACE
+tlmnobuk        tldplg          REPLACE
+lnobuk738       tldsat          REPLACE
+svistr10        tldbrg          REPLACE
+svikode         tldgrup         REPLACE
+svistr6         tldkat          REPLACE
+svitype3        tldcab          REPLACE
+svistr9         tlddvs          REPLACE
+ltipepnrk       tldbisnis       REPLACE
+lkode738        tldkirim        REPLACE
+lusia           tldstr1         REPLACE
+lsispok         tldjml          REPLACE
+gv_OPEN         tldsts          REPLACE
+
+MAP(mtambahmks)
+cBLANKS         lnofakppd       DO_CALC_IF ctambahnobuksvi    
+cBLANKS         lnofakssu       DO_CALC_IF ctambahnobuksvi        
+cBLANKS         lnokabrd        DO_CALC_IF ctambahnobuksvi           
+cBLANKS         lnopk           DO_CALC_IF ctambahnobuksvi
+cBLANKS         lnopol          DO_CALC_IF ctambahnobuksvi
+cBLANKS         ltglretur       DO_CALC_IF ctambahnobuksvi
+cBLANKS         lnopenarik      DO_CALC_IF ctambahnobuksvi
+cBLANKS         ltglbyrakh      DO_CALC_IF ctambahnobuksvi
+DEBUG   ldum    ldum    REPLACE
+
+MAP(mupdsvimks)
+lOK         svistr32          REPLACE
+
+DBCALCS(dupdsvimks)
+    DBC_COMMAND     UPDATE
+    DBC_TARGET      sviprmidx   sviprm
+    DBC_MAP         mupdsvimks
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SORT_BY_FIELD svinourt
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD      svikode
+SFL_UPLFLD_DBCALCS      dupdsvimks
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+svidatbuktyp  lRINCISO  tlmnobuk 
+
+SFL_MAP
+tlmnobuk    svinobuk    REPLACE
+lRINCISO    svidata     REPLACE
+
+SPCALCS(stemuanlainmks)
+        DO_LIB_IF ctmlainmks   ap_dbclc(DNAME daddtldtmlainmks,DCOMMAND ADD,DFILE tld,DMAP maddtldtmlainmks);
+
+SPCALCS(srincimokas)
+        DO_LIB_IF cblmretur    ap_dbclc(DNAME daddtldblmretur,DCOMMAND ADD,DFILE tld,DMAP maddtldblmretur);
+        DO_LIB_IF csdhretur    ap_dbclc(DNAME daddtkmsdhretur,DCOMMAND ADD,DFILE tkm,DMAP maddtkmsdhretur);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=svistr1       DO_MAP SHOW mtambahmks
+BEFORE_INPUT    cur_field=svistr1       DO_MAP SHOW misisvinourtmks
+AFTER_INPUT     cur_field=svistr1       DO_MAP SHOW mqrmesinmks 
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW maddnokamks
+AFTER_INPUT     cur_field=svidtmkode    DO_MAP SHOW mqrrangkamks
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW maddnosinmks
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW maddsvirinmokas
+AFTER_INPUT     cur_field=svistr9       DO_MAP SHOW mpenarik
+AFTER_INPUT     cur_field=svitgl1       DO_MAP SHOW mendap
+AFTER_INPUT     cur_field=sviket        DO_SPCALCS stemuanlainmks
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS srincimokas
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cOPEN
+PMT_UPDALL_COND cOPEN

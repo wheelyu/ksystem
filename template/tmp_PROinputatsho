@@ -1,0 +1,109 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+|t.InputNipAtasan                      |
+|/------------------------------------\|
+||t.InputNipJabBaruPro                ||
+||t.NipInput    :________________     ||
+||t.Tgl         :________________	  ||
+||t.NipAtasan1  :_______ ____________ ||
+||t.Jabatan     :________________     ||
+||t.NipAtasan2  :_______ ____________ ||
+||t.Jabatan     :________________     ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdstr3		PROTECT                        INPUTRI         1
+psdtgl1 	PROTECT NOLIMIT	{DD-MM-YY}     INPUTRI         2
+psdstr1		ALLCAPS                        INPUTRI         4
+lnamaats1	PROTECT                        INPUTRI         4
+psdstr4		PROTECT                        INPUTRI         4
+psdstr2		ALLCAPS                        INPUTRI         5
+lnamaats2	PROTECT                        INPUTRI         5
+psdstr5		PROTECT                        INPUTRI         5
+
+DEFAULTS(tmptranst)
+psdstr3     INIT        {g_usrkode}
+psdtgl1     INIT        {g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory psdstr1     MANDATORY
+e.Mandatory psdstr2     MANDATORY
+t.ValidateNip   psdstr1  VALIDATE psikodidx mpsiats1 spsiINPG
+t.ValidateNip2  psdstr2  VALIDATE psikodidx mpsiats2 spsiINPG
+
+MAP(mjoinjabats1)
+tbdrekbk        llevelats1      REPLACE
+
+DBCALCS(djoinjabats1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_personal gv_jabatan psijabatan
+        DBC_MAP         mjoinjabats1
+
+MAP(mjoinurutlvlats1)
+tbddf1      lurtlvlats1         REPLACE
+
+DBCALCS(djoinurutlvlats1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal lURUTANLVLJAB llevelats1
+        DBC_MAP         mjoinurutlvlats1
+
+MAP(mjoinjabats2)
+tbdrekbk        llevelats2      REPLACE
+
+DBCALCS(djoinjabats2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_personal gv_jabatan psijabatan
+        DBC_MAP         mjoinjabats2
+
+MAP(mjoinurutlvlats2)
+tbddf1      lurtlvlats2         REPLACE
+
+DBCALCS(djoinurutlvlats2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal lURUTANLVLJAB llevelats2
+        DBC_MAP         mjoinurutlvlats2
+
+CALCS()
+cJablebih       djoinmtd==1 && djointbdlvltujuan==1 && lurutantujuan<lurtlvlats1
+cJablebih2      djoinmtd==1 && djointbdlvltujuan==1 && lurutantujuan<lurtlvlats2
+cjoinjabats1    djoinjabats1==1
+cjoinurutlvlats1 djoinurutlvlats1==1
+cjoinjabats2    djoinjabats2==1
+cjoinurutlvlats2 djoinurutlvlats2==1
+
+MAP(mpsiats1)
+psinama         lnamaats1       REPLACE
+psijabatan      psdstr4         REPLACE
+llevelats1      llevelats1      REPLACE_IF cjoinjabats1
+lurtlvlats1     lurtlvlats1     REPLACE_IF cjoinurutlvlats1
+
+MAP(mpsiats2)
+psinama         lnamaats2       REPLACE
+psijabatan      psdstr5         REPLACE
+llevelats2      llevelats2      REPLACE_IF cjoinjabats2
+lurtlvlats2     lurtlvlats2     REPLACE_IF cjoinurutlvlats2
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdstr1   DO_MAP SHOW
+                IF cJablebih    mdum 
+                ELSE HKCURSOR STAY
+                HKMSG t.LevelHrsLebih
+
+AFTER_INPUT     cur_field=psdstr2   DO_MAP SHOW
+                IF cJablebih2    mdum 
+                ELSE HKCURSOR STAY
+                HKMSG t.LevelHrsLebih
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod   lNIPATS170 hrmnobuk hrmnip1
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+lNIPATS170      psddata         REPLACE
+hrmnip1         psdkode         REPLACE

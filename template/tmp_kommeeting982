@@ -1,0 +1,45 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ /-------------------------------\
+  t.Konfirmasi : ________________
+  t.Keterangan : ________________
+		 ____
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svitype       	NOCHANGE                INPUTRI 1
+sviket          TEXTAREA ALLCAPS SCROLL INPUTRI 2
+lenter		ALLCAPS                 INPUTRI 3
+
+CALCS()
+cjadi		svitype == "JADI"
+ctdkjadi	svitype == "TIDAK"
+chanyaremender	((tlmnobbm == "AP" || tlmnobbm == "DIVISI") && tlmtype2 =="REMINDER")
+
+EDITS(tmptranst)
+Data wajib di Isi sviket  MANDATORY_IF ctdkjadi
+
+DEFAULTS(tmptranst)
+svitype         DFALT_SCAN      BLANKS
+                                JADI  "JADI MEETING  "
+                                TIDAK "TIDAK JADI MEETING"
+lenter          INIT            ENTER
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=sviket	DO_SKIP_IF cjadi
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	chanyaremender
+SFL_TARGET
+        svidatbuktyp lDTPDCA11 tlmnobuk
+SFL_MAP
+        gt_dtpdca       svidata         REPLACE
+        tlmnobuk        svinobuk        REPLACE
+        gv_OPEN         svists          REPLACE
+        tlmtgl          svitgl1       REPLACE
+
+

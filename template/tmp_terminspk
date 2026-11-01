@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ /---------s.DOCUPLOAD-----------\
+
+
+
+ \-------------------------------/
+ /-------------------------------\
+  t.NoBuk       :________________
+  t.NoBuk2      :________________
+  t.TypeGambar  :________________
+  t.NoSPK       :________________
+  t.TglMulai    :________________
+  t.TglSelesai  :________________
+  t.ProgressHari:________________
+  t.Upload      :___
+  t.TglUpload   :________________
+  t.Approve     :________________
+  t.KetTacc     :________________
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmkode         PROTECT         INPUTRI 1
+tkmnobuk        PROTECT         INPUTRI 2
+tkmbuk1         NOCHANGE        INPUTRI 3
+tkmnama		ALLCAPS SCROLL	INPUTRI	4
+tkmtgl1		NONE NOLIMIT {DD-MM-YYYY} INPUTRI 5
+tkmtgl2		NONE NOLIMIT {DD-MM-YYYY} INPUTRI 6
+tkmbuk2		NOCHANGE	INPUTRI	7
+tkmtype         NOCHANGE        INPUTRI 8
+tkmtgl          PROTECT NOLIMIT {DD-MM-YYYY} INPUTRI 9
+tkmplg          NOCHANGE        INPUTRI 10
+tkmket          ALLCAPS SCROLL  INPUTRI 11
+
+DEFAULTS(tmptranst)
+tkmbuk1         INIT            SPK
+tkmbuk2		DFALT_SCAN	BLANKS
+				SENIN " "
+				JUMAT " "
+tkmplg          DFALT_SCAN      BLANKS
+                                ACC " "
+                                TACC " "
+
+EDITS(tmptranst)
+e.Mandatory     tkmbuk1         MANDATORY
+e.Mandatory     tkmtgl1         MANDATORY
+e.Mandatory     tkmtgl2         MANDATORY
+e.Mandatory     tkmket          MANDATORY_IF ctkmtacc
+e.Validate      tkmkode         VALIDATE mtsbukidx mmts7
+
+MAP(mmts7)
+mtsnobuk        tkmkode         REPLACE
+mtscab          laprcab         REPLACE
+tkmnobuk        ltkmnobuk       REPLACE
+
+MAP(mpsi7)
+psikode         tkmusrapr       REPLACE
+psinama         lnamaaprdet1    REPLACE
+
+CALCS()
+cAPR_GBRSPK     "APR_GBRSPK"
+
+MAP(mnobuktkm7)
+cnobukSPK       tkmnobuk        DO_CALC
+cAPR_GBRSPK     tkmlok1         DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tkmbuk1       DO_MAP SHOW mnobuktkm7
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD tkmnobuk tkmdata
+SFL_DOCUPLFLD_DBCALCS dupdtkmlay
+SFL_TARGET
+        tkmdtkdstlok lDTSPK mtsnobuk gv_OPEN
+SFL_MAP
+        lDTSPK          tkmdata         REPLACE
+	mtsnobuk        tkmkode         REPLACE
+        gv_OPEN         tkmsts          REPLACE
+        mtstgl          tkmtgl          REPLACE
+

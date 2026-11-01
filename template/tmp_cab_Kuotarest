@@ -1,0 +1,59 @@
+LOCAL
+PGM_FIELDS
+lmastertarget		STRING		21
+ltgtrest		STRING		21
+
+IMAGE(tmptranst)
+/-------------t--------------------t---------t----------t--------t--------t--------t--------t---------t---------\
+|t.Data       |t.Kode              |t.Kodecab|t.Bisnis  |t.Kuota |t.tbttot|t.tbtdf1|t.tbtdf2|t.tbtjam1|t.tbtjam2|
+\-------------.--------------------.---------.----------.--------.--------.--------.--------.---------.---------/
+IMAGE(tmptrans)
+|_____________|____________________|_________|__________|________|________|________|________|_________|_________|
+
+FIELD(tmptrans)
+tbttbdkode      PROTECT SCROLL  INPUTRI         1
+tbtkode         PROTECT SCROLL  INPUTRI         2
+tbtcab          PROTECT SCROLL  INPUTRI         3
+tbttblkode      PROTECT SCROLL  INPUTRI         4
+tbtjml          NUMERIC SCROLL  INPUTRI         5
+tbttot          NUMERIC SCROLL  INPUTRI         5
+tbtdf1          NUMERIC SCROLL  INPUTRI         5
+tbtdf2          NUMERIC SCROLL  INPUTRI         5
+tbtjam          NUMERIC SCROLL  INPUTRI         5
+tbtjam2          NUMERIC SCROLL  INPUTRI         5
+
+
+DEFAULTS(tmptrans)
+tbtdata		INIT		"DTTABEL"
+tbtdtmkode	INIT		"MASTERTARGET"
+tbttblkode	INIT		"M4W"
+tbttbdkode	INIT		"TGTREST"
+ltgtrest	INIT		"TGTREST"
+lmastertarget	INIT		"MASTERTARGET"
+
+
+CALCS()
+ccabsama	cabkode == tbtcab
+ckode		"TGTRESTM4W"+STRIP(cabkode)
+cbolehaddrest	g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "B.M4WDVH"
+
+MAP(mkode)
+ckode		tbtkode		DO_CALC
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tbtjml	DO_MAP SHOW mkode
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_SELECT ccabsama
+SFL_TARGET
+tbtdatkodtyp   gv_dttabel lmastertarget gv_m4w21 ltgtrest
+
+SFL_MAP
+cabkode		tbtcab		REPLACE
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cbolehaddrest
+        PMT_UPDALL_COND cbolehaddrest
+        PMT_DEL_COND    cbolehaddrest

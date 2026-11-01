@@ -1,0 +1,93 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------\
+|t.UplPkt                                                   |
+|__ _____________________________                           |                          
+|/--s.UPLOAD----------------------\/-----------------------\|
+||                                ||t.Tgl     : __________ ||
+||                                ||t.Nippic  : __________ ||
+||                                ||t.Niphrd  : __________ ||
+||                                ||t.OkUp    : __________ ||
+||                                ||t.AccHrd  : __________ ||
+||                                || ______ ______         ||
+||                                |\-----------------------/|
+||                                |                         |
+|\--------------------------------/                         |
+|i.Ket : ___________________________________________________|
+\-----------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt		PROTECT			INPUTRI 1
+psdket			PROTECT			INPUTRI 2
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 3
+psdstr1			PROTECT			INPUTRI	4
+psdstr2			PROTECT			INPUTRI 5
+psdtype			PROTECT			INPUTRI	6
+psdtype2		PROTECT			INPUTRI 7
+luploadtacc		TOMBOL			INPUTRI 8
+luploadacc		TOMBOL			INPUTRI 9
+psdket2  		ALLCAPS SCROLL		INPUTRI 10 
+
+DEFAULTS(tmptranst)
+luploadtacc	INIT		TACC
+luploadacc	INIT		ACC
+l_count3	INIT		1
+
+CALCS()
+cadafoto3x	(UPLEXIST(l_count3) == 1  || UPLEXIST(l_count3) == 0) && djoinpsi_user==1 && (
+		(hrmdvs2=="ACC_FOTO" && (g_grpnam=="HRDER" || g_usrkode=="1733536" || g_grpnam=="B.IVAROHRD" || g_grpnam=="HRDSPV"|| g_grpnam=="B.PARTHRD" || ljabuserz=="VNT_DIVHEAD" || g_usrkode=="2130879")) || (hrmdvs2=="ACC_DIR" && g_grpnam=="CMBNHEAD"))
+cbkn_accfoto	psdtype!="TACC"
+caccblanks	psdtype==BLANKS
+
+MAP(mupdpsdsdm21)
+cOK		psdtype		DO_CALC
+g_usrkode	psdstr1		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+cBLANKS		psdtype2	DO_CALC
+
+DBCALCS(dupdpsdsdm21)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdpsdsdm21
+
+MAP(mupdpsdsdm2)
+gv_TACC		psdtype2 	REPLACE
+cBLANKS		psdtype		DO_CALC
+g_usrkode	psdstr2		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+MAP(mupdpsdsdm3)
+cacc1		psdtype2 	DO_CALC
+cacc1		psdtype		DO_CALC
+g_usrkode	psdstr2		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+SPCALCS(supdpsd2psd)
+	DO_LIB_IF cadafoto3x ap_dbclc(DNAME dupdpsdsdm2,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdsdm2);
+
+SPCALCS(supdpsd3psd)
+	DO_LIB_IF cadafoto3x ap_dbclc(DNAME dupdpsdsdm3,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdsdm3);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtacc	DO_SPCALCS supdpsd2psd
+CLICKED		cur_field=luploadacc	DO_SPCALCS supdpsd3psd
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF cbkn_accfoto
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_COND	cbolehpic
+SFL_LINES(1)
+SFL_UPL_DIRFLD hrmdata
+SFL_UPLFLD	psdpsmkode  psdkode
+SFL_UPLFLD_DBCALCS dupdpsdsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_UPL_DIRFLD hrmtgl
+SFL_TARGET
+	psddatpsmkod  lPKTSDM hrmnobuk                     
+
+SFL_MAP
+lPKTSDM        		psddata		REPLACE
+hrmnobuk		psdpsmkode	REPLACE
+g_usrkode		psdstr5		REPLACE
+

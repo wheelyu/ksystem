@@ -1,0 +1,172 @@
+LOCAL
+PGM_FIELDS
+	lurut1		INT2		2
+	lspmb		STRING		21
+	lastjml		STRING		21
+	lasthrg		STRING		21
+	lbrgfrefik2tmp	STRING		21
+
+MAP(mjoinasttmp)
+astnourt	lurut1		REPLACE
+
+DBCALCS(djoinasttmp)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	astdatjnsurt	gv_dtassets psmktp gv_bpkb
+	DBC_MAP		mjoinasttmp
+
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||_ _ _ _			      ||
+||i.Nosin   __________________________||
+||i.Norang  __________________________||
+||t.TglBeli __________________________||
+||i.Tahun   _______________________   ||
+||				      ||
+|\------------------------------------/|
+|/------------------------------------\|
+||t.NsNon   _____  ___________________||
+||          ________________ _________||
+||          ________  ________        ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+astnopol		PROTECT  UNSEEN ALLCAPS SCROLL                 INPUTRI		1
+astbrg			PROTECT	 UNSEEN ALLCAPS SCROLL		       INPUTRI		2
+astnama			PROTECT  UNSEEN ALLCAPS SCROLL			INPUTRI		3
+astno2			PROTECT  UNSEEN ALLCAPS SCROLL			INPUTRI		4
+
+astmesin		ALLCAPS NOSPACE	SCROLL		MEDIUM 	INPUTRI		5
+astrangka		ALLCAPS NOSPACE SCROLL		MEDIUM 	INPUTRI		6 
+asttgl			ALLCAPS NOLIMIT {DD-MM-YYYY}		INPUTRI		7 
+astth			NUMERIC					INPUTRI		8 
+
+asthrg			NOCHANGE				INPUTRI		10
+lasthrg			PROTECT					INPUTRI		10
+lenter    		NOCHANGE              			INPUTRI		11
+astkode			PROTECT	UNSEEN				INPUTRI		12
+astjns			PROTECT					INPUTRI		13
+astdata			PROTECT					INPUTRI		14
+
+DEFAULTS(tmptranst)
+astdata		INIT		{gv_dtassets}
+astjns		INIT		{gv_bpkb}
+asttgl		INIT		{g_tgltrn}
+lspmb		INIT		"SPMB"
+astjml		DFALT_SCAN_BLANKS	1 "ADA"
+					2 "TIDAK ADA"
+asthrg		DFALT_SCAN_BLANKS	1 "NS"
+					2 "NON NS"
+
+CALCS()
+cbtmtype1	btmtypmtr != BLANKS
+cbtmtype0	btmtypmtr == BLANKS
+
+EDITS(tmptranst)
+e.MandatoryMesin astmesin MANDATORY
+e.MandatoryRangka astrangka MANDATORY
+e.Mandatory astth MANDATORY
+t.MandatoryNsNon asthrg	MANDATORY
+
+t.ValidateBrgModel astbrg VALIDATE_IF cbtmtype1 brgstdtkatbr mbrgMtmp sbrgahs {Pgv_INPG} {Pgv_dtbarang} {Plspm}
+t.ValidateBrgModel astkode VALIDATE_IF cbtmtype0 astjnspolidx mbrgMtmp 0 {Pgv_bpkb} 
+e.ValidateThn astth VALIDATE tbddatkodidx mtbdTHN stbdTHN {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+
+CALCS()
+cNSa		"NS"
+cNNSa		"NON NS"
+cADA		"ADA"
+cTDKADA		"TIDAK ADA"
+castjml1	astjml == 1
+castjml2	astjml == 2
+casthrg1a	asthrg == 1
+casthrg2a	asthrg == 2
+
+MAP(mbrgMtmp)
+brgnama		astnama		REPLACE
+brgkode		astbrg		REPLACE
+brgkat4		astno2		REPLACE
+brgfrefik2	lbrgfrefik2tmp	REPLACE
+cNSa		lasthrg		DO_CALC_IF casthrg1a
+cNNSa		lasthrg		DO_CALC_IF casthrg2a
+cADA		lastjml		DO_CALC_IF castjml1
+cTDKADA		lastjml		DO_CALC_IF castjml2
+
+MAP(mtbdTHN)
+tbdkode		astth		REPLACE
+
+CALCS()
+cjoinasttmp0	djoinasttmp == 0
+cjoinasttmp1	djoinasttmp == 1
+curut1		lurut1 + 1
+cnopolnotnull	astnopol != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" 
+cmotornotnull	astbrg != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL"
+cmesinnotnull	astmesin != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL"
+crangkanotnull	astrangka != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL"
+cthnnotnull	astth != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL"
+
+cnopolbeda	(btmkdsam == astkode) || (btmkdsam == astnopol)
+
+ctambahnopol	g_curcmd == 1
+
+MAP(misinourt)
+c1		astnourt	DO_CALC_IF cjoinasttmp0
+curut1		astnourt	DO_CALC_IF cjoinasttmp1
+
+MAP(mdum1)
+ldumstr		ldumstr		REPLACE
+
+MAP(mtambahnopol)
+btmkdsam	astnopol	REPLACE_IF ctambahnopol
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=astnopol	DO_SKIP_IF cnopolnotnull
+BEFORE_INPUT	cur_field=astbrg	DO_SKIP_IF cmotornotnull
+BEFORE_INPUT	cur_field=astmesin	DO_SKIP_IF cmesinnotnull
+BEFORE_INPUT	cur_field=astrangka	DO_SKIP_IF crangkanotnull
+BEFORE_INPUT	cur_field=astth		DO_SKIP_IF cthnnotnull
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW misinourt
+
+AFTER_INPUT	cur_field=astnopol	DO_MAP SHOW mtambahnopol
+
+AFTER_INPUT	cur_field=astnopol	DO_MAP SHOW
+		IF cnopolbeda	mdum1
+		ELSE HKCURSOR STAY
+		HKMSG t.NopolBeda
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cnopolbeda	mdum1
+		ELSE HKCURSOR STAY
+		HKMSG t.NopolBeda
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	astjnspolidx	gv_bpkb btmkdsam
+
+SFL_MAP
+btmnobuk	astpsmkode	REPLACE
+astnopol	astkode		REPLACE
+
+
+MAP(mupdbtmTypMtr)
+astbrg		btmtypmtr		REPLACE
+astnama		lnamabarang		REPLACE
+lbrgfrefik2tmp	btmtypmtr2		REPLACE
+
+SPCALCS(spaddtmptrans)
+DO_LIB ap_dbclc(DNAME daddbtmtmp,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmTypMtr);
+
+SPCALCS(spupdtmptrans)
+DO_LIB ap_dbclc(DNAME dupdbtmtmp,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmTypMtr);
+
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtmptrans
+PST_UPDCMD      spupdtmptrans
+

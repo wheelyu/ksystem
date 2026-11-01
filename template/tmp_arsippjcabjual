@@ -1,0 +1,115 @@
+IMAGE(tmptranst)
+ 
+/-------------------------\
+|t.PicMkt ________ ______ |
+|t.AdhBM  ________ ______ |
+|t.NsoMso ________ ______ |
+|t.AM	  ________ ______ |
+\-------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1		ALLCAPS         INPUTRI         1
+lstsstr1	PROTECT		INPUTRI		1
+svistr2         ALLCAPS         INPUTRI         2
+lstsstr2	PROTECT		INPUTRI		2
+svistr3		ALLCAPS		INPUTRI		3
+lstsstr3	PROTECT		INPUTRI		3
+svistr4		ALLCAPS		INPUTRI		4
+lstsstr4	PROTECT		INPUTRI		4
+
+CALCS()
+cstspicg1ok	(lstsstr1=="INPG" && svistr1 != ~svistr1) || svistr1 == ~svistr1
+cstsadhg1ok	(lstsstr2=="INPG" && svistr2 != ~svistr2) || svistr2 == ~svistr2
+cstsbumg1ok	(lstsstr3=="INPG" && svistr3 != ~svistr3) || svistr3 == ~svistr3
+cstskawilg1ok	(lstsstr4=="INPG" && svistr4 != ~svistr4) || svistr4 == ~svistr4
+/*cusrpicg1ok	(lusrstr1=="PICMKT" && svistr1 != ~svistr1) || svistr1 == ~svistr1 || svistr1 == BLANKS
+cusradhg1ok	((lusrstr2=="ADH" || lusrstr2=="BM") && svistr2 != ~svistr2) || svistr2 == ~svistr2 || svistr2 == BLANKS
+cusrbumg1ok	(lusrstr3=="BUM" && svistr3 != ~svistr3) || svistr3 == ~svistr3 || svistr3 == BLANKS
+cusrkwlg1ok	(lusrstr4=="KAWIL" && svistr4 != ~svistr4) || svistr4 == ~svistr4 || svistr4 == BLANKS*/
+
+EDITS(tmptranst)
+t.Validatepsi1	svistr1	VALIDATE psikodidx mpsi12g1 0
+t.Validatepsi2	svistr2	VALIDATE psikodidx mpsi22g1 0
+t.Validatepsi3	svistr3	VALIDATE psikodidx mpsi32g1 0
+t.Validatepsi4	svistr4	VALIDATE psikodidx mpsi42g1 0
+t.Validateusr1	svistr1	VALIDATE usrkodidx musr12g1 0
+t.Validateusr2	svistr2	VALIDATE usrkodidx musr22g1 0
+t.Validateusr3	svistr3	VALIDATE usrkodidx musr32g1 0
+t.Validateusr4	svistr4	VALIDATE usrkodidx musr42g1 0
+
+MAP(mpsi12g1)
+psikode		svistr1		REPLACE
+psists		lstsstr1	REPLACE
+
+MAP(mpsi22g1)
+psikode		svistr2		REPLACE
+psists		lstsstr2	REPLACE
+
+MAP(mpsi32g1)
+psikode		svistr3		REPLACE
+psists		lstsstr3	REPLACE
+
+MAP(mpsi42g1)
+psikode		svistr4		REPLACE
+psists		lstsstr4	REPLACE
+
+MAP(musr12g1)
+usrgrp		lusrstr1	REPLACE
+
+MAP(musr22g1)
+usrgrp		lusrstr2	REPLACE
+
+MAP(musr32g1)
+usrgrp		lusrstr3	REPLACE
+
+MAP(musr42g1)
+usrgrp		lusrstr4	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cstspicg1ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG NIP PIC harus INPG
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cstsadhg1ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG NIP ADH/BM harus INPG
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cstsbumg1ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG NIP BUM/NSO/MSO harus INPG
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cstskawilg1ok mdum
+		HKMSG NIP KAWIL/AM harus INPG
+/*AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cusrpicg1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bukan PICMKT
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cusradhg1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bukan ADH/BM
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cusrbumg1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bukan BUM
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cusrkwlg1ok mdum
+                HKMSG Bukan KAWIL*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cPJARSIPCABJL
+SFL_TARGET
+        svidatbuktyp	ldtpjarsip btmnobuk lcabjl lisi1
+
+SFL_MAP
+ldtpjarsip	svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lcabjl		svitype		REPLACE
+lisi1		svinourt	REPLACE
+btmlokjual	svikode		REPLACE
+btmdvsjl	svitblkode	REPLACE

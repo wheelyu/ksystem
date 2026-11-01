@@ -1,0 +1,69 @@
+LOCAL
+PGM_FIELDS
+lnamapk10	STRING		61
+lbtptgltrn10	DATE		4
+lstskrm10	STRING		5
+
+MAP(mjoinbtp10)
+btptgltrn	lbtptgltrn10	REPLACE
+DBCALCS(djoinbtp10)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btpdatbuktgl	gv_historisdm btmnobuk lJANJIKIRIM 
+	DBC_MAP		mjoinbtp10
+
+MAP(mjoinppm10)
+ppmstskrm	lstskrm10	REPLACE
+DBCALCS(djoinppm10)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppmnollidx	btmnobuk 
+	DBC_MAP		mjoinppm10	
+
+MAP(mjoinpsm10)
+psmnama		lnamapk10	REPLACE
+DBCALCS(djoinpsm10)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	btmplg
+	DBC_MAP		mjoinpsm10
+
+IMAGE(tmptranst)
+/---------------t----------t-------t------t---------------t----------------t------t--------\
+|t.Nobuk        |t.DvsJual |t.Sts  |t.Acc |t.NoPK         |t.NamaPK        |t.Tipe|t.Tgl   |
+\---------------.----------.-------.------.---------------.----------------.------.--------/
+
+IMAGE(tmptrans)
+|_______________|__________|_______|______|_______________|________________|______|________|
+
+FIELD(tmptrans)
+btmnobuk        PROTECT         INPUTRI         1
+btmdvsjl        PROTECT         INPUTRI         2
+btmsts          PROTECT         INPUTRI         3
+btmflag1        PROTECT         INPUTRI         4
+btmplg		PROTECT		INPUTRI		5
+lnamapk10	PROTECT		INPUTRI		6
+btmtypjl	PROTECT		INPUTRI		7
+btmtgl		PROTECT		INPUTRI		8
+
+EDITS(tmptrans)
+e.ValidateBuk10	btmnobuk VALIDATE btmbukidx mbtm10 sbtm
+
+CALCS()
+cjoinpsm1_10	djoinpsm10 == 1
+cjoinpsm0_10	djoinpsm10 == 0
+ccond10		cabusaha == "DEALER"
+
+MAP(mbtm10)
+lnamapk10	lnamapk10	REPLACE_IF cjoinpsm1_10 
+cBLANKS		lnamapk10	DO_CALC_IF cjoinpsm0_10
+
+CALCS()
+cselect10       ((btmsts == "CLSD" || btmsts == "INPG" || btmsts == "724" || btmsts == "721" || btmsts == "720" || btmsts == "716" || btmsts == "631" ||              btmsts == "611" || btmsts == "727" || btmsts == "3502" || btmsts == "714" || btmsts == "712" ||  btmsts == "713" || btmsts == "719" ||                btmsts == "711" || btmsts == "TACC" || btmsts == "715") && (btmdvsjl == "H1") && ((btmflag1 == "ACC" && btmtypjl == "K") || (btmtypjl == "T")) && djoinbtp10 == 1 && lbtptgltrn10 == ltgl2 && djoinppm10 == 1 && lstskrm10 != "KR")
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND	ccond10
+SFL_SELECT      cselect10
+SFL_TARGET_GTE  btmdatjltgl     lBUKUTAMU cabkode ltgl1 {lBUKUTAMU} {cabkode} {ltgl2}
+
+
+

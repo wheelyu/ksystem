@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+lenter9		STRING	11
+lnamalaro1	STRING	30
+lduma_1		INT2	2
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+
+  t.NIPLaro : _______ ____________
+  t.AprKasus: ____________________
+  t.KetTACC : ____________________
+
+           ___________
+
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldkat		PROTECT		INPUTRI	1
+lnamalaro1	PROTECT		INPUTRI	2
+tldtydis	NOCHANGE	INPUTRI	3
+tldket		TEXTAREA 3	INPUTRI	4
+lenter9		NOCHANGE	INPUTRI	5
+
+EDITS(tmptranst)
+e.ValidatePsi   tldkat          VALIDATE psikodidx mpsi2 0
+
+MAP(mpsi2)
+psikode		tldkat		REPLACE
+psinama		lnamalaro1	REPLACE
+
+CALCS()
+cACC            tldtydis=="ACC"                      
+cTACC		((tldtydis=="TACC" || tldtydis=="TLBR") && tldket!=BLANKS) || (tldtydis!="TACC" && tldtydis!="TLBR")
+
+DEFAULTS(tmptranst)
+lenter9		INIT			"TAB+ENTER"
+tldtydis	DFALT_SCAN_BLANKS	ACC
+					TACC
+
+MAP(minpt)
+g_usrkode	tldkat		REPLACE
+
+MAP(mduma_1)
+lduma_1		lduma_1		REPLACE
+
+MAP(maccketksg)
+cBLANKS		tldket		DO_CALC_IF cACC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldtydis	  DO_MAP SHOW minpt
+BEFORE_INPUT	cur_field=tldket	  DO_SKIP_IF cACC
+AFTER_INPUT	cur_field=tldtydis	  DO_MAP SHOW maccketksg
+AFTER_INPUT	cur_field=tldket	  DO_MAP SHOW
+		IF cTACC	mduma_1
+		ELSE HKCURSOR STAY
+		HKMSG t.IsiketTACC
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldllbrgurt     llegal tlmnobuk llaroacc tlmnobuk
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+llegal		tldnoll		REPLACE
+tlmnobuk	tldbrg  	REPLACE
+llaroacc	tldlok		REPLACE
+tlmpst		tldkat		REPLACE

@@ -1,0 +1,172 @@
+LOCAL
+PGM_FIELDS
+	
+	lTELPTERHUBUNG1	STRING		21
+	lTELPTERHUBUNG2	STRING		21
+	lsatukk		STRING		21
+	ltidaksatukk	STRING		21
+	ldttabel11	STRING		11
+	lketsvi		STRING		21
+	ltelp1		STRING		61
+	ltelp		STRING		21
+	ldtkomite	STRING		11
+	lnodarurat	STRING		11
+	lnobuk841	STRING		21
+
+MAP(mjointlm841)
+tlmnobuk	lnobuk841	REPLACE
+
+DBCALCS(djointlm841)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmstsplgbuk	gv_INPG ldtkomite psmktp
+	DBC_MAP		mjointlm841 
+
+DBCALCS(djoin841dar)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp	ldtkomite lnobuk841 lnodarurat l1
+
+IMAGE(tmptranst)
+/---------------------------------------------------\
+|t.InfoNoDarurat				    |
+ spasi
+|t.Gsm             : ___________________ _____      |
+|t.Wa              : ___________________ _____      |
+|t.Nama	           : ___________________            |
+|t.SatuKk          : ___________________            |
+|t.Terhubung       : _____ _____________            |
+|t.HslDeskcall	   : ___________________            |
+|t.KetHslDescall   : ___ __________________________ |
+ spasi
+|               ___________________                 |
+\---------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldstr1		DIGITS 			INPUTRI	1
+tldgrup		PROTECT			INPUTRI 2
+tldstr2		DIGITS 			INPUTRI 3
+tldgrup		PROTECT			INPUTRI 4
+tldstr3		ALLCAPS			INPUTRI 5
+tldstr4		NOCHANGE		INPUTRI 6
+tldstr5		NOCHANGE		INPUTRI 7
+lketsvi		PROTECT			INPUTRI 8
+tldkirim	PROTECT			INPUTRI	9
+tldbisnis	PROTECT			INPUTRI 10
+ltelp1		PROTECT	SCROLL		INPUTRI 11
+lhp_enter	NOCHANGE		INPUTRI	12
+
+CALCS()
+csatukk		tldstr4 == "YA"
+ctdksatukk	tldstr4 == "TIDAK"
+
+EDITS(tmptranst)
+e.MandatoryGsm		tldstr1		MANDATORY
+e.MandatoryWa		tldstr2		MANDATORY
+e.mandatoryNama		tldstr3		MANDATORY
+e.MandatorySatuKK	tldstr4		MANDATORY
+e.MandatoryTerhub	tldstr5		MANDATORY
+e.Validatesatukk	tldstr5		VALIDATE_IF csatukk tbddatkodidx mtbd1x stbd {Pldttabel11} {PlDESKCALL21} {Plsatukk}
+e.Validatesatukk	tldstr5		VALIDATE_IF ctdksatukk tbddatkodidx mtbd1x stbd {Pldttabel11} {PlDESKCALL21} {Pltidaksatukk}
+e.Validate		tldbisnis	VALIDATE tbddatkodidx mtbd2x stbddesk {Pldttabel11} {PlDESKCALL21} {Pltelp}
+
+MAP(mtbd1x)
+tbdkode		tldstr5		REPLACE
+tbdket		lketsvi		REPLACE
+
+MAP(mtbd2x)
+tbdket		ltelp1		REPLACE
+
+DEFAULTS(tmptranst)
+
+tldstr4		DFALT_SCAN	BLANKS
+				YA
+				TIDAK
+lTELPTERHUBUNG1	INIT		TELPTERHUBUNG1
+lTELPTERHUBUNG2	INIT		TELPTERHUBUNG2
+lsatukk		INIT		SATUKK
+ltidaksatukk	INIT		TIDAKSATUKK
+ldttabel11	INIT		"DTTABEL"
+ltelp		INIT		TELEPON
+lnodarurat        INIT		NODARURAT
+ldtkomite	INIT		DTKOMITE
+
+CALCS()
+cpanjangnomx             DO_LIB ap_strln(tldstr1,&ljumlahnomorx);
+cpanjangnomy             DO_LIB ap_strln(tldstr2,&ljumlahnomory);
+
+MAP(mpanjangnomx)
+cpanjangnomx    ljumlahnomorx           DO_CALC
+psmktp          tldnobuk                REPLACE
+gv_INPG         tldsts                  REPLACE
+ldarurat	tldlok			REPLACE
+ldtdarurat	tldbrg			REPLACE
+c1		tldnourt		DO_CALC
+
+MAP(mpanjangnomy)
+cpanjangnomy	ljumlahnomory		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=tldstr1       DO_LIB ap_amstr(tldstr1,ln1i,ln1,&ldigit1x);
+AFTER_INPUT             cur_field=tldstr1       DO_LIB ap_amstr(tldstr1,ln2i,ln1,&ldigit2x);
+AFTER_INPUT             cur_field=tldstr2       DO_LIB ap_amstr(tldstr2,ln1i,ln1,&ldigit1y);
+AFTER_INPUT             cur_field=tldstr2       DO_LIB ap_amstr(tldstr2,ln2i,ln1,&ldigit2y);
+
+AFTER_INPUT             cur_field=tldstr1       DO_MAP SHOW mpanjangnomx
+AFTER_INPUT             cur_field=tldstr2       DO_MAP SHOW mpanjangnomy
+
+
+AFTER_INPUT             cur_field=tldstr1 DO_MAP SHOW
+                        IF cbukan08x mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT             cur_field=tldstr2 DO_MAP SHOW
+                        IF cbukan08y mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)       
+
+SFL_TARGET
+tldbukbrglok   psmktp ldtdarurat ldarurat 
+
+SFL_MAP
+psmktp		tldnobuk	REPLACE
+ldtdarurat	tldbrg		REPLACE
+ldarurat	tldlok		REPLACE
+
+CALCS()
+cdjoin841dar1	djoin841dar == 1
+cdjoin841dar0	djoin841dar == 0
+cdjointlm841	djointlm841 == 1
+
+MAP(mmapmap10)
+lnobuk841	lnobuk841	REPLACE_IF cdjointlm841
+DEBUG	ldum	ldum	REPLACE
+
+MAP(mupddarurat)
+tldstr1		sviket		REPLACE
+tldstr2		sviket2		REPLACE
+DEBUG	ldum	ldum	REPLACE
+
+MAP(maddsvidar)
+ldtkomite	svidata		REPLACE
+lnobuk841	svinobuk	REPLACE
+lnodarurat	svitype		REPLACE
+l1		svinourt	REPLACE
+tldstr1		sviket		REPLACE
+tldstr2		sviket2		REPLACE
+DEBUG	ldum	ldum	REPLACE
+
+SPCALCS(saddtmptrans)
+DO_LIB 			ap_dbclc(DNAME dmapmap10,DCOMMAND MAPMAP,DMAP mmapmap10);
+DO_LIB_IF cdjoin841dar1	ap_dbclc(DNAME dupddar,DCOMMAND UPDATE,DTARGET svidatbuktyp ldtkomite lnobuk841 lnodarurat l1,DMAP mupddarurat);
+DO_LIB_IF cdjoin841dar0	ap_dbclc(DNAME dadddar,DCOMMAND ADD,DFILE svi,DMAP maddsvidar);
+
+
+POSTING(tmptrans)
+PST_ADDCMD	saddtmptrans
+PST_UPDCMD	saddtmptrans

@@ -1,0 +1,101 @@
+LOCAL
+PGM_FIELDS
+ltypealm        STRING          11
+ljalan          STRING          61
+lrt3            STRING          5
+lrw3            STRING          5
+lprop3          STRING          21
+lkota3          STRING          21
+lkec3           STRING          21
+lkel3           STRING          21
+lkdpos3         STRING          11
+
+CALCS()
+cblanks         BLANKS
+cyesalmkrm	almdata == gt_almkirim
+
+MAP(mjoinalmkrm)
+cblanks         ljalan  	DO_CALC
+cblanks         lrt3    	DO_CALC
+cblanks         lrw3    	DO_CALC
+cblanks         lprop3  	DO_CALC
+cblanks         lkota3  	DO_CALC
+cblanks         lkec3   	DO_CALC
+cblanks         lkel3   	DO_CALC
+cblanks         lkdpos3         DO_CALC
+almjalan        ljalan  	REPLACE
+almrt           lrt3    	REPLACE
+almrw           lrw3    	REPLACE
+almprop         lprop3  	REPLACE
+almkota         lkota3  	REPLACE
+almkec          lkec3   	REPLACE
+almkel          lkel3   	REPLACE
+almkdpos        lkdpos3         REPLACE
+
+DBCALCS(djoinalmkrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almotodatidx btmplg ltypealm 
+        DBC_MAP         mjoinalmkrm
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|i.Data      ___________                             |
+|t.AlmKirim  _________________                       |
+|t.IdDeb     ________________________________________|
+|i.Jalan     ________________________________________|
+|i.RT        _______       i.RW      ________        |
+|i.Kel       ________________________________________|
+|i.Kec       ________________________________________|
+|i.Kota      ________________________________________|
+|i.Propinsi  ________________________________________|
+|i.Kodepos   ____________                            |
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almdata         PROTECT         INPUTRI         1
+almnama2        ALLCAPS SCROLL  INPUTRI 	2
+ppmplg          PROTECT         INPUTRI         3
+almjalan        PROTECT         INPUTRI         4
+almrt           PROTECT         INPUTRI         5
+almrw           PROTECT         INPUTRI         6
+almkel          PROTECT         INPUTRI         7
+almkec          PROTECT         INPUTRI         8
+almkota         PROTECT         INPUTRI         9
+almprop         PROTECT         INPUTRI         10
+almkdpos        PROTECT         INPUTRI         11
+
+
+DEFAULT(tmptranst)
+IF cyesalmkrm 	almnama2          DFALT_SCAN    PSMKTP PSMTINGGAL
+
+CALCS()
+coke            djoinalmkrm==1 
+
+
+MAP(misialmkrm)
+almnama2                ltypealm                REPLACE
+lrt3                    almrt                   REPLACE_IF coke 
+lrw3                    almrw                   REPLACE_IF coke 
+ljalan                  almjalan                REPLACE_IF coke 
+lprop3                  almprop                 REPLACE_IF coke 
+lkota3                  almkota                 REPLACE_IF coke 
+lkec3                   almkec                  REPLACE_IF coke 
+lkel3                   almkel                  REPLACE_IF coke 
+lkdpos3                 almkdpos                REPLACE_IF coke 
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=almnama2	DO_MAP SHOW misialmkrm
+
+CALCS()
+cpilih_plg      (almdata == gv_psmktp || almdata == gt_psmtinggal || (almdata == gv_almsurvey && almnobuk == ppmnoll) || (almdata == gt_almkirim && almnobuk == ppmnoll) || (almdata == "ALMTAGIH" && almnobuk == ppmnoll))
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SELECT cpilih_plg
+SFL_TARGET
+        almotodatidx    ppmplg
+

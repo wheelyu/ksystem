@@ -1,0 +1,145 @@
+
+IMAGE(tmptranst)
+/----------------------------------\
+|t.Uplsrt                          |
+|/--s.UPLOAD----------------------\|
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|t.Tgl     : __________   ________ |
+|          : _____________________ |
+|t.Apr     : _____________________ |
+|t.UserApr : _______ _____________ |
+|t.CaraUpl7442                     |
+|t.CaraUpl7443                     |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akttgl2		PROTECT {DD-MM-YYYY}	INPUTRI 1
+akttype2	PROTECT		        INPUTRI 2
+luploadok	TOMBOL			INPUTRI	3
+aktbrg		NOCHANGE		INPUTRI	4
+aktcrtusr	PROTECT			INPUTRI	5
+aktket		PROTECT			INPUTRI	6
+
+DEFAULTS(tmptranst)
+akttgl		INIT		{g_tgltrn}
+aktdata		INIT		UPL744
+akttype		INIT		{csrttgs}
+aktbrg		DFALT_SCAN_BLANKS	Y 
+                                        T
+
+MAP(mupdaktuplsrttugas)
+g_tgltrn	akttgl2		REPLACE
+lOK             aktlok          REPLACE
+
+DBCALCS(dupdpaktuplsrttugas)
+DBC_COMMAND	UPDATE
+DBC_TARGET	aktprmidx aktprm 
+DBC_MAP		mupdaktuplsrttugas
+
+DBCALCS(djoinabksrttgs1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN lbukabksrttgs1
+
+
+MAP(mjoinpsibm1)
+sgmstr5         lnipbm          REPLACE
+
+DBCALCS(djoinpsibm1)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg    gv_dtpiccab psidvs lBM lTHBL psicabskr
+DBC_MAP         mjoinpsibm1
+
+MAP(mjoinpsibm)
+psinama         lnamabm         REPLACE
+
+DBCALCS(djoinpsibm)
+DBC_COMMAND     JOIN
+DBC_TARGET      psikodidx	g_usrkode
+DBC_MAP         mjoinpsibm
+
+CALCS()
+cjoinabksrttgs1a	djoinabksrttgs1==0 && aktlok == "OK" && psidvs != "M2W4W"
+ccekaprbm		g_grpnam == "BM"
+ccekaprbm2		g_grpnam == "BM" && djoinpsibm == 1
+caccsrttgs              "ACC DET SRT TGS KOL"
+caccsrttgs2             "TACC DET SRT TGS KOL"
+caccsrttgs3             "ACC DET NAMETAG KOL"
+caccsrttgs4             "TACC DET NAMETAG KOL"
+c744                    "744"
+cjoinpsibm1             djoinpsibm1 == 1
+cjoinuplokall           aktlok == "OK" && djoinaktnametag == 1 &&  laktloknametag == "OK"
+cjikaACC                aktbrg == "Y"
+cjikaTACC               aktbrg == "T"
+csdhuplok		aktlok == "OK"
+
+MAP(maprbm)
+g_usrkode		aktcrtusr		REPLACE_IF	ccekaprbm2
+lnamabm			aktket			REPLACE_IF	ccekaprbm2
+
+MAP(muploksrttgs)
+lOK				akttype2		REPLACE
+
+MAP(mupdabksrttgs)
+gv_CLSD         abksts          REPLACE
+
+MAP(maddabksrttgs1)
+lbukabksrttgs1  abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lnipbm          abkkym          REPLACE_IF cjoinpsibm1
+caccsrttgs      abkkym2         DO_CALC
+g_tgltrn        abktgl          REPLACE
+c744            abkscr          DO_CALC
+gv_INPG         abksts          REPLACE
+
+MAP(maddabksrttgs3)
+lbukabksrttgs3  abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+psikode         abkkym          REPLACE
+caccsrttgs2     abkkym2         DO_CALC
+g_tgltrn        abktgl          REPLACE
+c744            abkscr          DO_CALC
+gv_INPG         abksts          REPLACE
+
+
+SPCALCS(spuplsrttgs)
+DO_LIB_IF csdhuplok ap_dbclc(DNAME duplaktsrttgs,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP muploksrttgs);
+DO_LIB_IF cjoinuplokall  ap_dbclc(DNAME dupdabksrttgs,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lbukabksrttgs,DMAP mupdabksrttgs);
+DO_LIB_IF cjoinabksrttgs1a  ap_dbclc(DNAME daddabksrttgs,DCOMMAND ADD,DFILE abk,DMAP maddabksrttgs1);
+
+SPCALCS(sptmptranst)
+DO_LIB_IF cjikaTACC  ap_dbclc(DNAME daddabksrttgs1,DCOMMAND ADD,DFILE abk,DMAP maddabksrttgs3);
+DO_LIB_IF cjikaACC  ap_dbclc(DNAME dupdabksrttgs1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lbukabksrttgs1,DMAP mupdabksrttgs);
+DO_LIB_IF cjikaACC  ap_dbclc(DNAME dupdabksrttgs2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lbukabksrttgs3,DMAP mupdabksrttgs);
+
+HOOKS(tmptranst)
+CLICKED			cur_field=luploadok		DO_SPCALCS spuplsrttgs
+AFTER_INPUT		cur_field=aktbrg		DO_MAP	SHOW maprbm
+AFTER_INPUT     	cur_field=aktbrg  		DO_MAP  SHOW
+                	IF      ccekaprbm       mdum
+                	ELSE    HKCURSOR        STAY
+                	HKMSG   t.HarusDiAprBM
+
+AFTER_INPUT             cur_keybd=EN               	DO_MAP  SHOW
+                        IF      ccekaprbm       mdum
+                        ELSE    HKCURSOR        STAY
+                        HKMSG   t.HarusDiAprBM
+
+AFTER_INPUT		cur_field=aktbrg		DO_SPCALCS sptmptranst
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPLFLD  aktkode lsrttgs
+SFL_UPL_DIRFLD  psitglawl
+SFL_UPL_DELCOND chapusfoto
+SFL_UPLFLD_DBCALCS dupdpaktuplsrttugas
+SFL_TARGET
+	aktkodtypidx	psikode	lupl744 lsrttgs
+
+SFL_MAP
+psikode		aktkode 	REPLACE

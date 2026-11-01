@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  t.NipUser   : ___________________
+  t.Nama      : ___________________
+  t.Grup      : ___________________
+  t.Tanggal   : ___________________
+  t.Acc       : ___________________
+  t.Keterangan: ___________________
+                ________
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdsisstr         PROTECT               INPUTRI 1
+lnamabuka         PROTECT               INPUTRI 1
+lgrupbuka         PROTECT               INPUTRI 1
+tkdtgl            PROTECT               INPUTRI 2
+tkdjwbstr1        NOCHANGE              INPUTRI 3
+tkdket            TEXTAREA              INPUTRI 4
+tkddata           NOCHANGE              INPUTRI 5
+
+DEFAULTS(tmptranst)
+tkdjwbstr1        DFALT_SCAN_BLANKS   ACC
+tkdtgl            INIT_ADD              {g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr1              MANDATORY
+e.Mandatory     tkdket                  MANDATORY
+e.Validate      tkdsisstr               VALIDATE        psikodidx       mpsibuka        0
+e.Validate      tkdsisstr               VALIDATE        usrkodidx       musrbuka        0
+
+MAP(mpsibuka)
+psinama         lnamabuka               REPLACE
+
+MAP(musrbuka)
+usrgrp          lgrupbuka               REPLACE
+
+CALCS()
+cselatasan	  tkdjwbstr1 == "ACC"
+catasan           (dbscantkmrng == 0 || dbscantkmrng == 1) && ((ljmlbuka <= 3 && ((djoinsgmpic == 1 && lnippic == g_usrkode) || (djoinsgmmso == 1 &&
+                  lnipmso == g_usrkode) || (djoinsgmam == 1 && lnipam == g_usrkode) || g_grpnam == "PICMKTM2W")) ||
+                  (ljmlbuka > 3  && ljmlbuka <= 6 && ((djoinsgmmso == 1 && lnipmso == g_usrkode) || (djoinsgmam == 1 && lnipam == g_usrkode))) ||
+                  (ljmlbuka >= 7 && ((djoinsgmam == 1 && lnipam == g_usrkode) || (djoinsgmdvh == 1 && lnipdvh == g_usrkode )))) || g_grpnam == "RI" || g_grpnam == "IT"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND        catasan
+SFL_SELECT	cselatasan
+SFL_TARGET
+tkddatbukll     lSPK11          tkmnobuk
+
+SFL_MAP
+g_usrkode 	tkdsisstr REPLACE
+tkmnobuk        tkdnobuk        REPLACE
+lSPK11          tkddata         REPLACE
+lSPK21          tkdnoll         REPLACE
+gv_OPEN         tkdsts          REPLACE
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cbolehtambah
+        PMT_UPDALL_COND c0
+        PMT_DEL_COND    c0

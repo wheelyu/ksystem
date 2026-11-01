@@ -1,0 +1,110 @@
+/* 
+LOCAL
+PGM_FIELDS
+lnopbb			STRING		31
+lnosertifikat		STRING		31
+lanpbb			STRING		31
+lalamatpbb		STRING		31
+*/
+DBCALCS(djoinsvikapital)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	svidatbuktyp   gv_dt1106 btmnobuk gv_kapital
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------\ 
+| i.Kodeasset      : _____________________     i.Statusrumah    : _____________________        |
+| i.Rumahan        : _____________________     i.Kondisirumah   : _____________________        |
+| i.Lamatinggal    : _________ i.Th            i.Aksesjalan     : ______ ______________________|
+| i.Hargasewa      : __________________.__     i.t                                             |
+| i.Nopbb          : ______________________    i.Nosertifikat   : ______________________       |
+| i.Anpbb          : ______________________    i.Alamatpbb      : ______________________       |
+\----------------------------------------------------------------------------------------------/ 
+/----------------------------------------------------------------------------------------------\ 
+| i.Hslanalisakapital: _________________________________________________________________       |
+\----------------------------------------------------------------------------------------------/ 
+FIELD(tmptranst)
+svistr1			PROTECT SCROLL			INPUTRI 1
+svistr2			ALLCAPS SCROLL			INPUTRI 2
+svistr3			ALLCAPS SCROLL			INPUTRI 3
+svistr4			ALLCAPS SCROLL			INPUTRI 4
+svidf1			NUMERIC				INPUTRI 5
+svistr5			ALLCAPS SCROLL			INPUTRI 6
+svinama			ALLCAPS SCROLL			INPUTRI 7
+svidf2			NUMERIC				INPUTRI 8
+svidf2			ALLCAPS SCROLL			INPUTRI 10
+svidf3        	ALLCAPS SCROLL			INPUTRI 11
+svidf4 		ALLCAPS SCROLL			INPUTRI 12
+svidf5     	ALLCAPS SCROLL			INPUTRI 13
+sviket			TEXTAREA ALLCAPS		INPUTRI 14
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+svistr2			DFALT_SCAN		BLANKS
+						MS "MILIK_SENDIRI"
+						MK "MILIK_KELUARGA"
+						KO "KONTRAK/KOST"
+						RD "RUMAH DINAS"
+svistr4			DFALT_SCAN		BLANKS
+						RE "REAL ESTATE"
+						RG "RUMAH GEDUNG"
+						RS "RUMAH SEDERHANA"
+						RSS "RUMAH SANGAT SEDERHANA"
+svistr5			DFALT_SCAN		BLANKS
+						JKHM "JALAN KECIL LEWAT SATU MOBIL"
+						JTLM "JALAN TIDAK BISA LEWAT MOBIL"
+						JUJR "JALAN UMUM JALAN RAYA"
+
+svistr1			INIT			JMN001
+
+EDITS(tmptranst)
+e.Mandatorystatusrmh		svistr2		MANDATORY
+e.Mandatorykondisi		svistr4		MANDATORY
+e.Mandatoryakses		svistr5		MANDATORY
+/* e.Mandatoryasset		svistr1 VALIDATE_BUF3 astdatkodidx   mastserti sastserti {Pgv_dtassets} {Pbtmplg} {Pgv_sertifikat} */
+/*
+MAP(mastserti)
+#astkode			svistr1			REPLACE
+#astno1			lnopbb			REPLACE
+#astno2			lnosertifikat		REPLACE
+#astanstnk		lanpbb			REPLACE
+#astalmstnk  		lalamatpbb		REPLACE
+*/
+CALCS()
+cmsmk			svistr2 == "MS" || svistr2 == "MK"
+cjkhm			svistr5 == "JKHM"
+cjtlm			svistr5 == "JTLM"
+cjujr			svistr5 == "JUJR"
+cket_jkhm		"JL KECIL LEWAT SATU MOBIL"
+cket_jltm		"JL TIDAK BISA LEWAT MOBIL"
+cket_jujr		"JL UMUM JALAN RAYA"
+
+MAP(misiketjalan)
+cket_jkhm 			svinama			DO_CALC_IF cjkhm
+cket_jltm 			svinama			DO_CALC_IF cjtlm
+cket_jujr 			svinama			DO_CALC_IF cjujr
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svidf2	DO_SKIP_IF cmsmk
+AFTER_INPUT		cur_field=svistr5	DO_MAP SHOW misiketjalan
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_dt1106 btmnobuk gv_kapital
+
+SFL_MAP
+gv_dt1106		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_kapital		svitype			REPLACE
+gv_kapital		svikode			REPLACE
+
+CALCS()
+cadd_kapital	(btmsts == "701" || btmsts ==  "3702") && djoinsvikapital == 0
+cdel_kapital	btmsts == "701" || btmsts == "3702"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_kapital	
+  	PMT_DEL_COND  	cdel_kapital

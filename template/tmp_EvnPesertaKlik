@@ -1,0 +1,118 @@
+LOCAL
+PGM_FIELDS
+lnamaagen	STRING	61
+ljabatansdm	STRING	21
+lDTAGEN		STRING	11
+lpsists		STRING	5
+
+MAP(mjoinpsiupline)
+psists		lpsists		REPLACE
+psinama		lnamasdm	REPLACE
+psijabatan	ljabatansdm	REPLACE
+
+DBCALCS(djoinpsiupline)
+	DBC_COMMAND 	JOIN
+	DBC_TARGET 	psikodidx 	tldgrup
+	DBC_MAP 	mjoinpsiupline
+
+DBCALCS(djoinpsipeserta)
+	DBC_COMMAND 	JOIN
+	DBC_TARGET 	psikodidx 	tldplg
+	DBC_MAP 	mjoinpsiupline
+
+IMAGE(tmptranst)
+/----t-------------------t---------------------t------------t----------------t---------------\
+|i.Ke|t.NoHPAgen/NIPKBA  |t.NamaAgen/KBA/SPV   |t.NipUpline |t.Jabatan       |t.NamaUpline   |
+\----.-------------------.---------------------.------------.----------------.---------------/
+
+IMAGE(tmptrans)
+|____|___________________|_____________________|____________|________________|_______________|
+
+FIELD(tmptrans)
+tldnourt	PROTECT		INPUTRI	1
+tldplg		ALLCAPS SCROLL	INPUTRI	1
+lnamaagen	PROTECT		INPUTRI	1
+tldgrup		PROTECT		INPUTRI	1
+ljabatansdm	PROTECT		INPUTRI	1
+lnamasdm	PROTECT		INPUTRI	1
+
+DEFAULT(tmptrans)
+lDTAGEN 	INIT    	DTAGEN
+
+CALCS()
+cuplineada	(djoinpsipeserta == 0 && djoinpsiupline == 1 && lpsists == "INPG" && (ljabatansdm == "T.LEADERKBA" || ljabatansdm == "KBANMCOFFICER" || ljabatansdm == "MKTKBAM2W" || ljabatansdm == "MKTKBAHMC" || 
+		ljabatansdm == "KBAM2WOFFICER" || ljabatansdm == "PLTKLIKNSCM2WSPV" || ljabatansdm == "KLIKNSCM2WSPV" || ljabatansdm == "KLIKNSCHMCSPV" || 
+		ljabatansdm == "PLTKLIKNSCHMCSPV" || ljabatansdm == "SPVKLIKNSCHMC" || ljabatansdm == "SPVKLIKNSCM2W")) || djoinpsipeserta == 1
+cbknkbaspv	(djoinpsiupline == 0 && djoinpsipeserta == 1 && lpsists == "INPG" && (ljabatansdm == "T.LEADERKBA" || ljabatansdm == "KBANMCOFFICER" || ljabatansdm == "MKTKBAM2W" || ljabatansdm == "MKTKBAHMC" || 
+		ljabatansdm == "KBAM2WOFFICER" || ljabatansdm == "PLTKLIKNSCM2WSPV" || ljabatansdm == "KLIKNSCM2WSPV" || ljabatansdm == "KLIKNSCHMCSPV" || 
+		ljabatansdm == "PLTKLIKNSCHMCSPV" || ljabatansdm == "SPVKLIKNSCHMC" || ljabatansdm == "SPVKLIKNSCM2W")) || djoinpsiupline == 1
+cBLANKS		BLANKS
+ctldblmada	dscantldpeserta >= 0 && ltottld == 0
+cagenblmldimtr	dscanpesertaagen >= 0 && leventagen == 0
+
+cjoinpsiupline	djoinpsiupline == 1
+cagen		djoinpsipeserta == 0
+ckbaspv		djoinpsipeserta == 1
+
+EDITS(tmptrans)
+e.Mandatory		tldplg  	MANDATORY
+e.Mandatory		tldgrup 	MANDATORY_IF cagen
+t.ValidatePsmKons  	tldplg		VALIDATE_IF cagen psmdtskodidx mpsmagenklik 0 {PlDTAGEN} {Pgv_INPG}
+t.ValidateNip		tldplg		VALIDATE_IF ckbaspv psikodidx mpsikbaklik 0
+
+MAP(mpsmagenklik)
+psmkode		tldplg		REPLACE
+psmkdtmp2	tldgrup 	REPLACE
+psmnama		lnamaagen 	REPLACE
+lnamasdm	lnamasdm	REPLACE_IF cjoinpsiupline
+ljabatansdm	ljabatansdm	REPLACE_IF cjoinpsiupline
+
+MAP(mpsikbaklik)
+psikode		tldplg		REPLACE
+psinama		lnamaagen 	REPLACE
+ljabatansdm	ljabatansdm	REPLACE
+cBLANKS		lnamasdm	DO_CALC
+
+MAP(murut2)
+c1		tldnourt	DO_CALC_IF cdjointldx0
+curttld		tldnourt	DO_CALC_IF cdjointldx1
+
+MAP(mkodez2)
+cthblz		tldukrwrn	DO_CALC
+
+MAP(mnip)
+tldplg		ltldplg		REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldnourt	DO_MAP SHOW murut2
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mkodez2
+AFTER_INPUT 	cur_field=tldplg 	DO_MAP SHOW
+	    	IF cuplineada mjual
+	    	ELSE HKCURSOR STAY
+	    	HKMSG t.UplineTidakAdaAtauUplineBukanKBA/SPV
+AFTER_INPUT 	cur_field=tldplg 	DO_MAP SHOW mnip
+AFTER_INPUT 	cur_field=tldplg 	DO_MAP SHOW
+	    	IF cbknkbaspv mjual
+	    	ELSE HKCURSOR STAY
+	    	HKMSG t.BknNIPKBA/SPV
+AFTER_INPUT 	cur_field=tldplg 	DO_MAP SHOW
+	    	IF ctldblmada mjual
+	    	ELSE HKCURSOR STAY
+	    	HKMSG t.PesertaSudahAda
+AFTER_INPUT 	cur_field=tldplg 	DO_MAP SHOW
+	    	IF cagenblmldimtr mjual
+	    	ELSE HKCURSOR STAY
+	    	HKMSG t.EventiniAgenSudahDiGatheringBlnIni
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND	cklik
+SFL_TARGET	tldbukbrglok	tlmnobuk lPESERTA lPESERTA
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+tlmtgl2		tldtglfak   	REPLACE
+tlmdata		tlddata		REPLACE
+lPESERTA	tldbrg		REPLACE
+lPESERTA	tldlok		REPLACE
+gv_OPEN		tldsts		REPLACE

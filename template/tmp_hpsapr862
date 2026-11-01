@@ -1,0 +1,41 @@
+IMAGE(tmptranst)
+/------------------------t------\
+|t.HapusApr              |      |
+|________________________|      |
+\------------------------.------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lenter          NOCHANGE                INPUTRI         1
+
+DEFAULTS(tmptranst)
+lenter          INIT            "Tekan ENTER utk Hapus Apr"
+
+CALCS()
+cbisahpsapr     tlmsts == "RINP" && tlmkodeapr != BLANKS && (tlmstsapr == "TL" || ((tlmstsapr == "OK" || tlmstsapr == "IN") && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHSPV" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHHO" || g_grpnam == "ADHDVH" || g_grpnam == "B.M4WADHSPV" || g_grpnam == "B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH")))
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND cbisahpsapr
+SFL_SHOW_NEXT
+SFL_TARGET tlmotoidx       tlmoto
+
+
+CALCS()
+cjoinapr        djoinapr == 1
+
+MAP(mupdtlmstsapr)
+lblanks         tlmstsapr       REPLACE
+
+
+SPCALCS(sphpsapr)
+DO_LIB ap_dbclc(DNAME dupdtlmstsapr,DCOMMAND UPDATE,DTARGET tlmotoidx tlmoto,DMAP mupdtlmstsapr);
+DO_LIB_IF cjoinapr ap_dbclc(DNAME ddelapr,DCOMMAND DELETE_RANGE,DTARGET aprbukkeurt tlmnobuk);
+
+POSTING(tmptrans)
+PST_COMMAND sphpsapr
+
+

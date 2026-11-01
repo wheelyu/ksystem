@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+lTGTMKTHMC	STRING	11
+lTGTSSU		STRING	21
+lnama		STRING	61
+
+lssulama1	DFLOAT	8
+lssulama2	DFLOAT	8
+lssulama3	DFLOAT	8
+lssulama4	DFLOAT	8
+
+MAP(mjoincadssu)
+cadtot1		lssulama1	REPLACE
+cadtot2		lssulama2	REPLACE
+cadtot3		lssulama3	REPLACE
+cadtot4		lssulama4	REPLACE
+DBCALCS(djoincadssu)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx hrmcab lTGTMKTHMC lTGTSSU lthbls
+	DBC_MAP		mjoincadssu
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------\
+|t.SSU875a							  |
+|t.SSU875b							  |
+|---------t----------------t---------------------t--------t-------|
+|i.Dealer |t.Nip           |t.Nama               |t.SSUNss|t.SSUMD|
+\---------.----------------.---------------------.--------.-------/
+
+IMAGE(tmptrans)
+|_________|________________|_____________________|________|_______|
+
+FIELD(tmptrans)
+tkdrek		PROTECT		INPUTRI	1
+tkdsisstr	PROTECT		INPUTRI	2
+lnama		PROTECT		INPUTRI	3
+tkdjml		DIGITS		INPUTRI	4
+tkdjml2		DIGITS		INPUTRI	5
+
+CALCS()
+ctypessu	hrmkep == "SSU"
+cssuBsr		(hrmsts == "OPEN" && (djoincadssu == 0 ||
+		(djoincadssu == 1 && tkdjml >= lssulama1 && tkdjml2 >= lssulama2))) || hrmsts != "OPEN" || g_usrkode=="1071059"
+cssuBsrx	(hrmsts == "CLSD" && (djoincadssu == 0 ||
+		(djoincadssu == 1 && tkdjml >= lssulama3 && tkdjml2 >= lssulama4))) || hrmsts != "CLSD"
+
+DEFAULTS(tmptrans)
+lTGTMKTHMC	INIT		TGTMKTHMC
+lTGTSSU		INIT		TGTSSU
+lthbls		INIT		{cthbl}
+
+EDITS(tmptrans)
+t.ValidatePsi	tkdsisstr	VALIDATE psikodidx mpsissu 0
+
+MAP(mpsissu)
+psikode		tkdsisstr	REPLACE
+psinama		lnama		REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cssuBsr  mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusLbhBesar
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cssuBsrx  mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.SrGmHarusLbhBesar
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND        ctypessu
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkddatbukll	hrmdata hrmnobuk lDATASSU
+
+SFL_MAP
+hrmcab          tkdrek          REPLACE
+g_usrkode       tkdsisstr       REPLACE
+hrmdata		tkddata		REPLACE
+hrmnobuk	tkdnobuk	REPLACE
+lDATASSU	tkdnoll		REPLACE
+
+CALCS()
+cdjoincadssu0	hrmsts == "CLSD" && djoincadssu == 0
+cdjoincadssu1	hrmsts == "CLSD" && djoincadssu == 1 
+
+MAP(maddcadssu)
+lTGTMKTHMC	caddata		REPLACE
+lthbls		cadkode		REPLACE
+hrmcab		cadkdcab	REPLACE
+lTGTSSU		cadtype		REPLACE
+
+MAP(mupdcadssu)
+tkdjml		cadtot1		REPLACE
+tkdjml2		cadtot2		REPLACE
+
+SPCALCS(sptmptrans)
+	DO_LIB          	ap_dbclc(DNAME dmapmapssu, DCOMMAND MAPMAP, DMAP mapmapTc);
+	DO_LIB_IF cdjoincadssu0	ap_dbclc(DNAME daddcadssu,DCOMMAND ADD,DFILE cad,DMAP maddcadssu);
+	DO_LIB_IF cdjoincadssu1	ap_dbclc(DNAME dupdcadssu,DCOMMAND UPDATE,DTARGET cadcabdtidx hrmcab lTGTMKTHMC lTGTSSU lthbls,DMAP mupdcadssu);
+
+POSTING(tmptrans)
+	PST_UPDCMD	sptmptrans

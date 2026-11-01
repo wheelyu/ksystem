@@ -1,0 +1,81 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------\
+ /-------s.UPLOAD------------------\
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ \---------------------------------/
+ /---------------------------------\
+ |i.Ket      : ______________  ____|
+ |t.TglFoto  : _____________       |
+ |t.Latitude : ________.____       |
+ |t.Longitude: ________.____       |
+ |t.Jam      : __.__               |
+ |t.LongLatDeb                     |
+ |______________ __________________|
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2
+svitgl2			PROTECT {DD-MM-YYYY}	INPUTRI		3
+svidf6			PROTECT NUMERIC		INPUTRI		3
+svidf7			PROTECT NUMERIC		INPUTRI		3
+svidf8			PROTECT			INPUTRI		4
+svinobuk                PROTECT SCROLL          INPUTRI         7
+luploadOK6		TOMBOL			INPUTRI		7
+
+
+CALCS()
+cnametag5b	tmpkode == "FOTOTELP" && djoinsvidcagen == 1 && lRING == "RING_0"
+cnametag5ab	sviyt1 == "T"
+
+EDITS(tmptranst)
+e.Validate svinobuk	VALIDATE tkmbukidx mtkm5b 0
+
+MAP(mtkm5b)
+tkmnobuk	svinobuk	REPLACE
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+
+MAP(mupdsvinametag5b)
+cY             sviyt1          DO_CALC
+
+MAP(mupdtldinfo5b)
+c1              tldperdis3      DO_CALC
+
+SPCALCS(supdnametag5b)
+	DO_LIB		ap_dbclc(DNAME dupdsvinametag5b,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdsvinametag5b);
+	DO_LIB_IF ckba  ap_dbclc(DNAME dupdtld5b, DCOMMAND UPDATE_RANGE, DTARGET  tldbukbrgoto svinobuk gv_OPEN lINFOALAMAT, DMAP mupdtldinfo5b);
+HOOKS(tmptranst)
+   CLICKED      cur_field=luploadOK6	DO_SPCALCS supdnametag5b
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_COND cnametag5b
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND	cnametag5ab
+SFL_UPLFLD tkmnobuk svikode
+
+SFL_TARGET
+	svidatbuktyp   ldtspk tkmnobuk lfotospk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

@@ -1,0 +1,96 @@
+IMAGE(tmptranst)
+/------------------------------------------\
+ /----------------------------------------\
+ | t.Enter   ____                         |
+ | t.NipUser _______                      |
+ | t.NamaUsr ___________________________  |
+ \----------------------------------------/
+                 t.Awal                  
+ t.Us    t.Unit        t.Sis          
+ t.PPTGH   ________________   
+ t.tarik   ________________   
+ t.Plnsan  ________________
+ t.ZDEN    ________________
+ t.JlMokas ________________
+
+\------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lenter                  NOCHANGE                INPUTRI 1
+psikode                 PROTECT                 INPUTRI 1
+psinama			NOCHANGE		INPUTRI 1
+
+lactsipokpptgh          PROTECT                 INPUTRI 2
+lactunittarik           PROTECT                 INPUTRI 3
+lactunitplns            PROTECT                 INPUTRI 4
+lactsipokzden           PROTECT                 INPUTRI 5
+lactsipokjlmks          PROTECT                 INPUTRI 6
+
+
+DEFAULTS(tmptranst)
+lenter                  INIT            TAB
+ltglawl                 INIT            {cawlbln}
+
+MAP(mscanpikakmkolrem)
+c1                      lactunttrkrem                   DO_CALC_IF cactunttrkakmrem
+c1                      lactzdenunitrem                 DO_CALC_IF cactzdenunitakmrem
+
+DBCALCS(dbscanpikakmkolrem)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      pikkolstsidx   psikode
+        DBC_LAST_TARGET pikkolstsidx   psikode
+        DBC_SUM_MAP     mscanpikakmkolrem
+
+MAP(mscanbkmakmkolrem)
+c1                      lactuntbyr                      DO_CALC_IF cactbyrakmx
+bkmtotal                lactrpbyr                       REPLACE_IF cactbyrakmx
+
+c1                      lactuntplns                     DO_CALC_IF cactplnsakmx
+bkmtotal                lactrpplns                      REPLACE_IF cactplnsakmx
+
+c1                      lactuntsisadenda                DO_CALC_IF cactsisadendaakmx
+bkmtotal                lactrpsisadenda                 REPLACE_IF cactsisadendaakmx
+
+
+DBCALCS(dbscanbkmakmkolrem)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      bkmdatkodtgl   gv_dtkmpiu psikode ltglawl
+        DBC_LAST_TARGET bkmdatkodtgl   gv_dtkmpiu psikode tlmtgl
+        DBC_SUM_MAP     mscanbkmakmkolrem
+
+MAP(mscanppdakmkolrem)
+c1                      lttljlmksunitrem                DO_CALC_IF cttljlmksakmrem
+ppdhrg                  lttljlmkssispokrem              REPLACE_IF cttljlmksakmrem
+
+DBCALCS(dbscanppdakmkolrem)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      ppdststglsts psikode ltglawl
+        DBC_LAST_TARGET ppdststglsts psikode tlmtgl
+        DBC_SUM_MAP     mscanppdakmkolrem
+
+
+MAP(mhitungkolremAKM)
+cactsipokpptgh		lactsipokpptgh		DO_CALC
+lactunttrkrem		lactunittarik           REPLACE
+lactrpplns		lactunitplns            REPLACE
+lactrpsisadenda		lactsipokzden           REPLACE
+lttljlmkssispokrem 	lactsipokjlmks          REPLACE
+
+DEBUG		ldum		ldum		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=lenter        DO_SCAN dbscanpikakmkolrem
+AFTER_INPUT     cur_field=lenter        DO_SCAN dbscanbkmakmkolrem
+AFTER_INPUT     cur_field=lenter        DO_SCAN dbscanppdakmkolrem
+AFTER_INPUT     cur_field=lenter        DO_MAP SHOW mhitungkolremAKM
+
+
+SUBFILE(tmptrans)
+SFL_APP_TYPE
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cjabatankolrem
+SFL_TARGET
+        psicbskrsts   tlmcab gv_INPG
+

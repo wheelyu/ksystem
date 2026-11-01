@@ -1,0 +1,83 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|/------------------------------------------------------------------------------\|
+||                         t.SuratPernyataan                                    ||
+||   t.Denganinimenyatakanbahwa                                                 ||
+|| t.danadalahbenarmerupakanaset                                                ||
+|| t.Groupyangdiserahkankepada                                                  ||
+||                                                                              ||
+||                                                                              ||
+||                                                                              ||
+||      t.Demikiansuratpernyataanini                                            ||
+|| t.untukdapatdipergunakan                                                     ||
+||                                                                              ||
+||       t.Acc1 : ___ ___  t.Ya                                                 ||
+|\------------------------------------------------------------------------------/|
+|/---SIGNATURE---\                                                               |
+||               |                                                               |
+||               |                                                               |
+||               |                                                               |
+||               |                                                               |
+|\---------------/                                                               |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+  lend              NOCHANGE             INPUTRI            1
+  tldsisbrg         PROTECT              INPUTRI            2
+
+EDITS(tmptranst)
+e.Mandatory tldsisbrg MANDATORY
+
+DEFAULTS(tmptranst)
+lend            INIT    Y
+
+CALCS()
+cclsd           tlmsts != "CLS1"
+cbolehacc       lend != ""
+/*ctest	       (g_usrkode!="1805349" || g_grpnam!="GAHEAD" || (tlmdata=="DTMUTASI" && (tlmgrup=="TITIP" || tlmgrup=="NIP_GDG" || tlmgrup=="ANTAR_GEDUNG") && g_usrkode!="1805349")) */
+cmasuk		(tlmsts=="INPG" && tlmdata=="DTMUTASI")
+
+MAP(misi)
+lend            tldsisbrg       REPLACE
+
+HOOKS(tmptranst)
+/*AFTER_INPUT     cur_keybd=EN              DO_LIB_IF ctest ap_ceksj(tldplg);*/
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbolehacc mdum
+                ELSE HKCURSOR STAY
+                HKMSG Harap ACC dahulu, Tekan Spasi
+AFTER_INPUT     cur_field=tldsisbrg      DO_MAP SHOW misi
+AFTER_INPUT     cur_field=tldsisbrg      DO_MAP SHOW
+                IF cclsd mdum
+                ELSE HKCURSOR STAY
+                HKMSG Status Sudah CLS1 Tidak Bisa Posting
+
+CALCS()
+cBLANKS	BLANKS
+
+MAP(mupdttd)
+cOK		tlmtypbrg	DO_CALC
+DBCALCS(dupdttd)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tlmbukidx tlmnobuk
+	DBC_MAP		mupdttd
+
+MAP(mupdttdhps)
+cBLANKS		tlmtypbrg	DO_CALC
+DBCALCS(dupdttdhps)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tlmbukidx tlmnobuk
+	DBC_MAP		mupdttdhps
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SGNFLD tldplg
+SFL_SGNFLD_DBCALCS dupdttd
+SFL_SGNFLD_DELDBCALCS dupdttdhps
+SFL_UPL_DIRFLD tlmtgl
+SFL_COND cmasuk
+SFL_TARGET
+        tldotoidx tldoto  

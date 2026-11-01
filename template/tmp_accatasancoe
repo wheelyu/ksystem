@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+ljam		 TIME	 2
+lsesuaiCOE	 STRING	 2	
+ltgtCOE		 STRING	161
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------------------------------\
+  spasi
+  t.ProdMenit : ___________________________
+|-----------t-------------------t-----------------t-------------t-----------t---------------t-----------------t------------|            
+| Jam       |t.TgtCOE           |t.ActCOE         |t.DetailCOE  |t.SesuaiCOE|t.AccAtasan    | t.KetTacc       | t.NoBukti  |            
+\-----------.-------------------.-----------------.-------------.-----------.---------------.-----------------.------------/            
+
+IMAGE(tmptrans)
+|___________|___________________|_________________|_____________|___________|_______________|________________|_____________|           
+
+
+FIELDS(tmptranst)
+ketdf1  	PROTECT		        INPUTRI 1
+
+FIELDS(tmptrans)
+ljam		PROTECT			INPUTRI	1       /*Jam Master*/
+ltgtCOE		TEXTAREA 2 PROTECT	INPUTRI	2       /*Target Master*/
+ketisi2		TEXTAREA 2 PROTECT	INPUTRI 3       /*Keterangan Detail Coe*/
+ketisi		TEXTAREA 2 PROTECT	INPUTRI 4       /*Keterangan Actual Coe*/
+lsesuaiCOE	PROTECT			INPUTRI	5       /*Coe Sesuai Master*/
+ketstr2		NOCHANGE		INPUTRI	6       /*ACC ATASAN*/
+ketstr3		ALLCAPS			INPUTRI	7       /*KET ACC ATASAN*/
+ketnobuk	PROTECT SCROLL		INPUTRI	8       /*Nobuk*/
+
+CALCS()
+cdataatasan     ((tlmytppn == "Y" && ketnama == lSESUAITGT) || (tlmytppn == "T" && ketnama == lTDKSESUAITGT)) && 
+                ((tlmsts == "INPG" && (ketstr2 == BLANKS || ketstr2 == "ACC" || ketstr2 == "TACC")) || (tlmsts == "TACC" && ketstr2 == "TACC") || tlmsts == "CLSD")
+cacc		ketstr2 == "ACC"
+ctacc		ketstr2 == "TACC"
+cupdacc		ketstr2 == "ACC" && g_curcmd == 2
+csts            tlmsts != "OPEN"
+
+DEFAULTS(tmptrans)
+ketstr2		DFALT_SCAN_BLANKS	ACC
+					TACC
+MAP(mupdacc)
+cblank		ketstr3			DO_CALC_IF cupdacc
+
+
+EDITS(tmptrans)
+e.Mandatory	ketstr2			MANDATORY
+e.Mandatory	ketstr3			MANDATORY_IF	ctacc
+
+e.Validate      ketnobuk		VALIDATE  tlmbukidx mket      0
+
+MAP(mket)
+tlmjam1		ljam			REPLACE
+tlmket		ltgtCOE			REPLACE
+tlmytppn	lsesuaiCOE		REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=ketstr2	DO_MAP SHOW mupdacc
+BEFORE_INPUT	cur_field=ketstr3	DO_SKIP_IF cacc
+
+
+SUBFILE(tmptrans)
+SFL_LINES(9)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND csts
+SFL_SELECT	cdataatasan
+SFL_TARGET
+ketdatbuktgl    tlmdata tlmnobuk
+
+

@@ -1,0 +1,383 @@
+LOCAL
+PGM_FIELDS
+/*lpropinsiorglain        STRING          21
+lkotaorglain            STRING          21
+lkecorglain             STRING          21
+lkelorglain		        STRING		    21
+lalmjalanorglain        STRING          251
+lalmrtorglain           STRING          21
+lalmrworglain           STRING          21
+lnamaorglain		    STRING		    61
+lnoTLPoranglain         STRING          21*/
+ltombolupload           STRING          31
+ljamfoto                TIME            4   
+
+
+/*MAP(mjoinalmPEMAKAI)
+almjalan        lalmjalanorglain	REPLACE
+almrt           lalmrtorglain		REPLACE
+almrw           lalmrworglain		REPLACE
+almprop         lpropinsiorglain	REPLACE
+almkota         lkotaorglain		REPLACE
+almkec          lkecorglain		REPLACE
+almkel          lkelorglain		REPLACE
+
+
+DBCALCS(djoinalmPEMAKAI)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      almotodatidx   svistr4  gv_psmktp
+    DBC_MAP         mjoinalmPEMAKAI*/
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   spasi
+   t.NIK Pengguna        : ___________________
+   i.Nama                : ___________________
+   t.NoTlp               : ___________________
+   i.Alamatktp           : ________________ 
+   i.RT                  : ____ i.RW : ____
+   i.Prop                : ________________ 
+   i.Kota                : ________________ 
+   i.Kec                 : ________________ 
+   i.Kel                 : ________________ 
+   t.Hub dengan PM       : ________________
+   t.Pekerjaan Pengguna  : ________________
+   _
+   spasi
+
+   /--------s.UPLOAD----------------\
+   |                                |
+   |                         	    |
+   |                                |
+   |                                |
+   |                                |
+   |                                |
+   |                                |
+   |                                |
+   \--------------------------------/
+   /--------------------------------\
+   !t.Lat   : ___.__________________|
+   !t.Lon   : ___.__________________|
+   !t.Tgl   : __________________    |
+   !t.jam   : __________________    |
+   |              ___   ________   _|
+   \--------------------------------/
+| \----------------------------------------------------------------------------------------------/ |
+| /----------------------------------------------------------------------------------------------\ |
+   t.CMSSesuai        : __  ______
+   t.AnalisaCMS       : _________________
+                        ______
+
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr4                         DIGITS SCROLL           	    INPUTRI 1
+/*lnamaorglain */svinama        ALLCAPS SCROLL                  INPUTRI 2
+/*lnoTLPoranglain*/svistr2      DIGITS SCROLL                  INPUTRI 3
+/*lalmjalanorglain*/sviket3	ALLCAPS SCROLL                  INPUTRI 4
+/*lalmrtorglain*/svistr31	ALLCAPS SCROLL                  INPUTRI 5
+/*lalmrworglain*/svistr32	ALLCAPS SCROLL                  INPUTRI 6
+/*lpropinsiorglain*/svistr8	ALLCAPS	SCROLL                  INPUTRI 7
+/*lkotaorglain*/svistr9		ALLCAPS	SCROLL                  INPUTRI 8
+/*lkecorglain*/svistr10	        ALLCAPS	SCROLL                  INPUTRI 9
+/*lkelorglain*/svistr1		ALLCAPS	SCROLL                  INPUTRI 10
+svistr5                         ALLCAPS SCROLL                        INPUTRI 11
+svistr6                         ALLCAPS                         INPUTRI 12
+g_usrkode                       UNSEEN                          INPUTRI 13
+svidf1                          PROTECT NUMERIC {99,999999999}  INPUTRI 14 
+svidf2                          PROTECT NUMERIC {99,999999999}  INPUTRI 15 
+svitgl2                         PROTECT {DD-MM-YYYY}            INPUTRI 16
+ljamfoto                        PROTECT SCROLL                  INPUTRI 17
+sviyt2                          PROTECT SCROLL                  INPUTRI 18
+ltombolupload                   TOMBOL                          INPUTRI 19
+svistr7                         PROTECT UNSEEN                  INPUTRI 20
+sviyt1                          ALLCAPS SCROLL                  INPUTRI 21
+lsviyt1p                        NOCHANGE                        INPUTRI 22
+sviket2                         TEXTAREA SCROLL                 INPUTRI 23
+lenter                          NOCHANGE                        INPUTRI 24
+
+IMAGE(tmptrans)
+
+/*CALCS()
+chanyatelp	condata == "TELP" && congrup != "CUG"
+
+MAP(mjoinconpemakai)
+conhp           lnoTLPoranglain  REPLACE
+
+DBCALCS(djoinconpemakai)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx	svistr4  gv_INPG
+	DBC_SELECT  chanyatelp 
+	DBC_MAP		mjoinconpemakai*/
+
+CALCS()
+cdjoinsvipurpose714     djoinsvipurpose == 1 && g_scrnumstr=="714"
+cPEMAKAIlain            lsvistr2purpose == "KLRGLAIN" || lsvistr2purpose == "ORANGLAIN" || lsvistr2purpose == "TEMAN"
+cbukanoranglain         lsvistr2purpose != "KLRGLAIN" && lsvistr2purpose != "ORANGLAIN" && lsvistr2purpose != "TEMAN" 
+/*cdjoinalmpengguna       djoinalmPEMAKAI == 1
+cdjoinconpemakai        djoinconpemakai == 1*/
+cok2                    "OK"
+cadalonlat2             svidf2!=0 && (g_fotodate1==g_tgltrn || g_grpnam=="RI" || g_grpnam=="IT")
+csdhupload2             svistr34=="Y"
+
+DEFAULTS(tmptranst)
+sviyt1          	DFALT_SCAN_BLANKS       Y " "
+                                        	T " "
+
+ljaminput1           INIT    SYSTIME
+ltombolupload        INIT    "UPLOAD"
+
+
+EDITS(tmptranst)
+t.Validate              g_usrkode               VALIDATE usrkodidx mdana
+e.validatePropinsi1     svistr8	       	        VALIDATE dtmdtkodidx  mdtm_tmppd sdtm {Pgv_dtkota}
+e.validateKota1         svistr9       	        VALIDATE tbldtdtmkod mtbl_tmppd stbl {Pgv_dtkota} {Psvistr8}
+e.validateKec1          svistr10                VALIDATE tbddatkodidx mtbd_tmppd stbd {Pgv_dtkota} {Psvistr8} {Psvistr9}
+e.validateKel1          svistr1                 VALIDATE tbtdattypkod mtbt_tmppd stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr8} {Psvistr9} {Psvistr10}    
+e.Mandatory             svistr4                 MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr2                 MANDATORY_IF cPEMAKAIlain
+e.Mandatory             sviket3                 MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr31                MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr32                MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr8                 MANDATORY_IF cPEMAKAIlain     
+e.Mandatory             svistr9                 MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr10                MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr1                 MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr5                 MANDATORY_IF cPEMAKAIlain
+e.Mandatory             svistr6                 MANDATORY_IF cPEMAKAIlain   
+e.Mandatory		sviyt1			MANDATORY
+          
+/*e.Mandatory             lnoTLPoranglain         MANDATORY 
+e.validate svistr4 VALIDATE_IF cPEMAKAIlain psmdtckodidx mpsm 0 {Pgv_dtkonsumen} {Pgv_INPG}   */          
+
+
+MAP(mdtm_tmppd)
+dtmkode         svistr8         REPLACE
+
+MAP(mtbl_tmppd)
+tblkode         svistr9         REPLACE
+
+MAP(mtbd_tmppd)
+tbdkode        svistr10        REPLACE
+
+MAP(mtbt_tmppd)
+tbtkode         svistr1         REPLACE
+/*MAP(mpsm)
+psmktp                  svistr4                 REPLACE_IF cdjoinalmpengguna
+psmnama                 lnamaorglain            REPLACE
+lalmjalanorglain        lalmjalanorglain        REPLACE_IF cdjoinalmpengguna
+lalmrtorglain           lalmrtorglain           REPLACE_IF cdjoinalmpengguna
+lalmrworglain           lalmrworglain           REPLACE_IF cdjoinalmpengguna
+lpropinsiorglain        lpropinsiorglain        REPLACE_IF cdjoinalmpengguna
+lkotaorglain            lkotaorglain            REPLACE_IF cdjoinalmpengguna
+lkecorglain             lkecorglain             REPLACE_IF cdjoinalmpengguna
+lkelorglain             lkelorglain             REPLACE_IF cdjoinalmpengguna
+lnoTLPoranglain         lnoTLPoranglain         REPLACE_IF cdjoinconpemakai*/
+/*cBLANKS                 ljamfoto                DO_CALC
+svidf3                  ljamfoto                REPLACE*/
+
+
+MAP(mdana)
+lsvistr2purpose         lsvistr2purpose         REPLACE_IF cdjoinsvipurpose714
+DEBUG       ldum    ldum    REPLACE
+
+MAP(mupdsvirmhpemakai)
+gv_Y              svistr34          REPLACE
+cSYSTIME        svidf3          DO_CALC
+
+DBCALCS(dupdsvirmhpemakai)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvirmhpemakai
+
+MAP(mfoto)
+g_fotolat1      svidf1          REPLACE
+g_fotolon1      svidf2          REPLACE
+g_tgltrn        svitgl2         REPLACE 
+cok2            sviyt2          DO_CALC_IF cadalonlat2
+
+DBCALCS(dupdsvirmhpemakaiok)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mfoto
+
+SPCALCS(spcaluplpemakaiok)
+dupdsvirmhpemakaiok
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=svistr4 DO_MAP SHOW
+                  IF cdjoinsvicapacity714   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiCapacityDahulu
+
+BEFORE_INPUT 	cur_field=svistr4 DO_MAP SHOW
+                  IF cdjoinsvipurpose714   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiPurposeDahulu
+
+/*AFTER_INPUT 	cur_field=svistr4 DO_MAP SHOW
+                  IF cdjoinalmpengguna   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiDataKTPDahulu
+
+AFTER_INPUT 	cur_field=svistr4 DO_MAP SHOW
+                  IF cdjoinconpemakai   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiNoTlpDahulu
+
+AFTER_INPUT 	cur_keybd=EN DO_MAP SHOW
+                  IF cdjoinalmpengguna   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiDataKTPDahulu
+
+AFTER_INPUT 	cur_keybd=EN DO_MAP SHOW
+                  IF cdjoinconpemakai   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiNoTlpDahulu*/
+
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW  mhitunganalisasvi
+
+AFTER_INPUT cur_field=sviket2 DO_MAP SHOW
+        IF canalisa50svi   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF canalisa50svi   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+	IF cdjoinsvitrans2	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.IsiCapacityDulu
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+	IF cdjoinsvitransc11	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.Belum714a
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.BlmVerifCekKerjaCMO
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc11    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714a
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.BlmVerifCekKerjaCMO
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdjoinftmpurpose7140     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.SesuaikanVerifikasiPurpose4D
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinftmpurpose7140    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.SesuaikanVerifikasiPurpose4D
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdjointkmvertelOPEN1     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjointkmvertelOPEN1    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+BEFORE_INPUT    cur_field=svistr4       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr2       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr31      DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr32      DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr8       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr9       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr10      DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=svistr6       DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbukanoranglain
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cbukanoranglain
+CLICKED         cur_field=ltombolupload DO_SPCALCS IF csdhupload2 spcaluplpemakaiok
+
+CALCS()
+crumahpemakai   sviyt1 != "Y"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdsvirmhpemakai
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD  btmnobuk  svikode
+SFL_UPL_DELCOND crumahpemakai
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk lPEMAKAI714
+
+SFL_MAP
+gv_datasurvey  		        svidata			REPLACE
+btmnobuk		        svinobuk		REPLACE
+lPEMAKAI714		        svitype			REPLACE
+lPEMAKAI714		        svikode			REPLACE
+
+
+/**********************************************************************/
+CALCS()
+cadd_pengguna	(btmsts=="714" && djoinsvipengguna==0 && g_scrnumstr=="714" && lsvistr2purpose != BLANKS) || (btmsts=="711" && djoinsvipengguna==1 && g_scrnumstr=="711")
+cupd_pengguna	(btmsts=="714" && djoinsvipengguna==1 && g_scrnumstr=="714" && djoinsvijanjikc==0 && btmflag1!="BRKS" && btmflag1!="BTTD" && btmflag1!="ACCD") || (btmsts=="711" && djoinsvipengguna==1 && g_scrnumstr=="711")
+cdel_pengguna	(btmsts=="714" && djoinsvipengguna==1 && g_scrnumstr=="714" && djoinsvijanjikc==0 && btmflag1!="BRKS" && btmflag1!="BTTD" && btmflag1!="ACCD") || (btmsts=="711" && djoinsvipengguna==1 && g_scrnumstr=="711")
+
+
+MAP(mapmappengguna)
+lPEMAKAI714       lDETAIL2        REPLACE
+
+
+
+SPCALCS(sppengguna)
+DO_LIB ap_dbclc(DNAME dmapmappengguna;DCOMMAND MAPMAP;DMAP mapmappengguna);
+DO_LIB                  ap_nxpst(l4461,lm4461det2);
+
+POSTING(tmptrans)
+        PST_UPDCMD      sppengguna     
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_pengguna	
+  	PMT_UPDALL_COND	cupd_pengguna
+  	PMT_DEL_COND  	cdel_pengguna

@@ -1,0 +1,139 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+|! i.Ket        : ________________ !|
+|! t.TglKembali : ________________ !|
+|! t.LamaHari   : ________________ !|
+|! t.UangSaku   : ________________ !|
+|! t.UangMkn    : ________________ !|
+|! i.Total      : ________________ !|
+|! i.Rek        : ________________ !|
+|! i.KetRek     : ________________ !|
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bkdket                  TEXTAREA                 INPUTRI         1
+bkdtgl                  NOLIMIT {DD-MM-YY}      INPUTRI		 2
+bkddf3 			PROTECT			INPUTRI		4  
+bkddf4 			PROTECT			INPUTRI		5  
+bkddf5 			PROTECT			INPUTRI		6  
+bkdjml			NUMERIC 		INPUTRI		7  
+bkdnobbm		ALLCAPS  		INPUTRI		8  
+bbgket  	 	PROTECT 		INPUTRI		9  
+
+DBCALCS(djoinrmd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx gv_INPG lrmdgab
+
+CALCS()
+crmdgab         "JJD" + STRIP(psidep)
+cjoinrmd	djoinrmd==1
+
+MAP(misirmd)
+crmdgab                 lrmdgab                 DO_CALC
+
+EDITS(tmptranst)
+e.Mandatory bkdket      MANDATORY
+e.Mandatory bkdtgl      MANDATORY
+e.Mandatory bkdjml      MANDATORY
+e.ValidateBbm   bkdnobbm        VALIDATE bbggolnoidx mbbg4 sbbgRL {Pgv_05}
+
+MAP(mbbg4)
+bbgno           bkdnobbm        REPLACE
+bbgket          bbgket          REPLACE
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+bkdsts          INIT_ADD                OPEN
+lbkdjml         INIT_UPDATE             {bkdjml}
+bkdnobbm        INIT_ADD                {lREKJLND}
+bkddep 		DFALT_SCAN	BLANKS
+				KERETA
+				BUS
+				PESAWAT
+
+CALCS()
+ctotusaku		(bkddf3 * bkddf4) + (bkddf3 * bkddf5)
+clama			bkdtgl - bkmtgl1
+csaku  			lhasil1 
+cmakan 			lhasil2 
+
+MAP(mtotalusaku)
+clama			bkddf3		DO_CALC	
+csaku			bkddf4		DO_CALC
+cmakan			bkddf5		DO_CALC
+ctotusaku		bkdjml		DO_CALC
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=bkdtgl        DO_MAP SHOW mtotalusaku
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW murut
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW misirmd
+AFTER_INPUT   cur_field=bkdket     DO_LIB_IF cjoinrmd ap_ambts(gv_INPG,lrmdgab,lNol,lNol,lNol,&lhasil1,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+
+
+
+CALCS()
+cUSAKU   	tmpkode == "USAKU"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cUSAKU
+
+SFL_TARGET
+	bkdbuklloto    bkmnobuk   lUSAKU 
+
+SFL_MAP
+bkmdata         bkddata         REPLACE
+bkmnobuk        bkdnobuk        REPLACE
+lUSAKU          bkdbukll        REPLACE
+lUSAKU          bkdgrup         REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cOPEN_SAJA
+  PMT_UPDALL_COND  cOPEN_SAJA
+  PMT_DEL_COND  cOPEN_SAJA
+
+
+CALCS()
+c4totalbi                bkdjml + bkmbia
+c4totalbi2               bkmbia - lbkdjml + bkdjml
+c4totalbi3               bkmbia - bkdjml
+c4bkmpend		 bkmbia - bkmpokok
+
+MAP(mupdbkmd)
+c4totalbi                bkmbia          DO_CALC
+cbkmpend		 bkmpend	 DO_CALC_IF cPBS
+
+MAP(mupdbkmd2)
+c4totalbi2               bkmbia          DO_CALC
+cbkmpend		 bkmpend	 DO_CALC_IF cPBS
+
+MAP(mupdbkmd3)
+c4totalbi3               bkmbia          DO_CALC
+c4bkmpend		 bkmpend	 DO_CALC_IF cPBS
+
+
+SPCALCS(spcaladd5)
+DO_LIB ap_dbclc(DNAME dupdbkmadd5,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd);
+
+SPCALCS(spcalupd5)
+DO_LIB ap_dbclc(DNAME dupdbkmupd5,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd2);
+
+SPCALCS(spcaldel5)
+DO_LIB ap_dbclc(DNAME dupdbkmdel5,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd3);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladd5
+        PST_UPDCMD      spcalupd5
+        PST_DELCMD      spcaldel5
+
+
+
+
+

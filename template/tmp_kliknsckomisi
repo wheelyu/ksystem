@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+lppsnobuk	STRING	21
+lppssts		STRING	5
+lppsstsprc	STRING	5
+lppstotal	DFLOAT	8
+lppssisa	DFLOAT	8
+lppssisprc	DFLOAT	8
+lstscair	STRING	21
+
+CALCS()
+chutmklr	ppskdpm == "HUTMKLR"
+
+MAP(mjoinpps)
+ppsnobuk	lppsnobuk	REPLACE
+ppstotal	lppstotal	REPLACE
+ppssisa		lppssisa	REPLACE
+ppssts		lppssts		REPLACE
+ppssisprc	lppssisprc	REPLACE
+ppsstsprc	lppsstsprc	REPLACE
+DBCALCS(djoinpps)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppsmstbukidx	btmnobuk
+	DBC_SELECT	chutmklr
+	DBC_MAP		mjoinpps
+
+IMAGE(tmptranst)
+/----------------------------------------------------------\
+| t.JikaNoBukKosong
+|---------------t-----------------t------------t-----------|
+|   t.NoBukti   |    t.NoHl       |  t.Komisi  | t.Status  |
+\---------------.-----------------.------------.-----------/
+
+IMAGE(tmptrans)
+|_______________|_________________|____________|___________|_|
+
+FIELD(tmptrans)
+btmnobuk	NOCHANGE	INPUTRI	1
+lppsnobuk	PROTECT		INPUTRI	2
+lppstotal	PROTECT		INPUTRI	3
+lstscair	PROTECT		INPUTRI	4
+btmlokjual	QPROTECT UNSEEN	INPUTRI	5
+
+CALCS()
+cterkirim	djoinpps == 1 && btmdata=="BUKUTAMU" && btmiklan == "KLIKNSC" &&
+		(btmsts == "INPG" || btmsts=="CLSD" || btmsts=="720" || btmsts=="721" || (btmsts=="715" && btmflag1=="ACC"))
+cdjoinpps	djoinpps == 1
+cSDH_KELUAR	"SDH_KELUAR"
+cPROSES		"PROSES"
+cBLM_PROSES	"BLM_PROSES"
+csdh		djoinpps == 1 && lppssts == "CLSD"
+cproses		djoinpps == 1 && lppssts == "INPG" && lppssisa == 0 && lppssisprc == 0
+cblmproses	djoinpps == 1 && lppssts == "INPG" && lppssisa > 0
+cmasihopen	djoinpps == 1 && lppssts == "OPEN"
+
+EDITS(tmptrans)
+t.Validate	btmlokjual	VALIDATE cabkodidx mcaba 0
+
+MAP(mcaba)
+lppsnobuk	lppsnobuk	REPLACE_IF cdjoinpps
+lppstotal	lppstotal	REPLACE_IF cdjoinpps
+cSDH_KELUAR	lstscair	DO_CALC_IF csdh
+cPROSES		lstscair	DO_CALC_IF cproses
+cBLM_PROSES	lstscair	DO_CALC_IF cblmproses
+gv_OPEN		lstscair	REPLACE_IF cmasihopen
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SELECT	cterkirim
+SFL_TARGET
+btmmklidx	psmkode2

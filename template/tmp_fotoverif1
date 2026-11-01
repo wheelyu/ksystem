@@ -1,0 +1,74 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------\
+| t.FotoTmptKerjaResrv                 |
+| t.NoBuk ________________             |
+|/-----------s.UPLOAD-----------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+|/------------------------------------\|
+||t.StsUpl      ___________________   ||
+||t.TglFt       ___________________   ||
+||t.Latitude    _____________.______  ||
+||t.Longitude   _____________.______  ||
+||         _____________              ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk    PROTECT     INPUTRI   1
+svistr31    PROTECT     INPUTRI   2
+svitgl2     PROTECT     INPUTRI   3   
+svidf2      PROTECT     INPUTRI   4
+svidf1      PROTECT     INPUTRI   5
+luploadok   TOMBOL      INPUTRI   6
+
+
+CALCS()
+cjoinabkkolM2W      djoinabkkolfoto==1 && mtsdvs != "M4W"
+
+DEFAULTS(tmptranst)
+lresurvey6              INIT            RESURVEY6
+lKERJARESRV   INIT    KERJARESRV
+
+MAP(mupdsviuplft)
+cOK               svistr31        DO_CALC
+g_fotodate1   svitgl2   REPLACE
+g_fotolon1        svidf1          REPLACE
+g_fotolat1              svidf2          REPLACE
+
+DBCALCS(dupdsviuplft)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx   sviprm
+        DBC_MAP         mupdsviuplft
+
+MAP(mupdabkkolfoto)
+abksts  	abksts		REPLACE /* kebuka pas status INPG SPV */
+/*
+gv_CLSD         abksts          REPLACE_IF cabkkolfoto
+*/
+
+SPCALCS(sptmptranst)
+DO_LIB_IF cjoinabkkolM2W ap_dbclc(DNAME dupdabkkolm2w,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkkolfoto);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadok     DO_SPCALCS sptmptranst
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD   svinobuk svitblkode 
+SFL_UPL_DIRFLD  mtstgl1
+SFL_UPL_DELCOND chapusfoto
+SFL_UPLFLD_DBCALCS dupdsviuplft
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+svidatbuktyp gv_resurvey11 mtsnobuk lresurvey6
+
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+

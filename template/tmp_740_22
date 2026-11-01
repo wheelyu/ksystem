@@ -1,0 +1,47 @@
+IMAGE(tmptranst)
+/----t--------t--------t---------t-\
+|i.Ke|i.TglByr|i.TglJtp| i.TotByr| |
+\----.--------.--------.---------.-/
+IMAGE(tmptrans)
+|__|________|________|__________|_|
+
+FIELDS(tmptrans)
+anhke                           NUMERIC                 INPUTRI 1
+anhtglbyr                       NONE {DD-MM-YYYY}       INPUTRI 2
+anhcrttgl                       NONE {DD-MM-YYYY}       INPUTRI 3
+ltotbyr                         NUMERIC                 INPUTRI 4
+anhnobuk                	NOCHANGE SCROLL UNSEEN	INPUTRI	5
+
+EDITS(tmptrans)
+e.Validate anhnobuk  VALIDATE pikdatbukidx   mpik2 {Pgv_dtpiu}
+
+CALCS()
+ctotbyr2   	anhbyrpk + anhbyrbg + anhbyradm + anhbyrden
+cangbyr2   	anhbyrpk + anhbyrbg
+cslshr2    	anhtglbyr - anhcrttgl
+cnodd2 	  	anhtype != "DD"
+cisi02     	0
+
+MAP(mpik2)
+anhnobyr	anhnobyr	REPLACE
+ctotbyr2	ltotbyr		DO_CALC
+cangbyr2	langbyr		DO_CALC
+cisi02		lslshr		DO_CALC
+cslshr2		lslshr		DO_CALC_IF cnodd2
+
+CALCS()
+canhok2         anhsts == "CLSD" && (anhbyrum !=0 || anhbyrpk !=0 || anhbyrbg != 0 || anhbyrden != 0 || anhbyradm != 0)
+cpikE2          piktybg != "M" && g_mobile == 1
+
+SUBFILE(tmptrans)
+SFL_SELECT canhok2
+SFL_COND  cpikE2
+SFL_LINES(10)
+
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD  anhtglbyr
+SFL_SORT_UPDOWN    DOWN
+SFL_TARGET
+anhbukotourt    piknobuk
+
+

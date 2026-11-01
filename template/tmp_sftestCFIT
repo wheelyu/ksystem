@@ -1,0 +1,144 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD--------------------------------------------\/--------------------\|
+| |___| |                                                      || _________________  ||
+| \---/ |                                                      || t.Jwb1   ______    ||
+|       |                                                      || spasi              ||
+|       |                                                      || t.Jwb2   ______    ||
+|       |                                                      || _________________  ||
+|       |                                                      ||                    ||
+|       |                                                      ||spasi               ||
+|       |                                                      ||t.Mulai     _______ ||
+|       |                                                      ||t.Dateline  _______ ||
+|       |                                                      ||t.WktSkr    _______ ||
+|       |                                                      |\--------------------/|
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       \------------------------------------------------------/                      |
+\-------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   sgmurt       PROTECT                 INPUTRI          1
+   sgmstr3	PROTECT			INPUTRI		 2
+   sgmstr4      ALLCAPS                 INPUTRI          3
+   sgmjasbrg    ALLCAPS                 INPUTRI          4
+   lenter	NOCHANGE		INPUTRI		 5
+   lsgmjamcfit1		PROTECT		INPUTRI		 6
+   lsgmjamakhir    PROTECT		INPUTRI		 7
+   sgmjam	PROTECT			INPUTRI 	 8	
+
+
+CALCS()
+cdjoinsgm11_1      (djoinsgm11 == 1 && btmstsdata!="CLSD" && ((btmstsbrg=="PROMOSI" && g_usrkode==btmkdkms) || btmstsbrg!="PROMOSI")) || g_usrkode=="2492032" || g_usrkode=="1802178" || g_grpnam=="HRDSPV" || g_grpnam=="HRDHEAD" || g_grpnam=="HRDDVH" || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD"
+cSYSTIME	   SYSTIME
+cbukansubtes2	   sgmstr3!="SUBTES2"
+csubtes2	   sgmstr3=="SUBTES2"
+csubtes13	   sgmstr3=="SUBTES1" || sgmstr3=="SUBTES3"
+csubtes24	   sgmstr3=="SUBTES2" || sgmstr3=="SUBTES4"
+ctdksama	   (sgmstr3=="SUBTES2" && sgmstr4!=sgmjasbrg) || sgmstr3!="SUBTES2"
+clewat_jam10a      (sgmstr3=="SUBTES1"&&((djoinsgmcfit1time==1 && sgmjam <= lsgmjamcfit1AAA) || djoinpsd9cfit1==1 || djoinsgmcfit1time == 0)) || sgmstr3!="SUBTES1"
+clewat_jam10b      (sgmstr3=="SUBTES2"&&((djoinsgmcfit2time==1 && sgmjam <= lsgmjamcfit2AAA) || djoinpsd9cfit2==1 || djoinsgmcfit2time == 0)) || sgmstr3!="SUBTES2"
+clewat_jam10c	   (sgmstr3=="SUBTES3"&&((djoinsgmcfit3time==1 && sgmjam <= lsgmjamcfit3AAA) || djoinpsd9cfit3==1 || djoinsgmcfit3time == 0)) || sgmstr3!="SUBTES3"
+clewat_jam10d	   (sgmstr3=="SUBTES4"&&((djoinsgmcfit4time==1 && sgmjam <= lsgmjamcfit4A) || djoinpsd9cfit4==1 || djoinsgmcfit4time == 0)) || sgmstr3!="SUBTES4"
+
+cjoinsgmCFIT1       djoinsgmcfit1time==1 && sgmstr3=="SUBTES1"
+cjoinsgmCFIT2       djoinsgmcfit2time==1 && sgmstr3=="SUBTES2"
+cjoinsgmCFIT3       djoinsgmcfit3time==1 && sgmstr3=="SUBTES3"
+cjoinsgmCFIT4       djoinsgmcfit4time==1 && sgmstr3=="SUBTES4"
+ctambahjamcfit1     lsgmjamcfit1 + l000330 
+ctambahjamcfit1A    lsgmjamcfit1AA - l100000
+
+ctambahjamcfit2     lsgmjamcfit2 + l000430
+ctambahjamcfit2A     lsgmjamcfit2AA - l100000 
+
+ctambahjamcfit3     lsgmjamcfit3 + l000330
+ctambahjamcfit3A     lsgmjamcfit3AA - l100000
+
+ctambahjamcfit4     lsgmjamcfit4 + l0003  
+
+DEFAULTS(tmptranst)
+IF csubtes13 sgmstr4		DFALT_SCAN_BLANKS A B C D E F
+IF csubtes24 sgmstr4		DFALT_SCAN_BLANKS A B C D E 
+sgmjasbrg		DFALT_SCAN_BLANKS A B C D E 
+
+EDITS(tmptranst)
+e.Mandatory    sgmstr4  MANDATORY
+e.Mandatory    sgmjasbrg  MANDATORY_IF csubtes2
+
+
+MAP(mwaktu_cfit1)
+cSYSTIME        sgmjam          DO_CALC
+lsgmjamcfit1	lsgmjamawal	REPLACE_IF cjoinsgmCFIT1
+ctambahjamcfit1 lsgmjamcfit1A 	DO_CALC_IF cjoinsgmCFIT1 /*Masih time*/
+lsgmjamcfit1A   lsgmjamcfit1AA	REPLACE_IF  cjoinsgmCFIT1 /*Time ke Dfloat*/
+ctambahjamcfit1A lsgmjamcfit1AAA	DO_CALC_IF cjoinsgmCFIT1 /*Dfloat ke Time*/
+lsgmjamcfit1AAA	lsgmjamakhir	REPLACE_IF cjoinsgmCFIT1
+
+lsgmjamcfit2	lsgmjamawal	REPLACE_IF cjoinsgmCFIT2
+ctambahjamcfit2 lsgmjamcfit2A 	DO_CALC_IF cjoinsgmCFIT2 /*Masih time*/
+lsgmjamcfit2A   lsgmjamcfit2AA  REPLACE_IF  cjoinsgmCFIT2 /*Time ke Dfloat*/
+ctambahjamcfit2A lsgmjamcfit2AAA        DO_CALC_IF cjoinsgmCFIT2 /*Dfloat ke Time*/
+lsgmjamcfit2AAA	lsgmjamakhir	REPLACE_IF cjoinsgmCFIT2
+
+lsgmjamcfit3	lsgmjamawal	REPLACE_IF cjoinsgmCFIT3
+ctambahjamcfit3 lsgmjamcfit3A 	DO_CALC_IF cjoinsgmCFIT3
+lsgmjamcfit3A   lsgmjamcfit3AA  REPLACE_IF  cjoinsgmCFIT3 /*Time ke Dfloat*/
+ctambahjamcfit3A lsgmjamcfit3AAA        DO_CALC_IF cjoinsgmCFIT3 /*Dfloat ke Time*/
+lsgmjamcfit3AAA	lsgmjamakhir	REPLACE_IF cjoinsgmCFIT3
+
+lsgmjamcfit4	lsgmjamawal	REPLACE_IF cjoinsgmCFIT4
+ctambahjamcfit4 lsgmjamcfit4A 	DO_CALC_IF cjoinsgmCFIT4
+lsgmjamcfit4A   lsgmjamakhir	REPLACE_IF cjoinsgmCFIT4
+g_tgltrn        sgmtgl1         REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=sgmjasbrg	DO_SKIP_IF cbukansubtes2
+/*BEFORE_INPUT	cur_field=sgmstr4	DO_LIB_IF cdjoinsgmcfit1time0 ap_nxpst(l4321,lm4321);
+BEFORE_INPUT	cur_field=sgmstr4	DO_LIB_IF cdjoinsgmcfit2time0 ap_nxpst(l4321,lm4321);
+BEFORE_INPUT	cur_field=sgmstr4	DO_LIB_IF cdjoinsgmcfit3time0 ap_nxpst(l4321,lm4321);
+BEFORE_INPUT	cur_field=sgmstr4	DO_LIB_IF cdjoinsgmcfit4time0 ap_nxpst(l4321,lm4321);*/
+BEFORE_INPUT	cur_field=sgmstr4     	DO_MAP SHOW mwaktu_cfit1
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW mwaktu_cfit1
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctdksama mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JawabanTdkBlhSama
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF clewat_jam10a mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuSubtes1HabisLanjut
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF clewat_jam10b mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuSubtes2HabisLanjut
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF clewat_jam10c mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuSubtes3HabisLanjut
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF clewat_jam10d mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuSubtes4HabisLanjut
+/*
+CALCS()
+cbukan_instruksi	sgmstr3!=BLANKS
+ */
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     sgmstr2
+SFL_UPLREADONLY
+/*SFL_AUTO_UPD_IF cbukan_instruksi*/
+SFL_COND        cdjoinsgm11_1
+SFL_TARGET
+        sgmdabrplgtb   gv_testkry11   btmnobuk ltest_cfit
+

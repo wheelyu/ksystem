@@ -1,0 +1,62 @@
+LOCAL
+PGM_FIELDS
+lUplFoto		STRING		21
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------\
+ /--------s.UPLOAD--------------\/-----------------------------------------------\
+ |                              || t.Berkas ____________________________________ |
+ |                              ||          _______                              |
+ |                              ||          spasi                                |
+ |                              ||          ____________                         |
+ |                              ||                                               |
+ \------------------------------/\-----------------------------------------------/
+\---------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdket			NOCHANGE                INPUTRI         1
+tkdjenis		PROTECT			INPUTRI		2
+lUplFoto		TOMBOL			INPUTRI		3
+
+DEFAULTS(tmptranst)
+lDESKPIUT1		INIT		DESKPIUT
+lUplFoto		INIT		UPLOAD_OK
+
+CALCS()
+chapustmptrans  g_usrkode==BLANKS || g_grpnam=="RI" || g_grpnam=="IT" 
+cOK             "OK"
+cadafoto	g_fotodate1!=0 || g_grpnam=="RI" || g_grpnam=="IT"
+/*
+MAP(mupduplfttmptrans)
+cOK                     tkdjenis        DO_CALC
+g_fotodate1             tkdtgl2         REPLACE
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx tkdprm
+        DBC_MAP         mupduplfttmptrans
+*/
+MAP(mmap6d)
+cOK       		tkdjenis        DO_CALC_IF cadafoto
+g_fotodate1             tkdtgl2         REPLACE
+
+SPCALCS(supd6d)
+        DO_LIB ap_dbclc(DNAME dmap6d,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm,DMAP mmap6d);
+
+HOOKS(tmptranst)
+   CLICKED      cur_field=lUplFoto      DO_SPCALCS supd6d
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND chapustmptrans
+/*SFL_UPLFLD_DBCALCS dupduplfttmptrans*/
+SFL_UPLFLD tkdnobuk tkdsisstr
+SFL_TARGET
+        tkddatbukll   lDESKPIUT1 tlmnobuk tlmnoasal
+
+SFL_MAP
+lDESKPIUT       tkddata         REPLACE
+tlmnobuk        tkdnobuk        REPLACE
+

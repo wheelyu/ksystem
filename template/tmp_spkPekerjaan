@@ -1,0 +1,171 @@
+LOCAL
+PGM_FIELDS
+
+lPEKERJAAN	STRING		21
+ltldnourt4	INT2		2
+
+lprop4		STRING		31
+lkota4		STRING		31
+lkec4 		STRING		31
+lkel4 		STRING		31
+
+MAP(mjointldkerja)
+tldnourt	ltldnourt4	REPLACE
+DBCALCS(djointldkerja)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldbukurtidx	tkmnobuk
+	DBC_MAP		mjointldkerja
+
+DBCALCS(djointldpekerja)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbbmidx	tkmnobuk lPEKERJAAN
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk    	__________________||
+||t.Pekerjaan	____  ____________||
+||t.Penghasilan	__________________||
+||t.NamPt	__________________||
+||i.Alamat	__________________||
+||i.Propinsi 	____  ____________||
+||i.Kota     	____  ____________||
+||i.Kec      	____  ____________||
+||i.Kel      	____  ____________||
+|| ___       	t.RT ___  t.RW ___||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	tldnobuk		PROTECT				INPUTRI		1
+	tldsat  		ALLCAPS SCROLL			INPUTRI		2
+	tldbisnis		PROTECT SCROLL			INPUTRI		2
+	tldhrg   		NUMERIC       			INPUTRI		2
+	tldukrwrn		ALLCAPS SCROLL			INPUTRI		3
+	tldket   		ALLCAPS SCROLL 			INPUTRI		4
+	tldlok      		PROTECT SCROLL			INPUTRI		5
+	lprop4      		PROTECT SCROLL			INPUTRI		5
+	tldlok2      		ALLCAPS SCROLL			INPUTRI		6
+	lkota4      		PROTECT SCROLL			INPUTRI		6
+	tldgrup      		ALLCAPS SCROLL			INPUTRI		7
+	lkec4       		PROTECT SCROLL			INPUTRI		7
+	tldgrup2      		ALLCAPS SCROLL			INPUTRI		8
+	lkel4       		PROTECT SCROLL			INPUTRI		8
+	tldnourt		PROTECT	QPROTECT UNSEEN		INPUTRI		9
+	tldppdoto		ALLCAPS				INPUTRI		9
+	tldbrdoto		ALLCAPS				INPUTRI		9
+
+CALCS()
+cdjointldkerja0		djointldkerja == 0 && g_curcmd==1
+cdjointldkerja1		djointldkerja == 1 && g_curcmd==1
+curuta1			ltldnourt4 + 1
+ckerja			tldsat != "BELUMKERJA"
+cTdkkrja		tldsat == "BELUMKERJA"
+cdjoinsviminat		djoinsviminat == 1
+
+DEFAULT(tmptranst)
+tlddata         INIT            PEKERJAAN
+tldsts          INIT            OPEN
+lPEKERJAAN	INIT		PEKERJAAN
+
+EDITS(tmptranst)
+e.Mandatory             tldsat          MANDATORY
+e.Mandatory             tldukrwrn       MANDATORY_IF ckerja
+e.Mandatory             tldket          MANDATORY_IF ckerja
+e.Mandatory             tldhrg          MANDATORY_IF ckerja
+
+e.mandatoryKota1	tldlok2		MANDATORY_IF ckerja
+e.mandatoryKec1 	tldgrup		MANDATORY_IF ckerja
+e.Mandatorykel  	tldgrup2	MANDATORY_IF ckerja
+
+e.Mandatory             tldppdoto       MANDATORY_IF ckerja
+e.Mandatory             tldbrdoto       MANDATORY_IF ckerja
+
+
+
+e.validatePropinsi2     tldlok          VALIDATE_IF ckerja dtmdtkodidx mdtm4 0 {Pgv_dtkota}
+e.validateKota2         tldlok2         VALIDATE_IF ckerja tbldtkodidx mtbl4 stblDT {Pgv_dtkota}
+e.validateKec2          tldgrup         VALIDATE_IF ckerja tbddatkodidx mtbd4 stbd {Pgv_dtkota} {Ptldlok} {Ptldlok2}
+e.validateKel2          tldgrup2        VALIDATE_IF ckerja tbtdattypkod mtbt4 stbt  {Pgv_dtkota} {Pgv_dtkota21} {Ptldlok} {Ptldlok2} {Ptldgrup}
+e.validate              tldsat           VALIDATE tbddatkodidx mkerja4 stbd {Pgv_dttabel} {Pgv_infokredit} {Pgv_pekerja}
+t.validateRT            tldppdoto       VALIDATE tbddatkodidx mtbdrt8 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            tldbrdoto       VALIDATE tbddatkodidx mtbdrw8 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+
+
+MAP(muruta1)
+c1		tldnourt	DO_CALC_IF cdjointldkerja0
+curuta1		tldnourt	DO_CALC_IF cdjointldkerja1
+cblanks		tldgrup2	DO_CALC_IF cTdkkrja
+cblanks		tldgrup 	DO_CALC_IF cTdkkrja
+cblanks		tldlok2 	DO_CALC_IF cTdkkrja
+cblanks		tldlok  	DO_CALC_IF cTdkkrja
+cblanks		tldbisnis  	DO_CALC_IF cTdkkrja
+cblanks		tldtmp1		DO_CALC_IF cTdkkrja
+cblanks		tldtmp2		DO_CALC_IF cTdkkrja
+cblanks		tldket 		DO_CALC_IF cTdkkrja
+cblanks		tldhrg 		DO_CALC_IF cTdkkrja
+cblanks		tldukrwrn	DO_CALC_IF cTdkkrja
+
+MAP(mtbt4)
+tbtkode         tldgrup2        REPLACE
+tbtket          lkel4           REPLACE
+
+MAP(mtbd4)
+tbdkode         tldgrup         REPLACE
+tbdket          lkec4           REPLACE
+
+MAP(mtbl4)
+tblkode         tldlok2         REPLACE
+tblket          lkota4          REPLACE
+tbldtmkode      tldlok          REPLACE
+
+MAP(mdtm4)
+dtmkode         tldlok          REPLACE
+dtmket          lprop4          REPLACE
+
+MAP(mtbdrt8)
+tbdkode         tldppdoto       REPLACE
+
+MAP(mtbdrw8)
+tbdkode         tldbrdoto       REPLACE
+
+MAP(mkerja4)
+tbdkode         tldsat          REPLACE
+tbdket          tldbisnis       REPLACE
+
+MAP(mkerjaminat)
+lpekminat	tldsat		REPLACE_IF cdjoinsviminat
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW muruta1
+BEFORE_INPUT	cur_field=tldsat	DO_MAP SHOW mkerjaminat
+BEFORE_INPUT	cur_field=tldukrwrn     DO_SKIP_IF cTdkkrja
+BEFORE_INPUT	cur_field=tldket        DO_SKIP_IF cTdkkrja
+
+BEFORE_INPUT    cur_field=tldlok2	DO_SKIP_IF cTdkkrja
+BEFORE_INPUT    cur_field=tldgrup	DO_SKIP_IF cTdkkrja
+BEFORE_INPUT    cur_field=tldgrup2	DO_SKIP_IF cTdkkrja
+
+BEFORE_INPUT    cur_field=tldppdoto     DO_SKIP_IF cTdkkrja
+BEFORE_INPUT    cur_field=tldbrdoto     DO_SKIP_IF cTdkkrja
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldbukbbmidx       tkmnobuk lPEKERJAAN
+SFL_MAP
+tkmnobuk        tldnobuk        REPLACE
+lPEKERJAAN	tldnobbm	REPLACE
+tkmtgl		tldtglfak	REPLACE
+	
+CALCS()
+caddtransb       (tkmsts=="OPEN" || tkmsts=="INPG") && djointldpekerja == 0 && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS")
+cupdtransb       (tkmsts=="OPEN" || tkmsts=="INPG") && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS")
+
+PERMIT(tmptrans)
+PMT_ADD_COND    caddtransb
+PMT_UPDALL_COND cupdtransb
+PMT_DEL_COND    c0
+

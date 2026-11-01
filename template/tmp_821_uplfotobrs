@@ -1,0 +1,115 @@
+LOCAL
+PGM_FIELDS
+lUploadOKE2      STRING          11
+
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload      : _____
+  t.TglFt       : ______________
+  t.Acc         : _____ __
+  t.NipAcc      : ______________
+  t.AlsanTlk : _________________
+  t.Enter       : ____
+       ___________________
+  t.Kuncianke2mntkeDCA
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      PROTECT         INPUTRI 1
+tkdtgl2         PROTECT         INPUTRI 2
+tkdjwbstr2         NOCHANGE        INPUTRI 3
+tkdnil2         PROTECT         INPUTRI 3
+tkdstr2         NOCHANGE        INPUTRI 4
+tkdket          TEXTAREA 3 ALLCAPS         INPUTRI 5
+lENTER          NOCHANGE        INPUTRI 6
+lUploadOKE2      TOMBOL          INPUTRI 8
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr2      MANDATORY
+e.Mandatory     tkdket          MANDATORY_IF ctacc
+  
+
+DEFAULTS(tmptranst)
+lUploadOKE2      INIT            UPLOAD_OK
+tkdjwbstr2      DFALT_SCAN      ACC
+                                TACC
+tkdstr2         INIT_UPDATE     {g_usrkode}
+
+CALCS()
+cOKE2                    "OK"
+cATLH1EVENT	        (tlmdvs == "H1" || tlmdvs == "HMC") && tlmgrup == "ATL" && tlmdari == "BRS" && djointkdfotobrs == 1 /*&& tlmtgljtp <= g_tgltrn*/
+ctlmnobukbrs		tlmnobuk + "FTBRS"
+cfotobrs                "DCA"
+cket821brs		"REVIEW FOTO BROSUR H1 821"
+ctkdnil			tkdnil2 + 1
+
+MAP(mupdtkdftbrs)
+cOKE2            tkdjwbstr1      DO_CALC
+g_usrkode       tkdsisstr       REPLACE
+g_tgltrn        tkdtgl2         REPLACE
+c0s              tkdnil          DO_CALC
+ctkdnil         tkdnil2		DO_CALC_IF cupltac
+
+MAP(maccbrs)
+cblanks         tkdket  DO_CALC_IF cacc
+
+MAP(maddabkfotobrsdca)
+gv_INPG         abksts          REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lnipdca       	abkkym        	REPLACE_IF cnipdcabrs
+ctlmnobukbrs	abknobuk        DO_CALC
+g_tgltrn	abktgl		REPLACE
+cket821brs      abkkym2         DO_CALC
+c821            abkscr          DO_CALC
+cfotobrs	abktype		DO_CALC
+DEBUG ldum ldum REPLACE
+
+MAP(mupdtlm4)
+l3              tlmperdisd      REPLACE
+
+SPCALCS(supdtkdbrs)
+DO_LIB_IF cdjoinabkfotobrs2	ap_dbclc(DNAME dupdabkfotobrs,DCOMMAND UPDATE_RANGE, DBC_TARGET abkdatbukidx lKUNCIABSEN lnobukfotobrs ,DMAP mupdabk);
+DO_LIB_IF csdhupload2  ap_dbclc(DNAME daddabkfotobrs,DCOMMAND ADD, DFILE abk, DMAP maddabkfotobrsdca);
+DO_LIB_IF csdhupload  ap_dbclc(DNAME dupdtlm31, DCOMMAND UPDATE, DTARGET tlmbukidx tkdnobuk, DMAP mupdtlm4);
+DO_LIB_IF csdhupload  ap_dbclc(DNAME dupdtkdbrs, DCOMMAND UPDATE, DTARGET tkdotoidx tkdoto, DMAP mupdtkdftbrs);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lUploadOKE2    DO_SPCALCS supdtkdbrs
+AFTER_INPUT     cur_field=tkdjwbstr2    DO_MAP SHOW maccbrs
+BEFORE_INPUT     cur_field=tkdket       DO_SKIP_IF cacc
+
+MAP(mupdtkduplbrs)
+g_fotodate1     tkdtgl      	REPLACE
+gv_int1         tkdnil		REPLACE
+
+DEBUG	ldum	ldum	REPLACE
+DBCALCS(dupdtkdfotbrs)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdotoidx tkdoto
+        DBC_MAP         mupdtkduplbrs
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_UPLFLD tlmnobuk lFOTOBRSH1
+SFL_UPL_COND    cbrsh1
+SFL_UPLFLD_DBCALCS dupdtkdfotbrs
+SFL_COND        cATLH1EVENT
+/* SFL_UPL_CAMERAONLY */
+SFL_TARGET
+        tkddatbukll   lFOTOBRSH1  tlmnobuk 

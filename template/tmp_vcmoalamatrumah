@@ -1,0 +1,93 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+   t.VerifikasiAlamatTinggal
+   spasi
+   i.Alamat     : ________________
+   i.Propinsi   : ________________ 
+   i.Kota       : ________________ 
+   i.Kec        : ________________ 
+   i.Kel        : ________________ 
+
+|/---------------------------------\|
+   t.VerifikasiCMO
+   t.Jaraktempuh  : ______.________
+   t.Menittempuh  : ______.________
+   t.Enter        : ______
+    spasi
+    spasi
+    t.UploadGMAPS : ______
+   /-------s.UPLOAD--------------\
+   |                             |
+   |                             |
+   |                             |
+   |                             |
+   |                             |
+   \-----------------------------/
+|\---------------------------------/|
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lalmjalansvy              PROTECT                          INPUTRI  3
+lalmpropsvy               PROTECT                          INPUTRI  4
+lalmkotasvy               PROTECT                          INPUTRI  6
+lalmkecsvy                PROTECT                          INPUTRI  8
+lalmkelsvy                PROTECT                          INPUTRI  10
+svidf3			         NUMERIC   {99,999999999}         INPUTRI	14
+svidf4			         NUMERIC   {99,999999999}         INPUTRI	15
+lenter                  NOCHANGE                         INPUTRI  16
+svistr37                PROTECT                          INPUTRI  100
+
+DEFAULTS(tmptranst)
+lalmbukoto      INIT            {btmplg}
+lPSMKTP         INIT            PSMKTP
+lALMSURVEY      INIT            PSMTINGGAL
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+/*
+CALCS()
+cbukancmoveralmrmh       g_grpnam != "CMO" && g_grpnam != "IT"
+*/
+
+EDITS(tmptranst)
+t.mandatory svidf3   MANDATORY
+t.mandatory svidf4   MANDATORY
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdfototg
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svitype
+SFL_SHOW_NEXT
+SFL_TARGET	svidatbuktyp   gv_datasurvey btmnobuk lvcmoalmrumah
+
+
+SFL_MAP
+gv_datasurvey  	svidata			REPLACE
+btmnobuk	    	   svinobuk		   REPLACE
+lvcmoalmrumah		svitype			REPLACE
+lvcmoalmrumah		svikode			REPLACE
+c1			         svinourt		   DO_CALC
+
+DBCALCS(djoinsvivcmoalmrmh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey btmnobuk lvcmoalmrumah
+
+CALCS()
+caddvcmoalmrmh	btmsts=="713" && djoinsvivcmoalmrmh == 0 
+cupdvcmoalmrmh	btmsts=="713" && djoinsvivcmoalmrmh == 1 
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddvcmoalmrmh
+        PMT_UPDALL_COND cupdvcmoalmrmh
+        PMT_DEL_COND    c0
+
+
+
+
+
+

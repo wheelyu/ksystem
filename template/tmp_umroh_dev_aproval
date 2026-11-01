@@ -1,0 +1,130 @@
+LOCAL
+PGM_FIELDS
+        ltipedev	STRING		11
+        lsvitype2r	STRING		11
+
+CALCS()
+        cthbl11	        THBLS(g_tgltrn)
+        
+IMAGE(tmptranst)
+/----------------------------------\
+|t.Status : __________             | 
+|i.NoBuk  : _____________________  |
+|           _____________________  |
+|t.acc    : ___________  _______   |
+|t.user   : ___________  __________|
+|                                  |
+|t.Ket    : _______________________|
+|                                  |
+|           _______________________|
+|                                  |
+|           _______________________|
+|              ________            |
+|                                  |
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svistr10        PROTECT                 INPUTRI         1
+        svinobuk        PROTECT                 INPUTRI         1
+        svikode         PROTECT                 INPUTRI         2
+        svitype2        NOCHANGE SCROLL         INPUTRI         2
+        svistr1         NOCHANGE SCROLL         INPUTRI         2
+        svitype3        PROTECT                 INPUTRI         3
+        svistr2         PROTECT                 INPUTRI         3
+        sviket          TEXTAREA                INPUTRI         4
+        sviket2         TEXTAREA                INPUTRI         5
+        sviket3         TEXTAREA                INPUTRI         6
+        lenter2         ALLCAPS                 INPUTRI         7
+
+DEFAULT(tmptranst)
+        svistr10        INIT                    OPEN
+        lenter2         INIT                    ENTER
+        svitype         INIT                    APPROVE
+        svitype2        DFALT_SCAN              BLANKS
+                                                ACC
+                                                TACC
+        svitype3        INIT                    {g_usrkode}
+        svistr1         DFALT_SCAN              SLIK
+        lthbl11		INIT 	                {cthbl11}
+        svistr2         INIT                    {g_grpnam}
+
+CALCS()
+        clenket1        DO_LIB ap_strln(sviket,&llenket);
+        clenket2001     llenket >= 200
+
+        ccekdeviasi     djoincekdeviasi == 1
+        csdhaccok1	(lsvitype2r == "ACC" || lsvitype2r == "TACC") && djoincekdeviasi == 1 && lfinaldeviasi == BLANKS
+        csdhaccok2	(lsvitype2r == "ACC" || lsvitype2r == "TACC")  && djoincekdeviasi == 1 && lfinaldeviasi == "B.M4WBM"
+        csdhaccok3	(lsvitype2r == "ACC" || lsvitype2r == "TACC")  && djoincekdeviasi == 1 && lfinaldeviasi == "B.M4WDVH"
+        caddapprove     djoincekdeviasi == 1 && ((lfinaldeviasi == BLANKS && (g_grpnam == "B.M4WBM" || g_grpnam == "RI"|| g_grpnam == "IT")) ||
+                        (lfinaldeviasi == "B.M4WBM" && (g_grpnam == "B.M4WDVH" || g_grpnam == "RI"|| g_grpnam == "IT")) ||
+                        (lfinaldeviasi == "B.M4WDVH" && (g_grpnam == "B.M4WCOO" || g_grpnam == "RI"|| g_grpnam == "IT")))
+
+        cupdapprove     djoincekdeviasi == 1 && 
+                        ((lfinaldeviasi == "B.M4WBM" && ((svistr2 == g_grpnam && g_grpnam == "B.M4WBM") || g_grpnam == "RI"|| g_grpnam == "IT")) ||
+                        (lfinaldeviasi == "B.M4WDVH" && ((svistr2 == g_grpnam && g_grpnam == "B.M4WDVH") || g_grpnam == "RI"|| g_grpnam == "IT")) ||
+                        (lfinaldeviasi == "B.M4WCOO" && ((svistr2 == g_grpnam && g_grpnam == "B.M4WCOO") || g_grpnam == "RI"|| g_grpnam == "IT")))
+        
+        cdelapprove     djoincekdeviasi == 1 && 
+                        ((lfinaldeviasi != "B.M4WCOO" && ((svistr2 == g_grpnam && g_grpnam == "B.M4WBM") || g_grpnam == "RI"|| g_grpnam == "IT")) ||
+                        (lfinaldeviasi != "B.M4WCOO" && ((svistr2 == g_grpnam && g_grpnam == "B.M4WDVH") || g_grpnam == "RI"|| g_grpnam == "IT")) ||
+                        ((svistr2 == g_grpnam && g_grpnam == "B.M4WCOO") || g_grpnam == "RI"|| g_grpnam == "IT"))
+                        
+EDITS(tmptranst)
+        e.Mandatory     svitype2                MANDATORY
+        e.Mandatory     svistr1                 MANDATORY
+        e.Mandatory     sviket                  MANDATORY
+
+MAP(misi2)
+        gt_deviasibr11  svidata                 REPLACE
+        btmnobuk        svinobuk                REPLACE
+        btmnobuk        svikode                 REPLACE
+
+MAP(mlenket2)
+        clenket1        llenket                 DO_CALC
+
+HOOKS(tmptranst)
+	AFTER_INPUT     cur_field=svistr10      DO_MAP SHOW misi2
+        AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket2
+        AFTER_INPUT	cur_field=sviket	DO_MAP
+			IF clenket2001 mdum
+	                ELSE HKCURSOR STAY
+        	        HKMSG Panjang Ket harus 200 Karakter
+
+MAP(mmapawal)
+        svistr1		ltipedev                REPLACE
+        svitype2	lsvitype2r	        REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND                ccekdeviasi
+SFL_TARGET
+        svidatbuktyp    gt_deviasibr11 btmnobuk gv_aprove
+
+SFL_MAP
+        gt_deviasibr11  svidata                 REPLACE
+        btmnobuk        svinobuk                REPLACE
+        btmnobuk        svikode                 REPLACE
+
+MAP(mupddeviasi)
+	lBM             svistr4                 REPLACE_IF csdhaccok1
+        lDVH            svistr4                 REPLACE_IF csdhaccok2
+        lDCOO           svistr4                 REPLACE_IF csdhaccok3
+
+SPCALCS(stmptrans)
+        DO_LIB          ap_dbclc(DNAME dmapawal,DCOMMAND MAPMAP,DMAP mmapawal); 
+        DO_LIB          ap_dbclc(DNAME dupddeviasi,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp gt_deviasibr11 btmnobuk ltipedev l1,DMAP mupddeviasi);
+        
+POSTING(tmptrans)
+        PST_ADDCMD stmptrans
+        PST_UPDCMD stmptrans
+
+PERMIT(tmptrans)
+        PMT_ADD_COND  		caddapprove
+        PMT_UPDALL_COND 	cupdapprove
+        PMT_DEL_COND  		cdelapprove
+
+
+

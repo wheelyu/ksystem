@@ -1,0 +1,78 @@
+LOCAL
+PGM_FIELDS
+lpekerjaan	STRING	61
+lsubkerja	STRING	61
+lsubpekerjaan	STRING	21
+lkerjamitra	STRING	21
+lDCAGENx	STRING	11
+lKERJAMITRAx	STRING	11
+
+MAP(mjoinsviag)
+svistr1         lkerjamitra     REPLACE
+DBCALCS(djoinsviag)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp    lDCAGENx hrmnobuk lDCAGENx
+        DBC_MAP         mjoinsviag
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.Pekerjaan  : ____  ___________||
+||i.SubKerja   : ____  ___________||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr2		NOCHANGE	INPUTRI	1
+lpekerjaan	NOCHANGE	INPUTRI	2
+psdstr3		NOCHANGE	INPUTRI	3
+lsubkerja	NOCHANGE	INPUTRI	4
+
+CALCS()
+clsubpekerjaan	"SUBPEKERJAAN"+STRIP(psdstr2)
+cjoinsviag	djoinsviag == 1
+
+DEFAULTS(tmptranst)
+lKERJAMITRAx	INIT	KERJAMITRA
+lDCAGENx	INIT	DCAGEN
+
+EDITS(tmptranst)
+t.Mandatory	psdstr2		MANDATORY
+t.Mandatory	psdstr3		MANDATORY
+
+e.validate	psdstr2		VALIDATE tbldtdtmkod mtbl1  stblDT {Pgv_dttabel} {Pgv_pekerjaan21}
+e.validate	psdstr3   	VALIDATE tbddatkodidx mtbd1 stbdLIT {Pgv_dttabel} {Pgv_personal} {Plsubpekerjaan}
+
+MAP(mtbl1)
+tblkode		psdstr2		REPLACE
+tblket		lpekerjaan	REPLACE
+clsubpekerjaan	lsubpekerjaan	DO_CALC
+
+MAP(mtbd1)
+tbdkode		psdstr3		REPLACE
+tbdket		lsubkerja	REPLACE
+
+MAP(mpekerjaan)
+lkerjamitra	psdstr2		REPLACE_IF cjoinsviag
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr2	DO_MAP SHOW mpekerjaan
+
+CALCS()
+c3208x		g_scrnumstr == "3208"
+c3209x		g_scrnumstr == "3209"
+cxm4w		hrmdvs != "M4W" && psmdvs != "M4W" && hrmdvs!="UMROH" && psmdvs!="UMROH" && psmdvs==BLANKS
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND	cxm4w
+SFL_TARGET_IF c3208x	psddatpsmkod 	lKERJAMITRAx hrmnip1
+SFL_TARGET_IF c3209x	psddatpsmkod 	lKERJAMITRAx psmktp
+
+SFL_MAP
+lKERJAMITRAx	psddata		REPLACE
+hrmnip1		psdpsmkode	REPLACE
+hrmnobuk	psdstr1		REPLACE
+gv_int1		psdnourt	REPLACE

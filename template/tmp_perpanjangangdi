@@ -1,0 +1,132 @@
+
+DBCALCS(djoinnhdp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbukidx   btmnobuk  lnhddata1 
+
+
+IMAGE(tmptranst)
+/----t--------------------t--------------t---------t------------t---------------\
+|t.No|   t.ItemBrg        | t.Kelengkapan|t.Kondisi|t.KetKondisi|  t.Estimasi   |
+\----.--------------------.--------------.---------.------------.---------------/
+
+IMAGE(tmptrans)
+|____|____________________|______________|_________|____________|____________.__|
+FIELD(tmptrans)
+nhdnourt      PROTECT                INPUTRI 	1 /* No Urt */
+nhdkode	      PROTECT                INPUTRI	2 /* Item Brg */
+nhdnobbm      NOCHANGE               INPUTRI	3 /* Kelengkapan */
+nhdhrg1       NOCHANGE               INPUTRI	4 /* Kondisi */
+nhdtype       PROTECT                INPUTRI    5 /* Ket Kondisi*/
+nhdhrg2       NOCHANGE               INPUTRI	5 /* Estimasi */
+
+
+DEFAULT(tmptrans)
+IF chpok        nhdnobbm                DFALT_SCAN              BLANKS
+                                                                ADA_ORI    "ADA ORIGINAL"
+                                                                ADA_TDKORI "ADA TDK ORI"
+                                                                RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF cdroneok     nhdnobbm                DFALT_SCAN              BLANKS
+                                                                ADA_ORI    "ADA ORIGINAL"
+                                                                RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF cgaransihp   nhdnobbm                DFALT_SCAN              BLANKS
+                                                                SESUAI
+                                                                TDK_SESUAI
+
+IF chpokx       nhdhrg1                 DFALT_SCAN              BLANKS
+                                                                1 "BAGUS"
+                                                                2 "KURANG BAGUS"
+
+IF cRam         nhdhrg1                DFALT_SCAN              BLANKS
+                                                                1 "SESUAI"
+                                                                3 "TDK_SESUAI"
+
+IF cdrone       nhdhrg1                DFALT_SCAN              BLANKS
+                                                                1 "BAGUS"
+                                                                2 "KURANG BAGUS"
+
+IF cdronex      nhdhrg1                DFALT_SCAN              BLANKS
+                                                                3 "TIDAK ADA"
+
+IF cdroneA      nhdnobbm                DFALT_SCAN              BLANKS
+                                                                BISA "BISA"
+                                                                TDK_BISA "TDK_BISA"
+IF cdroneA1      nhdhrg1                DFALT_SCAN              BLANKS
+                                                                1 "BAGUS"
+
+IF cdroneA2      nhdhrg1                DFALT_SCAN              BLANKS
+                                                                2 "TDK_ADA"
+
+IF cdroneB      nhdnobbm                DFALT_SCAN              BLANKS
+                                                                KUAT "KUAT"
+                                                                LEMAH "LEMAH"
+                                                                TDK_BISA "TDK_BISA"
+
+IF cdroneB1      nhdhrg1                DFALT_SCAN              BLANKS
+                                                                1 "BAGUS"
+
+IF cdroneB2      nhdhrg1                DFALT_SCAN              BLANKS
+                                                                2 "KRG_BGS"
+
+
+IF cproy        nhdnobbm                DFALT_SCAN              BLANKS
+                                                                ADA_ORI    "ADA ORIGINAL"
+                                                                RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF cwarna       nhdnobbm                DFALT_SCAN              BLANKS
+                                                                CERAH "CERAH"
+                                                                KUSAM "KUSAM"
+
+IF chomey1      nhdnobbm                DFALT_SCAN              BLANKS
+                                                                BAGUS      "BAGUS"
+                                                                BARETHALUS "BARET LUAR"
+                                                                BARETKASAR "BARET DALAM"
+                                                                RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF chomey2      nhdnobbm                DFALT_SCAN              BLANKS
+                                                                BAGUS      "BAGUS"
+                                                                BARET      "BARET"
+                                                                RUSAK/TDK  "RUSAK/TDK_ADA"
+IF chomey3      nhdnobbm                DFALT_SCAN              BLANKS
+                                                                BERFUNGSI  "BERFUNGSI"
+                                                                TDK_FUNGSI "TIDAK BERFUNGSI"
+
+IF csubwoofer   nhdhrg1                 DFALT_SCAN_BLANKS       1 "BAGUS"
+                                                                2 "RUSAK"
+
+IF csubwoofer2  nhdnobbm                DFALT_SCAN_BLANKS       BAGUS "BAGUS"
+                                                                RUSAK/TDK "RUSAK/TDK_ADA"
+
+IF csubwoofer3  nhdnobbm                DFALT_SCAN_BLANKS       BAGUS "BAGUS"
+                                                                PECAH "PECAH"
+
+
+lbts1		INIT			0
+lbts3		INIT			0
+
+EDITS(tmptrans)
+e.Mandatory	nhdnobbm	MANDATORY
+e.Mandatory	nhdhrg1		MANDATORY_IF cbkngrsnrsk
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=nhdhrg1	DO_SKIP_IF crskngrn
+/*BEFORE_INPUT	cur_field=nhdnobbm	DO_SKIP_IF ckamera1 */
+AFTER_INPUT	cur_field=nhdnobbm	DO_MAP SHOW mkosong
+AFTER_INPUT	cur_field=nhdhrg1	DO_MAP SHOW mketkond
+
+CALCS()
+cdjoinnhdp	djoinnhdp==1 && (btmrekomen == "BARU" || (btmrekomen == "PINJAMAN_ULANG" && (btmtotal == 3 || btmtotal == 6 || btmtotal == 9)))
+		&& btmnorangka != "MOTOR"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_COND	cdjoinnhdp
+SFL_TARGET
+    nhdbukidx   btmnobuk  lnhddata1
+SFL_MAP
+btmnobuk	nhdnobuk	REPLACE
+lnhddata1	nhddata		REPLACE
+
+

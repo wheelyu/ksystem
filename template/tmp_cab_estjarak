@@ -1,0 +1,62 @@
+LOCAL
+PGM_FIELDS
+lESTJARAK	STRING		11
+lESTJARAK21	STRING		21
+ldumestjarak	INT2		2
+
+DBCALCS(djoincadestjarak)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx cabkode lESTJARAK lESTJARAK21 cadkode
+
+CALCS()
+cestjarak0	(djoincadestjarak==0 && g_curcmd==1) || (g_curcmd==2 && ~cadkode==cadkode) || (g_curcmd==2 && ~cadkode!=cadkode && djoincadestjarak==0)
+
+
+IMAGE(tmptranst)
+/---------t------------t---------------t----------------\
+|i.Cab    |t.Kode      |t.JarakM       |t.Menit         |
+\---------.------------.---------------.----------------/
+
+IMAGE(tmptrans)
+|_________|____________|____________.__|________________|
+
+FIELD(tmptrans)
+cadkdcab		PROTECT		INPUTRI		1
+cadkode			NOCHANGE	INPUTRI		2
+cadtot1			NUMERIC		INPUTRI		3
+cadtot2			PROTECT		INPUTRI		4
+
+DEFAULTS(tmptrans)
+lESTJARAK	INIT			ESTJARAK
+lESTJARAK21	INIT			ESTJARAK
+cadthbl		INIT			{cthbl}
+cadthbl		INIT_UPDATE		{cthbl}
+caddata		INIT			ESTJARAK
+cadtype		INIT			ESTJARAK
+cadtot2		INIT			60
+
+cadkode		DFALT_SCAN_BLANKS	ESTJARAKPAGI
+					ESTJARAKSIANG
+
+EDITS(tmptrans)
+e.Mandatory	cadkode	MANDATORY
+e.Mandatory	cadtot1	MANDATORY
+e.Mandatory	cadtot2	MANDATORY
+
+MAP(mdumestjarak)
+ldumestjarak	ldumestjarak	REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=cadkode	DO_MAP SHOW
+		IF cestjarak0 mdumestjarak
+		ELSE HKCURSOR STAY
+		HKMSG t.KodeEstJarakSudahAda
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(6)
+SFL_TARGET
+	cadcabdtidx	cabkode lESTJARAK lESTJARAK21 
+SFL_MAP
+	cabkode		cadkdcab	REPLACE
+

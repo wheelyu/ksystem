@@ -1,0 +1,102 @@
+LOCAL
+PGM_FIELDS
+lpropinsi	STRING	21
+lkota		STRING	21
+lkec		STRING	21
+lkel		STRING 	21
+lpihakke3	STRING	11
+lENTER		STRING	11
+
+DBCALCS(djoinpihakke3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      svidatbuktyp    gv_dt1106 btmnobuk lpihakke3
+
+
+
+IMAGE(tmptranst)
+/-----------------------------------------------\
+|/---------------------------------------------\|
+||i.Nama 	_______________________________||
+||i.alamat     	_____________________          ||
+||i.provinsi	__________  ___________________||
+||i.kab		__________  ___________________||
+||i.kec		__________  ___________________||
+||i.kel		__________  ___________________||
+||		_______ 	               ||
+|\---------------------------------------------/|
+\-----------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama		ALLCAPS		INPUTRI 1
+sviket		TEXTAREA	INPUTRI 2
+svistr1		ALLCAPS SCROLL	INPUTRI 3
+lpropinsi	PROTECT		INPUTRI 3
+svistr2		ALLCAPS SCROLL	INPUTRI 4
+lkota		PROTECT		INPUTRI 4
+svistr3		ALLCAPS SCROLL	INPUTRI 5
+lkec		PROTECT		INPUTRI	5
+svistr4		ALLCAPS SCROLL	INPUTRI 6
+lkel		PROTECT		INPUTRI 6
+lENTER		NOCHANGE	INPUTRI 7
+
+DEFAULTS(tmptranst)
+lkota		INIT		DTKOTA	
+lpihakke3	INIT		PIHAKTIGA
+svitype		INIT		PIHAKTIGA
+svidata		INIT		1106
+lENTER          INIT   		ENTER
+
+
+EDITS(tmptranst)
+e.mandatory     svinama      MANDATORY
+e.mandatory     sviket 	     MANDATORY
+e.Mandatory     svistr1      MANDATORY
+e.Mandatory     svistr2     MANDATORY
+e.Mandatory     svistr3      MANDATORY
+e.Mandatory     svistr4      MANDATORY
+
+e.validatePropinsi1     svistr1 VALIDATE dtmdtkodidx  mdtm03 sdtm {Pgv_dtkota}
+e.validateKota1         svistr2 VALIDATE tbldtdtmkod  mtbl03 stbl {Pgv_dtkota} {Psvistr1}
+e.validateKec1          svistr3 VALIDATE tbddatkodidx mtbd03 stbd {Pgv_dtkota} {Psvistr1} {Psvistr2}
+e.validateKel1          svistr4 VALIDATE tbtdattypkod mtbt03 stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr1} {Psvistr2} {Psvistr3}
+
+MAP(mdtm03)
+dtmkode 	svistr1		REPLACE
+dtmket          lpropinsi       REPLACE
+
+MAP(mtbl03)
+tblkode          svistr2	REPLACE
+tblket          lkota		REPLACE
+tbldtmkode      svistr1         REPLACE
+
+MAP(mtbd03)
+tbdkode         svistr3         REPLACE
+tbtket		lkec		REPLACE
+
+MAP(mtbt03)
+tbtkode         svistr4         REPLACE
+tbtket          lkel		REPLACE
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp   gv_dt1106 btmnobuk lpihakke3
+SFL_MAP	
+btmnobuk	svinobuk	REPLACE
+
+CALCS()
+cpihakke3	djoinpihakke3 == 0 && ((btmflag1 != "CLSD") || (btmflag1 == "CLSD" && (g_grpnam =="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH" || g_grpnam == "IT" || g_grpnam == "RI")))
+		
+
+cubah3		djoinpihakke3 == 1 && ((btmflag1 == "OPEN" || btmflag1 =="SCTK") && (g_grpnam =="B.M4WCMO" || g_grpnam =="B.M4WADH" ||g_grpnam =="B.M4WBM")) || (btmflag1 =="OPE1" && (g_grpnam == "B.M4WMSPV" || g_grpnam =="B.M4WCA" || g_grpnam =="B.M4WCM" || g_grpnam =="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH" || g_grpnam == "IT" || g_grpnam == "RI")) || ((btmflag1 == "OPE2" || btmflag1 == "CLSD") && (g_grpnam =="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH"))
+
+PERMIT(tmptrans)
+PMT_ADD_COND  cpihakke3
+PMT_UPDALL_COND cubah3
+PMT_DEL_COND c0
+
+
+
+

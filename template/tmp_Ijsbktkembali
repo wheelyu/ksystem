@@ -1,0 +1,138 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------\
+|/---------------------------------------------------------\|
+|| t.BuktiKembali                                          ||
+||spasi                                                    ||
+||t.TglInp       :_____________                            ||
+||t.User         :_____________ ________________           ||
+||t.NipKrm       :_____________ ________________           ||
+||t.CbgKrm       :_____ _____________________              ||
+||t.CbgTuj       :_____ _____________________              ||
+||t.Via          :_____________                            ||
+||t.NoResi       :____________________                     ||
+||t.NoTelpExp    :____________________                     ||
+||t.AlamatExp    :____________________________________     ||
+||spasi                                                    ||
+|\---------------------------------------------------------/|
+|t.UplBuktiKembali                                          |                          
+|/--s.UPLOAD----------------------\/-----------------------\|
+||                                ||t.Tgl     : __________ ||
+||                                ||t.OkUp    : __________ ||
+||                                ||t.AccHrd  : __________ ||
+||                                || ______ ______         ||
+||                                |\-----------------------/|
+||                                |                         |
+|\--------------------------------/                         |
+\-----------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1   	PROTECT {DD-MM-YY}			INPUTRI 1
+psdstr1		PROTECT			INPUTRI 2
+lnamuser2	PROTECT			INPUTRI 3
+psdstr2  	PROTECT              INPUTRI 4
+lnamuser3	PROTECT		     INPUTRI 5
+psdstr3		PROTECT 			INPUTRI	6
+lcabkrm1		PROTECT			INPUTRI	7
+psdstr4	 	ALLCAPS 			INPUTRI 8
+lcabtuj1		PROTECT			INPUTRI	9
+psdtype2	PROTECT SCROLL		INPUTRI 10
+psdket		ALLCAPS SCROLL		INPUTRI 11
+psdstr5		ALLCAPS SCROLL		INPUTRI 12
+psdket2		ALLCAPS SCROLL		INPUTRI 13
+
+psdtgl2		PROTECT {DD-MM-YY}	INPUTRI	13
+psdsts 		PROTECT			INPUTRI 14	
+psdtype		PROTECT			INPUTRI	15
+luploadtacc3		TOMBOL			INPUTRI 16
+luploadacc3		TOMBOL			INPUTRI 17
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdstr1		INIT_ADD	{g_usrkode}
+psdstr2		INIT_ADD	{cbudyahayuni}
+psdstr3		INIT_ADD	{cSMG31}
+psdtype2	INIT_ADD	EKSPEDISI
+luploadtacc3	INIT		TACC
+luploadacc3	INIT		ACC
+l_count3	INIT		1
+
+EDITS(tmptranst)
+t.Validate psdstr1	VALIDATE psikodidx mpsix1
+t.Validate psdstr2	VALIDATE psikodidx mpsix2
+t.Validate psdstr3	VALIDATE cabkodidx mcabx1 scab
+t.Validate psdstr4	VALIDATE cabkodidx mcabx2 scab
+t.Mandatory psdtgl1	MANDATORY
+t.Mandatory psdstr2	MANDATORY
+t.Mandatory psdstr3	MANDATORY
+t.Mandatory psdstr4	MANDATORY
+t.Mandatory psdtype2	MANDATORY
+t.Mandatory psdket	MANDATORY
+t.Mandatory psdstr5	MANDATORY
+t.Mandatory psdket2	MANDATORY
+
+MAP(mpsix1)
+psikode		psdstr1		REPLACE
+psinama		lnamuser2	REPLACE
+
+MAP(mpsix2)
+psikode		psdstr2		REPLACE
+psinama		lnamuser3	REPLACE
+
+MAP(mcabx1)
+cabkode  	psdstr3		REPLACE
+cabnama		lcabkrm1		REPLACE
+
+MAP(mcabx2)
+cabkode  	psdstr4		REPLACE
+cabnama		lcabtuj1		REPLACE
+
+MAP(mupdmtssdm21b)
+cOK		psdsts 		DO_CALC
+g_usrkode	psdtype		REPLACE
+g_tgltrn	psdtgl2		REPLACE
+
+DBCALCS(dupdmtssdm21b)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdmtssdm21b
+
+
+MAP(mupdmtssdm9)
+ctacc1          psdsts          DO_CALC
+g_usrkode       psdtype         REPLACE
+
+MAP(mupdmtssdm10)
+cacc1           psdsts          DO_CALC
+g_usrkode       psdtype         REPLACE
+g_tgltrn        psdtgl2         REPLACE
+
+
+CALCS()
+cada_kembali1	(UPLEXIST(l_count9) == 1  || UPLEXIST(l_count9) == 0) && (g_grpnam=="HRDHEAD"||g_grpnam=="HRDSPV" || g_grpnam=="FINARSIP" || (djoinpsdacc==1 && g_usrkode==laccupload)) && (hrmket2=="ACC_BERKAS" && hrmcab2=="PENGEMBALIAN")
+
+SPCALCS(supdpsd2mtsb)
+	DO_LIB_IF cada_kembali1 ap_dbclc(DNAME dupdmtssdm2b,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdmtssdm9);
+
+SPCALCS(supdpsd3mtsb)
+	DO_LIB_IF cada_kembali1 ap_dbclc(DNAME dupdmtssdm3b,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdmtssdm10);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtacc3	DO_SPCALCS supdpsd2mtsb
+CLICKED		cur_field=luploadacc3	DO_SPCALCS supdpsd3mtsb
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  lbuktikembali psdpsmkode  psdkode         
+SFL_UPLFLD_DBCALCS dupdmtssdm21b
+SFL_UPL_DELCOND caccblanks2
+SFL_TARGET
+	psddatpsmkod  lbuktikembali hrmnobuk                     
+
+SFL_MAP
+lbuktikembali    		psddata		REPLACE
+hrmnobuk		psdpsmkode	REPLACE
+gv_dtijazah21		psdkode		REPLACE

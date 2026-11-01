@@ -1,0 +1,284 @@
+LOCAL
+PGM_FIELDS
+lveriklan	STRING	11
+ltompjiklan     STRING  21
+ltomdvhiklan    STRING  21
+lklik		STRING  11
+
+/*===== join tkd sahreiklan =====*/
+MAP(mjointkdiklan)
+tkdjml3		ldum		REPLACE
+DBCALCS(djointkdiklan)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll lSHAREIKLAN svinobuk 
+	DBC_MAP		mjointkdiklan
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.SHAREIKLAN	                    ||_
+|\----------------------------------/|
+|/----------------------------------\|
+| t.Iklanfb			  ___|
+|\----------------------------------/|
+|/------------- UPLOAD -------------\|
+||			  	    ||
+||			  	    || 	
+||	       			    ||
+||	       			    ||
+||	     	  		    ||
+|\----------------------------------/|
+			         
+|/----------------------------------\|
+| t.Iklanwa			  ___|
+|\----------------------------------/|
+|/------------- UPLOAD2 ------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+				 
+|/----------------------------------\|
+| t.Iklanig/tiktok		  ___|
+|\----------------------------------/|
+|/------------- UPLOAD3 ------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+
+|/----------------------------------\|
+| t.Jamkerja   _______________ ______|
+|\----------------------------------/|
+
+|/----------------------------------\|
+| t.RevHO      ___________ __ _______|
+|              ______________________|
+| t.RevDVH     __ ___________________|
+|              ______________________|
+| ________________  ________________ |
+|       __                __         |
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt		UNSEEN PROTECT  INPUTRI	 1 /*no urut*/
+svistr1			PROTECT		INPUTRI  2 /*Tanda Upload FB*/   
+svistr2			PROTECT		INPUTRI  3 /*Tanda Upload WA*/
+svistr3			PROTECT		INPUTRI  4 /*Tanda Upload IG/TIKTOK*/
+ljamiklan       	PROTECT		INPUTRI  5 /*Jam Mulai Share Iklan*/
+lklik			TOMBOL          INPUTRI  6 /*Tombol Jam*/
+
+svitype2        	PROTECT         INPUTRI  7 /*NIP Rev HO*/
+svistr34        	NOCHANGE        INPUTRI  8 /*ket Rev SPV*/
+lrevhoiklan     	PROTECT         INPUTRI  9
+sviket2         	TEXTAREA        INPUTRI 10 /*isi ket review HO*/
+svistr35        	NOCHANGE        INPUTRI 11 /*ket Rev DVH*/
+lrevdvhiklan    	PROTECT         INPUTRI 12
+sviket3         	TEXTAREA 	INPUTRI 13 /*isi ket review DVH*/
+
+ltompjiklan     	TOMBOL          INPUTRI 14
+ltomdvhiklan   		TOMBOL          INPUTRI 16
+svistr36        	PROTECT         INPUTRI 15
+svistr37        	PROTECT         INPUTRI 17
+
+CALCS()
+csdhshare		djointkdiklan==0 && svidf1 == 3 && svistr1 == "OK" && svistr2 == "OK" && svistr3 == "OK" && sviyt1 != "Y"
+cbtsiklan		svidf1 < 3
+ctandaupl		svidf1 + 1
+cwibiklan      		lkodejam == "WIB"  && svistr1 == "OK" && svistr2 == "OK" && svistr3 == "OK" && ljamiklan == BLANKS 
+cwitaiklan      	lkodejam == "WITA" && svistr1 == "OK" && svistr2 == "OK" && svistr3 == "OK" && ljamiklan == BLANKS
+cwitiklan		lkodejam == "WIT"  && svistr1 == "OK" && svistr2 == "OK" && svistr3 == "OK" && ljamiklan == BLANKS
+crev1iklan      	svistr34 == "1" && svitype == "SHAREIKLAN"
+crev1aiklan     	svistr35 == "1" && svitype == "SHAREIKLAN"
+crev2iklan      	svistr34 == "2" && svitype == "SHAREIKLAN"
+crev2aiklan     	svistr35 == "2" && svitype == "SHAREIKLAN"
+cpjhosdhreviklan	svistr34 != BLANKS
+cdvhsdhreviklan   	svistr35 != BLANKS
+
+DEFAULT(tmptranst)
+lveriklan		INIT			2606.18.v1
+svistr34        	DFALT_SCAN_BLANKS	1 "ACC"
+                		                2 "TACC"
+svistr35        	DFALT_SCAN_BLANKS	1 "ACC"
+						2 "TACC"
+lklik			INIT			"KLIK"	
+ltompjiklan             INIT                    "SELESAI REV PJ HO"
+ltomdvhiklan            INIT                    "SELESAI REV DVH"
+IF chnypjho svitype2    INIT_UPDATE             {g_usrkode}
+
+/*
+EDITS(tmptranst)
+e.Validate iklan                svinourt        VALIDATE svidatbuktyp mBLANKSiklan {PlSPKADH11} {Ptkmnobuk} {PlSHAREIKLAN}
+
+MAP(mBLANKSiklan)
+svinourt	ldum		REPLACE
+cACC            lrevhoiklan     DO_CALC_IF crev1iklan
+cTACC           lrevhoiklan     DO_CALC_IF crev2iklan
+cACC            lrevdvhiklan    DO_CALC_IF crev1aiklan
+cTACC           lrevdvhiklan    DO_CALC_IF crev2aiklan
+*/
+
+MAP(mhslreviklan)
+cACC            lrevhoiklan     DO_CALC_IF crev1iklan
+cTACC           lrevhoiklan     DO_CALC_IF crev2iklan
+cACC            lrevdvhiklan    DO_CALC_IF crev1aiklan
+cTACC           lrevdvhiklan    DO_CALC_IF crev2aiklan
+
+/*===== map pada saat klik tombol upload =====*/
+MAP(mjamiklan)
+cwib            ljamiklan       DO_CALC_IF cwibiklan
+cwita           ljamiklan       DO_CALC_IF cwitaiklan
+cwit            ljamiklan       DO_CALC_IF cwitiklan
+
+MAP(maddtkdiklan)
+svinobuk        tkdnobuk        REPLACE_IF csdhshare
+svidata         tkddata         REPLACE_IF csdhshare
+lSHAREIKLAN21	tkdnoll		REPLACE_IF csdhshare
+tkmtgl          tkdtgl          REPLACE_IF csdhshare
+gv_OPEN         tkdsts          REPLACE_IF csdhshare
+ljamiklan       tkdjml          REPLACE_IF csdhshare
+l23             tkdjml3         REPLACE_IF csdhshare
+tkmplg          tkdstr1         REPLACE_IF csdhshare
+l1		tkdnourt	REPLACE_IF csdhshare
+
+MAP(mtandaiklanselesai)
+cY		sviyt1		DO_CALC_IF csdhshare
+
+/*===== upd tkd review =====*/
+MAP(mmapiklan)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+
+MAP(mupdrevpjhoiklan)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum       REPLACE
+DBCALCS(dupdrevpjhoiklan)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhoiklan
+
+MAP(mupdrevdvhiklan)
+ctam1           tkdjml          DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhiklan)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhiklan
+
+MAP(muprevdpjhoiklan1)
+lOK             svistr36                REPLACE_IF cpjhosdhreviklan
+
+MAP(mupdrevdvhiklan1)
+lOK             svistr37                REPLACE_IF cdvhsdhreviklan
+
+MAP(mupdrevabkpjhoiklan2)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhiklan2)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spaddtkdjam)
+DO_LIB          ap_dbclc(DNAME djamiklan,DCOMMAND MAPMAP,DMAP mjamiklan);
+DO_LIB          ap_dbclc(DNAME daddtkdiklan,DCOMMAND ADD,DFILE tkd,DMAP maddtkdiklan);
+DO_LIB		ap_dbclc(DNAME daddtkdiklan2,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mtandaiklanselesai);
+
+SPCALCS(spupdrevpjhoiklan)
+DO_LIB          		ap_dbclc(DNAME dmapiklan1,DCOMMAND MAPMAP,DMAP mmapiklan);
+DO_LIB          		ap_dbclc(DNAME dupdokiklan1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhoiklan1);
+dupdrevpjhoiklan
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjiklan2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhoiklan2);
+
+SPCALCS(spupdrevdvhiklan)
+DO_LIB          		ap_dbclc(DNAME dmapiklan2,DCOMMAND MAPMAP,DMAP mmapiklan);
+DO_LIB         			ap_dbclc(DNAME dupdokiklan2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhiklan1);
+dupdrevdvhiklan
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhiklan2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhiklan2);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=lklik		  DO_SPCALCS spaddtkdjam
+
+BEFORE_INPUT	cur_field=lklik		  DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2     	  DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34     	  DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2      	  DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35     	  DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3      	  DO_SKIP_IF cdvh
+
+AFTER_INPUT     cur_field=svistr34  	  DO_MAP SHOW mhslreviklan
+AFTER_INPUT     cur_field=svistr35 	  DO_MAP SHOW mhslreviklan
+
+CLICKED         cur_field=ltompjiklan     DO_SPCALCS spupdrevpjhoiklan
+CLICKED         cur_field=ltomdvhiklan    DO_SPCALCS spupdrevdvhiklan
+
+/*===== tanda upload =====*/
+MAP(mupdsviiklan)
+ctandaupl       svidf1          DO_CALC_IF cbtsiklan
+cOK		svistr1		DO_CALC
+DBCALCS(dupdsviiklan)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx sviprm
+        DBC_MAP         mupdsviiklan
+
+/*===== tanda upload =====*/
+MAP(mupdsviiklan2)
+ctandaupl       svidf1          DO_CALC_IF cbtsiklan
+cOK		svistr2		DO_CALC
+DBCALCS(dupdsviiklan2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx sviprm
+        DBC_MAP         mupdsviiklan2
+
+/*===== tanda upload =====*/
+MAP(mupdsviiklan3)
+ctandaupl       svidf1          DO_CALC_IF cbtsiklan
+cOK		svistr3		DO_CALC
+DBCALCS(dupdsviiklan3)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx sviprm
+        DBC_MAP         mupdsviiklan3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD 	svinobuk svistr8  /*upload fb*/
+SFL_UPLFLD2	svinobuk svistr9  /*upload wa*/
+SFL_UPLFLD3	svinobuk svistr10 /*upload ig_tiktok*/
+SFL_UPLFLD_DBCALCS dupdsviiklan
+SFL_UPLFLD2_DBCALCS dupdsviiklan2
+SFL_UPLFLD3_DBCALCS dupdsviiklan3
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lSHAREIKLAN
+
+MAP(maddtkdreviklan)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam        tkdjenis        REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+SPCALCS(spupdtkdiklan1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdiklan1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdreviklan);
+
+POSTING(tmptrans)
+PST_UPDCMD	spupdtkdiklan1
+

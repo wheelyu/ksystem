@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+lnamadeb1               STRING          31
+lkecsvy                 STRING          21
+lkelsvy                 STRING          21
+lkelkbr                 STRING          21
+lkelkbr1a               STRING          21
+lbtmplg1                STRING          21
+lbtmtglkbr		DATE		4
+lbtmsoa1		STRING		21
+lbtmtypjl1		STRING		5
+
+MAP(mjoinpsm1)
+psmnama                 lnamadeb1	REPLACE
+
+DBCALCS(djoinpsm1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx     lbtmplg1
+        DBC_MAP         mjoinpsm1
+
+MAP(mjoinalm1)
+almkec                  lkecsvy         REPLACE
+almkel                  lkelsvy         REPLACE
+
+DBCALCS(djoinalm1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatbukidx gv_almsurvey tkdrek
+        DBC_MAP         mjoinalm1
+
+MAP(mjointlm821a)
+tlmbrdoto               lkelkbr1a       REPLACE
+
+DBCALCS(djointlm821a)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmbukidx       mtsnoasal
+        DBC_MAP         mjointlm821a
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||spasi                            ||
+||i.NoBt       :__________________ ||
+||t.NamaPemohon:__________________ ||
+||t.KecSurvey  :__________________ ||
+||t.KelSurvey  :__________________ ||
+||t.KelKbr     :__________________ ||
+||t.KelSvyKbr  :__________________ ||
+||spasi                            ||
+||t.AturanPkKbr                    ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdrek 		ALLCAPS 			INPUTRI	1	
+lnamadeb1	PROTECT 			INPUTRI	2	
+lkecsvy 	PROTECT 			INPUTRI 3	
+lkelsvy 	PROTECT 			INPUTRI	4	
+lkelkbr1a	PROTECT 			INPUTRI	5	
+lkelkbr 	PROTECT 			INPUTRI	5	
+
+CALCS()
+cjoinpsm1       djoinpsm1==1
+cjoinalm1       djoinalm1==1
+csamax          djointlm821a==1 && lkelkbr1a==lkelsvy
+ctsamax         djointlm821a==1 && lkelkbr1a!=lkelsvy && lkelsvy!=BLANKS
+csama           "SAMA"
+ctsama          "TIDAK_SAMA"
+ckelbeda	lbtmtglkbr>=mtstgl && lbtmsoa1=="KBR" && lbtmtypjl1=="K"
+
+EDITS(tmptranst)
+e.Validate	tkdrek	VALIDATE btmbukidx mbtmpk1 0
+
+MAP(mbtmpk1)
+btmnobuk        tkdrek          REPLACE
+btmplg          lbtmplg1        REPLACE
+btmtgl		lbtmtglkbr	REPLACE
+btmsoa		lbtmsoa1	REPLACE
+btmtypjl	lbtmtypjl1	REPLACE
+lnamadeb1       lnamadeb1       REPLACE_IF cjoinpsm1
+lkecsvy         lkecsvy         REPLACE_IF cjoinalm1
+lkelsvy         lkelsvy         REPLACE_IF cjoinalm1
+csama           lkelkbr         DO_CALC_IF csamax
+ctsama          lkelkbr         DO_CALC_IF ctsamax
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF ckelbeda mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.PkBedaTglKbr
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_COND ctipeknj5
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkdbukllsts	mtsnobuk mtsnoasal gv_OPEN
+SFL_MAP
+mtsnobuk        tkdnobuk        REPLACE
+g_tgltrn        tkdtgl          REPLACE
+mtsdata         tkddata         REPLACE
+mtsnoasal       tkdnoll         REPLACE
+gv_OPEN         tkdsts          REPLACE
+l1		tkdnourt	REPLACE

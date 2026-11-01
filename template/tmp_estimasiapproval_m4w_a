@@ -1,0 +1,123 @@
+LOCAL
+PGM_FIELDS
+lnamausrdet10	STRING	31
+lversi21		STRING	11
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.Approval                         ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.No       _______ __________      ||
+||           _______ ________________||
+||t.Ket                              ||
+|| __________________________________||
+||spasi                              ||
+||t.Approval _______                 ||
+||t.KetUpd  _______                  ||
+||                         _________ ||
+|\-----------------------------------/|
+|/------------S.UPLOAD---------------\|
+|				      |
+|				      |
+|				      |
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnoll 	    PROTECT         		    INPUTRI		1
+tkdtgl 		    PROTECT {DD-MM-YY}     		INPUTRI		2 
+tkdsisstr 	    PROTECT				        INPUTRI		3
+lnamausrdet10	PROTECT				        INPUTRI		4 
+tkdket 		    TEXTAREA ALLCAPS		    INPUTRI		5
+tkdjwbstr1 	    NOCHANGE 			        INPUTRI		6 
+tkdtmp1         ALLCAPS                     INPUTRI     7
+lENTER		    ALLCAPS				        INPUTRI		8
+
+CALCS()
+cM4W1		tlmdvs=="M4W" ||  tlmdvs=="M2W4W" 
+cM4W101		tlmdvs!="M4W" &&  tlmdvs!="M2W4W"  
+cbknit		g_grpnam!="IT" && g_grpnam!="RI"
+
+DEFAULTS(tmptranst)
+IF cM4W1  tkdjwbstr1 DFALT_SCAN_BLANKS 	        ACC
+
+IF cM4W101 tkdjwbstr1 DFALT_SCAN_BLANKS         ACC
+                                                TACC
+                                                   
+tkdtgl		    INIT		{g_tgltrn}
+lENTER		    INIT		ENTER
+IF cbknit tkdsisstr INIT_UPDATE		{g_usrkode}
+lnamausrdet10	    INIT		BLANKS
+lversi21	    INIT		240122v1
+
+EDITS(tmptranst)
+Nama User Tdk Ada       tkdsisstr       VALIDATE psmkodidx mpsmuser10
+e.Mandatory		        tkdket		    MANDATORY_IF cbknit
+e.Mandatory		        tkdjwbstr1	    MANDATORY_IF cbknit
+
+MAP(mpsmuser10)
+psmnama		lnamausrdet10		REPLACE
+
+CALCS()
+ckonapr1	 ((pikdvs=="HMC" || pikdvs=="M2W") && (tkdnoll=="ADH" || tkdnoll=="PIC" || tkdnoll=="BM" || tkdnoll=="BUH" || tkdnoll=="HO" || tkdnoll=="KWIL" || tkdnoll=="AM")) 
+
+caksesADHBM	 ((tlmsts2=="BM" || tlmsts2=="ADH" || tlmsts=="CLSD") && (pikdvs=="HMC" || pikdvs=="M2W")) 
+
+cupdACC          tkdjwbstr1=="ACC"
+cUPLOADOKtkd     "OK"
+csidikjari 	 tkdjwbstr1 != BLANKS && g_grpnam == "ADH"
+chapusfoto	 g_grpnam=="IT" || g_grpnam=="RI"
+
+MAP(mupduplfttmptrans)
+cUPLOADOKtkd               tkdtmp1        DO_CALC
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdotoidx tkdoto
+        DBC_MAP         mupduplfttmptrans
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdtmp1	DO_SKIP_IF cbknit
+AFTER_INPUT     cur_keybd=EN            DO_LIB_IF csidikjari ap_ceksj(g_usrkode);
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT ckonapr1
+SFL_COND    caksesADHBM
+SFL_UPLFLD tkdnoll tkdnobuk
+SFL_UPL_DELCOND chapusfoto
+SFL_UPL_DIRFLD tlmtgljtp
+SFL_UPL_COND	cupdACC    
+SFL_UPL_COND_MSG Isi Detail Approval dulu ACC
+SFL_UPLFLD_DBCALCS dupduplfttmptrans
+SFL_SHOW_NEXT
+SFL_TARGET
+tkdbukidx   tlmnobuk gv_INPG                  
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+tlmdata		tkddata		REPLACE
+
+CALCS()
+cupdtmptrans	(tlmsts=="INPG" && tlmsts2=="RM" && tkdnoll=="RM" && (g_grpnam=="B.M4WRM" || g_grpnam=="B.M4WCSPV" || g_grpnam=="IT")) || 
+                (tlmsts=="INPG" && tlmsts2=="DIVH" && tkdnoll=="DIVH" && (g_grpnam=="B.M4WDVH" || g_grpnam=="ADHDVH" || g_grpnam=="IT" || g_grpnam=="B.M4WDPH")) ||
+                (tlmsts=="INPG" && tlmsts2=="RM" && tkdnoll=="RM" && (g_grpnam=="B.M4WRM" || g_grpnam=="B.M4WCSPV" || g_grpnam=="IT")) || 
+                (tlmsts=="INPG" && tlmsts2=="DIVH" && tkdnoll=="DIVH" && (g_grpnam=="B.M4WDVH" || g_grpnam=="ADHDVH" || g_grpnam=="IT" || g_grpnam=="B.M4WDPH")) ||
+                (tlmsts=="INPG" && tlmsts2=="DCOO" && tkdnoll=="DCOO" && (g_grpnam=="B.M4WCOO" || g_grpnam=="COO" || g_grpnam=="DCOOOPR" || g_grpnam=="IT" || g_grpnam=="B.M4WDVH")) ||
+           	((pikdvs!="HMC" && pikdvs!="M2W") && tlmsts=="INPG" && tlmsts2=="ADH" && tkdnoll=="ADH" && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI")) || 
+                (tlmsts=="INPG" && tlmsts2=="PIC" && tkdnoll=="PIC" && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI")) ||
+                (tlmsts=="INPG" && tlmsts2=="BM" && tkdnoll=="BM" && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI")) ||
+                (tlmsts=="INPG" && tlmsts2=="BUH" && tkdnoll=="BUH" && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI")) ||
+                (tlmsts=="INPG" && tlmsts2=="HO" && tkdnoll=="HO" && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI")) ||
+                (tlmsts=="INPG" && tlmsts2=="CLHD" && tkdnoll=="CLHD" && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="COLLHEAD" || (djoinpsim2w4w==1 && ljabatan=="SALES&MKTGHEAD"))) ||
+                (tlmsts=="INPG" && (tlmsts2=="KWIL" || tlmsts2=="AM") && (tkdnoll=="KWIL" || tkdnoll=="AM") && (tkdsisstr == g_usrkode || g_grpnam=="IT" || g_grpnam=="RI")) ||
+                (tlmsts=="INPG" && (tlmsts2=="BM" || tlmsts2=="ADH") && (pikdvs=="HMC" || pikdvs=="M2W") && (tkdsisstr==g_usrkode)) || (g_grpnam=="IT" || g_grpnam=="RI")
+		
+PERMIT(tmptrans)
+	PMT_ADD_COND 	c0
+	PMT_UPDALL_COND cupdtmptrans
+	PMT_DEL_COND	c0

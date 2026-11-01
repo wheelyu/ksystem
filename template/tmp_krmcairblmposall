@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+
+lnamakonsumen4 	STRING	     	21
+lpromsub	STRING		11
+lkelurahan	STRING		21
+lkecamatan	STRING		21
+
+/*----------JOIN--------*/
+
+MAP(mpsmkonsumen4)
+psmnama    lnamakonsumen4     REPLACE
+
+DBCALCS(djoinpsmkonsumen4)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmktpidx ppmplg
+DBC_MAP         mpsmkonsumen4
+
+MAP(mbtmpromsub)
+btmguna	   lpromsub     REPLACE
+
+DBCALCS(djoinbtmpromsub)
+DBC_COMMAND     JOIN
+DBC_TARGET      btmbukidx ppmnoll
+DBC_MAP         mbtmpromsub
+
+MAP(malmkrmmtr)
+almkel    lkelurahan     REPLACE
+almkec    lkecamatan     REPLACE
+
+DBCALCS(djoinalmkrmmtr)
+DBC_COMMAND     JOIN
+DBC_TARGET      almdatotobuk  gt_almkirim ppmplg
+DBC_MAP         malmkrmmtr
+
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.CabKrm	 : __________        ||
+||t.LokJual      : __________        ||
+||i.Tgl          : _________         ||
+||i.NoFak        : _________________ ||
+||t.NamaKonsumen : _________________ ||
+||t.PrmSub       : __________        ||     
+||t.TypJual      : ____              ||
+||t.UangMuka     : _________________ ||
+||t.Angs         : _________________ ||
+||t.Tenor        : ____              ||
+||t.SisPiu       : _________         ||
+||t.Kel          : _________________ ||
+||t.Kec          : _________________ ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ppmcabinduk      NOCHANGE SCROLL            INPUTRI         1
+   ppmcab           NOCHANGE SCROLL            INPUTRI         2
+   ppmtglfak        PROTECT {DD-MM-YY}         INPUTRI         3
+   ppmnobuk         NOCHANGE SCROLL            INPUTRI         4
+   lnamakonsumen4   NOCHANGE SCROLL            INPUTRI         5
+   lpromsub         NOCHANGE SCROLL            INPUTRI         6
+   ppmtk            NOCHANGE SCROLL            INPUTRI         7
+   ppmum            NOCHANGE SCROLL            INPUTRI         8
+   ppmangbln        NOCHANGE SCROLL            INPUTRI         9
+   ppmlamabln       NOCHANGE SCROLL            INPUTRI         10
+   ppmsisa          NOCHANGE SCROLL            INPUTRI         11
+   lkelurahan       NOCHANGE SCROLL            INPUTRI         12
+   lkecamatan       NOCHANGE SCROLL            INPUTRI         13
+   
+
+CALCS()
+cdjoinpsmkonsumen04	djoinpsmkonsumen4==0
+cdjoinpsmkonsumen14	djoinpsmkonsumen4==1
+cdjoinbtmpromsub0	djoinbtmpromsub==0
+cdjoinbtmpromsub1	djoinbtmpromsub==1
+cdjoinalmkrmmtr04	djoinalmkrmmtr==0
+cdjoinalmkrmmtr14	djoinalmkrmmtr==1
+cblanksh4		BLANKS
+cposjualkrmall		ppmscr== "614" && ( ppmstskrm == "KR" || ppmstskrm == "616" || ppmstskrm == "617" || ppmstskrm == "IN" || ppmstskrm == "PKR" || ppmstskrm == "PPSJ" || ppmstskrm == "TSJ" )
+
+EDITS(tmptranst)
+e.Validate ppmnobuk  VALIDATE ppmbukidx mppmkrm4 0
+
+MAP(mppmkrm4)
+ppmnobuk        ppmnobuk        REPLACE
+cblanksh4       lnamakonsumen4	DO_CALC_IF cdjoinpsmkonsumen04
+lnamakonsumen4  lnamakonsumen4	REPLACE_IF cdjoinpsmkonsumen14
+cblanksh4	lpromsub	DO_CALC_IF cdjoinbtmpromsub0
+lpromsub	lpromsub	REPLACE_IF cdjoinbtmpromsub1
+cblanksh4	lkelurahan	DO_CALC_IF cdjoinalmkrmmtr04
+lkelurahan	lkelurahan	REPLACE_IF cdjoinalmkrmmtr14
+cblanksh4	lkecamatan	DO_CALC_IF cdjoinalmkrmmtr04
+lkecamatan	lkecamatan	REPLACE_IF cdjoinalmkrmmtr14
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT cposjualkrmall
+SFL_TARGET ppmdtcpostgl gv_dtpiu cabkode
+

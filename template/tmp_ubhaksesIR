@@ -1,0 +1,199 @@
+LOCAL
+PGM_FIELDS
+ltldplg_1	STRING		31
+ltldkat_1	STRING		31
+ltldlok2_1	STRING		31
+ltldlok2_2      STRING          21
+ltldnoll_1	STRING		21
+ltldlok_1	STRING		21
+lnourt1x	INT2		2
+ltglkunci	DATE		4
+ltlmsts		STRING		5
+ltlmsts2	STRING		5
+ltglkonci2	DATE		4
+
+MAP(mjoinnourt1x)
+tldnourt        lnourt1x         REPLACE
+
+DBCALCS(djointldnourt1x)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              tldllbrgurt    ltldnoll_1 tlmnobuk ltldlok_1 tlmnobuk
+        DBC_MAP                 mjoinnourt1x
+
+IMAGE(tmptranst)
+/-------------------------------------------\
+ /-----------------------------------------\
+ |t.Pengubah : _______ ___________________ |
+ |t.JnsUbah  : ___________________         |
+ |t.Ket      : ___________________________ |
+ |t.TglUbah  : ___________________         |
+ |t.NipLama  : _______ ___________________ |
+ |t.NipBaru  : _______ ___________________ |
+ \-----------------------------------------/
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldplg          PROTECT         INPUTRI 1
+ltldplg_1       PROTECT         INPUTRI 2
+tldsat          NOCHANGE        INPUTRI 3
+tldket          ALLCAPS         INPUTRI 4
+tldtglfak       PROTECT         INPUTRI 5
+tldkat          PROTECT         INPUTRI 6
+ltldkat_1       PROTECT         INPUTRI 7
+tldlok2         ALLCAPS         INPUTRI 8
+ltldlok2_1      PROTECT         INPUTRI 9
+
+CALCS()
+ctglknci	g_tgltrn + 1
+ctglknci2	g_tgltrn + 2
+cterlapor	tldsat == "TERLAPOR"
+cUSR_INPUT	tldsat == "USR_INPUT"
+cUSR_INPUT1	tldsat == "USR_INPUT" && (tlmsts == "OPEN" || tlmsts2 == "CAB3" || tlmsts2 == "CAB6" || tlmsts2 == "C4+7" || tlmsts2 == "CAB7" || tlmsts2 == "CAB4")
+cBUKA_KNCI      tldsat == "BUKA_KNCI" || tldsat == "TAMBAH_KUNCI"
+cTambahKunci	tldsat == "TAMBAH_KUNCI" && (g_grpnam == "RI" || g_grpnam == "IT")
+cOFF            tlmsts == "INPG" && (tlmsts2 == "OFFM" || tlmsts2 == "O3+6" || tlmsts2 == "O4+7" || tlmsts2 == "OFF4" || tlmsts2 == "OFF7")
+cCAB            tlmsts == "OPEN" || (tlmsts == "INPG" && (tlmsts2 == "CAB3" || tlmsts2 == "CAB6" || tlmsts2 == "C4+7" || tlmsts2 == "CAB4" || tlmsts2 == "CAB7"))
+chdgm		tlmsts2 == "HD" || tlmsts2 == "GM"
+ckosongjtp      tlmtgljtp2 == "" && tlmsts2 != "CAB3"
+ctdkkosongjtp   tlmtgljtp2 != ""
+ccab3		tlmsts == "INPG" && tlmsts2 == "CAB3"
+cFU7            g_tgltrn + 7
+ccondFU7	tlmsts2 == "CAB4" || tlmsts2 == "CAB7" || tlmsts2 == "C4+7"
+cnipsama	tldkat != tldlok2 || tldkat == ""
+cit		g_grpnam == "RI" || g_grpnam == "IT"
+cbknit		g_grpnam != "RI" && g_grpnam != "IT"
+cisinip		tldsat == "USR_INPUT" || tldsat == "LEGAL_IR" || tldsat == "TERLAPOR"
+c2type		tldsat == "BUKA_KNCI" || tldsat == "LEGAL_IR"
+clegal		tldsat == "LEGAL_IR"
+
+DEFAULTS(tmptranst)
+ltldnoll_1	INIT			LEGALIR
+ltldlok_1	INIT			UBHAKSES
+ltglkunci	INIT			{ctglknci}
+ltglkonci2	INIT			{ctglknci2}
+ltlmsts		INIT			{tlmsts}
+ltlmsts2	INIT			{tlmsts2}
+IF cit		tldsat		DFALT_SCAN_BLANKS	USR_INPUT BUKA_KNCI TAMBAH_KUNCI TERLAPOR LEGAL_IR
+IF cbknit	tldsat		DFALT_SCAN_BLANKS	USR_INPUT BUKA_KNCI LEGAL_IR
+
+EDITS(tmptranst)
+e.Mandatory     tldsat          MANDATORY
+e.Mandatory     tldket          MANDATORY
+e.Mandatory     tldlok2         MANDATORY_IF cisinip
+
+e.Validate	tldkat		VALIDATE psikodidx mpsi3 0
+e.Validate      tldlok2         VALIDATE psikodidx mpsi3_1 0
+e.Validate      tldplg          VALIDATE psikodidx mpsi3_2 0
+
+MAP(mpsi3)
+psikode		tldkat		REPLACE
+psinama		ltldkat_1	REPLACE
+
+MAP(mpsi3_1)
+psikode		tldlok2		REPLACE
+psinama		ltldlok2_1	REPLACE
+tldlok2		ltldlok2_2	REPLACE
+
+MAP(mpsi3_2)
+psikode		tldplg		REPLACE
+psinama		ltldplg_1	REPLACE
+
+CALCS()
+cjoinchdnourt1x         djointldnourt1x == 0 && g_curcmd == 1
+cjoinchdnourt2x         djointldnourt1x == 1 && g_curcmd == 1
+c1b			1
+cnourt1x                lnourt1x + 1
+cpakaries		"1832688"
+
+MAP(mnourt1x)
+c1b             tldnourt        DO_CALC_IF cjoinchdnourt1x
+cnourt1x        tldnourt        DO_CALC_IF cjoinchdnourt2x
+g_usrkode	tldplg		REPLACE
+g_tgltrn	tldtglfak	REPLACE
+
+MAP(musinp)
+tlmpst		tldkat		REPLACE_IF cUSR_INPUT
+tlmgrup2	tldkat		REPLACE_IF clegal
+tlmplg		tldkat		REPLACE_IF cterlapor
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldsat        DO_MAP SHOW mnourt1x
+BEFORE_INPUT    cur_field=tldlok2	DO_SKIP_IF cBUKA_KNCI
+AFTER_INPUT	cur_field=tldsat	DO_MAP SHOW musinp
+AFTER_INPUT     cur_field=tldlok2       DO_MAP SHOW
+                IF cnipsama musinp
+                ELSE HKCURSOR STAY
+                HKMSG t.Niplamabaru
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldllbrgurt    ltldnoll_1 tlmnobuk ltldlok_1 tlmnobuk
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+ltldnoll_1      tldnoll         REPLACE
+tlmnobuk        tldbrg          REPLACE
+ltldlok_1       tldlok          REPLACE
+tlmdata		tlddata         REPLACE
+
+MAP(mupdtlmusr)
+tldlok2		tlmpst  	REPLACE_IF cUSR_INPUT
+tldlok2		tlmgrup2  	REPLACE_IF clegal
+tldlok2		tlmplg		REPLACE_IF cterlapor
+
+MAP(mupdabk1)
+gv_CLSD		abksts		REPLACE
+
+MAP(mupdtlmtgl)
+cFU7            tlmtgljtp2      DO_CALC_IF ccondFU7
+
+MAP(maddabk1)
+tlmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+tlmpst          abkkym          REPLACE
+l781            abkkym2         REPLACE
+ltglkunci       abktgl          REPLACE_IF ckosongjtp
+ltglkonci2      abktgl          REPLACE_IF ccab3   
+tlmtgljtp2      abktgl          REPLACE_IF ctdkkosongjtp
+gt_RINP         abksts          REPLACE
+l781            abkscr          REPLACE
+
+MAP(maddabk2)
+tldnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+tlmgrup2        abkkym          REPLACE_IF cOFF
+tlmpst		abkkym		REPLACE_IF cCAB
+cpakaries       abkkym          DO_CALC_IF chdgm
+l781            abkkym2         REPLACE
+ltglkunci       abktgl          REPLACE
+gt_RINP         abksts          REPLACE
+l781            abkscr          REPLACE
+
+MAP(maddabk3)
+tldnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+tlmgrup2        abkkym          REPLACE_IF cOFF
+tlmpst          abkkym          REPLACE_IF cCAB
+cpakaries	abkkym		DO_CALC_IF chdgm
+l781            abkkym2         REPLACE
+ltglkunci       abktgl          REPLACE
+gt_RINP         abksts          REPLACE
+l781            abkscr          REPLACE
+
+SPCALCS(spcalupdusr)
+DO_LIB_IF cisinip ap_dbclc(DNAME dupdtlmusr,DCOMMAND UPDATE,DTARGET tlmbukidx tldnobuk,DMAP mupdtlmusr);
+
+DO_LIB_IF cUSR_INPUT1 ap_dbclc(DNAME dupdabk1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tldnobuk,DMAP mupdabk1);
+DO_LIB_IF cUSR_INPUT1 ap_dbclc(DNAME dupdtlm4,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmtgl);
+DO_LIB_IF cUSR_INPUT1 ap_dbclc(DNAME daddabk1,DCOMMAND ADD,DFILE abk,DMAP maddabk1);
+
+DO_LIB_IF c2type ap_dbclc(DNAME dupdabk2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tldnobuk,DMAP mupdabk1);
+DO_LIB_IF c2type ap_dbclc(DNAME daddabk2,DCOMMAND ADD,DFILE abk,DMAP maddabk2);
+
+DO_LIB_IF cTambahKunci ap_dbclc(DNAME daddabk3,DCOMMAND ADD,DFILE abk,DMAP maddabk3);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spcalupdusr

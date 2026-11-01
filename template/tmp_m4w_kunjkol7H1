@@ -1,0 +1,148 @@
+LOCAL
+PGM_FIELDS
+ldd		STRING	21
+langke		INT2	2
+langke1		INT2	2
+ljmlang		INT2	2
+ljmlang2	DFLOAT	8
+ldum2		INT2	2
+lbisnis		STRING	21
+lpsicabskrUsr	STRING	21
+
+CALCS()
+c1	1	
+
+MAP(mjointrans7d)
+svidf2          lsvidf2         REPLACE
+
+DBCALCS(djointrans7d)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_kunjungan11 mtsnobuk lKUNJKOL1 l1
+        DBC_MAP         mjointrans7d
+
+
+DBCALCS(djointrans8d)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_kunjungan11 mtsnobuk lKUNJKOL18 l1
+        DBC_MAP         mjointrans7d
+
+
+MAP(mjoinang)
+angke       langke      REPLACE
+
+DBCALCS(djoinang)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      angbukstsidx   mtsnoasal gv_ANG gv_OPEN
+        DBC_MAP         mjoinang
+
+MAP(mjoinang1)
+angke       langke1     REPLACE
+
+DBCALCS(djoinang1)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      angbukstsidx   mtsnoasal gv_ANG gv_INPG
+        DBC_MAP         mjoinang1
+
+MAP(mscanangHit)
+c1              ljmlang                 DO_CALC
+c1              ljmlang2                DO_CALC
+
+DBCALCS(dbscanangHit)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      angbukstsidx    mtsnoasal gv_ANG gv_INPG
+        DBC_SUM_MAP     mscanangHit
+
+MAP(mjoinpsiUsr)
+psicabskr	lpsicabskrUsr		REPLACE
+
+DBCALCS(djoinpsiUsr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	g_usrkode
+	DBC_MAP		mjoinpsiUsr
+
+CALCS()
+ctagihtanganE    mtssts=="OPEN" && (djointrans7d==1 || djointrans8d) && lsvidf2==1 && piktybg != "M"
+
+IMAGE(tmptranst)
+/-------------------------------------------------------\
+|                      t.RinciAng                       |
+|/-----------------------------------------------------\|
+||i.NoFak    : ______________ ___                      ||
+||i.Ke       : ___            t.StsAng     : _____     ||
+||i.Jtp      : ________       t.ByrAngs    : _________ ||
+||i.ByrAdm   : ________       t.SisaAdm    : _________ ||
+||i.ByrDenda : ________       t.SisaDenda  : _________ ||
+|\-----------------------------------------------------/|
+\-------------------------------------------------------/
+__
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   angnobuk       PROTECT            INPUTRI       2 /* Kode Rekening */
+   angoto         PROTECT SCROLL     INPUTRI       3 /* Kode Rekening */
+   angke          NOCHANGE           INPUTRI       4 /* Kode Rekening */
+   angsts         NOCHANGE           INPUTRI       4 /* Kode Rekening */
+   angtgljtp      PROTECT {DD-MM-YY} INPUTRI       6 /* Kode Rekening */
+   angbsr         PROTECT            INPUTRI       6 /* Kode Rekening */
+   angbyradm      NOCHANGE           INPUTRI       7 /* Kode Rekening */
+   angsisadm      PROTECT            INPUTRI       7 /* Kode Rekening */
+   angbyrden      NUMERIC            INPUTRI       8 /* Kode Rekening */
+   angsisden      PROTECT            INPUTRI       8 /* Kode Rekening */
+   lbkmtype	  PROTECT	     INPUTRI	   9
+
+DEFAULTS(tmptranst)
+angsts          DFALT_LIST      OPEN
+ldd             INIT            DENDA
+lbisnis		INIT		LEASING
+
+EDITS(tmptranst)
+e.Validate angnobuk VALIDATE pikdatbukidx   mpiktran 0 {Pgv_dtpiu}
+
+MAP(mpiktran)
+piknobuk        piknobuk        REPLACE
+
+CALCS()
+curutangkecil   ((djoinang == 1 && angke == langke) || (djoinang1 == 1 && angke == langke1)) || (~angsts == angsts)
+cstsinpg1       ljmlang == 1
+cstatusclsd     angsts == "CLSD"
+
+MAP(mdum2)
+ldum2           ldum2           REPLACE
+
+CALCS()
+cminimal	angbyrden >= 0 
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=angke         DO_SCAN dbscanangHit
+BEFORE_INPUT    cur_field=angsts        DO_SKIP_IF cstsinpg1
+BEFORE_INPUT    cur_field=angsts        DO_SKIP_IF cstatusclsd
+AFTER_INPUT     cur_field=angbyrden     DO_MAP SHOW
+                IF cminimal mdum2
+                ELSE HKCURSOR STAY
+                     HKMSG Nilai tidak boleh 0
+AFTER_INPUT     cur_field=angsts        DO_MAP SHOW
+                IF curutangkecil mdum2
+                ELSE HKCURSOR STAY
+                     HKMSG h.UrutDrAngTerkecil
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF curutangkecil mdum2
+                ELSE HKCURSOR STAY
+                     HKMSG h.UrutDrAngTerkecil
+
+SUBFILE(tmptrans)
+SFL_COND        ctagihtanganE
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+angbukstsidx   mtsnoasal  gv_ANG gv_INPG
+
+CALCS()
+cupdtransg54            mtssts=="OPEN" && (g_grpnam=="RI" || g_grpnam=="IT" || mtstype1==g_usrkode || mtsplg==g_usrkode || (djoinpsiUsr==1 && lpsicabskrUsr=="PST30"))
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cupdtransg54
+PMT_DEL_COND    c0
+

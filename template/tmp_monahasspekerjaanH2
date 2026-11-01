@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+lnama           STRING          61
+lppmsts		STRING		5
+lDTAHASS	STRING		11
+lMEKSTART	STRING		21
+lMEKFINISH	STRING		21
+laktjam_start	TIME		8
+laktjam_finish	TIME		8
+lHitungEst	INT2		2
+lestimasi	INT2		2
+lactual		INT2		2
+lppdperdism	DFLOAT		8
+
+
+MAP(mjoinaktMekaStart)
+aktjam		laktjam_start	REPLACE
+
+DBCALCS(djoinaktMekaStart)
+DBC_COMMAND	JOIN
+DBC_TARGET	aktkodtypidx	btmkdkms lDTAHASS lMEKSTART
+DBC_MAP		mjoinaktMekaStart
+
+
+MAP(mjoinaktMekaFinish)
+aktjam		laktjam_finish	REPLACE
+
+DBCALCS(djoinaktMekaFinish)
+DBC_COMMAND	JOIN
+DBC_TARGET	aktkodtypidx	btmkdkms lDTAHASS lMEKFINISH
+DBC_MAP		mjoinaktMekaFinish
+
+MAP(mscanppdPart)
+ppdperdism	lppdperdism	REPLACE
+
+DBCALCS(dbscanppdPart)
+DBC_COMMAND     SCANSCAN
+DBC_TARGET      ppdbukurtidx    btmkdkms 
+DBC_LAST_TARGET ppdbukurtidx	btmkdkms
+DBC_SUM_MAP	mscanppdPart
+
+
+IMAGE(tmptranst)
+/---------------t--------t-------t----------t-----------------t------------t--------t----------t--------\
+|i.NoBuk        |i.Tgl   |i.Sts  |i.NIPMek  |i.NamaMekanik    |t.Nobuk623  |i.Status|t.Estimasi|t.Actual|
+\---------------.--------.-------.----------.-----------------.------------.--------.----------.--------/
+
+IMAGE(tmptrans)
+|_______________|________|_______|__________|_________________|____________|________|__________|________|
+
+FIELD(tmptrans)
+btmnobuk		NOCHANGE				INPUTRI	1
+btmtgl			PROTECT {DD-MM-YYYY}			INPUTRI 2
+btmsts                  PROTECT                                 INPUTRI 3
+btmsales                PROTECT                                 INPUTRI 4
+lnama                   PROTECT                                 INPUTRI 5
+btmkdkms		PROTECT					INPUTRI	6
+lppmsts                 PROTECT                                 INPUTRI 7
+lestimasi		PROTECT					INPUTRI 8
+lactual			PROTECT					INPUTRI 9
+
+
+CALCS()
+cBlmdiTake		djoinaktMekaFinish == 0
+cdjoinaktMekaStart	djoinaktMekaStart == 1
+cdjoinaktMekaFinish	djoinaktMekaFinish == 1
+cHitungEst		laktjam_finish - laktjam_start
+cscanppdPart		btmkdkms != BLANKS && dbscanppdPart >= 0
+cNofakKosong		btmkdsam == BLANKS
+
+DEFAULTS(tmptrans)
+lDTAHASS	INIT	DTAHASS
+lMEKSTART	INIT	MEKANIKSTART
+lMEKFINISH	INIT	MEKANIKFINISH
+
+EDITS(tmptrans)
+e.Validate1 btmsales VALIDATE psikodidx mpsitmp
+e.Validate2 btmkdkms VALIDATE ppmbukidx mppmtmp
+
+MAP(mpsitmp)
+psinama		lnama		REPLACE
+
+MAP(mppmtmp)
+ppmsts		lppmsts		REPLACE
+lppdperdism	lppdperdism	REPLACE_IF cscanppdPart
+lppdperdism	lestimasi	REPLACE
+cBLANKS		lestimasi	DO_CALC_IF cNofakKosong
+laktjam_start	laktjam_start	REPLACE_IF cdjoinaktMekaStart
+laktjam_finish	laktjam_finish	REPLACE_IF cdjoinaktMekaFinish
+cHitungEst	lHitungEst	DO_CALC 
+lHitungEst	lactual		REPLACE
+cBLANKS		lactual		DO_CALC_IF cBlmdiTake
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cpil1a
+SFL_TARGET  
+btmdatjltgl	lahass lcab ltanggal
+

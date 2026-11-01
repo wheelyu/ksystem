@@ -1,0 +1,228 @@
+LOCAL
+PGM_FIELDS
+lDTMITRA                STRING          11
+lktprek                 STRING          21
+lktpagen                STRING          21
+ldtagen                 STRING          11
+lstslama		STRING		5
+lniplama		STRING		21
+
+IMAGE(tmptranst)
+/--------------------------------------------------------\
+|/------------------------------------------------------\|
+  i.Tgl         : _______________                                                   
+  i.Bank        : ____________________________________                                       
+  i.Rekeningbank: _______________                                                   
+  i.NamaRek       _____________________________________
+  t.User        : ___________
+  t.StsRek      : ___________
+|\------------------------------------------------------/|
+|/--s.UPLOAD------------------\/------------------------\|
+||                            ||                        ||
+||                            ||                        ||
+||                            ||                        ||
+||                            ||                        ||
+||                            ||                        ||
+||                            ||                        ||
+||                            ||                        ||
+||                            ||                        ||
+|\----------------------------/\------------------------/|
+|spasi							 |
+|t.Note							 |
+|t.RekAtasNamaPribadi					 |
+|t.ApabilaRekTidakAktifFUBANK                            |
+|t.ApabilaNamaBedaBankKTPFUBANK                          |
+|t.Digit0KhususBniTdkInput				 |
+|t.BsiHanyaUtkAceh					 |
+\--------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1 		PROTECT {DD-MM-YY} NOLIMIT	INPUTRI 1
+psdstr1  		ALLCAPS       	 	INPUTRI 2
+psdstr2  		DIGITS         	 	INPUTRI 3
+psdket   		PROTECT       	 	INPUTRI 4
+psdstr5			NOCHANGE		INPUTRI 5
+psdstr3			PROTECT 		INPUTRI 6
+
+DBCALCS(djointbdreksalah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx       gv_dttabel   gv_personal lREKSALAH psdstr2
+
+DEFAULTS(tmptranst)
+lDTMITRA	INIT		DTMITRA
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdtgl1		INIT_UPDATE	{g_tgltrn}
+ldtagen		INIT		DTAGEN
+  
+CALCS()
+cpkbankptok     (djointbdbtsbankpt==1 && djointbtbtsbankpt==1 && djoincab_bank==1 && djointbdbtsbsi==0) ||
+                (djointbdbtsbankpt==0 && djoincab_bank==1 && djointbdbtsbsi==0) ||
+                psdstr1=="BANK_BSI"
+cnonacehpt	(psdstr1=="BANK_BSI" && djoincab_bank==1 && djointbdbtsbsi==1) || (psdstr1!="BANK_BSI" && djoincab_bank==1 && djointbdbtsbsi==0)
+cpkbankdanamon	(psdstr1=="BANK_DANAMON" && djointbtbtsdanamon==1) || djointbtbtsdanamon==0 || lharike==6
+
+EDITS(tmptranst)
+t.ValidateBank  psdstr1 VALIDATE tbddatkodidx mtbd stbdbanksdm {Pgv_dttabel} {Pgv_BANK} {Pgv_BANK}
+e.Mandatory psdtgl1	MANDATORY
+e.Mandatory psdstr1	MANDATORY
+e.Mandatory psdstr2 	MANDATORY
+
+MAP(mtbd)
+tbdkode		psdstr1		REPLACE
+
+MAP(mjoinrekening)
+psmsts                  lpsmsts         REPLACE
+psmktp                  lktprek         REPLACE
+psmkode			lniplama	REPLACE
+
+DBCALCS(djoinrekening)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmbankidx      psdstr2
+        DBC_MAP         mjoinrekening
+
+MAP(mjoinpsmagen)
+psmkode2                lktpagen        REPLACE
+
+DBCALCS(djoinpsmagen)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmsupstsktp    ldtagen gv_INPG lktprek
+        DBC_MAP         mjoinpsmagen
+
+DBCALCS(djoinpsmmitra)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmsupstsktp    lDTMITRA gv_INPG lktprek
+        DBC_MAP         mjoinpsmagen
+
+DBCALCS(djoinpsmmitraopen)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmsupstsktp    lDTMITRA gv_OPEN lktprek
+        DBC_MAP         mjoinpsmagen
+
+DBCALCS(djoinpsmmitraclsd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmsupstsktp    lDTMITRA gv_CLSD lktprek
+        DBC_MAP         mjoinpsmagen
+
+MAP(mjoinpsilama)
+psists                lstslama        REPLACE
+
+DBCALCS(djoinpsilama)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx    lniplama
+        DBC_MAP         mjoinpsilama
+
+
+CALCS()
+cpanjang        DO_LIB ap_strln(psdstr2,&lpanjang1);
+cnik1           (psdstr1=="BNI" && ldigit1!="0") || psdstr1!="BNI"
+csdh_ada        djoinrekening==0 || (djoinrekening==1 && lpsmsts!="INPG") || (djoinrekening==1 && djoinpsilama==1 && lstslama!="INPG") || (djoinrekening==1 && djoinpsmagen==1 && btmplg==lktpagen) || (djoinrekening==1 && (djoinpsmmitra==1 || djoinpsmmitraopen==1 || djoinpsmmitraclsd==1))
+cFu_done2a	(djoinpsdberkas_FU1==1 && lpilFU1!="TDK_BISA_DIHUB") || djointbdjabpart==1 || djointbdjabpkl==1
+ctdkada_md      (djoinpsdberkas_FU1==1 && lpilFU1!="MD") || djointbdjabpart==1 || djointbdjabpkl==1
+cmdrkrg13       (psdstr1=="BANK_MANDIRI" && lpanjang1 >=13 ) || psdstr1 != "BANK_MANDIRI"
+
+/*Batasan Harus input angka*/
+ce1z             djointbdreksalah==0
+
+MAP(mcaripanjang)
+cpanjang        lpanjang1        DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT    cur_field=psdstr1       DO_MAP SHOW
+               IF cpkbankptok mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.Pt0405MandiriPt0910Bca
+
+AFTER_INPUT    cur_field=psdstr1      DO_MAP SHOW
+               IF cnonacehpt  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT    cur_field=psdstr1	DO_LIB ap_hrike(g_tgltrn,&lharike);
+AFTER_INPUT    cur_field=psdstr1      DO_MAP SHOW
+               IF cpkbankdanamon mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.CabJabDanamon
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cpkbankptok mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.Pt0405MandiriPt0910Bca
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cnonacehpt  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT    cur_keybd=EN	  DO_MAP SHOW
+               IF cpkbankdanamon mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.CabJabDanamon
+
+AFTER_INPUT     cur_field=psdstr2       DO_LIB ap_amstr(psdstr2,ln1,ln1,&ldigit1);
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW mcaripanjang
+AFTER_INPUT    cur_field=psdstr2      DO_MAP SHOW
+               IF cnik1  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BNINolTdkPerluDitulis                       
+
+AFTER_INPUT	cur_field=psdstr2	DO_MAP SHOW
+		IF cFu_done2a mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.FuBerkasHrsSelesai
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF ctdkada_md mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.AdaFuPilihanMd
+
+AFTER_INPUT     cur_field=psdstr2          DO_MAP SHOW
+                IF ce1z   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT     cur_field=psdstr2          DO_MAP SHOW
+                IF cmdrkrg13   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputKrgdr13Tbh0
+
+AFTER_INPUT    cur_keybd=EN      DO_MAP SHOW
+               IF cnik1  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BNINolTdkPerluDitulis
+
+AFTER_INPUT     cur_keybd=EN          DO_MAP SHOW
+                IF ce1z   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF csdh_ada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RekSdhAda
+
+MAP(mupdpsdftbank137)
+cOK             psdtype2         DO_CALC
+
+DBCALCS(dupdpsdftbank137)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      psdprmidx       psdprm
+        DBC_MAP         mupdpsdftbank137
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD  gv_sftabungan11  psdpsmkode
+SFL_UPLFLD_DBCALCS dupdpsdftbank137
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11  btmplg   gv_bank21         
+
+SFL_MAP
+gv_clnkry11		psddata		REPLACE
+btmplg  		psdpsmkode	REPLACE
+gv_bank21      		psdkode		REPLACE
+btmnama			psdket		REPLACE
+g_usrkode		psdstr5		REPLACE

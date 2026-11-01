@@ -1,0 +1,169 @@
+LOCAL
+PGM_FIELDS
+        lTRAVELUMR 	STRING		11
+        lnik            STRING  21  /* Nomor Induk Kependudukan (NIK), panjang dapat berubah */
+        lpanjangNik     INT2    16   /* Validasi panjang NIK (harus 16 digit) */
+        lnomor1          STRING  21  /* Nomor Handphone, panjang dapat berubah */
+        lpanjangNomor1   INT2    13   /* Validasi panjang Nomor (harus 16 digit) */
+        lnomor2          STRING  21  /* Nomor Handphone, panjang dapat berubah */
+        lpanjangNomor2   INT2    13   /* Validasi panjang Nomor (harus 16 digit) */
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.Ktp      : __________________ ||
+||i.Nama     : __________________ ||
+||i.Type     : __________________ ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Alamatktp: __________________ ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Nodir    : __________________ ||
+||i.Nomktg   : __________________ ||
+|\--------------------------------/|
+|t.Slik				   |
+|/-----------DOCUPLOAD------------\|
+||                                ||
+||                                ||
+||                                ||  
+||                                ||   
+||                                ||
+|\--------------------------------/|
+||t.UploadOK : _____		  ||
+||spasi				  ||
+|/--------------------------------\|
+||i.Ktp				  ||
+||/--------------UPLOAD----------\||
+|||                              |||
+|||                              |||
+|||                              |||  
+|||                              |||   
+|||                              |||
+||\------------------------------/||
+||t.UploadOK : _____		  ||
+|\--------------------------------/|
+\----------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+cmdkode	    NUMERIC {9999999999999999}   	INPUTRI 1
+cmdnama1	ALLCAPS	SCROLL			INPUTRI	2
+cmdstr1     ALLCAPS SCROLL          INPUTRI 3
+cmdket1		TEXTAREA 2 SCROLL		INPUTRI	4
+cmdarea		NUMERIC	SCROLL	{9999999999999}	INPUTRI	5
+cmddvs		NUMERIC	SCROLL			INPUTRI	6
+cmddf1		NOCHANGE			INPUTRI 7
+cmddf2		NOCHANGE			INPUTRI 8
+
+EDITS(tmptranst)
+    e.Mandatory               cmdkode       MANDATORY               
+    e.Mandatory               cmdnama1       MANDATORY      
+    e.Mandatory               cmdstr1       MANDATORY           
+    e.Mandatory               cmdket1     MANDATORY    
+    e.Mandatory               cmdarea     MANDATORY     
+    e.Mandatory               cmddvs     MANDATORY              
+
+DEFAULTS(tmptranst)
+lTRAVELUMR	INIT	TRAVELUMR
+cmdstr1             DFALT_SCAN              BLANKS
+                                                           OWNER
+                                                           DIREKTUR
+                                                           KOMISARIS
+
+CALCS()
+    cnik         DO_LIB ap_strln(lnik,&lpanjangNik);     /* Hitung panjang NIK menggunakan fungsi pustaka */
+    cpanjangnik  lpanjangNik == 16                        /* Validasi apakah panjang NIK sama dengan 16 */
+    
+    cnomor1         DO_LIB ap_strln(lnomor1,&lpanjangNomor1); /* Hitung panjang Nomor menggunakan fungsi pustaka */
+    cpanjangnomor1  lpanjangNomor1 == 13                        /* Validasi apakah panjang Nomor sama dengan 13 */
+    
+    cnomor2         DO_LIB ap_strln(lnomor2,&lpanjangNomor2);/* Hitung panjang Nomor menggunakan fungsi pustaka */
+    cpanjangnomor2  lpanjangNomor2 == 13                        /* Validasi apakah panjang Nomor sama dengan 13 */
+
+MAP(mpanjang)
+    cmdkode     lnik             REPLACE      
+    cnik        lpanjangNik      DO_CALC       /* Mapping hasil validasi panjang NIK */
+
+MAP(mpanjang1)
+    cmddvs     lnomor1             REPLACE       
+    cnomor1     lpanjangNomor1      DO_CALC       /* Mapping hasil validasi panjang Nomor */
+
+MAP(mpanjang2)
+    cmdarea    lnomor2             REPLACE       
+    cnomor2     lpanjangNomor2      DO_CALC       /* Mapping hasil validasi panjang Nomor */
+
+HOOKS(tmptranst)
+    AFTER_INPUT cur_field=cmdkode DO_MAP SHOW mpanjang  
+    AFTER_INPUT cur_field=cmdkode
+        DO_MAP SHOW
+        IF cpanjangnik
+            /* Jika panjang NIK valid, mapping ke mpanjang */
+            mpanjang
+        ELSE
+            /* Jika panjang NIK tidak valid, tampilkan pesan error */
+            HKCURSOR STAY
+            HKMSG t.NikHarus16Digit
+
+    AFTER_INPUT cur_field=cmddvs DO_MAP SHOW mpanjang1  
+    AFTER_INPUT cur_field=cmddvs
+        DO_MAP SHOW
+        IF cpanjangnomor1
+            /* Jika panjang Nomor valid, mapping ke mpanjang */
+            mpanjang1
+        ELSE
+            /* Jika panjang Nomor tidak valid, tampilkan pesan error */
+            HKCURSOR STAY
+            HKMSG t.NomorHarus13Digit
+
+    AFTER_INPUT cur_field=cmdarea DO_MAP SHOW mpanjang2  
+    AFTER_INPUT cur_field=cmdarea
+        DO_MAP SHOW
+        IF cpanjangnomor2
+            /* Jika panjang Nomor valid, mapping ke mpanjang */
+            mpanjang2
+        ELSE
+            /* Jika panjang Nomor tidak valid, tampilkan pesan error */
+            HKCURSOR STAY
+            HKMSG t.NomorHarus13Digit
+
+
+MAP(mupdktpppiu)
+l1    	cmddf1         REPLACE
+DBCALCS(dbktpppiu)
+	DCOMMAND	UPDATE
+	DTARGET 	cmdotoidx cmdoto
+	DMAP 		mupdktpppiu
+
+MAP(mupdktpppiu1)
+l1    	cmddf2         REPLACE
+DBCALCS(dbktpppiu1)
+	DCOMMAND	UPDATE
+	DTARGET 	cmdotoidx cmdoto
+	DMAP 		mupdktpppiu1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD_DBCALCS dbktpppiu
+SFL_DOCUPLFLD	cmdkode cmdstr1
+SFL_UPLFLD_DBCALCS dbktpppiu1	
+SFL_UPLFLD cmdkode
+SFL_UPL_DIRFLD  cmpdatasup
+SFL_UPL_DELCOND c0
+SFL_DOCUPL_DELCOND c0
+SFL_TARGET
+        cmddtcmpcbkd  lTRAVELUMR cmpkode
+
+SFL_MAP
+cmpkode         cmdcmpkode 	    REPLACE
+lTRAVELUMR      cmddata         REPLACE
+
+
+
+
+
+
+

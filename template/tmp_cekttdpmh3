@@ -1,0 +1,104 @@
+LOCAL
+PGM_FIELDS
+ltombolsesuai		STRING	31
+ltomboltdksesuai	STRING	31
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk:____________________    ||
+||i.Ket  :________________________||
+||t.TtdSesuai                     ||
+||        ___________ ___________ ||
+|\--------------------------------/|
+|/--SIGNATURE---------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode		PROTECT                 INPUTRI         1
+aktket 		PROTECT                 INPUTRI         2
+ltombolsesuai	TOMBOL  		INPUTRI		3
+ltomboltdksesuai	TOMBOL  		INPUTRI		4
+
+DEFAULTS(tmptranst)
+ltombolsesuai		INIT	"Sesuai"
+ltomboltdksesuai	INIT	"Tidak Sesuai"
+
+CALCS()
+c2		2
+chanyamirip	aktdk == "Y"
+cjkpmh		tmpkode == "CEKTTDPMH714"
+cjkpjm		tmpkode == "CEKTTDPJM714"
+cbisabuka	djoinbtd728==1 && lbtdsts=="CLSD" && ((tmpkode == "CEKTTDPMH714" && lbtdjml!=1) || (tmpkode == "CEKTTDPJM714" && lbtdtothrg!=1))
+cTO		"TO"
+cOK		"OK"
+chanya714	btmsts == "714" && g_scrnumstr == "714"
+cjadiopen	(btmstr1=="Y" && ((btdtothrg==1 && btdjml==2) || (btdtothrg==2 && btdjml==1) || (btdtothrg==2 && btdjml==2))) || (btmstr1=="T" && btdjml==2)
+
+MAP(mupdbtd728)
+cblanks         btdhrg          DO_CALC
+cblanks         btdnorangka     DO_CALC
+cblanks         btdbrdoto       DO_CALC
+cblanks         btdnorangka     DO_CALC
+c1              btdperdis       DO_CALC
+c2		btdjml		DO_CALC_IF cjkpmh
+c2		btdtothrg	DO_CALC_IF cjkpjm
+gv_OPEN         btdsts          REPLACE_IF cjadiopen
+
+MAP(mupdbtd728x)
+c1		btdjml		DO_CALC_IF cjkpmh
+c1		btdtothrg	DO_CALC_IF cjkpjm
+gv_OPEN         btdsts          REPLACE_IF cjadiopen
+
+MAP(mupdakt728)
+cblanks		aktdk		DO_CALC
+cTO     	akttype2	DO_CALC
+
+
+MAP(mupdakt728x)
+cOK     	akttype2	DO_CALC
+
+
+SPCALCS(spcalcsupd728)
+DO_LIB_IF chanya714 ap_dbclc(DNAME dupdbtd728,DCOMMAND UPDATE_RANGE,DTARGET btdbuktypidx   btmnobuk lTTDSURVEY lTTDSURVEY,DMAP mupdbtd728);
+DO_LIB_IF chanya714 ap_dbclc(DNAME dupdakt728,DCOMMAND UPDATE,DTARGET aktprmidx   aktprm,DMAP mupdakt728);
+
+SPCALCS(spcalcsupdakt728)
+DO_LIB_IF chanya714 ap_dbclc(DNAME dupdbtd728x,DCOMMAND UPDATE_RANGE,DTARGET btdbuktypidx   btmnobuk lTTDSURVEY lTTDSURVEY,DMAP mupdbtd728x);
+DO_LIB_IF chanya714 ap_dbclc(DNAME dupdakt728x,DCOMMAND UPDATE,DTARGET aktprmidx   aktprm,DMAP mupdakt728x);
+
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolsesuai       	 DO_SPCALCS spcalcsupdakt728
+CLICKED         cur_field=ltomboltdksesuai       DO_SPCALCS spcalcsupd728
+
+SUBFILE(tmptrans)
+
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cbisabuka
+SFL_SELECT	chanyamirip
+SFL_UPL_DIRFLD btmtgl
+SFL_SGNFLD	aktbrg
+SFL_SGNFLD_READONLY
+SFL_TARGET_IF cjkpmh
+aktkodtypidx	btmnobuk gv_datasurvey   lTTDPEMOHON
+SFL_TARGET_IF cjkpjm
+aktkodtypidx	btmnobuk gv_datasurvey   lTTDPENJAMIN
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

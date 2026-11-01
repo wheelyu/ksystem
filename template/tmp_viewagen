@@ -1,0 +1,157 @@
+LOCAL
+PGM_FIELDS
+lagnpsmnama	STRING	61
+lagnpsmkode2	STRING	21
+ljlM		INT2	2
+ljlM1		INT2	2
+ljlM2		INT2	2
+ljlM3		INT2	2
+ljlhmcM		INT2	2
+ljlm2wM		INT2	2
+ljlhmcM1	INT2	2
+ljlm2wM1	INT2	2
+ljlhmcM2	INT2	2
+ljlm2wM2	INT2	2
+ljlhmcM3	INT2	2
+ljlm2wM3	INT2	2
+
+lmin1		INT2	2
+lmin2		INT2	2
+lmin3		INT2	2
+ltglawl		DATE	4
+ltglawlM1	DATE	4
+ltglawlM2	DATE	4
+ltglawlM3	DATE	4
+
+lthblM1		STRING	21
+lthblM2		STRING	21
+lthblM3		STRING	21
+
+lstsagen	STRING	5
+
+MAP(mjoinpsdagnM)
+psdtot3		ljlhmcM		REPLACE
+psdtot7		ljlm2wM		REPLACE
+DBCALCS(djoinpsdagnM)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod	lPROGAGN lagnpsmkode2 lthbl
+	DBC_MAP		mjoinpsdagnM
+
+MAP(mjoinpsdagnM1)
+psdtot3		ljlhmcM1	REPLACE
+psdtot7		ljlm2wM1	REPLACE
+DBCALCS(djoinpsdagnM1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod	lPROGAGN lagnpsmkode2 lthblM1
+	DBC_MAP		mjoinpsdagnM1
+
+MAP(mjoinpsdagnM2)
+psdtot3		ljlhmcM2	REPLACE
+psdtot7		ljlm2wM2	REPLACE
+DBCALCS(djoinpsdagnM2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod	lPROGAGN lagnpsmkode2 lthblM2
+	DBC_MAP		mjoinpsdagnM2
+
+MAP(mjoinpsdagnM3)
+psdtot3		ljlhmcM3	REPLACE
+psdtot7		ljlm2wM3	REPLACE
+DBCALCS(djoinpsdagnM3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod	lPROGAGN lagnpsmkode2 lthblM3
+	DBC_MAP		mjoinpsdagnM3
+
+DBCALCS(djoingdf)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	gdftygrpcab	gv_D g_usrkode lpsicabskr
+
+MAP(mjoinpsmagen)
+psmstssup	lstsagen	REPLACE
+
+DBCALCS(djoinpsmagen)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	psdpsmkode
+	DBC_MAP		mjoinpsmagen
+
+IMAGE(tmptranst)
+/------------------t---------------t-------------t---------t----------t----------t----------\
+| t.NamaAgen       | t.NoTelp      | t.NoKtp     |  t.JlM  |  t.JlM1  |  t.JlM2  |  t.JlM3  |
+\------------------.---------------.-------------.---------.----------.----------.----------/
+
+IMAGE(tmptrans)
+|__________________|_______________|_____________|_________|__________|__________|__________|__|
+
+FIELDS(tmptrans)
+lagnpsmnama	PROTECT		INPUTRI	1
+psdpsmkode	PROTECT		INPUTRI	2
+lagnpsmkode2	PROTECT		INPUTRI	3
+ljlM		PROTECT		INPUTRI	4
+ljlM1		PROTECT		INPUTRI	5	
+ljlM2		PROTECT		INPUTRI	6
+ljlM3		PROTECT		INPUTRI	7
+psdkode		PROTECT UNSEEN	INPUTRI	8
+
+CALCS()
+ctglawl		ststglprjgl + 1
+ctglM1		DO_LIB ap_tambl(ltglawl,lmin1,&ltglawlM1);
+ctglM2		DO_LIB ap_tambl(ltglawl,lmin2,&ltglawlM2);
+ctglM3		DO_LIB ap_tambl(ltglawl,lmin3,&ltglawlM3);
+
+cthblM1		THBLS(ltglawlM1)
+cthblM2		THBLS(ltglawlM2)
+cthblM3		THBLS(ltglawlM3)
+
+cuplinehmcM	djoinpsdagnM == 1 && psidvs == "HMC" || psidvs == "H1" || psidvs == "KLIKNSCHMC"
+cuplinem2wM	djoinpsdagnM == 1 && psidvs == "M2W" || psidvs == "KLIKNSCM2W"
+cuplinehmcM1	djoinpsdagnM1 == 1 && psidvs == "HMC" || psidvs == "H1" || psidvs == "KLIKNSCHMC"
+cuplinem2wM1	djoinpsdagnM1 == 1 && psidvs == "M2W" || psidvs == "KLIKNSCM2W"
+cuplinehmcM2	djoinpsdagnM2 == 1 && psidvs == "HMC" || psidvs == "H1" || psidvs == "KLIKNSCHMC"
+cuplinem2wM2	djoinpsdagnM2 == 1 && psidvs == "M2W" || psidvs == "KLIKNSCM2W"
+cuplinehmcM3	djoinpsdagnM3 == 1 && psidvs == "HMC" || psidvs == "H1" || psidvs == "KLIKNSCHMC"
+cuplinem2wM3	djoinpsdagnM3 == 1 && psidvs == "M2W" || psidvs == "KLIKNSCM2W"
+cliatagen	g_usrkode == psmkode || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVKLIKNSC" || (g_grpnam == "DIGMKTSPV" && djoingdf == 1)
+cageninpg	djoinpsmagen == 1 && lstsagen == "INPG"
+
+DEFAULTS(tmptrans)
+lmin1		INIT		-1
+lmin2		INIT		-2
+lmin3		INIT		-3
+ltglawl		INIT		{ctglawl}
+ltglawlM1	INIT		{ctglM1}
+ltglawlM2	INIT		{ctglM2}
+ltglawlM3	INIT		{ctglM3}
+
+lthblM1		INIT		{cthblM1}
+lthblM2		INIT		{cthblM2}
+lthblM3		INIT		{cthblM3}
+
+EDITS(tmptrans)
+t.Validate	psdkode		VALIDATE psikodidx mpsiagn 0
+t.Validate	psdpsmkode	VALIDATE psmktpidx mpsmagn 0
+
+MAP(mpsmagn)
+psmnama		lagnpsmnama	REPLACE
+psmkode2	lagnpsmkode2	REPLACE
+cblanks		ljlM		DO_CALC
+cblanks		ljlM1		DO_CALC
+cblanks		ljlM2		DO_CALC
+cblanks		ljlM3		DO_CALC
+ljlhmcM		ljlM		REPLACE_IF cuplinehmcM
+ljlm2wM		ljlM		REPLACE_IF cuplinem2wM
+ljlhmcM1	ljlM1		REPLACE_IF cuplinehmcM1
+ljlm2wM1	ljlM1		REPLACE_IF cuplinem2wM1
+ljlhmcM2	ljlM2		REPLACE_IF cuplinehmcM2
+ljlm2wM2	ljlM2		REPLACE_IF cuplinem2wM2
+ljlhmcM3	ljlM3		REPLACE_IF cuplinehmcM3
+ljlm2wM3	ljlM3		REPLACE_IF cuplinem2wM3
+
+MAP(mpsiagn)
+psidvs		lpsidvs		REPLACE
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(5)
+SFL_COND cliatagen
+SFL_SELECT cageninpg
+SFL_TARGET
+psddatkodidx lKATMITRA lpsmkode

@@ -1,0 +1,89 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.tkdnobuk  __________          ||
+||t.Acc       _____               ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk	NOCHANGE PROTECT	INPUTRI	1	
+tkdjwbstr2	NOCHANGE		INPUTRI 1
+
+DEFAULT(tmptranst)
+l1int		INIT		1
+tkdjwbstr2	DFALT_SCAN	ACC
+				TACC
+
+CALCS()
+cOK             "OK"
+
+MAP(mupdtkdfoto)
+cOK              tkdjwbstr1       DO_CALC
+
+DBCALCS(dupdtkdfoto)
+        DCOMMAND        UPDATE
+        DTARGET         tkdotoidx   tkdoto
+        DMAP            mupdtkdfoto
+CALCS()
+cblmok          tkdjwbstr1!="OK"
+cbknm4w		tlmdvs!="M4W" && tlmdvs!="UMROH"
+cupdkon		(tlmdvs=="M4W" && tlmstsapr!="IN" && tlmstsapr != "OK" && 
+		((g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="IT2" ) ||
+			(tlmuntuk=="BTL" && ((dscanjmlbtl==0 && djoinsgmbm==1 && g_usrkode==lnipbm) || 
+			(dscanjmlbtl==1 && ljmlbtl<=3 && djoinsgmbm==1 && g_usrkode==lnipbm ) || 
+			(dscanjmlbtl==1 && ljmlbtl<=5 && djoinsgmrm==1 && g_usrkode==lniprm) || 
+			(dscanjmlbtl==1 && ljmlbtl>5 && g_usrkode=="2179915"))) 
+		|| 
+		
+			(tlmuntuk=="TACC" && ((dscanjmltacc==0 && djoinsgmbm==1 && g_usrkode==lnipbm) || 
+			(dscanjmltacc==1 && ljmltacc<=3 && djoinsgmbm==1 && g_usrkode==lnipbm)||
+			(dscanjmltacc==1 && ljmltacc<=5 && djoinsgmrm==1 && g_usrkode==lniprm) || 
+			(dscanjmltacc==1 && ljmltacc>5 && djoinsgmca==1 && g_usrkode==lnipca))))
+		) 
+		
+			||
+
+		(tlmdvs=="UMROH" && tlmstsapr!="IN" && tlmstsapr != "OK" && 
+			(
+			(g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="IT2") ||
+			(tlmuntuk=="BTL" && (djoinsgmbm==1 && g_usrkode==lnipbm)) ||
+			(tlmuntuk=="TACC" && (djoinsgmbm==1 && g_usrkode==lnipbm))
+			)
+		)
+
+HOOKS(tmptranst)
+	BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF cbknm4w
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdtkdfoto
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tlmnobuk     tkddata
+SFL_UPL_DELCOND cblmok
+
+SFL_TARGET
+	tkdbukidx   tlmnobuk gv_INPG	l1int
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+gv_INPG		tkdsts		REPLACE
+l1int		tkdnourt	REPLACE
+lFOTO3502	tkddata		REPLACE
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cupdkon
+  PMT_DEL_COND  c0
+

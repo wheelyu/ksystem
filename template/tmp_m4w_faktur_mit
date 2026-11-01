@@ -1,0 +1,122 @@
+LOCAL
+PGM_FIELDS
+lnamadeb        STRING          61  
+lnamamitra      STRING          61  
+loverdue        DFLOAT          8
+linpgfid        STRING          21
+lfid            STRING          21
+lFLAGFID4W6     STRING          11
+lFLAGFID4W7     STRING          11
+linpgfid6       STRING          21
+linpgfid7       STRING          21
+lkosong         STRING          21
+lkosong5        STRING          5 
+
+CALCS()
+cbtm4w        btmdvs == "M4W" && btmsts == "CLSD"
+
+MAP(mjoinbtm)
+btmmakelar      lnamamitra      REPLACE
+
+DBCALCS(djoinbtm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx  piknobtm             
+        DBC_SELECT      cbtm4w                          
+        DBC_MAP         mjoinbtm     
+
+
+MAP(mjoindeb)
+psmnama         lnamadeb        REPLACE
+DBCALCS(djoindeb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx pikplg     
+        DBC_MAP         mjoindeb  
+
+MAP(mjoinrtm6)
+rtmkode         linpgfid6      REPLACE
+
+DBCALCS(djoinrtm6)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rtmdatbuktgl    lFLAGFID4W6 lthbl  piknobuk 
+        DBC_MAP         mjoinrtm6
+
+MAP(mjoinrtm7)
+rtmkode         linpgfid7      REPLACE
+
+DBCALCS(djoinrtm7)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rtmdatbuktgl    lFLAGFID4W7 lthbl  piknobuk       
+        DBC_MAP         mjoinrtm7
+
+
+
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|----------t-----------t---------t--------t--------t---------t---------t-----t-|
+|t.NoFak   |i.NmDebitur|t.Tglcair|t.Sispok|t.TglJtp|t.Overdue|t.inpgfid|t.fid| |
+\----------.-----------.---------.--------.--------.---------.---------.-----.-/
+
+IMAGE(tmptrans)
+|__________|___________|_________|________|________|_________|_________|_____|_|
+
+FIELD(tmptrans)
+piknobuk        	PROTECT		INPUTRI		1
+lnamadeb        	NOCHANGE	INPUTRI		2
+piktglfak		PROTECT NOLIMIT {DD-MM-YY}	INPUTRI		3
+piksispok       	PROTECT 	INPUTRI		4
+piktgljtp       	PROTECT NOLIMIT {DD-MM-YY}	INPUTRI		5
+loverdue		NUMERIC		INPUTRI		6
+linpgfid		PROTECT		INPUTRI		7
+lfid                    PROTECT         INPUTRI         8
+piknobtm                PROTECT         INPUTRI         8
+
+CALCS()
+cfktr4w                djoinbtm == 1 && lnamamitra == psmktp 
+cslshr                 g_tgltrn - piktgljtp 
+cisi0                  0
+cfid0                  BLANKS
+cfid30                 g_tgltrn - piktgljtp > 30 && (djoinrtm6 == 1 || djoinrtm7 == 1 )
+cfid                   "FID30"
+cjoinrtm6              djoinrtm6 == 1 
+cjoinrtm7              djoinrtm7 == 1 
+call                   g_grpnam == BLANKS
+cjoindeb0              djoindeb == 0
+cjoindeb1              djoindeb == 1 
+ckosong                "" 
+
+DEFAULTS(tmptrans)
+lFLAGFID4W6     INIT            FLAGFID4W6
+lFLAGFID4W7     INIT            FLAGFID4W7
+
+EDITS(tmptrans)
+e.ValidateKTP piknobtm  VALIDATE btmbukidx mbtmdeb 0    
+
+MAP(mbtmdeb)
+cBLANKS         lnamadeb        DO_CALC_IF cjoindeb0
+lnamadeb        lnamadeb        REPLACE_IF cjoindeb1 
+cisi0           loverdue        DO_CALC
+cslshr          loverdue        DO_CALC          
+cfid0           lfid            DO_CALC
+cfid            lfid            DO_CALC_IF cfid30
+cBLANKS         linpgfid        DO_CALC 
+linpgfid6       linpgfid        REPLACE_IF cjoinrtm6
+linpgfid7       linpgfid        REPLACE_IF cjoinrtm7
+ckosong         lkosong         DO_CALC 
+ckosong         lkosong5        DO_CALC 
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(6)
+SFL_SELECT  cfktr4w 
+SFL_TARGET
+	pikdtjnstjtp   gv_dtpiu gv_INPG  lkosong   lkosong5 gv_m4w21 
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    call     
+PMT_UPDALL_COND call           
+PMT_DEL_COND    call
+

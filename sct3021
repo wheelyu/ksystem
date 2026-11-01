@@ -1,0 +1,90 @@
+SCREEN 3021 APPLICATION_TYPE s.ExportData
+
+LOCAL
+PGM_FIELDS
+l0		INT2		2
+lfilnam			STRING	            4
+lnamacalc		STRING	            20
+ldelimiter		INT2   		    2
+ldefdte   		INT2  		    2
+lrata                   INT2                2
+lgab_field		STRING	            200
+lpil   			INT2  		    2
+
+IMAGE(master) 
+/-------------------------------------------------------------------------------\
+|   /-------------------------------------------------\                         |
+|   |i.Pil         : __                               |                         |
+|   \-------------------------------------------------/                         |
+|                                                                               |
+|   i.NamaFile     : _____     i.AllUntukSemuaFile                              |
+|   i.Rata         : ___   	                                                |
+|   i.Pembatas     : ___                                                        |
+|   i.FormatTgl    : ___                                                        |
+|                                                                               |
+|   /--i.GabField-------------------------------------------------------------\ |
+|   |_________________________________________________________________________| |
+|   \-------------------------------------------------------------------------/ |
+\-------------------------------------------------------------------------------/
+
+FIELD(master)
+   lpil                NOCHANGE                 INPUTRI            1
+   lfilnam             NONE             	INPUTRI            2 /* file name */
+   lrata               NOCHANGE                 INPUTRI            3
+   ldelimiter          NOCHANGE                 INPUTRI            4 /* Delimiter */
+   ldefdte             NOCHANGE                 INPUTRI            5 
+   lgab_field          NONE SCROLL              INPUTRI            6 /* Delimiter */
+
+DEFAULTS(master)
+l0		INIT		0
+  lpil		DFALT_SCAN_BLANKS      	1 "Export Semua Field"
+		                	2 "Export Sebagian Field"
+
+  ldelimiter	DFALT_SCAN  	1 "Pembatas |"
+				3 "Pembatas tab"
+
+  lrata		DFALT_SCAN	0 "Tidak "
+                          	1 "Ya"
+
+  ldefdte	DFALT_SCAN	1 "DDMMYY "
+				2 "MMDDYY "
+				3 "YYMMDD "
+	        		4 "YYYYMMDD"
+
+HELP(master)
+Tekan tombol spasi untuk mengubah nilai ldelimiter
+Tekan tombol spasi untuk mengubah nilai ldefdte
+Tekan tombol spasi untuk mengubah nilai lrata
+
+EDITS(master)
+e.Mandatory lpil MANDATORY
+Harus masukkan nama file lfilnam  MANDATORY
+Harus masukkan character pembatas ldelimiter  MANDATORY
+Harus masukkan pilihan ldefdte  MANDATORY
+
+CALCS()
+cpil1		lpil == 1
+cfield_brg	"brgbrbi+brgsup+brgkode+brgkat+brgtglakhpj+brgkat2+brgytrugi+brgdvs+brgytppn+brgket3+brgsat+brgnama+brgket1+brgtglprjth+brgmerk+brgurt+brgth+brgytseri+brgstr3+brgnohpp"
+             /*  SN/ON  +THN HRG+Sentinel+Key+ Tgl Buat    +M/K/A  +Y/T utama+ Plg  +Y/T PPN+Programer+Imple+LokSent+Alamat+JtpKey    +USB/Prl+JmlUser+Y/Trekap+S(sentinel)+Veri2+Veri3+Tgl End */
+
+cfield_opm	"opmsts+opmnoprc+opmcrtusr+opmnofak+opmcab+opmtgltrn+opmplg+opmbrg+opmwarna+opmket+opmtbh1+opmsisop+opmket2+opmlok+opmtmp+opmdf1+opmdf3+opmlamatgh+opmakmop+opmdf2+opmtglkwi1+opmppn+opmsat+opmtglkwi2+opmjml+opmtglpros+opmcv+opmtgl+opmpr+opmag+opmtk" 
+             /*  Status+ Bukti  +Programer+grup Plg+Cabang+TglBuat+ Plg   + Sent  + key    +NamaPlg+ JmlUsr+JmlLok+ Ket +ThnBln+BiaSewa+Pemasaran+Adm  +LmSewa+Potongan+Implemen +Tgl Awal Kwi+%PPN + NPWP+Tgl Kwi2 +TtlSewa +TglAkhPros+CV/PT+TglYadPros+%Prog+%Agen+%Tk */
+
+cpil2_brg	lpil == 2 && lfilnam == "brg"
+cpil2_opm	lpil == 2 && lfilnam == "opm"
+
+MAP(mgabfield)
+cfield_brg	lgab_field	DO_CALC_IF cpil2_brg
+cfield_opm	lgab_field	DO_CALC_IF cpil2_opm
+
+HOOKS(master)
+BEFORE_INPUT	cur_field=lgab_field	DO_SKIP_IF cpil1
+AFTER_INPUT	cur_field=lfilnam	DO_MAP SHOW mgabfield
+
+SPCALCS(spcal)
+DO_LIB ap_flexp(lfilnam,ldelimiter,ldefdte,lrata,lnamacalc,lgab_field,g_strksg,g_strksg,l0);
+
+POSTING(master)
+   PST_COMMAND     spcal       /* APPLICATION_TYPE */
+				
+END_SCREEN

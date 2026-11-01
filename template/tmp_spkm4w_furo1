@@ -1,0 +1,504 @@
+LOCAL
+PGM_FIELDS
+lconhp		STRING		21
+lBULANINI	STRING		21
+lBLNDPN		STRING		21
+l2BLNLG		STRING		21
+lTDKMINAT	STRING		21
+lminatfuro1	STRING		21
+lfu1ketminat	STRING 		21
+lfu1minatkpn	STRING		21
+lfu1hslminat	STRING		21
+ljam1furo1	TIME		4
+ljamawalfuro	TIME		4
+ljamakhirfuro	TIME		4
+l1menitfuro	DFLOAT		8
+lmenitfuro	DFLOAT		8
+ltombolok	STRING		21
+
+CALCS()
+ctkdfuro	tkdnoll == svitype && tkdnourt == svinourt /* && tkdsisstr == svistr10 */
+
+DBCALCS(djointlm969)
+DBC_COMMAND	JOIN
+DBC_TARGET	tlmbukidx svistr10
+
+MAP(mjoincon)
+conhp     lconhp     REPLACE
+
+DBCALCS(djoincon)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx svistr2  gv_INPG
+        DBC_MAP         mjoincon
+
+DBCALCS(djoinalmx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almdatotobuk gt_psmtinggal svistr2
+
+MAP(mjointkdfuro)
+tkdjml          ljamawalfuro   REPLACE
+tkdjml2         ljamakhirfuro  REPLACE
+DBCALCS(djointkdfuro)
+	DBC_COMMAND	JOIN	
+	DBC_TARGET	tkdbukidx svinobuk gv_OPEN svinourt
+	DBC_SELECT	ctkdfuro
+	DBC_MAP		mjointkdfuro
+
+CALCS()
+cnoreffuro	"DAC" + STRIP(tkmplg) + STRIP(lthblref) + STRIP(ltglref)
+cjointlm969	djointlm969 == 1
+cjoinhp		djoincon==1 && lconhp!=BLANKS
+cjoinalmx	djoinalmx==1
+cfu1bpkbT	sviyt2 == "T" || svistr1 != "TRHBNG_DEBITUR"   
+cfu1bpkbY	sviyt2 == "Y"
+ctdkketemudeb	svistr1 != "TRHBNG_DEBITUR"
+cketemudeb	svistr7 == "AKTF_ANGKAT" && svistr1 == "TRHBNG_DEBITUR" && svidf1 == 1 
+cfotofuro1      FLD_TO_STRING(svinourt) + "F1"
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoBukti   : ___ _________ _____||
+||t.Nobuk969  : ___________________||
+||t.NoFaktur  : ___________________||
+||t.AdaData   : ____               ||
+||t.Ktp       : ___________________||
+||t.NamaCKons : ___________________||
+||t.NoTelp    : ___________________||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.Hasil                          ||
+||t.HasilTlp  : ___________________||
+||t.Keterangan: ___________________||
+||t.TglFuUlang: __________         ||
+||t.Alamat    : ___________________||
+||t.JnsThnMbl : ____________ ______||
+||t.BPKBada   : ______		   ||
+||t.Dimana    : ___________________||
+||t.Minatkpn  : __ __ _____________||
+||t.Hasil     : ___________________||
+||t.JadiPK    : ___________________||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.Referensi                      ||
+||t.AdaRefer  : _____              ||
+||t.NamaRefer : ___________________||
+||t.NoTelpRef : ___________________||
+||t.Kendaraan : ___________________||
+||t.TglFu     : _________ _____ ___||
+|\---------------------------------/|
+|/---------------------------------\|
+||/------------s.UPLOAD-----------\||
+|||				  |||
+|||				  |||
+|||				  |||
+|||				  |||
+|||			   	  |||
+||\-------------------------------/||
+||  ___________________________    ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt        PROTECT                 INPUTRI 1       /*nourt*/
+svinobuk        PROTECT                 INPUTRI 2       /*nobuk*/
+svistr8		PROTECT			INPUTRI	3
+svistr10	ALLCAPS			INPUTRI 3
+svikode		ALLCAPS			INPUTRI 4	/*faktur*/
+sviyt1		ALLCAPS			INPUTRI 5
+svistr2		PROTECT			INPUTRI 6	/*Ktp*/
+svinama		PROTECT			INPUTRI 7	/*nama konsumen*/
+svitblkode	PROTECT			INPUTRI 8	/*no telpon*/
+svistr7		ALLCAPS			INPUTRI 9	/*Hasil Tlp*/
+svistr1		ALLCAPS	SCROLL		INPUTRI 10	/*Ket Hasil Telp*/
+svitgl1		ALLCAPS NONE NOLIMIT {DD-MM-YYYY} INPUTRI 12	/*Tanggal Fu Ulang*/
+sviket2		PROTECT			INPUTRI 13	/*alamat*/
+svistr3		PROTECT			INPUTRI 14	/*JenisMobil*/
+svistr4		PROTECT			INPUTRI 15	/*Tahun Mobil*/
+sviyt2		ALLCAPS			INPUTRI 16	/*BPKB ada? */
+svistr9		ALLCAPS			INPUTRI 17	/*BPKB dimana*/
+lfu1minatkpn	ALLCAPS			INPUTRI 18	/*MInat kapan*/
+svistr31	PROTECT			INPUTRI	19
+lfu1ketminat	PROTECT			INPUTRI	20	/*ket minat*/
+lfu1hslminat	PROTECT			INPUTRI 21	/*Hasil*/
+svistr37        ALLCAPS                 INPUTRI 22	/*PK*/
+svitype2	ALLCAPS			INPUTRI 23	/*ada Ref*/
+svistr5		ALLCAPS			INPUTRI 24	/*Nama Ref*/
+svidtmkode	DIGITS			INPUTRI 25	/*No Telp Ref*/
+svistr6		ALLCAPS			INPUTRI 26	/*Kendaraan*/
+svitgl2		ALLCAPS NONE NOLIMIT {DD-MM-YYYY} INPUTRI 27 /*Tanggal Fu Ref*/
+lenter		ALLCAPS			INPUTRI 28
+svidf1		NOCHANGE		INPUTRI 32
+ltombolok       TOMBOL                  INPUTRI 31
+
+DEFAULTS(tmptranst)
+lBULANINI	INIT			BULAN_INI
+lBLNDPN		INIT			BULAN_DEPAN
+l2BLNLG		INIT			2BLN_LAGI
+lTDKMINAT	INIT			TIDAK_MINAT
+lminatfuro1	INIT			MINATFURO1
+svistr37         DFALT_SCAN_BLANKS       Y T  
+ljam1furo1      INIT_ADD      		{cSYSTIME}
+ltombolok	INIT			"UPLOAD OK"
+
+svistr7		DFALT_SCAN		BLANKS
+					AKTF_ANGKAT     "AKTIF DIANGKAT"
+                                        AKTF_TDKANGKAT  "AKTIF TDK DIANGKAT"
+                                        TDK_AKTIF       "TIDAK AKTIF"
+
+IF ctdkaktif svistr1	DFALT_SCAN	BLANKS
+					NOMOR_SALAH "NOMOR SALAH"
+					NO_TDK_TERDFTR  "NO TDK TERDAFTAR"
+                                        TEKAN_SUARA     "TEKAN_SUARA"
+
+IF caktifangkat	svistr1	DFALT_SCAN	BLANKS
+					SALAH_SAMBUNG   "SALAH SAMBUNG"
+                                        TRHBNG_DEBITUR  "TERHUBUNG DEBITUR"
+
+IF caktiftangkat svistr1 DFALT_SCAN	BLANKS
+                                        AKTF_TDKANGKAT  "AKTIF TDK DIANGKAT"
+
+svitype2	DFALT_SCAN		BLANKS
+					ADA "ADA"
+					TDK_ADA "TIDAK ADA"
+
+svistr6		DFALT_SCAN		BLANKS
+					MOBIL "MOBIL"
+					MOTOR "MOTOR"
+					MOBIL_MOTOR "MOBIL dan MOTOR"
+sviyt1		DFALT_SCAN		BLANKS	T
+
+sviyt2		DFALT_SCAN		BLANKS	Y T 
+
+
+EDITS(tmptranst)
+e.Mandatory	svistr7		MANDATORY_IF cdatakosong
+e.Mandatory	svistr1		MANDATORY_IF cdatakosong
+e.Mandatory	svitgl1		MANDATORY_IF cminatnantifuro
+/*e.Mandatory	svitype2	MANDATORY_IF cdebangkat
+*/
+e.Mandatory	svistr5		MANDATORY_IF cadaref
+e.Mandatory	svidtmkode	MANDATORY_IF cadaref
+e.Mandatory	svistr6		MANDATORY_IF cadaref
+e.Mandatory	svitgl2		MANDATORY_IF cadaref
+
+e.Mandatory	sviyt1		MANDATORY_IF crokosong
+e.Mandatory	sviyt2		MANDATORY_IF cketemudeb
+e.Mandatory     svistr37    	MANDATORY_IF cketemudeb
+e.Mandatory	svistr9		MANDATORY_IF cfu1bpkbY
+e.Mandatory	lfu1minatkpn	MANDATORY_IF cfu1bpkbY
+
+e.Validate1	svistr10	VALIDATE_IF ctambah tlmdatstsbuk mtlm stlm969 {PlDTCRO} {Pgv_OPEN}
+e.Validate2	svikode		VALIDATE pikdatbukidx mpik1  0    {Pgv_dtpiu}
+e.Validate3	svistr2		VALIDATE psmktpidx mpsm1 0
+e.Validate4	svistr2		VALIDATE_DUP_IF cjoinalmx almdatotobuk malmfuro  {Pgt_psmtinggal}
+e.Validate5	lfu1minatkpn	VALIDATE tbtdattypkod mtbtfu1 stbt {Pgv_dttabel} {Pgv_dttabel21} {Plspkm4w} {Plminatbpkb} {Plminatfuro1} 
+
+CALCS()
+cfuro1menit	tkdnourt==svinourt && djointkdfuro == 1 &&
+		((ljamakhirfuro - ljamawalfuro) <= 1) && 
+		svistr7 == "AKTF_ANGKAT" && svistr1 == "TRHBNG_DEBITUR" && svidf1 == 1
+cfurodiatas1	tkdnourt==svinourt && djointkdfuro == 1 && 
+		((ljamakhirfuro - ljamawalfuro) > 1 && (ljamakhirfuro - ljamawalfuro) <= 30) && 
+		svistr7 == "AKTF_ANGKAT" && svistr1 == "TRHBNG_DEBITUR" && svidf1 == 1
+cfurotole	tkdnourt==svinourt && djointkdfuro == 1 && 
+		((ljamakhirfuro - ljamawalfuro) > 30) && 
+		svistr7 == "AKTF_ANGKAT" && svistr1 == "TRHBNG_DEBITUR" && svidf1 == 1 
+cselfuro	ljamakhirfuro - ljamawalfuro
+csdh1furo	svidf1 == 1 
+
+
+MAP(mmapfurox)
+svidata         lmain1data      REPLACE
+svinobuk        lmain1nobuk     REPLACE
+svinourt        lmain1urt       REPLACE
+svitype         lmain1type      REPLACE
+DBCALCS(dmapfuro_x)
+	DCOMMAND MAPMAP
+	DMAP	 mmapfurox		
+
+MAP(mmapjamfuro)
+cBLANKS		lmenitfuro	DO_CALC
+cBLANKS		l1menitfuro	DO_CALC
+l1              l1menitfuro     REPLACE_IF cfuro1menit
+cselfuro        lmenitfuro      DO_CALC_IF cfurodiatas1
+DEBUG		ldum	ldum	REPLACE
+DBCALCS(dmapjamfuro)
+	DBC_COMMAND	MAPMAP
+	DBC_MAP		mmapjamfuro
+
+/*CALCS()
+c1menitfuro             tkmtotal + l1menitfuro
+cmenitfuro              tkmtotal + lmenitfuro
+
+MAP(mtambpoinfuro)
+c1menitfuro	tkmtotal	DO_CALC_IF cketemudeb
+cmenitfuro	tkmtotal	DO_CALC_IF cketemudeb
+cmenit30	tkmtotal	DO_CALC_IF cfurotole
+DEBUG		ldum	ldum	REPLACE
+
+DBCALCS(dupdpoinfuro)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkmprmidx tkmprm
+	DBC_MAP		mtambpoinfuro
+*/
+
+MAP(malmfuro)
+almjalan	sviket2		REPLACE
+almkel		lkelarea	REPLACE
+
+MAP(mtbtfu1)
+tbtkode		lfu1minatkpn	REPLACE
+lfu1minatkpn	svistr31	REPLACE
+tbtket		lfu1ketminat	REPLACE
+tbtkode2	lfu1hslminat	REPLACE
+
+MAP(mpik1)
+pikplg          svistr2          REPLACE
+
+MAP(mpsm1)
+psmnama		svinama		REPLACE
+lconhp		svitblkode	REPLACE_IF cjoinhp
+
+MAP(mtlm)
+tlmnobuk	svistr10	REPLACE
+tlmnoasal	svikode		REPLACE
+
+
+MAP(mmapfuro)
+cthblref	lthblref	DO_CALC
+svitgl2		ltglref		REPLACE
+cnoreffuro	lnobukfuref4	DO_CALC
+cthblfulagi	lthbllg		DO_CALC
+svitgl1		ltgllg		REPLACE
+lnipmo		lnipmo		REPLACE_IF cjoinsviarea1
+cnobukfulagi	lnobukfulagi	DO_CALC
+cBLANKS		lnobukfulagimo	DO_CALC
+cnobukfulagimo	lnobukfulagimo	DO_CALC
+l1		svinourt	REPLACE_IF cjoindet2_0urt
+curut		svinourt	DO_CALC_IF cjoindet2_1urt
+DEBUG		ldum	ldum	REPLACE
+
+MAP(maddreffuro)
+tkmtype		svidata		REPLACE
+lreffuro	svitype		REPLACE
+lsvistr5ref4	svinama		REPLACE
+lsvidtmkoderef4	svistr5		REPLACE
+lsvistr2ref4	svistr7		REPLACE
+lnobukfuref4	svinobuk	REPLACE
+
+MAP(maddfurolagi)
+tkmtype         svidata         REPLACE
+lFURO	        svitype         REPLACE
+lnobukfulagi	svinobuk	REPLACE
+lsvistr10ref4	svistr10	REPLACE
+lsvikoderef4	svikode		REPLACE
+lsvinamaref4	svinama		REPLACE
+lsvitblkoderef4	svitblkode	REPLACE
+lsvistr2ref4	svistr2		REPLACE
+/*lsviket2ref4	sviket2		REPLACE*/
+l1              svinourt        REPLACE_IF cjoinfuro_0urt
+curut           svinourt        DO_CALC_IF cjoinfuro_1urt	
+
+MAP(maddfuvisit)
+tkmtype		svidata		REPLACE
+lVISITRO	svitype		REPLACE
+lnobukfulagimo	svinobuk	REPLACE
+lsvistr10ref4	svistr10	REPLACE
+lsvikoderef4	svikode		REPLACE
+l1              svinourt        REPLACE_IF cjoinfuro_0urt
+curut           svinourt        DO_CALC_IF cjoinfuro_1urt
+
+MAP(mmapfuro22)
+DEBUG	ldum	ldum	REPLACE
+
+MAP(maddfuvisitmo)
+lSPKSALESMO     svidata         REPLACE
+lVISITRO	svitype		REPLACE
+lnobukfulagimo  svinobuk        REPLACE
+lsvistr10ref4   svistr10        REPLACE
+lsvikoderef4    svikode         REPLACE
+l1              svinourt        REPLACE_IF cjoinfuromo_0urt
+curut           svinourt        DO_CALC_IF cjoinfuromo_1urt
+
+MAP(mhithp)
+chithp         llonghp        DO_CALC
+
+MAP(mcektanda)
+cBLANKS		lcektanda	DO_CALC
+svistr7		lcektanda	REPLACE_IF cupdate
+cBLANKS		lcektandaref	DO_CALC
+svitype2	lcektandaref	REPLACE_IF cupdate
+tkmnobuk	svinobuk	REPLACE
+tkmtype		svidata		REPLACE
+lFURO		svitype		REPLACE
+l1		svinourt	REPLACE_IF cjoindet2_0urt
+curut		svinourt	DO_CALC_IF cjoindet2_1urt
+cBLANKS		sviyt1		DO_CALC
+tkmlok2		svistr8		REPLACE
+
+MAP(mblanks)
+cBLANKS		svistr1		DO_CALC
+cBLANKS		svitgl1		DO_CALC
+
+MAP(mupdtlm969)
+gv_CLSD		tlmsts		REPLACE
+
+MAP(mtgl2)
+cbesok		svitgl1		DO_CALC_IF cdifubesok
+
+MAP(mupdfotofuro1)
+l1		svidf1		REPLACE
+DEBUG		ldum	ldum	REPLACE
+DBCALCS(dupdfotofuro1)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviprmidx sviprm
+	DBC_MAP		mupdfotofuro1
+
+MAP(mupddf1)
+c2x      	svidf1        DO_CALC_IF csdh1furo
+DBCALCS(dupddf1)
+	DCOMMAND UPDATE
+	DTARGET sviotoidx svioto
+	DMAP 	mupddf1
+
+MAP(mupdfuro1)
+l1              tkdjml3       REPLACE_IF cfuro1menit
+cselfuro        tkdjml3       DO_CALC_IF cfurodiatas1
+cmenit30x	tkdjml3	      DO_CALC_IF cfurotole
+DEBUG		ldum	ldum		REPLACE
+
+MAP(mcoldfu1)
+/*cBLANKS		svistr31       DO_CALC_IF cfu1bpkbT
+cBLANKS         lfu1minatkpn   DO_CALC_IF cfu1bpkbT
+cBLANKS         svistr31       DO_CALC_IF cfu1bpkbT
+cBLANKS         lfu1ketminat   DO_CALC_IF cfu1bpkbT	
+*/
+lkodecold       lfu1hslminat   REPLACE_IF cfu1bpkbT
+
+DBCALCS(dupdfuro1)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_TARGET	tkddatbukll svidata svinobuk lFURO21
+	DBC_MAP		mupdfuro1
+
+
+SPCALCS(sjamdetfuro)
+	dmapfuro_x
+	dupdjam1
+	dmapjamfuro
+	/*dupdpoinfuro*/
+	dupdfuro1
+	dupddf1
+	
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr10	DO_SCAN_IF cdatakosong dscanhitfusamsat
+AFTER_INPUT	cur_field=sviyt1	DO_SCAN dscanfuro
+AFTER_INPUT	cur_field=svistr7	DO_MAP SHOW mblanks
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF cdatakosong
+BEFORE_INPUT	cur_field=svistr10	DO_MAP SHOW mcektanda
+BEFORE_INPUT	cur_field=svistr10	DO_SKIP_IF cupdate
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF ctdkminat2
+BEFORE_INPUT	cur_field=svikode	DO_SKIP_IF crodari969
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW mtgl2
+BEFORE_INPUT	cur_field=svitype2	DO_SKIP_IF cdifubesok
+BEFORE_INPUT	cur_field=svistr7	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=svistr5	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=svidtmkode	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=svistr6	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=svitgl2	DO_SKIP_IF ctdkadadata
+BEFORE_INPUT	cur_field=sviyt2	DO_SKIP_IF ctdkketemudeb
+BEFORE_INPUT	cur_field=svistr9	DO_SKIP_IF cfu1bpkbT
+
+BEFORE_INPUT    cur_field=lfu1minatkpn    DO_SKIP_IF    cfu1bpkbT
+BEFORE_INPUT    cur_field=svistr37        DO_MAP SHOW   mcoldfu1
+BEFORE_INPUT    cur_field=svistr37        DO_SKIP_IF    cfu1bpkbT
+
+AFTER_INPUT	cur_field=svistr10	DO_MAP SHOW
+		IF cjamtarget mdum
+		ELSE HKCURSOR STAY
+		HKMSG JAM SUDAH LEWAT DARI JAM TARGET
+
+AFTER_INPUT     cur_field=svitgl1       DO_MAP SHOW
+                IF ctglmaju    mdum
+                ELSE HKCURSOR STAY
+                HKMSG TANGGAL FU HARUS DIATAS HARI INI
+AFTER_INPUT     cur_field=svidtmkode       DO_MAP SHOW mhithp
+
+AFTER_INPUT     cur_field=svidtmkode          DO_MAP SHOW
+                IF cpanjanghp   mdum
+                ELSE HKCURSOR STAY
+                HKMSG PANJANG NO HP MINIMAL 10 DIGITS
+
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF ctglmaju2    mdum
+                ELSE HKCURSOR STAY
+                HKMSG TANGGAL FU HARUS DIATAS HARI INI
+AFTER_INPUT	cur_field=sviyt1	DO_MAP SHOW
+		IF ccek969 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Anda Ada Data RO
+
+CLICKED         cur_field=ltombolok     DO_SPCALCS sjamdetfuro
+		
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tkmnobuk svists
+SFL_UPLFLD_DBCALCS dupdfotofuro1
+SFL_UPL_DIRFLD tkmtgl
+SFL_TARGET
+        svidatbuktyp   tkmtype tkmnobuk lFURO
+SFL_MAP
+	tkmlok2	svistr8	REPLACE	
+
+CALCS()
+cFURO		"FU_RO"
+
+MAP(maddaktfuro)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cFURO           akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_usrkode       aktkode2        REPLACE
+cFURO           aktbrg          DO_CALC
+
+MAP(maddjamfuro)
+svinobuk	tkdnobuk	REPLACE
+svidata		tkddata		REPLACE
+lFURO		tkdnoll		REPLACE
+tlmnobuk	tkdsisstr	REPLACE
+svinourt        tkdnourt        REPLACE
+gv_OPEN         tkdsts          REPLACE
+ljam1furo1      tkdjml          REPLACE
+cfotofuro1	svists		DO_CALC
+
+SPCALCS(sptransfuro)
+	DO_LIB ap_dbclc(DNAME daddfuro1,DCOMMAND ADD, DFILE tkd,DMAP maddjamfuro);
+	DO_LIB ap_dbclc(DNAME dmapfuro,DCOMMAND MAPMAP,DMAP mmapfuro);
+	DO_LIB ap_dbclc(DNAME dmapawalfuro,DCOMMAND MAPMAP,DMAP mapawaldet2);
+	DO_LIB_IF cunit ap_dbclc(DNAME daddreffuro,DCOMMAND ADD,DFILE svi,DMAP maddreffuro);
+	DO_LIB ap_dbclc(DNAME dmapfurotes,DCOMMAND MAPMAP,DMAP mmapfuro22);
+	DO_LIB_IF cfuulang ap_dbclc(DNAME daddfurolagi,DCOMMAND ADD,DFILE svi,DMAP maddfurolagi);
+	DO_LIB_IF cdifubesok ap_dbclc(DNAME daasvivisit,DCOMMAND ADD,DFILE svi,DMAP maddfuvisit);
+	DO_LIB ap_dbclc(DNAME dmapfuro22,DCOMMAND MAPMAP,DMAP mmapfuro22);
+	DO_LIB_IF cdifubesokmo ap_dbclc(DNAME daasvivisitmo,DCOMMAND ADD,DFILE svi,DMAP maddfuvisitmo);
+	DO_LIB ap_dbclc(DNAME dmapakhirfuro,DCOMMAND MAPMAP,DMAP mapakhirdet2);
+	DO_LIB_IF cjointlm969 ap_dbclc(DNAME dupdtlm969,DCOMMAND UPDATE,DTARGET tlmbukidx svistr10,DMAP mupdtlm969);
+	DO_LIB ap_dbclc(DNAME daddaktfuro,DCOMMAND ADD,DFILE akt,DMAP maddaktfuro);	
+
+SPCALCS(sptransfurou)
+        DO_LIB ap_dbclc(DNAME dmapfurou,DCOMMAND MAPMAP,DMAP mmapfuro);
+        DO_LIB ap_dbclc(DNAME dmapawalfurou,DCOMMAND MAPMAP,DMAP mapawaldet2);
+        DO_LIB ap_dbclc(DNAME dmapakhirfurou,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mapakhirdet2);
+        DO_LIB_IF cunit ap_dbclc(DNAME daddreffurou,DCOMMAND ADD,DFILE svi,DMAP maddreffuro);
+        DO_LIB_IF cfuulang ap_dbclc(DNAME daddfurolagiu,DCOMMAND ADD,DFILE svi,DMAP maddfurolagi);
+
+POSTING(tmptrans)
+PST_ADDCMD	sptransfuro
+PST_UPDCMD	sptransfurou
+
+

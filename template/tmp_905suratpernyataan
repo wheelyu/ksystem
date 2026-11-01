@@ -1,0 +1,58 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|t.BacaModul                                                                              |
+|__________________________  __________________                                           |
+|/---------------------------------------------------------------------------------------\|
+| t.SuratPernyataan                                                                       |
+| spasi                                                                                   |
+| t.905p1                                                                                 | /*DENGAN INI SAYA MENYATAKAN*/
+| t.Nip   : ________________                                                              | /*NAMA : nama psi*/
+| t.Nama  : ________________                                                              | /*NIP : Psikode*/
+| spasi                                                                                   |
+| t.905p4   ________ t.905p5                                    ____                      |
+| t.905p6                                                                                 |
+| t.905p7                                                                                 |
+|\---------------------------------------------------------------------------------------/|
+| ___   t.sayatelah                                                                       |
+| spasi                                                                                   |
+\-----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk                PROTECT UNSEEN          INPUTRI 1
+tlddata                 PROTECT UNSEEN          INPUTRI 2
+tlmplg                  PROTECT                 INPUTRI 3
+lnama1                  PROTECT SCROLL          INPUTRI 4
+tlmtgl                  PROTECT {DD-MM-YY}      INPUTRI 5
+lthbltlm                PROTECT                 INPUTRI 5
+tldkat                  ALLCAPS                 INPUTRI 6
+
+DEFAULTS(tmptranst)
+tldkat			INIT_UPDATE		Y 
+
+CALCS()
+csurat			((g_usrkode==tlmplg && g_tgltrn >= tlmtgl) || (g_grpnam == "KBA" || g_grpnam == "KBANMC" || g_grpnam == "IT" || g_grpnam == "RI")) && tlmpst == "ATURAN" && tlmperdis == 1
+			&& tmpkode == "SURAT"
+
+cberhasil		r_long8 == 1
+
+MAP(mtldupdok24)
+cY			tldkat			DO_CALC
+cOK                     tldjasbrg               DO_CALC
+DEBUG	ldum		ldum			REPLACE
+
+SPCALCS(supdtlmok24)
+DO_LIB 		       ap_ceksj(tlmplg);
+DO_LIB_IF cberhasil    ap_dbclc(DNAME dtldup24,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mtldupdok24);
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN		DO_SPCALCS supdtlmok24
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND  csurat
+SFL_TARGET
+        tldbukurtidx tlmnobuk
+

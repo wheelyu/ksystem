@@ -1,0 +1,69 @@
+LOCAL 
+PGM_FIELDS
+lurut_infolain	INT2		2
+lok             STRING          5
+
+MAP(mjoinsviinfolain)
+svinourt		lurut_infolain		REPLACE
+
+DBCALCS(djoinsviinfolain)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   ldt703 btmnobuk gv_infolain 
+	DBC_MAP		mjoinsviinfolain
+  
+IMAGE(tmptranst) 
+/------------------------------------------------------------------------------------------------\
+|t.t                                                                                             |
+|i.Informasilain        _______________________________________________________________________  |
+|i.Informasilain        _______________________________________________________________________  |
+|i.Informasilain        _______________________________________________________________________  |
+|                                                ____                                            |
+|                                                                                                |
+|t.t                                                                                             |
+\------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+sviket			TEXTAREA                        INPUTRI 11
+sviket2			TEXTAREA                        INPUTRI 12
+sviket3			TEXTAREA                        INPUTRI 13
+lok                     ALLCAPS                         INPUTRI 14
+
+DEFAULT(tmptranst)
+lok		INIT		OK
+
+CALCS()
+cinfolain0		g_curcmd == 1 && djoinsviinfolain == 0
+cinfolain1		g_curcmd == 1 && djoinsviinfolain == 1
+curutinfolain		lurut_infolain + 1
+curutinfolain1		1
+
+MAP(murut_infolain)
+curutinfolain1		svinourt		DO_CALC_IF cinfolain0
+curutinfolain		svinourt		DO_CALC_IF cinfolain1
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW murut_infolain
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   ldt703 btmnobuk gv_infolain
+
+SFL_MAP
+ldt703			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_infolain		svitype			REPLACE
+
+CALCS()
+cupd_infolain		btmsts == "703" 
+cadd_infolain		btmsts == "703"/*  && djoinsviinfolain == 0 */
+
+PERMIT(tmptrans)
+  	PMT_ADD_COND 	cadd_infolain
+  	PMT_UPDALL_COND cupd_infolain
+  	PMT_DEL_COND  	cupd_infolain

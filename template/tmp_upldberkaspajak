@@ -1,0 +1,76 @@
+LOCAL
+PGM_FIELDS
+
+luplok3		STRING	11
+lenter3		STRING	21
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||i.Upload	  : ______	    ||
+||i.Tgl           : _________       ||
+||t.JmlKlaim	  : ______	    ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT          INPUTRI 1
+aktdk		PROTECT		 INPUTRI 2
+akttgl          PROTECT 	 INPUTRI 3
+aktjml		NUMERIC		 INPUTRI 4
+lenter3		NOCHANGE	 INPUTRI 5
+luplok3		TOMBOL		 INPUTRI 8
+
+
+DEFAULTS(tmptranst)
+lPAJAK		INIT		PAJAK
+lenter3		INIT		ENTER
+luplok3		INIT		UPLOAD_OK
+
+CALCS()
+cdjoinaktclaim1a	(tkmsts == "OPEN" ||tkmsts == "INPG" || tkmsts == "CLSD" || tkmsts == "RINP") && tkmkode == "CLAIM_AI"
+cY3			"Y"
+cfotobaru3		akttgl == g_tgltrn
+
+MAP(mupdaktpajak)
+g_tgltrn	akttgl	REPLACE
+cY3		aktdk	DO_CALC_IF cfotobaru3
+
+DBCALCS(dupdfoto3)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktpajak
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdjoinaktclaim1a
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tkmnobuk akttype
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD_DBCALCS dupdfoto3
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+aktkodtypidx       tkmnobuk tkmdata     lPAJAK
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c1
+PMT_DEL_COND c0

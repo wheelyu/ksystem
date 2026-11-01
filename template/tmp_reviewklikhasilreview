@@ -1,0 +1,61 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||i.Tgl        ____________           ||
+||t.NipAtasan  _______________________||
+||t.NamaAtasan _______________________||
+||t.AccTacc    ____________           ||
+||i.Ket        _______________________||
+||             ____________           ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldtglfak	PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI		1
+tldplg		PROTECT				INPUTRI		2
+lnama_atasan	PROTECT SCROLL			INPUTRI		3
+tldtydis	NOCHANGE			INPUTRI		4
+tldket		TEXTAREA ALLCAPS		INPUTRI		5
+lenter		NOCHANGE			INPUTRI		6
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT		{g_tgltrn}
+tldplg		INIT		{g_usrkode}
+tldtydis	DFALT_SCAN_BLANKS	ACC
+					TACC
+
+lenter		INIT_LABEL	ENTER
+
+CALCS()
+creview_tacc	tldtydis == "TACC"
+creview_acc	tldtydis == "ACC"
+
+EDITS(tmptranst)
+t.MandatoryAccTacc	tldtydis	MANDATORY
+e.MandatoryKet		tldket		MANDATORY_IF creview_tacc
+
+e.ValidatePsi		tldplg		VALIDATE psikodidx mpsi_ats 0
+
+MAP(mpsi_ats)
+psikode		tldplg		REPLACE
+psinama		lnama_atasan	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF creview_acc
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TARGET
+	tldllbrgurt	tkmkode lHASILREV tkmcab tkmnobuk
+SFL_MAP
+tkmdata		tlddata		REPLACE
+tkmnobuk	tldnobuk	REPLACE
+tkmkode		tldnoll		REPLACE
+tkmcab		tldlok		REPLACE
+lHASILREV	tldbrg		REPLACE
+gv_OPEN		tldsts		REPLACE
+tkmlok1		tldukrwrn	REPLACE

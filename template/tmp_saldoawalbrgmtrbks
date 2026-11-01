@@ -1,0 +1,160 @@
+LOCAL
+PGM_FIELDS
+lSPMB 		STRING		21
+ltlmjml2	DFLOAT		8
+ltlmtotal	DFLOAT		8
+ltlmjml		DFLOAT		8
+lESTIMASI	STRING		11
+lCLSD		STRING		5
+lumrstk		DFLOAT		8
+lpiksispok	DFLOAT		8
+lpikstspiubli	STRING		21
+lpiktglbyrakh	DATE		4
+lDTPIU		STRING		11
+lhrglelang	DFLOAT		8
+lESTAKTIVA	STRING		11
+ltlmbisnis  	STRING		11
+lPENARIKAN	STRING		11
+lUPLSRTSTR	STRING		11
+lSRTSTR		STRING		11
+
+MAP(mjointlm739)
+tlmjml2		ltlmjml2	   REPLACE  /* Harga Pasaran  */
+tlmtotal	   ltlmtotal	REPLACE  /* Harga Persediaan */
+tlmjml		ltlmjml		REPLACE  /* Harga Estimasi */
+tlmbisnis   ltlmbisnis  REPLACE  /* Usia Saat Tarik */
+
+
+DBCALCS(djointlm739)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmdatstsasl lESTIMASI lCLSD brdplg  
+	DBC_MAP		mjointlm739
+
+DBCALCS(djointlm828)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmdatstsasl lESTAKTIVA lCLSD brdplg  
+	DBC_MAP		mjointlm739
+
+
+MAP(mjoinpik)
+piksispok	lpiksispok		REPLACE
+pikstspiubli	lpikstspiubli		REPLACE
+piktglbyrakh	lpiktglbyrakh		REPLACE
+
+DBCALCS(djoinpik)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	pikdatbukidx lDTPIU brdplg
+	DBC_MAP		mjoinpik
+
+CALCS()
+cjoinpik_1	djoinpik == 1
+cjointlm739_1	djointlm739 == 1 || djointlm828 == 1
+chrglelang	(ltlmjml2 - ltlmjml) + 250000
+cminlelang	2550000
+cminhrglelang	lhrglelang <= 2550000
+cumrstk		g_tgltrn - brdtgl
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.Lok     : __________________   || _ _
+||i.NoDo    : __________________   ||
+||i.TglBl   : __________________   ||
+||i.Brg     : __________________   ||
+||i.Mesin   : __________________   ||
+||i.Rangka  : __________________   ||
+||i.Thn     : __________________   ||
+||i.Ukr     : __________________   ||
+||i.Sat     : __________________   ||
+||t.KdNoPol : __________________   ||
+||t.Sispok  : __________________   ||
+||t.HrgPasar: __________________   ||
+||t.Hrgllng : __________________   ||
+||t.HrgEstim: __________________   ||
+||t.HrgTksr : __________________   ||
+||t.JtpJual : __________________   ||
+||t.umrstk  : _____                ||
+||t.Us      : _____ ____________   ||
+||i.Oto     : __________________   ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   brdlok       	PROTECT SCROLL   INPUTRI                1
+   brdplg		PROTECT	SCROLL	 INPUTRI		1
+   brdcab		PROTECT	SCROLL	 INPUTRI		1
+   brdnobuk     	PROTECT SCROLL   INPUTRI                1
+   brdtgl       	PROTECT NOLIMIT {DD-MM-YY}  INPUTRI     2 /* Tanggal Faktur */
+   brdbrg       	NOCHANGE SCROLL   INPUTRI               9
+   brdnomesin   	NOCHANGE SCROLL   INPUTRI               10
+   brdnorangka  	NOCHANGE SCROLL   INPUTRI               11
+   brdthbrg     	NOCHANGE SCROLL   INPUTRI               12
+   brdukrwrn    	NOCHANGE SCROLL   INPUTRI               13
+   brdsat       	NOCHANGE SCROLL   INPUTRI               14 /* Satuan */
+   brdnopol     	NOCHANGE SCROLL   INPUTRI               15  /* Total Sisa */
+   lpiksispok		PROTECT SCROLL	  INPUTRI		15
+   ltlmjml2		PROTECT	SCROLL	  INPUTRI		15
+   lhrglelang		PROTECT	SCROLL	  INPUTRI		15
+   ltlmjml		PROTECT	SCROLL    INPUTRI		15
+   ltlmtotal		PROTECT	SCROLL    INPUTRI		15
+   brdtglexp  	 	PROTECT NOLIMIT {DD-MM-YY}  INPUTRI     15 
+   lumrstk		PROTECT	SCROLL	  INPUTRI		15
+   ltlmbisnis 	PROTECT	SCROLL	  INPUTRI		15
+   lpiktglbyrakh 	PROTECT	{DD-MM-YYYY} INPUTRI		15
+   brdoto       	NOCHANGE SCROLL   INPUTRI               15  /* Total Sisa */
+
+DEFAULTS(tmptranst)
+lSPMB 		INIT	SPMB 
+lESTIMASI	INIT	ESTIMASI
+lESTAKTIVA	INIT	ESTAKTIVA
+lCLSD		INIT	CLSD
+lDTPIU		INIT	DTPIU
+lpiksispok	INIT	BLANKS
+lpikstspiubli	INIT	BLANKS
+ltlmjml2	INIT	BLANKS
+ltlmtotal	INIT	BLANKS
+ltlmjml		INIT	BLANKS
+lumrstk		INIT	BLANKS
+lhrglelang	INIT	BLANKS
+lPENARIKAN	INIT	PENARIKAN
+lUPLSRTSTR	INIT	UPLSRTSTR
+lSRTSTR		INIT	SRTSTR
+
+EDITS(tmptranst)
+e.Validate   brdcab VALIDATE cabkodidx mcabbrd 0 
+
+MAP(mcabbrd)
+lpiksispok   	lpiksispok   	REPLACE_IF cjoinpik_1
+lpikstspiubli	lpikstspiubli	REPLACE_IF cjoinpik_1
+lpiktglbyrakh	lpiktglbyrakh	REPLACE_IF cjoinpik_1
+
+ltlmjml2	ltlmjml2	REPLACE_IF cjointlm739_1
+ltlmtotal	ltlmtotal	REPLACE_IF cjointlm739_1
+ltlmjml		ltlmjml		REPLACE_IF cjointlm739_1
+chrglelang	lhrglelang	DO_CALC_IF cjointlm739_1
+cminlelang	lhrglelang	DO_CALC_IF cminhrglelang
+cumrstk		lumrstk		DO_CALC
+
+CALCS()
+cmtrbekas	brdkat == "SPMB" && brdsisprc != 0
+
+SUBFILE(tmptrans)
+SFL_LINES(2)      
+SFL_SELECT cmtrbekas
+SFL_TITLE(tmptranst)
+SFL_TARGET
+brdstscabbrg   gv_INPG cabkode  
+SFL_MAP
+
+lpiksispok   	lpiksispok   	REPLACE
+lpikstspiubli	lpikstspiubli	REPLACE
+lpiktglbyrakh	lpiktglbyrakh	REPLACE
+ltlmjml2	ltlmjml2	REPLACE
+ltlmtotal	ltlmtotal	REPLACE
+ltlmjml		ltlmjml		REPLACE
+
+chrglelang	lhrglelang	DO_CALC
+cminlelang	lhrglelang	DO_CALC
+cumrstk		lumrstk		DO_CALC
+

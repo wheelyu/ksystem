@@ -1,0 +1,174 @@
+LOCAL
+PGM_FIELDS
+ltkdketkor 	STRING 251
+ltkdtypekor	STRING  21
+ltkdnollkor	STRING  21
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.Koreksi                         ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||___				     ||
+||t.Tanggal    : ___________________ ||
+||t.JdlMeet    : ___________________ ||
+||t.KetKor     : ___________________ ||
+||               	  __________ ||
+||spasi				     ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.UplOk      : ___________________ ||
+|\-----------------------------------/|
+|/----------DOCUPLOAD----------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnourt	PROTECT				INPUTRI 1
+tkdtgl2		PROTECT {DD-MM-YYYY}		INPUTRI 2
+tkdjenis	PROTECT				INPUTRI 3
+tkdket		TEXTAREA ALLCAPS		INPUTRI 4
+lenter		NOCHANGE   			INPUTRI 6
+tkdtype		PROTECT				INPUTRI	5	
+
+DEFAULTS(tmptranst)
+tkdtgl		INIT	{g_tgltrn}
+tkdsts		INIT	{gv_INPG}
+
+DBCALCS(djoinabkkordev)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN lnipdev
+	DBC_SELECT	ctipekoreksi
+
+DBCALCS(djoinabkkordevhead)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN lnipdevhead
+	DBC_SELECT	ctipekoreksi
+
+DBCALCS(djoinabkkordcoo)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN lnipdcoo
+	DBC_SELECT	ctipekoreksi
+
+MAP(mjoinurutkorbhnmeet)
+tkdnourt		ltkdnourt	REPLACE
+DBCALCS(djoinurutkorbhnmeet)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tkddatbukll lKOR935 tlmnobuk
+	DBC_MAP		mjoinurutkorbhnmeet
+
+CALCS()
+/* cjoinnipdev		djoinnipdev == 1*/
+cHplus1			g_tgltrn + 1
+cfartglmeet		tlmtgl2 - g_tgltrn > 2
+cHmin1			tlmtgl2 - 1
+cdkttglmeet		tlmtgl2 - g_tgltrn <= 2
+cabkkordev0		djoinabkkordev == 0
+cabkkordevhead0		djoinabkkordevhead == 0
+cabkkordcoo0		djoinabkkordcoo == 0
+cnamafoto		"KOR935" + FLD_TO_STRING(tkdnourt)
+cjoinurut0		djoinurutkorbhnmeet == 0
+cjoinurut1		djoinurutkorbhnmeet == 1
+
+
+MAP(murutkoreksi)
+c1			tkdnourt	DO_CALC_IF cjoinurut0	
+cnourt			tkdnourt	DO_CALC_IF cjoinurut1
+tlmtgl2			tkdtgl2		REPLACE
+tlmdari			tkdjenis	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=tkdket	DO_MAP SHOW murutkoreksi
+
+MAP(mupdtkd4)
+c1			tkdjml2		DO_CALC
+lOK			tkdtype		REPLACE
+DBCALCS(dupdtkd4)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx tkdprm
+	DBC_MAP		mupdtkd4
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_SORT_BY_FIELD tkdnourt
+SFL_SORT_UPDOWN DOWN
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD tkdoto tkdnoll
+SFL_DOCUPLFLD_DBCALCS dupdtkd4
+SFL_DOCUPL_DELCOND c0
+SFL_TARGET	tkddatbukll lKOR935 tlmnobuk
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+lKOR935		tkddata		REPLACE
+cnamafoto	tkdnoll		DO_CALC
+
+MAP(mmap935koreksi)
+tkdket		ltkdketkor	REPLACE
+tkdtype		ltkdtypekor	REPLACE
+tkdnoll		ltkdnollkor	REPLACE
+DEBUG ldum	ldum		REPLACE
+
+MAP(maddabkkordev)
+lKUNCIABSEN	abkdata		REPLACE
+tlmnobuk	abknobuk	REPLACE
+l935		abkscr		REPLACE
+lnipsendev	abkkym		REPLACE
+lketkormeet	abkkym2		REPLACE
+cHplus1		abktgl		DO_CALC_IF cfartglmeet 		/*jika hari ini > H-2 dari tgl meeting*/
+gt_RINP		abksts		REPLACE_IF cfartglmeet 		/*jika hari ini > H-2 dari tgl meeting*/
+cHmin1		abktgl		DO_CALC_IF cdkttglmeet		/*jika hari ini H-1 or H-2 dari tgl meeting*/
+gt_RINP		abksts		REPLACE_IF cdkttglmeet		/*jika hari ini H-1 or H-2 dari tgl meeting*/
+lKOR935		abktype		REPLACE
+DEBUG ldum	ldum		REPLACE
+
+MAP(maddabkkordevhead)
+lKUNCIABSEN	abkdata		REPLACE
+tlmnobuk	abknobuk	REPLACE
+l935		abkscr		REPLACE
+lnippicdev	abkkym		REPLACE
+lketkormeet	abkkym2		REPLACE
+cHplus1		abktgl		DO_CALC_IF cfartglmeet 		/*jika hari ini > H-2 dari tgl meeting*/
+gt_RINP		abksts		REPLACE_IF cfartglmeet 		/*jika hari ini > H-2 dari tgl meeting*/
+cHmin1		abktgl		DO_CALC_IF cdkttglmeet		/*jika hari ini H-1 or H-2 dari tgl meeting*/
+gt_RINP		abksts		REPLACE_IF cdkttglmeet		/*jika hari ini H-1 or H-2 dari tgl meeting*/
+lKOR935		abktype		REPLACE
+DEBUG ldum	ldum		REPLACE
+
+MAP(maddabkkordcoo)
+lKUNCIABSEN	abkdata		REPLACE
+tlmnobuk	abknobuk	REPLACE
+l935		abkscr		REPLACE
+lnippiccoe	abkkym		REPLACE
+lketkormeet	abkkym2		REPLACE
+cHplus1		abktgl		DO_CALC_IF cfartglmeet 		/*jika hari ini > H-2 dari tgl meeting*/
+lINPH		abksts		REPLACE_IF cfartglmeet 		/*jika hari ini > H-2 dari tgl meeting*/
+cHmin1		abktgl		DO_CALC_IF cdkttglmeet		/*jika hari ini H-1 or H-2 dari tgl meeting*/
+lINPH		abksts		REPLACE_IF cdkttglmeet		/*jika hari ini H-1 or H-2 dari tgl meeting*/
+lKOR935		abktype		REPLACE
+DEBUG ldum	ldum		REPLACE
+
+MAP(mupduplulang)
+cBLANKS		tkdtype2	DO_CALC
+cBLANKS		tkdjml3		DO_CALC
+DEBUG ldum	ldum		REPLACE
+
+SPCALCS(spkoreksi935)
+DO_LIB				ap_dbclc(DNAME dmap935koreksi,DCOMMAND MAPMAP,DMAP mmap935koreksi);
+DO_LIB_IF cabkkordev0		ap_dbclc(DNAME daddabkkordev,DCOMMAND ADD,DFILE abk,DMAP maddabkkordev);
+DO_LIB_IF cabkkordevhead0	ap_dbclc(DNAME daddabkkordevhead,DCOMMAND ADD,DFILE abk,DMAP maddabkkordevhead);
+DO_LIB_IF cabkkordcoo0		ap_dbclc(DNAME daddabkkordcoo,DCOMMAND ADD,DFILE abk,DMAP maddabkkordcoo);
+DO_LIB				ap_dbclc(DNAME dupduplulang,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll lBHNMEET tlmnobuk lUPLBHNMEET,DMAP mupduplulang);
+
+
+POSTING(tmptrans)
+PST_ADDCMD	spkoreksi935

@@ -1,0 +1,128 @@
+IMAGE(tmptranst)
+/------------------------------------\
+ /----------------------------------\
+  i.HrgMtr      : __________________
+  i.TJadi       : __________________
+  i.PengLama    :              _____
+  t.UangMuka    : __________________
+  i.PengAngs    : __________________
+  i.BiaMkl      : __________________
+  i.TotPok      : __________________
+  i.WarnaPlat   : _________________
+  t.YTAss       : ___
+  i.Kodeass     : ___________
+  i.JnsAss      : ___________
+  t.KatGarap    : ___________
+ \----------------------------------/
+\------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+btmhrg                  PROTECT                                 INPUTRI 1               /* Harga OTR Motor */
+btmtdjadi               PROTECT                                 INPUTRI 2               /* Tanda Jadi   */
+btmlmang                NUMERIC                                 INPUTRI 3               /* Lama Angsuran */
+nhmumsis_2              NUMERIC                                 INPUTRI 4               /* Uang Muka    */
+btmtotal                NUMERIC                                 INPUTRI 5               /* Besar Angsuran */
+nhmbiamklr_2            NUMERIC                                 INPUTRI 6               /* Biaya Makelar */
+nhmtotpok_2             PROTECT                                 INPUTRI 7               /* Total Pokok */
+btmstr2                 NOCHANGE                                INPUTRI 8               /* Plat Nomor */
+btmnonnm                NOCHANGE                                INPUTRI 9               /* Y/T Asuransi */
+btmass                  PROTECT                                 INPUTRI 10              /* Perusahaan Asuransi  */
+nhmtypass_2             PROTECT                                 INPUTRI 11              /* Jenis Asuransi       */
+lkatgarap               PROTECT                                 INPUTRI 12              /* Kategori Garap */
+
+DEFAULTS(tmptranst)
+btmnonnm                DFALT_SCAN_BLANKS       Y
+                                                T
+
+IF ctun btmstr2		DFALT_SCAN_BLANKS	HITAM
+						KOSONGAN
+IF ckre btmstr2		DFALT_SCAN_BLANKS       HITAM
+
+CALCS()
+chrgmtr			btmhrg != 0
+
+EDITS(tmptranst)
+t.MandHrgMtr		btmhrg			MANDATORY
+t.MandTenor             btmlmang		MANDATORY_IF cK
+t.MandDpRiil            nhmumsis_2		MANDATORY_IF cK
+t.MandAngs              btmtotal		MANDATORY_IF cK
+t.MandBiaMklr           nhmbiamklr_2		MANDATORY_IF cwajibmakelarT
+t.MandTipePlat          btmstr2			MANDATORY
+t.MandYTAss             btmnonnm		MANDATORY
+
+MAP(mfillharga)
+lbrchrgotr      btmhrg          REPLACE_IF cnokosongan01
+lbrchrgoff      btmhrg          REPLACE_IF ckosongan01
+lbrchrgotr      nhmhrgotr_2     REPLACE_IF cnokosongan01
+lbrchrgoff      nhmhrgotr_2     REPLACE_IF ckosongan01
+lbrchrgoff      nhmhrgoff_2     REPLACE
+ctotalpokok     nhmtotpok_2     DO_CALC
+btmhrg          nhmhrgpasar_2   REPLACE
+btmtgl          nhmtgl_2        REPLACE
+btmhrg          nhmcairpinj_2   REPLACE
+
+MAP(mtenor)
+btmlmang        nhmtenor_2	REPLACE
+btmtotal        nhmbsrang_2	REPLACE
+
+MAP(misinhm)
+nhmumsis_2           nhmumasal_2     REPLACE
+
+MAP(mfillass)
+cBLANKS         btmass          DO_CALC_IF cassT
+cBLANKS         nhmtypass_2     DO_CALC_IF cassT
+lkodeass        btmass          REPLACE_IF cassY
+cTLO            nhmtypass_2     DO_CALC_IF cassY
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=btmtdjadi     DO_SKIP_IF cRenc
+BEFORE_INPUT            cur_field=btmlmang      DO_SKIP_IF cRenc
+BEFORE_INPUT            cur_field=nhmumsis_2         DO_SKIP_IF cRenc
+BEFORE_INPUT            cur_field=btmtotal      DO_SKIP_IF cRenc
+BEFORE_INPUT            cur_field=btmstr2       DO_SKIP_IF cRenc
+
+BEFORE_INPUT            cur_field=btmlmang      DO_SKIP_IF cT
+BEFORE_INPUT            cur_field=nhmumsis_2         DO_SKIP_IF cT
+BEFORE_INPUT            cur_field=btmtotal      DO_SKIP_IF cT
+BEFORE_INPUT            cur_field=btmnonnm      DO_SKIP_IF cK
+BEFORE_INPUT            cur_field=nhmbiamklr_2  DO_SKIP_IF ctdkwajibmakelarT
+BEFORE_INPUT            cur_field=nhmbiamklr_2  DO_SKIP_IF ctdkwajibK
+BEFORE_INPUT            cur_field=btmnonnm      DO_SKIP_IF cSoaExport
+
+BEFORE_INPUT            cur_field=btmtdjadi     DO_MAP SHOW mpsmpenj
+
+BEFORE_INPUT		cur_field=btmstr2	DO_MAP SHOW mfillharga
+AFTER_INPUT             cur_field=btmlmang      DO_MAP SHOW mtenor
+AFTER_INPUT             cur_field=btmstr2	DO_MAP SHOW mfillass
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mtenor
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW IF cTdkRenc misinhm
+
+AFTER_INPUT             cur_field=btmstr2       DO_MAP SHOW
+                        IF chrgmtr mdumstr
+                        ELSE HKCURSOR NOSTAY
+                        HKMSG t.HrgMtrNoNull
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+btmbukidx	btmnobuk
+
+MAP(mupdnhmbtm)
+lbrchrgotr      nhmhrgotr	REPLACE_IF cnokosongan01
+lbrchrgoff      nhmhrgotr	REPLACE_IF ckosongan01
+lbrchrgoff      nhmhrgoff	REPLACE
+ctotalpokok     nhmtotpok	DO_CALC
+btmlmang        nhmtenor	REPLACE
+btmtotal        nhmbsrang	REPLACE
+DEBUG nhmumsis_2	nhmumasal	REPLACE
+cBLANKS         nhmtypass	DO_CALC_IF cassT
+cTLO            nhmtypass	DO_CALC_IF cassY
+
+SPCALCS(sptrans2)
+	DO_LIB	ap_dbclc(DNAME mupdnhm,DCOMMAND UPDATE, DTARGET nhmdatbukidx gv_bukutamu btmnobuk, DMAP mupdnhmbtm);
+
+POSTING(tmptrans)
+PST_UPDCMD	sptrans2

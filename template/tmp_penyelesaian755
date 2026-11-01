@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/-----------------------------------------------\
+| /-------------------------------------------\ |
+| |t.noFaktur    : ____________________       | |
+| |t.TipeSelesai : ____________________       | |
+| |t.nobuk738    : ____________________       | |
+| |t.Keterangan  : ____________________       | |
+| |t.VerifikasiBM                             | |
+| |t.HasilVerif  : ____________________       | |
+| |t.ketVerifBm  : ____________________       | |
+| |_________                                  | |
+| \-------------------------------------------/ |
+\-----------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svikode         PROTECT                 INPUTRI 1
+svitblkode      NOCHANGE                INPUTRI 1
+svidtmkode      ALLCAPS                 INPUTRI 2
+sviket          TEXTAREA ALLCAPS        INPUTRI 3
+svistr1         NOCHANGE                INPUTRI 4
+sviket3         TEXTAREA ALLCAPS        INPUTRI 5
+lenter          NOCHANGE                INPUTRI 6
+
+DEFAULTS(tmptranst)
+svitblkode		DFALT_SCAN_BLANKS       UNITBISADIRETURN  "UNIT BISA DI RETURN"
+                                                UNITAKANPELUNASAN "UNIT AKAN PELUNASAN"
+                                                BATALEKSEKUSI     "BATAL EKSEKULI"
+
+svistr1		        DFALT_SCAN       	SESUAI            "SESUAI"
+                                                TIDAKSESUAI       "TIDAK SESUAI"
+
+CALCS()
+cpenarikan   (svitblkode == "UNITBISADIRETURN") 
+cpelunasan   (svitblkode == "UNITAKANPELUNASAN")
+ctrkplns      (svitblkode == "UNITBISADIRETURN") || (svitblkode == "UNITAKANPELUNASAN")
+cbtleksksi   svitblkode  == "BATALEKSEKUSI"
+cmpkolhead   g_usrkode  == "1801289"
+cada         spkkode2 == "Y"
+charusclsd   (svitblkode == "UNITBISADIRETURN" && #tlmsts == "CLSD") || (svitblkode == "UNITAKANPELUNASAN" && bkmsts == "CLSD") || svitblkode  == "BATALEKSEKUSI"
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF ctrkplns
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF cmpkolhead
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cmpkolhead
+BEFORE_INPUT    cur_field=svitblkode    DO_SKIP_IF cverifbm
+BEFORE_INPUT    cur_field=svidtmkode    DO_SKIP_IF cverifbm
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cverifbm
+AFTER_INPUT     cur_field=svidtmkode    DO_MAP SHOW
+                IF charusclsd mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StsBlmClsd
+
+AFTER_INPUT     cur_keybd=EN  DO_MAP SHOW
+                IF charusclsd mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StsBlmClsd
+
+AFTER_INPUT     cur_keybd=EN  DO_MAP SHOW mupdsvi755
+
+
+MAP(mtlm738)
+#tlmnobuk       svidtmkode        REPLACE
+
+MAP(mbkm204)
+bkmnobuk        svidtmkode        REPLACE
+
+EDITS(tmptranst)
+e.Mandatory     svidtmkode  MANDATORY_IF ctrkplns
+e.Validate738   svidtmkode  VALIDATE_BUF3_IF cpenarikan tlmbukidx mtlm738  0
+e.Validate204   svidtmkode  VALIDATE_IF cpelunasan bkmbukidx mbkm204  0
+e.Mandatory     sviket      MANDATORY_IF cbtleksksi
+e.Mandatory     svistr1     MANDATORY_IF cverifbm
+e.Mandatory     sviket3     MANDATORY_IF cverifbm
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND   cada
+SFL_SORT_BY_FIELD svinourt
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatkodtyp   lPNYLSAIAN spknoasal

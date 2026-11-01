@@ -1,0 +1,117 @@
+MAP(mjoinbkmbyr)
+bkmscr		lscrmetod	REPLACE
+bkmkode2	lnipterima	REPLACE
+
+DBCALCS(djoinbkmbyr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	bkmbukidx anhnobyr
+	DBC_MAP		mjoinbkmbyr
+
+DBCALCS(djoinpsibyr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx lnipterima
+
+IMAGE(tmptranst)
+/----t-----------t--------t--------t--------t----t----t----------t----------t---------t----------t-----t-----------t--------\
+|i.Ty| i.BukByr  |t.TglInp|i.TglByr|i.TglJtp|i.Ke|t.Sl| i.TotByr |i.Angsuran|t.ByrAdm |t.ByrDenda|t.Pot|t.MetodByr |t.JamPst|
+\----.-----------.--------.--------.--------.----.----.----------.----------.---------.----------.-----.-----------.--------/
+IMAGE(tmptrans)
+|__|_______________|________|________|________|__|__|__________|__________|_________|__________|________|___________|_____|_
+
+FIELDS(tmptrans)
+anhtype                         ALLCAPS                 INPUTRI 1
+anhnobyr                        ALLCAPS                 INPUTRI 1
+anhtgl                          NONE {DD-MM-YYYY}       INPUTRI 2
+anhtglbyr                       NONE {DD-MM-YYYY}       INPUTRI 2
+anhcrttgl                       NONE {DD-MM-YYYY}       INPUTRI 3
+anhke                           NUMERIC                 INPUTRI 4
+lslshr                          NUMERIC                 INPUTRI 4
+ltotbyr                         NUMERIC                 INPUTRI 4
+langbyr                         NUMERIC                 INPUTRI 5
+anhbyradm                       NUMERIC                 INPUTRI 7
+anhbyrden               	NUMERIC                 INPUTRI 8
+anhsispok               	NUMERIC                 INPUTRI 8
+lmetodbyr			ALLCAPS			INPUTRI	9
+anhcrtjam			PROTECT			INPUTRI	10
+anhnobuk                	NOCHANGE SCROLL INPUTRI    10
+
+EDITS(tmptrans)
+e.Validate anhnobuk  VALIDATE pikdatbukidx   mpik {Pgv_dtpiu}
+
+CALCS()
+cjoinbkmbyr	djoinbkmbyr==1
+ctotbyr   	anhbyrpk + anhbyrbg + anhbyradm + anhbyrden - anhsispok
+cangbyr   	anhbyrpk + anhbyrbg
+cslshr    	anhtglbyr - anhcrttgl
+cnodd  	  	anhtype != "DD"
+cisi0     	0
+cbankmetod0	DO_LIB ap_amstr(anhnobyr,lhuruf1,lhuruf2,&lnipterimaoke);
+cbankmetod1	DO_LIB ap_amstr(anhnobyr,lhuruf1,lhuruf3,&lnipterimaoke2);
+cbankmetod2	DO_LIB ap_amstr(anhnobyr,lhuruf1,lhuruf4,&lnipterimaoke3);
+cmetod203_1	lscrmetod=="203" && djoinpsibyr == 1
+cmetod203_2	lscrmetod=="203" && djoinpsibyr == 0 && lnipterima != BLANKS
+cmetod203_3	lscrmetod=="203" && djoinpsibyr == 0 && lnipterima == BLANKS
+cmetod206_1	lscrmetod=="206" && lnipterimaoke == "PA" 
+cmetod206_2	lscrmetod=="206" && lnipterimaoke != "PA" 
+cmetod765	lscrmetod=="765"
+cmetodlama	djoinbkmbyr==0 && lnipterimaoke3 == "ALFA"
+cmetodlama2	djoinbkmbyr==0 && lnipterimaoke3 == "INDO"
+cmetodlama3	djoinbkmbyr==0 && lnipterimaoke == "TY"
+cmetodlama4	djoinbkmbyr==0 && lnipterimaoke == "BX"
+cmetodlama5	djoinbkmbyr==0 && lnipterimaoke == "RS"
+cmetodlama6	djoinbkmbyr==0 && lnipterimaoke2 == "POS"
+cbyr203_1	"KASIR"
+cbyr203_3	"POTONG GAJI"
+cbyr206		"TRANSFER"
+cbyr765		"KOLEKTOR"
+cbyrlama	"ALFAMART/ALFAMIDI"
+cbyrlama2	"INDOMARET"
+cbyrlama3	"RESTRUKTUR KASIR"
+cbyrlama4	"KANTORPOS"
+
+MAP(mpik)
+cblanks		lscrmetod	DO_CALC
+cblanks		lmetodbyr	DO_CALC
+cblanks		lnipterima	DO_CALC
+cblanks		lnipterimaoke	DO_CALC
+cblanks		lnipterimaoke2	DO_CALC
+cblanks		lnipterimaoke3	DO_CALC
+anhnobyr	anhnobyr	REPLACE
+ctotbyr		ltotbyr		DO_CALC
+cangbyr		langbyr		DO_CALC
+cisi0		lslshr		DO_CALC
+cslshr		lslshr		DO_CALC_IF cnodd
+cbankmetod0	lnipterimaoke	DO_CALC
+cbankmetod1	lnipterimaoke2	DO_CALC
+cbankmetod2	lnipterimaoke3	DO_CALC
+lscrmetod	lscrmetod	REPLACE_IF cjoinbkmbyr
+lnipterima	lnipterima	REPLACE_IF cjoinbkmbyr
+cbyr203_1	lmetodbyr	DO_CALC_IF cmetod203_1
+lnipterima	lmetodbyr	REPLACE_IF cmetod203_2
+cbyr203_3	lmetodbyr	DO_CALC_IF cmetod203_3
+cbyr206		lmetodbyr	DO_CALC_IF cmetod206_1
+lnipterimaoke2	lmetodbyr	REPLACE_IF cmetod206_2
+cbyr765		lmetodbyr	DO_CALC_IF cmetod765
+cbyrlama	lmetodbyr	DO_CALC_IF cmetodlama
+cbyrlama2	lmetodbyr	DO_CALC_IF cmetodlama2
+cbyr765		lmetodbyr	DO_CALC_IF cmetodlama3
+cbyr203_1	lmetodbyr	DO_CALC_IF cmetodlama4
+cbyrlama3	lmetodbyr	DO_CALC_IF cmetodlama5
+cbyrlama4	lmetodbyr	DO_CALC_IF cmetodlama6
+
+CALCS()
+canhok          anhsts == "CLSD" && (anhbyrum !=0 || anhbyrpk !=0 || anhbyrbg != 0 || anhbyrden != 0 || anhbyradm != 0)
+cpikE           piktybg != "M" && g_mobile == 0
+
+SUBFILE(tmptrans)
+SFL_SELECT canhok
+SFL_COND  cpikE
+SFL_LINES(36)
+
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD  anhke
+SFL_SORT_UPDOWN    DOWN
+SFL_TARGET
+anhbukotourt    piknobuk
+
+

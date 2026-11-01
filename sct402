@@ -1,0 +1,1487 @@
+SCREEN 402 QUERY_TYPE s.KorMin
+SCR_FILE mts
+SCR_JRNFLD mtsnobuk mtstgl
+SCR_LOGFLD mtsnobuk 
+SCR_UPL_DIRFLD mtstgl
+SCR_NXT_POSTING 4302
+SCR_NXT_MAP mnext
+SCR_NXT_COND cmtsOPEN
+SCR_NXT_MSG  IF cmtsOPEN6 t.mintaaproveaudit 
+             IF cmtsOPEN1a Status Approval Kosong
+	     IF cmtsOPEN1 Status Sudah CLSD	     
+	     IF cmtsOPEN2 Tgl Harus Hari Ini, Tekan ubah dulu enter
+	     IF cmtsOPEN3 Total HL tidak sesuai dengan Total Netto
+	     IF cmtsOPEN4 t.HrsInputNipdiDetail3
+	     IF cmtsOPEN5 t.JmlUnitTdkSama
+             IF cmtsINPG1 t.HrsUplFotodanKetdiDetail3
+             IF cmtsINPG2 t.HLblmdiACColehADHDVHdiDetail
+ 	     IF cmtsINPG3 Ada Part yang belum mengurangi Stok
+	     IF cmtsINPG4 Jumlah Stok Berbeda
+	     IF cmtsINPG5 Tipe HD harus ADH HEAD yang proses
+
+SCR_APR capprove
+SCR_APRFLD mtsnobuk
+SCR_APR_COND caprOPEN
+SCR_APR_MSG	IF caprOPEN1	t.StsNoOpen
+		IF caprOPEN2	t.StsAprTdkKosong
+                IF caprOPEN3    t.mintaaproveaudit
+
+MAP(mnext)
+mtsnobuk     	r_string1    REPLACE
+mtstgl     	r_date1      REPLACE
+
+LOCAL
+PGM_FIELDS
+lVERSI		        STRING		21
+ltomdet_d    	        STRING		20
+ltomdet_2d    	        STRING		20
+ltomdet_3d	        STRING		20
+ltomdet_4d	        STRING		20
+lcablok      	        STRING		21
+ldipenuhi     	        DFLOAT          8
+ltothpp       	        DFLOAT          8
+lhrgrata                DFLOAT          8  
+lkodebukti	        STRING		21
+litransg1rm             STRING          20
+lnamtrnjml              STRING          21
+lurut  		        INT2   		2
+lpengirim	        STRING		26
+ldumm		        STRING		2
+lkettotal               STRING          16  
+lbrchrgbl	        DFLOAT		8
+lbrdsisprc	        DFLOAT		8
+lmapbtf                 STRING          30   
+lBI		        STRING		21
+lSOAHASS	        STRING		11
+lLOKAHASS	        STRING		21
+lFASTMOVING	        STRING		21
+lLOKRUSAK	        STRING		21
+lLOKKASUS	        STRING		21
+lLOKMOTOR	        STRING		21
+lLOKHGA			STRING		21
+lLOKBONUS		STRING		21
+lLOKBEKAS	        STRING		21
+lJL			STRING		21
+lkethl		        STRING		21
+ltdkadabtfH2	        INT2		2
+lbtfjmlH2	        INT2		2
+lmtdjmlH2	        INT2		2
+
+lnourt2		        INT2		2
+lbbgket2	        STRING		61
+
+lnama		        STRING		61
+ljabatan	        STRING		21
+lcabang		        STRING		21
+lKORMIN		        STRING		11
+lDETAILSDM	        STRING		21
+lnipsdm		        INT2		2
+lrecord		        INT2		2
+lfoto_ok	        INT2		2
+/*lket_ok		INT2		2*/
+lpica_acc	        INT2		2
+
+lnamasdm	        STRING		61
+lcabsdm		        STRING		21
+ljabsdm		        STRING		21
+lusrADHDVH	        STRING		21
+lADHDVH		        STRING		21
+lkunciabsen	        STRING		11
+lnourt		        INT2		2
+l1		        DFLOAT		8
+lnamafldsts             STRING          31
+lnamafldfak             STRING          31
+lnamaidxfak             STRING          31
+lyturutapr              STRING          2
+ljabatanaudithead       STRING		21
+ljabatanauditspv        STRING		21
+lscr                    STRING		21
+l4996                   INT2            2
+lmnxtpstadd             STRING          15
+lmnxtpstupd             STRING          15
+lversi                  STRING          15
+
+
+/*---------------djoinbrc--------------*/
+MAP(mjoinbrc)
+brchrgbl	lbrchrgbl	REPLACE
+
+DBCALCS(djoinbrc)  /*Cabang saja*/
+DBC_COMMAND	JOIN
+DBC_TARGET	brcdtbrgidx   gv_dtbrgcab mtdbrg mtscab 
+DBC_MAP		mjoinbrc
+
+/* ------------------ djoinmtdu --------------*/
+MAP(mjoinmtdu)
+mtdnourt   lurut   REPLACE
+
+DBCALCS(djoinmtdu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET      mtdbukurtidx   mtsnobuk  
+        DBC_MAP         mjoinmtdu
+
+DBCALCS(djoinmtd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	mtdbukurtidx	mtsnobuk
+
+DBCALCS(djointcm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tcmbukurtidx	mtsnobuk
+
+MAP(mjointcmu)
+tcmnourt	lnourt2		REPLACE
+
+DBCALCS(djointcmu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tcmbukurtidx	mtsnobuk
+	DBC_MAP		mjointcmu
+
+MAP(mjoinbbg2)
+bbgket		lbbgket2	REPLACE
+
+DBCALCS(djoinbbg2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	bbgbbtnoidx	tcmnobbm
+	DBC_MAP		mjoinbbg2
+
+DBCALCS(djoinbtfH2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btfbrglokidx mtdnobuk mtdbrg mtdlok
+
+MAP(mscanbtfH2)
+btfjml          lbtfjmlH2       REPLACE
+
+DBCALCS(dscanbtfH2)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      btfbrglokidx mtsnobuk
+        DBC_LAST_TARGET btfbrglokidx mtsnobuk
+        DBC_SUM_MAP     mscanbtfH2
+
+CALCS()
+c1		1
+ctdkadabtfH2	mtsdvs == "H2" && djoinbtfH2 == 0
+
+MAP(mscanmtdFAST)
+c1              ltdkadabtfH2    DO_CALC_IF      ctdkadabtfH2
+mtdjml          lmtdjmlH2       REPLACE
+
+DBCALCS(dscanmtdFAST)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      mtdbukurtidx    mtsnobuk
+        DBC_LAST_TARGET mtdbukurtidx    mtsnobuk
+        DBC_SUM_MAP     mscanmtdFAST
+
+
+CALCS()
+cnipd3_ok       aktbrg != BLANKS
+cfotod3_ok      akttype2 == "OK"
+/*cketd3_ok     aktket != BLANKS*/
+cpicad3_acc     aktlok == "ACC"
+
+MAP(mscand3)
+gv_int1         lrecord         REPLACE
+gv_int1         lnipsdm         REPLACE_IF cnipd3_ok
+gv_int1         lfoto_ok        REPLACE_IF cfotod3_ok
+/*gv_int1               lket_ok         REPLACE_IF cketd3_ok*/
+gv_int1         lpica_acc       REPLACE_IF cpicad3_acc
+DBCALCS(dscand3)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      aktkodtypidx    mtsnobuk lKORMIN lDETAILSDM
+        DBC_SUM_MAP     mscand3
+
+
+MAP(mjoinusr)
+usrkode         lusrADHDVH      REPLACE
+DBCALCS(djoinusr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      usrgrpidx       lADHDVH
+        DBC_MAP         mjoinusr
+
+CALCS()
+cnipd3          aktkode == mtsnobuk
+cabkclsd        abksts == gv_CLSD
+cabkinph	abksts == "INPH"
+
+DBCALCS(djoinaktd3)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      cnipd3
+        DBC_TARGET      aktbrgtglidx    aktbrg aktdata akttype
+
+
+MAP(mjoinakturt)
+akturt		lnourt		REPLACE
+DBCALCS(djoinakturt)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	aktkodtypidx    mtsnobuk mtsdata lDETAILSDM
+	DBC_MAP		mjoinakturt
+
+DBCALCS(djoinabk)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lkunciabsen mtsnobuk
+        DBC_SELECT      cabkinph
+
+DBCALCS(djoinabk402)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lkunciabsen mtsnobuk
+
+DBCALCS(djoinabkcls)
+    DBC_COMMAND JOIN
+    DBC_TARGET abkdatbukidx lkunciabsen mtsnobuk
+    DBC_SELECT cabkclsd
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /-------------------------------\ /------------------------------------------------------------\ |
+| |i.Tgl   : __________ _________ | | i.NoBuk       : _____________________ i.Sts : _______ ____ | |
+| |i.Cab   : _________  __________| | i.aprov       : ____  _______________                      | |
+| |i.Dvs   : _________  __________| | i.Rek    _____:  _________  ______________________________ | |
+| \-------------------------------/ | i.Keterangan  : _________________________________________  | |
+|				    \------------------------------------------------------------/ |
+|    ____________________  ____________________  ____________________  ______________   ______     |
+|spasi                                                                                             |                                                                                   
+| /----------------------------------------------\/----------------------------------------------\ |
+| | ___________   _________________________.____ || ___________   _________________________.____ | |
+| |                                              ||                                              | |
+| \----------------------------------------------/\----------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+   mtstgl        NONE {DD-MM-YY}  INPUTRI       1 /* Tanggal Mutasi */
+   mtsgrup2	 NOCHANGE	  INPUTRI	4 /* Ket Selisih Audit */
+   mtsnobuk      ALLCAPS          INPUTRI          7 /* No Mutasi */
+   mtssts        PROTECT ALLCAPS  NONE             8 /* Status */
+   mtsstsapr	 PROTECT ALLCAPS  NONE		   9 /* Status Approval */
+   mtscab        ALLCAPS SCROLL   INPUTRI       2 /* Keterangan  */
+   mtskodeapr	 PROTECT ALLCAPS  NONE		5 /* Kode Approval */
+   mtsuntuk      ALLCAPS SCROLL    INPUTRI       5
+   mtsdari       PROTECT SCROLL   INPUTRI        5
+   mtsdvs        ALLCAPS SCROLL   INPUTRI       3 /* Keterangan  */
+   mtsbisnis     PROTECT          NONE          6 /* Nama Cabang Pengirim */
+   mtstypbrg     NOCHANGE         INPUTRI          10 /* Tipe Rekening */
+   mtsnobbm      ALLCAPS          INPUTRI          11 /* Kode Rekening */
+   lpengirim     PROTECT          NONE             12 /* Nama Rekening */
+   mtsket        ALLCAPS SCROLL   INPUTRI          13 /* Keterangan  */
+   ltomdet_d  	 TOMBOL	      	  INPUTRI       38 /* Tombol Detil d */
+   ltomdet_2d    TOMBOL           INPUTRI       39 /* Tombol Detil 2d */
+   ltomdet_3d	 TOMBOL		  INPUTRI	40 /* Tombol Detil 3d */
+   ltomdet_4d	 TOMBOL		  INPUTRI	41 /* Tombol Detil 4d */
+    mtsdata      PROTECT QPROTECT NONE                    14 /* Data */
+
+   lkettotal     PROTECT          MEDIUM                  15 /* Keterangan Total Netto */
+   mtstotal      PROTECT          MEDIUM                  16 /* Total Netto */
+   lkethl        PROTECT          MEDIUM                  17 /* Keterangan Total HL */
+   mtstothrg     PROTECT          MEDIUM                  18 /* Total HL */
+
+CALCS()
+cgsglbisdvs1		g_sglbisdvs == 1 && g_sglcab == 1
+cgsglcabbisdvs1		g_sglcabbisdvs == 1 
+cgsglcab1		g_sglcab == 1 
+cmtsOPEN	        ( ( mtsuntuk == "Y" && mtsgrup2 == "SELISIH_AUDIT" ) || (mtsgrup2 == BLANKS) ) && ((mtssts == "OPEN" && mtstgl == g_tgltrn && mtsstsapr == "OK") && ((mtsdvs == "H2" && dscanmtdFAST >= 0 && dscanbtfH2 >= 0 && lbtfjmlH2 == lmtdjmlH2) || mtsdvs != "H2") &&
+			(
+			 (mtstgl < 20231221 || (mtstgl >= 20231221 && mtstypbrg == "BI")) ||
+			 (mtstgl >= 20231221 && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtsdvs != "H2" && mtstotal == mtstothrg) ||
+			 (mtstgl >= 20231221 && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtsdvs == "H2" && dscand3 >= 0 && lrecord != 0 && lnipsdm == lrecord)
+			) &&
+			((mtstypbrg == "HD" && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHDVH" || g_grpnam == "RAS")) || mtstypbrg != "HD")
+			) ||
+			(mtssts == "INPG" && mtsstsapr == "OK" && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtsdvs == "H2" && dscand3 >= 0 && lfoto_ok == lrecord 
+			/*&& lket_ok == lrecord*/ && lpica_acc == lrecord && mtstotal == mtstothrg && dscanmtdFAST >= 0 &&
+                        ltdkadabtfH2 == 0 && dscanbtfH2 >= 0 && lbtfjmlH2 == lmtdjmlH2 &&
+			((mtstypbrg == "HD" && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHDVH" || g_grpnam == "ADHAM" || g_grpnam == "RAS")) || mtstypbrg != "HD")
+			)
+
+cmtsOPEN1a		mtsstsapr == BLANKS
+cmtsOPEN1               mtssts == "CLSD"
+cmtsOPEN2               mtssts == "OPEN" && mtstgl != g_tgltrn
+cmtsOPEN3		(mtstgl >= 20231221 && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtsdvs != "H2" && mtstotal != mtstothrg) ||
+			(mtstgl >= 20231221 && mtssts == "INPG" && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtsdvs == "H2" && mtstotal != mtstothrg)
+cmtsOPEN4		mtssts == "OPEN" && mtsdvs == "H2" && (mtstypbrg == "HL" || mtstypbrg == "HD") && dscand3 >= 0 && lrecord == 0
+cmtsOPEN5		mtssts == "OPEN" && mtsdvs == "H2" && dscanmtdFAST >= 0 && dscanbtfH2 >= 0 && lbtfjmlH2 != lmtdjmlH2
+cmtsOPEN6               mtsuntuk != "Y" && mtsgrup2 != BLANKS
+cmtsINPG1               mtssts == "INPG" && mtsdvs == "H2" && (mtstypbrg == "HL" || mtstypbrg == "HD") && dscand3 >= 0 && ((lfoto_ok != lrecord 
+			/*&& lket_ok != lrecord*/))
+    			/*|| (lfoto_ok == lrecord && lket_ok != lrecord) || (lfoto_ok != lrecord  && lket_ok == lrecord))*/
+cmtsINPG2               mtssts == "INPG" && mtsdvs == "H2" && (mtstypbrg == "HL" || mtstypbrg == "HD") && dscand3 >= 0 && lfoto_ok == lrecord /*&& lket_ok == lrecord
+                        */ && lpica_acc != lrecord
+cmtsINPG3		mtstgl >= 20231221 && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtstotal != mtstothrg
+cmtsINPG4		dscanmtdFAST >= 0 && ltdkadabtfH2 > 0
+cmtsINPG5		mtstypbrg == "HD" && (g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ADHHEAD" && g_grpnam != "ADHAM" && g_grpnam != "ADHDVH" && g_grpnam != "RAS")
+
+capprove		DO_LIB ap_aprmt(mtsnobuk,gv_aprumum,mtscab,mtskodeapr,l1,lnamafldsts,lnamafldfak,lnamaidxfak,mtsjmltlk,lyturutapr,g_strksg,g_strksg);
+caprOPEN		(mtssts == "OPEN" || mtssts == "INPG") && mtsstsapr == BLANKS && ( ( mtsuntuk == "Y" && mtsgrup2 == "SELISIH_AUDIT" ) || (mtsgrup2 == BLANKS) ) 
+caprOPEN1		mtssts != "OPEN"
+caprOPEN2		mtsstsapr != BLANKS
+caprOPEN3               ( mtsuntuk != "Y"  &&  ( mtsgrup2 != "SELISIH_AUDIT" || mtsgrup2 == "SELISIH_AUDIT" ) ) 
+
+cBLANKS			BLANKS
+
+
+
+DEFAULTS(master)
+lVERSI		        INIT		14062026
+ltomdet_d    	        INIT   		"1d.Isi Barang"
+ltomdet_2d	        INIT		"2d.Isi HL"
+ltomdet_3d	        INIT		"3d.Isi NIP"
+ltomdet_4d	        INIT		"4d.Hapus Approval"
+lkettotal               INIT       	NETTO 
+lkethl		        INIT		HL
+mtsscr                  INIT            {g_scrnumstr}
+IF cgsglbisdvs1 mtsdvs  INIT  	{g_grpbisdvs}
+IF cgsglcab1    mtscab  INIT  	{g_grpcab}
+mtstgl   	        INIT  		{g_tgltrn}
+mtstgl   	        INIT_UPDATE	{g_tgltrn}
+mtssts   	        INIT 	      	OPEN
+mtsdata                 INIT_ADD        KORMIN 
+mtsdata                 INIT_QUERY      KORMIN
+ljabatanauditspv        INIT            "AUDITSPV"
+ljabatanaudithead       INIT            "AUDITHEAD"
+mtsuntuk                DFALT_SCAN_BLANKS       Y
+                                                T
+
+mtsgrup2	        DFALT_SCAN		BLANKS
+					SELISIH_AUDIT ""
+
+mtstypbrg	        DFALT_SCAN_BLANKS	BI "Menggunakan Rekening Biaya"
+					HL "Menggunakan Hutang Lain"
+					HD "Menggunakan Hutang Dagang 503"
+
+lBI		        INIT		BI 
+lSOAHASS	        INIT		SOAHASS
+lLOKAHASS	        INIT		LOKAHASS
+lLOKMOTOR	        INIT		LOKMOTOR
+lLOKHGA			INIT		LOKHGA
+lLOKBONUS		INIT		LOKBONUS
+lLOKBEKAS	        INIT		LOKBEKAS
+lFASTMOVING	        INIT		FASTMOVING
+lLOKRUSAK	        INIT		LOKRUSAK
+lLOKKASUS	        INIT		LOKKASUS
+lJL			INIT		JL
+
+lDETAILSDM	        INIT		DETAILSDM
+lKORMIN		        INIT		KORMIN
+lADHDVH		        INIT		ADHDVH
+lkunciabsen	        INIT		KUNCIABSEN
+l1                      INIT            1
+lnamafldsts             INIT            "mtsstsapr"
+lnamafldfak             INIT            "mtsnobuk"
+lnamaidxfak             INIT            "mtsbukidx"
+mtskodeapr              INIT            APR_KORMIN
+mtskodeapr              INIT_UPDATE     APR_KORMIN
+lscr                    INIT            {g_scrnumstr}
+lmnxtpstadd             INIT            mnxtpstadd
+lmnxtpstupd             INIT            mnxtpstupd
+l4996                   INIT            4996
+lversi                  INIT            20260525a
+
+MAP(mnxtpstadd)
+    mtsnobuk            r_string1  REPLACE
+    lscr                r_string2  REPLACE
+
+MAP(mnxtpstupd)
+    mtsnobuk            r_string1  REPLACE
+    lscr                r_string2  REPLACE
+
+CALCS()
+cmandatory01	        mtstgl >= 20231221
+cBI		        (mtstgl < 20231221 || (mtstgl >= 20231221 && mtstypbrg == "BI"))
+cblank                  BLANKS
+cnamablankd3            aktbrg == BLANKS
+
+EDITS(master)
+e.Tombol ltomdet_d SHOW_SFL trans
+e.MandatoryDvs mtsdvs MANDATORY
+e.MandatoryCab mtscab MANDATORY
+e.MandatoryBuk mtsnobuk MANDATORY
+e.MandatoryTgl mtstgl MANDATORY
+e.MandatoryRek mtsnobbm MANDATORY_IF cBI
+e.MandatoryKet mtsket MANDATORY
+e.MandatoryTyRek mtstypbrg MANDATORY_IF cmandatory01
+e.ValidateCab  mtscab VALIDATE cabstskodidx mcab scab {Pgv_INPG}
+e.ValidateRek mtsnobbm VALIDATE_IF cBI bbgbbtnoidx mbbg sbbgT {PlBI}
+e.ValidateDvs mtsdvs VALIDATE cadcabdtidx mcadDV scad {Pmtscab} {Pgv_cabbis} {Pmtscab}
+e.ValidateDvs mtsdvs VALIDATE dtmkodidx mdtmDV 0
+
+
+MAP(mcadDV)
+cadkode		mtsdvs		REPLACE
+cblank          lnama           DO_CALC_IF cnamablankd3
+cblank          ljabatan        DO_CALC_IF cnamablankd3
+cblank          lcabang         DO_CALC_IF cnamablankd3
+
+MAP(mdtmDV)
+dtmcab   	mtsbisnis	REPLACE
+
+MAP(mcab)
+cabkode		mtscab		REPLACE
+g_cabbisdvs	mtsdvs	REPLACE_IF cgsglcabbisdvs1
+
+MAP(mbbg)
+bbgno		mtsnobbm	REPLACE
+bbgket		lpengirim	REPLACE
+
+MAP(mdumm)
+ldumm		ldumm		REPLACE
+
+CALCS()
+cotY       	stsotobukti == "Y"
+ckodebukti	DO_LIB ap_amdvs(mtsdvs,mtsscr,lkodebukti); 
+cnomer     	STRIP(lkodebukti) + STRIP(cabkdfak) + THBLS(g_tgltrn) + "-"
+ctypadd    	g_curcmd == 1
+cbisdvs1	mtsdvs != BLANKS
+cHL		mtstypbrg == "HL"
+cadaHL		mtstypbrg == "HL" && djointcm == 1
+cHD		mtstypbrg == "HD"
+cadaHD		mtstypbrg == "HD" && djointcm == 1
+cupd		g_curcmd == 2
+cadadtl		djoinmtd == 1
+cHDADHHEAD	((mtstypbrg == "HD" && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM"  || g_grpnam == "ADHDVH" || g_grpnam == "RAS")) || mtstypbrg != "HD")
+cgrpaudit       g_grpnam != "AUDITSPV"  &&  g_grpnam != "AUDITHEAD"
+cgrpaudit1      ( g_grpnam == "AUDITSPV"  || g_grpnam == "AUDITHEAD" )  && mtsuntuk != BLANKS    
+
+MAP(mnomer)
+ckodebukti	lkodebukti	DO_CALC_IF cbisdvs1
+cnomer     	mtsnobuk    	DO_CALC_IF ctypadd
+
+MAP(mnipaudit)
+g_usrkode       mtsdari         REPLACE
+
+HOOKS(master)
+BEFORE_INPUT    cur_field=mtscab   	DO_SKIP_IF cgsglcab1  
+BEFORE_INPUT    cur_field=mtsdvs   	DO_SKIP_IF cgsglcabbisdvs1  
+BEFORE_INPUT   	cur_field=mtsnobuk   	DO_SKIP_IF cotY
+BEFORE_INPUT	cur_field=mtsnobbm	DO_SKIP_IF cHL
+BEFORE_INPUT	cur_field=mtsnobbm	DO_SKIP_IF cHD
+BEFORE_INPUT	cur_field=mtstypbrg	DO_SKIP_IF cadaHL
+BEFORE_INPUT	cur_field=mtsket	DO_SKIP_IF cadaHL
+BEFORE_INPUT	cur_field=mtstypbrg	DO_SKIP_IF cadaHD
+BEFORE_INPUT	cur_field=mtsket	DO_SKIP_IF cadaHD
+BEFORE_INPUT	cur_field=mtscab	DO_SKIP_IF cupd
+BEFORE_INPUT	cur_field=mtsdvs	DO_SKIP_IF cadadtl
+BEFORE_INPUT    cur_field=mtsuntuk      DO_SKIP_IF cgrpaudit
+AFTER_INPUT     cur_field=mtsuntuk      DO_MAP SHOW IF cgrpaudit1 mnipaudit
+AFTER_INPUT    	cur_field=mtstgl  	DO_MAP SHOW IF cotY mnomer
+AFTER_INPUT    	cur_field=mtsdvs  	DO_MAP SHOW IF cotY mnomer
+AFTER_INPUT    	cur_field=mtsnobbm	DO_MAP SHOW IF cotY mnomer
+
+AFTER_INPUT	cur_field=mtstypbrg	DO_MAP SHOW
+		IF cHDADHHEAD mdumm
+		ELSE HKCURSOR STAY
+		HKMSG Tipe HD harus ADH HEAD yang proses
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cHDADHHEAD mdumm
+		ELSE HKCURSOR STAY
+		HKMSG Tipe HD harus ADH HEAD yang proses
+
+/*** SUBFILE INFORMATION ***/
+IMAGE(transt) 
+/--t------t----------t------------t-----------t------t------t------t-------t------------t-----------t----------\
+|No|i.Kat |i.Brg     |i.NamaBrg   |t.TypeLok  |i.Lok |i.Ukr |i.Sat |i.Jml  |    i.Hrg   | i.Sub     |i.TglEx   |
+\--.------.----------.------------.-----------.------.------.------.-------.------------.-----------.----------/
+
+
+IMAGE(trans) 
+|__|______|__________|____________|___________|______|______|______|_____._|_________.__|___________|__________| 
+
+FIELD(trans)
+   mtdnourt          PROTECT             INPUTRI     1 /* Jumlah Barang */
+   mtdkat            ALLCAPS SCROLL      INPUTRI     2 /* Kode Brg */
+   mtdbrg            ALLCAPS SCROLL      INPUTRI     3 /* Kode Brg */
+   brgnama           PROTECT SCROLL      INPUTRI     4 /* Kode Brg */
+
+   mtdgrup	     ALLCAPS SCROLL	 INPUTRI     4
+   mtdlok  	     ALLCAPS SCROLL      INPUTRI     5
+   mtdukrwrn	     ALLCAPS SCROLL      INPUTRI     6
+   mtdsat 	     ALLCAPS SCROLL      INPUTRI     7
+   mtdjml            NUMERIC             INPUTRI     8 /* Jumlah Barang */
+   mtdhrg            PROTECT             INPUTRI     9
+
+   mtdsubtot         PROTECT             INPUTRI     10 /* Jumlah Barang */
+   mtdtgl2           NONE {DD-MM-YY} NOLIMIT 	 INPUTRI  11 
+   
+DEFAULTS(trans)
+litransg1rm	INIT		a.Rangka-Msn
+lnamtrnjml	INIT		"mtdjml"
+mtdsatbsr  	INIT	        1
+mtddk           INIT            K
+mtddk           INIT_UPDATE     K
+mtdsisbrg	INIT		{stssetsisbrg}
+lmapbtf		INIT		mapbtf
+mtdgrup		DFALT_SCAN_BLANKS	INTI
+					FASTMOVING
+					BARANG_RUSAK
+					BARANG_KASUS
+
+CALCS()
+ckatisi  	mtdkat != BLANKS
+cBEKAS		mtdkat == "BEKAS"
+cTglExpY	brgytexp == "Y"
+cTglExpT	brgytexp != "Y"
+cytukrY   	brgytukr != "T" && brgytukr != "" 
+cytukrT   	brgytukr == "T" 
+cFIFOO 		(stssetsisbrg == "O" || stssetsisbrg == "R")
+cFIFOM		stssetsisbrg == "M"
+/*cFIFOOtdkSPM 	mtdkat!="SPM" && mtdkat!="SPMB" && (stssetsisbrg == "O" || stssetsisbrg == "R" || stssetsisbrg == "M" )*/
+cH1             mtsdvs=="H1" && mtdgrup == "SPM" 
+cH2		mtsdvs=="H2"
+cH2Inti         mtsdvs=="H2" && mtdgrup =="INTI"
+cH2Fast		mtsdvs=="H2" && mtdgrup =="FASTMOVING"
+cH2Rusak	mtsdvs=="H2" && mtdgrup =="BARANG_RUSAK"
+cH2Kasus	mtsdvs=="H2" && mtdgrup =="BARANG_KASUS"
+cHGA		mtdkat == "HGA"
+cBONUS		mtdkat == "BONUS"
+cHMCM2W         (mtsdvs=="HMC" || mtsdvs=="M2W") && mtdkat!="BATIK"
+
+EDITS(trans)
+e.MandatoryTglExp mtdtgl2 MANDATORY_IF cTglExpY
+e.MandatoryUrt mtdnourt MANDATORY
+e.MandatoryBrg mtdbrg  MANDATORY
+e.MandatoryTypLok mtdgrup MANDATORY_IF cH2
+e.MandatoryJml mtdjml MAND_PLUS
+e.MandatoryUkr mtdukrwrn MANDATORY_IF cytukrY
+e.MandatoryLok mtdlok MANDATORY
+/*e.MandatorySat mtdsat MANDATORY*/
+
+e.ValidateKatbrg mtdkat VALIDATE tbddatkodidx  mkat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_kategori} /*kategori*/
+e.ValidateKatBrg mtdbrg VALIDATE_IF ckatisi brgstdtkatbr mbrg sbrgKat {Pgv_INPG} {Pgv_dtbarang} {Pmtdkat}
+e.ValidateBrg mtdbrg VALIDATE brgstsdatbrg mbrg sbrg {Pgv_INPG} {Pgv_dtbarang}
+e.ValidatebrdLok1 mtdlok VALIDATE_RKP_IF cFIFOO brdbrglokoto mbrdLok  sbrdLok4 {Pgv_INPG} {Pmtdbrg} {Pmtdcab} 
+e.ValidatebrdLok2 mtdlok VALIDATE_IF cFIFOM brdbrglokoto mbrdLok2 sbrdLok4 {Pgv_INPG} {Pmtdbrg} {Pmtdcab} {Smtdukrwrn}  {Smtdsat} {Smtdbrdoto}
+
+e.ValidateLokInti mtdlok VALIDATE_IF cH2Inti tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKAHASS} {Pgv_BR} {Pmtdcab}
+e.ValidateLokFast mtdlok VALIDATE_IF cH2Fast tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlFASTMOVING} {Pgv_BR} {Pmtdcab}
+e.ValidateLokRusak mtdlok VALIDATE_IF cH2Rusak tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKRUSAK} {Pgv_BR} {Pmtdcab}
+e.ValidateLokKasus mtdlok VALIDATE_IF cH2Kasus tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKKASUS} {Pgv_BR} {Pmtdcab}
+
+e.ValidateLok mtdlok VALIDATE_IF cH1 tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKMOTOR} {Pgv_BR} {Pmtdcab} 
+e.ValidateLok mtdlok VALIDATE_IF cHMCM2W tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKBEKAS} {Pgv_BR} {Pmtdcab} 
+e.ValidateLokHGA mtdlok VALIDATE_IF cHGA tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKHGA} {PlJL} {Pmtdcab}
+e.ValidateLokBONUS mtdlok VALIDATE_IF cBONUS tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKBONUS} {Pgv_BR} {Pmtdcab}
+
+e.ValidateUkr mtdukrwrn VALIDATE_RKP_IF cFIFOO brdstbrlkust mbrdUkr sbrdUkr {Pgv_INPG} {Pmtdbrg} {Pmtdlok} 
+/*e.ValidatebrdSat mtdsat VALIDATE_RKP_IF cFIFOOtdkSPM brdstbrlkust mbrdSat sbrdSat {Pgv_INPG} {Pmtdbrg} {Pmtdlok} {Pmtdukrwrn}*/
+
+MAP(mbrdUkr)
+brdukrwrn	mtdukrwrn	REPLACE
+
+/*
+MAP(mbrdSat)
+brdsat   	mtdsat		REPLACE
+*/
+
+MAP(mbrdLok)
+brdlok		mtdlok		REPLACE
+brdsisprc	lbrdsisprc	REPLACE
+
+MAP(mbrdLok2)
+brdlok          mtdlok          REPLACE
+brdsisprc       lbrdsisprc      REPLACE
+brdukrwrn       mtdukrwrn       REPLACE
+brdoto          mtdbrdoto       REPLACE
+brdsat          mtdsat          REPLACE
+
+MAP(mkat)
+tbdkode		mtdkat   	REPLACE
+
+
+MAP(mtbdLK2)
+tbdkode        	mtdlok       	REPLACE
+
+/*
+MAP(mtbdSat)
+tbdkode		mtdsat		REPLACE
+tbddf1		mtdsatbsr	REPLACE  
+*/
+
+
+CALCS()
+csubtot         	mtdjml * mtdhrg
+csistemDlr_BARU     	stssistem == "DEALER" && mtdkat == "BARU"
+c0			0
+curut         		lurut + 1
+cjoinmtdu0    		djoinmtdu == 0 && g_curcmd == 1 && mtdnourt == 0 
+cjoinmtdu1    		djoinmtdu == 1 && g_curcmd == 1 && mtdnourt == 0 
+cjoinbrc1	      	mtdkat!="SPM" && djoinbrc == 1 
+csatksg			mtdsat == BLANKS
+csaldobrd1      	mtdjml <= lbrdsisprc + ~mtdjml 
+
+MAP(mbrg)
+brgkode        mtdbrg       REPLACE
+brgnama        brgnama      REPLACE
+brgsat         mtdsat       REPLACE_IF csatksg
+brgkat         mtdkat       REPLACE
+brgytseri      brgytseri    REPLACE
+brgytexp       brgytexp     REPLACE
+brgytukr       brgytukr     REPLACE
+brgbbmprs      mtdnobbm	    REPLACE
+
+MAP(mhitsubtot)
+csubtot         mtdsubtot     DO_CALC
+
+MAP(mhrgbrg)
+lbrchrgbl    mtdhrg      REPLACE_IF cjoinbrc1
+
+MAP(msatu)
+c1		mtdjml		DO_CALC
+
+MAP(murut)
+c1          	mtdnourt   	DO_CALC_IF cjoinmtdu0
+curut       	mtdnourt   	DO_CALC_IF cjoinmtdu1
+mtscab		mtdcab	   	REPLACE
+mtsbisnis	mtdbisnis	REPLACE
+mtsdvs   	mtddvs		REPLACE
+
+
+HOOKS(trans)
+BEFORE_INPUT    cur_field=mtdtgl2       DO_SKIP_IF cTglExpT
+BEFORE_INPUT	cur_field=mtdukrwrn	DO_SKIP_IF cytukrT
+BEFORE_INPUT 	cur_field=mtdbrg  	DO_MAP SHOW murut  
+BEFORE_INPUT	cur_field=mtdjml 	DO_MAP SHOW IF csistemDlr_BARU msatu
+BEFORE_INPUT	cur_field=mtdjml  	DO_SKIP_IF csistemDlr_BARU
+AFTER_INPUT	cur_field=mtdjml 	DO_MAP SHOW mhrgbrg
+AFTER_INPUT	cur_field=mtdjml	DO_MAP SHOW mhitsubtot
+AFTER_INPUT	cur_field=mtdhrg	DO_MAP SHOW mhitsubtot
+AFTER_INPUT     cur_field=mtdjml    DO_MAP SHOW
+		IF csaldobrd1  mdumm
+		ELSE HKCURSOR STAY 
+		HKMSG Jumlah Dalam satuan ini tidak cukup
+AFTER_INPUT	cur_keybd=EN    	DO_MAP SHOW mhitsubtot
+
+CALCS()
+cbknKRD      	stssistem != "DEALER" || mtsdvs == "H2" 
+crm_msn1	(mtdkat == "SPM" && mtdgrup != BLANKS && mtdgrup2 != BLANKS) || mtdkat != "SPM"
+
+/*****/
+SUBFILE(trans)
+SFL_LINES(6)
+SFL_TITLE(transt)
+SFL_COND cbknKRD
+
+SFL_TARGET
+     mtdbukurtidx        	  mtsnobuk
+
+SFL_MAP 
+     mtsnobuk         	mtdnobuk
+     mtssts	 	mtdsts
+     mtstgl	 	mtdtglfak
+     mtscab             mtdcab
+     mtsbisnis          mtdbisnis
+     mtsdvs             mtddvs
+     mtsscr             mtdscr 
+     mtsdata		mtddata
+
+IMAGE(transg1t) 
+/--t-----t-------------t--------------t------t----------------t--------------t------t------t------t-----------t-------------\
+|No|i.Kat| i.Brg       |  i.Nama      |i.Lok |i.Mesin         |i.Rangka      |i.Ukr |i.Sat |i.Jml |  i.Hrg    |  i.SubTtl   |
+\--.-----.-------------.--------------.------.----------------.--------------.------.------.------.-----------.-------------/
+
+
+IMAGE(transg1) {IMG_HOOKS=trans} {IMG_DEFAULT=trans} {IMG_HELP=trans} {COVER_MASTER} {IMG_EDIT=trans}
+|__|_____|_____________|______________|______|________________|______________|______|______|______|_________._|_____________|
+
+FIELD(transg1)
+   mtdnourt      NUMERIC             INPUTRI     1 /* Jumlah Barang */
+   mtdkat        ALLCAPS SCROLL      INPUTRI     2 /* Kode Brg */
+   mtdbrg        ALLCAPS SCROLL      INPUTRI     3 /* Kode Brg */
+   brgnama       PROTECT SCROLL      INPUTRI     4 /* Kode Brg */
+   mtdlok  	 ALLCAPS SCROLL      INPUTRI     5
+   mtdgrup2      ALLCAPS        	SCROLL INPUTRI   6   /* Mesin */
+   mtdgrup       ALLCAPS        	SCROLL INPUTRI   7   /* Rangka */
+   mtdukrwrn     NOCHANGE SCROLL     INPUTRI     8
+   mtdsat     	 ALLCAPS SCROLL      INPUTRI     9
+   mtdjml       NUMERIC             INPUTRI     10 /* Jumlah Barang */
+   mtdhrg       NUMERIC             INPUTRI     11
+   mtdsubtot     PROTECT 	     INPUTRI     12  /* unit sat kecil */
+/*   litransg1rm   TOMBOL            INPUTRI     11   */
+
+CALCS()
+ckatspm		mtdkat =="SPM"
+
+   
+EDITS(transg1)
+e.ValidatebrdMs mtdgrup2 VALIDATE_IF ckatspm brdstslokmr mbrdRM sbrd4_RM {Pgv_INPG} {Pmtdlok} {Pmtdbrg} {Smtdgrup}  {Smtdbrdoto} 
+e.ValidatebrdRk mtdgrup VALIDATE_IF ckatspm brdstslokmr mbrdRM sbrd4_RMa {Pgv_INPG} {Pmtdlok} {Pmtdbrg}  {Pmtdgrup2}  {Smtdbrdoto} 
+/*
+Tombol PPN litransg1rm SHOW_IMAGE itransg1rm
+*/
+
+HOOKS(transg1)
+BEFORE_INPUT	cur_field=mtdnourt	DO_MAP SHOW murut
+AFTER_INPUT	cur_keybd=EN      	 DO_MAP SHOW
+		IF crm_msn1 mdumm 
+		ELSE HKCURSOR STAY
+		     HKMSG No.Rangka Mesin harus diisi 
+
+
+IMAGE(itransg1rm)
+/---------------------------------\
+|  Mesin : ___________________    |
+|  Rangka: ___________________    |                        
+|  BPKB  : ___________________    |
+|  No.Pol: _________              |
+|  Warna : _________              |
+|  Tahun : ______                 |
+\---------------------------------/
+
+FIELD(itransg1rm)
+mtdgrup2    	ALLCAPS        	SCROLL INPUTRI   12  /* Mesin */
+mtdgrup   	ALLCAPS        	SCROLL INPUTRI   13  /* Rangka */
+mtdnoll      	ALLCAPS 	SCROLL INPUTRI   14  /* BPKB */
+mtdplg       	ALLCAPS 	SCROLL INPUTRI   15  /* No.Pol */
+mtdukrwrn    	ALLCAPS        	SCROLL INPUTRI   16  /* Warna */
+mtdbisnis    	ALLCAPS        	SCROLL INPUTRI   17  /* Tahun */
+
+CALCS()
+cBARU       	stssistem == "DEALER" && mtdkat == "SPM" 
+cKRD            brgytseri =="Y" 
+
+HELP(itransg1rm)
+Masukkan No.Rangka mtdgrup
+Masukkan No.Mesin mtdgrup2
+Masukkan Keterangan 2 jika diperlukan mtdnoll
+Masukkan Keterangan 3 jika diperlukan mtdplg 
+
+EDITS(itransg1rm)
+e.MandatoryRangka mtdgrup MANDATORY_IF cKRD
+e.MandatoryMesin mtdgrup2 MANDATORY_IF cKRD
+e.MandatoryWarna mtdukrwrn MANDATORY
+e.MadatoryBpkb mtdnoll MANDATORY_IF cBEKAS
+e.MandatoryNopol mtdplg  MANDATORY_IF cBEKAS
+e.MandatoryThn mtdbisnis MANDATORY_IF cBEKAS
+/*e.Dupkey  mtdgrup  DUPKEY ssumridx {Spptrangka}
+e.Dupkey  mtdgrup2  DUPKEY ssumridx {Ppptmesin}
+e.ValidateWarna mtdukrwrn VALIDATE ubrbrgdatkod mubrWR subr {Ppptbrg} {Pgv_dtwarna}*/
+e.ValidatebrdMs mtdgrup2 VALIDATE brdstslokmr mbrdRM sbrd4_RM {Pgv_INPG} {Pmtdlok} {Pmtdbrg} {Smtdgrup}  {Smtdbrdoto} 
+e.ValidatebrdRk mtdgrup VALIDATE brdstslokmr mbrdRM sbrd4_RMa {Pgv_INPG} {Pmtdlok} {Pmtdbrg}  {Pmtdgrup2}  {Smtdbrdoto} 
+
+MAP(mbrdRM)
+brdnomesin	mtdgrup2     	REPLACE
+brdnorangka	mtdgrup      	REPLACE
+brdoto   	mtdbrdoto  	REPLACE
+brdhrg		mtdhrg  	REPLACE
+brdukrwrn       mtdukrwrn  	REPLACE
+/*
+MAP(mubrWR)
+ubrkode		mtdukrwrn	REPLACE*/
+
+HOOKS(itransg1rm)
+BEFORE_INPUT    cur_field=mtdnoll       DO_SKIP_IF cBARU
+BEFORE_INPUT    cur_field=mtdplg        DO_SKIP_IF cBARU
+
+CALCS()
+cDEALER    stssistem == "DEALER" 
+
+SUBFILE(transg1)
+SFL_LINES(12)
+SFL_TITLE(transg1t)
+SFL_COND cDEALER
+
+SFL_TARGET
+mtdbukurtidx        	  mtsnobuk
+
+SFL_MAP 
+     mtsnobuk         	mtdnobuk
+     mtssts	 	mtdsts
+     mtstgl	 	mtdtglfak
+     mtscab             mtdcab
+     mtsbisnis          mtdbisnis
+     mtsdvs             mtddvs   
+     mtsscr             mtdscr 
+     mtsdata		mtddata
+
+IMAGE(transat)
+/---------------------------------------------------------------------------------------\
+|i.Ty  _____  ____  i.KasBank  _____________  ____________________________              |
+|-----t----------------t-----------t------------------------t-------------t-------------|
+|i.Urt|i.NoCek         |t.Kdhl     |t.NoHL                  |i.Total      |i.Sisa       |
+\-----.----------------.-----------.------------------------.-------------.-------------/
+
+IMAGE(transa)
+|_____|________________|___________|________________________|__________.__|__________.__|
+
+FIELD(transat)
+tcmtype		PROTECT			INPUTRI		1
+tcmdk		PROTECT			INPUTRI		2
+tcmnobbm	PROTECT			INPUTRI		3
+lbbgket2	PROTECT			INPUTRI		4
+
+FIELD(transa)
+tcmnourt	NOCHANGE		INPUTRI		1
+tcmnocek	NOCHANGE		INPUTRI		2
+tcmkode		ALLCAPS			INPUTRI		3
+tcmbank		ALLCAPS			INPUTRI		4
+tcmtotal	NUMERIC			INPUTRI		5
+tcmtotbuk	PROTECT			INPUTRI		6
+
+CALCS()
+cjoinbbg21	djoinbbg2 == 1
+cjointcmu0	djointcmu == 0
+cjointcmu1	djointcmu == 1
+curut2		lnourt2 + 1
+cnocek		STRIP(mtsnobuk) + "0" + FLD_TO_STRING(tcmnourt)
+cnocek2		STRIP(mtsnobuk) + FLD_TO_STRING(tcmnourt)
+ctotalok	tcmtotal <= tcmtotbuk
+cppssisprc	ppssisprc + tcmtotbuk
+cadd		g_curcmd == 1
+chlsama		tcmbank == ~tcmbank && g_curcmd == 2
+chlbeda		tcmbank != ~tcmbank && g_curcmd == 2
+cdibawah10	tcmnourt < 10
+cdiatas10	tcmnourt >= 10
+csatu		1
+
+DEFAULTS(transa)
+tcmtype		INIT		HL
+tcmtype		INIT_UPDATE	HL
+tcmdk		INIT		D
+tcmdk		INIT_UPDATE	D
+
+EDITS(transa)
+e.MandatoryTot tcmtotal  MANDATORY
+
+e.Validate tcmkode VALIDATE cmphlkodidx mcmp scmpDTHL {Pgv_DTHL}
+e.Validate tcmbank VALIDATE ppsstsplgdat mppshl spps225 {Pgv_INPG} {Ptcmkode} {Pgv_dthut}
+
+MAP(mcmp)
+cmpkode		tcmkode		REPLACE
+
+MAP(mppshl)
+ppsnobuk	tcmbank		REPLACE
+ppsnobbm	tcmnobbm	REPLACE
+ppscab		tcmcab		REPLACE
+lbbgket2	lbbgket2	REPLACE_IF cjoinbbg21
+ppssisprc	tcmtotbuk	REPLACE_IF cadd
+cppssisprc	tcmtotbuk	DO_CALC_IF chlsama
+ppssisprc	tcmtotbuk	REPLACE_IF chlbeda
+
+MAP(murut2)
+csatu		tcmnourt	DO_CALC_IF cjointcmu0
+curut2		tcmnourt	DO_CALC_IF cjointcmu1
+
+MAP(misinocek)
+cnocek		tcmnocek	DO_CALC_IF cdibawah10
+cnocek2		tcmnocek	DO_CALC_IF cdiatas10
+
+HOOKS(transa)
+BEFORE_INPUT	cur_field=tcmnourt	DO_MAP SHOW murut2
+AFTER_INPUT	cur_field=tcmnourt	DO_MAP SHOW misinocek
+AFTER_INPUT	cur_field=tcmtotal	DO_MAP SHOW
+		IF ctotalok mdumm
+		ELSE HKCURSOR STAY
+		HKMSG t.TotalLbhDrSisPrc
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctotalok mdumm
+		ELSE HKCURSOR STAY
+		HKMSG t.TotalLbhDrSisPrc
+
+SUBFILE(transa)
+SFL_LINES(5)
+SFL_TITLE(transat)
+SFL_COND cHL
+SFL_TARGET
+	tcmbukurtidx	mtsnobuk
+SFL_MAP
+mtsnobuk	tcmnobuk	REPLACE
+mtssts		tcmsts		REPLACE
+mtstgl		tcmtgl		REPLACE
+mtsdata		tcmtype2	REPLACE
+mtsscr		tcmscr		REPLACE
+mtsdvs		tcmdvs		REPLACE
+mtsbisnis	tcmbisnis	REPLACE
+mtsket		tcmket		REPLACE
+
+IMAGE(transag1t)
+/---------------------------------------------------------------------------------------\
+|i.Ty  _____  ____             _____________  ____________________________              |
+|-----t----------------t-----------t------------------------t-------------t-------------|
+|i.Urt|i.NoCek         |t.Sup      |t.NoDo                  |i.Total      |i.Sisa       |
+\-----.----------------.-----------.------------------------.-------------.-------------/
+
+IMAGE(transag1)
+|_____|________________|___________|________________________|__________.__|__________.__|
+
+FIELD(transag1t)
+tcmtype		PROTECT			INPUTRI		1
+tcmdk		PROTECT			INPUTRI		2
+tcmnobbm	PROTECT			INPUTRI		3
+lbbgket2	PROTECT			INPUTRI		4
+
+FIELD(transag1)
+tcmnourt	NOCHANGE		INPUTRI		1
+tcmnocek	NOCHANGE		INPUTRI		2
+tcmkode		ALLCAPS			INPUTRI		3
+tcmbank		ALLCAPS			INPUTRI		4
+tcmtotal	NUMERIC			INPUTRI		5
+tcmtotbuk	PROTECT			INPUTRI		6
+
+DEFAULTS(transag1)
+tcmtype		INIT		HD
+tcmtype		INIT_UPDATE	HD
+tcmdk		INIT		D
+tcmdk		INIT_UPDATE	D
+
+CALCS()
+cpmbsisprc	pmbsisprc + tcmtotbuk
+
+EDITS(transag1)
+e.MandatoryTot tcmtotal  MANDATORY
+
+e.Validate tcmkode VALIDATE cmpsuptykod mcmp2 scmp {Pgv_dtsup} {Pgv_DN}
+e.ValidateHutD tcmbank VALIDATE pmbstssupidx mpmb spmb {Pgv_INPG} {Ptcmkode} {Pgv_F} {Pgv_dthut} 
+
+MAP(mcmp2)
+cmpkode		tcmkode		REPLACE
+
+MAP(mpmb)
+pmbnobuk	tcmbank		REPLACE
+pmbnobbm	tcmnobbm	REPLACE
+pmbcab		tcmcab		REPLACE
+lbbgket2	lbbgket2	REPLACE_IF cjoinbbg21
+pmbsisprc	tcmtotbuk	REPLACE_IF cadd
+cpmbsisprc	tcmtotbuk	DO_CALC_IF chlsama
+pmbsisprc	tcmtotbuk	REPLACE_IF chlbeda
+
+HOOKS(transag1)
+BEFORE_INPUT	cur_field=tcmnourt	DO_MAP SHOW murut2
+AFTER_INPUT	cur_field=tcmnourt	DO_MAP SHOW misinocek
+AFTER_INPUT	cur_field=tcmtotal	DO_MAP SHOW
+		IF ctotalok mdumm
+		ELSE HKCURSOR STAY
+		HKMSG t.TotalLbhDrSisPrc
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctotalok mdumm
+		ELSE HKCURSOR STAY
+		HKMSG t.TotalLbhDrSisPrc
+
+SUBFILE(transag1)
+SFL_LINES(5)
+SFL_TITLE(transag1t)
+SFL_COND cHD
+SFL_TARGET
+	tcmbukurtidx	mtsnobuk
+SFL_MAP
+mtsnobuk	tcmnobuk	REPLACE
+mtssts		tcmsts		REPLACE
+mtstgl		tcmtgl		REPLACE
+mtsdata		tcmtype2	REPLACE
+mtsscr		tcmscr		REPLACE
+mtsdvs		tcmdvs		REPLACE
+mtsbisnis	tcmbisnis	REPLACE
+mtsket		tcmket		REPLACE
+
+/*******************************************************************************/
+IMAGE(transbt)
+/-----t-------------------t----------t-----------------------t---------------t---------t------------------\
+|t.No |t.NoBuk            |t.Nip     |t.NamaSDM              |t.Jabatan      |t.Cabang |t.TglPenyelesaian |
+\-----t-------------------.----------.-----------------------.---------------.---------.------------------/
+
+IMAGE(transb)
+|_____|___________________|__________|_______________________|_______________|_________|______|
+
+FIELD(transb)
+akturt		NOCHANGE	INPUTRI		1
+aktkode         PROTECT         INPUTRI         2
+aktbrg          ALLCAPS SCROLL  INPUTRI         3
+lnama           PROTECT         INPUTRI         4
+ljabatan        PROTECT         INPUTRI         5
+lcabang         PROTECT         INPUTRI         6
+akttgl          NOLIMIT {DD-MM-YY}      INPUTRI         7
+
+EDITS(transb)
+e.MandatoryNIP  aktbrg MANDATORY
+e.MandatoryTgl3d        akttgl  MANDATORY
+e.ValidateNIP   aktbrg  VALIDATE  psikodidx mpsiakt spsi
+
+DEFAULT(transb)
+akttgl          INIT            {g_tgltrn}
+
+CALCS()
+csatu3d		1
+curut3d		lnourt + 1
+cjoinakt0	djoinakturt == 0
+cjoinakt1	djoinakturt == 1
+
+MAP(mpsiakt)
+psikode         aktbrg          REPLACE
+psinama         lnama           REPLACE
+psijabatan      ljabatan        REPLACE
+psicabskr       lcabang         REPLACE
+
+MAP(murt3d)
+csatu3d		akturt		DO_CALC_IF cjoinakt0
+curut3d		akturt		DO_CALC_IF cjoinakt1
+
+CALCS()
+cstsOPEN        mtssts == "OPEN" && mtsdvs == "H2" && (mtstypbrg == "HL" || mtstypbrg == "HD")
+cmax7harid3     ((aktbrg == g_usrkode || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH" || g_grpnam == "ADHAM" || g_grpnam == "ADHHEAD" || g_grpnam == "RAS") && akttgl >= g_tgltrn && akttgl <= g_tgltrn + 7)
+cnipsudahada    djoinaktd3 == 0
+
+HOOKS(transb)
+BEFORE_INPUT	cur_field=akturt	DO_MAP murt3d
+AFTER_INPUT     cur_field=akttgl        DO_MAP SHOW
+                IF cmax7harid3 mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.Max7HariPenyelsaiandanNIPhrs
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cmax7harid3 mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.Max7HariPenyelsaiandanNIPhrs
+
+AFTER_INPUT     cur_field=aktbrg            DO_MAP SHOW
+                IF cnipsudahada mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.NipSudahAdadiNobukIni
+
+AFTER_INPUT     cur_keybd=EN                   DO_MAP SHOW
+                IF cnipsudahada mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.NipSudahAdadiNobukIni
+
+
+SUBFILE(transb)
+SFL_TITLE(transbt)
+SFL_LINES(10)
+SFL_COND        cstsOPEN
+SFL_TARGET
+aktkodtypidx    mtsnobuk mtsdata lDETAILSDM
+
+SFL_MAP
+mtsnobuk        aktkode         REPLACE
+mtsdata         aktdata         REPLACE
+lDETAILSDM      akttype         REPLACE
+
+/*******************************************************************************/
+
+IMAGE(transbg1t)
+/---------------------------------------------------------------\
+|/----------------------------UPLOAD---------------------------\|
+||                                                             ||
+||                                                             ||
+||                                                             ||
+|\-------------------------------------------------------------/|
+|/-------------------------------------------------------------\|
+||t.Nip         : _______   t.Nama    : ______________________ ||
+||t.Cabang      : _______   t.Jabatan : _____________          ||
+||t.tglPnylsn   : ____________                                 ||
+||t.Alasan      : __________________________                   ||
+||t.PicaADHDVH  : _______                                      ||
+|\-------------------------------------------------------------/|
+\---------------------------------------------------------------/
+
+IMAGE(transbg1)
+
+FIELD(transbg1t)
+aktbrg          PROTECT         INPUTRI         1
+lnamasdm        PROTECT         INPUTRI         2
+lcabsdm         PROTECT         INPUTRI         3
+ljabsdm         PROTECT         INPUTRI         4
+akttgl          /*NOLIMIT {DD-MM-YY}*/NOCHANGE {DD-MM-YY}       INPUTRI         5
+aktket          ALLCAPS         INPUTRI         6
+aktlok          NOCHANGE        INPUTRI         7
+
+CALCS()
+cOK             "OK"
+cstsNOPEN       mtssts != "OPEN" && mtsdvs == "H2" && (mtstypbrg == "HL" || mtstypbrg == "HD")
+/*cmax7hari     ((aktbrg == g_usrkode || g_grpnam == "IT") && akttgl >= g_tgltrn && akttgl <= g_tgltrn + 7) */
+chnyadhdvh      (g_grpnam == "ADHDVH" || g_grpnam == "RI")
+/*cACC            aktlok == "ACC"
+cTACC           aktlok == "TACC"*/
+cbknADHDVH	g_grpnam != "ADHDVH" && g_grpnam != "RI"
+
+EDITS(transbg1t)
+e.MandatoryTgl  akttgl MANDATORY
+e.MandatoryKet  aktket MANDATORY
+v.ValidateNama  aktbrg VALIDATE psikodidx mpsiakt2 spsi
+
+
+DEFAULT(transbg1t)
+IF chnyadhdvh aktlok            DFALT_SCAN_BLANK        ACC
+                                                        TACC
+
+
+MAP(mpsiakt2)
+psikode         aktbrg          REPLACE
+psinama         lnamasdm        REPLACE
+psicab          lcabsdm         REPLACE
+psijabatan      ljabsdm         REPLACE
+
+MAP(mupdaktfoto)
+cOK             akttype2        DO_CALC
+DBCALCS(dupdaktfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx aktprm
+        DBC_MAP         mupdaktfoto
+
+HOOKS(transbg1t)
+/*BEFORE_INPUT    cur_field=aktket        DO_SKIP_IF cACC*/
+BEFORE_INPUT	cur_field=aktlok	DO_SKIP_IF cbknADHDVH	
+
+
+/*AFTER_INPUT   cur_field=akttgl        DO_MAP SHOW
+                IF cmax7hari mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.Max7HariPenyelsaian
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cmax7hari mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.Max7HariPenyelsaian*/
+
+
+SUBFILE(transbg1)
+SFL_LINES(1)
+SFL_TITLE(transbg1t)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdaktfoto
+SFL_UPL_DIRFLD	mtstgl
+SFL_UPLFLD mtsnobuk aktbrg
+SFL_COND        cstsNOPEN
+SFL_TARGET
+aktkodtypidx    mtsnobuk mtsdata lDETAILSDM
+
+/*******************************************************************************/
+
+IMAGE(trans2t)
+/----------------t-----------t-------t-------------------\
+|i.Brg           |t.Lok      |i.Jml  |                   |
+\----------------.-----------.-------.-------------------/
+
+IMAGE(trans2)
+|________________|___________|_______|___________________|
+
+
+FIELD(trans2)
+   btfbrg        NOCHANGE               INPUTRI     1
+   btflok        NOCHANGE               INPUTRI     2 /* Jasa / barang */
+   btfjml        NOCHANGE               INPUTRI     3 /* Jasa / barang */
+   btfbrdoto     NOCHANGE               INPUTRI     3 /* Jasa / barang */
+
+CALCS()
+ckondH2         mtsdvs == "H2"
+
+SUBFILE(trans2)
+SFL_LINES(5)
+SFL_COND        ckondH2
+SFL_TITLE(trans2t)
+SFL_TARGET
+    btfbrglokidx                mtdnobuk     mtdbrg  mtdlok mtdoto
+
+/************* Hapus Approval ***************/
+IMAGE(transc)
+__________________________
+
+FIELDS(transc)
+mtsnobuk        NOCHANGE        INPUTRI         1
+
+CALCS()
+cRI             mtssts != "CLSD" && (g_grpnam == "RI" || g_grpnam == "AHASSHEAD" || g_grpnam == "IT" || g_grpnam == "AHASSSPV" || g_grpnam == "AHASSINVSPV" ||
+				     g_grpnam == "ADHHEAD" || g_grpnam == "ADHSPV" || g_grpnam == "ADHDVH")
+
+SUBFILE(transc)
+SFL_LINES(1)
+SFL_APP_TYPE
+SFL_COND        cRI
+SFL_TARGET
+mtsbukidx	mtsnobuk
+
+
+/*------------------daddmts--------------*/
+CALCS(master)
+cmtstotal_a		mtstotal + mtdsubtot
+cmtstotal_u		mtstotal + mtdsubtot - ~mtdsubtot
+cmtstotal_d		mtstotal - mtdsubtot
+
+MAP(mupdmts_a)
+cmtstotal_a		mtstotal	   	DO_CALC
+
+MAP(mupdmts_u)
+cmtstotal_u		mtstotal	   	DO_CALC
+
+MAP(mupdmts_d)
+cmtstotal_d		mtstotal		DO_CALC	
+
+MAP(maddsub)
+mtsnobuk   mtsnobuk  REPLACE
+
+CALCS()
+ctothpp			ltothpp / mtdjml
+ctothpp1		mtdsubtot != 0  && mtdjml != 0
+ctothpp2		ltothpp * 1.1
+ctdkspm                 mtdkat != "SPM" && mtdkat !="SPMB"
+cspm                    mtdkat == "SPM" || mtdkat =="SPMB"
+
+MAP(mmapmtd)
+mtdjml   		mtdjml2		REPLACE  /* Pada saat diisi Operator */
+ldipenuhi		mtdjml		REPLACE
+ctothpp2		mtdsubtot	DO_CALC_IF ctdkspm
+ltothpp                 mtdsubtot       REPLACE_IF cspm
+ctothpp			mtdhrg   	DO_CALC_IF ctothpp1
+
+DBCALCS(dmapmtd)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapmtd
+
+MAP(mapbtf)
+mtstgl   	btftglfak	REPLACE
+
+CALCS()
+cmtstothrgA	mtstothrg + tcmtotal
+cmtstothrgU	mtstothrg + (tcmtotal - ~tcmtotal)
+cmtstothrgD	mtstothrg - tcmtotal
+cppssisprcA	ppssisprc - tcmtotal
+cppssisprcD	ppssisprc + tcmtotal
+cpmbsisprcA	pmbsisprc - tcmtotal
+cpmbsisprcD	pmbsisprc + tcmtotal
+cppsmshutuh	ppstotal == tcmtotal
+cppstdkutuh	ppstotal != tcmtotal
+cket7hari       "SDH LEWAT 7 HARI RVS"
+clewat7hari     "LEWAT7HARI"
+cjoinusr        djoinusr == 1
+ctipe_7hari     djoinusr == 1 && lusrADHDVH == abkkym
+ctipe_7harix    aktbrg == abkkym
+c402            "402"
+cmax7hari       akttgl > g_tgltrn && akttgl <= g_tgltrn + 7
+cbknhrini	aktlok == "ACC" && akttgl != g_tgltrn
+csdhACC		aktlok == "ACC" && djoinabk402 == 1
+ctambahabk 	mtsgrup2 == "SELISIH_AUDIT" && djoinabk == 0 && djoinabkcls == 0
+cdjoinabk	mtsgrup2 != "SELISIH_AUDIT" && djoinabk == 1
+cdjoinclsdabk   djoinabkcls == 1 && mtsgrup2 == "SELISIH_AUDIT"
+cINPH           "INPH"
+
+MAP(mupdmts2A)
+cmtstothrgA	mtstothrg	DO_CALC
+
+MAP(mupdmts2U)
+cmtstothrgU	mtstothrg	DO_CALC
+
+MAP(mupdmts2D)
+cmtstothrgD	mtstothrg	DO_CALC
+
+MAP(mupdpps2A)
+cppssisprcA	ppssisprc	DO_CALC
+gv_RCLS		ppsstsprc	REPLACE
+
+MAP(mupdpps2D)
+cppssisprcD	ppssisprc	DO_CALC
+gv_INPG		ppsstsprc	REPLACE_IF cppsmshutuh
+gv_RCLS		ppsstsprc	REPLACE_IF cppstdkutuh
+
+MAP(mupdpmb2A)
+cpmbsisprcA	pmbsisprc	DO_CALC
+
+MAP(mupdpmb2D)
+cpmbsisprcD	pmbsisprc	DO_CALC
+
+MAP(mupdabkADHDVH)
+gv_CLSD         abksts          REPLACE_IF ctipe_7hari 
+
+MAP(mupdabkUSR)
+gv_CLSD		abksts		REPLACE_IF ctipe_7harix
+
+MAP(maddabkADHDVH)
+/*gv_INPG         abksts          REPLACE_IF chariini*/
+gt_RINP         abksts          REPLACE_IF cmax7hari
+lkunciabsen     abkdata         REPLACE
+lusrADHDVH      abkkym          REPLACE_IF cjoinusr
+mtsnobuk        abknobuk        REPLACE
+akttgl          abktgl          REPLACE
+cket7hari       abkkym2         DO_CALC
+c402            abkscr          DO_CALC
+clewat7hari     abktype         DO_CALC
+aktbrg          abknoll         REPLACE
+DEBUG      aktnobuk  aktnobuk   REPLACE
+
+MAP(maddabkUSR)
+/*gv_INPG         abksts          REPLACE_IF chariini*/
+gt_RINP         abksts          REPLACE_IF cmax7hari
+lkunciabsen     abkdata         REPLACE
+aktbrg          abkkym          REPLACE
+mtsnobuk        abknobuk        REPLACE
+akttgl          abktgl          REPLACE
+cket7hari       abkkym2         DO_CALC
+c402            abkscr          DO_CALC
+clewat7hari     abktype         DO_CALC
+aktbrg          abknoll         REPLACE
+DEBUG      aktnobuk  aktnobuk   REPLACE
+
+MAP(mupdmts4d)
+cBLANKS		mtsstsapr	DO_CALC
+
+/*-------------------------------------------*/
+SPCALCS(spadd) 	
+DO_LIB_IF cspm ap_adbtf(gv_M,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);
+DO_LIB_IF ctdkspm ap_adbtf(mtdsisbrg,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);
+/*DO_LIB_IF ctdkspm ap_adbtf(gv_O,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);*/
+dmapmtd
+DO_LIB ap_dbclc(DNAME dupdmts_a,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_a);
+
+SPCALCS(spupd) 	
+DO_LIB ap_dlbtf(gv_O,~mtdbrdoto,mtsnobuk,~mtdbrg,~mtdlok,mtdoto,~mtdukrwrn,~mtdsat,~mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,g_strksg,g_str_empty,lnamtrnjml);
+DO_LIB_IF ctdkspm ap_adbtf(mtdsisbrg,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);
+/*DO_LIB_IF ctdkspm ap_adbtf(gv_O,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);*/
+DO_LIB_IF cspm ap_adbtf(gv_M,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);
+dmapmtd
+DO_LIB ap_dbclc(DNAME dupdmts_u,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_u);
+
+SPCALCS(spdel) 	
+DO_LIB ap_dbclc(DNAME dupdmts_d,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_d);
+DO_LIB ap_dlbtf(gv_O,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,g_strksg,g_str_empty,lnamtrnjml);
+
+SPCALCS(sadd)
+DO_LIB_IF cotY	ap_dbclc(DNAME daddsub,DCOMMAND ADD_SUB,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+
+SPCALCS(sptransa_add)
+DO_LIB ap_dbclc(DNAME dupdmts2A,DCOMMAND UPDATE,DTARGET mtsbukidx tcmnobuk,DMAP mupdmts2A);
+DO_LIB ap_dbclc(DNAME dupdpps2A,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdpps2A);
+
+SPCALCS(sptransa_upd)
+DO_LIB ap_dbclc(DNAME dupdmts2U,DCOMMAND UPDATE,DTARGET mtsbukidx tcmnobuk,DMAP mupdmts2U);
+DO_LIB ap_dbclc(DNAME dupdpps2U1,DCOMMAND UPDATE,DTARGET ppsbukidx ~tcmbank,DMAP mupdpps2D);
+DO_LIB ap_dbclc(DNAME dupdpps2U2,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdpps2A);
+
+SPCALCS(sptransa_del)
+DO_LIB ap_dbclc(DNAME dupdmts2D,DCOMMAND UPDATE,DTARGET mtsbukidx tcmnobuk,DMAP mupdmts2D);
+DO_LIB ap_dbclc(DNAME dupdpps2D,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdpps2D);
+
+SPCALCS(sptransag1_add)
+DO_LIB ap_dbclc(DNAME dupdmts2g1A,DCOMMAND UPDATE,DTARGET mtsbukidx tcmnobuk,DMAP mupdmts2A);
+DO_LIB ap_dbclc(DNAME dupdpmb2g1A,DCOMMAND UPDATE,DTARGET pmbbukidx tcmbank,DMAP mupdpmb2A);
+
+SPCALCS(sptransag1_upd)
+DO_LIB ap_dbclc(DNAME dupdmts2g1U,DCOMMAND UPDATE,DTARGET mtsbukidx tcmnobuk,DMAP mupdmts2U);
+DO_LIB ap_dbclc(DNAME dupdpmb2g1U1,DCOMMAND UPDATE,DTARGET pmbbukidx ~tcmbank,DMAP mupdpmb2D);
+DO_LIB ap_dbclc(DNAME dupdpmb2g1U2,DCOMMAND UPDATE,DTARGET pmbbukidx tcmbank,DMAP mupdpmb2A);
+
+SPCALCS(sptransag1_del)
+DO_LIB ap_dbclc(DNAME dupdmts2g1D,DCOMMAND UPDATE,DTARGET mtsbukidx tcmnobuk,DMAP mupdmts2D);
+DO_LIB ap_dbclc(DNAME dupdpmb2g1D,DCOMMAND UPDATE,DTARGET pmbbukidx tcmbank,DMAP mupdpmb2D);
+
+SPCALCS(sptransb_upd)
+DO_LIB_IF csdhACC ap_dbclc(DNAME dupdabkADHDVH, DCOMMAND UPDATE_RANGE,DTARGET  abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkADHDVH);
+DO_LIB_IF csdhACC ap_dbclc(DNAME dupdabkUSR, DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkUSR);
+DO_LIB_IF cbknhrini ap_dbclc(DNAME daddabkADHDVH, DCOMMAND ADD,DFILE abk,DMAP maddabkADHDVH);
+DO_LIB_IF cbknhrini ap_dbclc(DNAME daddabkUSR, DCOMMAND ADD,DFILE abk,DMAP maddabkUSR);
+
+SPCALCS(sptransc)
+DO_LIB ap_dbclc(DNAME dupdmts4d,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmts4d);
+DO_LIB ap_dbclc(DNAME ddelapr,DCOMMAND DELETE_RANGE, DTARGET aprbukkeurt mtsnobuk);
+
+MAP(mupdabk)
+    gv_CLSD	abksts	REPLACE
+
+MAP(mupdinphabk)
+    cINPH       abksts  DO_CALC
+
+SPCALCS(spdelabk)
+DO_LIB ap_dbclc(DNAME dupdabk, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen mtsnobuk, DMAP mupdabk);
+
+SPCALCS(spaddabk)
+DO_LIB_IF ctambahabk 		ap_nxpst(l4996, lmnxtpstadd);
+DO_LIB_IF cdjoinabk             ap_dbclc(DNAME dupdabk1, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen mtsnobuk, DMAP mupdabk);
+DO_LIB_IF cdjoinclsdabk         ap_dbclc(DNAME dupdabklagi, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen mtsnobuk,DBC_COND cabkclsd, DMAP mupdinphabk);
+
+POSTING(master)
+	PST_UPD_DET_COND    c1
+	PST_SUB_ADDCMD sadd
+	PST_ADDCMD spaddabk
+	PST_UPDCMD spaddabk
+	PST_DELCMD spdelabk
+
+POSTING(trans)
+        PST_ADDCMD 	spadd
+	PST_UPDCMD 	spupd
+	PST_DELCMD 	spdel
+
+POSTING(transg1)
+        PST_ADDCMD 	spadd
+	PST_UPDCMD 	spupd
+	PST_DELCMD 	spdel
+
+POSTING(transa)
+	PST_ADDCMD	sptransa_add
+	PST_UPDCMD	sptransa_upd
+	PST_DELCMD	sptransa_del
+
+POSTING(transag1)
+	PST_ADDCMD	sptransag1_add
+	PST_UPDCMD	sptransag1_upd
+	PST_DELCMD	sptransag1_del
+
+POSTING(transbg1)
+        PST_UPDCMD      sptransb_upd
+
+POSTING(transc)
+	PST_COMMAND	sptransc
+
+CALCS(master)
+  cmtsOPENKP 	((mtssts == "OPEN" && mtsdata == "KORMIN") || (mtssts == "INPG" && (g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHSPV" || g_grpnam == "ADHDVH")))
+  cmtsOPENKP0 	mtssts == "OPEN" && mtsdata == "KORMIN" && djoinmtd == 0 && djointcm == 0
+  cmtsOPENKP1   (mtssts == "OPEN" && mtsdata == "KORMIN") || (mtssts == "INPG" && (mtstypbrg == "HL" || mtstypbrg == "HD") && mtsdvs == "H2")
+  cadadetail	djoinmtdu == 1 
+  cupdtrsbg1    mtssts == "INPG" && (g_grpnam == "ADHDVH" || g_usrkode == aktbrg)
+
+PERMIT(master)
+	PMT_UPDALL_COND	cmtsOPENKP
+	PMT_DEL_COND    cmtsOPENKP0
+	PMT_EXIT_COND   cadadetail
+	PMT_EXIT_MOV_COND cadadetail
+	PMT_EXIT_MSG Detil harus diisi atau hapus data ini
+
+PERMIT(trans)
+	PMT_ADD_COND	cmtsOPENKP
+	PMT_UPDALL_COND	cmtsOPENKP
+	PMT_IGNDET_COND	cmtsOPENKP
+	PMT_DEL_COND	cmtsOPENKP
+
+PERMIT(trans2)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	c0
+	PMT_DEL_COND	c0
+
+PERMIT(transg1)
+	PMT_ADD_COND	cmtsOPENKP
+	PMT_UPDALL_COND	cmtsOPENKP
+	PMT_DEL_COND	cmtsOPENKP
+
+PERMIT(transa)
+	PMT_ADD_COND	cmtsOPENKP1
+	PMT_UPDALL_COND	cmtsOPENKP1
+	PMT_DEL_COND	cmtsOPENKP1
+
+PERMIT(transag1)
+	PMT_ADD_COND	cmtsOPENKP1
+	PMT_UPDALL_COND	cmtsOPENKP1
+	PMT_DEL_COND	cmtsOPENKP1
+
+PERMIT(transb)
+        PMT_ADD_COND    cmtsOPENKP
+        PMT_UPDALL_COND cmtsOPENKP
+        PMT_DEL_COND    cmtsOPENKP
+
+PERMIT(transbg1)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND cupdtrsbg1
+        PMT_DEL_COND    c0
+
+
+IMAGE(report) 
+/------------------------------------------------------------\
+	
+		No. Koreksi : ______________
+
+		Status      : ____
+
+\------------------------------------------------------------/
+
+FIELD(report)
+    mtsnobuk	    PROTECT	       INPUTRI		1	
+    mtssts          PROTECT	       INPUTRI		2
+
+MAP(mstring)
+mtsnobuk		r_string1	REPLACE
+mtssts		r_string2	REPLACE
+
+RTREE(report)
+USES_SCRIPT(scr401.rptdesign)
+RT_MAP   mstring
+
+END_SCREEN

@@ -1,0 +1,124 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------\
+|t.BuktiKirim                                               |
+|________________________________                           |                          
+|/--s.UPLOAD----------------------\/-----------------------\|
+||                                ||t.TglUpl  : __________ ||
+||                                ||t.TglKrm  : __________ ||
+||                                ||t.User    : __________ ||
+||                                ||t.CbgKrm  : __________ ||
+||                                ||t.CbgTuj  : __________ ||
+||                                ||t.NipAcc  : __________ ||
+||                                ||t.OkUp    : __________ ||
+||                                ||t.AccHrd  : __________ ||
+||                                ||t.JmlTac  : __________ ||
+||                                || ______ ______         ||
+||                                |\-----------------------/|
+||                                | t.TknBwhUplFoto         |
+|\--------------------------------/                         |
+|i.Ket : ___________________________________________________|
+\-----------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdket		ALLCAPS			INPUTRI 1 
+psdtgl2		PROTECT {DD-MM-YY}	INPUTRI	2 /*Tgl*/ 
+psdtgl1   	ALLCAPS {DD-MM-YY}	INPUTRI 3 /*Tgl Krm*/
+psdstr1		PROTECT			INPUTRI 4 /*User*/
+psdstr3		PROTECT			INPUTRI 5 /*Cbg Kirim*/
+psdstr4		PROTECT			INPUTRI 6 /*Cbg Tujuan*/
+psdstr5		PROTECT			INPUTRI 7  /*Nip acc*/	
+psdtype		PROTECT			INPUTRI	8 
+psdtype2	PROTECT			INPUTRI 9 
+psdtot          PROTECT                 INPUTRI 10
+luploadtacc4		TOMBOL			INPUTRI 11
+luploadacc4		TOMBOL			INPUTRI 12
+psdket2  		ALLCAPS SCROLL		INPUTRI 13 
+
+CALCS()
+ctotkosong2      psdtot==BLANKS && psdkode!="JNSJMN"
+ctotada2         psdtot!=BLANKS && psdkode!="JNSJMN"
+cplus2           psdtot+1
+ctaccb2          psdtype2=="TACC"
+
+DEFAULTS(tmptranst)
+luploadtacc4	INIT		TACC
+luploadacc4	INIT		ACC
+l_count4	INIT		1
+
+EDITS(tmptranst)
+t.Mandatory psdtgl1	MANDATORY
+t.Mandatory psdstr4 	MANDATORY
+e.Mandatory     psdket2 MANDATORY_IF ctaccb2
+
+
+MAP(mupdmtssdm21a)
+cOK		psdtype		DO_CALC
+g_usrkode	psdstr1		REPLACE
+g_tgltrn	psdtgl2		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+lcabang		psdstr3		REPLACE
+cSMG31		psdstr4		DO_CALC
+
+DBCALCS(dupdmtssdm21a)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdmtssdm21a
+
+MAP(mupdmtssdm2a)
+ctacc1		psdtype2 	DO_CALC
+cBLANKS		psdtype		DO_CALC
+g_usrkode	psdstr5		REPLACE
+cplus2          psdtot          DO_CALC_IF ctotada2
+c1              psdtot          DO_CALC_IF ctotkosong2
+
+MAP(mupdmtssdm3a)
+cacc1		psdtype2 	DO_CALC
+cacc1		psdtype		DO_CALC
+g_usrkode	psdstr5		REPLACE
+g_tgltrn	psdtgl2		REPLACE
+
+CALCS()
+cada_kirim2	(UPLEXIST(l_count4) == 1  || UPLEXIST(l_count4) == 0) && (g_grpnam=="HRDHEAD"|| g_grpnam=="HRDSPV" || g_usrkode=="1802178" || g_grpnam=="RI") && hrmcab2=="PENGIRIMAN" && hrmket2=="ACC_BERKAS"
+
+SPCALCS(supdpsd2mtsa)
+	DO_LIB_IF cada_kirim2 ap_dbclc(DNAME dupdmtssdm2a,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdmtssdm2a);
+
+SPCALCS(supdpsd3mtsa)
+	DO_LIB_IF cada_kirim2 ap_dbclc(DNAME dupdmtssdm3a,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdmtssdm3a);
+
+CALCS()
+cdwirini	"1076698"
+csmg		"SMG31"
+cketresi	"UPLOAD BUKTI RESI PENGIRIMAN"
+cbukan_jamin	psdkode!=gv_jnsjmn
+
+MAP(misi)
+cdwirini	psdstr2		DO_CALC
+lcabang		psdstr3		REPLACE
+csmg		psdstr4		DO_CALC
+cketresi	psdket		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT 	cur_field=psdtgl1	DO_MAP SHOW misi
+CLICKED		cur_field=luploadtacc4	DO_SPCALCS supdpsd2mtsa
+CLICKED		cur_field=luploadacc4	DO_SPCALCS supdpsd3mtsa
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF cbknIT
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_COND	cbolehupload
+SFL_SELECT	cbukan_jamin
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  psdpsmkode psdkode
+SFL_UPLFLD_DBCALCS dupdmtssdm21a
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+	psddatpsmkod  ldtijazah11 hrmnobuk     
+
+SFL_MAP
+ldtijazah11    		psddata		REPLACE
+hrmnobuk		psdpsmkode	REPLACE
+

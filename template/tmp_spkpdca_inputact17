@@ -1,0 +1,159 @@
+/*ANALISA REKOMENDASI PERBAIKAN DARI PENCAPAIAN DIVISI*/
+IMAGE(tmptranst)
+/-------------------------------------------------------------\
+|/-----------------------------------------------------------\|
+||t.InputHslSpk                                              ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.Nobuk               ___________________________________  ||
+||t.TanggalInput        _________                            ||
+||t.Activity            _________                            ||
+||                      ___________________________________  ||
+||t.VarKpi              ___________________________________  ||
+||t.NipPdca             ___________________________________  ||
+||t.NmPdca              ___________________________________  ||
+||t.NipPic              ___________________________________  ||
+||t.NamaPic             ___________________________________  ||
+||t.NpHead              ___________________________________  ||
+||t.NmHead              ___________________________________  ||
+||spasi                                                      ||
+||t.Sesuaix             ___________________________________  ||
+||t.Ket                 ___________________________________  ||
+||t.VarKPI1             ___________________________________  ||
+||t.EskDiv              ___________________________________  ||
+||                                               __________  ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.Pica                                                     ||
+|\-----------------------------------------------------------/|
+|/----------------------- UPLOAD ----------------------------\|
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.Upload                                                   ||
+|\-----------------------------------------------------------/|
+/------------------------ DOCUPLOAD --------------------------\
+|                                                             |
+|                                                             |
+|                                                             |
+|                                                             |
+|                                                             |
+|                                                             |
+\-------------------------------------------------------------/
+|/-----------------------------------------------------------\|
+||t.ApprovalHead        _______                              ||
+|\-----------------------------------------------------------/|
+\-------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spknobuk                PROTECT                         INPUTRI 1               /*Nobuk*/
+spktgl                  PROTECT                         INPUTRI 2               /*Tanggal Input*/
+spktgg                  PROTECT                         INPUTRI 3               /*Activity*/
+lketacttmp              PROTECT                         INPUTRI 4               /*Ket Activity*/
+spknoasal               PROTECT                         INPUTRI 5               /*VarKpi*/
+spktgg2                 PROTECT                         INPUTRI 6               /*NIP PDCA*/
+lpdcatmp                PROTECT                         INPUTRI 7               /*Nama PDCA*/
+spktgg3                 PROTECT                         INPUTRI 8               /*NIP PIC*/
+lpictmp                 PROTECT                         INPUTRI 9               /*Nama PIC*/
+spktgg4                 PROTECT                         INPUTRI 10              /*NIP Head*/
+lheadpdcatmp            PROTECT                         INPUTRI 11              /*Nama Head*/
+spkkat                  NOCHANGE                        INPUTRI 12               /*Sesuai? YA-TIDAK*/
+spkket                  TEXTAREA                        INPUTRI 13              /*Keterangan*/
+spkkat6                 NOCHANGE                        INPUTRI 14              /*Variabel KPI (1)*/
+spkreview4              TEXTAREA                        INPUTRI 15              /*Eskalasi ke Divisi*/  
+lenter                  NOCHANGE                        INPUTRI 16              /*Enter*/             
+spkhasil2               NOCHANGE                        INPUTRI 17              /*Approval Head PDCA*/
+
+DEFAULT(tmptranst)
+spktgl                  INIT_ADD                        {g_tgltrn}
+
+spkkat                  DFALT_SCAN_BLANKS               YA
+                                                        TIDAK
+
+spkhasil2               DFALT_SCAN_BLANKS               ACC
+                                                        TACC
+
+EDITS(tmptranst)
+e.Mandatory                     spkket          MANDATORY
+e.Wajib Isi Eskalasi Divisi     spkreview4      MANDATORY
+
+e.Validate Activity             spktgg          VALIDATE tbddatkodidx mactivitytmp17 {Pgv_dttabel} {PlSPKPDCA21} {PlACTIVITY}
+e.Validate PDCA                 spktgg2         VALIDATE psikodidx    mpsipdcatmp17  0
+e.Validate PIC                  spktgg3         VALIDATE psikodidx    mpsipictmp17   0
+e.Validate HEAD PDCA            spktgg4         VALIDATE psikodidx    mpsiheadtmp17  0
+
+MAP(mactivitytmp17)
+tbdkode                 spktgg          REPLACE
+tbdket                  lketacttmp      REPLACE
+tbtkettype              spknoasal       REPLACE
+
+MAP(mpsipdcatmp17)
+psikode                 spktgg2         REPLACE
+psinama                 lpdcatmp        REPLACE
+
+MAP(mpsipictmp17)
+psikode                 spktgg3         REPLACE
+psinama                 lpictmp         REPLACE
+
+MAP(mpsiheadtmp17)
+psikode                 spktgg4         REPLACE
+psinama                 lheadpdcatmp    REPLACE
+
+MAP(mdataact17)
+lINPACT                 spkdata         REPLACE
+lINPACT17	        spktype         REPLACE
+tlmnobuk                spknobuk        REPLACE
+tlmnobbm                spktgg          REPLACE
+tlmuntuk                spktgg2         REPLACE
+tlmplg                  spktgg3         REPLACE
+tlmbisnis               spktgg4         REPLACE
+
+MAP(mmapkodefoto17)
+ckode2                  lspkkode2       DO_CALC
+ckode3                  lspkkode3       DO_CALC
+lspkkode2               spkkode2        REPLACE
+lspkkode3               spkkode3        REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=spkkat                DO_MAP SHOW mdataact17
+AFTER_INPUT             cur_field=spkkat                DO_MAP SHOW mmapkodefoto17
+
+BEFORE_INPUT            cur_field=spkkat                DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkket                DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkkat6               DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkreview4            DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=lenter                DO_SKIP_IF clogusrinput
+
+BEFORE_INPUT            cur_field=spkhasil2             DO_SKIP_IF cloghead
+
+MAP(mupdact17a)
+cY                      spkfoto2        DO_CALC
+DBCALCS(dupdact17a)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx spkprm
+        DBC_MAP         mupdact17a
+
+MAP(mupdact17b)
+cY                      spkfoto3         DO_CALC
+DBCALCS(dupdact17b)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx spkprm
+        DBC_MAP         mupdact17b
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD             spknobuk spkkode2  /*upload Pica*/
+SFL_DOCUPLFLD          spknobuk spkkode3  /*upload Dokumen Mandatory*/
+SFL_UPLFLD_DBCALCS     dupdact17a
+SFL_DOCUPLFLD_DBCALCS  dupdact17b
+SFL_TARGET
+        spkdatbuktyp    lINPACT tlmnobuk lINPACT17
+

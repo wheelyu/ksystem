@@ -1,0 +1,70 @@
+LOCAL
+PGM_FIELDS
+lenter1		STRING	31
+ldumc_1		INT2	2
+lpnjg		INT2	2
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+   _______________________      
+
+  t.Legal: _______________________
+  t.UsVer: _______________________
+  t.HAcc : ____		 _________
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketnama		PROTECT		INPUTRI	1
+ketisi 		TEXTAREA 3 	INPUTRI	2
+kettype		NOCHANGE	INPUTRI	3
+ketyt1		NOCHANGE	INPUTRI 1
+lenter1		NOCHANGE	INPUTRI	5
+
+DEFAULTS(tmptranst)
+lenter1		INIT			"TAB+ENTER"
+kettype		DFALT_SCAN_BLANKS	SDH_VRFKS           
+ketyt1		DFALT_SCAN_BLANKS	Y T
+
+CALCS()
+clglopn		tlmsts2=="C"
+cusrvr		tlmsts2=="D"
+
+EDITS(tmptranst)
+e.MandatoryRev  ketisi           MANDATORY_IF clglopn
+e.MandatoryVer  kettype          MANDATORY_IF cusrvr
+
+CALCS()
+cbknbm		g_usrkode != tlmplg && g_grpnam != "BM" && g_grpnam != "LITIGASIHD" && g_grpnam != "IT" && g_grpnam != "RAS"
+cbknlegal	g_usrkode != tlmpst && g_grpnam != "LARO" && g_grpnam != "LITIGASISPV" && g_grpnam != "LITIGASIHD" && g_grpnam != "IT" && g_grpnam != "RAS" && g_grpnam!="RI"
+cbkndivhdlegal  g_grpnam != "LITIGASIHD"
+cdivhdlegal	g_grpnam == "LITIGASIHD"
+cpnjg           DO_LIB ap_strln(ketisi,&lpnjg);
+cpjng           lpnjg >= 120
+    
+MAP(mpnjng)
+cpnjg           lpnjg           DO_CALC
+
+MAP(mdumc_1)
+ldumc_1		ldumc_1		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=ketisi 	DO_SKIP_IF cbknlegal
+BEFORE_INPUT	cur_field=kettype	DO_SKIP_IF cbknbm
+BEFORE_INPUT	cur_field=ketyt1	DO_SKIP_IF cbkndivhdlegal
+BEFORE_INPUT    cur_field=ketisi        DO_SKIP_IF cdivhdlegal
+BEFORE_INPUT    cur_field=kettype       DO_SKIP_IF cdivhdlegal
+AFTER_INPUT     cur_field=ketisi        DO_MAP SHOW mpnjng  
+AFTER_INPUT     cur_field=ketisi        DO_MAP SHOW
+                IF cpjng mdumc_1
+                ELSE HKCURSOR STAY
+                HKMSG t.Ketlglmin120
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+        ketdatbukkod    llegal11 tlmnobuk llegalopini

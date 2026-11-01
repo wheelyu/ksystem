@@ -1,0 +1,99 @@
+LOCAL
+PGM_FIELDS
+lbukabkftomga10         STRING          21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| |t.AdaPass : _____________!|
+| |t.PolaNon : _____________!|
+| |t.Pass    : _____________!|
+| | _______________________ !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk                NOCHANGE                INPUTRI         10
+doclok                  PROTECT                 INPUTRI         11
+docsts                  NOCHANGE                INPUTRI         12
+doccab                  NOCHANGE                INPUTRI         13
+docno                   NONE                    INPUTRI         14
+ltombol                 TOMBOL                  INPUTRI         99
+
+DEFAULTS(tmptranst)
+docsts          DFALT_SCAN_BLANKS       YA "YA"
+                                        TDK "TDK"
+doccab          DFALT_SCAN_BLANKS       POLA "SANDI POLA"
+                                        NON_POLA "SANDI KATA/NOMOR"
+
+CALCS()
+ctgluplisi10    (doctgljadi!=BLANKS && docsts=="YA" && doccab=="POLA") ||
+                (docsts=="YA" && doccab=="NON_POLA" && docno!=BLANKS) ||
+                docsts=="TDK"
+cstsuplisi10    doclok=="OK"
+cbukabkftomga10 STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+cadapass10        docsts=="YA"
+cadapassnon10     docsts=="YA" && doccab=="NON_POLA"
+
+EDITS(tmptranst)
+e.Mandatory     docsts  MANDATORY
+e.MandatoryPola doccab  MANDATORY_IF cadapass10
+e.MandatoryPass docno   MANDATORY_IF cadapassnon10
+
+MAP(mupddocpassbrg10)
+g_tgltrn        doctgljadi      REPLACE
+
+MAP(mupddocpassbrg_10)
+lY              doclok          REPLACE_IF ctgluplisi10
+cbukabkftomga10 lbukabkftomga10 DO_CALC
+
+DBCALCS(dupddocpassbrg10)
+        DCOMMAND UPDATE
+        DTARGET  docprmidx docprm
+        DMAP     mupddocpassbrg10
+
+CALCS()
+cpassbrg10        tmpkode == "PASSBRG"
+cT		  tmptypjl == "T"
+
+MAP(mupdabkftomga10)
+gv_CLSD         abksts          REPLACE
+
+SPCALCS(spuplftomga10)
+DO_LIB  ap_dbclc(DNAME dupddockonfkonspj_10,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocpassbrg_10);
+DO_LIB_IF cstsuplisi10   ap_dbclc(DNAME dupdabkftomga10,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga10,DMAP mupdabkftomga10);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombol               DO_SPCALCS spuplftomga10
+BEFORE_INPUT
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cpassbrg10
+SFL_COND cT
+SFL_UPLFLD_DBCALCS dupddocpassbrg10
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_UPLREADONLY
+SFL_TARGET
+        docdatbukidx lUPGAD  btmnobuk lpassbrgx 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cboleh
+  PMT_DEL_COND  c0

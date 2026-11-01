@@ -1,0 +1,322 @@
+SCREEN 3001 QUERY_TYPE  s.GrupDanProteksiGrup
+SCR_FILE grp
+SCR_LOGFLD grpnam 
+SCR_TO_FLY 3002 3003 3004 3005 
+
+LOCAL
+PGM_FIELDS
+   lgrpdsk		    STRING	    11
+   lblanktype               STRING           2
+   lBtype                   STRING           2
+   lDtype                   STRING           11
+   ltomdet_d    	    STRING	30
+   ltomdet_2d    	    STRING	30
+   ltomdet_3d    	    STRING	30
+   ltomdet_4d    	    STRING	30
+   lpil			    INT2	2
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------\
+|   /------------------------------------------------------------------------\   |
+|   |i.Kode               : _________________                                |   |
+|   |i.Keterangan         : ________________________________________         |   |
+|   |i.BolehLihatFileGaji : __                                               |   |
+|   |i.HrsAbsSaatLogin    : __                                               |   |
+|   |i.HrsSjSaatLogin     : __                                               |   |
+|   |t.Bolehtransferoto   : __                                               |   |
+|   |i.UrtApr             : ____                                             |   |
+|   \------------------------------------------------------------------------/   |
+|    __________________  _________________  ________________ ________________    |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+\--------------------------------------------------------------------------------/
+
+FIELD(master)
+   grpnam            ALLCAPS        INPUTRI        1 /* group name */
+   grpdes            ALLWORDCAPS    INPUTRI        2 /* group description */
+   grpytgj           NOCHANGE       INPUTRI        3 /* group description */
+   grpytabs          NOCHANGE       INPUTRI        4 /* group description */
+   grpytsj           NOCHANGE       INPUTRI        5 /* group description */
+   grpyttrbank       NOCHANGE       INPUTRI        6 /* group description */
+   grpurtapr         NUMERIC        INPUTRI        7 /* group description */
+   ltomdet_d  	  TOMBOL	      	    INPUTRI	9 /* Tombol Detil d*/
+   ltomdet_2d  	  TOMBOL	      	    INPUTRI	10 /* Tombol Detil d*/
+   ltomdet_3d  	  TOMBOL	      	    INPUTRI	11 /* Tombol Detil d*/
+   ltomdet_4d  	  TOMBOL	      	    INPUTRI	12 /* Tombol Detil d*/
+
+CALCS()
+caprY           stssetapr == "Y" 
+
+EDITS(master)
+Tombol d tidak ltomdet_d SHOW_SFL trans
+Tombol d tidak ltomdet_2d SHOW_SFL transa
+Tombol d tidak ltomdet_3d SHOW_SFL transb
+Tombol d tidak ltomdet_4d SHOW_SFL transc
+e.MandatoryApr grpurtapr MANDATORY_IF caprY
+Harus Masukkan Nama Grup grpnam MANDATORY
+Rekord ini sudah ada grpnam DUPKEY grpnamidx
+
+HELP(master)
+ Masukkan nama group grpnam
+ Masukkan keterangan group ini grpdes
+
+DEFAULTS(master)
+lgrpdsk  INIT_UPDATE {grpnam}
+lblanktype INIT BLANKS
+lBtype  INIT B
+lBtype  INIT_QUERY B
+lBtype  INIT_UPDATE B
+lDtype  INIT DASHBOARD
+lDtype  INIT_QUERY DASHBOARD
+lDtype  INIT_UPDATE DASHBOARD
+grpytgj		DFALT_LIST  T Y
+grpytabs	DFALT_LIST  T Y
+grpytsj 	DFALT_LIST  T Y
+grpyttrbank 	DFALT_LIST  T Y
+ltomdet_d    	INIT   "1d.Proteksi Layar"
+ltomdet_2d  	INIT   "2d.Proteksi Field"
+ltomdet_3d  	INIT   "3d.Proteksi Rekening"
+ltomdet_4d  	INIT   "4d.Proteksi Dashboard"
+
+/*** SUBFILE INFORMATION ***/
+IMAGE(transt)
+/---------------------t---------------t----------\
+|Layar yang diijinkan | Boleh Posting |   Grup   |
+\---------------------.---------------.----------/
+
+IMAGE(trans) 
+|          ______     |      _        |_________ |
+
+FIELD(trans)
+    gdtprt           NONE             INPUTRI     1/* grup is allowed this screen */
+    gdtpst           NOCHANGE          INPUTRI     2/* grup is allowed this screen */
+    gdtgrp           PROTECT SCROLL    INPUTRI     3/* group is protected from this screen */
+
+EDITS(trans)
+    Harus masukkan data gdtprt  MANDATORY
+    Nomor ini sudah ada gdtprt DUPKEY gdtgpridx {Pgrpnam}
+
+DEFAULTS(trans)
+    gdtpst  DFALT_LIST Y T
+
+HELP(trans)
+    Masukkan nomor layar yang diijinkan untuk grup ini gdtprt
+    Tekan tombol Spasi untuk memilih Y atau T gdtpst
+	
+
+/*****/
+
+SUBFILE(trans)
+SFL_LINES(8)    /* total number of lines sfl takes up on screen  */
+SFL_TITLE(transt)
+
+SFL_TARGET
+    gdtgpridx                grpnam  
+
+SFL_MAP
+    grpnam               gdtgrp 		REPLACE
+
+/****/
+IMAGE(transat) 
+/------------------------t-----------------\
+| Field Yang di Proteksi | Tampak di Layar |
+\------------------------.-----------------/
+
+IMAGE(transa) 
+|  ____________          |        _        |
+
+FIELD(transa)
+   gdffld      NONE                INPUTRI     1
+   gdfseen     NOCHANGE  INPUTRI     2
+
+DEFAULTS(transa)
+  gdfseen DFALT_LIST  Y T
+
+HELP(transa)
+ Masukkan field yang diproteksi gdffld
+
+/* ------------------ djoinfld --------------*/
+DBCALCS(djoinfld)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	gdftpgpfdidx     lblanktype grpnam gdffld
+
+CALCS()
+cjoinfld0	djoinfld == 0 || gdffld == ~gdffld
+
+MAP(mdum)
+lBtype		lBtype		REPLACE
+
+HOOKS(transa)
+AFTER_INPUT		cur_field=gdffld	DO_MAP SHOW
+			IF cjoinfld0 mdum
+			ELSE HKCURSOR STAY
+			HKMSG Field ini sudah di Proteksi
+
+CALCS()
+cbkndashb  gdfdata != "DASHBOARD"
+
+SUBFILE(transa)
+SFL_TITLE(transat)
+SFL_SELECT cbkndashb
+SFL_LINES(9)    /* total number of lines sfl takes up on screen  */
+
+SFL_TARGET
+gdftpgpfdidx            lblanktype grpnam  
+
+SFL_MAP
+   grpnam                gdfgrp           REPLACE
+   gdffld                gdfbbm         REPLACE
+/*
+CALCS(master)
+cgrpubh   lgrpdsk != grpnam*/
+
+IMAGE(transbt) 
+/------------------------t-----------------\
+| Rek.BBM yang diijinkan |    Grup         |
+\------------------------.-----------------/
+
+IMAGE(transb)  
+|   __________           |    ___________  |
+
+FIELD(transb)
+   gdfbbm      NONE      INPUTRI     1
+   gdfgrp      PROTECT SCROLL      INPUTRI     1
+
+DEFAULTS(transb)
+   gdftype    INIT   B  /* Buku Besar */
+
+/* ------------------ djoinbbm --------------*/
+DBCALCS(djoinbbm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	gdftpgpbmidx    lBtype grpnam gdfbbm
+
+CALCS()
+cjoinbbm0	djoinbbm == 0
+
+HOOKS(transb)
+AFTER_INPUT		cur_field=gdfbbm	DO_MAP SHOW
+			IF cjoinbbm0 mdum
+			ELSE HKCURSOR STAY
+			HKMSG No.Rekening ini sudah ada    
+
+SUBFILE(transb)
+SFL_TITLE(transbt)
+SFL_SELECT cbkndashb
+SFL_LINES(9)    
+
+SFL_TARGET
+    gdftpgpbmidx            lBtype grpnam  
+
+SFL_MAP
+   grpnam              gdfgrp           REPLACE
+   gdfbbm              gdffld           REPLACE
+    
+IMAGE(transct) 
+/----------------------------t------------------t----------------------------------t---------------\
+|  t.Url                     |  t.Nama          | t.Id                             |    t.Param    |
+\----------------------------.------------------.----------------------------------.---------------/
+
+IMAGE(transc)  
+|____________________________|__________________|__________________________________|_______________|
+
+FIELD(transc)
+   gdfurl      NONE    SCROLL  INPUTRI     1
+   gdfbbm      ALLCAPS SCROLL  INPUTRI     2
+   gdfid       NONE    SCROLL  INPUTRI     3
+   gdfcab      NONE    SCROLL  INPUTRI     4
+ 
+DEFAULTS(transc)
+   gdfdata    INIT   DASHBOARD 
+   gdfurl     INIT    https://dashboard.nusantara-sakti.co.id
+
+CALCS()
+cgrpnamisi    grpnam != BLANKS
+
+SUBFILE(transc)
+SFL_TITLE(transct)
+SFL_SELECT cgrpnamisi
+SFL_LINES(9)    
+
+SFL_TARGET
+gdfdatgrpidx   lDtype grpnam 	
+
+SFL_MAP
+   grpnam              gdfgrp           REPLACE
+   
+/*
+POSTING(master)
+   PST_UPD_DET_COND   cgrpubh */
+
+MAP(mreport)
+   grpnam        r_string1        REPLACE
+
+CALCS()
+cgrproot    		g_grpnam == "ROOT"      
+
+PERMIT(master)
+	PMT_ADD_COND    cgrproot
+	PMT_UPDALL_COND    cgrproot
+	PMT_DEL_COND    cgrproot
+PERMIT(trans)
+	PMT_ADD_COND    cgrproot
+	PMT_UPDALL_COND    cgrproot
+	PMT_DEL_COND    cgrproot
+PERMIT(transa)
+	PMT_ADD_COND    cgrproot
+	PMT_UPDALL_COND    cgrproot
+	PMT_DEL_COND    cgrproot
+PERMIT(transb)
+	PMT_ADD_COND    cgrproot
+	PMT_UPDALL_COND    cgrproot
+	PMT_DEL_COND    cgrproot
+/*
+PERMIT(transc)
+	PMT_ADD_COND    cgrproot
+	PMT_UPDALL_COND    cgrproot
+	PMT_DEL_COND    cgrproot*/
+
+/* -------------------- Report -------------------- */
+IMAGE(report) 
+/---------------------------------------\
+	     t.Pil   : ____
+             i.Kode  : _______________      
+\---------------------------------------/
+			     
+			  
+
+FIELD(report)
+   lpil		    NOCHANGE		   INPUTRI		1
+   grpnam           NOCHANGE               INPUTRI ZERO         10
+
+DEFAULTS(report)
+lpil            DFALT_SCAN_BLANKS	1
+
+CALCS()
+cnonpil		lpil==BLANKS
+cpil1		lpil==1
+
+RTREE(report)
+RT_COND	 cnonpil
+USES_SCRIPT(scr3001.rptdesign)
+RT_MAP   mreport
+
+RTREE(report1)
+RT_COND  cpil1
+USES_SCRIPT(scr30011-p1.rptdesign)
+RT_MAP   mreport
+RT_PRINT_BACKUP
+RT_XLSX
+
+
+END_SCREEN

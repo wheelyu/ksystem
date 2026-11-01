@@ -1,0 +1,76 @@
+LOCAL
+PGM_FIELDS
+
+luplok6		STRING	11
+lenter6		STRING	21
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||i.Upload	  : ___		    ||
+||i.Tgl           : _________       ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT   INPUTRI 1
+aktdk		PROTECT	  INPUTRI 2
+akttgl          PROTECT   INPUTRI 3
+lenter6		NOCHANGE  INPUTRI 4
+luplok6		TOMBOL    INPUTRI 8
+
+
+DEFAULTS(tmptranst)
+lenter6		INIT		ENTER
+luplok6		INIT		UPLOAD_OK
+lRESIGARANSI	INIT		RESIGARANSI
+
+CALCS()
+cdjoinaktclaim2b 	tkmkode == "CLAIM_AD" && (tkmsts == "INPG" || tkmsts == "CLSD") && (g_grpnam == "ADH" || g_grpnam == "ADHSPV" ||
+			g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "AHASSHEAD" || g_grpnam == "AHASSSPV")
+cY6             	"Y"
+cfotobaru6      	akttgl == g_tgltrn    
+
+MAP(mupdaktresiGaransi)
+g_tgltrn	akttgl	REPLACE
+cY6             aktdk   DO_CALC_IF cfotobaru6
+
+DBCALCS(dupdfoto6)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktresiGaransi
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdjoinaktclaim2b
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tkmnobuk	akttype
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD_DBCALCS dupdfoto6
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+aktkodtypidx       tkmnobuk tkmdata lRESIGARANSI
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+

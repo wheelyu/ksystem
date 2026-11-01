@@ -1,0 +1,125 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+|| t.AlasanTdkHdr            t.TglMengerjakan||
+||                           ____________    ||
+|| t.PilAlasan    ____________               ||
+|| t.KetAlasan                               ||
+|| ________________                          ||
+|\-------------------------------------------/|
+|/-------------------------------------------\|
+|| t.BentukFollUp                            ||
+||                                           ||
+|| t.PilFollouwup   ____________             ||
+|| t.KeteranganFollUp                        ||
+|| ________________  _____                   ||
+|\-------------------------------------------/|
+|/-------------------------------------------\|
+|| t.UploadBukti                             ||
+||                                           ||
+||/------s.UPLOAD---------\                  ||
+|||                       |                  ||
+|||                       |                  ||
+|||                       |                  ||
+|||                       |                  ||
+||\-----------------------/                  ||
+|\-------------------------------------------/|
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+kettgl1         NOCHANGE {DD-MM-YYYY}       INPUTRI 2
+ketnama         NOCHANGE                     INPUTRI 3
+ketisi          TEXTAREA                    INPUTRI 4
+ketstr1         NOCHANGE                    INPUTRI 5
+ketisi2         TEXTAREA                    INPUTRI 6
+lenter          NOCHANGE SCROLL             INPUTRI 7
+
+DEFAULTS(tmptranst)
+
+/*ketnama         DFALT_SCAN_BLANKS   TDK_ADA_KABAR
+                                    SAKIT
+                                    IZIN
+                                    JALAN_DINAS
+
+*/
+IF cpilalsh2k4 ketnama         DFALT_SCAN_BLANKS   TIDAK_ADA_KABAR
+                                                   SAKIT_TANPA_SURAT_SAKIT
+                                                   SAKIT_ADA_SURAT_SAKIT
+                                                   KELUARGA_SAKIT
+                                                   ACARA/MASALAH_KELUARGA
+                                                   KENDALA_KENDARAAN
+                                                   KECELAKAAN/BENCANA_ALAM
+                                                   URUSAN_ADMINISTRASI(KTP/SIM/BANK_DLL)
+                   
+IF cpilalsh5 ketnama         DFALT_SCAN_BLANKS   FOKUS_PENDIDIKAN
+                                                 SAKIT/KELUARGA_SAKIT
+                                                 MASALAH_KELUARGA
+                                                 KELUAR_KOTA
+                                                 MENGUNDURKAN_DIRI
+                                                 MENIKAH
+                                                 TERKENDALA_ABSEN_TERKUNCI
+                                                 TIDAK_DAPAT_KOMISI/TIDAK_COCOK_MKTG
+                                                 DAPAT_PEKERJAAN_BARU
+                                                 TIDAK_ADA_KENDARAAN
+                                                 LAINNYA
+
+
+ketstr1         DFALT_SCAN_BLANKS   CHATWHATSAPP
+                                    CALL
+                                    VIDEOCALL
+                                    VISIT_SDM
+                                    LAINNYA
+
+EDITS(tmptranst)
+e.Mandatory     ketnama     MANDATORY
+e.Mandatory     ketstr1     MANDATORY
+
+CALCS()
+csakitdll	((ketnama=="SAKIT" || ketnama=="IZIN" || ketnama=="JALAN_DINAS") && ketdf1==1) || (ketnama!="SAKIT" && ketnama!="IZIN" && ketnama!="JALAN_DINAS")
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=kettgl1      DO_SKIP_IF c1
+AFTER_INPUT     cur_field=ketisi       DO_MAP SHOW    misiket
+AFTER_INPUT	    cur_keybd=EN		DO_MAP SHOW mupdkettgl
+AFTER_INPUT     cur_field=ketnama      DO_MAP SHOW
+                                IF csakitdll mdum
+                                ELSE HKCURSOR NOSTAY
+                                HKMSG t.SegeraProsesKoreksi
+
+AFTER_INPUT     cur_field=ketnama      DO_MAP SHOW      misiket2    
+
+AFTER_INPUT     cur_field=ketisi2       DO_MAP SHOW    misiket3
+
+
+
+AFTER_INPUT	cur_field=ketisi	DO_MAP SHOW 
+				IF cpanjangket mdum
+				ELSE HKCURSOR STAY
+				HKMSG t.Minimal30Karakter
+
+AFTER_INPUT	cur_field=ketisi2	DO_MAP SHOW 
+				IF cpanjangket2 mdum
+				ELSE HKCURSOR STAY
+				HKMSG t.Minimal30Karakter
+
+CALCS()
+cY      "Y"
+
+MAP(mupdketUPL)
+cY          ketyt1      DO_CALC
+g_tgltrn    kettgl1     REPLACE
+
+DBCALCS(dupdketUPL)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      ketprmidx   ketprm 
+        DBC_MAP         mupdketUPL
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_UPLFLD  tlmnobuk tlmdata
+SFL_UPLFLD_DBCALCS dupdketUPL
+SFL_UPL_COND    cmshOpen
+SFL_TARGET
+ketdatbuktgl   lREVIEW913 tlmnobuk lPROBLEM

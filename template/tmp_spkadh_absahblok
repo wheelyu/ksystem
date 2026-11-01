@@ -1,0 +1,336 @@
+LOCAL
+PGM_FIELDS
+/*lnopol	STRING	21*/
+lnamadebabs	STRING	61
+/*lnamabpkb	STRING	31*/
+ltombuplabs	STRING	11
+ltompjabs       STRING  21
+ltomdvhabs      STRING  21
+lnoktpdeb	STRING	21
+lbtmcab		STRING	21
+lverabs		STRING	11
+
+MAP(mjoinnamadeb)
+psmnama		lnamadebabs	REPLACE
+DBCALCS(djoinnamadeb)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmktpidx lnoktpdeb
+	DBC_MAP		mjoinnamadeb
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.ABSAHBLOKIR			    ||
+|\----------------------------------/|
+|/----------------------------------\|
+|		___		     |
+| t.buk		_____________________|/* _*/
+| t.Sts		_____		     |
+| t.NmDeb	_____________________|
+| t.Bpkb	_____________________|
+| t.Namabpkb    _____________________|
+|			       ______|
+|\----------------------------------/|
+
+|/----------------------------------\|
+| t.Srtabsah                      ___|
+|\----------------------------------/|
+|/------------DOCUPLOAD-------------\|
+||                      	    ||
+||                                  ||
+||            		            ||
+||             	                    ||
+||             	                    ||
+|\----------------------------------/|
+
+|/----------------------------------\|
+| t.Fisikbpkb                     ___|
+|\----------------------------------/|
+|/--------------UPLOAD2-------------\|
+||                                  ||
+||                                  ||
+||                                  || 
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|			    _________|
+
+|/----------------------------------\|
+| t.RevHO       __________ __ _______|
+|               _____________________|
+| t.RevDVH      __ __________________|
+|               _____________________|
+| ________________  ________________ |
+|       __                __         |
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	PROTECT		INPUTRI	 1  /*No Urut*/
+svikode		ALLCAPS		INPUTRI  2  /*Nobuk 701-705*/
+svists		PROTECT		INPUTRI	 3  /*Status nobuk 701-705*/
+svinama		PROTECT		INPUTRI  4  /*Nama Debitur*/
+/*lnopol		UNSEEN PROTECT	INPUTRI	 2*/  /*untuk ambil nopol di ssu*/
+svistr1		ALLCAPS		INPUTRI  5  /*No BPKB*/
+svistr10	ALLCAPS		INPUTRI  6  /*Atas Nama BPKB*/
+lenter		ALLCAPS		INPUTRI	 7  /*Tombol Enter*/
+svistr2		PROTECT		INPUTRI  8  /*Tanda sudah Upload Srt Absah*/
+svistr3		PROTECT		INPUTRI	 9  /*Tanda Sudah Upload Fisik BPKB*/
+ltombuplabs	TOMBOL		INPUTRI	10  /*Tombol Upload OK*/
+
+svitype2        PROTECT         INPUTRI 11  /*NIP Rev HO*/
+svistr34        NOCHANGE        INPUTRI 12  /*ket Rev SPV*/
+svistr4	        PROTECT         INPUTRI 13
+sviket2         TEXTAREA        INPUTRI 14  /*isi ket review HO*/
+svistr35        NOCHANGE        INPUTRI 15  /*ket Rev DVH*/
+svistr5         PROTECT         INPUTRI 16
+sviket3         TEXTAREA        INPUTRI 17  /*isi ket review DVH*/
+
+ltompjabs       TOMBOL          INPUTRI 18
+ltomdvhabs      TOMBOL          INPUTRI 20
+svistr36        PROTECT         INPUTRI 19
+svistr37        PROTECT         INPUTRI 21
+
+
+DEFAULTS(tmptranst)
+lverabs			INIT			2606.18v1
+svistr34		DFALT_SCAN_BLANKS	1 "ACC"
+						2 "TACC"
+svistr35		DFALT_SCAN_BLANKS	3 "ACC"
+						4 "TACC"
+ltombuplabs		INIT			"UPLOAD OK"
+ltompjabs               INIT                    "SELESAI REV PJ HO"
+ltomdvhabs              INIT                    "SELESAI REV DVH"
+IF chnypjho svitype2    INIT_UPDATE             {g_usrkode}
+
+
+CALCS()
+cbtsabsah       	svidf1 < 2
+ctdabsah        	svidf1 + 1
+cABSAH			"OK_ABSAH"
+cBPKB			"OK_BPKB"
+csdhuplabs		svistr6 == "OK_ABSAH" && svistr7 == "OK_BPKB"
+cmenitabsah		svistr2 != "OK" && svistr3 != "OK" && svistr6 == "OK_ABSAH" && svistr7 == "OK_BPKB"
+cjoinurtabsah0  	djoinurutabsah == 0 && g_curcmd == 1
+cjoinurtabsah1  	djoinurutabsah == 1 && g_curcmd == 1
+cjoinnamadeb		djoinnamadeb == 1
+curtabsah1      	FLD_TO_STRING(svinourt) + "SRTABSAH"
+curtabsah2      	FLD_TO_STRING(svinourt) + "FSBPKB"
+crev1abs        	svistr34 == "1" && svitype == "ABSAHBLOK"
+crev1aabs       	svistr35 == "1" && svitype == "ABSAHBLOK"
+crev2abs        	svistr34 == "2" && svitype == "ABSAHBLOK"
+crev2aabs       	svistr35 == "2" && svitype == "ABSAHBLOK"
+cpjhosdhrevabs  	svistr34 != BLANKS
+cdvhsdhrevabs   	svistr35 != BLANKS
+cbisaabsah		svists != "BTL" && svists != "DBL" && svists != "TACC"
+cbkncab			lbtmcab == tkmcab
+
+EDITS(tmptranst)
+e.Wajib Isi No. BPKB			svistr1		MANDATORY	
+e.Wajib Isi Nama Pemilik BPKB		svistr10	MANDATORY
+/*e.Validate Faktur			svikode		VALIDATE ssubuk2idx mdtssu 0*/
+e.Bukan Nobuk 701-705                   svikode         VALIDATE btmbukidx mdtbtm 0
+/*e.Tidak Ada di Data Asset		lnopol		VALIDATE astjnspolidx mdtast {Pgv_bpkb}*/
+
+/*========= ambil data nopol di ssu ==========*/
+/*
+MAP(mdtssu)
+ssunobuk2	svikode		REPLACE
+ssunopol	lnopol		REPLACE
+*/
+
+/*========= ambil data debitur di btm ==========*/
+MAP(mdtbtm)
+btmnobuk        svikode         REPLACE
+btmplg	        lnoktpdeb       REPLACE
+btmsts		svists		REPLACE
+btmcab		lbtmcab		REPLACE
+lnamadebabs	svinama		REPLACE_IF cjoinnamadeb
+
+/*========= ambil data bpkb di ast ==========*/
+/*
+MAP(mdtast)
+astanbpkb	lnamabpkb	REPLACE
+astno1		svistr1		REPLACE
+*/
+
+/*===== no urut svi =====*/
+MAP(murtabsah)
+l1              svinourt        REPLACE_IF cjoinurtabsah0
+curut           svinourt        DO_CALC_IF cjoinurtabsah1
+curtabsah1      svistr8         DO_CALC
+curtabsah2      svistr9         DO_CALC
+
+MAP(mhslrevabs)
+DEBUG cACC            svistr4	        DO_CALC_IF crev1abs
+cTACC           svistr4	        DO_CALC_IF crev2abs
+cACC            svistr5         DO_CALC_IF crev1aabs
+cTACC           svistr5		DO_CALC_IF crev2aabs
+
+/*===== upd menit di data tkd =====*/
+MAP(mupdtkdabsah2)
+l10             tkdjml3         REPLACE_IF cmenitabsah
+DEBUG	ldum ldum REPLACE
+
+MAP(mupdokabsah)
+cOK             svistr2         DO_CALC_IF csdhuplabs
+cOK             svistr3         DO_CALC_IF csdhuplabs
+DEBUG   ldum ldum REPLACE
+
+/*===== upd tkd review =====*/
+MAP(mmapabs)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+
+MAP(mupdrevpjhoabs)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum       REPLACE
+DBCALCS(dupdrevpjhoabs)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhoabs
+
+MAP(mupdrevdvhabs)
+ctam1           tkdjml          DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhabs)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhabs
+
+MAP(muprevdpjhoabs1)
+lOK             svistr36                REPLACE_IF cpjhosdhrevabs
+
+MAP(mupdrevdvhabs1)
+lOK             svistr37                REPLACE_IF cdvhsdhrevabs
+
+MAP(mupdrevabkpjhoabs2)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhabs2)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spupdtkdabsah)
+DO_LIB		ap_dbclc(DNAME dupdabsah,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll svidata svinobuk lABSAHBLOK21,DMAP mupdtkdabsah2);
+DO_LIB		ap_dbclc(DNAME dupdokabsah,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdokabsah);
+		
+SPCALCS(spupdrevpjhoabs)
+DO_LIB          		ap_dbclc(DNAME dmapabs1,DCOMMAND MAPMAP,DMAP mmapabs);
+DO_LIB          		ap_dbclc(DNAME dupdokabs1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhoabs1);
+dupdrevpjhoabs
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjabs2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhoabs2);
+
+SPCALCS(spupdrevdvhabs)
+DO_LIB          		ap_dbclc(DNAME dmapabs2,DCOMMAND MAPMAP,DMAP mmapabs);
+DO_LIB          		ap_dbclc(DNAME dupdokabs2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhabs1);
+dupdrevdvhabs
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhabs2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhabs2);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW murtabsah
+
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF cbkncab           mdum
+                ELSE
+                HKCURSOR STAY
+                HKMSG Cabang Tidak Sama
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF cbisaabsah		mdum
+		ELSE 
+		HKCURSOR STAY
+		HKMSG Nobuk Tidak Boleh Yg Status BTL/DBL/TACC
+
+CLICKED		cur_field=ltombuplabs	DO_SPCALCS spupdtkdabsah
+
+BEFORE_INPUT    cur_field=svikode       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltombuplabs   DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr10      DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr4       DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35      DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cdvh
+
+AFTER_INPUT     cur_field=svistr34      DO_MAP SHOW mhslrevabs
+AFTER_INPUT     cur_field=svistr35      DO_MAP SHOW mhslrevabs
+
+CLICKED         cur_field=ltompjabs     DO_SPCALCS spupdrevpjhoabs
+CLICKED         cur_field=ltomdvhabs    DO_SPCALCS spupdrevdvhabs
+
+/*========== tanda sudah upload srt abssah ==========*/
+MAP(mupdsviabsah)
+ctdabsah	svidf1             DO_CALC_IF cbtsabsah
+cABSAH		svistr6		   DO_CALC
+DBCALCS(dupdsviabsah)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsviabsah
+
+/*========== tanda sudah upload bpkb ==========*/
+MAP(mupdsviabsah2)
+ctdabsah        svidf1             DO_CALC_IF cbtsabsah
+cBPKB		svistr7		   DO_CALC
+DBCALCS(dupdsviabsah2)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsviabsah2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tkmtgl
+SFL_DOCUPLFLD   svinobuk   svistr8  /*nama upload foto surat absah*/
+SFL_UPLFLD2     svinobuk   svistr9  /*nama upload foto fisik bpkb*/
+SFL_DOCUPLFLD_DBCALCS dupdsviabsah  /*tanda upload dokumen surat absah*/
+SFL_UPLFLD2_DBCALCS dupdsviabsah2   /*tanda upload foto fisik bpkb*/
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lABSAHBLOK
+SFL_MAP
+tkmnobuk        svinobuk
+lSPKADH11       svidata
+lABSAHBLOK      svitype
+
+MAP(maddtkdabsah)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+lABSAHBLOK21	tkdnoll		REPLACE
+gv_OPEN         tkdsts          REPLACE
+tkmplg         	tkdstr1         REPLACE
+tkmtgl          tkdtgl          REPLACE
+svinourt        tkdnourt        REPLACE
+
+MAP(maddtkdrevabs)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+SPCALCS(spaddtkdabsah)
+DO_LIB          ap_dbclc(DNAME daddtkdabsah,DCOMMAND ADD,DFILE tkd,DMAP maddtkdabsah);
+
+SPCALCS(spupdtkdabs1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdabs1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevabs);
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtkdabsah
+PST_UPDCMD	spupdtkdabs1
+

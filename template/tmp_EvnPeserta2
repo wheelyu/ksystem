@@ -1,0 +1,42 @@
+IMAGE(tmptrans)
+__________ ______________________ _______________
+
+FIELDS(tmptrans)
+psikode         NOCHANGE        INPUTRI 1
+psinama         NOCHANGE        INPUTRI 2
+psijabatan      NOCHANGE        INPUTRI 3
+
+CALCS()
+clkpic          psidvs == tlmdvs && (psijabatan == "SALESMANHMC" || psijabatan == "SALESNMC" || psijabatan == "SALESDTN" || psijabatan=="MKTLAPANGANHMC" || psijabatan=="MKTCOUNTERHMC" || psijabatan=="MKTKBAHMC" || psijabatan=="MKTLAPANGANM2W" || psijabatan=="MKTCOUNTERM2W" || psijabatan=="MKTKBAHMC" ||
+                psijabatan == "SALESREFIMOTOR" || psijabatan == "KAPOSM2W" || psijabatan == "MKTGREFIMOTORSPV" || psijabatan == "PLTMKTGMOTORSPV" || 
+		psijabatan == "SODPM2W" || (djoinpicmkt == 1 && psikode == lnippic))
+cblmproses      tlmgrup == "BTL" && tlmdvs == "M2W" && tlmtypbrg == BLANKS && g_usrkode == BLANKS /*ditutup karena nobuk ini ATI260200000166*/
+ctambah         lnourtx + 1
+
+MAP(maddtkd)
+ctambah         lnourtx         DO_CALC
+lnourtx         tkdnourt        REPLACE
+psikode         tkdrek          REPLACE
+psijabatan      tkdjwbstr1      REPLACE
+tlmdata         tkddata         REPLACE
+tlmnobuk        tkdnobuk        REPLACE
+lPESERTA        tkdnoll         REPLACE
+
+MAP(mupdtlmtrans)
+tlmdata         tlmtypbrg       REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_COND        cblmproses
+SFL_SELECT      clkpic
+SFL_APP_TYPE
+SFL_TARGET
+psicbskrsts     tlmcab gv_INPG
+
+SPCALCS(sptmptrans)
+        DO_LIB          ap_dbclc(DNAME daddtkdc DCOMMAND ADD, DFILE tkd, DMAP maddtkd);
+        DO_LIB          ap_dbclc(DNAME dupdtlmy,DCOMMAND UPDATE,DTARGET tlmotoidx tlmoto, DMAP mupdtlmtrans);
+
+POSTING(tmptrans)
+        PST_COMMAND     sptmptrans
+

@@ -1,0 +1,274 @@
+LOCAL
+PGM_FIELDS
+lmpaprop	STRING		21
+lmpakota	STRING		21
+lmpakec		STRING		21
+lmpakel		STRING		21
+ljaminputmpa	TIME		4
+ljampstmpa	TIME		4
+lPST3209	STRING		11
+lPST320921	STRING		21
+lADD3201	STRING		11
+lADD320121	STRING		21
+lktpmitrabaru	STRING		21
+ljmlmpamitra	INT2		2
+ltomcarimitra	STRING		21
+
+MAP(mjoinsvicabmpa)
+svitype3	lnipmpa		REPLACE
+
+DBCALCS(djoinsvicabmpa)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatkodtyp lBAGIAREA11 svistr4 lcab    
+	DBC_MAP		mjoinsvicabmpa
+
+MAP(mjaminputmpa)
+aktjam		ljaminputmpa	REPLACE
+DBCALCS(djoinjaminputmpa)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx     svikode lADD3201 lADD320121
+	DBC_MAP		mjaminputmpa
+
+MAP(mjampstmpa)
+aktjam		ljampstmpa	REPLACE
+DBCALCS(djoinjampstmpa)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx    svikode lPST3209 lPST320921
+	DBC_MAP		mjampstmpa
+
+
+CALCS()
+careagarap	 (djoinsvicabmpa == 1 && tkmplg == lnipmpa ) || g_grpnam == "B.M4WMO"
+cfotocarimitra	 FLD_TO_STRING(svinourt) + "MPA"
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.Nobuk     ___ _______________ ||
+||t.Ktp	      __________________  ||
+||t.NamaMitra ___________________ ||
+||t.Propinsi  ________  _________ ||
+||t.Kota      ________  _________ ||
+||t.Kec	      ________  _________ ||
+||t.Kel       ________  _________ ||
+||t.RT        _______ t.RW ______ ||
+||t.JnsMitra  ___________  ______ ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.Lat	     ____________	  ||
+||t.Lon	     ____________	  ||
+||t.tgl	     ____________	  ||
+||/---------s.UPLOAD-------------\||
+|||				 |||
+|||				 |||
+|||				 |||
+|||				 |||
+|||				 |||
+||\------------------------------/||
+|| _____________________________  ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt	PROTECT		INPUTRI 1 
+svinobuk	PROTECT		INPUTRI 1
+svikode		ALLCAPS		INPUTRI 2
+svinama		NOCHANGE	INPUTRI 2
+svistr1		NOCHANGE	INPUTRI 3
+lmpaprop	PROTECT		INPUTRI 4
+svistr2		NOCHANGE	INPUTRI 5
+lmpakota	PROTECT		INPUTRI 6
+svistr3		NOCHANGE	INPUTRI 7
+lmpakec		PROTECT		INPUTRI	8
+svistr4		NOCHANGE	INPUTRI 9
+lmpakel		PROTECT		INPUTRI 10
+svistr5		NOCHANGE	INPUTRI 11
+svistr6		PROTECT		INPUTRI 12
+svistr9		ALLCAPS		INPUTRI 13
+lenter		ALLCAPS		INPUTRI 20
+
+svidf3		PROTECT		INPUTRI 21
+svidf4		PROTECT		INPUTRI 22
+svitype3	PROTECT		INPUTRI 23
+ltomcarimitra	TOMBOL		INPUTRI 24
+
+DEFAULTS(tmptranst)
+lADD3201	INIT		ADD3201
+lADD320121	INIT		ADD3201
+lPST3209	INIT		PST3209
+lPST320921	INIT		PST3209
+svistr9		DFALT_SCAN	BLANKS
+				NONFINCO  ""
+				FINCO  ""
+ltomcarimitra	INIT		"UPLOAD OK"
+
+EDITS(tmptranst)
+e.Mandatory	svikode		MANDATORY
+e.Mandatory	svistr9		MANDATORY
+e.Validatell	svikode		VALIDATE psddatpsmkod mpsdmpa spsdmitraskr {PlKETMITRA} {Ptkmplg} {Slm4w}
+e.Validateas	svikode		VALIDATE almdatotobuk malmmpa {Pgt_psmtinggal}
+e.Validatenm    svikode         VALIDATE psmktpidx mpsmmpa
+e.Validate1b    svistr1         VALIDATE dtmdtkodidx  mdtmbmpa sdtm {Pgv_dtkota}
+e.Validate2b    svistr2         VALIDATE tbldtdtmkod  mtbl2mpa stbl {Pgv_dtkota} {Psvistr1}
+e.Validate3b    svistr3         VALIDATE tbddatkodidx mtbd3mpa stbd {Pgv_dtkota} {Psvistr1} {Psvistr2}
+e.Validate4b    svistr4         VALIDATE tbtdattypkod mtbt4mpa stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr1} {Psvistr2} {Psvistr3}
+/*e.Dupkeyktp	svikode		DUPKEY psmktpidx
+*/
+
+CALCS()
+cjammpa		djoinjaminputmpa == 1 && djoinjampstmpa == 1 && ((ljampstmpa - ljaminputmpa) <= 60)
+cjammpatole	djoinjaminputmpa == 1 && djoinjampstmpa == 1 && ((ljampstmpa - ljaminputmpa) > 60) /*&& ((ljampstmpa - ljaminputmpa) <= ((lmenit60x * 0.20) + lmenit60x)))*/
+cseljammpa	ljampstmpa - ljaminputmpa
+chariinimitra	svinobuk == tkmnobuk
+
+MAP(mpsdmpa)
+psdkode		svikode		REPLACE
+svikode		lktpmitrabaru	REPLACE
+
+MAP(mpsmmpa)
+psmktp		svikode		REPLACE
+psmnama		svinama		REPLACE
+cseljammpa	svidf1		DO_CALC_IF cjammpa
+lmenit60x	svidf1		REPLACE_IF cjammpatole
+
+MAP(mnompa)
+tkmnobuk	svinobuk	REPLACE
+tkmtype		svidata		REPLACE
+lMPAGARAP	svitype		REPLACE
+l1		svinourt	REPLACE_IF cjoinmpa_0urt
+curut		svinourt	DO_CALC_IF cjoinmpa_1urt
+
+MAP(malmmpa)
+almprop		svistr1		REPLACE
+almkota		svistr2		REPLACE
+almkec		svistr3		REPLACE
+almkel		svistr4		REPLACE
+
+MAP(mdtmbmpa)
+dtmkode         svistr1          REPLACE
+dtmket          lmpaprop         REPLACE
+
+MAP(mtbl2mpa)
+tblkode         svistr2          REPLACE
+tblket          lmpakota         REPLACE
+
+MAP(mtbd3mpa)
+tbdkode         svistr3          REPLACE
+tbdket          lmpakec          REPLACE
+
+MAP(mtbt4mpa)
+tbtkode         svistr4          REPLACE
+tbtket          lmpakel          REPLACE
+
+MAP(mlenidmpa)
+clendidmpa        llenidmpa         DO_CALC
+
+MAP(mscanmpamitra)
+c1	ljmlmpamitra		DO_CALC_IF chariinimitra
+
+DBCALCS(dscanmpamitra)
+DBC_COMMAND	SCANSCAN
+DBC_TARGET      svidatkodtyp tkmtype lktpmitrabaru lMPAGARAP
+DBC_SUM_MAP     mscanmpamitra
+
+CALCS()
+cudhdiambil	 ljmlmpamitra == 0 
+
+
+MAP(mgpscarimitra)
+cfotolat1        svidf3          DO_CALC
+cfotolon1        svidf4          DO_CALC
+g_fotodate1     svitype3         REPLACE
+DBCALCS(dbgpscarimitra)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviprmidx sviprm
+	DBC_MAP		mgpscarimitra
+
+
+
+MAP(mupdmpa1)
+cseljammpa	tkdjml3		DO_CALC_IF cjammpa
+lmenit60x	tkdjml3		REPLACE_IF cjammpatole
+DBCALCS(dupdmpa1)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_TARGET	tkddatbukll svidata svinobuk lMPAGARAP21
+	DBC_MAP		mupdmpa1
+
+SPCALCS(supdmpa)
+	/*dupdmpa*/
+	dupdmpa1
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svistr4	DO_MAP SHOW 
+		IF careagarap mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.BukanGarapAnda
+BEFORE_INPUT    cur_field=svikode       DO_MAP SHOW mnompa
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW mlenidmpa
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF cjamtarget mdum
+		ELSE HKCURSOR STAY
+		HKMSG JAM SUDAH LEWAT DARI JAM TARGET
+
+AFTER_INPUT     cur_field=svistr4       DO_MAP
+                IF clenid16mpa mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang ID harus 16 digit
+AFTER_INPUT     cur_field=svikode       DO_SCAN dscanmpamitra
+AFTER_INPUT     cur_field=svikode       DO_MAP
+                IF cudhdiambil mdum
+                ELSE HKCURSOR STAY
+                HKMSG Mitra Sudah diinput
+AFTER_INPUT	cur_keybd=EN		DO_SPCALCS supdmpa
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tkmnobuk svists
+SFL_UPLFLD_DBCALCS dbgpscarimitra
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tkmtgl
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+        svidatbuktyp    tkmtype tkmnobuk lMPAGARAP
+SFL_MAP	
+tkmtype         svidata         REPLACE
+lMPAGARAP       svitype         REPLACE
+tkmnobuk        svinobuk        REPLACE
+
+CALCS()
+cMPGARAPP         "MP_GARAP"
+
+MAP(maddaktmpgrp)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cMPGARAPP       akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_usrkode       aktkode2        REPLACE
+cMPGARAPP       aktbrg          DO_CALC
+
+MAP(maddtkdmpa)
+svinobuk 	tkdnobuk	REPLACE
+svidata		tkddata		REPLACE
+svitype		tkdnoll		REPLACE
+svinourt	tkdnourt	REPLACE
+gv_OPEN		tkdsts		REPLACE
+ljaminputmpa	tkdjml		REPLACE
+ljampstmpa	tkdjml2		REPLACE
+cseljammpa	tkdjml3		DO_CALC_IF cjammpa
+lmenit60x       tkdjml3         REPLACE_IF cjammpatole
+cfotocarimitra	svists		DO_CALC
+
+SPCALCS(spmpa)
+DO_LIB ap_dbclc(DNAME dmapmpa,DCOMMAND MAPMAP,DMAP mnompa);
+DO_LIB ap_dbclc(DNAME daddtkdmpa,DCOMMAND ADD,DFILE tkd,DMAP maddtkdmpa);
+DO_LIB ap_dbclc(DNAME daddaktmp,DCOMMAND ADD,DFILE akt,DMAP maddaktmpgrp);
+
+POSTING(tmptrans)
+PST_ADDCMD      spmpa
+
+
+

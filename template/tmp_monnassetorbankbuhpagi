@@ -1,0 +1,219 @@
+LOCAL
+PGM_FIELDS
+
+ljmlinpgpg	INT4	4
+ljmlclsdpg	INT4	4
+lnasionalbuhpg  INT4	4
+lrupiahinpgpg	DFLOAT  8
+lrupiahclsdpg	DFLOAT  8
+lrupiahnasbuhpg DFLOAT  8
+
+ljmlcabpgbuh	INT4	4
+lrupiahpgbuh	DFLOAT	8
+
+ljmlcabvalpgbuh	INT4	4
+lrupiahvalpgbuh	DFLOAT	8
+ljmlnasvalpgbuh INT4	4
+lrupnasvalpgbuh DFLOAT	8
+
+
+lH1		STRING	21
+lH2		STRING	21
+lHMC		STRING	21
+lM2W		STRING	21
+lBUH		STRING	21
+lthnbl		STRING	11
+lket		STRING	21
+lnipbuh		STRING	21
+lnipadhspvpg	STRING  21
+lnamaadhspvpg   STRING  61
+
+lcabpg          STRING  21
+lkdwktpg        STRING  11
+
+/*-----JOIN------*/
+
+MAP(mmapbuh)
+sgmstr5		lnipbuh		REPLACE
+
+DBCALCS(djoinsgmbuh)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatplgth gv_dtpiccab bkmdvs bkmcab  lthnbl lBUH 
+DBC_MAP		mmapbuh
+
+MAP(msgmadhspvpg)
+sgmtbl          lnipadhspvpg         REPLACE
+
+DBCALCS(djoinsgmadhspvpg)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstr15 gv_dtpiccab lBUH usrkode
+        DBC_MAP         msgmadhspvpg
+
+
+/*--------JOIN PSM----------*/
+
+MAP(mjoinpsmadhspvpg)
+psmnama   lnamaadhspvpg    REPLACE
+
+DBCALCS(djoinpsmadhspvpg)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmkodidx lnipadhspvpg
+DBC_MAP         mjoinpsmadhspvpg
+
+
+/*------------------Menghitung Jumlah Record-----------------------*/
+
+CALCS()
+cnilbuh		1
+ctypeSBpgbuh	bkmjns == "SB" && bkmpst == "PAGI" && djoinsgmbuh == 1 && usrkode == lnipbuh 
+ctypeSBpgValbuh	bkmjns == "SB" && bkmpst == "PAGI" && ( bkmstsbank == "IN" || bkmstsbank == BLANKS ) && djoinsgmbuh == 1 && usrkode == lnipbuh
+
+cthnbl          THBLS(g_tgltrn)
+ctypeSBnaspg    bkmjns == "SB" && bkmpst == "PAGI"
+ctypeSBnasvalpg bkmjns == "SB" && bkmpst == "PAGI" && ( bkmstsbank == "IN" || bkmstsbank == BLANKS )
+
+
+/*------------------------Scan 301 INPG-----------------*/
+MAP(mscanbkm301buhinpg)
+cnilbuh         ljmlinpgpg      DO_CALC_IF ctypeSBpgbuh
+bkmjmld		lrupiahinpgpg	REPLACE_IF ctypeSBpgbuh
+cnilbuh		ljmlcabvalpgbuh	DO_CALC_IF ctypeSBpgValbuh
+bkmjmld		lrupiahvalpgbuh	REPLACE_IF ctypeSBpgValbuh
+
+cnilbuh       ljmlnasvalpgbuh    DO_CALC_IF ctypeSBnasvalpg
+bkmjmld       lrupnasvalpgbuh    REPLACE_IF ctypeSBnasvalpg
+
+DBCALCS(dscanbkm301buhinpg)
+DBC_COMMAND     SCANSCAN
+DBC_TARGET      bkmtgldtjnst   ltanggal gv_dtkkumum lsb gv_INPG
+DBC_SUM_MAP     mscanbkm301buhinpg
+
+/*------------------------Scan 301 CLSD-----------------*/
+MAP(mscanbkm301buhclsd)
+cnilbuh         ljmlclsdpg      DO_CALC_IF ctypeSBpgbuh
+bkmjmld         lrupiahclsdpg   REPLACE_IF ctypeSBpgbuh
+
+DBCALCS(dscanbkm301buhclsd)
+DBC_COMMAND     SCANSCAN
+DBC_TARGET      bkmtgldtjnst   ltanggal gv_dtkkumum lsb gv_CLSD
+DBC_SUM_MAP     mscanbkm301buhclsd
+
+/*-----------------------Scan 301 ALL-----------------*/
+MAP(mscanbkm301nasionalbmpg)
+cnilbuh       lnasionalbuhpg     DO_CALC_IF ctypeSBnaspg
+bkmjmld	      lrupiahnasbuhpg	 REPLACE_IF ctypeSBnaspg
+
+DBCALCS(dscanbkm301naspagibm)
+DBC_COMMAND     SCANSCAN
+DBC_TARGET      bkmtgldtjnst   ltanggal
+DBC_SUM_MAP     mscanbkm301nasionalbmpg
+
+/*-----------------------JOIN PSI--------------------*/
+MAP(mjoinpsipgbuh)
+psicabasal        lcabpg        REPLACE
+
+DBCALCS(djoinpsipgbuh)
+DBC_COMMAND     JOIN
+DBC_TARGET      psikodidx  usrkode
+DBC_MAP         mjoinpsipgbuh
+
+
+/*-----------------------JOIN CAB--------------------*/
+MAP(mjoincabpgbuh)
+cabkdjam        lkdwktpg        REPLACE
+
+DBCALCS(djoincabpgbuh)
+DBC_COMMAND     JOIN
+DBC_TARGET      cabkodidx  lcabpg
+DBC_MAP         mjoincabpgbuh
+
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------------------\
+|/==========================================================================================================\|
+||____________________  t.NasPagi    : ______  t.Jumlah : _______________.__                                ||
+||                      t.BlmNasPg   : _____   t.Jumlah : _______________.__                                ||
+|\==========================================================================================================/|
+||spasi                                                                                                     ||     
+|/=======t================t=====================t======t================t==========t================t=======\|
+||t.BUH  |t.Nama          |t.AdhSpv             |t.Tgt |t.Jumlah        |t.BlmSls  |t.Jumlah        |t.Waktu||
+|\=======.================.=====================.======.================.==========.================.=======/|
+\------------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+|________|________________|_____________________|______|_____________.__|__________|_____________.__|________|
+
+FIELD(tmptranst)
+   lket			PROTECT  BIG               INPUTRI         1                        
+   lnasionalbuhpg	PROTECT  BIG               INPUTRI         1
+   lrupiahnasbuhpg	PROTECT  BIG               INPUTRI         1
+   ljmlnasvalpgbuh	PROTECT  BIG               INPUTRI         1
+   lrupnasvalpgbuh	PROTECT  BIG               INPUTRI         1
+
+FIELD(tmptrans)
+   usrkode		NOCHANGE		   INPUTRI	   2
+   usrnam		NOCHANGE		   INPUTRI	   3
+   lnamaadhspvpg	NOCHANGE		   INPUTRI	   3
+   ljmlcabpgbuh         NOCHANGE SCROLL            INPUTRI         4
+   lrupiahpgbuh         NUMERIC		           INPUTRI         5
+   ljmlcabvalpgbuh      NOCHANGE SCROLL            INPUTRI         6
+   lrupiahvalpgbuh      NUMERIC	                   INPUTRI         7
+   lkdwktpg             NOCHANGE                   INPUTRI         8
+
+DEFAULTS(tmptrans)
+lH1		INIT		H1
+lH2		INIT		H2
+lHMC		INIT		HMC
+lM2W		INIT		M2W
+lBUH		INIT		BUH
+lthnbl          INIT            {cthnbl}
+lket		INIT		SETOR BANK PAGI BUH
+
+CALCS()
+cdscanbkm301buhinpg	dscanbkm301buhinpg >= 0
+cdscanbkm301buhclsd	dscanbkm301buhclsd >= 0
+cdjoinsgmbuh		djoinsgmbuh == 1
+cjmlall			ljmlinpgpg + ljmlclsdpg
+crupiahall		lrupiahinpgpg + lrupiahclsdpg
+cdjoinsgmadhspvpg	djoinsgmadhspvpg == 1
+cdjoinpsmadhspvpg       djoinpsmadhspvpg == 1
+cdscanbkm301naspagibm   dscanbkm301naspagibm >= 0
+cdjoinpsipgbuh          djoinpsipgbuh == 1
+cdjoincabpgbuh          djoincabpgbuh == 1
+
+EDITS(tmptrans)
+e.Validate usrkode  VALIDATE usrkodidx musr 0
+
+MAP(musr)
+usrkode		usrkode		REPLACE
+
+/*---Target---*/
+ljmlinpgpg	ljmlinpgpg	REPLACE_IF cdscanbkm301buhinpg
+ljmlclsdpg	ljmlclsdpg	REPLACE_IF cdscanbkm301buhclsd
+
+lrupiahinpgpg	lrupiahinpgpg	REPLACE_IF cdscanbkm301buhinpg
+lrupiahclsdpg	lrupiahclsdpg	REPLACE_IF cdscanbkm301buhclsd
+
+cjmlall		ljmlcabpgbuh	DO_CALC
+crupiahall	lrupiahpgbuh	DO_CALC
+
+/*---Belum Selesai---*/
+ljmlcabvalpgbuh	ljmlcabvalpgbuh	REPLACE_IF cdscanbkm301buhinpg
+lrupiahvalpgbuh	lrupiahvalpgbuh	REPLACE_IF cdscanbkm301buhinpg
+
+lnipbuh		lnipbuh		REPLACE_IF cdjoinsgmbuh
+lcabpg          lcabpg          REPLACE_IF cdjoinpsipgbuh
+lnipadhspvpg	lnipadhspvpg	REPLACE_IF cdjoinsgmadhspvpg
+lnamaadhspvpg   lnamaadhspvpg   REPLACE_IF cdjoinpsmadhspvpg
+lkdwktpg        lkdwktpg        REPLACE_IF cdjoincabpgbuh
+
+lnasionalbuhpg  lnasionalbuhpg   REPLACE_IF cdscanbkm301naspagibm
+lrupiahnasbuhpg	lrupiahnasbuhpg	 REPLACE_IF cdscanbkm301naspagibm
+
+ljmlnasvalpgbuh ljmlnasvalpgbuh	 REPLACE_IF cdscanbkm301buhinpg
+lrupnasvalpgbuh	lrupnasvalpgbuh	 REPLACE_IF cdscanbkm301buhinpg
+
+SUBFILE(tmptrans)
+SFL_LINES(19)
+SFL_TITLE(tmptranst)
+SFL_TARGET usrgrpidx  lBUH
+

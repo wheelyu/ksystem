@@ -1,0 +1,101 @@
+IMAGE(tmptranst)
+/---------------------------------\
+|/-------------------------------\|
+||t.Nourt   :____                ||
+||t.NipInp  :____________________||
+||i.Login   :____________________||
+||t.NoBuk   :____________________||
+||t.Pilihan :____________________||
+||t.Ket                          ||
+||:                              ||
+||:                              ||
+||:______________________________||
+||                         ______||
+|\-------------------------------/|
+\---------------------------------/
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+tldnourt        NOCHANGE        INPUTRI 1
+tldplg          PROTECT         INPUTRI 2
+tldlok2         PROTECT         INPUTRI 3
+tldnobuk        PROTECT         INPUTRI 4
+tldbrg          NOCHANGE        INPUTRI 5
+tldket          TEXTAREA        INPUTRI 6
+lenter          NOCHANGE        INPUTRI 7
+
+
+DEFAULTS(tmptranst)
+lenter          INIT            ENTER
+tlddata         INIT            RESURVEY
+tldlok2         INIT            {g_grpnam}
+tldsts          INIT            OPEN
+tldplg          INIT            {g_usrkode}
+tldbrg          DFALT_SCAN      BLANKS
+                                UBAHSTATUS
+                                UBAHKUNCI
+
+EDITS(tmptranst)
+e.Mandatory     tldbrg          MANDATORY
+e.Mandatory     tldket          MANDATORY
+t.ValidateNip   tldplg          VALIDATE psmdtkodidx mpsinip2  {Pgv_dtkaryawan} {Pgv_INPG}
+
+MAP(mpsinip2)
+psmkode         tldplg          REPLACE
+
+CALCS()
+cjointld_0      djointld == 0 && g_curcmd==1
+cjointld_1      djointld == 1 && g_curcmd==1
+cbtssts         djointldsts==0 || tldbrg=="UBAHKUNCI" || g_grpnam == "IT"
+cbtstgl         djointldkunci==0 || tldbrg=="UBAHSTATUS"
+
+MAP(misiuruty)
+csatu2x         tldnourt        DO_CALC_IF cjointld_0
+cplus2x         tldnourt        DO_CALC_IF cjointld_1
+
+MAP(misitranse)
+mtsnobuk        tldnobuk        REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldnourt      DO_MAP misiuruty
+AFTER_INPUT     cur_field=tldbrg        DO_MAP SHOW misitranse
+
+AFTER_INPUT     cur_field=tldbrg      DO_MAP  SHOW
+                IF cbtssts mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Max 1 kali input ubah status
+
+AFTER_INPUT     cur_field=tldbrg      DO_MAP  SHOW
+                IF cbtstgl mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Max 1 kali input mundur tanggal
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+        tldbukurtidx   mtsnobuk
+
+CALCS()
+ckuncitranse            tldbrg=="UBAHKUNCI" || (tldbrg=="UBAHSTATUS" && (mtssts=="INPG"||mtssts=="RCLS" || mtssts=="CLSD") && mtsgrup=="TIDAKFRAUD")
+cststranse              tldbrg=="UBAHSTATUS" && (mtssts=="INPG"||mtssts=="RCLS" || mtssts=="CLSD") && mtsgrup=="TIDAKFRAUD"
+cbesok2                 g_tgltrn+1
+
+MAP(mupdmtstranse)
+gv_OPEN                 mtssts          REPLACE
+
+MAP(mupdabktranse)
+cbesok2                 abktgl          DO_CALC
+gt_RINP                 abksts          REPLACE
+
+SPCALCS(sptmptrans)
+DO_LIB_IF ckuncitranse     ap_dbclc(DNAME dupdabktranse,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabktranse);
+DO_LIB_IF cststranse       ap_dbclc(DNAME dupdmtstranse,DCOMMAND UPDATE,DTARGET mtsbukidx tldnobuk,DMAP mupdmtstranse);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans
+
+

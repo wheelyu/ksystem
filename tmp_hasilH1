@@ -1,0 +1,594 @@
+LOCAL
+PGM_FIELDS
+lKETTOLAKSURVEY		STRING		21
+l4544                   INT2    2
+lm4544                  STRING  15
+lcmsmcs		STRING	21
+lsgmstr5	STRING	21
+lbtmcab1		STRING	21
+lbtmcab2		STRING	21
+lpsitglabs		DATE	8
+ltglfid30b              DATE            4
+ltglfid30c              DATE            4
+lmin2                   INT2            2
+lmin8                   INT2            2
+ltglawlbl       DATE            4
+lrmdgabPT       STRING  61
+lplatmtr	STRING	11
+lhasil1PT	DFLOAT	8
+ljmnasuransi	STRING	5
+lhasil1a	STRING	21
+lhasil1b	STRING	21
+lhasil1c	STRING	61
+l4688a			INT2            2
+lm4688a			STRING          15
+lnhmumasal      DFLOAT  8
+
+CALCS()
+ctglawal                ststglprjgl+1
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   i.Acctacc          : __  _________
+   i.Keterangan       : __  ________________________ _ _
+
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+lsvistr1		PROTECT				INPUTRI 2
+svistr2			NOCHANGE SCROLL			INPUTRI 3
+sviket			NOCHANGE	SCROLL			INPUTRI	4
+lbtmcab1		UNSEEN	PROTECT			INPUTRI		5
+lbtmcab2		UNSEEN	PROTECT			INPUTRI		6
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+lKETTOLAKSURVEY		INIT		KETTOLAKSURVEY
+lbtmcab1			INIT		{btmcab}
+lbtmcab2		INIT			{btmcab}
+l4544                   INIT            4544
+lm4544                  INIT            m4544
+lcmsmcs		INIT		CMS/MCS
+ltglawlbl       INIT                    {ctglawal}
+lmin2           INIT                    -2
+lmin8           INIT                    -8
+l4688a                  INIT            4688
+lm4688a                 INIT            m4688a
+
+DBCALCS(djoinsgmcmsmcshasil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg gv_dtpiccab lm2w lcmsmcs lthbl lbtmcab1 lbtmcab2
+
+DBCALCS(djoinsgmcmshasil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg gv_dtpiccab lm2w lcms lthbl lbtmcab1 lbtmcab2
+
+
+CALCS()
+cdiacc          svistr1=="Y"
+cditolak        svistr1=="T"
+cACC            "ACC"
+cTACC           "TACC"
+cdjoinsgmcmsmcshasil1		djoinsgmcmsmcshasil==1
+cdjoinsgmcmshasil1		djoinsgmcmshasil==1
+
+EDITS(tmptranst)
+e.Validate      svistr1        VALIDATE tbddatkodidx  mtbd5_2 stbd {Pgv_dttabel} {Pgv_kunjungan1} {Pgv_yt21}
+e.Validate	lbtmcab2	VALIDATE_IF cdjoinsgmcmsmcshasil1 sgmdatstrbrg msgmhasil {Pgv_dtpiccab} {Plm2w} {Plcmsmcs} {Plthbl} {Plbtmcab1}
+e.Validate      lbtmcab2	VALIDATE_IF cdjoinsgmcmshasil1 sgmdatstrbrg msgmhasil {Pgv_dtpiccab} {Plm2w} {Plcms} {Plthbl} {Plbtmcab1}
+
+e.Validate	svistr2        VALIDATE_IF cdiacc tbddatkodidx  mtbd5_1 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_ketsurvey}
+e.Validate      svistr2        VALIDATE_IF cditolak tbddatkodidx  mtbd5_1 stbd {Pgv_dttabel} {Pgv_survey21} {PlKETTOLAKSURVEY}
+
+e.Mandatory                     svistr1          MANDATORY
+e.Mandatory                     svistr2          MANDATORY
+e.Mandatory                     sviket          MANDATORY
+
+MAP(msgmhasil)
+sgmstr5		lsgmstr5	REPLACE
+sgmstr5		svistr3		REPLACE
+
+CALCS()
+ctglfid30b1             DO_LIB ap_tambl(ltglawlbl,lmin8,&ltglfid30b);
+ctglfid30b2             ltglfid30b + 25
+ctglfid30c1             DO_LIB ap_tambl(ltglawlbl,lmin2,&ltglfid30c);
+ctglfid30c2             ltglfid30c + 24
+
+
+MAP(mtgl)
+ctglfid30b1     ltglfid30b      DO_CALC
+ctglfid30b2     ltglfid30b      DO_CALC
+
+ctglfid30c1     ltglfid30c      DO_CALC
+ctglfid30c2     ltglfid30c      DO_CALC
+
+
+MAP(m4544)
+svistr3	       r_string1       REPLACE
+svioto		r_string2	REPLACE
+lhasil1a	r_string3	REPLACE
+lhasil1b	r_string4	REPLACE
+lhasil1c	r_string5	REPLACE
+ltglfid30b	r_date1		REPLACE
+ltglfid30c	r_date2		REPLACE
+
+MAP(m4688a)
+btmnobuk        r_string20      REPLACE
+
+MAP(mtbd5_1)
+tbdkode		svistr2		REPLACE
+tbdkode		lhasil1b	REPLACE
+tbdket		sviket		REPLACE
+tbdket		lhasil1c	REPLACE
+cACC		lsvistr1	DO_CALC_IF cdiacc
+cTACC		lsvistr1	DO_CALC_IF cditolak
+
+MAP(mtbd5_2)
+tbdkode         svistr1         REPLACE
+tbdkode         lhasil1a        REPLACE
+
+MAP(mkosong)
+cBLANKS         svistr2         DO_CALC
+cBLANKS		sviket		DO_CALC
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=svistr2       DO_MAP SHOW mkosong
+BEFORE_INPUT	cur_field=svistr1	DO_MAP SHOW mtgl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_hasilH1
+
+SFL_MAP
+gv_datasurvey  		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_hasilH1		svitype			REPLACE
+gv_hasilH1		svikode			REPLACE
+
+/**********************************************************************/
+DBCALCS(djoinrmdRC)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabRC
+
+DBCALCS(djoinrmdRN)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabRN
+
+DBCALCS(djoinrmdRT)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabRT
+
+DBCALCS(djoinrmdJK)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabJK
+
+DBCALCS(djoinrmdRD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabRD
+
+DBCALCS(djoinrmdTM)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabTM
+
+DBCALCS(djoinrmdSE)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabSE
+
+DBCALCS(djoinrmdSM)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabSM
+
+DBCALCS(djoinrmdSD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabSD
+
+DBCALCS(djoinrmdRO)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabRO
+
+DBCALCS(djoinrmdTY)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabTY
+
+DBCALCS(djoinrmdUM)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabUM
+
+DBCALCS(djoinrmd1P)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgab1P
+
+MAP(mjoinjmn)
+jmnasuransi	ljmnasuransi	REPLACE
+
+DBCALCS(djoinjmn)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	jmnplgnoidx   btmplg btmnobuk
+	DBC_MAP		mjoinjmn
+
+DBCALCS(djoinrmdPT)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgabPT
+
+MAP(mjoinnhm)
+nhmbiamklr      lnhmbiamklr     REPLACE
+nhmcairpinj     lnhmcairpinj    REPLACE
+nhmumriil       lnhmumriil      REPLACE
+nhmhrgpasar     lnhmhrgpasar    REPLACE
+nhmumasal       lnhmumasal      REPLACE
+
+DBCALCS(djoinnhm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhmdatbukidx    gv_dtbukutamu   btmnobuk
+        DBC_MAP         mjoinnhm
+
+
+MAP(mjoinalmsurveyhasil)
+almprop         lalmprop        REPLACE
+almkota         lalmkota        REPLACE
+almkec          lalmkec         REPLACE
+almkel          lalmkel         REPLACE
+
+DBCALCS(djoinalmsurveyhasil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatotobuk   gv_almsurvey btmplg btmnobuk
+        DBC_MAP         mjoinalmsurveyhasil
+
+CALCS()
+cdjoinalmsurveyhasil1        djoinalmsurveyhasil==1
+
+MAP(mjointbtring)
+tbtscr          lring           REPLACE
+
+DBCALCS(djointbtring)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdattypkod   gv_dtkota        gv_dtkota21 lalmprop lalmkota lalmkec lalmkel
+        DBC_COND        cdjoinalmsurveyhasil1
+        DBC_MAP         mjointbtring
+
+
+MAP(mjoinpsm)
+psmgender       lpsmgender      REPLACE
+psmtgllahir     lpsmtgllahir    REPLACE
+psmstsbill      lpsmstsbill     REPLACE
+psmdatakry      lpsmdatakry     REPLACE
+
+DBCALCS(djoinpsm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx   btmplg
+        DBC_MAP         mjoinpsm
+
+
+MAP(mjoinbrgh1)
+brgkat4         lseries         REPLACE
+brgkat2         lbrgkat2        REPLACE
+
+DBCALCS(djoinbrgh1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      brgdatkodidx   gv_dtbarang btmtypmtr
+        DBC_COND        cgabindukok1
+        DBC_MAP         mjoinbrgh1
+
+MAP(mjoinbrgm2w)
+brgkat4         lseries         REPLACE
+brgkat2         lbrgkat2        REPLACE
+
+DBCALCS(djoinbrgm2w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      brgdatkodidx   gv_dtmodel btmtypmtr
+        DBC_COND        cgabindukok2
+        DBC_MAP         mjoinbrgm2w
+
+
+MAP(mjoinpsi)
+psisdep lpsijabatan     REPLACE
+
+DBCALCS(djoinpsi)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx       btmsales
+        DBC_MAP         mjoinpsi
+
+MAP(mjoinpsicms)
+psitglabs	lpsitglabs	REPLACE
+
+DBCALCS(djoinpsicms)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx   lsgmstr5
+	DBC_MAP		mjoinpsicms
+
+CALCS()
+cjoinrmdRC       lrmdgabRC!="" && djoinrmdRC == 1
+crmdgabRC        STRIP(ltype)+"RC"
+cringcair       (lnhmcairpinj / btmhrg) * 100
+cdjoinnhm1      djoinnhm==1 && btmsoa!="AGEN"
+cdjoinnhm1kba   djoinnhm==1 && btmsoa=="AGEN"
+
+crmdgabRCz       STRIP(ltype)+"RC"+STRIP(btmcab)
+
+/****BATAS****/
+
+cjoinrmdRN       lrmdgabRN!="" && djoinrmdRN == 1
+crmdgabRN        STRIP(ltype)+"RN"+STRIP(lring)
+cdjointbtring1  	djointbtring==1 && btmcab!="SMG31" && btmcab!="CLP31" && btmcab!="DMK31" && btmcab!="MJP31" && btmcab!="PDR31" && btmcab!="SKN31" && btmcab!="KDL31" && btmcab!="SEI31" && btmcab!="PNK31" && btmcab!="BJM31"
+cdjointbtring1khusus	djointbtring==1 && (btmcab=="SMG31" || btmcab=="CLP31" || btmcab=="DMK31" || btmcab=="MJP31" || btmcab=="PDR31" || btmcab=="SKN31" || btmcab=="KDL31" || btmcab=="SEI31" || btmcab=="PNK31" || btmcab=="BJM31")
+
+crmdgabRNz       STRIP(ltype)+"RN"+STRIP(lring)+STRIP(btmcab)
+
+/****BATAS****/
+
+cjoinrmdRT       lrmdgabRT!="" && djoinrmdRT == 1
+crmdgabRT        STRIP(ltype)+"RT"
+
+crmdgabRTz       STRIP(ltype)+"RT"+STRIP(btmcab)
+
+
+/****BATAS****/
+
+cjoinrmdJK      lrmdgabJK!="" &&  djoinrmdJK == 1
+cdjoinpsm1      djoinpsm==1
+cdjoinpsm1bukankhusus      djoinpsm==1 && btmcab!="SMG31" && btmcab!="CLP31" && btmcab!="DMK31" && btmcab!="MJP31" && btmcab!="PDR31" && btmcab!="SKN31" && btmcab!="KDL31" && btmcab!="SEI31" && btmcab!="PNK31" && btmcab!="BJM31"
+cdjoinpsm1cabangkhusu      djoinpsm==1 && (btmcab=="SMG31" || btmcab=="CLP31" || btmcab=="DMK31" || btmcab=="MJP31" || btmcab=="PDR31" || btmcab=="SKN31" || btmcab=="KDL31" || btmcab=="SEI31" || btmcab=="PNK31" || btmcab=="BJM31")
+
+crmdgabJK        STRIP(ltype)+"JK"+STRIP(lpsmgender)
+crmdgabJKz       STRIP(ltype)+"JK"+STRIP(lpsmgender)+STRIP(btmcab)
+
+/****BATAS****/
+
+cjoinrmdRD       lrmdgabRD!="" && djoinrmdRD == 1
+crmdgabRD        STRIP(ltype)+"RD"
+cdepe           (lnhmumriil / lnhmhrgpasar) * 100
+cdepekba        (lnhmumasal / lnhmhrgpasar) * 100
+
+crmdgabRDz	STRIP(ltype)+"RD"+STRIP(btmcab)
+
+/****BATAS****/
+
+cjoinrmdTM       lrmdgabTM!="" && djoinrmdTM == 1
+crmdgabTM        STRIP(ltype)+"TM"
+clama           lyy - lbtmthnf
+crmdgabTMz       STRIP(ltype)+"TM"+STRIP(btmcab)
+
+
+/****BATAS****/
+
+cjoinrmdSEh1     lrmdgabSE!="" && djoinrmdSE == 1 && (btmdvsjl=="H1" || btmdvsjl=="HMC" || btmdvsjl=="HMC")
+crmdgabSE        STRIP(ltype)+"SE"+STRIP(lseries)
+crmdgabSEz	 STRIP(ltype)+"SE"+STRIP(lseries)+STRIP(btmcab)
+
+cdjoinbrgh1m2wbiasa  (djoinbrgh1==1 && (btmdvs=="H1" || btmdvs=="HMC") || (djoinbrgm2w==1 && btmdvs=="M2W")) && btmcab!="SMG31" && btmcab!="CLP31" && btmcab!="DMK31" && btmcab!="MJP31" && btmcab!="PDR31" && btmcab!="SKN31" && btmcab!="KDL31" && btmcab!="SEI31" && btmcab!="PNK31" && btmcab!="BJM31"
+cdjoinbrgh1m2wkhusus (djoinbrgh1==1 && (btmdvs=="H1" || btmdvs=="HMC") || (djoinbrgm2w==1 && btmdvs=="M2W")) && (btmcab=="SMG31" || btmcab=="CLP31" || btmcab=="DMK31" || btmcab=="MJP31" || btmcab=="PDR31" || btmcab=="SKN31" || btmcab=="KDL31" || btmcab=="SEI31" || btmcab=="PNK31" || btmcab=="BJM31")
+
+cjoinrmdSEm2w    lrmdgabSE!="" && djoinrmdSE == 1 && btmdvs=="M2W"
+/*belum*/
+/****BATAS****/
+
+cjoinrmdSM        lrmdgabSM!="" && djoinrmdSM == 1
+crmdgabSMb        STRIP(ltype)+"SM"+STRIP(lmerk)
+
+cHONDA          "HONDA"
+cYAMAHA         "YAMAHA"
+cSUZUKI         "SUZUKI"
+cKAWASAKI       "KAWASAKI"
+
+cinihondaok       djoinbrgm2w==1 && lbrgkat2=="HONDA"
+ciniyamahaok      djoinbrgm2w==1 && lbrgkat2=="YAMAHA"
+cinisuzukiok      djoinbrgm2w==1 && lbrgkat2=="SUZUKI"
+cinikawasakiok    djoinbrgm2w==1 && lbrgkat2=="KAWASAKI"
+/*blm pakai*/
+/****BATAS****/
+
+cjoinrmdSD        lrmdgabSD!="" && djoinrmdSD == 1
+cctr             "COUNTER"
+cctrok           djoinpsi==1 && djoinnhm==1 && lpsijabatan=="COUNTER" && lnhmbiamklr==0 /* non makelar */
+cmag             "S.MAGANG"
+cmagok           djoinpsi==1 && djoinnhm==1 && lnhmbiamklr==0 && (lpsijabatan=="SALES " || lpsijabatan=="S.MAGANG " || lpsijabatan=="SALESMAN M") /* mo makelar */
+csls             "SALESMAN"
+cslsok           djoinpsi==1 && djoinnhm==1 && lpsijabatan=="SALESMAN " && lnhmbiamklr==0 /* non makelar */
+clapangan        "LAPANGAN"
+clapanganok      djoinpsi==1 && djoinnhm==1 && lnhmbiamklr==0 && (lpsijabatan=="T.LEADER " || lpsijabatan=="AC.TM LDR " || lpsijabatan=="T.LDR " || lpsijabatan=="T.LEADER M") /* non makelar */
+cmctr            "MKLCTR"
+cmctrok          djoinpsi==1 && djoinnhm==1 && lpsijabatan=="COUNTER " && lnhmbiamklr>0
+cmlap            "MKLLAP"
+cmlapok          djoinpsi==1 && djoinnhm==1 && (lpsijabatan=="S.MAGANG" || lpsijabatan=="SALESMAN" || lpsijabatan=="T.LEADER  " || lpsijabatan=="AC.TM LDR" || lpsijabatan=="T.LDR" || lpsijabatan =="T.LEADER M") && lnhmbiamklr>0
+clain            "LAIN"
+clainok          djoinpsi==1 && djoinnhm==1 && (lpsijabatan!="SALES " && lpsijabatan != "S.MAGANG" && lpsijabatan !="SALESMAN" && lpsijabatan != "COUNTER" && lpsijabatan !="T.LEADER  " && lpsijabatan!="AC.TM LDR" && lpsijabatan!="T.LDR" && lpsijabatan!="T.LEADER M") && lnhmbiamklr==0
+
+crmdgabSD        STRIP(ltype)+"SD"+STRIP(lsubdep)
+crmdgabSDz       STRIP(ltype)+"SD"+STRIP(lsubdep)+STRIP(btmcab)
+/****BATAS****/
+
+cRONON          "RONON"
+cRO             "RO"
+cNON		"NON"
+cinirobos       djoinpsm==1 && lpsmstsbill!="NEW" && lpsmstsbill!=""
+cininonro       djoinpsm==1 && lpsmstsbill=="NEW"
+cininonrokhusus	djoinpsm==1 && lpsmstsbill=="NEW" && (btmcab=="SMG31" || btmcab=="CLP31" || btmcab=="DMK31" || btmcab=="MJP31" || btmcab=="PDR31" || btmcab=="SKN31" || btmcab=="KDL31" || btmcab=="SEI31" || btmcab=="PNK31" || btmcab=="BJM31") 
+cjoinrmdRO        lrmdgabRO!="" && djoinrmdRO == 1
+crmdgabRO        STRIP(ltype)+"RO"+STRIP(lro)
+crmdgabROz       STRIP(ltype)+"RO"+STRIP(lro)+STRIP(btmcab)
+
+/****BATAS****/
+
+cjoinrmdTY      lrmdgabTY!="" &&  djoinrmdTY == 1
+
+c47             "47"
+cinikaryawan    djoinpsm==1 && lpsmdatakry=="DTKARYAWAN"
+crmdgabTY        STRIP(ltype)+"TY"+STRIP(l47)
+crmdgabTYz       STRIP(ltype)+"TY"+STRIP(l47)+STRIP(btmcab)
+
+
+cumur           (btmtgl-lpsmtgllahir)/365
+
+cjoinrmdUM       lrmdgabUM!="" && djoinrmdUM == 1
+crmdgabUM        STRIP(ltype)+"UM"
+crmdgabUMz       STRIP(ltype)+"UM"+STRIP(btmcab)
+
+
+cusiacms	(g_tgltrn-lpsitglabs)/30
+
+cdjoinpsicms1	djoinpsicms==1
+cjoinrmd1P       lrmdgab1P!="" && djoinrmd1P == 1
+crmdgab1P        STRIP(ltype)+"1PCMS"
+
+cnipcmsada	lsgmstr5!=""
+
+cdalamkota	"DALAM KOTA"
+cluarkota	"LUAR KOTA"
+cDK		djoinjmn==1 && ljmnasuransi=="DK"
+cLK		djoinjmn==1 && ljmnasuransi=="LK"
+
+cjoinrmdPT      lrmdgabPT!="" && djoinrmdPT == 1
+crmdgabPTz      STRIP(ltype)+"PT"+STRIP(lplatmtr)+STRIP(btmcab)
+
+
+MAP(mmappertama)
+        cblanks     lrmdgabPT     DO_CALC
+	cblanks	    lplatmtr	  DO_CALC
+	cdalamkota	lplatmtr	DO_CALC_IF cDK
+	cluarkota	lplatmtr	DO_CALC_IF cLK
+
+MAP(mmaphasil)
+        cringcair   lringcair     DO_CALC_IF cdjoinnhm1
+        crmdgabRC   lrmdgabRC     DO_CALC_IF cbukancabangkhusu
+	crmdgabRCz  lrmdgabRC	  DO_CALC_IF ccabangkhusus
+
+
+        crmdgabRN   lrmdgabRN     DO_CALC_IF cdjointbtring1
+	crmdgabRNz  lrmdgabRN	  DO_CALC_IF cdjointbtring1khusus
+
+
+	btmlmang        lbtmlmangdf     REPLACE
+	crmdgabRT   lrmdgabRT     DO_CALC_IF cbukancabangkhusu
+	crmdgabRTz  lrmdgabRT	  DO_CALC_IF ccabangkhusus
+
+
+        crmdgabJK   lrmdgabJK     DO_CALC_IF cdjoinpsm1bukankhusus
+	crmdgabJKz  lrmdgabJK	  DO_CALC_IF cdjoinpsm1cabangkhusu
+
+	cdepe       lpersendp   DO_CALC_IF cdjoinnhm1
+        cdepekba    lpersendp   DO_CALC_IF cdjoinnhm1kba
+
+        crmdgabRD   lrmdgabRD     DO_CALC_IF cbukancabangkhusu
+	crmdgabRDz  lrmdgabRD	  DO_CALC_IF ccabangkhusus
+
+        btmthn      lbtmthnf      REPLACE
+        clama       lumurmtr      DO_CALC
+        crmdgabTM   lrmdgabTM     DO_CALC_IF cbukancabangkhusu
+	crmdgabTMz  lrmdgabTM	  DO_CALC_IF ccabangkhusus
+        
+	crmdgabSE   lrmdgabSE     DO_CALC_IF cdjoinbrgh1m2wbiasa
+	crmdgabSEz  lrmdgabSE	  DO_CALC_IF cdjoinbrgh1m2wkhusus
+
+        cHONDA      lmerk         DO_CALC_IF cinihondaok
+        cYAMAHA     lmerk         DO_CALC_IF ciniyamahaok
+        cSUZUKI     lmerk         DO_CALC_IF cinisuzukiok
+        cKAWASAKI   lmerk         DO_CALC_IF cinikawasakiok
+        crmdgabSMb  lrmdgabSM     DO_CALC_IF cdjoinbrgh1m2wbiasa
+
+
+        cctr        lsubdep       DO_CALC_IF cctrok
+        cmag        lsubdep       DO_CALC_IF cmagok
+        csls        lsubdep       DO_CALC_IF cslsok
+        cmctr       lsubdep       DO_CALC_IF cmctrok
+        cmlap       lsubdep       DO_CALC_IF cmlapok
+        clain       lsubdep       DO_CALC_IF clainok
+        clapangan   lsubdep       DO_CALC_IF clapanganok
+        crmdgabSD   lrmdgabSD     DO_CALC_IF cbukancabangkhusu
+	crmdgabSDz  lrmdgabSD	  DO_CALC_IF ccabangkhusus
+
+        cRONON      lro           DO_CALC_IF cininonro
+        cRO         lro           DO_CALC_IF cinirobos
+	cNON	    lro		  DO_CALC_IF cininonrokhusus
+        crmdgabRO   lrmdgabRO     DO_CALC_IF cbukancabangkhusu
+	crmdgabROz  lrmdgabRO	  DO_CALC_IF ccabangkhusus
+
+        c47         l47           DO_CALC_IF cinikaryawan
+        crmdgabTY   lrmdgabTY     DO_CALC_IF cbukancabangkhusu
+	crmdgabTYz  lrmdgabTY	  DO_CALC_IF ccabangkhusus
+        cumur       lumur         DO_CALC_IF cdjoinpsm1
+        crmdgabUM   lrmdgabUM     DO_CALC_IF cbukancabangkhusu
+        crmdgabUMz  lrmdgabUM     DO_CALC_IF ccabangkhusus
+
+        crmdgabPTz  lrmdgabPT     DO_CALC_IF ccabangkhusus
+
+
+        crmdgab1P   lrmdgab1P     DO_CALC
+	cusiacms	lusiacms   DO_CALC_IF cdjoinpsicms1
+DEBUG    ldum   ldum    REPLACE
+
+MAP(mupdtldwarnahasil)
+lhasil1RC		tldhrgnet	REPLACE
+lhasil1RN		tldtmp1		REPLACE
+lhasil1RT		tldtmp2		REPLACE
+lhasil1JK		tldjml2		REPLACE
+lhasil1RD		tldjml3		REPLACE
+lhasil1TM		tldperdism	REPLACE
+lhasil1SE		tldtotdism	REPLACE
+lhasil1SM		tldperdis1	REPLACE
+lhasil1SD		tldperdis2	REPLACE
+lhasil1RO		tldperdis3	REPLACE
+lhasil1TY		tldperdis4	REPLACE
+lhasil1UM		tldperdis5	REPLACE
+lhasil11P		tldperdis6	REPLACE
+lhasil1PT		tldperdis7	REPLACE
+
+ctotalhmc		tldjml		DO_CALC_IF cnonA
+ctotalhmc		tldjml		DO_CALC_IF cnonB
+
+ctotalhmc               tldjml          DO_CALC_IF cnonAkhusus
+
+ctotalm2w1		tldjml		DO_CALC_IF cdatun1
+ctotalm2w2		tldjml		DO_CALC_IF cdatun2
+
+ctotalm2wbaru           tldjml          DO_CALC_IF cM2Wbaru
+
+SPCALCS(sphasil)
+        DO_LIB ap_dbclc (DNAME dmapawal6,DCOMMAND MAPMAP,DMAP mmapawal);
+	DO_LIB ap_dbclc (DNAME dmappertama,DCOMMAND MAPMAP,DMAP mmappertama);
+        DO_LIB ap_tglhr(btmtgl,&lhr1,&ldd,&lmm,&lyy,&ltglstr);
+        DO_LIB ap_dbclc (DNAME dmaphasil,DCOMMAND MAPMAP,DMAP mmaphasil);
+
+	DO_LIB_IF cjoinrmdRC  ap_ambts(lINPG,lrmdgabRC,lringcair,lNOL,lNOL,&lhasil1RC,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdRN  ap_ambts(lINPG,lrmdgabRN,lNOL,lNOL,lNOL,&lhasil1RN,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdRT  ap_ambts(lINPG,lrmdgabRT,lbtmlmangdf,lNOL,lNOL,&lhasil1RT,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdJK  ap_ambts(lINPG,lrmdgabJK,lNOL,lNOL,lNOL,&lhasil1JK,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdRD  ap_ambts(lINPG,lrmdgabRD,lpersendp,lNOL,lNOL,&lhasil1RD,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdTM  ap_ambts(lINPG,lrmdgabTM,lumurmtr,lNOL,lNOL,&lhasil1TM,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdSEh1  ap_ambts(lINPG,lrmdgabSE,lNOL,lNOL,lNOL,&lhasil1SE,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);    
+	DO_LIB_IF cjoinrmdSEm2w  ap_ambts(lINPG,lrmdgabSE,lNOL,lNOL,lNOL,&lhasil1SE,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdSM  ap_ambts(lINPG,lrmdgabSM,lNOL,lNOL,lNOL,&lhasil1SM,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdSD  ap_ambts(lINPG,lrmdgabSD,lNOL,lNOL,lNOL,&lhasil1SD,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdRO  ap_ambts(lINPG,lrmdgabRO,lNOL,lNOL,lNOL,&lhasil1RO,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdTY  ap_ambts(lINPG,lrmdgabTY,lNOL,lNOL,lNOL,&lhasil1TY,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cjoinrmdUM  ap_ambts(lINPG,lrmdgabUM,lumur,lNOL,lNOL,&lhasil1UM,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);	
+        DO_LIB_IF cjoinrmdPT  ap_ambts(lINPG,lrmdgabPT,lNOL,lNOL,lNOL,&lhasil1PT,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2);
+	DO_LIB_IF cnipcmsada ap_nxpst(l4544,lm4544);	
+
+	DO_LIB_IF cjoinrmd1P  ap_ambts(lINPG,lrmdgab1P,lusiacms,svidf6,lNOL,&lhasil11P,&lhasil2,&lhasil3,lhasilstr1,lhasilstr2); /*fid hmc*/
+        DO_LIB ap_dbclc (DNAME dmaphasil1,DCOMMAND MAPMAP,DMAP mmaphasil);
+        DO_LIB_IF cdjointldwarna0 ap_dbclc (DNAME daddtldwarnahasil,DCOMMAND ADD,DFILE tld,DMAP maddtldwarna);
+        DO_LIB_IF cdjointldwarna1 ap_dbclc (DNAME dupdtldwarnahasil,DCOMMAND UPDATE,DTARGET tldbukurtidx   btmnobuk l1,DMAP mupdtldwarnahasil);
+	DO_LIB ap_nxpst(l4688a,lm4688a);   /*Btp Penyimpangan*/
+
+POSTING(tmptrans)
+        PST_ADDCMD sphasil
+        PST_UPDCMD sphasil
+
+
+CALCS()
+ctambah_hasil	btmsts=="714" && djoinsvihasil==0 && g_scrnumstr=="714"
+cubah_hasil	btmsts=="714" && djoinsvihasil==1 && g_scrnumstr=="714"
+chapus_hasil	btmsts=="714" && djoinsvihasil==1 && g_scrnumstr=="714"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	ctambah_hasil
+  	PMT_UPDALL_COND	cubah_hasil
+  	PMT_DEL_COND  	chapus_hasil

@@ -1,0 +1,63 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||i.NoBuk     :____________________   ||
+||t.Nama      :____________________   ||
+||i.Ket       :_______________________||
+||t.HasilVerif: ____________   ___    ||
+|\------------------------------------/|
+|/--SIGNATURE-------------------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode		PROTECT                 INPUTRI         1
+aktlok		PROTECT			INPUTRI		1
+aktket 		PROTECT                 INPUTRI         2
+aktbukoto	NOCHANGE		INPUTRI		3
+aktdf6		PROTECT			INPUTRI		5
+
+DEFAULTS(tmptranst)
+aktbukoto       DFALT_SCAN BLANKS
+                                SESUAI
+                                TIDAK
+
+EDIT(tmptranst)
+e.Mandatory     aktbukoto         MANDATORY
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cloginbolehbuka
+SFL_UPL_DIRFLD btmtgl
+SFL_SELECT	cbolehbuka
+SFL_SGNFLD	aktbrg
+SFL_SGNFLD_READONLY
+SFL_TARGET
+	aktkodtypidx	btmnobuk gv_datasurvey   lttdpihak3
+
+SPCALCS(spcekttdpihak3)
+DO_LIB ap_dbclc(DNAME dmapcekttdpihak3,DCOMMAND MAPMAP,DMAP mmapkunci);
+DO_LIB_IF chanyaliat ap_dbclc(DNAME dupdaktsendiri,DCOMMAND UPDATE,DTARGET aktprmidx   aktprm,DMAP mupdaktsendiri);
+DO_LIB ap_dbclc(DNAME dupdabkamttdpihak3,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabkamttdpihak3);
+DO_LIB_IF ctolakberkascmsttd ap_dbclc(DNAME daddabkttdpihak3, DCOMMAND ADD, DFILE abk, DMAP maddabkttdpihak3);
+dscansvifotopk
+DO_LIB_IF cfotosdhsesuai ap_dbclc(DNAME mupdmntberkasfoto1,DCOMMAND UPDATE_RANGE,DBC_TARGET  mntdatkodtgl   lBRKS btmnobuk btmtgl,DBC_MAP mupdmntbrks);
+DO_LIB_IF cfotosdhsesuai ap_dbclc(DNAME daddabkcmsf1, DCOMMAND ADD, DFILE abk, DMAP maddabkcms);
+DO_LIB_IF cpkmenjadibatal ap_dbclc(DNAME dupdbtmbatalttd,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmbatal);
+DO_LIB_IF cpkmenjadibatal ap_dbclc(DNAME dupdabkttd,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN aktkode,DMAP mupdabkbtl);
+DO_LIB_IF cpkmenjadibatal ap_dbclc(DNAME dupdabkcmsttd,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lkunciabsencms,DMAP mupdabkbtl);
+
+POSTING(tmptrans)
+        PST_UPDCMD spcekttdpihak3
+

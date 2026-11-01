@@ -1,0 +1,123 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Bukti Promosi Sosmed
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| _______________________       t.H_____  ||
+|| i.TanggalInput         : _____________  ||
+|| i.JumlahLikes          : _____________  ||
+|| i.JumlahKomentar       : _____________  ||
+
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc : ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      PROTECT                         INPUTRI 1
+tkdjml          PROTECT                         INPUTRI 1
+tkdtgl          PROTECT {DD-MM-YY}              INPUTRI 1
+tkdnildmke      NUMERIC             	        INPUTRI	2
+tkdnildmdr      NUMERIC             	        INPUTRI	3
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts          PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 2
+tkdket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolpromosi    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+ltmpisidf1      INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+ltkdnoll 	INIT            {ctipedetail}
+tkdjml          INIT            {tmpisidf1}
+tkdtotsj        INIT            {gv_int1}
+tkdtotsj        INIT_UPDATE     0
+tkdtotsan        INIT            {tmpisidf1}
+tkdsts          INIT            {gv_OPEN}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+
+CALCS()
+cdetailhm3promosi       tlmkode == g_usrkode && tkdnildmke != 0 && tkdnourt > 0
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolpromosi  DO_SPCALCS spdetailokhm3sos
+
+BEFORE_INPUT    cur_field=tkdnildmke            DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdnildmdr            DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+EDITS(tmptranst)
+e.Mandatory             tkdnildmke      MANDATORY
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+e.Mandatory             tkdnildmdr      MANDATORY
+
+MAP(mtambahuploadfotopromosisosmed)
+lPROMOSISOSMED          tkdjwbstr1      REPLACE_IF cdetailhm3
+lPROMOSISOSMED2         tkdjwbstr1      REPLACE_IF cdetailhm1
+lPROMOSISOSMED3         tkdjwbstr1      REPLACE_IF cdetailh
+ctambahupload		tkdnourt	DO_CALC
+gv_int1                 tkdtotjsa       REPLACE
+g_tgltrn                tkdtgl          REPLACE
+DBCALCS(dtambahuploadfotopromosisosmed)
+	  DBC_COMMAND	UPDATE
+	  DBC_TARGET	tkdprmidx	tkdprm
+	  DBC_MAP       mtambahuploadfotopromosisosmed
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPLFLD tkdnobuk tkdjwbstr1
+SFL_UPLFLD_DBCALCS dtambahuploadfotopromosisosmed
+SFL_UPL_COND cuploadblastsosmedok
+SFL_UPL_COND_MSG        IF cdetailblastsosmed1sudahacc Detail H-3 Sudah ACC tidak bisa upload
+                        IF cdetailblastsosmed2sudahacc Detail H-1 Sudah ACC tidak bisa upload
+                        IF cdetailblastsosmed3sudahacc Detail Hari H Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetailblastsosmed1review Tunggu Review H-3 Terlebih Dahulu
+                        IF cdetailblastsosmed2review Tunggu Review H-1 Terlebih Dahulu
+                        IF cdetailblastsosmed3review Tunggu Review Hari H Terlebih Dahulu
+                        IF cbelumadablastpromosi Tekan T Enter Dulu
+                        IF cdalamkondisiupdate Tekan U Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_SELECT cselblastwa
+SFL_TARGET
+        tkddatbukll lEVNH1BHM3 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1BHM3 tkddata
+        labktype tkdnoll
+
+MAP(mupdinfodetailhm3sos)
+cketdetailsosmed        tkdrek          DO_CALC_IF cjumlahlikekosong
+cketuploadfotodulu        tkdrek          DO_CALC_IF cfotososmedkosong
+lSELESAIKANHMIN7DULU    tkdrek          REPLACE_IF cdjoindetailhm7apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+
+SPCALCS(spdetailokhm3sos)
+        DO_LIB_IF cdetailhm3promosi          ap_dbclc(DNAME dupddetailreqhm3sos,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm3sos, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm3sos, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm3sos,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm3sos);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailadditionalbaru

@@ -1,0 +1,91 @@
+LOCAL
+PGM_FIELDS
+lPEFINDO	STRING	11
+l4673           INT2            2
+lm4673          STRING          15
+lIDPEFINDO	STRING	11
+
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------------------\
+|                                  _______________                                                             |
+|i.Ktp                           : _________________________________                                           |
+|i.Siapa                         : _______________                                                             |
+|t.Enter                         : _________
+\--------------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	PROTECT					INPUTRI 1
+tldplg		ALLCAPS SCROLL				INPUTRI 3
+tldkat		ALLCAPS SCROLL				INPUTRI 4
+lenter2		ALLCAPS					INPUTRI 20
+
+CALCS()
+cidpefindo	STRIP(tldplg) + THBLS(g_tgltrn)
+
+DEFAULTS(tmptranst)
+tldkat		DFALT_SCAN	BLANKS
+				DEBITUR
+                                PENJAMIN
+				PASANGAN
+
+
+lPEFINDO	INIT	PEFINDO
+lIDPEFINDO	INIT	IDPEFINDO
+l4673           INIT    4673
+lm4673          INIT    m4673
+
+EDITS(tmptranst)
+t.Mandatory	tldkat		MANDATORY
+t.Mandatory	tldplg		MANDATORY
+TAB-TAB SAMPAI AKHIR,ENTER	lenter2	MANDATORY
+
+MAP(menter2g11)
+btmnobuk	tldnobuk	REPLACE
+btmnobuk	tldbrg		REPLACE
+tldplg		tldnoll		REPLACE
+lenter		lenter2		REPLACE
+cidpefindo	tldppdoto	DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldkat	DO_MAP SHOW menter2g11
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldstsbrgukr lPEFINDO gv_INPG btmnobuk
+
+SFL_MAP
+btmnobuk	tldnobuk	REPLACE
+btmnobuk	tldbrg		REPLACE
+lPEFINDO	tlddata		REPLACE
+gv_INPG		tldsts		REPLACE
+
+/*DBCALCS(djoinahmpefindo)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ahmdatfak2id lIDPEFINDO tldppdoto*/
+
+DBCALCS(djointbdcekpefm4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 l711PEFINDO l642ok
+
+CALCS()
+cadapefindo	djointbdcekpefm4w==1
+
+MAP(m4673)
+btmnobuk	r_string1	REPLACE
+tldplg          r_string2       REPLACE
+btmnobuk	r_string3	REPLACE
+btmnobuk	r_string15	REPLACE
+g_scrnumstr	r_string21	REPLACE
+tldkat		r_string22	REPLACE
+
+
+SPCALCS(spaddtmptrans)
+DO_LIB_IF cadapefindo ap_nxpst(l4673,lm4673);
+
+POSTING(tmptrans)
+PST_ADDCMD spaddtmptrans
+

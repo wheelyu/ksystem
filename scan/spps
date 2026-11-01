@@ -1,0 +1,195 @@
+/****************************************************************************/
+IMAGE(ppshead)
+/-------------Daftar Faktur Hutang------------------------------------------------------\
+|  Nomor Bukti        Status    Tanggal  Nominal                                        |
+|---------------------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|---------------------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                           |
+\---------------------------------------------------------------------------------------/
+|---------------------------------------------------------------------------------------|
+
+IMAGE(ppsroll)
+  __________________  ________  ________ ________________.__ __________________________
+
+FIELD(ppsroll)
+ppsnobuk        NOCHANGE SCROLL          NONE              1  
+ppssts          PROTECT SCROLL           NONE              2  
+ppstglbuk       PROTECT {DD-MM-YY}       NONE              3  
+ppssisprc       PROTECT SCROLL           NONE              4  
+ppsket          PROTECT SCROLL           NONE              5
+
+CALCS()
+cpilass         (ppssts == "INPG" && ppsstsprc == "OPEN" && ppsdtdkode == bkmkode) /* && ppsnomst != "ASSURANSI")*/
+cpilBBN         ppskdpm == bkdgrup
+csisprc_sc     	ppsnobuk2 == bkmnobs && ppssisprc + ~bkdtotal > 0.0 
+csisprc_sc758   ppsnobuk2 == tlmnoasal && ppssisprc + ~tlmtotal > 0.0 
+cppskpbnss	(ppsnobuk2 == bkmnobuk2 || ppsnobuk2 == bkmnobs) && ppssisprc > 0.0 && ppstotbyr == 0.0
+cppskpbnss2	ppsnobbm == "251.11.2105" && ppssisprc > 0.0 && ppstotbyr == 0.0
+cppskpb1tahuna	(ppsnobbm == "251.11.2107" && ppssisprc > 0.0) || (ppsnobbm == "251.11.2104" && ppssisprc > 0.0 && ppstotbyr > 0.0)
+cppskpb1tahunb	(ppsnobbm == "251.11.2107" && ppssisprc > 0.0) || (ppsnobbm == "251.11.2104" && ppssisprc > 0.0 && ppstotbyr > 0.0)
+cppsnsspeduli   (ppsnobbm == "251.11.2103" && ppssisprc > 0.0 && ppskdpm == "VOUCHERAH")
+cbkdbuk_beda    ~bkdbukll == ppsnobuk
+cppstambkd	ppssisprc + ~bkdtotal
+cppsfid		ppssisprc + ~bkdtotal > 0.
+cppsfidpstM4W   ppssisprc + ~bkdtotal > 0. && (ppssts == "INPG" && ppsdata == "DTHUT")
+cprogresif      ppskdpm == bkmtype
+careabbnsama	ppsgrup2==tlmgrup2 || ppsgrup2==bkmgrup2 || ppsscr=="AWBN" || ppsscr=="AWBJ"
+cBRJS           ppscab==tlmcab &&  ppskdpm == "BRJS" && ppsgrup2==tlmgrup2
+cgedungasr	ppsfr == "GD" && ppsdata == "DTHUT" && ppstype == "HUTASSIN"
+cmobilasr	ppsfr == "MB" && ppsdata == "DTHUT" && ppstype == "HUTASSIN"
+cppsASRPRM      ppsdata == gv_dthut && (ppstype == "HUTASS" || ppstype == "HUTASSR") && ppsnobuk2 == tlmnoasal
+cpilANG3        (ppssts == "INPG" && ppsdata == "DTHUT" && ppsnobuk2 == tlmnoasal && ppssisa > 0 )
+cppsBJ          ppsnomst == "BJ"
+cfincoy		(ppskdpm == "SCHEME" || ppskdpm == "FEEOWNER")/* && ppsstsdaf == "FD"*/
+csisprc_225	((ppssisprc + ~tcmtotal > 0.0) || (ppssisprc + ~tcmtotal == 0.0 && ppsnobuk == ~tcmbank))
+ctgrgd          ppstype == "TGRGD" && ppsstsprc == "INPG"
+cvouchersubs	ppsnobuk2 == ppmnoll && ppssisprc + ~tcmtotal > 0.0
+cpps314		ppstype == bkmtype
+cppsm2wadm2	ppstype == "STRBIA" && ppsnobbm == "251.11.1001" && ppskdpm == "HUTADM2"
+cppsHLF		(ppsgrup == tlmplg && ppsgrup2 == tlmgrup && ppskdpm == "HLF" && tlmdata=="KLAIMPIU") || 
+		(ppsgrup == BLANKS && ppskdpm == "HL" && tlmdata == "KLAIMPIU")
+
+MAP(mtmppps)
+cppstambkd		ppssisprc		DO_CALC_IF cbkdbuk_beda
+
+SCAN(spps) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_UPD_MAP=mtmppps} {SCAN_SELECT=csisprc_sc}
+SCAN(sppsASS) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8}  {SCAN_SELECT=cpilass}
+SCAN(sppsBBN) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8}  {SCAN_SELECT=cpilBBN}
+SCAN(spps2) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=csisprc_sc} 
+SCAN(spps3) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=csisprc_sc} 
+SCAN(spps4) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(spps5) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(sppsHLF) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppsHLF}
+SCAN(spps758) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=csisprc_sc758} 
+SCAN(sppsfin) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cfincoy} 
+
+SCAN(sppsFID) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_UPD_MAP=mtmppps} {SCAN_SELECT=cppsfid}
+SCAN(sppsFIDpstM4W) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_UPD_MAP=mtmppps} {SCAN_SELECT=cppsfidpstM4W}
+SCAN(sppsANG3) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cpilANG3}
+SCAN(spps216) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(sppsBJ) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppsBJ}
+SCAN(spps225) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=csisprc_225}
+SCAN(sppstgrgd) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctgrgd}
+
+SCAN(sppsbklkpb) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppskpbnss}
+SCAN(sppsbklkpb2) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppskpbnss2}
+SCAN(spps1tahuna) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppskpb1tahuna}
+SCAN(spps1tahunb) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppskpb1tahunb}
+SCAN(sppsnsspeduli) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppsnsspeduli}
+SCAN(spps314) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cpps314}
+SCAN(sppsadm2) {IMAGE_OUT=ppshead} {IMAGE_ROL=ppsroll} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppsm2wadm2}
+
+
+/****************************************************************************/
+IMAGE(ppshead2)
+/-------------Daftar Faktur Hutang--------------------------------------------------------------------------\
+|  KdBukti            Faktur         Status    Tanggal  Nominal                                             |
+|-----------------------------------------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|-----------------------------------------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                                               |
+\-----------------------------------------------------------------------------------------------------------/
+|-----------------------------------------------------------------------------------------------------------|
+
+IMAGE(ppsroll2)
+  __________________  _______________  ________  ________ ____________.__ ________________ ________________
+
+
+FIELD(ppsroll2)
+ppsnobuk        NOCHANGE SCROLL          NONE              1
+ppsnobuk2	NOCHANGE SCROLL		 NONE		   2
+ppssts          PROTECT SCROLL           NONE              3
+ppstglbuk       PROTECT {DD-MM-YY}       NONE              4
+ppssisprc       PROTECT SCROLL           NONE              5
+ppsket          PROTECT SCROLL           NONE              6
+ppsnopj         PROTECT SCROLL           NONE              6
+
+
+
+SCAN(sppsMKL) {IMAGE_OUT=ppshead2} {IMAGE_ROL=ppsroll2} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_UPD_MAP=mtmppps} {SCAN_SELECT=cppsfid}
+
+SCAN(sppsPROG) {IMAGE_OUT=ppshead2} {IMAGE_ROL=ppsroll2} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cprogresif}
+SCAN(sppsBBN1) {IMAGE_OUT=ppshead2} {IMAGE_ROL=ppsroll2} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=careabbnsama}
+SCAN(sppsBBN3) {IMAGE_OUT=ppshead2} {IMAGE_ROL=ppsroll2} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cBRJS}
+SCAN(sppsvcrsubs) {IMAGE_OUT=ppshead2} {IMAGE_ROL=ppsroll2} {IMAGE_INP=ppsroll2} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cvouchersubs}
+
++/****************************************************************************/
+IMAGE(ppshead3)
+/-------------Daftar Faktur Hutang--------------------------------------------------------------------\
+|  KdBukti            Faktur         Status    Tanggal  Nominal                                       |
+|-----------------------------------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|-----------------------------------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                                         |
+\-----------------------------------------------------------------------------------------------------/
+|-----------------------------------------------------------------------------------------------------|
+
+IMAGE(ppsroll3)
+  __________________  _______  ____________
+
+FIELD(ppsroll3)
+ppsnobuk        NOCHANGE SCROLL          NONE              1
+ppssts          PROTECT SCROLL           NONE              2
+ppsgrup2	NOCHANGE SCROLL		 NONE		   3
+
+
+SCAN(sppsASRGD) {IMAGE_OUT=ppshead3} {IMAGE_ROL=ppsroll3} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cgedungasr}
+SCAN(sppsASRMB) {IMAGE_OUT=ppshead3} {IMAGE_ROL=ppsroll3} {IMAGE_INP=ppsroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cmobilasr}
+
+IMAGE(ppshead4)
+/-------------Daftar Faktur Hutang--------------------------------------------------------------------\
+|  KdBukti             Faktur           Status       Nominal   Tahun                                  |
+|-----------------------------------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|-----------------------------------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                                         |
+\-----------------------------------------------------------------------------------------------------/
+|-----------------------------------------------------------------------------------------------------|
+
+
+IMAGE(ppsroll4)
+  __________________  ____________  ____  ____________  ___
+
+FIELD(ppsroll4)
+ppsnobuk        NOCHANGE SCROLL          NONE              1
+ppsnobuk2       NOCHANGE SCROLL          NONE              2
+ppssts          NOCHANGE SCROLL          NONE              3
+ppshrg          NOCHANGE SCROLL          NONE              4
+ppsjml          NOCHANGE SCROLL          NONE              5
+
+SCAN(sppsASRPRM) {IMAGE_OUT=ppshead4} {IMAGE_ROL=ppsroll4} {IMAGE_INP=ppsroll4} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppsASRPRM}
+
+

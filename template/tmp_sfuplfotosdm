@@ -1,0 +1,141 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|i.uplktpsdm                                                 |                          
+|/--s.UPLOAD----------------------\/------------------------\|
+||                                ||i.Tgl     : __________  ||
+||                                ||i.Nippic  : __________  ||
+||                                ||i.Niphrd  : __________  ||
+||				  ||t.Nipadh  : __________  ||
+||                                ||t.OkUp    : __________  ||
+||				  ||t.AccAdh  : __________  ||
+||				  ||t.AccHrd  : __________  ||
+||                                ||               	    ||
+||                                || _________  _________   ||
+||                   		  ||			    ||
+||				  ||			    ||
+||                                || _________  _________   ||
+|\--------------------------------/\------------------------/|
+|i.Ket : ____________________________________________________|
+|        __                                                  |
+\------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 1
+psdstr1			PROTECT			INPUTRI	2
+psdstr2			PROTECT			INPUTRI 3
+psdstr3			PROTECT			INPUTRI 4
+psdstr4			PROTECT			INPUTRI	5
+psdtype3		PROTECT			INPUTRI 6
+psdtype2		PROTECT			INPUTRI 7
+luploadtacc1		TOMBOL			INPUTRI 8
+luploadacc1		TOMBOL			INPUTRI 9
+luploadtacc		TOMBOL			INPUTRI 10
+luploadacc		TOMBOL			INPUTRI 11
+psdket  		TEXTAREA ALLCAPS	INPUTRI 12
+lenter			NOCHANGE		INPUTRI	13
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdtgl1		INIT_UPDATE	{g_tgltrn}
+luploadtacc1	INIT		TACC ADH
+luploadacc1	INIT		ACC ADH
+luploadtacc	INIT		TACC HRD
+luploadacc	INIT		ACC HRD
+l_count1	INIT		1
+
+CALCS()
+cacc1		"ACC"
+ctacc1		"TACC"
+/* cadafoto        UPLEXIST(l_count1) == 1 || UPLEXIST(l_count1) == 0 */
+
+/*
+MAP(mupdktpsdm)
+g_tgltrn	psdtgl1		REPLACE
+cacc1		psdstr4		DO_CALC
+g_usrkode	psdstr1		REPLACE
+*/
+
+
+MAP(mupdktpsdm2)
+ctacc1		psdtype2	DO_CALC
+cBLANKS		psdstr4 	DO_CALC
+g_usrkode	psdstr2		REPLACE
+
+MAP(mupdktpsdm3)
+cacc1		psdtype2	DO_CALC
+cacc1		psdstr4 	DO_CALC
+g_usrkode	psdstr2		REPLACE
+
+MAP(mupdktpsdm4)
+ctacc1		psdtype3	DO_CALC
+cBLANKS		psdstr4		DO_CALC
+g_usrkode	psdstr3		REPLACE
+
+MAP(mupdktpsdm5)
+cacc1		psdtype3	DO_CALC
+g_usrkode	psdstr3		REPLACE
+
+MAP(mupdpsdktpsdm21)
+g_tgltrn	psdtgl1		REPLACE
+cOK  		psdstr4		DO_CALC
+g_usrkode	psdstr1		REPLACE
+cBLANKS		psdtype3	DO_CALC
+
+DBCALCS(dupdpsdktpsdm21)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psdprmidx	psdprm
+	DBC_MAP		mupdpsdktpsdm21
+
+/*
+SPCALCS(supdpsd1)
+	DO_LIB_IF cadafoto ap_dbclc(DNAME dupdpsdktpsdm,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm);
+*/
+
+SPCALCS(supdpsd2)
+	DO_LIB_IF cadafoto1 ap_dbclc(DNAME dupdbtmd1xz,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+	DO_LIB_IF cadafoto1 ap_dbclc(DNAME dupdpsdktpsdm2,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm2);
+
+SPCALCS(supdpsd3)
+	DO_LIB_IF cadafoto1 ap_dbclc(DNAME dupdbtmd1xz1,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+	DO_LIB_IF cadafoto1 ap_dbclc(DNAME dupdpsdktpsdm3,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm3);
+
+SPCALCS(supdpsd4)
+	DO_LIB_IF cadafoto1a ap_dbclc(DNAME dupdbtmd1xz2,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+	DO_LIB_IF cadafoto1a ap_dbclc(DNAME dupdpsdktpsdm4,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm4);
+
+SPCALCS(supdpsd5)
+	DO_LIB_IF cadafoto1a ap_dbclc(DNAME dupdbtmd1xz3,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+	DO_LIB_IF cadafoto1a ap_dbclc(DNAME dupdpsdktpsdm5,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm5);
+
+HOOKS(tmptranst)
+/*CLICKED		cur_field=luploadok	DO_SPCALCS supdpsd1*/
+CLICKED		cur_field=luploadtacc	DO_SPCALCS supdpsd2 
+CLICKED		cur_field=luploadacc	DO_SPCALCS supdpsd3 
+CLICKED		cur_field=luploadtacc1  DO_SPCALCS supdpsd4
+CLICKED		cur_field=luploadacc1	DO_SPCALCS supdpsd5
+
+CALCS()
+caccblanks	psdstr4 == BLANKS 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_DEL_COND caccblanks
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD  gv_sfktpsdm11  psdpsmkode psdnourt
+SFL_UPLFLD_DBCALCS dupdpsdktpsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_SORT_BY_FIELD psdnourt
+SFL_SORT_UPDOWN	DOWN
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11 btmnobuk gv_fotoktpsdm21
+
+SFL_MAP
+gv_clnkry11    		psddata		REPLACE
+gv_fotoktpsdm21		psdkode		REPLACE
+btmnobuk  		psdpsmkode	REPLACE
+g_usrkode		psdstr5		REPLACE
+
+

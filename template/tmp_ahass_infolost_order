@@ -1,0 +1,101 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------\
+|----t-------------------t---------------t----------t--------t---------|
+|i.No|  t.KodeBrg        | i.NamaBrg     | i.Hrg    | i.Jml  |t.Hotline|
+\----.-------------------.---------------.----------.------------------/
+
+IMAGE(tmptrans)
+|____|___________________|_______________|__________|________|_________|
+
+FIELD(tmptrans)
+tkdnourt                PROTECT SCROLL          INPUTRI 1 /* NO URUT */
+tkdnoll	                ALLCAPS SCROLL		INPUTRI 2 /* KODE BARANG */
+lnamaBrgRekomen		PROTECT			INPUTRI 3 /* NAMA BARANG */
+tkdjml3			PROTECT			INPUTRI 4 /* HARGA BARANG */
+tkdjml                  NUMERIC                 INPUTRI 5 /* JUMLAH BARANG */
+tkdstr4			ALLCAPS			INPUTRI 6
+
+DEFAULTS(tmptrans)
+tkdstr4			DFALT_SCAN_BLANKS  Y
+                                           T
+
+
+EDITS(tmptrans)
+e.Mandatory	tkdnoll		MANDATORY
+e.Mandatory	tkdjml		MANDATORY
+e.ValidateppdBrg tkdnoll  VALIDATE brgstsdatbrg mbrg6 sbrg {Pgv_INPG} {Pgv_dtbarang}
+/*e.ValidateppdBrg        tkdnoll       VALIDATE brgstdtkatbr mbrg6 sbrgKat {Pgv_INPG} {Pgv_dtbarang} {PlPARTSPM}*/
+
+CALCS()
+cdjointkdu0     djointkdu == 0 && g_curcmd == 1
+cdjointkdu1     djointkdu == 1 && g_curcmd == 1
+curut3          luruttkd + 1
+csatua          1
+cjoinbrcU5 	djoinbrcU5 == 1
+cjktambah	lbrchrgjla * tkdjml
+cdscanstoksekarang      dscanstoksekarang >=0
+cnobuknew	STRIP(tkdnobuk) + "-" + STRIP(luruttkd_str)
+
+
+MAP(mbrg6)
+brgkode		tkdnoll 	REPLACE
+brgnama		lnamaBrgRekomen	REPLACE
+lbrchrgjla       lbrchrgjla     REPLACE_IF  cjoinbrcU5
+
+
+
+MAP(mmaptldstoksekarang)
+c0                  lstokbarangsekarang DO_CALC
+lstokbarangsekarang tkdjml5      	REPLACE_IF cdscanstoksekarang
+
+MAP(muruttkd)
+csatua		tkdnourt	DO_CALC_IF	cdjointkdu0
+curut3		tkdnourt	DO_CALC_IF	cdjointkdu1
+tkdnourt	luruttkd_str	REPLACE
+
+MAP(mhitung)
+cjktambah	tkdjml3		DO_CALC
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW	muruttkd
+AFTER_INPUT	cur_keybd=EN 		DO_MAP SHOW	mhitung
+AFTER_INPUT	cur_keybd=EN 		DO_MAP SHOW	mmaptldstoksekarang
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkddatbukll	lINFOLPART btmnobuk
+
+SFL_MAP
+lINFOLPART	tkddata		REPLACE
+btmnobuk	tkdnobuk	REPLACE
+cnobuknew	tkdrek		DO_CALC
+
+
+MAP(maddakt_lossorder_part)
+btmnobuk        aktkode         REPLACE
+btmnobuk        aktnobuk        REPLACE
+lINFOLPART      aktdata         REPLACE
+tkdnoll         aktbrg          REPLACE
+tkdnoll         akttype         REPLACE
+btmcab		aktkode2	REPLACE
+tkdjml		aktjml		REPLACE
+tkdjml3		akthrg		REPLACE
+lSYSTIME        aktjam          REPLACE
+g_tgltrn        akttgl          REPLACE
+tkdrek		aktbukoto	REPLACE
+DEBUG	ldumstr	ldumstr		REPLACE
+
+
+SPCALCS(spaddtmptrans)
+DO_LIB ap_dbclc(DNAME daddakt_lossorder_part,DCOMMAND ADD,DFILE akt, DMAP maddakt_lossorder_part);
+
+
+SPCALCS(spdeltmptrans)
+DO_LIB ap_dbclc(DNAME ddelakt_lossorder,DCOMMAND DELETE_RANGE,DTARGET aktbukotoidx btmnobuk tkdrek);
+
+POSTING(tmptrans)
+PST_ADDCMD	spaddtmptrans
+PST_DELCMD      spdeltmptrans
+

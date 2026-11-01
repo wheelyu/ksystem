@@ -1,0 +1,69 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+		 ____
+  t.Nip        : ________________
+  t.Tgl        : ________________
+  t.UserSebelum: _____ ___________
+  t.UserSesudah: _____ ___________
+  t.Alasan     : ________________
+                 _______
+ \--------------------------------/
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlmkode		PROTECT UNSEEN			INPUTRI 1
+tkdnoll         PROTECT                         INPUTRI 1
+tkdtgl          PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 2
+tkdstr1        	PROTECT			        INPUTRI 3
+tkdstr2		PROTECT				INPUTRI 4
+tkdstr3		ALLCAPS				INPUTRI 5
+tkdstr4		PROTECT				INPUTRI 6
+tkdket          TEXTAREA ALLCAPS                INPUTRI 7
+lENTER          NOCHANGE                        INPUTRI 8
+
+DEFAULT(tmptranst)
+tkdnoll         INIT    {g_usrkode}
+tkdtgl          INIT    {g_tgltrn}
+lENTER          INIT    ENTER
+
+EDITS(tmptranst)
+t.ValidateNip           tkdstr1          VALIDATE psikodidx mpsix spsi
+t.ValidateNip1		tkdstr3		 VALIDATE psikodidx mpsix1 spsi
+
+MAP(mpsix)
+psikode		tkdstr1		REPLACE
+psinama		tkdstr2		REPLACE
+
+MAP(mpsix1)
+psikode		tkdstr3		REPLACE
+psinama		tkdstr4		REPLACE
+
+MAP(mdjoinsgmmsoam)
+sgmstr5		lnip	REPLACE
+
+MAP(mnipsebelum)
+tlmkode		tkdstr1	REPLACE
+
+CALCS()
+cdjoinsgmmsoam	(djoinsgmmso == 1 || djoinsgmam == 1) || ((tlmdvs == "H1" || tlmdvs == "HMC") && (djoinsgmamHMC == 1 || djoinnsohead == 1))
+cadd		g_curcmd == 1
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdstr3	DO_MAP SHOW IF cadd  mnipsebelum
+AFTER_INPUT     cur_field=tkdnoll       DO_MAP SHOW
+                IF cdjoinsgmmsoam mdjoinsgmmsoam
+                ELSE HKCURSOR STAY
+                HKMSG t.MSO/AMCabangIniYangHanyaBisaTambah
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET tkddatbukll  lKORNIP821 tlmnobuk
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+lKORNIP821      tkddata         REPLACE
+tlmkode		tkdstr1		REPLACE
+
+                                                 

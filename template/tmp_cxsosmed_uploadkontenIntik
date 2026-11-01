@@ -1,0 +1,83 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------\
+|_                                                    |
+|_/------------------------------------------------\_ |
+| | t.NamaAkun      : __________________           |  |
+| | t.InpLink       : __________________           |  |
+| |                   ______                       |  |
+| \------------------------------------------------/  |
+
+| /------------------------------------------------\  |
+|   t.FotoBuktiUploadSos                              |
+| \------------------------------------------------/  |
+| /------------------------------------------------\  |
+|   t.StsUpl        : _____  t.TglUpl : ________      |
+| \------------------------------------------------/  |
+| /------------s.UPLOAD----------------------------\  |
+| |                                                |  |
+| |                                                |  |
+| |                                                |  |
+| \------------------------------------------------/  |
+\-----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlddata         PROTECT QPROTECT UNSEEN   NONE
+tldnobuk        PROTECT QPROTECT UNSEEN   NONE
+tldnourt        PROTECT QPROTECT UNSEEN   NONE
+tldket2         NONE            INPUTRI 1       /* NamaAkun */
+lLinkDetail     NONE            INPUTRI 2       /* Input Link */
+lENTER          NOCHANGE        INPUTRI 3
+tldjasbrg       PROTECT                         /* StatusUpl1 */
+tldtglfak       PROTECT NOCHANGE {DD-MM-YY}     /* TanggalUpl1 */
+
+DEFAULTS(tmptranst)
+tldtgl3         INIT_ADD        {g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory     lLinkDetail     MANDATORY_IF    cOPENg1
+e.Mandatory     tldket2         MANDATORY
+e.Validate      tldnourt        VALIDATE_IF cjkkosupl ketbukurtidx mjoinketnourtuplintikwa {Ptlddata} {Ptldnobuk}
+
+MAP(mjoinketnourtuplintikwa)
+cBLANKS         lLinkDetail     DO_CALC
+ketisi2         lLinkDetail     REPLACE
+
+MAP(mjoinnourutuplintikwa)
+csatuupl         tldnourt        DO_CALC_IF cjoinurut0upl
+ctam1upl         tldnourt        DO_CALC_IF cjoinurut1upl
+
+MAP(mpanjangsosmedintikwa)
+cpnjgtik        lhslpjg         DO_CALC_IF cjktik
+cpnjginst        lhslpjg         DO_CALC_IF cjkinst
+
+MAP(mblankuplintikwa)
+cBLANKS         lLinkDetail     DO_CALC_IF ctambahupl
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=lLinkDetail   DO_MAP SHOW mblankuplintikwa
+AFTER_INPUT     cur_field=tldnourt      DO_MAP SHOW mjoinnourutuplintikwa
+AFTER_INPUT     cur_field=lLinkDetail      DO_MAP SHOW mpanjangsosmedintikwa
+AFTER_INPUT     cur_field=lLinkDetail   DO_MAP SHOW
+                                        IF cpanjangsama mdum
+                                        ELSE HKCURSOR STAY HKMSG h.Harus Isi Link SOSMED 
+         
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND    ctikinwa
+SFL_UPL_COND chrsisi
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD  tldnobuk tldoto
+SFL_UPLFLD2 tldoto tldnobuk /*tldnobuk tldnourt*/
+SFL_UPLFLD_DBCALCS dUpdateStsUpl1
+SFL_UPL_DELCOND ctdkclsd
+SFL_TARGET
+        tldbukurtidx   tlmnobuk
+
+SFL_MAP
+tlmdata         tlddata  REPLACE
+tlmnobuk        tldnobuk REPLACE
+

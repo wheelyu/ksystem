@@ -1,0 +1,88 @@
+IMAGE(tmptranst) 
+/-----------------------------------------------------\
+ /---------------------------------------------------\
+ t.TanggalInput: _____________         t.Sts: ________
+ t.TipeRevisi  : ___________     t.TipeEvent: ________ 
+ t.TglMulai    : __________  t.TglSelesai : __________
+ t.Keterangan  : _____________________________________
+ t.NipApr1     : __________   t.Review      : ________
+ t.Alasan      : _____________________________________
+ i.TekanEnter  : ______
+ \---------------------------------------------------/
+\-----------------------------------------------------/
+_
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldtglfak       PROTECT {DD-MM-YYYY}            INPUTRI         1
+tldsts          PROTECT                         INPUTRI         1
+tldkat          PROTECT                         INPUTRI         1
+tldbrg          ALLCAPS                         INPUTRI         1
+tldtgl2         ALLCAPS NOLIMIT {DD-MM-YYYY}    INPUTRI         2
+tldtgl3         ALLCAPS NOLIMIT {DD-MM-YYYY}    INPUTRI         3
+tldstr4         ALLCAPS                         INPUTRI         4
+tldplg          PROTECT                         INPUTRI         4
+tldstr1         ALLCAPS                         INPUTRI         5
+tldket          TEXTAREA                        INPUTRI         6
+lenter          NOCHANGE                        INPUTRI         7
+tldjml          UNSEEN                          INPUTRI         7
+
+DEFAULTS(tmptranst)
+tlddata         INIT            {lDTCOEH1}
+tldtglfak       INIT            {g_tgltrn}
+tldtgl2         INIT            {ctglawlblplus1}
+tldtgl3         INIT            {ctglawlblplus1}
+tldsts          INIT            OPEN      
+tldstr1         DFALT_LIST      ACC TACC   
+tldstr1         INIT            {gv_OPEN}
+tldkat          INIT            {lTAMBAHAN}
+tldstr3         INIT            {lAPPR}
+
+EDITS(tmptranst)
+e.Mandatory     tldbrg          MANDATORY
+e.Validate      tldbrg          VALIDATE tbddtmstidx mtipeevent stbd2 {Pgv_dttabel} {Pgv_infoumum} {PlTIPEAKTIVITAS} {PlBLANKS} {PlCOEBTL}
+e.Mandatory     tldtgl2         MANDATORY
+e.Mandatory     tldtgl3         MANDATORY
+e.Mandatory     tldstr4         MANDATORY
+e.Mandatory     tldstr1         MANDATORY
+e.Mandatory     tldket          MANDATORY_IF ctldstr1tacc
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldbrg    DO_SKIP_IF cammktgkawil
+BEFORE_INPUT    cur_field=tldtgl2   DO_SKIP_IF cammktgkawil
+AFTER_INPUT     cur_field=tldtgl2   DO_MAP SHOW mtgl
+BEFORE_INPUT    cur_field=tldtgl3   DO_SKIP_IF cammktgkawil
+BEFORE_INPUT    cur_field=tldstr4   DO_SKIP_IF cammktgkawil
+BEFORE_INPUT    cur_field=tldstr1   DO_SKIP_IF cpicnso
+AFTER_INPUT     cur_field=tldstr1   DO_MAP SHOW
+                IF ctldstr1valid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Review Harus ACC atau TACC
+BEFORE_INPUT    cur_field=tldket   DO_SKIP_IF cpicnso
+AFTER_INPUT     cur_field=tldket   DO_MAP SHOW mhitungpanjangalasantldstr4
+AFTER_INPUT	cur_field=tldket   DO_MAP
+		IF cpanjangalasantambahurgentok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Alasan Minimal 10 Karakter
+AFTER_INPUT	cur_keybd=EN            DO_MAP mentertambahurgentevent
+AFTER_INPUT	cur_keybd=EN            DO_MAP mtgl
+
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+                IF crentangblplus1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Harus Dalam Rentang M+1 Bulan Dari Tanggal Terbentuk Master COE
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+                IF ctglmulaislsok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Mulai Tidak Boleh Lebih Dari Tanggal Selesai Dan Sebaliknya
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ccondtambahurgentevent
+SFL_SELECT cseltambahurgentevent
+SFL_TARGET
+        tldbukurtidx tkmnobuk
+SFL_MAP
+        tkmnobuk tldnobuk

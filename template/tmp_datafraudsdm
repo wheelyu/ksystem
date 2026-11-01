@@ -1,0 +1,64 @@
+LOCAL
+PGM_FIELDS
+lHSLAUDIT	STRING		11
+lketerangan	STRING		61
+
+
+MAP(mjointlm)
+tlmket		lketerangan		REPLACE
+
+DBCALCS(djointlm)
+        DBC_COMMAND     JOIN             
+        DBC_TARGET      tlmbukidx    tldnobuk                                   
+        DBC_MAP         mjointlm 
+
+
+IMAGE(tmptranst)
+/---------------t--------------t------------t------------------t-----------\
+| t.NomorBukti  | t.Nobuk1     | t.Nobuk2   | t.Jnspush2       | i.Tgl     |
+\---------------.--------------.------------.------------------.-----------/
+
+
+
+
+
+
+IMAGE(tmptrans)
+|_______________|______________|____________|__________________|___________|
+
+
+FIELD(tmptrans)
+tldnobuk        PROTECT                 INPUTRI         1
+tldnobbm        PROTECT                 INPUTRI         2
+tldppdoto       PROTECT                 INPUTRI         2
+tldkat          PROTECT                 INPUTRI         3
+tldtglfak       PROTECT NOLIMIT {DD-MM-YYYY} INPUTRI         4
+
+
+DEFAULT(tmptrans)
+lHSLAUDIT	INIT	HSLAUDIT
+
+EDIT(tmptrans)
+e.Validatesdm           tldnobuk            VALIDATE tlmbukidx	mtlm 0
+
+CALCS()
+cdjointlm	djointlm == 1
+clihatfraud 	g_grpnam=="IT"|| g_grpnam=="RI" || g_grpnam=="HRDSPV" || g_grpnam=="HRDCMBN" || g_grpnam=="HRDDVH" || g_grpnam=="CMBNHEAD" || 
+		g_grpnam == "AUDIT" || g_grpnam == "AUDITTL" || g_grpnam == "AUDITHEAD" || g_grpnam == "PDCADVH" || g_grpnam == "SUPPORT" ||
+		g_grpnam == "RASMGR" || g_grpnam == "RAS" || g_grpnam == "RASDVH"
+
+MAP(mtlm)
+tlmket		lketerangan	REPLACE_IF cdjointlm
+tlmtypbrg	tlmtypbrg	REPLACE_IF cdjointlm
+
+
+
+SUBFILE(tmptrans)
+        SFL_LINES(5)
+        SFL_TITLE(tmptranst)
+        SFL_COND clihatfraud
+        SFL_TARGET
+        tldplgbrgidx   lHSLAUDIT gv_OPEN psikode
+
+
+

@@ -1,0 +1,65 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/------------------------------\
+|       t.UplFotoBukti2        |
+| t.NoBuk : _________________  |
+|/-s.UPLOAD-------------------\|
+||                            || 
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+|\----------------------------/|
+|/----------------------------\|
+||t.ket      ________________ ||
+||t.StsUpl   ________________ ||
+||t.TglUpl   ________________ ||
+|\----------------------------/|
+|                              |
+\------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk                PROTECT                 INPUTRI         1
+tkdket			PROTECT			INPUTRI		2
+tkdjwbstr2		PROTECT			INPUTRI		3
+tkdtgl2                 PROTECT                 INPUTRI         4
+
+DEFAULTS(tmptranst)
+l2			INIT		2
+lINPG			INIT		INPG
+
+CALCS()
+chapustmptrans  g_usrkode==BLANKS || g_grpnam=="RI" || g_grpnam=="IT"
+
+MAP(mupduplfttmptrans)
+cOK                     tkdjwbstr2      DO_CALC
+g_fotodate1             tkdtgl2         REPLACE
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx tkdprm
+        DBC_MAP         mupduplfttmptrans
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD       tkdnobuk tkdjwbstr1
+SFL_UPL_DELCOND chapustmptrans
+SFL_UPLFLD_DBCALCS dupduplfttmptrans
+SFL_TARGET
+	tkdbukidx   tlmnobuk lINPG l2
+
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

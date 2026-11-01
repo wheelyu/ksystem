@@ -1,0 +1,94 @@
+SCREEN 4382 APP_TYPE t.PostBrkt  
+/*SCR_NXT_POSTING_IF ctdkbatal 4810
+SCR_NXT_MAP      mnext*/
+
+LOCAL
+PGM_FIELDS
+loto		STRING		21
+lnobuk		STRING		21
+lsystime  	TIME  		4 
+
+/*
+MAP(mnext)
+mtdoto      r_string1   REPLACE
+lscr        r_string2   REPLACE*/
+
+IMAGE(master)
+/--------------------------------------------------------------------------------\
+|No Oto  : _________________    No. Bukti  : _________________                   |
+|-----------t--------------t-----------t---------t-------t-------t---------------|
+|No.Faktur  |  Kode Barang | Jml Unit  |  Tgl DO |Lokasi |Status |  Sisa Unit    |
+\-----------.--------------.-----------.---------.-------.-------.---------------/
+
+FIELD(master)
+loto		ALLCAPS			INPUTRI		1
+lnobuk		ALLCAPS			INPUTRI		2
+
+
+DEFAULTS(master)
+loto		INIT		{r_string1}
+lnobuk		INIT		{r_string2}
+lsystime	INIT	SYSTIME
+
+IMAGE(trans)
+|___________|______________|______________|___________|_________|_______|_______|_______________|
+
+FIELD(trans)
+mtdnobuk		NOCHANGE		INPUTRI		1
+mtdnoll			NOCHANGE		INPUTRI		2
+mtdgrup			NOCHANGE		INPUTRI		2
+mtdbrg			PROTECT			INPUTRI		3
+mtdlok			PROTECT			INPUTRI		4
+mtdjml			PROTECT			INPUTRI		5
+btmlokjual		PROTECT			INPUTRI		6
+cadarea			PROTECT			INPUTRI		7
+
+EDITS(trans)
+e.Validatefaktur	mtdgrup  VALIDATE btmbukidx	mbtm 0
+e.Validatenegoharga	mtdgrup  VALIDATE nhmdatbukidx	mnhm 0 {Pgv_bukutamu}
+
+MAP(mbtm)
+btmnobuk	mtdgrup		REPLACE
+btmlokjual	btmlokjual	REPLACE
+
+MAP(mnhm)
+nhmnobuk	nhmnobuk	REPLACE
+
+SUBFILE(trans)
+SFL_LINES(1)
+SFL_TARGET
+mtdotoidx   loto 
+
+CALCS()
+cketeranganBRKT      "Berangkat, Mulai Jalan "
+c618            "618"
+c618brkt	"618BERANGKAT"
+cIN		"IN"
+cprskirim	"PROSES KIRIM"
+cINPG		"INPG"
+clewat		g_tgltrn >= 20251110
+
+MAP(mupdmtd)
+cIN		mtdsisbrg	DO_CALC
+cprskirim	mtdket		DO_CALC
+cINPG 	mtdsts		DO_CALC
+
+MAP(maddaktBRKT)
+gv_historisdm   aktdata         REPLACE
+ppmnoll         aktkode         REPLACE
+g_usrkode       aktkode2        REPLACE
+g_tgltrn        akttgl          REPLACE
+lsystime        aktjam          REPLACE
+cketeranganBRKT aktket          DO_CALC
+c618            aktscr          DO_CALC
+c618brkt        akttype         DO_CALC
+
+SPCALCS(sptrans)
+DO_LIB ap_dbclc(DNAME dupdmtd,DCOMMAND UPDATE,DTARGET mtdotoidx mtdoto,DMAP mupdmtd);
+DO_LIB_IF clewat ap_dbclc(DNAME daddaktBRKT,DCOMMAND ADD,DFILE akt,DMAP maddaktBRKT);
+DO_LIB ap_gpsaw(mtdnoll);
+
+POSTING(trans)
+	PST_COMMAND sptrans
+
+END_SCREEN

@@ -1,0 +1,88 @@
+LOCAL()
+PGM_FIELDS
+ltbtkodecekca	STRING		21
+
+CALCS()
+ckodesamaca	svikode == tbtkode
+
+DBCALCS(djoinsvikodeca)
+DBC_COMMAND	JOIN
+DBC_SELECT	ckodesamaca
+DBC_TARGET	svidatbuktyp ldtca btmnobuk lCEKLISTCA11
+
+IMAGE(tmptranst)
+/--t-----------------------t-------------\
+\--.-----------------------.-------------/
+
+IMAGE(tmptrans)
+|__|_______________________|_____________|
+
+FIELD(tmptrans)
+tbtnourt                PROTECT SCROLL                  INPUTRI 1
+tbtket                  PROTECT SCROLL                  INPUTRI 2
+tbtkat                 	ALLCAPS SCROLL                  INPUTRI 3
+
+CALCS()
+cpil1ca		tbtdf1 == 1 
+/*cpil2ca	tbtdf1 == 2*/
+
+cadaygbelumisica	(djoinsviceklistca == 0 || (djoinsviceklistca == 1 && djoinsviceklistca2 == 1)) && btmflag1 == "CA"
+		 && (g_grpnam == "B.M4WCA" || g_grpnam=="B.M4WCM" ||  g_grpnam=="RI")
+
+cjoinsvikodeca	djoinsvikodeca == 0
+cjoinsvikodeca1	djoinsvikodeca == 1
+
+cbukanri	g_grpnam != "RI"
+
+
+DEFAULT(tmptrans)
+IF cpil1ca tbtkat          DFALT_SCAN               BLANKS 
+						  OK ""
+						  TDK_OK ""
+/*IF cpil2ca tbtkat	 	 DFALT_SCAN		  BLANKS
+						  OK ""
+						  TDK_OK ""
+						  TDK_MANDATORY ""
+
+*/
+
+EDITS(tmptrans)
+e.Mandatory		tbtkat		MANDATORY_IF cbukanri
+e.Mandatory		tbtkat		MANDATORY
+
+
+SUBFILE(tmptrans)
+SFL_LINES(15)
+SFL_COND	cadaygbelumisica
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tbtdaturtidx   gv_dttemplate lTMPUMROH lCEKLISTCA lCEKLISTCA lUMROH
+
+MAP(maddsviceklistca)
+btmnobuk	svinobuk	REPLACE
+tbtnourt	svinourt	REPLACE
+tbtkode		svikode		REPLACE
+tbtket		sviket		REPLACE
+ldtca		svidata		REPLACE
+lCEKLISTCA11	svitype		REPLACE
+tbtkat		svistr1		REPLACE
+gv_INPG		svists		REPLACE
+
+MAP(mupdsviceklistca)
+tbtkat		svistr1		REPLACE_IF ckodesamaca
+
+MAP(mmapceklistca)
+DEBUG	ldum	ldum	REPLACE
+tbtkode		ltbtkodecekca	REPLACE
+
+SPCALCS(spdetailcekcaok)
+	DO_LIB ap_dbclc(DNAME dmapceklistca,DCOMMAND MAPMAP,DMAP mmapceklistca);
+        DO_LIB_IF cjoinsvikodeca   ap_dbclc(DNAME daddsviceklistca,DCOMMAND ADD,DFILE svi,DMAP maddsviceklistca);
+        DO_LIB_IF cjoinsvikodeca1  ap_dbclc(DNAME dupdsviceklistca,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp ldtca btmnobuk lCEKLISTCA11,DMAP mupdsviceklistca);
+
+POSTING(tmptrans)
+  PST_COMMAND   spdetailcekcaok
+
+
+

@@ -1,0 +1,124 @@
+LOCAL
+PGM_FIELDS
+lnamasdmpnj			STRING	61
+ljabsdmpnj			STRING	21
+lcabsdmpnj			STRING	21
+lnamacabsdmpnj		STRING	61
+lPNJSDM				STRING	11
+labknobuk			STRING	21
+lEXTPEND        	STRING  11
+lkunciabsen        	STRING  11
+ltotalexternal      DFLOAT  8
+lusrgrp				STRING  21
+lpsists				STRING  5
+
+MAP(mjoinusr)
+usrgrp		lusrgrp		REPLACE
+psists		lpsists		REPLACE
+
+DBCALCS(djoinusr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	usrkodidx   psdpsmkode
+	DBC_MAP		mjoinusr
+
+DBCALCS(djoinpsi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx   psdpsmkode
+	DBC_MAP		mjoinusr
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  i.NipSDM :________________
+  i.Nama   :_________________
+  t.SDept  :__________
+  t.Cab    :____  ___________
+ \---------------------------------/
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdpsmkode	ALLCAPS		INPUTRI	1	/* NIP SDM*/
+lnamasdmpnj	PROTECT		INPUTRI	2	/* NAMA SDM*/
+ljabsdmpnj	PROTECT		INPUTRI	3	/* JABATAN SDM*/
+lcabsdmpnj	PROTECT		INPUTRI	4	/* CAB SDM*/
+lnamacabsdmpnj	PROTECT		INPUTRI	5	/* NAMA CAB SDM*/
+
+DEFAULTS(tmptranst)
+psdsts		INIT	INPG
+psdscr		INIT	{g_scrnumstr}
+psddata		INIT	PNJSDM
+lPNJSDM		INIT	PNJSDM
+lEXTPEND    INIT    EXTPEND
+lkunciabsen     INIT            KUNCIABSEN
+
+EDITS(tmptranst)
+e.Mandatory	psdpsmkode	MANDATORY
+e.Validate	psdpsmkode	VALIDATE psikodidx mpsipnj 0
+e.Validate	lcabsdmpnj	VALIDATE cabkodidx mcabpnj 0
+
+MAP(mpsipnj)
+psikode		psdpsmkode	REPLACE
+psinama		lnamasdmpnj	REPLACE
+psijabatan	ljabsdmpnj	REPLACE
+psicabskr	lcabsdmpnj	REPLACE
+
+MAP(mcabpnj)
+cabkode		lcabsdmpnj	REPLACE
+cabnama		lnamacabsdmpnj	REPLACE
+
+MAP(mscanpsdexternal)
+c1      ltotalexternal       DO_CALC
+DEBUG ldum            ldum            REPLACE
+
+MAP(mupdabkrevgab)
+gv_CLSD		abksts		REPLACE
+DEBUG ldum            ldum            REPLACE
+
+CALCS()
+chitungexternal      (~psdpsmkode != psdpsmkode && (ltotalexternal+1) > 1) || (~psdpsmkode == psdpsmkode && (ltotalexternal-1 +1 ) > 1)
+cnobukabk776          STRIP(psdpsmkode) + "EXTPEND"
+cKolRem				 djoinusr==1 && (lusrgrp=="KOL" || lusrgrp=="REM" || lusrgrp=="BM" || lusrgrp=="SPVKOL" || lusrgrp=="KOOREM")
+cInpg				 djoinpsi==1 && psists=="INPG"
+
+MAP(mmapabk776)
+cnobukabk776      labknobuk            DO_CALC
+DEBUG ldum            ldum            REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdpsmkode   DO_MAP SHOW
+                IF cKolRem mdum
+                ELSE HKCURSOR STAY
+                     HKMSG Nip Tidak Boleh
+
+AFTER_INPUT     cur_field=psdpsmkode   DO_MAP SHOW
+                IF cInpg mdum
+                ELSE HKCURSOR STAY
+                     HKMSG Hanya Untuk NIP INPG
+
+
+/* AFTER_INPUT	cur_field=psdpsmkode	DO_MAP SHOW
+		IF cblmadakolpend mdum
+		ELSE HKCURSOR STAY
+		HKMSG Kolektor Ini Sudah Ada Pendampingnya */
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+psddatkodidx lPNJSDM tlmnobuk
+
+SFL_MAP
+lPNJSDM		psddata		REPLACE
+tlmdata		psdtype		REPLACE
+tlmnobuk	psdkode		REPLACE
+
+SPCALCS(spaddtmptrans)
+DO_LIB ap_dbclc(DNAME dmapabk776,DCOMMAND MAPMAP,DMAP mmapabk776);
+DO_LIB ap_dbclc(DNAME DscanPendamingExternal,DCOMMAND SCANSCAN_BUF3,DTARGET psddattypidx   lPNJSDM lEXTPEND psdpsmkode,DBC_SUM_MAP mscanpsdexternal);
+DO_LIB_IF chitungexternal ap_dbclc(DNAME dupdabkrevgab,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx   lkunciabsen labknobuk,DMAP mupdabkrevgab);
+
+POSTING(tmptrans)
+PST_ADDCMD spaddtmptrans
+PST_UPDCMD spaddtmptrans

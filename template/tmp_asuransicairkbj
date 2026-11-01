@@ -1,0 +1,44 @@
+IMAGE(tmptranst)
+/------------------------------------\
+| /---------------------------------\|
+| |t.CairKbj	: ___  _____________!|
+| |i.Ket : _________________________!|
+| |                                 !|
+| \---------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketyt3		NOCHANGE			INPUTRI 1
+kettgl1		PROTECT NOLIMIT	{DD-MM-YYYY}	INPUTRI	2
+ketisi2		TEXTAREA 3			INPUTRI	4
+
+DEFAULT(tmptranst)
+ketyt3		DFALT_SCAN_BLANKS	Y T
+
+CALCS()
+cisicairkbjY	ketyt3 == "Y"
+cisicairkbjbknY	ketyt3 != "Y"
+cisicairkbjYtgl	(ketyt3 == "Y" && kettgl1 == BLANKS) || (ketyt3 == "Y" && ~ketyt3 != "Y")
+cTMPCAIRKBJASS	tmpkode=="CAIRKBJASS" && tlmbisnis == "FAKTUR" &&
+		(tlmkode=="CAIR" && (tlmsts=="892" || tlmsts=="CLSD"))
+
+EDITS(tmptranst)
+t.MandatoryYTCair	ketyt3	MANDATORY
+
+MAP(misicairkbj)
+g_tgltrn	kettgl1		REPLACE_IF cisicairkbjYtgl
+cCAIRKBJ	ketnama		DO_CALC_IF cisicairkbjY
+g_strksg	ketnama		REPLACE_IF cisicairkbjbknY
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=ketyt3        DO_MAP SHOW misicairkbj
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW misicairkbj
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cTMPCAIRKBJASS
+SFL_TARGET
+ketotoidx	ketoto_3

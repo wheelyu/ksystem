@@ -1,0 +1,72 @@
+IMAGE(tmptranst)
+/------------------------------------------\
+|/----------------------------------------\
+|t.Tgl        : ___________
+|t.AdaAtr     : _____
+|t.JamCekAtr  : ___________
+|t.KondAtr    : ___________
+|t.Verifikasi  : _____                  
+|t.KetTACC     : ___________________    
+|\----------------------------------------/
+|__
+/------------s.UPLOAD----------------------\
+
+
+
+
+\------------------------------------------/
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+
+FIELD(tmptranst)
+tldtglfak       PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI  1 /* Tanggal */
+tldkat          NOCHANGE                        INPUTRI 2       /* Ada Atr */
+tldsat          NOCHANGE                        INPUTRI 3       /* Jam Cek Atr */
+tldket          ALLCAPS                         INPUTRI 4
+tldstr5         ALLCAPS                         INPUTRI         6 /* Verifikasi */
+tldket2         TEXTAREA                        INPUTRI         7       /* Kondisi */
+tlddk		    PROTECT                         INPUTRI 5
+
+DEFAULTS(tmptranst)
+tldkat          DFALT_SCAN          Y
+                                    T
+tldsat          INIT_UPDATE         SYSTIME
+tldstr5             DFALT_SCAN      ACC
+                                    TACC   
+
+EDITS(tmptranst)
+e.Mandatory         tldkat          MANDATORY
+e.Mandatory         tldsat          MANDATORY_IF cadaatr
+e.Mandatory         tldket          MANDATORY_IF cadaatr
+
+e.Mandatory         tldstr5         MANDATORY_IF cRCLS1
+e.Mandatory         tldket2         MANDATORY_IF caprTACC
+
+HOOKS(tmptranst)
+AFTER_INPUT         cur_field=tldkat        DO_MAP SHOW IF ctdkadaatr mupdtldact
+BEFORE_INPUT        cur_field=tldsat        DO_SKIP_IF ctdkadaatr
+BEFORE_INPUT        cur_field=tldket        DO_SKIP_IF ctdkadaatr
+
+BEFORE_INPUT        cur_field=tldkat        DO_SKIP_IF cRCLS1
+BEFORE_INPUT        cur_field=tldsat        DO_SKIP_IF cRCLS1
+BEFORE_INPUT        cur_field=tldket        DO_SKIP_IF cRCLS1
+
+BEFORE_INPUT        cur_field=tldstr5       DO_SKIP_IF cOPEN1
+BEFORE_INPUT        cur_field=tldket2       DO_SKIP_IF cOPEN1
+
+AFTER_INPUT         cur_keybd=EN            DO_MAP SHOW mupdtldbknupl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND cintexact
+SFL_UPL_DIRFLD	tlmtgl
+SFL_UPLFLD tldnobuk tldbrg
+SFL_UPLFLD_DBCALCS dupdtldact
+SFL_UPL_COND cOPEN
+SFL_TARGET
+    tldbukbrglok tlmnobuk

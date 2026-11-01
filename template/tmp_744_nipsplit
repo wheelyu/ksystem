@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+
+lnamaawal               STRING  31
+lnamaganti             	STRING  31
+lARCOLLECTIONJR		STRING	21
+ljmlsplit		DFLOAT	8
+
+
+MAP(mscansplitfkt)
+c1x		ljmlsplit	DO_CALC
+
+DBCALCS(dscansplitfkt)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tbddatkod2id	gv_dttabel tbdkode
+	DBC_MAP		mscansplitfkt
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------\
+|/---------t---------------------------t------------t----------t-----------------------------\|
+||t.NipAwl |t.Nama                     |t.Split/Tdk |t.NipGanti|t.Nama                       ||
+|\---------.---------------------------.------------.----------.-----------------------------/|
+\---------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+|__________|___________________________|____________|___________|_____________________________|
+/*   1                 2                     3            4                   5             */
+
+FIELDS(tmptrans)
+tbdkode			PROTECT			INPUTRI		1
+lnamaawal		PROTECT			INPUTRI		2
+tbdkettype		PROTECT			INPUTRI		3
+tbdkode2		ALLCAPS			INPUTRI		4
+lnamaganti		PROTECT			INPUTRI		5
+
+DEFAULTS(tmptrans)
+lARCOLLECTIONJR		INIT	"A/RCOLLECTIONJR"
+
+EDITS(tmptrans)
+e.Mandatory	tbdkode2	MANDATORY
+e.validate	tbdkode		VALIDATE psmkodidx mpsm1 0 /* nip awal */
+e.Validate2	tbdkode2	VALIDATE psistsjabkod mpsisplit 0 {Pgv_INPG} {PlARCOLLECTIONJR}
+
+MAP(mpsm1)
+psmkode         tbdkode         REPLACE
+psmnama         lnamaawal       REPLACE
+
+MAP(mpsisplit)
+psikode		tbdkode2	REPLACE
+psinama		lnamaganti	REPLACE
+
+CALCS()
+csdhinputsplit	dscansplitfkt>=0 && ljmlsplit == 0
+
+HOOKS(tmptrans)
+AFTER_INPUT cur_field=tbdkode2      DO_MAP SHOW
+                IF csdhinputsplit mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nip Sudah Pernah Input Split
+
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+ 	      tbddatkodidx   gv_dttabel gv_kunjungan21 lSPLITFKT lnip
+SFL_MAP
+lnip			tbdkode         	REPLACE
+lnip			tbdket			REPLACE
+gv_dttabel		tbddata 		REPLACE
+gv_kunjungan21		tbddtmkode		REPLACE
+lSPLITFKT		tbdtblkode		REPLACE
+

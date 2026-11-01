@@ -1,0 +1,125 @@
+LOCAL
+PGM_FIELDS
+lINFO_DATA     STRING 101
+lIDENTIFIKASI  STRING 101
+lREKOMENDASI   STRING 101
+lPREDIKSI      STRING 101
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|t.PenilaiHead                            t.HasilAnalsis                            |
+|/---------------------------------------\|/---------------------------------------\|
+||t.Tgl       : _ _______________          ||t.InfoData       :_________________     ||
+||t.Hasil     : _________                ||t.Identifikasi   :_________________     ||
+||                                       ||t.Rekomendasi    :_________________     ||
+||t.Ket       : _________________        ||t.Prediksi       :_________________     ||
+||t.Penilaian                            ||\---------------------------------------/|
+||t.PemData   : _________                |                                          |
+||t.InfoData  : _________                |                                          |
+||t.IdenData  : _________                |                                          |
+||t.RekData   : _________                |                                          |
+||t.PredBaik  : _________                |                                          |
+||          ______                       |                                          |
+|\---------------------------------------/                                          |
+\-----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+
+
+g_usrkode       PROTECT UNSEEN INPUTRI 1
+svitgl1     PROTECT {DD-MM-YY}  INPUTRI 1
+lINFO_DATA     TEXTAREA PROTECT         INPUTRI 
+svikode     NOCHANGE            INPUTRI 2
+lIDENTIFIKASI  TEXTAREA PROTECT         INPUTRI 2
+lREKOMENDASI   TEXTAREA PROTECT         INPUTRI 3
+sviket      TEXTAREA            INPUTRI 3
+lPREDIKSI      TEXTAREA PROTECT         INPUTRI 4
+svidf1      NOCHANGE            INPUTRI 4
+svidf2      NOCHANGE            INPUTRI 4
+svidf3      NOCHANGE            INPUTRI 4
+svidf4      NOCHANGE            INPUTRI 4
+svidf5      NOCHANGE            INPUTRI 4
+lenter          NOCHANGE        INPUTRI 12
+
+
+DEFAULTS(tmptranst)
+svitgl1     INIT        {g_tgltrn}
+svikode DFALT_SCAN_BLANKS   ACC
+                            TACC
+                            PASS
+
+svidf1 DFALT_SCAN	            0
+                                1
+                                2
+
+svidf2 DFALT_SCAN	            0
+                                1
+                                2
+
+svidf3 DFALT_SCAN	            0
+                                1
+                                2
+
+svidf4 DFALT_SCAN	            0
+                                1
+                                2
+
+svidf5 DFALT_SCAN               0
+                                1
+                                2
+
+CALCS()
+cKETINPG1        ketnourt == svinourt
+
+MAP(mmapjoinketjasil)
+ketstr1    lINFO_DATA     REPLACE
+ketstr2    lIDENTIFIKASI  REPLACE
+ketstr3    lREKOMENDASI   REPLACE
+DEBUG ketstr4    lPREDIKSI      REPLACE
+
+EDITS(tmptranst)
+t.ValidateNip           g_usrkode          VALIDATE psikodidx mjoinkethasil 0
+
+DBCALCS(djoinkethasil)
+DBC_COMMAND     JOIN
+DBC_TARGET      ketdatbuktgl    tlmdata tlmnobuk lHSLANLS
+DBC_SELECT      cKETINPG1
+DBC_MAP         mmapjoinketjasil                                 
+
+CALCS()
+cdetINPG4       ((tlmbrdoto == "HEAD_ISI_DETAIL" || tlmbrdoto == "DEV_TERIMA_KERJA" || tlmbrdoto == "HEAD_PENILAIAN"|| tlmbrdoto == "OPR_PENILAIAN") && svists == "INPG") || (tlmbrdoto != "HEAD_PENILAIAN" && (tlmbrdoto == "CLSD" || tlmtotal >= 1))
+cdjoinkethasil  djoinkethasil == 1
+
+
+
+MAP(mjoinkethasil)
+lINFO_DATA    lINFO_DATA     REPLACE_IF cdjoinkethasil
+lIDENTIFIKASI lIDENTIFIKASI  REPLACE_IF cdjoinkethasil
+lREKOMENDASI  lREKOMENDASI   REPLACE_IF cdjoinkethasil
+lPREDIKSI     lPREDIKSI      REPLACE_IF cdjoinkethasil
+
+HOOKS(tmptranst)
+BEFORE_INPUT   cur_field=svikode        DO_MAP SHOW murut4
+BEFORE_INPUT   cur_field=svikode        DO_MAP SHOW mjoinkethasil
+AFTER_INPUT   cur_field=svikode        DO_MAP SHOW mjoinkethasil
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svinourt
+SFL_SELECT cdetINPG4
+SFL_TARGET
+        svidatbuktyp  tlmdata tlmnobuk lNILAIDATA
+SFL_MAP
+tlmdata   svidata     REPLACE
+tlmnobuk    svinobuk    REPLACE  
+lNILAIDATA   svitype     REPLACE  
+gv_INPG     svists      REPLACE
+
+
+
+POSTING(tmptrans)
+        PST_ADDCMD supd
+        PST_UPDCMD supd

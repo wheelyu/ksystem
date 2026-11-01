@@ -1,0 +1,214 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------\
+|t.uplkksdm                                                  					 |                          
+|/--s.UPLOAD----------------------\/------------------------------------------------------------\|
+||                                ||i.Tgl     		: __________  				||
+||                                ||i.Nippic  		: __________  				||
+||                                ||i.NipUpl  		: __________  				||
+||                                ||t.OkUp    		: __________  				||
+||				  ||t.AccPic  		: __________  				||
+||                                ||i.nomerkk 		: __________________________    	||
+||				  ||i.namakplkel        : ____________________________________ 	||
+||				  ||i.Alamat            : ____________________________________	||
+||                                ||i.Propinsi          : ___________ _________________       	||
+||                                ||i.Kota              : ___________ _________________   	||
+||                   		  ||i.Kec               : ___________ _________________	        ||
+||				  ||i.Kel               : ___________ _________________		||
+|\--------------------------------/|i.RtRw              : ____ i.2 ____ 			||
+|                                  |i.KodePos           : ________			    	||
+|                                  |t.JmlAnggota        : _____________________________		||
+|                                  | 			    					||
+|                                  | 			    					||
+|                                  | 		________	   ________ 			||
+|                                  | 			    					||
+|                                  \------------------------------------------------------------/|
+\------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svitgl1  		PROTECT {DD-MM-YY}	INPUTRI 1
+svistr1			PROTECT			INPUTRI	2
+svistr2			PROTECT			INPUTRI	3
+svistr3			PROTECT			INPUTRI	4
+svistr4			PROTECT			INPUTRI 5
+svinama                 DIGITS  SCROLL          INPUTRI 6
+sviket               	ALLCAPS SCROLL          INPUTRI 7
+sviket2               	ALLCAPS SCROLL          INPUTRI 8
+svistr5                 ALLCAPS SCROLL          INPUTRI 9
+lpropinsi1x             PROTECT SCROLL          INPUTRI 10
+svistr6                 ALLCAPS SCROLL          INPUTRI 11
+lkota1x                 PROTECT SCROLL          INPUTRI 12
+svistr7                 ALLCAPS SCROLL          INPUTRI 13
+lkec1x                  PROTECT SCROLL          INPUTRI 14
+svistr8                 ALLCAPS SCROLL          INPUTRI 15
+lkel1x                  PROTECT SCROLL          INPUTRI 16
+svitype2                ALLCAPS SCROLL          INPUTRI 17
+svitype3                ALLCAPS SCROLL          INPUTRI 18
+svistr9                 ALLCAPS SCROLL          INPUTRI 19
+svidf1                	NOCHANGE SCROLL         INPUTRI 20
+luploadtacc2		TOMBOL			INPUTRI 21
+luploadacc2		TOMBOL			INPUTRI 22
+
+DEFAULTS(tmptranst)
+svitgl1		INIT_ADD	{g_tgltrn}
+svitgl1		INIT_UPDATE	{g_tgltrn}
+luploadtacc2	INIT		TACC PIC
+luploadacc2	INIT		ACC PIC
+l_count2	INIT		1
+
+EDITS(tmptranst)
+e.mandatoryNoKK         svinama MANDATORY
+e.mandatoryNamaKplKlrg  sviket MANDATORY
+e.mandatoryAlamat       sviket2 MANDATORY
+e.mandatoryPropinsi1    svistr5 MANDATORY
+e.mandatoryKota1        svistr6 MANDATORY
+e.mandatoryKec1         svistr7 MANDATORY
+e.mandatoryKel1         svistr8 MANDATORY
+e.mandatoryRt           svitype2 MANDATORY
+e.mandatoryRw           svitype3 MANDATORY
+e.mandatoryKodePos      svistr9 MANDATORY
+e.mandatoryJmlAnggota   svidf1 MANDATORY
+
+e.validatePropinsi1     svistr5 VALIDATE dtmdtkodidx  mdtmx sdtm {Pgv_dtkota}
+e.validateKota1         svistr6 VALIDATE tbldtdtmkod mtblx stbl {Pgv_dtkota} {Psvistr5}
+e.validateKec1          svistr7 VALIDATE tbddatkodidx mtbdx stbd {Pgv_dtkota} {Psvistr5} {Psvistr6}
+e.validateKel1          svistr8 VALIDATE tbtdattypkod mtbtx stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr5} {Psvistr6} {Psvistr7}
+
+CALCS()
+cacc1x		"ACC"
+ctacc1x		"TACC"
+cscandatakk	(dbscantld166!=0 || dbscantld166==0)
+
+MAP(mtbtx)
+tbtkode                 svistr8                 REPLACE
+tbtket                  lkel1x                  REPLACE
+tbtkat			svistr9			REPLACE
+langgotakk		svidf1			REPLACE_IF cscandatakk
+
+MAP(mtbdx)
+tbdkode                 svistr7                 REPLACE
+tbdket                  lkec1x                  REPLACE
+
+MAP(mtblx)
+tblkode                 svistr6	                REPLACE
+tblket                  lkota1x                 REPLACE
+
+MAP(mdtmx)
+dtmkode                 svistr5                 REPLACE
+dtmket                  lpropinsi1x             REPLACE
+
+MAP(mupdkksdm4)
+ctacc1x		svistr4		DO_CALC
+cblanks		svistr3		DO_CALC
+g_usrkode	svistr1		REPLACE
+
+MAP(mupdkksdm5)
+cacc1x		svistr4		DO_CALC
+g_usrkode	svistr1		REPLACE
+
+MAP(mupdsvikksdm21)
+g_tgltrn	svitgl1		REPLACE
+cOK  		svistr3		DO_CALC
+g_usrkode	svistr2		REPLACE
+
+CALCS()
+ckk             lpanjangkk == 16
+cpjgkk         	DO_LIB ap_strln(svinama,&lpanjangkk);
+crtkk           lpanjangrtx == 3
+crwkk           lpanjangrwx == 3
+cposkk          lpanjangposx == 5
+cpjgrtkk        DO_LIB ap_strln(svitype2,&lpanjangrtx);
+cpjgrwkk        DO_LIB ap_strln(svitype3,&lpanjangrwx);
+cpjgposkk       DO_LIB ap_strln(svistr9,&lpanjangposx);
+
+MAP(mcaripjgrtx)
+cpjgrtkk                lpanjangrtx             DO_CALC
+
+MAP(mcaripjgrwx)
+cpjgrwkk                lpanjangrwx             DO_CALC
+
+MAP(mcaripjgposx)
+cpjgposkk               lpanjangposx            DO_CALC
+
+
+MAP(mcaripjgkk)
+cpjgkk          lpanjangkk             DO_CALC
+
+DBCALCS(dupdsvikksdm21)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviprmidx	sviprm
+	DBC_MAP		mupdsvikksdm21
+
+SPCALCS(supdsvi4x)
+	DO_LIB_IF cadafoto2a ap_dbclc(DNAME dupdsvikksdm4,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdkksdm4);
+
+SPCALCS(supdsvi5x)
+	DO_LIB_IF cadafoto2a ap_dbclc(DNAME dupdsvikksdm5,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdkksdm5);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtacc2  DO_SPCALCS supdsvi4x
+CLICKED		cur_field=luploadacc2	DO_SPCALCS supdsvi5x
+AFTER_INPUT     cur_field=svinama       DO_MAP SHOW mcaripjgkk
+AFTER_INPUT     cur_field=svitype2      DO_MAP SHOW mcaripjgrtx
+AFTER_INPUT     cur_field=svitype3      DO_MAP SHOW mcaripjgrwx
+AFTER_INPUT     cur_field=svistr9     	DO_MAP SHOW mcaripjgposx
+AFTER_INPUT     cur_field=svinama       DO_MAP SHOW
+                IF ckk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKK16
+
+AFTER_INPUT     cur_field=svitype2      DO_MAP SHOW
+                IF crtkk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRT3
+
+AFTER_INPUT     cur_field=svitype3      DO_MAP SHOW
+                IF crwkk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRW3
+
+AFTER_INPUT     cur_field=svistr9       DO_MAP SHOW
+                IF cposkk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKdPos5
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKK16
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF crtkk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRT3
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF crwkk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRW3
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF cposkk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKdPos5
+
+CALCS()
+caccblanksx	svistr4 == BLANKS || g_usrkode=="2221048" 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_DEL_COND caccblanksx
+SFL_UPLFLD  lUPLKK166 svinobuk
+SFL_UPLFLD_DBCALCS dupdsvikksdm21
+SFL_UPL_DELCOND caccblanksx
+SFL_TARGET
+	svidatbuktyp  hrmdata hrmnobuk lUPLKK166
+
+SFL_MAP
+hrmdata    		svidata		REPLACE
+lUPLKK166		svitype		REPLACE
+hrmnobuk  		svinobuk	REPLACE
+
+

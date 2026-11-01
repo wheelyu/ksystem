@@ -1,0 +1,86 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/----s.UPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| t.No        :_________________  ||
+|| t.NoRangka  :__________________ ||_
+|| t.NoMesin   :__________________ ||
+|| t.TglTrk    :____________       ||
+|| t.Latitude  :____________       ||
+|| t.Longitude :____________       ||
+||              ____________       ||
+|| t.Jnsbiayaan:__________________ ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tldnourt        PROTECT                 INPUTRI         1
+tldbrdoto       ALLCAPS                 INPUTRI         2
+tldcab          PROTECT                 INPUTRI         3
+tldnobbm        ALLCAPS                 INPUTRI         4
+ltglretur       PROTECT {DD-MM-YY}      INPUTRI         5
+tldperdis4      PROTECT                 INPUTRI         6
+tldperdis5      PROTECT                 INPUTRI         7
+ltombolgmaps    TOMBOL                  INPUTRI         8
+ljnspembia2	PROTECT			INPUTRI		7
+
+DEFAULTS(tmptranst)
+tldtglfak       INIT_ADD        {g_tgltrn}
+tldplg          INIT_ADD        {g_usrkode}
+
+EDITS(tmptranst)
+/*e.Mandatory     tldnobbm        MANDATORY*/
+e.Dupkey        tldnobbm        DUPKEY          tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}
+e.Validatecab2  tldcab          VALIDATE        cabkodidx mcabmokas 0
+
+MAP(mampatbx)
+cmampatb        tldnobbm        DO_CALC
+lssurangka2     tldbrdoto       REPLACE_IF cjoinssubekas2
+lssumesin2      tldnobbm        REPLACE_IF cjoinssubekas2x
+lssubrg         tldbrg          REPLACE_IF cjoinssubekas2x
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldnobbm      DO_MAP SHOW murtb
+AFTER_INPUT     cur_field=tldbrdoto     DO_MAP SHOW mampatbx
+AFTER_INPUT     cur_field=tldnobbm      DO_MAP SHOW mampatbx
+CLICKED         cur_field=ltombolgmaps          DO_SPCALCS spgmaps2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbknSISTEMb
+SFL_COND	cunitbekaszoom
+SFL_LINES(1)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tldnobuk tldoto
+SFL_UPLFLD_DBCALCS dupdfotospmb
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+tldbukurtidx    tlmnobuk   
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmtype1        tldgrup         REPLACE
+tlmcab		tldcab		REPLACE
+g_lat        	tldperdis4      REPLACE
+g_lon         	tldperdis5      REPLACE
+
+SPCALCS(sptrans2addbx)
+DO_LIB		ap_dbclc(DNAME dupdtlmaddbx, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmaddb);
+
+SPCALCS(sptrans2updbx)
+DO_LIB		ap_dbclc(DNAME dupdtlmupdbx, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupdb);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2addbx
+	PST_DELCMD	sptrans2updbx
+

@@ -1,0 +1,185 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||t.Indikator                            t.Hsl714  t.HslKlik  i.Ket          ||
+||t.indk1                                _________ __________ _______________||
+||t.indk2                                _________ __________ _______________||
+||t.indk3                                _________ __________ _______________||
+||t.indk4                                _________ __________ _______________||
+||t.KatIndikasi                          _________                           ||
+|\---------------------------------------------------------------------------/|
+|/---t.KetTacc---------------------------------------------------------------\|
+||__________________________________________________________________________ ||
+|\---------------------------------------------------------------------------/|
+|/---t.Verifikasi------------------------------------------------------------\|
+||t.YTSesuai     _____   ___                                                 ||
+||__________________________________________________________________________ ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.Treatment    _________      t.UpdSts1      _________                     ||
+||t.TreatmentLjt _________      t.UpdSts2      _________                     ||
+||t.Upl0         _________                                   _______________ ||
+|\---------------------------------------------------------------------------/|
+|/-----DOCUPLOAD-------------------------------------------------------------\|
+||                                                                           ||
+||                                                                           ||
+||                                                                           ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr31	PROTECT		INPUTRI		1
+svistr35	NOCHANGE	INPUTRI			2
+svistr1		ALLCAPS		INPUTRI				3
+
+svistr32	PROTECT		INPUTRI		4
+svistr36	NOCHANGE	INPUTRI			5
+svistr2		ALLCAPS		INPUTRI				6
+
+svistr33	PROTECT		INPUTRI		7
+svistr37	NOCHANGE	INPUTRI			8
+svistr3		ALLCAPS		INPUTRI				9
+
+svistr34	PROTECT		INPUTRI		10
+svistr38	NOCHANGE	INPUTRI			11
+svistr4		ALLCAPS		INPUTRI				12
+
+svidf5		PROTECT		INPUTRI		13
+
+lkettacc3	PROTECT		INPUTRI		14
+
+sviyt2		PROTECT		INPUTRI		15
+sviyt1		NOCHANGE	INPUTRI		15
+lketverif	PROTECT		INPUTRI		16
+
+svistr5		PROTECT		INPUTRI		17
+svitype2	PROTECT		INPUTRI		18
+svistr6		NOCHANGE	INPUTRI		19
+svitype3	PROTECT		INPUTRI		20
+svidf2		PROTECT		INPUTRI		21
+lenter		NOCHANGE	INPUTRI		22
+
+DEFAULTS(tmptranst)
+svistr31	INIT		{ltacc1}
+svistr32	INIT		{ltacc2}
+svistr33	INIT		{ltacc3}
+svistr34	INIT		{ltacc4}
+sviyt2		INIT		{lhslvertelp}
+svistr35	DFALT_SCAN	T Y
+svistr36	DFALT_SCAN	T Y
+svistr37	DFALT_SCAN	T Y
+svistr38	DFALT_SCAN	T Y
+sviyt1		DFALT_SCAN	T Y
+svistr6		DFALT_SCAN_BLANKS	KIRIM
+					TDK_KIRIM
+
+lenter		INIT		ENTER
+
+CALCS()
+ctacc_open		tkmsts == "OPEN"
+ctacc_inpg		tkmsts == "INPG"
+
+EDITS(tmptranst)
+t.MandatoryTacc1	svistr35	MANDATORY
+t.MandatoryTacc2	svistr36	MANDATORY
+t.MandatoryTacc3	svistr37	MANDATORY
+t.MandatoryTacc4	svistr38	MANDATORY
+t.MandatoryKetTacc1	svistr1		MANDATORY
+t.MandatoryKetTacc2	svistr2		MANDATORY
+t.MandatoryKetTacc3	svistr3		MANDATORY
+t.MandatoryKetTacc4	svistr4		MANDATORY
+t.MandatorySesuai	sviyt1		MANDATORY
+t.MandatoryTreatLjt	svistr6		MANDATORY_IF ctacc_inpg
+
+CALCS()
+csvistr35T	svistr35 == "T"
+csvistr35Y	svistr35 == "Y"
+csvistr36T	svistr36 == "T"
+csvistr36Y	svistr36 == "Y"
+csvistr37T	svistr37 == "T"
+csvistr37Y	svistr37 == "Y"
+csvistr38T	svistr38 == "T"
+csvistr38Y	svistr38 == "Y"
+csvidf5		svidf1 + svidf2 + svidf3 + svidf4
+ckirim		"KIRIM"
+ctdkkirim	"TDK_KIRIM"
+ckat_kirim	svidf5 <= 1 && sviyt1 == "T"
+ckat_tdkkirim	svidf5 > 1 || sviyt1 != "T"
+ckat_kirim2	tkmsts == "INPG" && svistr6 == "KIRIM"
+ckat_tdkkirim2	tkmsts == "INPG" && svistr6 == "TDK_KIRIM"
+c611		"611"
+cTACC		"TACC"
+
+MAP(misitacc)
+c1		svidf1		DO_CALC_IF csvistr35Y
+c0		svidf1		DO_CALC_IF csvistr35T
+c1		svidf2		DO_CALC_IF csvistr36Y
+c0		svidf2		DO_CALC_IF csvistr36T
+c1		svidf3		DO_CALC_IF csvistr37Y
+c0		svidf3		DO_CALC_IF csvistr37T
+c1		svidf4		DO_CALC_IF csvistr38Y
+c0		svidf4		DO_CALC_IF csvistr38T
+csvidf5		svidf5		DO_CALC
+
+MAP(misitreatment)
+ckirim		svistr5		DO_CALC_IF ckat_kirim
+c611		svitype2	DO_CALC_IF ckat_kirim
+ctdkkirim	svistr5		DO_CALC_IF ckat_tdkkirim
+cTACC		svitype2	DO_CALC_IF ckat_tdkkirim
+
+MAP(misitreatment2)
+c611		svitype3	DO_CALC_IF ckat_kirim2
+cTACC		svitype3	DO_CALC_IF ckat_tdkkirim2
+c0		svitgl1		DO_CALC_IF ckat_tdkkirim2
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr6	DO_SKIP_IF ctacc_open
+BEFORE_INPUT	cur_field=svistr35	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr36	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr37	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr38	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF ctacc_inpg
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF ctacc_inpg
+
+AFTER_INPUT	cur_field=svistr35	DO_MAP misitacc
+AFTER_INPUT	cur_field=svistr36	DO_MAP misitacc
+AFTER_INPUT	cur_field=svistr37	DO_MAP misitacc
+AFTER_INPUT	cur_field=svistr38	DO_MAP misitacc
+AFTER_INPUT	cur_keybd=EN		DO_MAP misitacc
+AFTER_INPUT	cur_keybd=EN		DO_MAP misitreatment
+AFTER_INPUT	cur_field=svistr6	DO_MAP misitreatment2
+AFTER_INPUT	cur_keybd=EN		DO_MAP misitreatment2
+
+CALCS()
+cini_taccsvy	tkmlok1 == "TACC_SVY"
+
+MAP(mupdsviupl)
+c1		svidf2		DO_CALC
+
+DBCALCS(dupdsviupl)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviotoidx svioto
+	DBC_MAP		mupdsviupl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_DOCUPLFLD tkmnobuk svitype
+SFL_DOCUPLFLD_DBCALCS dupdsviupl
+SFL_DOCUPL_DELCOND ctacc_open
+SFL_UPL_DIRFLD tkmtgl
+SFL_COND cini_taccsvy
+SFL_TARGET
+	svidatbuktyp	tkmdata tkmnobuk lKETTACC
+SFL_MAP
+tkmdata		svidata		REPLACE
+tkmnobuk	svinobuk	REPLACE
+tkmkode		svikode		REPLACE
+lKETTACC	svitype		REPLACE

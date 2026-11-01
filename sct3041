@@ -1,0 +1,460 @@
+SCREEN  3041  APPLICATION_TYPE  s.requestJsonPostGetReturnJson
+
+LOCAL
+PGM_FIELDS
+   lurl  			STRING		150
+   lurlaccesstoken  		STRING		101
+   lurllengkap  		STRING		150
+   lrekening			STRING		31
+   lrekening21			STRING		21
+   lreturnlabel 		STRING		50
+   lexpectedreturnvalue 	STRING		50
+   lreqmstlabels         	STRING          201
+   lreqmstfields           	STRING          201
+   lmsttitle           		STRING          21
+   lmstlabels           	STRING          201
+   lmstfields           	STRING          201
+   lmstnamamap			STRING		21
+   ldetlabels           	STRING          201
+   ldetfields           	STRING          201
+   ldetnamamap			STRING		21
+   lsaveflg			INT2		2
+   luser			STRING		61
+   lpassword       		STRING		61
+   lapikey      		STRING		61
+   lapikeysecret		STRING		61
+   lmethod			STRING		100
+   lrequestbody			STRING		100
+   lbank			STRING		31
+   lcredentialid		STRING		11
+   lchannelid			STRING		6
+   lnama			STRING		61
+   lkode			STRING		21
+   lrekbank			STRING		21
+   lbiajns			STRING		21
+   lbiadata			STRING		11
+   lstatus			STRING		3
+   ldturl			STRING		61
+   lnamasdm			STRING		61
+   lnamasdmbtm			STRING		61
+   ltbddtmkode			STRING		21
+   ltbdtblkode			STRING		21
+   ldtusr			STRING		21
+   ldtkey			STRING		21
+   ltbdlv1			STRING		21
+
+   lKUNCIABSEN			STRING		11
+   lDTAGEN			STRING		11
+   lKATMITRA			STRING		11
+   lM2W				STRING		11
+   lnobuktkm			STRING		21
+   lnohp			STRING		21
+   lktpagen			STRING		21
+   lupline			STRING		21
+   ltkmnama			STRING		51
+   ltkmket 			STRING		61
+   ltkmtype			STRING		11
+   ltkmkode			STRING		21
+   ltkmplg   			STRING		21
+ltkmlok2  			STRING		21
+ltkmbuk2			STRING		21
+   lhrmnip1  			STRING		21
+   lhrmnip2  			STRING		21
+   ldum				STRING		5
+   l4754           INT2            2
+   lm4754          STRING          15
+   lnamabankbni3   		STRING  	61
+   lnamabankbni4   		STRING  	61
+   lnamabankbni5   		STRING  	61
+   lnamabankbni6   		STRING  	61
+   lnamabankbni7   		STRING  	61
+   lnamabankbni8   		STRING  	61
+   ln3             		INT2    	2
+   ln4             		INT2    	2
+   ln5             		INT2    	2
+   ln6             		INT2    	2
+   ln7             		INT2    	2
+   ln8             		INT2    	2
+   ln61            		INT2    	2
+
+
+
+MAP(mjointbd)
+tbdket          luser     	REPLACE
+tbdkettype      lpassword       REPLACE
+tbdtblket       ldturl	     	REPLACE
+tbdlv1		ltbdlv1		REPLACE
+
+DBCALCS(djointbd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx     gv_dttabel ltbddtmkode ltbdtblkode ldtusr
+        DBC_MAP         mjointbd
+
+MAP(mjointbd1)
+tbdket          lapikey     	REPLACE
+tbdkettype      lapikeysecret   REPLACE
+
+DBCALCS(djointbd1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx     gv_dttabel ltbddtmkode ltbdtblkode ldtkey
+        DBC_MAP         mjointbd1
+
+DBCALCS(djoinket)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketdatbukkod   lbiadata lrekening21 lrekening21
+
+MAP(mjoinpsdagen)
+psdstr2		lnohp		REPLACE
+DBCALCS(djoinpsdagen)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod	lDTAGEN lktpagen
+	DBC_MAP		mjoinpsdagen
+
+DBCALCS(djoinpsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	lnohp
+
+MAP(mmappsmsdm)
+psmnama		lnamasdm		REPLACE
+
+DBCALCS(djoinpsmsdm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	lhrmnip1
+	DBC_MAP		mmappsmsdm
+ 
+DBCALCS(djoinpsmsdm2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	ltkmplg
+	DBC_MAP		mmappsmsdm
+ 
+MAP(mjointkm)
+tkmnama		ltkmnama	REPLACE
+tkmtype		ltkmtype	REPLACE
+tkmket 		ltkmket 	 REPLACE
+
+tkmkode		ltkmkode	REPLACE  /* id ktp utk sdm */
+tkmplg   	ltkmplg   	REPLACE
+
+tkmlok2  	ltkmlok2  	REPLACE	
+tkmbuk2		ltkmbuk2		REPLACE	
+
+DBCALCS(djointkm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkmbukidx	lnobuktkm
+	DBC_MAP		mjointkm
+
+MAP(mhrm)
+hrmnip1		lhrmnip1		REPLACE
+hrmnip2		lhrmnip2		REPLACE
+
+DBCALCS(djoinhrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      hrmbukidx               ltkmplg    
+	DBC_MAP		mhrm   
+
+MAP(mbtm)
+btmnama		lnamasdmbtm		REPLACE
+
+DBCALCS(djoinbtm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx               ltkmplg    
+	DBC_MAP		mbtm   
+
+DBCALCS(djoinpsdsdm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddatpsmkod gv_clnkry11 ltkmkode gv_bank21
+
+DBCALCS(djoinabk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN lnobuktkm
+
+MAP(mjoinpsdupl)
+psdkode         lupline         REPLACE
+DBCALCS(djoinpsdupl)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddattypidx    lKATMITRA lM2W lnohp
+        DBC_MAP         mjoinpsdupl
+
+IMAGE(master) 
+/---------------------------------------\ 
+|  /----------------------------------\ |
+|  |  i.Rek : ______________________  | | 
+|  |  i.Sts : ______________________  | | 
+|  \----------------------------------/ |
+\---------------------------------------/
+
+FIELD(master)
+   lrekening           NOCHANGE          NONE     1 
+   lstatus             PROTECT           NONE     2
+
+DEFAULTS(master)
+  lrekening		INIT   {r_string1}
+  lrekening21		INIT   {r_string1}
+  lbank			INIT   {r_string2}
+  lbiajns		INIT   {r_string3}
+  lnobuktkm		INIT   {r_string6}
+  lktpagen		INIT   {r_string7}
+  lmethod	  	INIT   GET
+  lrequestbody	  	INIT   ""
+  r_string1		INIT   "client_credentials"
+  lreqmstlabels  	INIT   ""
+  lreqmstfields  	INIT   ""
+  lreturnlabel  	INIT   ""
+  lexpectedreturnvalue  INIT   ""
+  lmsttitle    		INIT   ""
+  lmstlabels   		INIT   "beneficiary_account_name+beneficiary_bank_code+beneficiary_account_number"
+  lmstfields   		INIT   "lnama+lkode+lrekbank"
+/*
+  lmstlabels   		INIT   "beneficiary_bank_code+beneficiary_account_number+beneficiary_account_name"
+  lmstfields   		INIT   "lkode+lrekbank+lnama"
+*/
+  lmstnamamap  		INIT   ""
+  ldetlabels   		INIT   ""
+  ldetfields   		INIT   ""
+  ldetnamamap  		INIT   ""
+  lsaveflg		INIT	1
+  lchannelid		INIT	95051
+  lbiadata		INIT	DTBANK
+  ltbddtmkode		INIT	KODEBANK
+  ltbdtblkode		INIT	KODEBANK
+  ldtusr		INIT	DTUSR
+  ldtkey		INIT	DTKEY
+  lDTAGEN		INIT	DTAGEN
+  lKUNCIABSEN		INIT	KUNCIABSEN
+  lKATMITRA             INIT    KATMITRA
+  lM2W                  INIT    M2W
+   l4754           	INIT	4754
+   lm4754         	INIT	m4754 
+  ln3             	INIT    3
+  ln4             	INIT    4
+  ln5             	INIT    5
+  ln6             	INIT    6
+  ln7             	INIT    7
+  ln8             	INIT    8
+  ln61            	INIT    61
+
+EDITS(master)
+e.MANDATORY	lrekening	MANDATORY
+
+CALCS()
+cadatbd		djointbd == 1
+cadatbd1	djointbd1 == 1
+curl		"/banking/corporates/transfers/v2/domestic/beneficiaries/banks/"+STRIP(lbank)+"/accounts/"+STRIP(lrekening)
+curllengkap	STRIP(ldturl) + "/banking/corporates/transfers/v2/domestic/beneficiaries/banks/"+STRIP(lbank)+"/accounts/"+STRIP(lrekening)
+curlaccesstoken	STRIP(ldturl) + "/api/oauth/token"
+
+MAP(mnofak)
+luser		luser		REPLACE_IF cadatbd
+lpassword	lpassword	REPLACE_IF cadatbd
+ldturl		ldturl		REPLACE_IF cadatbd
+ltbdlv1		lcredentialid	REPLACE_IF cadatbd
+curlaccesstoken lurlaccesstoken	DO_CALC_IF cadatbd
+lapikey		lapikey		REPLACE_IF cadatbd1
+lapikeysecret	lapikeysecret	REPLACE_IF cadatbd1
+curl		lurl		DO_CALC
+curllengkap	lurllengkap	DO_CALC
+
+HOOKS(master)
+AFTER_INPUT	cur_field=lrekening	DO_MAP	SHOW mnofak
+
+
+MAP(mupdbia)
+lrekbank	bianobbm	REPLACE
+gv_INPG		biasts		REPLACE
+g_tgltrn	biatglbyr	REPLACE
+lnama		bianiplm	REPLACE
+
+CALCS()
+cgagal		r_long8 == 0
+cberhasil	r_long8 == 1 
+cberhasilsdm	r_long8 == 1 && ((lnamasdm == lnama && ltkmnama == lnama) || lnamasdm == lnama)
+cberhasil1	lbiajns != BLANKS && r_long8 == 1 && djoinket == 0
+cberhasil2	lbiajns != BLANKS && r_long8 == 1 && djoinket == 1
+cberhasilbia	lbiajns != BLANKS && r_long8 == 1
+cOK		"OK"
+cNO		"NO"
+cmampat		MAMPAT(ketisi2)
+
+cREKENING_OK	"REKENING_OK"
+cketkunci       "PERBAIKAN REK AGEN"
+c991            "991"
+caccrek		"ACCREK"
+ctaccrek	"TACCREK"
+cdjointkm	lnobuktkm != BLANKS && djointkm == 1
+cdjoinabk	lnobuktkm != BLANKS && djoinabk == 1
+cdjoinpsm1	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype !="DTCLNKAR" && lktpagen != BLANKS && r_long8 == 1 && djoinpsdagen == 1 && djoinpsm == 1 && ltkmnama == lnama
+cdjoinpsm1x	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype !="DTCLNKAR" && lktpagen != BLANKS && r_long8 == 1 && djoinpsdagen == 1 && djoinpsm == 1 && ltkmnama != lnama
+
+cdjoinpsm2	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinhrm==1 && r_long8 == 1 && djoinpsmsdm == 1 
+		&& ((lnamasdm == lnama && ltkmnama == lnama) || lnamasdm == lnama
+		   || ((lnamabankbni3==lnamasdm || lnamabankbni4==lnamasdm || lnamabankbni5==lnamasdm || lnamabankbni6==lnamasdm || lnamabankbni7==lnamasdm || lnamabankbni8==lnamasdm) && ltkmlok2=="BANK_BNI")
+                   )
+cdjoinpsm3	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && r_long8 == 1 && djoinpsmsdm2 == 1 
+		&& ((lnamasdm == lnama && ltkmnama == lnama) || lnamasdm == lnama
+		   || ((lnamabankbni3==lnamasdm || lnamabankbni4==lnamasdm || lnamabankbni5==lnamasdm || lnamabankbni6==lnamasdm || lnamabankbni7==lnamasdm || lnamabankbni8==lnamasdm) && ltkmlok2=="BANK_BNI")
+                   )
+cdjoinbtmsdmx	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && r_long8 == 0 && djoinbtm==1
+cdjoinpsdsdmx	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && r_long8 == 0 && djoinbtm==1 && djoinpsdsdm==1
+cdjoinbtmsdm	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && r_long8 == 1 && djoinbtm==1
+		&& ((lnamasdmbtm == lnama && ltkmnama == lnama) || lnamasdmbtm == lnama
+		   || ((lnamabankbni3==lnamasdmbtm || lnamabankbni4==lnamasdmbtm || lnamabankbni5==lnamasdmbtm || lnamabankbni6==lnamasdmbtm || lnamabankbni7==lnamasdmbtm || lnamabankbni8==lnamasdmbtm) && ltkmlok2=="BANK_BNI")
+                   )
+cdjoinpsdsdm	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && r_long8 == 1 && djoinbtm==1 && djoinpsdsdm==1
+		&& ((lnamasdmbtm == lnama && ltkmnama == lnama) || lnamasdmbtm == lnama
+		   || ((lnamabankbni3==lnamasdmbtm || lnamabankbni4==lnamasdmbtm || lnamabankbni5==lnamasdmbtm || lnamabankbni6==lnamasdmbtm || lnamabankbni7==lnamasdmbtm || lnamabankbni8==lnamasdmbtm) && ltkmlok2=="BANK_BNI")
+                   )
+cclsd_sdm       lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinhrm==1 && r_long8 == 1 && djoinpsmsdm == 1 
+		&& ((lnamasdm == lnama && ltkmnama == lnama) || lnamasdm == lnama
+		   || ((lnamabankbni3==lnamasdm || lnamabankbni4==lnamasdm || lnamabankbni5==lnamasdm || lnamabankbni6==lnamasdm || lnamabankbni7==lnamasdm || lnamabankbni8==lnamasdm) && ltkmlok2=="BANK_BNI")
+                   )
+cbeda_sdm       lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinhrm==1 
+		&& (r_long8 == 1 && djoinpsmsdm == 1 && ((lnamasdm != lnama && ltkmnama != lnama) || lnamasdm != lnama))
+cbeda_sdm2      lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR"
+		&& r_long8 == 1 && djoinpsmsdm2 == 1 && ((lnamasdm != lnama && ltkmnama != lnama) || lnamasdm != lnama)
+cbeda_sdmawl    lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinbtm==1 
+		&& (r_long8 == 1 && ((lnamasdmbtm != lnama && ltkmnama != lnama) || lnamasdmbtm != lnama))
+cgagal_sdm	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinhrm==1 && r_long8 == 0
+cgagal_sdm2	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinpsmsdm2==1 && r_long8 == 0
+cgagal_sdm3	lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" && djoinbtm==1 && r_long8 == 0
+cgagaltkm       lnobuktkm != BLANKS && djointkm == 1 && ltkmtype !="DTCLNKAR" && lktpagen != BLANKS && (r_long8 == 0 || r_long8 == 0) && djoinpsdagen == 1 && djoinpsdupl == 1 && lupline != BLANKS && ltkmnama != lnama
+
+/* 
+cgagaltkm_sdm      lnobuktkm != BLANKS && djointkm == 1 && ltkmtype =="DTCLNKAR" &&  (r_long8 == 0 ) && ltkmnama != lnama */
+
+cdjointkm_sdm       lnobuktkm != BLANKS && djointkm == 1 && djoinhrm ==1
+cINCH		"INCH"
+cbankbni        lnobuktkm != BLANKS && djointkm==1 && ltkmlok2=="BANK_BNI"
+cnamabni3       DO_LIB ap_amstr(lnama,ln3,ln61,&lnamabankbni3); /* pot digit 3 */
+cnamabni4       DO_LIB ap_amstr(lnama,ln4,ln61,&lnamabankbni4); /* pot digit 4 */
+cnamabni5       DO_LIB ap_amstr(lnama,ln5,ln61,&lnamabankbni5); /* pot digit 5 */
+cnamabni6       DO_LIB ap_amstr(lnama,ln6,ln61,&lnamabankbni6); /* pot digit 6 */
+cnamabni7       DO_LIB ap_amstr(lnama,ln7,ln61,&lnamabankbni7); /* pot digit 7 */
+cnamabni8       DO_LIB ap_amstr(lnama,ln8,ln61,&lnamabankbni8); /* pot digit 8 */
+
+MAP(mmapmap)
+lkode		lkode		REPLACE
+cOK		lstatus		DO_CALC_IF cberhasil
+cNO		lstatus		DO_CALC_IF cgagal
+
+MAP(mmapmap2)
+DEBUG		ldum		ldum			REPLACE
+
+
+MAP(maddket)
+lrekening21	ketkode		REPLACE
+lrekening21	ketnobuk	REPLACE
+lbiadata	ketdata		REPLACE
+lnama		ketisi2		REPLACE
+cmampat		ketisi		DO_CALC
+
+MAP(mupdket)
+lnama		ketisi2		REPLACE
+cmampat		ketisi		DO_CALC
+
+MAP(mupdtkm)
+cnamabni3       lnamabankbni3   DO_CALC_IF cbankbni
+cnamabni4       lnamabankbni4   DO_CALC_IF cbankbni
+cnamabni5       lnamabankbni5   DO_CALC_IF cbankbni
+cnamabni6       lnamabankbni6   DO_CALC_IF cbankbni
+cnamabni7       lnamabankbni7   DO_CALC_IF cbankbni
+cnamabni8       lnamabankbni8   DO_CALC_IF cbankbni
+gv_OPEN		tkmsts		REPLACE_IF cgagal
+cINCH   	tkmsts		DO_CALC_IF cbeda_sdm 
+cINCH   	tkmsts		DO_CALC_IF cbeda_sdm2
+cINCH   	tkmsts		DO_CALC_IF cbeda_sdmawl 
+gv_CLSD		tkmsts		REPLACE_IF cdjoinpsm1
+gv_CLSD		tkmsts		REPLACE_IF cclsd_sdm 
+gv_CLSD		tkmsts		REPLACE_IF cdjoinpsm3
+gv_CLSD		tkmsts		REPLACE_IF cdjoinbtmsdm
+gv_VOID		tkmsts		REPLACE_IF cgagal_sdm
+gv_VOID		tkmsts		REPLACE_IF cgagal_sdm2
+gv_VOID		tkmsts		REPLACE_IF cgagal_sdm3
+gv_RCLS		tkmsts		REPLACE_IF cdjoinpsm1x
+lnama		tkmket		REPLACE_IF cberhasil
+
+CALCS()
+cjml_gagal      hrmdf1 + 1
+ckettolak	"No Rek" + " " + STRIP(ltkmbuk2) + " " + "Tdk ada di" + " " + STRIP(ltkmlok2) + ",Cek Inputan Norek/Bank/Nama"
+c1516901	"1516901"
+
+MAP(mupdhrm)
+cjml_gagal      hrmdf1          DO_CALC_IF cgagal
+gv_TACC		hrmsts		REPLACE_IF cgagal_sdm
+gv_CLSD         hrmsts          REPLACE_IF cberhasilsdm
+ckettolak	hrmket1		DO_CALC_IF cgagal_sdm
+
+ltkmket		hrmket2		REPLACE
+
+MAP(mupdpsm)
+cREKENING_OK	psmnambank2	DO_CALC
+
+
+
+MAP(mupdpsmsdm)
+cREKENING_OK	psmnambank2	DO_CALC
+
+ltkmlok2  	psmbank		REPLACE
+ltkmbuk2	psmrekbank	REPLACE
+ltkmket 	psmiddeb  	REPLACE
+
+
+
+
+MAP(mupdabk)
+gv_CLSD		abksts		REPLACE
+
+MAP(m4754)
+ltkmplg         r_string1               REPLACE
+
+
+MAP(maddabk)
+lKUNCIABSEN     abkdata         REPLACE
+tkmnobuk        abknobuk        REPLACE
+gv_INPG         abksts          REPLACE
+c1516901	abkkym          DO_CALC
+g_tgltrn        abktgl          REPLACE
+cketkunci       abkkym2         DO_CALC
+c991            abkscr          DO_CALC
+
+MAP(mupdpsdsdmx)
+ckettolak	psdket2		DO_CALC
+
+MAP(mupdbtmsdmx)
+ctaccrek	btmsurveyor	DO_CALC
+
+MAP(mupdpsdsdm)
+cREKENING_OK	psdstr3		DO_CALC
+
+MAP(mupdbtmsdm)
+caccrek		btmsurveyor	DO_CALC
+
+SPCALCS(spcal1)
+  DO_LIB ap_bcasg(luser,lpassword,lurlaccesstoken,lapikey,lapikeysecret,lmethod,lurl,lchannelid,lcredentialid);
+  DO_LIB ap_rqjsp(lurllengkap,lmsttitle,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+  DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+  DO_LIB_IF cberhasilbia ap_dbclc(DNAME dupdbia,DCOMMAND UPDATE,DBC_TARGET biadatstskod lbiadata lbiajns gv_OPEN lrekening21,DMAP mupdbia);
+  DO_LIB_IF cberhasil2	ap_dbclc(DNAME dupdket,DCOMMAND UPDATE_RANGE,DTARGET ketdatbukkod lbiadata lrekening21 lrekening21,DMAP mupdket);
+  DO_LIB_IF cberhasil1	ap_dbclc(DNAME daddket,DCOMMAND ADD,DFILE ket,DMAP maddket);
+
+  DO_LIB_IF cdjointkm	ap_dbclc(DNAME dupdtkm,DCOMMAND UPDATE,DBC_TARGET tkmbukidx lnobuktkm,DMAP mupdtkm);
+  DO_LIB_IF cdjoinpsm1	ap_dbclc(DNAME dupdpsm1,DCOMMAND UPDATE,DBC_TARGET psmkodidx lnohp,DMAP mupdpsm);
+  DO_LIB_IF cdjoinpsm2	ap_dbclc(DNAME dupdpsm2,DCOMMAND UPDATE,DBC_TARGET psmkodidx lhrmnip1,DMAP mupdpsmsdm);
+  DO_LIB_IF cdjoinpsm3	ap_dbclc(DNAME dupdpsm3,DCOMMAND UPDATE,DBC_TARGET psmkodidx ltkmplg,DMAP mupdpsmsdm);
+  DO_LIB_IF cdjoinpsdsdmx ap_dbclc(DNAME dupdpsdsdmx,DCOMMAND UPDATE,DBC_TARGET psddatpsmkod gv_clnkry11 ltkmkode gv_bank21,DMAP mupdpsdsdmx);
+  DO_LIB_IF cdjoinbtmsdmx ap_dbclc(DNAME dupdbtmsdmx,DCOMMAND UPDATE,DBC_TARGET btmbukidx ltkmplg,DMAP mupdbtmsdmx);
+  DO_LIB_IF cdjoinpsdsdm ap_dbclc(DNAME dupdpsdsdm,DCOMMAND UPDATE,DBC_TARGET psddatpsmkod gv_clnkry11 ltkmkode gv_bank21,DMAP mupdpsdsdm);
+  DO_LIB_IF cdjoinbtmsdm ap_dbclc(DNAME dupdbtmsdm,DCOMMAND UPDATE,DBC_TARGET btmbukidx ltkmplg,DMAP mupdbtmsdm);
+  DO_LIB_IF cdjoinabk	ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DBC_TARGET abkdatbukidx lKUNCIABSEN lnobuktkm,DMAP mupdabk);
+  DO_LIB_IF cgagaltkm   ap_dbclc(DNAME daddabk,DCOMMAND ADD,DFILE abk,DMAP maddabk);
+
+  DO_LIB_IF cdjointkm_sdm   ap_dbclc(DNAME dupdhrm,DCOMMAND UPDATE,DBC_TARGET hrmbukidx ltkmplg,DMAP mupdhrm);
+  
+/* DO_LIB_IF cgagaltkm_sdm   ap_dbclc(DNAME dupdabksdm,DCOMMAND UPDATE_RANGE,DBC_TARGET abkdatbukidx lKUNCIABSEN ltkmplg,DMAP mupdabkgagal);
+  DO_LIB_IF cgagaltkm_sdm   ap_nxpst(l4754,lm4754); */
+  DO_LIB ap_dbclc(DNAME dmapmap2,DCOMMAND MAPMAP,DMAP mmapmap2);
+
+				
+POSTING(master)
+	PST_COMMAND spcal1
+
+END_SCREEN

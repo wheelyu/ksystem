@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+ltopikmeet	STRING	351
+lINPG		STRING	11
+lketkat         STRING  61
+lketkpi         STRING  61
+lPIUTREM        STRING  21
+lMEETCOE        STRING  21
+lKATTOPIKCOE    STRING  21
+lKPICOE         STRING  21
+lTIPEKPICOE     STRING  21
+
+MAP(mjointbdkattopik)
+tbdket        lketkat         REPLACE
+
+DBCALCS(djointbdkattopik)
+DBC_COMMAND      JOIN
+DBC_TARGET       tbddatkodidx	gv_dttabel lPIUTREM lKATTOPIKCOE spktgg
+DBC_MAP          mjointbdkattopik
+
+
+MAP(mjointbtkpicoe)
+tbtket        lketkpi         REPLACE
+
+DBCALCS(djointbtkpicoe)
+DBC_COMMAND      JOIN
+DBC_TARGET       tbtdattypkod   gv_dttabel gv_dttabel21 lPIUTREM lTIPEKPICOE lKPICOE spktgg4
+DBC_MAP          mjointbtkpicoe
+
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------------------\
+|t.ListAP	    						                                               |
+|-----------------------t-----------------t----------------t--------------------------t----------------------|-|
+|t.Ket           	|t.KatTopik       |t.TipeKpi       |t.ActivityPlan            |t.TglDatelinex        | |
+\-----------------------.-----------------.----------------.--------------------------.----------------------.-/
+
+IMAGE(tmptrans)
+|_______________________|_________________|________________|__________________________| ____________________ |_|
+
+FIELD(tmptrans)
+ltopikmeet      TEXTAREA PROTECT           INPUTRI 1
+lketkat         TEXTAREA PROTECT           INPUTRI 2
+lketkpi         TEXTAREA PROTECT           INPUTRI 3
+spkket      	TEXTAREA PROTECT           INPUTRI 4
+spktgl          PROTECT NOLIMIT {DD-MM-YY} INPUTRI 5
+spknobuk        PROTECT UNSEEN    	   INPUTRI 6
+
+DEFAULTS(tmptrans)
+lINPG		INIT	INPG
+lPIUTREM        INIT    PIUTREM
+lMEETCOE        INIT    MEETCOE
+lKATTOPIKCOE    INIT    KATTOPIKCOE
+lKPICOE         INIT    KPICOE
+lTIPEKPICOE     INIT    TIPEKPICOE
+
+EDITS(tmptrans)
+t.Validate  spknobuk  VALIDATE tlmbukidx mtlmcpr 0
+
+CALCS()
+cjointbdkattopik	djointbdkattopik==1
+cjointbtkpicoe		djointbtkpicoe==1
+cnotdone		spktgg2==BLANKS || spktgg2=="NOT_DONE"
+
+
+MAP(mtlmcpr)
+tlmnobuk	spknobuk	REPLACE
+cblanks		ltopikmeet	DO_CALC
+tlmket		ltopikmeet	REPLACE
+lketkat		lketkat		REPLACE_IF cjointbdkattopik
+lketkpi		lketkpi		REPLACE_IF cjointbtkpicoe
+
+
+SUBFILE(tmptrans)
+SFL_LINES(5)      
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD spktgl
+SFL_SELECT	cnotdone
+SFL_TARGET	
+spkasldattyp   psmkode lCOEPIUTREM lINPG

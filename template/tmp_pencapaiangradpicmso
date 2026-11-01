@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+lcabjual		STRING		21
+ltotcabsgm		DFLOAT		2
+lactrpsbl		DFLOAT		8
+lactrpskr		DFLOAT		8
+lavgrpsbl		DFLOAT		8
+lavgrpskr		DFLOAT		8
+ltgtsama		DFLOAT		8
+ltgtnaik		DFLOAT		8
+lselisihsama		DFLOAT		8
+lselisihnaik		DFLOAT		8
+ltotcab			DFLOAT		2
+lgradsbl		STRING		21
+lgradskr		STRING		21
+lketumr			STRING		61
+lkatcabjl10		STRING		61
+lGRADGJM2W		STRING		11
+lSTRUKM2W		STRING		21
+
+
+CALCS()
+cjabmso		psijabatan == "MSOHEAD" || psijabatan == "PLTMSOHEAD"
+MAP(mjoinrptgradgj)
+psicabskr	lcabjual		REPLACE
+rptjml1		ltotcabsgm		REPLACE_IF cjabmso
+rptjml2		lactrpsbl		REPLACE
+rptjml3		lactrpskr		REPLACE
+rptjml4		lavgrpsbl		REPLACE
+rptjml5		lavgrpskr		REPLACE
+rptjml6		ltgtsama		REPLACE
+rptjml7		ltgtnaik		REPLACE
+rptjml8		lselisihsama		REPLACE
+rptjml9		lselisihnaik		REPLACE
+rptjml10	ltotcab			REPLACE_IF cjabmso
+rptstr1		lgradsbl		REPLACE
+rptstr2		lgradskr		REPLACE
+rptket		lketumr			REPLACE
+rptket2		lkatcabjl10		REPLACE_IF cjabmso
+
+DBCALCS(djoinrptgradgj)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rptdttypkod lGRADGJM2W lthbl11 lSTRUKM2W psikode psicabskr psicabskr
+	DBC_MAP		mjoinrptgradgj
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+||t.Cabang                _________          ||
+||t.TotCab                _________          ||
+||t.ActJlPeriodeSebelum   _______________.___||
+||t.ActJlPeriodeSekarang  _______________.___||____
+||t.ActAvgPeriodeSebelum  _______________.___||
+||t.ActAvgPeriodeSekarang _______________.___||
+||t.GradePeriodeSebelum   _______            ||
+||t.GradePeriodeSekarang  _______            ||
+||t.TgtSama               _______________.___||
+||t.TgtNaik               _______________.___||
+||t.KurangJlGradeSama     _______________.___||
+||t.KurangJlGradeNaik     _______________.___||
+||t.CabAvgJual10          _________          ||
+||t.KatUMR                _________          ||
+||t.KatCabAvgJual10       _________          ||
+|\-------------------------------------------/|
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lcabjual	PROTECT		INPUTRI 1
+ltotcabsgm	PROTECT		INPUTRI 2
+lactrpsbl	PROTECT		INPUTRI 3
+lactrpskr	PROTECT		INPUTRI 4
+psikode		PROTECT UNSEEN	INPUTRI 5
+lavgrpsbl	PROTECT		INPUTRI 6
+lavgrpskr	PROTECT		INPUTRI 7
+lgradsbl	PROTECT		INPUTRI 8
+lgradskr	PROTECT		INPUTRI 9
+ltgtsama	PROTECT		INPUTRI 10
+ltgtnaik	PROTECT		INPUTRI 11
+lselisihsama	PROTECT		INPUTRI 12
+lselisihnaik	PROTECT		INPUTRI 13
+ltotcab		PROTECT		INPUTRI 14
+lketumr		PROTECT		INPUTRI 15
+lkatcabjl10	PROTECT		INPUTRI 16
+
+
+EDITS(tmptranst)
+e.VALIDATE	psikode VALIDATE psikodidx  mpsi 0
+
+DEFAULT(tmptranst)
+lGRADGJM2W	INIT		GRADGJM2W
+lSTRUKM2W	INIT		STRUKM2W
+
+CALCS()
+crptgradgj1	djoinrptgradgj == 1
+
+MAP(mpsi)
+lactrpsbl	lactrpsbl	REPLACE_IF crptgradgj1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)      
+SFL_TITLE(tmptranst)
+SFL_TARGET psikodidx	psmkode

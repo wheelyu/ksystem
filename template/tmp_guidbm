@@ -1,0 +1,234 @@
+LOCAL
+PGM_FIELDS
+lsvikode	STRING		31
+ltahapan        STRING		21
+lprothpn        STRING 		21
+lsubthpn        STRING		21
+lguidance       STRING		61
+ltemudgn        STRING		21
+lstsfoto        STRING		21
+lketrumah	STRING		61
+lketkerja	STRING		61
+lpssunit	STRING		31
+ltbdket1	STRING		31
+ltbdket2	STRING		31
+ltbdkettype2    STRING          61
+ltbdtblket2     STRING          31
+ltbdyt2         STRING          3
+ltbdket3        STRING          31
+ltbdkettype3    STRING          61
+ltbdtblket3     STRING          31
+ltbdyt3         STRING          3
+llegal111	STRING		11
+lpnjg1		INT2		2
+lpnjg2          INT2            2
+lpnjg3          INT2            2
+lenterg		STRING		11
+lguidbm1	STRING		11
+
+MAP(mjointbd11)
+tbdket          ltbdket1        REPLACE
+
+DBCALCS(djointbd11)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel llegal lTAHAPAN svistr1
+        DBC_MAP         mjointbd11
+
+MAP(mjointbd22)
+tbdket          ltbdket2        REPLACE
+tbdkettype      ltbdkettype2    REPLACE
+tbdtblket       ltbdtblket2     REPLACE
+tbdyt           ltbdyt2         REPLACE
+
+DBCALCS(djointbd22)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel llegal lTAHAP svistr2  
+        DBC_MAP         mjointbd22
+
+MAP(mjointbd33)
+tbdket          ltbdket3        REPLACE
+tbdkettype      ltbdkettype3    REPLACE
+tbdtblket       ltbdtblket3     REPLACE
+tbdyt           ltbdyt3         REPLACE
+
+DBCALCS(djointbd33)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx    gv_dttabel llegal lSUBTAHAP svistr3
+	DBC_MAP		mjointbd33
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  t.TahapSblm: ___________________
+  t.ProTahap : ___________________
+  t.SubproThp: ___________________
+  t.Guidance : ___________________
+  t.TemuDgn  : ___________________
+  t.StsFoto  : ___________________
+ \---------------------------------/
+ /--PROGRESS USER------------------\
+  t.Tgl      : ___________________
+  t.NipPIC   : ________ __________
+  t.Hasil    : ___________________
+  t.Progres  : ___________________
+  t.KerjaLpor: ___ _______________
+  t.RumahLpor: ___ _______________
+  t.AdaUnit  : ___ _______________
+  t.NoSurat  : ___________________
+  t.Hambatan : ___________________
+  t.Usulan   : ___________________
+               __________
+ \---------------------------------/
+ /------s.UPLOAD-------------------\
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ltahapan	PROTECT		INPUTRI	1
+lprothpn	PROTECT		INPUTRI	2
+lsubthpn	PROTECT		INPUTRI	3
+lguidance	TEXTAREA 3	INPUTRI	4
+ltemudgn	PROTECT		INPUTRI	5
+lstsfoto	PROTECT		INPUTRI	6
+
+svitgl2  	PROTECT		INPUTRI	7
+svikode		PROTECT		INPUTRI	8
+lsvikode	PROTECT		INPUTRI	9 
+svistr4  	NOCHANGE	INPUTRI	10
+sviket 		TEXTAREA 2	INPUTRI	11
+svistr5		ALLCAPS 	INPUTRI	12
+lketkerja	PROTECT		INPUTRI	13
+svistr6		ALLCAPS 	INPUTRI	14
+lketrumah	PROTECT		INPUTRI	15
+svistr7  	ALLCAPS 	INPUTRI	16
+lpssunit	PROTECT		INPUTRI	17
+svistr8		ALLCAPS		INPUTRI	18
+sviket2		TEXTAREA 2	INPUTRI	19
+sviket3   	TEXTAREA 2	INPUTRI	20
+lenterg		NOCHANGE	INPUTRI	21
+
+DEFAULTS(tmptranst)
+llegal111	INIT			LEGAL
+svistr4  	DFALT_SCAN_BLANKS	SELESAI
+					BLM_SELESAI
+lenterg		INIT			TAB+ENTER
+lguidbm1	INIT			GUIDBM
+
+EDITS(tmptranst)
+e.Mandatory	svistr4 	MANDATORY
+e.Mandatory     sviket          MANDATORY
+e.Mandatory     svistr5         MANDATORY
+e.Mandatory     svistr6         MANDATORY
+e.Mandatory     svistr7         MANDATORY
+e.Mandatory     svistr8         MANDATORY
+e.Mandatory     sviket2         MANDATORY
+e.Mandatory     sviket3         MANDATORY
+
+e.ValidatePsi	svikode		VALIDATE psikodidx mpsix 0
+e.validate 	svistr5 	VALIDATE tbldtdtmkod mtbd2_1  stbl {Pgv_dttabel} {Pgv_pekerjaan21}
+e.validate 	svistr6 	VALIDATE tbddatkodidx mtbd1 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah}
+e.validate	svistr7  	VALIDATE tbddatkodidx mtbd2_2 stbd {Pgv_dttabel} {Pgv_kunjungan21} {Plposisiunit}
+
+CALCS()
+cdjointbdtahap		 djointbd11==1
+cdjointbdtahapa		 djointbd22==1
+cdjointbdtahapb		 djointbd33==1
+
+MAP(mpsix)
+psikode		svikode		REPLACE
+psinama		lsvikode	REPLACE
+ltbdket1        ltahapan        REPLACE_IF cdjointbdtahap
+ltbdket2        lprothpn        REPLACE_IF cdjointbdtahapa
+ltbdkettype2    lguidance       REPLACE_IF cdjointbdtahapa
+ltbdtblket2     ltemudgn        REPLACE_IF cdjointbdtahapa
+ltbdyt2         lstsfoto        REPLACE_IF cdjointbdtahapa
+ltbdket3	lsubthpn	REPLACE_IF cdjointbdtahapb
+ltbdkettype3    lguidance       REPLACE_IF cdjointbdtahapb
+ltbdtblket3     ltemudgn        REPLACE_IF cdjointbdtahapb
+ltbdyt3         lstsfoto        REPLACE_IF cdjointbdtahapb
+
+MAP(mtbd1)
+tbdkode		svistr6		REPLACE
+tbdket		lketrumah	REPLACE
+
+MAP(mtbd2_1)
+tblkode		svistr5 	REPLACE
+tblket		lketkerja	REPLACE
+
+MAP(mtbd2_2)
+tbdkode		svistr7  	REPLACE
+tbdket		lpssunit	REPLACE
+
+MAP(minput)
+g_tgltrn	svitgl2  	REPLACE
+g_usrkode	svikode		REPLACE
+ltbdket1        ltahapan        REPLACE_IF cdjointbdtahap
+ltbdket2        lprothpn        REPLACE_IF cdjointbdtahapa
+ltbdkettype2    lguidance       REPLACE_IF cdjointbdtahapa
+ltbdtblket2     ltemudgn        REPLACE_IF cdjointbdtahapa
+ltbdyt2         lstsfoto        REPLACE_IF cdjointbdtahapa
+ltbdket3        lsubthpn        REPLACE_IF cdjointbdtahapb
+ltbdkettype3    lguidance       REPLACE_IF cdjointbdtahapb
+ltbdtblket3     ltemudgn        REPLACE_IF cdjointbdtahapb
+ltbdyt3         lstsfoto        REPLACE_IF cdjointbdtahapb
+
+CALCS()
+cupd1		g_curcmd==2
+cpnjg1          DO_LIB ap_strln(sviket,&lpnjg1);
+cpnjg2          DO_LIB ap_strln(sviket2,&lpnjg2);
+cpnjg3          DO_LIB ap_strln(sviket3,&lpnjg3);
+cpjng1          lpnjg1 >= 60 
+cpjng2          lpnjg2 >= 60 
+cpjng3          lpnjg3 >= 60 
+
+MAP(mpnjng1)
+cpnjg1          lpnjg1          DO_CALC
+
+MAP(mpnjng2)
+cpnjg2          lpnjg2          DO_CALC
+
+MAP(mpnjng3)
+cpnjg3          lpnjg3          DO_CALC
+
+MAP(mdumb)
+ldumb		ldumb		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=lguidance	DO_SKIP_IF cupd1
+BEFORE_INPUT    cur_field=svistr4       DO_MAP SHOW minput   
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mpnjng1
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW
+                IF cpjng1 mdumb
+                ELSE HKCURSOR STAY
+                HKMSG t.Progressmin60
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW mpnjng2
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW
+                IF cpjng2 mdumb
+                ELSE HKCURSOR STAY
+                HKMSG t.Hambatanmin60
+AFTER_INPUT     cur_field=sviket3       DO_MAP SHOW mpnjng3
+AFTER_INPUT     cur_field=sviket3       DO_MAP SHOW
+                IF cpjng3 mdumb
+                ELSE HKCURSOR STAY
+                HKMSG t.Usulanmin60
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_UPDOWN DOWN
+SFL_SORT_BY_FIELD svinourt
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tlmnobuk svitype svinourt        
+SFL_TARGET
+        svidatbuktyp    llegal111 tlmnobuk lguidbm1 
+SFL_MAP
+llegal111	svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lguidbm		svitype		REPLACE
+

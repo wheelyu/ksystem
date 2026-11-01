@@ -1,0 +1,1769 @@
+SCREEN  2938  APP_TYPE  t.ApiMD
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+ldum            INT2    2
+lpil		STRING	11
+lpilint		INT2    2
+lspil		INT2	2
+ltglawl		DATE	4
+ltglakh		DATE	4
+lcabdlr		STRING	21
+lAPIMD		STRING	21
+lDATAAPIH1	STRING  11
+lSPK            STRING  11
+lDTCDB          STRING  11
+lapi_key        STRING  100
+lsecret_key     STRING  100
+lmasterurl      STRING  100
+lkodeahm	STRING	21
+lMD		STRING	21
+lidProspect	STRING	21
+lidSPK		STRING	21
+lidSalesPeople	STRING	21
+
+lrequestreply           STRING          31
+lmsttitle               STRING          31
+lreturnlabel            STRING  50
+lexpectedreturnvalue    STRING  50
+lexpectedreturnvaluetrio        STRING          50
+
+lurl            STRING  101
+lfromTime       STRING  31
+ltoTime         STRING  31
+ldocumentno     STRING  21
+ldocumenttype   STRING  21
+ldealerId	STRING	21
+lreqmstlabels   STRING  601
+lreqmstfields   STRING  601
+lmstlabels      STRING  1001
+lmstfields      STRING  1001
+lmstnamamap     STRING   21
+ldetlabels      STRING  1001
+ldetfields      STRING  1001
+ldetnamamap     STRING   21
+lsaveflg        INT2     2
+lfromdate       DATE     4
+ltodate         DATE     4
+ltglstring	STRING	21
+ltglakhformat   STRING  31
+
+ljamstr         STRING  11
+
+l4820		INT2	2
+lm4474prsl    	STRING	15
+lkodescr	STRING	21
+ljalanoto	STRING	21
+lahmtgl1	STRING	21
+lahmtgl2        STRING  21
+lahmtgl3        STRING  21
+lahmtgl4        STRING  21
+ldump		STRING	21
+lblanks       	STRING	31
+ltlmtype1	STRING	11
+lversi		STRING	21
+ltahun          STRING  6
+lbulan          STRING  3
+lhari           STRING  3
+lT3             INT2    2
+lT5             INT2    2
+ls4             INT2    2
+ls2             INT2    2
+lcab5           STRING  6
+lcab521         STRING  21
+lH1             STRING  21
+lcadcmp         STRING  21
+lcdbadd         STRING  21
+lkodemd         STRING  31
+ldebugnomd      STRING  101
+l878            STRING  11
+lcab878         STRING  21
+
+
+MAP(mjointbdapi)
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4		ljalanoto	REPLACE
+
+DBCALCS(djointbdapi)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx     gv_dttabel gv_infoumum lAPIMD lcabdlr
+        DBC_MAP         mjointbdapi
+
+MAP(mjoinnobuk878)
+tkmnobuk lnobuk878      REPLACE
+CALCS()
+cadatkmket tkmket == lidprspcdb
+cada1471 tlmnobbm == ahmket4
+DBCALCS(djoinnobuk878)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkmdatljltgl lSPK  ltkmlok21 g_tgltrn
+        DBC_SELECT      cadatkmket
+        DBC_MAP mjoinnobuk878
+
+MAP(mjoin1471)
+tlmket lidprspcdb REPLACE
+DBCALCS(djointlm1471)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdattglidx lDATAAPIH1 ltglakh lSPK
+        DBC_SELECT      cada1471
+        DBC_MAP mjoin1471
+MAP(mjoincadH1)
+cadcmp  lcadcmp         REPLACE
+
+DBCALCS(djoincadH1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx     cabkode gv_cabbis cabkode lH1
+        DBC_MAP         mjoincadH1
+DBCALCS(djoincadH1x)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx     lcab521 gv_cabbis lcab521 lH1
+        DBC_MAP         mjoincadH1
+
+CALCS()
+cstringtglakh     FLD_TO_STRING(ltglakh)
+cmampatahmtglakh  MAMPAT_ALPHANUM(ltglakhformat)
+ctahuntglakh      DO_LIB  ap_amstr(ltglakhformat,lT5,ls4,&ltahun);
+cbulantglakh      DO_LIB  ap_amstr(ltglakhformat,lT3,ls2,&lbulan);
+cgabtgl           STRIP(ltahun)+STRIP(lbulan)+STRIP(lhari)
+
+MAP(m4474prsl)
+lkodescr	r_string1	REPLACE
+lkodescr	r_string2	REPLACE
+lkodeahm	r_string3	REPLACE
+lpilint		r_float1	REPLACE
+ltlmtype1	r_string4	REPLACE
+ltglakhformat   r_string5       REPLACE
+
+lkodemd         r_string10      REPLACE
+lcab5           r_string11      REPLACE
+ldebugnomd      r_string12      REPLACE
+ltglakh         r_date2         REPLACE
+DEBUG	ldump	ldump		REPLACE
+
+IMAGE(master)
+/-----------------------------------------------------------------------------\
+ /--------------------------------------------------------------------------\
+  i.Pil         : ___ _____ _________ 
+  t.Spil        : ___  
+  i.Tgl         : _________ i.Sd _________
+  i.NoMD        : ________________________
+ \--------------------------------------------------------------------------/
+\-----------------------------------------------------------------------------/
+
+FIELD(master)
+        lspil           NONE                            INPUTRI         1
+        l878           NONE                            INPUTRI         1
+        lcab878           NONE                            INPUTRI         1
+        lpil            NONE                            INPUTRI         3
+        ltglawl         NONE {DD-MM-YY} NOLIMIT         INPUTRI         5
+        ltglakh         NONE {DD-MM-YY} NOLIMIT         INPUTRI         6
+        ldebugnomd      ALLCAPS                         INPUTRI         7
+
+
+CALCS()
+ctglawlbln      ststglprjgl+1
+
+cpil1		lspil == 1
+cspil1hso       l878== BLANKS && (lpil == "1" || lpil == "4" || lpil == "5" || lpil == "6" || lpil == "7" || lpil == "8" || lpil == "9" || lpil == "10" || lpil == "11" || lpil == "12" || lpil == "13")
+cspil2hso       l878== BLANKS && (lpil == "2" || lpil == "14" || lpil == "15" || lpil == "16" || lpil == "17" || lpil == "18" || lpil == "19" || lpil == "20" || lpil == "24" || lpil == "25" || lpil == "26")
+cspil3hso       l878== BLANKS && (lpil == "3" || lpil == "27" || lpil == "28" || lpil == "29" || lpil == "30" || lpil == "34" || lpil == "35" || lpil == "36" || lpil == "37" || lpil == "38" || lpil == "39")
+
+cspil1hsox      ((l878== "878" && tbdlv2=="HSO") || lpil == "1" || lpil == "4" || lpil == "5" || lpil == "6" || lpil == "7" || lpil == "8" || lpil == "9" || lpil == "10" || lpil == "11" || lpil == "12" || lpil == "13")
+
+cpil2		lspil == 2 
+cpil2a		l878== BLANKS && (lpil == "21" || lpil == "22" || lpil == "23")
+cspil1sinsen    lpil == "21"
+cspil2sinsen    lpil == "22"
+cspil3sinsen    lpil == "23"
+cspil1sinsenx   lpil == "21" || (l878== "878" && tbdlv2=="SINSEN")
+
+
+cpil3		lspil == 3
+cpil3a		l878== BLANKS && (lpil == "31" || lpil == "32" || lpil == "33" || lpil == "44" || lpil == "45" || lpil == "46")
+cspil1daw       lpil == "31" || lpil == "44"
+cspil2daw       lpil == "32" || lpil == "45"
+cspil3daw       lpil == "33" || lpil == "46"
+cspil1dawx      lpil == "31" || lpil == "44" || (l878== "878" && (tbdlv2=="DAM" || tbdlv2=="DAW"))
+
+cpil4		lspil == 4
+cpil4a		l878== BLANKS && (lpil == "41" || lpil == "42" || lpil == "43")
+cspil1trio      lpil == "41"
+cspil2trio      lpil == "42"
+cspil3trio      lpil == "43"
+cspil1triox     lpil == "41" || (l878== "878" && tbdlv2=="TRIO")
+
+cpil5           lspil == 5
+cpil5a          l878== BLANKS && (lpil == "51" || lpil == "52" || lpil == "53" || lpil == "54" || lpil == "55" || lpil == "56")
+cspil1mpm       lpil == "51" || lpil == "54"
+cspil2mpm       lpil == "52" || lpil == "55"
+cspil3mpm       lpil == "53" || lpil == "56"
+cspil1mpmx      lpil == "51" || lpil == "54" || (l878== "878" && tbdlv2=="MPM")
+
+cpil6		lspil == 6
+cpil6a          l878== BLANKS && (lpil == "61" || lpil == "62" || lpil == "63")
+cspil1wahana    lpil == "61"
+cspil2wahana    lpil == "62"
+cspil3wahana    lpil == "63"
+cspil1wahanax   lpil == "61" || (l878== "878" && tbdlv2=="WAHANA")
+
+cpil10          lspil == 10
+cpil11          lspil == 11
+cpil7	        lspil == 7
+cpil7a          l878== BLANKS && (lpil == "71" || lpil == "72" || lpil == "73")
+cpil10a         l878== BLANKS && (lpil == "101" || lpil == "102" || lpil == "103")
+cgabasptdm1      lpil == "71" || lpil == "101"
+cgabasptdm2      lpil == "72" || lpil == "102"
+cgabasptdm3      lpil == "73" || lpil == "103"
+cgabasptdm1x      lpil == "71" || lpil == "101" || (l878== "878" && tbdlv2=="TDM")
+
+/*cspil1tdm       lpil == "71" 
+cspil1asp       lpil == "101"
+cspil2tdm       lpil == "72" 
+cspil3tdm       lpil == "73"
+cspil2asp       lpil == "102"
+cspil3asp       lpil == "103"
+*/
+cpil8	        lspil == 8
+cpil8a          l878== BLANKS && (lpil == "81" || lpil == "82" || lpil == "83")
+cspil1indako    lpil == "81"
+cspil2indako    lpil == "82"
+cspil3indako    lpil == "83"
+cspil1indakox   lpil == "81" || (l878== "878" && tbdlv2=="INDAKO")
+
+cpil9	        lspil == 9
+cpil9a          l878== BLANKS && (lpil == "91" || lpil == "92" || lpil == "93")
+cspil1cdn       lpil == "91"
+cspil2cdn       lpil == "92"
+cspil3cdn       lpil == "93"
+cspil1cdnx      lpil == "91" || (l878== "878" && tbdlv2=="CAPELLA")
+
+cpilcdb         lpil == "111" && l878== BLANKS
+cselcdb         tlmperdisd == 0
+
+DEFAULTS(master)
+ltglawl         INIT            {ctglawlbln}
+ltglakh         INIT            {g_tgltrn}
+
+lAPIMD          INIT    	APIMD	
+lDATAAPIH1      INIT            DATAAPIH1
+lSPK            INIT            SPK
+lDTCDB          INIT            DTCDB
+lcdbadd         INIT            CDB/Add
+l878            INIT            {r_string2}
+lcab878         INIT            {r_string1}
+lspil		DFALT_SCAN	        1 "HSO"
+                                        2 "SINSEN"
+                                        3 "DAYA"
+                                        4 "TRIO"
+                                        5 "MPM"
+                                        6 "WAHANA"
+                                        7 "ASP"
+                                        8 "INDAKO"
+                                        9 "CDN"
+                                        10 "TDM"
+                                        11 "TITIK CDB"
+IF cpil1 lpil	DFALT_SCAN_BLANKS
+                                1 "Titik PRSP SMG"
+				2 "Titik SPK"
+				3 "Titik LSNG"
+				4 "Titik PRSP BALI"
+				5 "Titik PRSP BENGKULU"
+				6 "Titik PRSP BPP"
+				7 "Titik PRSP KEDU"
+				8 "Titik PRSP MKSR"
+				9 "Titik PRSP MTRM"
+				10 "Titik PRSP PLMB"
+				11 "Titik PRSP PTN"
+				12 "Titik PRSP SRD"
+				13 "Titik PRSP YOGYA"
+				27 "Titik LSNG BALI"
+				28 "Titik LSNG BENGKULU"
+				29 "Titik LSNG BPP"
+				30 "Titik LSNG KEDU"
+				34 "Titik LSNG MKSR"
+				35 "Titik LSNG MTRM"
+				36 "Titik HSO LSNG PLMB"
+				37 "Titik HSO LSNG PTN"
+				38 "Titik HSO LSNG SRD"
+				39 "Titik HSO LSNG YOGYA"
+
+IF cpil2 lpil	DFALT_SCAN_BLANKS
+                                21 "Proses PRSP"
+                                22 "Proses SPK"
+                                23 "Proses LSNG"
+
+IF cpil3 lpil	DFALT_SCAN_BLANKS
+                                31 "Proses PRSP DAYA A"
+                                32 "Proses SPK DAYA A"
+                                33 "Proses LSNG DAYA A"
+                                44 "Proses PRSP DAYA B"
+                                45 "Proses SPK DAYA B"
+                                46 "Proses LSNG DAYA B"
+
+IF cpil4 lpil	DFALT_SCAN_BLANKS
+                                41 "Proses PRSP"
+                                42 "Proses SPK"
+                                43 "Proses LSNG"
+
+IF cpil5 lpil	DFALT_SCAN_BLANKS
+                                51 "Proses PRSP MPM A"
+                                52 "Proses SPK MPM A"
+                                53 "Proses LSNG MPM A"
+                                54 "Proses PRSP MPM B"
+                                55 "Proses SPK MPM B"
+                                56 "Proses LSNG MPM B"
+
+IF cpil6 lpil	DFALT_SCAN_BLANKS
+                                61 "Proses PRSP"
+                                62 "Proses SPK"
+                                63 "Proses LSNG"
+
+IF cpil7 lpil	DFALT_SCAN_BLANKS
+                                71 "Proses PRSP"
+                                72 "Proses SPK"
+                                73 "Proses LSNG"
+
+IF cpil8 lpil	DFALT_SCAN_BLANKS
+                                81 "Proses PRSP"
+                                82 "Proses SPK"
+                                83 "Proses LSNG"
+
+IF cpil9 lpil	DFALT_SCAN_BLANKS
+                                91 "Proses PRSP"
+                                92 "Proses SPK"
+                                93 "Proses LSNG"
+
+IF cpil10 lpil	DFALT_SCAN_BLANKS
+                                101 "Proses PRSP"
+                                102 "Proses SPK"
+                                103 "Proses LSNG"
+
+IF cpil11 lpil  DFALT_SCAN_BLANKS
+                                111 "Proses CDB"
+
+lH1             INIT    H1
+
+l4820		INIT		4820
+lm4474prsl    	INIT    	m4474prsl
+lkodescr	INIT		"2938"
+lversi		INIT		2509026v2
+
+lmsttitle               INIT            ""
+lrequestreply           INIT            "request"
+lsaveflg                INIT            1
+lreturnlabel            INIT            "status"
+/*lexpectedreturnvaluetrio        INIT            true
+lexpectedreturnvalue    INIT            "1"*/
+lidSPK			INIT		"09602-SPK-25003504"
+lblanks                 INIT    	BLANKS
+lT3                     INIT    3
+lT5                     INIT    5
+ls4                     INIT    4
+ls2                     INIT    2
+
+CALCS()
+cdjoincadH1     (lpil == "1" || lpil == "2" || lpil == "3" ||
+lpil == "4" ||
+lpil == "5"  ||
+lpil == "6"  ||
+lpil == "7"  ||
+lpil == "8"  ||
+lpil == "9"  ||
+lpil == "10" ||
+lpil == "11" ||
+lpil == "12" ||
+lpil == "13" || l878=="878") && (djoincadH1==1 || (djoincadH1==0 && djoincadH1x==1))
+
+MAP(mcek)
+DEBUG   ldum    ldum    REPLACE
+
+HOOKS(master)
+BEFORE_INPUT    cur_field=lspil DO_MAP SHOW mcek
+
+/* HSO */
+IMAGE(trans) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8}
+|_________________|______________________________________|
+FIELD(trans)
+        cabkode                 NOCHANGE SCROLL         INPUTRI         2
+        cabnama                 PROTECT  SCROLL         INPUTRI         2
+
+CALCS()
+csel            cabpos!="PST" && cabkode==cabpst2 &&  
+                ((lpil == "1" && djoincadH1==1 && lcadcmp=="ASTRASMG") ||
+                 (lpil == "4" && djoincadH1==1 && lcadcmp=="ASTRABALI") ||
+                 (lpil == "5" && djoincadH1==1 && lcadcmp=="ASTRABENG") ||
+                 (lpil == "6" && djoincadH1==1 && lcadcmp=="ASTRABPP") ||
+                 (lpil == "7" && djoincadH1==1 && lcadcmp=="ASTRAKEDU") ||
+                 (lpil == "8" && djoincadH1==1 && lcadcmp=="ASTRAMKSR") ||
+                 (lpil == "9" && djoincadH1==1 && lcadcmp=="ASTRAMTRM") ||
+                 (lpil == "10" && djoincadH1==1 && lcadcmp=="ASTRAPLMB") ||
+                 (lpil == "11" && djoincadH1==1 && lcadcmp=="ASTRAPTN") ||
+                 (lpil == "12" && djoincadH1==1 && lcadcmp=="ASTRASRD") ||
+                 (lpil == "13" && djoincadH1==1 && lcadcmp=="ASTRAYOGYA"))
+
+SUBFILE(trans)
+SFL_LINES(15)
+SFL_COND        cspil1hso
+SFL_SELECT      csel
+SFL_TARGET
+cabstsushkod    gv_INPG gv_dealer
+/********************************************************/
+IMAGE(transg1) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8}
+|_________________|______________________________________|
+FIELD(transg1)
+        cabkode                 NOCHANGE SCROLL         INPUTRI         2
+        cabnama                 PROTECT  SCROLL         INPUTRI         2
+
+CALCS()
+csel2           cabpos!="PST" && cabkode==cabpst2 
+/* 
+&& 
+                ((lpil == "2" && djoincadH1==1 && lcadcmp=="ASTRASMG") ||
+                 (lpil == "14" && djoincadH1==1 && lcadcmp=="ASTRABALI") ||
+                 (lpil == "15" && djoincadH1==1 && lcadcmp=="ASTRABENG") ||
+                 (lpil == "16" && djoincadH1==1 && lcadcmp=="ASTRABPP") ||
+                 (lpil == "17" && djoincadH1==1 && lcadcmp=="ASTRAKEDU") ||
+                 (lpil == "18" && djoincadH1==1 && lcadcmp=="ASTRAMKSR") ||
+                 (lpil == "19" && djoincadH1==1 && lcadcmp=="ASTRAMTRM") ||
+                 (lpil == "20" && djoincadH1==1 && lcadcmp=="ASTRAPLMB") ||
+                 (lpil == "24" && djoincadH1==1 && lcadcmp=="ASTRAPTN") ||
+                 (lpil == "25" && djoincadH1==1 && lcadcmp=="ASTRASRD") ||
+                 (lpil == "26" && djoincadH1==1 && lcadcmp=="ASTRAYOGYA"))
+*/
+SUBFILE(transg1)
+SFL_LINES(15)
+SFL_COND        cspil2hso
+SFL_SELECT      csel2
+SFL_TARGET
+cabstsushkod    gv_INPG gv_dealer
+/********************************************************/
+IMAGE(transg2) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=8}
+|_________________|______________________________________|
+FIELD(transg2)
+        cabkode                 NOCHANGE SCROLL         INPUTRI         2
+        cabnama                 PROTECT  SCROLL         INPUTRI         2
+
+CALCS()
+csel3          	cabpos!="PST" && cabkode==cabpst2
+/*                ((lpil == "3" && djoincadH1==1 && lcadcmp=="ASTRASMG") ||
+                 (lpil == "27" && djoincadH1==1 && lcadcmp=="ASTRABALI") ||
+                 (lpil == "28" && djoincadH1==1 && lcadcmp=="ASTRABENG") ||
+                 (lpil == "29" && djoincadH1==1 && lcadcmp=="ASTRABPP") ||
+                 (lpil == "30" && djoincadH1==1 && lcadcmp=="ASTRAKEDU") ||
+                 (lpil == "34" && djoincadH1==1 && lcadcmp=="ASTRAMKSR") ||
+                 (lpil == "35" && djoincadH1==1 && lcadcmp=="ASTRAMTRM") ||
+                 (lpil == "36" && djoincadH1==1 && lcadcmp=="ASTRAPLMB") ||
+                 (lpil == "37" && djoincadH1==1 && lcadcmp=="ASTRAPTN") ||
+                 (lpil == "38" && djoincadH1==1 && lcadcmp=="ASTRASRD") ||
+                 (lpil == "39" && djoincadH1==1 && lcadcmp=="ASTRAYOGYA"))
+*/
+SUBFILE(transg2)
+SFL_LINES(15)
+SFL_COND        cspil3hso
+SFL_SELECT      csel3
+SFL_TARGET
+cabstsushkod    gv_INPG gv_dealer
+
+
+
+/* SINSEN */
+
+IMAGE(transg3)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg3)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cselsinsenh1     tbdlv2 == "SINSEN" && tbdlv3 == "H1"
+
+SUBFILE(transg3)
+SFL_LINES(15)
+SFL_COND        cpil2a 
+SFL_SELECT      cselsinsenh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+
+
+/* DAW */
+IMAGE(transg4)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg4)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cseldawh1     tbdlv3 == "H1" &&
+                (((lpil == "31" || lpil == "32" || lpil == "33") && (tbdkode =="KRW11H1" || tbdkode =="SKB11H1" || tbdkode == "AMR11H1" || tbdkode == "JLO11H1" || tbdkode == "GTO11H1") ) ||
+                ((lpil == "44" || lpil == "45" || lpil == "46") && (tbdkode == "CJR11H1" || tbdkode =="KMB11H1" || tbdkode == "MDO11H1" || tbdkode == "MRT11H1" || tbdkode == "SFI11H1" || tbdkode == "TTE11H1") )
+)
+SUBFILE(transg4)
+SFL_LINES(15)
+SFL_COND        cpil3a 
+SFL_SELECT      cseldawh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+/* TRIO */
+IMAGE(transg5)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg5)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cseltrioh1     tbdlv2 == "TRIO"  && tbdlv3 == "H1" 
+
+SUBFILE(transg5)
+SFL_LINES(15)
+SFL_COND        cpil4a
+SFL_SELECT      cseltrioh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+/* MPM */
+IMAGE(transg6)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg6)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cselmpmh1     tbdlv3 == "H1" &&
+ (((lpil == "51" || lpil == "52" || lpil == "53") && (tbdkode =="ATB11H1" || tbdkode =="BLW11H1" || tbdkode == "KFA11H1" || tbdkode == "MDN11H1" || tbdkode == "KPG11H1" || tbdkode == "NDE11H1") ) ||
+                ((lpil == "54" || lpil == "55" || lpil == "56") && (tbdkode == "MLG11H1" || tbdkode =="RTE11H1" || tbdkode == "SBY11H1" || tbdkode == "SOE11H1" || tbdkode == "WGP11H1" || tbdkode == "WKB11H1") )
+)
+
+SUBFILE(transg6)
+SFL_LINES(15)
+SFL_COND        cpil5a 
+SFL_SELECT      cselmpmh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+/* WAHANA */
+IMAGE(transg7)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg7)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cselwahanah1     tbdlv2 == "WAHANA" && tbdlv3 == "H1" 
+
+SUBFILE(transg7)
+SFL_LINES(15)
+SFL_COND        cpil6a 
+SFL_SELECT      cselwahanah1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+
+/* TDM */
+IMAGE(transg8)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg8)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cselasph1     tbdlv2 == "TDM" && tbdlv3 == "H1" && tbdkode != "LPG11H1" && tbdkode != "PSW11H1"
+
+SUBFILE(transg8)
+SFL_LINES(15)
+SFL_COND        cpil7a 
+SFL_SELECT      cselasph1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+
+/* INDAKO */
+IMAGE(transg9)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg9)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cselindakoh1     tbdlv2 == "INDAKO" && tbdlv3 == "H1" 
+
+SUBFILE(transg9)
+SFL_LINES(15)
+SFL_COND        cpil8a 
+SFL_SELECT      cselindakoh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+
+/* CDN */
+IMAGE(transg10)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg10)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cselcdnh1     tbdlv2 == "CAPELLA" && tbdlv3 == "H1" 
+
+SUBFILE(transg10)
+SFL_LINES(15)
+SFL_COND        cpil9a 
+SFL_SELECT      cselcdnh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+/* TDM */
+IMAGE(transg11)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg11)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cseltdmh1     tbdlv2 == "TDM" && tbdlv3 == "H1" && (tbdkode == "LPG11H1" || tbdkode == "PSW11H1")
+
+SUBFILE(transg11)
+SFL_LINES(15)
+SFL_COND        cpil10a 
+SFL_SELECT      cseltdmh1 
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD
+
+
+/* TITIK CDB */
+IMAGE(transg12)
+|________________|________________|_________________|________________|
+
+FIELD(transg12)
+tlmket          NOCHANGE        INPUTRI 1
+tlmcab          NOCHANGE        INPUTRI 1
+tlmtgl          NOCHANGE        INPUTRI 1
+tlmtype1        NOCHANGE        INPUTRI 1
+
+SUBFILE(transg12)
+SFL_LINES(15)
+SFL_COND        cpilcdb
+SFL_SELECT     cselcdb
+SFL_TARGET
+tlmdattglidx   lDATAAPIH1 ltglakh lSPK
+
+IMAGE(transg13)
+|_________|________________|_________________|________________|___|____________|_|
+
+FIELD(transg13)
+tbdkode         NOCHANGE        INPUTRI 1
+tbdket          NOCHANGE        INPUTRI 1
+tbdkettype      NOCHANGE        INPUTRI 1
+tbdtblket       NOCHANGE        INPUTRI 1
+tbdlv1          NOCHANGE        INPUTRI 1
+tbdlv2          NOCHANGE        INPUTRI 1
+tbdtblkode      NOCHANGE        INPUTRI 1
+
+CALCS()
+cpildr878       l878=="878"
+/*ccab878        tbdkode==lcab878 */
+
+SUBFILE(transg13)
+SFL_LINES(15)
+SFL_COND        cpildr878
+/*SFL_SELECT      ccab878 */
+SFL_TARGET
+tbddatkodidx   gv_dttabel gv_infoumum lAPIMD lcab878
+
+/*** API PRSP ****/
+CALCS()
+cdjointbdapi1	djointbdapi==1
+cblanks		""
+ckodedlr	STRIP(cabkode) + "H1"
+ckodedlrtlm     STRIP(tlmcab) + "H1"
+/*
+ctlmcabsama     tlmcab == lcabyangudahjalan */
+cnobuktlm1	"APIH1" + THBLS(g_tgltrn)
+cPRSP		"PRSP"
+cSPK		"SPK"
+cLSNG		"LSNG"
+cCDB            "CDB"
+/*cnoPrsp	"00314-PRS-2512041214"
+cnoSpk		"00314-SPK-25003336"
+*/
+
+
+MAP(mmapmaphso)
+lpil            lpilint         REPLACE
+cnobuktlm1	tlmnobuk	DO_CALC
+cPRSP		ltlmtype1	DO_CALC_IF cspil1hso
+cSPK		ltlmtype1	DO_CALC_IF cspil2hso
+cLSNG		ltlmtype1	DO_CALC_IF cspil3hso
+
+ckodedlr	lcabdlr		DO_CALC
+cblanks		lidProspect	DO_CALC
+cblanks		lidSalesPeople	DO_CALC
+
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+lmasterurl	lmasterurl	REPLACE_IF cdjointbdapi1 
+lapi_key	lapi_key	REPLACE_IF cdjointbdapi1
+lsecret_key	lsecret_key	REPLACE_IF cdjointbdapi1
+lkodeahm	lkodeahm	REPLACE_IF cdjointbdapi1
+lMD		lMD		REPLACE_IF cdjointbdapi1
+
+MAP(mmapmapsinsen)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1sinsen
+cSPK		ltlmtype1	DO_CALC_IF cspil2sinsen
+cLSNG		ltlmtype1	DO_CALC_IF cspil3sinsen
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmapdaw)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1daw
+cSPK            ltlmtype1       DO_CALC_IF cspil2daw
+cLSNG           ltlmtype1       DO_CALC_IF cspil3daw
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmaptrio)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1trio
+cSPK            ltlmtype1       DO_CALC_IF cspil2trio
+cLSNG           ltlmtype1       DO_CALC_IF cspil3trio
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmapmpm)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1mpm
+cSPK            ltlmtype1       DO_CALC_IF cspil2mpm
+cLSNG           ltlmtype1       DO_CALC_IF cspil3mpm
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmapwahana)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1wahana
+cSPK		ltlmtype1	DO_CALC_IF cspil2wahana
+cLSNG		ltlmtype1	DO_CALC_IF cspil3wahana
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmaptdm)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cgabasptdm1
+cSPK		ltlmtype1	DO_CALC_IF cgabasptdm2
+cLSNG		ltlmtype1	DO_CALC_IF cgabasptdm3
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmapindako)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1indako
+cSPK		ltlmtype1	DO_CALC_IF cspil2indako
+cLSNG		ltlmtype1	DO_CALC_IF cspil3indako
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE 
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+
+MAP(mmapmapcdn)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+
+cPRSP		ltlmtype1	DO_CALC_IF cspil1cdn
+cSPK		ltlmtype1	DO_CALC_IF cspil2cdn
+cLSNG		ltlmtype1	DO_CALC_IF cspil3cdn
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmapprsp)
+cblanks         lmasterurl      DO_CALC
+cblanks         lapi_key        DO_CALC
+cblanks         lsecret_key     DO_CALC
+cblanks		lkodeahm	DO_CALC
+cblanks		lMD		DO_CALC
+cblanks         ltlmtype1       DO_CALC
+cPRSP		ltlmtype1	DO_CALC
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+lexpectedreturnvalue lexpectedreturnvalue REPLACE
+lexpectedreturnvaluetrio lexpectedreturnvalue REPLACE_IF cspil1triox
+tbdket          lmasterurl      REPLACE
+tbdkettype      lapi_key        REPLACE
+tbdtblket       lsecret_key     REPLACE
+tbdlv1		lkodeahm	REPLACE
+tbdlv2		lMD		REPLACE
+tbdlv4          ljalanoto       REPLACE
+
+MAP(mmapmaptitikcdb)
+lpil            lpilint         REPLACE
+cCDB		ltlmtype1	DO_CALC
+
+ckodedlrtlm	lcabdlr		DO_CALC
+cblanks		lidSalesPeople	DO_CALC
+ltglakh		lfromdate	REPLACE
+ltglakh         ltodate       	REPLACE
+
+lmasterurl	lmasterurl	REPLACE_IF cdjointbdapi1 
+lapi_key	lapi_key	REPLACE_IF cdjointbdapi1 
+lsecret_key	lsecret_key	REPLACE_IF cdjointbdapi1 
+lkodeahm	lkodeahm	REPLACE_IF cdjointbdapi1 
+lMD		lMD		REPLACE_IF cdjointbdapi1 
+ljalanoto       ljalanoto       REPLACE_IF cdjointbdapi1 
+/*
+MAP(mupdtlmDGI)
+c1		tlmperdisd	DO_CALC_IF ctlmcabsama
+DEBUG ldum ldum REPLACE
+*/
+/**** master label dan fields API PRSP ****/
+CALCS()
+cfromTime       	THBLS_YYYY(lfromdate) + "-" + THBLS_MM(lfromdate) + "-" + THBLS_DD(lfromdate) + " " + "00:00:00"
+ctoTime         	THBLS_YYYY(ltodate) + "-" + THBLS_MM(ltodate) + "-" + THBLS_DD(ltodate) + " " + "23:59:00"
+creqmstlabels   	"fromTime+toTime+dealerId+idProspect+idSalesPeople"
+creqmstfields   	"lfromTime+ltoTime+ldealerId+lidProspect+lidSalesPeople"
+creqmstlabels_lsng1     "fromTime+toTime+dealerId+idSPK"
+creqmstfields_lsng1     "lfromTime+ltoTime+ldealerId+lblanks"
+/*
+creqmstlabels_cdb       "documentNo+dealerId+documentType"
+creqmstfields_cdb       "ldocumentno+ldealerId+ldocumenttype"
+*/
+creqmstlabels_cdbnew       "fromTime+toTime+dealerId+idSPK+noKontak"
+creqmstfields_cdbnew       "lfromTime+ltoTime+ldealerId+lblanks+lblanks"
+ctglstring      	THBLS_DD(ltglakh) + "/" + THBLS_MM(ltglakh) + "/" + THBLS_YYYY(ltglakh) + " " + STRIP(ljamstr)
+
+
+capi_prsp       	STRIP(lmasterurl) + "prsp/read"
+
+/* HSO */
+cdetlabels_prsp1    	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+latitude+longitude+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+kodePekerjaan+noKontakKantor+tanggalAppointment+waktuAppointment+metodeFollowUp+keteranganNextFollowUp+testRidePreference+tanggalActualTestRide+statusFollowUpProspecting+statusProspect+idSalesPeople+idEvent+dealerId+createdTime+modifiedTime+kodeTipeUnit+salesProgramId+createdTime+modifiedTime"
+cdetfields_prsp1        "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmstr301+ahmstr302+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmtype1+ahmno4+ahmtgl5+ahmjam1+ahmstr303+ahmstr2001+ahmstr1011+lahmtgl7+ahmstr304+ahmstr305+ahmstr306+ahmstr307+ahmno3+ahmtgl2+ahmtgl3+ahmbrg+ahmdvs+ahmtgl4+ahmtgl4"
+
+/* SINSEN */
+cdetlabels_prspsinsen 	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKelurahan+kodePos+latitude+longitude+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+kodePekerjaan+noKontakKantor+metodeFollowUp+testRidePreference+statusFollowUpProspecting+statusProspect+idSalesPeople+dealerId+createdTime+modifiedTime+kodeTipeUnit+salesProgramId+createdTime+modifiedTime"
+cdetfields_prspsinsen   "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr104+ahmstr105+ahmstr301+ahmstr302+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmtype1+ahmno4+ahmstr303+ahmstr1011+ahmstr304+ahmstr305+ahmstr306+ahmno3+ahmtgl2+ahmtgl3+ahmbrg+ahmdvs+ahmtgl4+ahmtgl3"
+
+/* DAW */
+cdetlabels_prspdaw  	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+latitude+longtitude+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+kodePekerjaan+noKontakKantor+tanggalAppointment+metodeFollowUp+testRidePreference+statusFollowUpProspecting+statusProspect+idSalesPeople+idEvent+dealerID+createdTime+modifiedTime"
+cdetfields_prspdaw      "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmstr301+ahmstr302+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmtype1+ahmno4+ahmtgl5+ahmstr303+ahmstr1011+ahmstr304+ahmstr305+ahmstr306+ahmstr307+ahmno3+ahmtgl4+ahmtgl4"
+
+/* TRIO */
+cdetlabels_prsptrio  	"idProspectMD+idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKelurahan+kodePos+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodePoskantor+latitude+longitude+kodePekerjaan+noKontakKantor+metodeFu+testRidePreference+statusFollowUpProspecting+statusProspect+idSalesPeople+dealerId+createdTime+modifiedTime+kodeTipeUnit+salesProgramId+createdTime+modifiedTime"
+cdetfields_prsptrio     "ahmket3+ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr104+ahmstr105+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr1010+ahmstr301+ahmstr302+ahmtype1+ahmno4+ahmstr303+ahmstr1011+ahmstr304+ahmstr305+ahmstr306+ahmno3+ahmtgl2+ahmtgl3+ahmbrg+ahmdvs+ahmtgl4+ahmtgl5"
+
+/* MPM */
+cdetlabels_prspmpm  	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+latitude+longitude+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+kodePekerjaan+noKontakKantor+tanggalAppointment+waktuAppointment+metodeFollowUp+testRidePreference+statusFollowUpProspecting+statusProspect+idSalesPeople+idEvent+dealerId+createdTime+modifiedTime+ispos" /*+kodeTipeUnit+salesProgramId+createdTime+modifiedTime*/
+cdetfields_prspmpm      "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmstr301+ahmstr302+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmtype1+ahmno4+ahmtgl5+ahmjam1+ahmstr303+ahmstr1011+ahmstr304+ahmstr305+ahmstr306+ahmstr307+ahmno3+ahmtgl3+ahmtgl4+ahmno1" /* +ahmbrg+ahmdvs+ahmtgl4+ahmtgl4 */
+
+/* WAHANA */
+cdetlabels_prspwahana 	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+latitude+longitude+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+kodePekerjaan+noKontakKantor+metodeFollowUp+testRidePreference+statusFollowUpProspecting+statusProspect+idSalesPeople+idEvent+kodeTipeUnit+salesProgramId+createdTime"
+cdetfields_prspwahana   "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmstr301+ahmstr302+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmtype1+ahmno4+ahmstr303+ahmstr1011+ahmstr304+ahmstr305+ahmstr306+ahmstr307+ahmbrg+ahmdvs+ahmtgl4"
+
+/* TDM */
+cdetlabels_prsptdm  	"kodeKotaKantor+noKontak+alamatKantor+statusProspect+kodePropinsi+createdTime+kodeTipeUnit+salesProgramId+kodeKecamatan+alamat+sumberProspect+kodeKota+kodePropinsiKantor+idSalesPeople+taggingProspect+latitude+tanggalProspect+metodeFollowUp+modifiedTime+kodeKelurahan+createdTime+statusFollowUpProspecting+kodePosKantor+namaLengkap+kodePos+noKontakKantor+dealerId+idProspect+testRidePreference+KodeKelurahanKantor+idEvent+kodePekerjaan+longitude+kodeKecamatanKantor+noKtp"
+cdetfields_prsptdm      "ahmstr107+ahmkat+ahmalamat2+ahmstr305+ahmstr101+ahmtgl4+ahmbrg+ahmdvs+ahmstr103+ahmalamat1+ahmnobuk1+ahmstr102+ahmstr106+ahmstr306+ahmkode1+ahmstr301+lahmtgl1+ahmstr303+ahmtgl3+ahmstr104+ahmtgl2+ahmstr304+ahmstr1010+ahmnama1+ahmstr105+ahmno4+ahmno3+ahmket4+ahmstr1011+ahmstr109+ahmstr307+ahmtype1+ahmstr302+ahmstr108+ahmplg"
+
+/* ASP 
+cdetlabels_prspasp      "kodeKotaKantor+noKontak+alamatKantor+statusProspect+kodePropinsi+createdTime+kodeTipeUnit+salesProgramId+kodeKecamatan+alamat+waktuAppointment+sumberProspect+kodeKota+kodePropinsiKantor+idSalesPeople+taggingProspect+latitude+tanggalProspect+metodeFollowUp+tanggalAppointment+kodeKelurahan+statusFollowUpProspecting+kodePosKantor+namaLengkap+kodePos+noKontakKantor+idProspect+testRidePreference+KodeKelurahanKantor+idEvent+kodePekerjaan+longitude+kodeKecamatanKantor+noKtp"
+cdetfields_prspasp      "ahmstr107+ahmkat+ahmalamat2+ahmstr305+ahmstr101+ahmtgl2+ahmbrg+ahmdvs+ahmstr103+ahmalamat1+ahmstr1012+ahmno2+ahmstr102+ahmstr106+ahmstr306+ahmkode1+ahmstr301+lahmtgl1+ahmstr303+ahmtgl5+ahmstr104+ahmstr304+ahmstr1010+ahmnama1+ahmstr105+ahmno4+ahmket4+ahmstr1011+ahmstr109+ahmstr307+ahmtype1+ahmstr302+ahmstr108+ahmplg"
+*/
+cdetlabels_prspindako  	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+latitude+longitude+kodePekerjaan+noKontakKantor+tanggalAppointment+waktuAppointment+metodeFollowUp+keteranganNextFollowUp+testRidePreference+tanggalActualTestRide+statusFollowUpProspecting+statusProspect+idSalesPeople+idEvent+dealerId+createdTime+modifiedTime+kodeTipeUnit+salesProgramId+createdTime+modifiedTime"
+cdetfields_prspindako   "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmstr301+ahmstr302+ahmtype1+ahmno4+ahmtgl5+ahmjam1+ahmstr303+ahmstr2001+ahmstr1011+lahmtgl7+ahmstr304+ahmstr305+ahmstr306+ahmstr307+ahmcab+ahmtgl2+lahmtgl3+ahmbrg+ahmdvs+ahmtgl4+ahmtgl3"
+
+cdetlabels_prspcdn  	"idProspect+sumberProspect+tanggalProspect+taggingProspect+namaLengkap+noKontak+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+alamatKantor+kodePropinsiKantor+kodeKotaKantor+kodeKecamatanKantor+kodeKelurahanKantor+kodePosKantor+latitude+longitude+kodePekerjaan+noKontakKantor+tanggalAppointment+waktuAppointment+metodeFollowUp+keteranganNextFollowUp+testRidePreference+tanggalActualTestRide+statusFollowUpProspecting+statusProspect+idSalesPeople+idEvent+dealerId+createdTime+modifiedTime+kodeTipeUnit+salesProgramId+createdTime+modifiedTime"
+cdetfields_prspcdn      "ahmket4+ahmnobuk1+lahmtgl1+ahmkode1+ahmnama1+ahmkat+ahmplg+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmalamat2+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1010+ahmstr301+ahmstr302+ahmtype1+ahmno4+ahmtgl5+ahmjam1+ahmstr303+ahmstr2001+ahmstr1011+lahmtgl7+ahmstr304+ahmstr305+ahmstr306+ahmstr307+ahmcab+ahmtgl2+lahmtgl3+ahmbrg+ahmdvs+ahmtgl4+ahmtgl3"
+
+cdetnamamap_prsp        "maddahmPrsp"
+
+capi_spk	       	STRIP(lmasterurl) + "spk/read"
+cdetlabels_spk1		"idSpk+idProspect+namaCustomer+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+NPWP+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+dealerId+createdTime+modifiedTime+kodeTipeUnit+kodeWarna+quantity+hargaJual+diskon+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+idApparel+createdTime+modifiedTime"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spk1        	"ahmket4+ahmket2+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmkat+ahmtgl3+ahmdvs+ahmcab+ahmnobuk3+ahmnobuk4+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmstr303+ahmstr304+ahmstr305"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* SINSEN */
+cdetfields_spk2        	"ahmket4+ahmket2+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmkat+ahmtgl3+ahmdvs+ahmcab+ahmnobuk3+ahmnobuk4+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmstr303+ahmstr304+ahmstr305"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* DAW */
+cdetlabels_spkdaw 	"idSpk+idProspect+namaCustomer+alamat+noKtp+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+npwp+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+dealerId+createdTime+modifiedTime+kodeTipeUnit+kodeWarna+quantity+hargaJual+diskon+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+idApparel+createdTime+modifiedTime"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spkdaw      	"ahmket4+ahmket2+ahmnama1+ahmalamat1+ahmplg+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmkat+ahmtgl3+ahmdvs+ahmcab+ahmnobuk3+ahmnobuk4+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmstr303+ahmstr304+ahmstr305"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* TRIO */
+cdetlabels_spktrio 	"idSpkMD+idSpk+idProspectMD+idProspect+namaCustomer+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+NPWP+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+dealerId+namaLeasing+kdLeasing+kodePekerjaan+kodePendidikan+tglLahir+kodeAgama+jenisKelamin+kodeStatusNikah+kodePengeluaran+created_time+modified_time+kodeTipeUnit+kodeWarna+quantity+hargaJual+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+idSalesProgramAHM+idApparel+kodePPN+diskon+createdTime+modifiedTime"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spktrio     	"ahmket1+ahmket2+ahmket3+ahmket4+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmstr308+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmkat+ahmtgl3+ahmdvs+ahmcab+ahmstr1013+ahmkode5+ahmkode6+ahmkode7+ahmtgl4+ahmkode8+ahmtype1+ahmtype2+ahmtype3+ahmnobuk3+ahmnobuk4+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmstr306+ahmstr303+ahmhrg1+ahmhrg2+ahmstr304+ahmstr305"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* MPM */
+cdetlabels_spkmpm 	"idSpk+idProspect+namaCustomer+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+NPWP+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+dealerId+createdTime+modifiedTime+ispos+kodeTipeUnit+kodeWarna+quantity+hargaJual+diskon+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+idApparel+createdTime+modifiedTime"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spkmpm      	"ahmket4+ahmket2+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmkat+ahmtgl3+ahmdvs+ahmcab+ahmnobuk3+ahmnobuk4+ahmno1+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmstr303+ahmstr304+ahmstr305"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* WAHANA */
+cdetlabels_spkwahana 	"idSpk+idProspect+namaCustomer+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+NPWP+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+createdTime+kodeTipeUnit+kodeWarna+quantity+hargaJual+diskon+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+idApparel+createdTime+anggotaKK+createdTime+modifiedTime"/*+dataAnggotaKeluarga"*/
+cdetfields_spkwahana  	"ahmket4+ahmket2+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmkat+ahmtgl3+ahmdvs+ahmnobuk3+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmstr303+ahmstr304+ahmstr1014+ahmstr1015+ahmstr1016"/*+ahmstr1013"*/
+
+/* TDM */
+cdetlabels_spktdm 	"kodePropinsiBPKB+noKontak+noKTPBPKB+alamatKK+kodePropinsi+kodeKotaKK+kodePosBPKB+kodeKecamatan+alamat+kodeKotaBPKB+idApparel+jumlahTandaJadi+idSalesProgram+modifiedTime+kodeTipeUnit+hargaJual+fakturPajak+tanggalPengiriman+tipePembayaran+kodeWarna+createdTime+amountPPN+diskon+quantity+kodeKecamatanKK+idSpk+kodeKecamatanBPKB+namaCustomer+latitude+statusSPK+email+kodeKota+fax+modifiedTime+kodePosKK+kodeKelurahan+alamatBPKB+kodeKelurahanKK+anggotaKK+createdTime+modifiedTime+kodePropinsiKK+kodeKelurahanBPKB+noKK+kodePos+tanggalPesanan+namaBPKB+dealerId+idProspect+idSalesPeople+idEvent+longitude+createdTime+noKtp+NPWP"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spktdm      	"ahmstr101+ahmno4+ahmstr1012+ahmket3+ahmkode1+ahmstr107+ahmstr105+ahmkode3+ahmalamat1+ahmstr102+ahmstr303+ahmhrg4+ahmstr302+ahmstr1016+ahmbrg+ahmhrg1+ahmstr301+ahmtgl2+ahmstr1010+ahmwarna+ahmstr1015+ahmhrg3+ahmhrg2+ahmjml3+ahmstr108+ahmket4+ahmstr103+ahmnama1+ahmjml1+ahmdvs+ahmnama4+ahmkode2+ahmnama3+ahmstr1016+ahmstr1011+ahmkode4+ahmalamat2+ahmstr109+ahmstr1014+ahmstr1015+ahmstr1016+ahmstr106+ahmstr104+ahmstr301+ahmno3+ahmtgl3+ahmnama2+ahmcab+ahmno2+ahmno+ahmkat+ahmjml1+ahmnobuk3+ahmplg+ahmstr301"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* ASP 
+cdetlabels_spkasp 	"kodePropinsiBPKB+noKontak+noKTPBPKB+alamatKK+kodePropinsi+kodeKotaKK+kodePosBPKB+kodeKecamatan+alamat+kodeKotaBPKB+idApparel+jumlahTandaJadi+idSalesProgram+modifiedTime+kodeTipeUnit+hargaJual+fakturPajak+tanggalPengiriman+tipePembayaran+kodeWarna+createdTime+amountPPN+diskon+quantity+kodeKecamatanKK+idSpk+kodeKecamatanBPKB+namaCustomer+latitude+statusSPK+email+kodeKota+fax+modifiedTime+kodePosKK+kodeKelurahan+alamatBPKB+kodeKelurahanKK+anggotaKK+createdTime+modifiedTime+kodePropinsiKK+kodeKelurahanBPKB+noKK+kodePos+tanggalPesanan+namaBPKB+dealerId+idProspect+idSalesPeople+idEvent+longitude+createdTime+noKtp+NPWP"
+cdetfields_spkasp      	"ahmstr101+ahmno4+ahmstr1012+ahmket3+ahmkode1+ahmstr107+ahmstr105+ahmkode3+ahmalamat1+ahmstr102+ahmstr303+ahmhrg4+ahmstr302+ahmstr1016+ahmbrg+ahmhrg1+ahmstr301+ahmtgl2+ahmstr1010+ahmwarna+ahmstr1015+ahmhrg3+ahmhrg2+ahmjml3+ahmstr108+ahmket4+ahmstr103+ahmnama1+ahmjml1+ahmdvs+ahmnama4+ahmkode2+ahmnama3+ahmstr1016+ahmstr1011+ahmkode4+ahmalamat2+ahmstr109+ahmstr1014+ahmstr1015+ahmstr1016+ahmstr106+ahmstr104+ahmstr301+ahmno3+ahmtgl3+ahmnama2+ahmcab+ahmno2+ahmno+ahmkat+ahmjml1+ahmnobuk3+ahmplg+ahmstr301"
+*/
+
+/*INDAKO */
+cdetlabels_spkindako    "idSpk+idProspect+namaCustomer+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+NPWP+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+dealerId+createdTime+modifiedTime+kodeTipeUnit+kodeWarna+quantity+hargaJual+diskon+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+AHMMDSupport+dealerSupport+idApparel+createdTime+modifiedTime"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spkindako   	"ahmket4+ahmket2+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmstr307+lahmtgl3+ahmdvs+ahmcab+ahmnobuk3+ahmnobuk4+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmjml5+ahmjml6+ahmstr303+ahmstr304+ahmstr305"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+/* CDN */
+cdetlabels_spkcdn       "idSpk+idProspect+namaCustomer+noKtp+alamat+kodePropinsi+kodeKota+kodeKecamatan+kodeKelurahan+kodePos+noKontak+namaBPKB+noKTPBPKB+alamatBPKB+kodePropinsiBPKB+kodeKotaBPKB+kodeKecamatanBPKB+kodeKelurahanBPKB+kodePosBPKB+latitude+longitude+NPWP+noKK+alamatKK+kodePropinsiKK+kodeKotaKK+kodeKecamatanKK+kodeKelurahanKK+kodePosKK+fax+email+idSalesPeople+idEvent+tanggalPesanan+statusSPK+dealerId+createdTime+modifiedTime+kodeTipeUnit+kodeWarna+quantity+hargaJual+diskon+amountPPN+fakturPajak+tipePembayaran+jumlahTandaJadi+tanggalPengiriman+idSalesProgram+AHMMDSupport+dealerSupport+idApparel+createdTime+modifiedTime+anggotaKK+createdTime+modifiedTime"/*+dataAnggotaKeluarga+anggotaKK+createdTime+modifiedTime"*/
+cdetfields_spkcdn   	"ahmket4+ahmket2+ahmnama1+ahmplg+ahmalamat1+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmno3+ahmno4+ahmnama2+ahmstr1012+ahmalamat2+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmjml1+ahmjml1+ahmstr301+ahmstr301+ahmket3+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmstr1011+ahmnama3+ahmnama4+ahmno+ahmstr307+lahmtgl3+ahmdvs+ahmcab+ahmnobuk3+ahmnobuk4+ahmbrg+ahmwarna+ahmjml3+ahmhrg1+ahmhrg2+ahmhrg3+ahmstr301+ahmstr1010+ahmhrg4+ahmtgl2+ahmstr302+ahmjml5+ahmjml6+ahmstr303+ahmstr304+ahmstr305+ahmstr1014+ahmstr1015+ahmstr1016"/*+ahmstr1013+ahmstr1014+ahmstr1015+ahmstr1016"*/
+
+cdetnamamap_spk         "maddahmSpk"
+
+capi_lsng    		STRIP(lmasterurl) + "lsng/read"
+cdetlabels_lsng1	"idDokumenPengajuan+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime"
+cdetfields_lsng1	"ahmno2+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmkode1+ahmtgl4+ahmtgl5"
+
+/* Sinsen */
+cdetlabels_lsngsinsen 	"idDokumenPengajuan+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime"
+cdetfields_lsngsinsen	"ahmket2+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmkode1+ahmtgl4+ahmtgl5"
+
+/* DAW */
+cdetlabels_lsngdaw 	"idDokumenPengajuan+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime"
+cdetfields_lsngdaw 	"ahmket2+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmno3+ahmnama1+ahmno4+lahmtgl2+lahmtgl3+ahmkode1+ahmtgl4+ahmtgl5"
+
+/* TRIO */
+cdetlabels_lsngtrio 	"idDokumenPengajuan+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime"
+cdetfields_lsngtrio 	"ahmket2+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmkode1+ahmtgl4+ahmtgl5"
+
+/* MPM */
+cdetlabels_lsngmpm 	"idDokumenPengajuan+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime+ispos"
+cdetfields_lsngmpm 	"ahmket2+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmcab+ahmtgl4+ahmtgl5+ahmno1"
+
+/* WAHANA */
+cdetlabels_lsngwahana 	"idDokumenPengajuan+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+createdTime"
+cdetfields_lsngwahana 	"ahmket2+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmtgl4"
+
+/* TDM */
+cdetlabels_lsngtdm 	"idSPK+jumlahCicilan+tanggalPembuatanPO+dealerId+idPOFinanceCompany+modifiedTime+namaFinanceCompany+idDokumenPengajuan+tanggalPengirimanPOFinanceCompany+idFinanceCompany+tenor+createdTime+jumlahDP+tanggalPengajuan"
+cdetfields_lsngtdm 	"ahmket4+ahmhrg2+ahmtgl2+ahmkode1+ahmno4+ahmtgl5+ahmnama1+ahmket2+ahmtgl3+ahmno3+ahmjml1+ahmtgl4+ahmhrg1+ahmtgl1"
+
+/* ASP 
+cdetlabels_lsngasp 	"idSPK+jumlahCicilan+tanggalPembuatanPO+idPOFinanceCompany+namaFinanceCompany+idDokumenPengajuan+tanggalPengirimanPOFinanceCompany+idFinanceCompany+tenor+createdTime+jumlahDP+tanggalPengajuan"
+cdetfields_lsngasp 	"ahmket4+ahmhrg2+ahmtgl2+ahmno4+ahmnama1+ahmket2+ahmtgl3+ahmno3+ahmjml1+ahmtgl4+ahmhrg1+ahmtgl1"
+*/
+/* INDAKO */
+cdetlabels_lsngindako 	"idDokumenPengajuan+noKontak+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+statusPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime"
+cdetfields_lsngindako	"ahmket2+ahmkat+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmstr301+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmkode1+ahmtgl4+ahmtgl5"
+
+/* CDN */
+cdetlabels_lsngcdn 	"idDokumenPengajuan+noKontak+idSPK+jumlahDP+tenor+jumlahCicilan+tanggalPengajuan+statusPengajuan+idFinanceCompany+namaFinanceCompany+idPOFinanceCompany+tanggalPembuatanPO+tanggalPengirimanPOFinanceCompany+dealerId+createdTime+modifiedTime"
+cdetfields_lsngcdn	"ahmket2+ahmkat+ahmket4+ahmhrg1+ahmjml1+ahmhrg2+ahmtgl1+ahmstr301+ahmno3+ahmnama1+ahmno4+ahmtgl2+ahmtgl3+ahmkode1+ahmtgl4+ahmtgl5"
+
+cdetnamamap_lsng       	"maddahmLsng"
+
+/* TITIK CDB */
+capi_cdb	       	STRIP(lmasterurl) + "cdb/read"
+/*
+cdetlabels_cdb	        "spk+salesmanCodeHonda+salesmanCodeHso+billingNo+billingDate+salesType+dealerCode+custStatus+familyCardNo+dealerId+createdTime+modifiedTime+frameNo+fincoyCode+dpAmount+tenorAmount+installmentAmount+dpCode+tenorCode+poLeasingNo+poLeasingDate+citizenship+sexType+birthDate+domAddress+domKelurahanDesc+domKecamatanDesc+domCity+domZipCode+domProvince+religion+occupation+expense+education+handphoneNo+phoneNo+contactAvailable+ownedMotorBrand+ownedMotorType+purposeUseMotor+userMotor+email+homeStatus+hpStatus+facebook+twitter+instagram+youtube+hobby+custCharacteristic+referenceID+birthPlace+instanceName+instanceAddress+instanceKecamatan+instanceCity+instanceProvince+occupation2+otherOccupationDesc+machineCode+machineNo+ownerName+ownerAddress+ownerKelurahanDesc+ownerKecamatanDesc+ownerCity+ownerZipCode+ownerProvince+idCardNo+grUnitDate+ownerKelurahanCode+ownerKecamatanCode+purchasePurpose+activitySales+createdTime+modifiedTime"
+cdetfields_cdb   	"ahmket4+ahmno+ahmcab+ahmbrg+lahmtgl1+ahmnourt+ahmwarna+ahmurt1+ahmplg+ahmdvs+ahmtgl7+ahmtgl7+ahmkat+ahmurt2+ahmjml1+ahmurt3+ahmjml2+ahmurt4+ahmjml3+ahmno3+lahmtgl2+ahmjml4+ahmno4+lahmtgl3+ahmstr2001+ahmstr301+ahmkode1+ahmkode2+ahmkode3+ahmkode4+ahmtype+ahmtype1+ahmhrg1+ahmhrg2+ahmstr302+ahmstr303+ahmyt1+ahmtype2+ahmtype3+ahmtype4+ahmtype5+ahmnama1+ahmtype6+ahmkode5+ahmnama2+ahmnama3+ahmnama4+ahmalamat1+ahmsts2+ahmstr2002+ahmstr304+ahmstr305+ahmstr306+ahmalamat2+ahmkode6+ahmkode7+ahmkode8+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmket3+ahmstr2003+ahmstr105+ahmstr106+ahmstr107+ahmstr108+ahmstr109+ahmnobuk1+lahmtgl4+ahmstr1010+ahmstr1011+ahmyt2+ahmstr1012+ahmtgl7+ahmtgl7"
+*/
+cdetlabels_cdbbaru      "idSpk+noMesin+mainDealerId+dealerId+nik+kodeCustomer+jenisKelamin+tanggalLahir+alamatSurat+kelurahanSurat+kecamatanSurat+kotaSurat+provinsiSurat+kodePosSurat+agama+pekerjaan+deskripsiPekerjaanLainLain+pengeluaran+pendidikan+namaPenanggungJawab+noHP+noTelp+kebersediaanUntukDihubungi+konfirmasiBersediaDihubungiDateTime+merkMotorYangDimilikiSekarang+jenisMotorYangDimilikiSekarang+sepedaMotorDigunakanUntuk+deskripsisepedaMotorDigunakanUntukLainLain+yangMenggunakanSepedaMotorAnda+yangMenggunakanSepedaMotorAndaLainLain+kodeSalesperson+email+statusRumah+statusNoHP+statusValidasiMD+facebook+twitter+instagram+youtube+hobi+keterangan+kewarganegaraan+noKK+refID+refBOID+tempatLahirKonsumen+namaInstansiUsaha+alamatInstansiUsaha+kecamatanInstansiUsaha+kotaInstansiUsaha+provinsiInstansiUsaha+aktivitasPenjualan+createdTime+modifiedTime"
+cdetfields_cdbbaru      "ahmket4+ahmno+ahmcab+ahmkode1+ahmstr301+ahmtype1+ahmtype2+lahmtgl1+ahmalamat1+ahmstr101+ahmstr102+ahmstr103+ahmstr104+ahmstr105+ahmtype3+ahmtype4+ahmnama1+ahmtype5+ahmtype6+ahmnama2+ahmbrg+ahmstr307+ahmtype7+lahmtgl2+ahmtype8+ahmtype9+ahmtype10+ahmstr302+ahmtype11+ahmket2+ahmstr106+ahmnama3+ahmtype12+ahmyt1+ahmyt2+ahmstr2001+ahmstr2002+ahmstr2003+ahmstr2004+ahmstr107+ahmket1+ahmtype+ahmno3+ahmstr108+ahmstr109+ahmno4+ahmnama4+ahmalamat2+ahmstr303+ahmstr304+ahmstr305+ahmstr306+ahmtgl7+ahmtgl7"
+/*                        spk   cdhond cdhso billingno billdate saletype dlcode custsts ktp    dlrid  created  modif frameno fincoy    dp    tenoram install  dpcode tenorcd polsno polsdate citizen sextpe birthdte domaddress lurahdesc kecdesc  domcity   zipcode province relgion ocupatio expense educati hphoneno   phoneNo  avlble motbrand mottype  purpomot  usermot  email   homests  hpstatus facebook twitter instagram  youtube    hobby  character  referenid birthplce instcname instcaddr  instkec  instcity instprov ocpation2 otocpdesc  machcode   machno  ownname ownaddr    ownlrhdes ownkecdes  owncity  ownzipcd   ownprov   idcardno grunitdt ownlrhcode ownkeccode purcps actvitysls  create  modif*/
+cdetnamamap_cdb       	"maddahmcdb"
+cjoinnobuk878   djoinnobuk878 == 1
+cjointlm1471    djointlm1471 == 1
+MAP(mapmapAPI)
+ctglstring      	ltglstring      DO_CALC
+cstringtglakh           ltglakhformat   DO_CALC
+cmampatahmtglakh        ltglakhformat   DO_CALC
+ctahuntglakh            ltahun          DO_CALC
+cbulantglakh            lbulan          DO_CALC
+ltglakhformat           lhari           REPLACE
+cgabtgl                 ltglakhformat   DO_CALC
+
+/* HSO */
+capi_prsp		lurl            DO_CALC
+
+capi_spk                lurl            DO_CALC_IF cspil2hso
+capi_lsng               lurl            DO_CALC_IF cspil3hso
+
+capi_spk                lurl            DO_CALC_IF cspil2sinsen
+capi_lsng               lurl            DO_CALC_IF cspil3sinsen
+
+capi_spk                lurl            DO_CALC_IF cspil2daw
+capi_lsng               lurl            DO_CALC_IF cspil3daw
+
+capi_spk                 lurl            DO_CALC_IF cspil2trio
+capi_lsng                lurl            DO_CALC_IF cspil3trio
+
+capi_spk                lurl            DO_CALC_IF cspil2mpm
+capi_lsng               lurl            DO_CALC_IF cspil3mpm
+
+capi_spk                lurl            DO_CALC_IF cspil2wahana
+capi_lsng               lurl            DO_CALC_IF cspil3wahana
+
+capi_spk                 lurl            DO_CALC_IF cgabasptdm2
+capi_lsng                lurl            DO_CALC_IF cgabasptdm3
+
+capi_spk                 lurl            DO_CALC_IF cspil2indako
+capi_lsng                lurl            DO_CALC_IF cspil3indako
+
+capi_spk                 lurl            DO_CALC_IF cspil2cdn
+capi_lsng                lurl            DO_CALC_IF cspil3cdn
+
+
+/* TITIK CDB */
+capi_cdb                 lurl            DO_CALC_IF cpilcdb
+tlmket                   ldocumentno     REPLACE_IF cpilcdb
+lcdbadd                  ldocumenttype   REPLACE_IF cpilcdb
+
+cfromTime       	 lfromTime       DO_CALC
+ctoTime         	 ltoTime         DO_CALC
+lkodeahm		 ldealerId       REPLACE
+
+creqmstlabels            lreqmstlabels   DO_CALC
+creqmstfields            lreqmstfields   DO_CALC
+
+/* HSO PRSP */
+cdetlabels_prsp1        lmstlabels      DO_CALC_IF cspil1hsox
+cdetfields_prsp1        lmstfields      DO_CALC_IF cspil1hsox
+cdetlabels_prsp1        ldetlabels      DO_CALC_IF cspil1hsox
+cdetfields_prsp1        ldetfields      DO_CALC_IF cspil1hsox
+cdetnamamap_prsp      	lmstnamamap     DO_CALC_IF cspil1hsox
+cdetnamamap_prsp	ldetnamamap     DO_CALC_IF cspil1hsox
+
+/* SINSEN PRSP */
+cdetlabels_prspsinsen    lmstlabels      DO_CALC_IF cspil1sinsenx
+cdetfields_prspsinsen    lmstfields      DO_CALC_IF cspil1sinsenx
+cdetlabels_prspsinsen    ldetlabels      DO_CALC_IF cspil1sinsenx
+cdetfields_prspsinsen    ldetfields      DO_CALC_IF cspil1sinsenx
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cspil1sinsenx
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cspil1sinsenx
+
+/* DAW PRSP*/
+cdetlabels_prspdaw       lmstlabels      DO_CALC_IF cspil1dawx
+cdetfields_prspdaw       lmstfields      DO_CALC_IF cspil1dawx
+cdetlabels_prspdaw       ldetlabels      DO_CALC_IF cspil1dawx
+cdetfields_prspdaw       ldetfields      DO_CALC_IF cspil1dawx
+cdetnamamap_prsp      	 lmstnamamap  DO_CALC_IF cspil1dawx
+cdetnamamap_prsp	 ldetnamamap  DO_CALC_IF cspil1dawx
+
+/* TRIO PRSP*/
+cdetlabels_prsptrio      lmstlabels      DO_CALC_IF cspil1triox
+cdetfields_prsptrio      lmstfields      DO_CALC_IF cspil1triox
+cdetlabels_prsptrio      ldetlabels      DO_CALC_IF cspil1triox
+cdetfields_prsptrio      ldetfields      DO_CALC_IF cspil1triox
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cspil1triox
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cspil1triox
+
+/* MPM PRSP*/
+cdetlabels_prspmpm       lmstlabels      DO_CALC_IF cspil1mpmx
+cdetfields_prspmpm       lmstfields      DO_CALC_IF cspil1mpmx
+cdetlabels_prspmpm       ldetlabels      DO_CALC_IF cspil1mpmx
+cdetfields_prspmpm       ldetfields      DO_CALC_IF cspil1mpmx
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cspil1mpmx
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cspil1mpmx
+
+/* WAHANA PRSP*/
+cdetlabels_prspwahana    lmstlabels      DO_CALC_IF cspil1wahanax
+cdetfields_prspwahana    lmstfields      DO_CALC_IF cspil1wahanax
+cdetlabels_prspwahana    ldetlabels      DO_CALC_IF cspil1wahanax
+cdetfields_prspwahana    ldetfields      DO_CALC_IF cspil1wahanax
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cspil1wahanax
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cspil1wahanax
+
+/* TDM PRSP*/
+cdetlabels_prsptdm       lmstlabels      DO_CALC_IF cgabasptdm1x
+cdetfields_prsptdm       lmstfields      DO_CALC_IF cgabasptdm1x
+cdetlabels_prsptdm       ldetlabels      DO_CALC_IF cgabasptdm1x
+cdetfields_prsptdm       ldetfields      DO_CALC_IF cgabasptdm1x
+
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cgabasptdm1x
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cgabasptdm1x
+
+/* indako prsp */
+cdetlabels_prspindako    lmstlabels      DO_CALC_IF cspil1indakox
+cdetfields_prspindako    lmstfields      DO_CALC_IF cspil1indakox
+cdetlabels_prspindako    ldetlabels      DO_CALC_IF cspil1indakox
+cdetfields_prspindako    ldetfields      DO_CALC_IF cspil1indakox
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cspil1indakox
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cspil1indakox
+
+/* CDN PRSP */
+cdetlabels_prspcdn       lmstlabels      DO_CALC_IF cspil1cdnx
+cdetfields_prspcdn       lmstfields      DO_CALC_IF cspil1cdnx
+cdetlabels_prspcdn       ldetlabels      DO_CALC_IF cspil1cdnx
+cdetfields_prspcdn       ldetfields      DO_CALC_IF cspil1cdnx
+cdetnamamap_prsp      	 lmstnamamap     DO_CALC_IF cspil1cdnx
+cdetnamamap_prsp	 ldetnamamap     DO_CALC_IF cspil1cdnx
+
+/* HSO SPK */
+cdetlabels_spk1          lmstlabels      DO_CALC_IF cspil2hso
+cdetfields_spk1          lmstfields      DO_CALC_IF cspil2hso
+cdetlabels_spk1          ldetlabels      DO_CALC_IF cspil2hso
+cdetfields_spk1          ldetfields      DO_CALC_IF cspil2hso
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2hso
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2hso
+
+/* SINSEN SPK */
+cdetlabels_spk1          lmstlabels      DO_CALC_IF cspil2sinsen
+cdetfields_spk2          lmstfields      DO_CALC_IF cspil2sinsen
+cdetlabels_spk1          ldetlabels      DO_CALC_IF cspil2sinsen
+cdetfields_spk2          ldetfields      DO_CALC_IF cspil2sinsen
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2sinsen
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2sinsen
+
+/* DAW SPK */
+cdetlabels_spkdaw        lmstlabels      DO_CALC_IF cspil2daw
+cdetfields_spkdaw        lmstfields      DO_CALC_IF cspil2daw
+cdetlabels_spkdaw        ldetlabels      DO_CALC_IF cspil2daw
+cdetfields_spkdaw        ldetfields      DO_CALC_IF cspil2daw
+cdetnamamap_spk      	 lmstnamamap  DO_CALC_IF cspil2daw
+cdetnamamap_spk 	 ldetnamamap  DO_CALC_IF cspil2daw
+
+/* TRIO SPK */
+cdetlabels_spktrio       lmstlabels      DO_CALC_IF cspil2trio
+cdetfields_spktrio       lmstfields      DO_CALC_IF cspil2trio
+cdetlabels_spktrio       ldetlabels      DO_CALC_IF cspil2trio
+cdetfields_spktrio       ldetfields      DO_CALC_IF cspil2trio
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2trio
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2trio
+
+/* MPM SPK */
+cdetlabels_spkmpm        lmstlabels      DO_CALC_IF cspil2mpm
+cdetfields_spkmpm        lmstfields      DO_CALC_IF cspil2mpm
+cdetlabels_spkmpm        ldetlabels      DO_CALC_IF cspil2mpm
+cdetfields_spkmpm        ldetfields      DO_CALC_IF cspil2mpm
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2mpm
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2mpm
+
+/* WAHANA SPK */
+cdetlabels_spkwahana     lmstlabels      DO_CALC_IF cspil2wahana
+cdetfields_spkwahana     lmstfields      DO_CALC_IF cspil2wahana
+cdetlabels_spkwahana     ldetlabels      DO_CALC_IF cspil2wahana
+cdetfields_spkwahana     ldetfields      DO_CALC_IF cspil2wahana
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2wahana
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2wahana
+
+
+/* TDM SPK */
+cdetlabels_spktdm        lmstlabels      DO_CALC_IF cgabasptdm2
+cdetfields_spktdm        lmstfields      DO_CALC_IF cgabasptdm2
+cdetlabels_spktdm        ldetlabels      DO_CALC_IF cgabasptdm2
+cdetfields_spktdm        ldetfields      DO_CALC_IF cgabasptdm2
+
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cgabasptdm2
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cgabasptdm2
+
+/* INDAKO SPK */
+cdetlabels_spkindako     lmstlabels      DO_CALC_IF cspil2indako
+cdetfields_spkindako     lmstfields      DO_CALC_IF cspil2indako
+cdetlabels_spkindako     ldetlabels      DO_CALC_IF cspil2indako
+cdetfields_spkindako     ldetfields      DO_CALC_IF cspil2indako
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2indako
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2indako
+
+/* CDN SPK */
+cdetlabels_spkcdn        lmstlabels      DO_CALC_IF cspil2cdn
+cdetfields_spkcdn        lmstfields      DO_CALC_IF cspil2cdn
+cdetlabels_spkcdn        ldetlabels      DO_CALC_IF cspil2cdn
+cdetfields_spkcdn        ldetfields      DO_CALC_IF cspil2cdn
+cdetnamamap_spk      	 lmstnamamap     DO_CALC_IF cspil2cdn
+cdetnamamap_spk 	 ldetnamamap     DO_CALC_IF cspil2cdn
+
+/* HSO LSNG */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3hso
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3hso
+cdetlabels_lsng1         lmstlabels      DO_CALC_IF cspil3hso
+cdetfields_lsng1         lmstfields      DO_CALC_IF cspil3hso
+cdetlabels_lsng1         ldetlabels      DO_CALC_IF cspil3hso
+cdetfields_lsng1         ldetfields      DO_CALC_IF cspil3hso
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cspil3hso
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cspil3hso
+
+/* SINSEN LSNG */
+creqmstlabels_lsng1	 lreqmstlabels    DO_CALC_IF cspil3sinsen
+creqmstfields_lsng1	 lreqmstfields    DO_CALC_IF cspil3sinsen
+cdetlabels_lsngsinsen    lmstlabels       DO_CALC_IF cspil3sinsen
+cdetfields_lsngsinsen    lmstfields       DO_CALC_IF cspil3sinsen
+cdetlabels_lsngsinsen    ldetlabels       DO_CALC_IF cspil3sinsen
+cdetfields_lsngsinsen    ldetfields       DO_CALC_IF cspil3sinsen
+cdetnamamap_lsng         lmstnamamap      DO_CALC_IF cspil3sinsen
+cdetnamamap_lsng         ldetnamamap      DO_CALC_IF cspil3sinsen
+
+/* DAW LSNG */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3daw
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3daw
+cdetlabels_lsngdaw       lmstlabels      DO_CALC_IF cspil3daw
+cdetfields_lsngdaw       lmstfields      DO_CALC_IF cspil3daw
+cdetlabels_lsngdaw       ldetlabels      DO_CALC_IF cspil3daw
+cdetfields_lsngdaw       ldetfields      DO_CALC_IF cspil3daw
+cdetnamamap_lsng         lmstnamamap  DO_CALC_IF cspil3daw
+cdetnamamap_lsng         ldetnamamap  DO_CALC_IF cspil3daw
+
+/* TRIO LSNG */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3trio
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3trio
+cdetlabels_lsngtrio      lmstlabels      DO_CALC_IF cspil3trio
+cdetfields_lsngtrio      lmstfields      DO_CALC_IF cspil3trio
+cdetlabels_lsngtrio      ldetlabels      DO_CALC_IF cspil3trio
+cdetfields_lsngtrio      ldetfields      DO_CALC_IF cspil3trio
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cspil3trio
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cspil3trio
+
+/* MPM LSNG */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3mpm
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3mpm
+cdetlabels_lsngmpm       lmstlabels      DO_CALC_IF cspil3mpm
+cdetfields_lsngmpm       lmstfields      DO_CALC_IF cspil3mpm
+cdetlabels_lsngmpm       ldetlabels      DO_CALC_IF cspil3mpm
+cdetfields_lsngmpm       ldetfields      DO_CALC_IF cspil3mpm
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cspil3mpm
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cspil3mpm
+
+/* WAHANA LSNG */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3wahana
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3wahana
+cdetlabels_lsngwahana    lmstlabels      DO_CALC_IF cspil3wahana
+cdetfields_lsngwahana    lmstfields      DO_CALC_IF cspil3wahana
+cdetlabels_lsngwahana    ldetlabels      DO_CALC_IF cspil3wahana
+cdetfields_lsngwahana    ldetfields      DO_CALC_IF cspil3wahana
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cspil3wahana
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cspil3wahana
+
+/* TDM LSNG */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cgabasptdm3
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cgabasptdm3
+cdetlabels_lsngtdm       lmstlabels      DO_CALC_IF cgabasptdm3
+cdetfields_lsngtdm       lmstfields      DO_CALC_IF cgabasptdm3
+cdetlabels_lsngtdm       ldetlabels      DO_CALC_IF cgabasptdm3
+cdetfields_lsngtdm       ldetfields      DO_CALC_IF cgabasptdm3
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cgabasptdm3
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cgabasptdm3
+
+/* INDAKO */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3indako
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3indako
+cdetlabels_lsngindako    lmstlabels      DO_CALC_IF cspil3indako
+cdetfields_lsngindako    lmstfields      DO_CALC_IF cspil3indako
+cdetlabels_lsngindako    ldetlabels      DO_CALC_IF cspil3indako
+cdetfields_lsngindako    ldetfields      DO_CALC_IF cspil3indako
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cspil3indako
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cspil3indako
+
+/* cdn */
+creqmstlabels_lsng1	 lreqmstlabels   DO_CALC_IF cspil3cdn
+creqmstfields_lsng1	 lreqmstfields   DO_CALC_IF cspil3cdn
+cdetlabels_lsngcdn       lmstlabels      DO_CALC_IF cspil3cdn
+cdetfields_lsngcdn       lmstfields      DO_CALC_IF cspil3cdn
+cdetlabels_lsngcdn       ldetlabels      DO_CALC_IF cspil3cdn
+cdetfields_lsngcdn       ldetfields      DO_CALC_IF cspil3cdn
+cdetnamamap_lsng         lmstnamamap     DO_CALC_IF cspil3cdn
+cdetnamamap_lsng         ldetnamamap     DO_CALC_IF cspil3cdn
+
+/* TITIK CDB */
+creqmstlabels_cdbnew	 lreqmstlabels   DO_CALC_IF cpilcdb
+creqmstfields_cdbnew	 lreqmstfields   DO_CALC_IF cpilcdb
+cdetlabels_cdbbaru           lmstlabels      DO_CALC_IF cpilcdb
+cdetfields_cdbbaru           lmstfields      DO_CALC_IF cpilcdb
+cdetlabels_cdbbaru           ldetlabels      DO_CALC_IF cpilcdb
+cdetfields_cdbbaru           ldetfields      DO_CALC_IF cpilcdb
+cdetnamamap_cdb          lmstnamamap     DO_CALC_IF cpilcdb
+cdetnamamap_cdb          ldetnamamap     DO_CALC_IF cpilcdb
+
+DEBUG ldump		ldump		REPLACE
+
+CALCS()
+cnofakspk       FLD_TO_STRING(ltglakh) + lcab5 
+cmampatahmtgl1  MAMPAT_ALPHANUM(lahmtgl1)
+ctahuntgl1      DO_LIB  ap_amstr(lahmtgl1,lT5,ls4,&ltahun);
+cbulantgl1      DO_LIB  ap_amstr(lahmtgl1,lT3,ls2,&lbulan);
+cmampatahmtgl2  MAMPAT_ALPHANUM(lahmtgl2)
+ctahuntgl2          DO_LIB  ap_amstr(lahmtgl2,lT5,ls4,&ltahun);
+cbulantgl2          DO_LIB  ap_amstr(lahmtgl2,lT3,ls2,&lbulan);
+cmampatahmtgl3  MAMPAT_ALPHANUM(lahmtgl3)
+ctahuntgl3          DO_LIB  ap_amstr(lahmtgl3,lT5,ls4,&ltahun);
+cbulantgl3          DO_LIB  ap_amstr(lahmtgl3,lT3,ls2,&lbulan);
+cmampatahmtgl4  MAMPAT_ALPHANUM(lahmtgl4)
+ctahuntgl4          DO_LIB  ap_amstr(lahmtgl4,lT5,ls4,&ltahun);
+cbulantgl4          DO_LIB  ap_amstr(lahmtgl4,lT3,ls2,&lbulan);
+cmampatahmtgl5  MAMPAT_ALPHANUM(lahmtgl2)
+
+cmampatahmtgl7  MAMPAT_ALPHANUM(lahmtgl7)
+ctahuntgl7      DO_LIB  ap_amstr(lahmtgl7,lT5,ls4,&ltahun);
+cbulantgl7      DO_LIB  ap_amstr(lahmtgl7,lT3,ls2,&lbulan);
+MAP(maddahmPrsp)
+cmampatahmtgl1  lahmtgl1        DO_CALC
+
+ctahuntgl1      ltahun          DO_CALC
+cbulantgl1      lbulan          DO_CALC
+lahmtgl1        lhari           REPLACE
+cgabtgl         lahmtgl1        DO_CALC
+lahmtgl1        ahmtgl1         REPLACE
+
+cmampatahmtgl7  lahmtgl7        DO_CALC
+ctahuntgl7      ltahun          DO_CALC
+cbulantgl7      lbulan          DO_CALC
+lahmtgl7        lhari           REPLACE
+cgabtgl         lahmtgl7        DO_CALC
+lahmtgl7        ahmtgl7         REPLACE
+
+ahmtgl4         lahmtgl4        REPLACE
+ctahuntgl4      ltahun          DO_CALC
+cbulantgl4      lbulan          DO_CALC
+lahmtgl4        lhari           REPLACE
+cgabtgl         ahmnofak        DO_CALC
+
+ahmket4         ahmnobuk2       REPLACE
+tbdkode         lcab5           REPLACE
+cabkode         lcab5           REPLACE_IF cspil1hso
+cabkode         lcab5           REPLACE_IF cspil2hso
+cabkode         lcab5           REPLACE_IF cspil3hso
+tbdkode         lcab5           REPLACE_IF cpildr878
+lcab5           lcab521         REPLACE
+lcab5           ahmno2          REPLACE
+cgabtgl         ahmstr1030      DO_CALC
+ahmstr1030      ahmtgl1         REPLACE
+cmampatahmtgl3  lahmtgl3        DO_CALC
+ctahuntgl3      ltahun          DO_CALC
+cbulantgl3      lbulan          DO_CALC
+lahmtgl3        lhari           REPLACE
+cgabtgl         lahmtgl3        DO_CALC
+lkodescr	ahmnofak2	REPLACE
+lkodescr	ahmsts1		REPLACE
+lkodeahm	ahmsup		REPLACE	
+gv_bukutamu     ahmdata         REPLACE
+cPRSP           ahmsts          DO_CALC
+ltglakh		ahmtgl5		REPLACE
+lcab5		ahmlok		REPLACE
+ltglakh         ahmtgl6         REPLACE
+tbdlv2          lkodemd         REPLACE
+lcadcmp         lkodemd         REPLACE_IF cdjoincadH1
+lkodemd         ahmno1          REPLACE
+DEBUG ldump	ldump		REPLACE
+
+MAP(maddahmSpk)
+cmampatahmtgl1  lahmtgl1        DO_CALC
+ctahuntgl1      ltahun          DO_CALC
+cbulantgl1      lbulan          DO_CALC
+lahmtgl1        lhari           REPLACE
+tbdkode         lcab5           REPLACE
+cabkode         lcab5           REPLACE_IF cspil1hso
+cabkode         lcab5           REPLACE_IF cspil2hso
+cabkode         lcab5           REPLACE_IF cspil3hso
+cabkode         lcab5           REPLACE_IF cspil2hso
+cabkode         lcab5           REPLACE_IF cspil3hso
+cnofakspk	ahmnofak2	DO_CALC
+lkodeahm	ahmsup		REPLACE	
+cSPK           ahmdata         DO_CALC
+cSPK           ahmsts          DO_CALC
+ltglakh		ahmtgl1		REPLACE
+cmampatahmtgl2  lahmtgl2        DO_CALC
+ctahuntgl2      ltahun          DO_CALC
+cbulantgl2      lbulan          DO_CALC
+lahmtgl2        lhari           REPLACE
+cgabtgl         lahmtgl2        DO_CALC
+lahmtgl2        ahmtgl2         REPLACE
+cmampatahmtgl3  lahmtgl3        DO_CALC
+ctahuntgl3      ltahun          DO_CALC
+cbulantgl3      lbulan          DO_CALC
+lahmtgl3        lhari           REPLACE
+cgabtgl         lahmtgl3        DO_CALC
+lahmtgl3        ahmtgl3         REPLACE
+lcab5		ahmlok		REPLACE
+ltglakh         ahmtgl6         REPLACE
+ahmket4         ahmnofak        REPLACE
+tbdlv2          lkodemd         REPLACE
+lcadcmp         lkodemd         REPLACE_IF cdjoincadH1
+lkodemd         ahmno1          REPLACE
+DEBUG ldump	ldump		REPLACE
+
+MAP(maddahmLsng)
+cmampatahmtgl5  lahmtgl2        DO_CALC
+cmampatahmtgl3  lahmtgl3        DO_CALC
+ctahuntgl1      ltahun          DO_CALC
+cbulantgl1      lbulan          DO_CALC
+lahmtgl1        lhari           REPLACE
+ahmket4         ahmnofak        REPLACE
+tbdkode         lcab5           REPLACE
+cabkode         lcab5           REPLACE_IF cspil1hso
+cabkode         lcab5           REPLACE_IF cspil2hso
+cabkode         lcab5           REPLACE_IF cspil3hso
+lkodescr        ahmnofak2       REPLACE
+cLSNG           ahmdata         DO_CALC
+cLSNG           ahmsts          DO_CALC
+ltglakh		ahmtgl5		REPLACE
+cabkode		ahmlok		REPLACE
+lcab5		ahmlok		REPLACE
+
+ahmtgl5 	ahmtgl1		REPLACE
+cmampatahmtgl5  lahmtgl2        DO_CALC
+ctahuntgl2      ltahun          DO_CALC
+cbulantgl2      lbulan          DO_CALC
+lahmtgl2        lhari           REPLACE
+cgabtgl         lahmtgl2        DO_CALC
+lahmtgl2        ahmtgl2         REPLACE
+cmampatahmtgl3  lahmtgl3        DO_CALC
+ctahuntgl3      ltahun          DO_CALC
+cbulantgl3      lbulan          DO_CALC
+lahmtgl3        lhari           REPLACE
+cgabtgl         lahmtgl3        DO_CALC
+lahmtgl3        ahmtgl3         REPLACE
+ldealerId	ahmsup		REPLACE
+ltglakh         ahmtgl6         REPLACE
+
+tbdlv2          lkodemd         REPLACE
+lcadcmp         lkodemd         REPLACE_IF cdjoincadH1
+lkodemd         ahmno1          REPLACE
+
+MAP(maddahmcdb)
+tlmcab lcabyangudahjalan        REPLACE
+cmampatahmtgl1  lahmtgl1        DO_CALC
+ctahuntgl1      ltahun          DO_CALC
+cbulantgl1      lbulan          DO_CALC
+lahmtgl1        lhari           REPLACE
+cgabtgl         lahmtgl1        DO_CALC
+lahmtgl1        ahmtgl1         REPLACE
+
+cmampatahmtgl2  lahmtgl2        DO_CALC
+ctahuntgl2      ltahun          DO_CALC
+cbulantgl2      lbulan          DO_CALC
+lahmtgl2        lhari           REPLACE
+cgabtgl         lahmtgl2        DO_CALC
+lahmtgl2        ahmtgl2         REPLACE
+
+cmampatahmtgl3  lahmtgl3        DO_CALC
+ctahuntgl3      ltahun          DO_CALC
+cbulantgl3      lbulan          DO_CALC
+lahmtgl3        lhari           REPLACE
+cgabtgl         lahmtgl3        DO_CALC
+lahmtgl3        ahmtgl3         REPLACE
+
+cmampatahmtgl4  lahmtgl4        DO_CALC
+ctahuntgl4      ltahun          DO_CALC
+cbulantgl4      lbulan          DO_CALC
+lahmtgl4        lhari           REPLACE
+cgabtgl         lahmtgl4        DO_CALC
+lahmtgl4        ahmtgl4         REPLACE
+
+tlmcab          lcab5           REPLACE
+lcab5           ahmno2          REPLACE
+lcab5           ltkmlok21       REPLACE
+lidprspcdb      lidprspcdb      REPLACE_IF cjointlm1471
+lidprspcdb      ahmstr308       REPLACE
+lnobuk878       lnobuk878       REPLACE_IF cjoinnobuk878
+lnobuk878       ahmnobuk4       REPLACE 
+lkodescr	ahmnofak2	REPLACE
+lkodescr	ahmsts1		REPLACE
+lkodeahm	ahmsup		REPLACE	
+lDTCDB          ahmdata         REPLACE
+gv_INPG         ahmsts          REPLACE
+ltglakh		ahmtgl5		REPLACE
+lcab5		ahmlok		REPLACE
+ltglakh         ahmtgl6         REPLACE
+lMD             lkodemd         REPLACE
+lkodemd         ahmno1          REPLACE
+
+cblanks		lidprspcdb	DO_CALC
+cblanks         lnobuk878       DO_CALC
+DEBUG ldump	ldump		REPLACE
+
+MAP(mupdtbdDGI)
+g_tgltrn        tbdtgl1         REPLACE
+
+CALCS()
+cdjointbdapi1ok	djointbdapi==1 && ((lMD=="INDAKO" || lMD=="MPM") && ljalanoto=="Y") 
+cjalanoto       ljalanoto=="Y"
+/*cdjointbdapi1ok	djointbdapi==1 && (ljalanoto=="Y" || lMD=="HSO")*/
+
+SPCALCS(sptrans)
+	DO_LIB				ap_dbclc(DNAME dmapmap, DCOMMAND MAPMAP, DMAP mmapmaphso);
+	DO_LIB				ap_dbclc(DNAME dmapmapAPI, DCOMMAND MAPMAP, DMAP mapmapAPI);
+	DO_LIB_IF cdjointbdapi1ok       ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cdjointbdapi1ok       ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);	
+	DO_LIB_IF cdjointbdapi1ok       ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg1)
+	DO_LIB				ap_dbclc(DNAME dmapmapg1, DCOMMAND MAPMAP, DMAP mmapmaphso);
+	DO_LIB				ap_dbclc(DNAME dmapmapAPIg1, DCOMMAND MAPMAP, DMAP mapmapAPI);
+	DO_LIB_IF cdjointbdapi1ok       ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cdjointbdapi1ok       ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);	
+	DO_LIB_IF cdjointbdapi1ok       ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg2)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg2, DCOMMAND MAPMAP, DMAP mmapmaphso);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg2, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cdjointbdapi1ok       ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cdjointbdapi1ok       ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cdjointbdapi1ok       ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg3)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg3, DCOMMAND MAPMAP, DMAP mmapmapsinsen);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg3, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg4)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg4, DCOMMAND MAPMAP, DMAP mmapmapdaw);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg4, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+
+SPCALCS(sptransg5)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg5, DCOMMAND MAPMAP, DMAP mmapmaptrio);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg5, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvaluetrio,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg6)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg6, DCOMMAND MAPMAP, DMAP mmapmapmpm);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg6, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg7)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg7, DCOMMAND MAPMAP, DMAP mmapmapwahana);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg7, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+
+SPCALCS(sptransg8)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg8, DCOMMAND MAPMAP, DMAP mmapmaptdm);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg8, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+
+SPCALCS(sptransg9)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg9, DCOMMAND MAPMAP, DMAP mmapmapindako);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg9, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+
+SPCALCS(sptransg10)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg10, DCOMMAND MAPMAP, DMAP mmapmapcdn);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg10, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg11)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg11, DCOMMAND MAPMAP, DMAP mmapmaptdm);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg11, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cjalanoto             ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cjalanoto             ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg12)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg12, DCOMMAND MAPMAP, DMAP mmapmaptitikcdb);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg12, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB_IF cdjointbdapi1ok       ap_astra(lapi_key,lsecret_key);
+        DO_LIB_IF cdjointbdapi1ok       ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB_IF cjalanoto             ap_nxpst(l4820,lm4474prsl);
+
+SPCALCS(sptransg13)
+        DO_LIB                          ap_dbclc(DNAME dmapmapg13, DCOMMAND MAPMAP, DMAP mmapmapprsp);
+        DO_LIB                          ap_dbclc(DNAME dmapmapAPIg13, DCOMMAND MAPMAP, DMAP mapmapAPI);
+        DO_LIB                          ap_astra(lapi_key,lsecret_key);
+        DO_LIB                          ap_rqjsp(lurl,g_strksg,lreqmstlabels,lreqmstfields,lreturnlabel,lexpectedreturnvalue,lmstlabels,lmstfields,lmstnamamap,ldetlabels,ldetfields,ldetnamamap,lsaveflg);
+        DO_LIB                          ap_nxpst(l4820,lm4474prsl);
+        DO_LIB                          ap_dbclc(DNAME dupdtbdg13, DCOMMAND UPDATE, DTARGET tbdprmidx tbdprm, DMAP mupdtbdDGI);
+
+POSTING(trans)
+	PST_COMMAND	sptrans
+POSTING(transg1)
+	PST_COMMAND	sptransg1
+POSTING(transg2)
+        PST_COMMAND     sptransg2
+POSTING(transg3)
+        PST_COMMAND     sptransg3
+POSTING(transg4)
+        PST_COMMAND     sptransg4
+POSTING(transg5)
+        PST_COMMAND     sptransg5
+POSTING(transg6)
+        PST_COMMAND     sptransg6
+POSTING(transg7)
+        PST_COMMAND     sptransg7
+POSTING(transg8)
+        PST_COMMAND     sptransg8
+POSTING(transg9)
+        PST_COMMAND     sptransg9
+POSTING(transg10)
+        PST_COMMAND     sptransg10
+POSTING(transg11)
+        PST_COMMAND     sptransg11
+POSTING(transg12)
+        PST_COMMAND     sptransg12
+POSTING(transg13)
+        PST_COMMAND     sptransg13
+
+END_SCREEN

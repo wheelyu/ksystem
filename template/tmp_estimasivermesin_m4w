@@ -1,0 +1,126 @@
+DBCALCS(djoinestmesin)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      mtdbukurtidx tlmnobuk l3
+        DBC_MAP         mjoinestimasi
+
+CALCS()
+cjoinestmesin        djoinestmesin==1
+
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||t.DetailMesin         ______________||
+|\------------------------------------/|
+|/------------------------------------\|
+||t.Mesin     t.Pilihan               ||
+||t.ACCU      :____  ___________      ||
+||t.NilaiADH           t.NilaiHO      ||
+||_________________  _________________||
+||t.FisikMesin:____  ___________      ||
+||t.NilaiADH           t.NilaiHO      ||
+||_________________  _________________||
+||t.Radiator  :____  ___________      ||
+||t.NilaiADH           t.NilaiHO      ||
+||_________________  _________________||
+||t.Total:_____________  _____________||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+mtdnobuk        PROTECT 	INPUTRI		1
+lpes1           PROTECT         INPUTRI         2
+lket1b          PROTECT         INPUTRI         3
+lnes1		PROTECT		INPUTRI		4
+mtdperdis1      NUMERIC         INPUTRI         5
+lpes2           PROTECT         INPUTRI         6
+lket2b          PROTECT         INPUTRI         7
+lnes2		PROTECT		INPUTRI		8
+mtdperdis2      NUMERIC         INPUTRI         9
+lpes3           PROTECT         INPUTRI         10
+lket3b          PROTECT         INPUTRI         11
+lnes3		PROTECT		INPUTRI		12
+mtdperdis3      NUMERIC         INPUTRI         13
+ltotal		PROTECT		INPUTRI		14
+mtdjml          PROTECT         INPUTRI         15
+
+DEFAULTS(tmptranst)
+lpes1          INIT             BLANKS
+lpes2          INIT            BLANKS
+lpes3          INIT            BLANKS
+lnes1          INIT            BLANKS
+lnes2          INIT            BLANKS
+lnes3          INIT            BLANKS
+ltotal         INIT            BLANKS
+
+EDITS(tmptranst)
+e.Validate      mtdnobuk        VALIDATE tlmbukidx mtlm3
+
+MAP(mtlm3)
+tlmnobuk        mtdnobuk        REPLACE
+lpes1           lpes1           REPLACE_IF cjoinestmesin
+lpes2           lpes2           REPLACE_IF cjoinestmesin
+lpes3           lpes3           REPLACE_IF cjoinestmesin
+lnes1           lnes1           REPLACE_IF cjoinestmesin
+lnes2           lnes2           REPLACE_IF cjoinestmesin
+lnes3           lnes3           REPLACE_IF cjoinestmesin
+ltotal          ltotal          REPLACE_IF cjoinestmesin
+chidup2          lket1b          DO_CALC_IF cpil1axx
+cmati2           lket1b          DO_CALC_IF cpil1bxx
+ckarat2          lket1b          DO_CALC_IF cpil1cxx
+chidup2          lket2b          DO_CALC_IF cpil2axx
+cmati2           lket2b          DO_CALC_IF cpil2bxx
+ckarat2          lket2b          DO_CALC_IF cpil2cxx
+chidup2          lket3b          DO_CALC_IF cpil3axx
+cmati2           lket3b          DO_CALC_IF cpil3bxx
+ckarat2          lket3b          DO_CALC_IF cpil3cxx
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=mtdperdis1    DO_MAP SHOW mtlm3
+AFTER_INPUT  cur_keybd=EN               DO_MAP SHOW mjumtot3
+
+MAP(mupdtlm7)
+mtdjml          tlmperpph       REPLACE
+ctotalPB        tlmjml          DO_CALC
+cnilaiper       tlmtotal        DO_CALC
+cpersenest      tlmperdisd      DO_CALC
+
+DBCALCS(dupdtlm7)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tlmbukidx   mtdnobuk
+        DBC_MAP         mupdtlm7
+
+SPCALCS(supdtlm7)
+        dupdtlm7
+
+POSTING(tmptrans)
+        PST_ADDCMD supdtlm7
+        PST_UPDCMD supdtlm7
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+       mtdbukurtidx   tlmnobuk l7
+SFL_MAP
+tlmnobuk        mtdnobuk        REPLACE
+l7              mtdnourt        REPLACE
+tlmdata         mtddata         REPLACE
+tlmnobbm        mtdnobbm        REPLACE
+tlmcab          mtdcab          REPLACE
+
+DBCALCS(djointmptrans)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      mtdbukurtidx   tlmnobuk l7
+
+CALCS()
+caddtmptrans    (g_grpnam=="B.M4WCSPV" || g_grpnam=="B.M4WDPH") && tlmsts=="INPG" && tlmsts2=="CRAS" && djointmptrans==0
+cupdtmptrans    (g_grpnam=="B.M4WCSPV" || g_grpnam=="B.M4WDPH")  && tlmsts=="INPG" && tlmsts2=="CRAS"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddtmptrans
+        PMT_UPDALL_COND cupdtmptrans
+        PMT_DEL_COND    c0
+

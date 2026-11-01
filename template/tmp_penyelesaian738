@@ -1,0 +1,124 @@
+LOCAL
+PGM_FIELDS
+lAWALPIU    STRING  11
+lthbl1      STRING  11
+lakrawlkwi  DFLOAT  8 
+
+CALCS()
+cthbl1          THBLS(g_tgltrn)
+cket1           "PELUNASAN"
+cket2           "BAYAR SESUAI TUNGGAKAN"
+cket3           "RETUR" 
+cket1x          ketstr1=="1"
+cket2x          ketstr1=="2"
+cket3x          ketstr1=="3"
+
+
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||t.TipeSelesai : ____________________||
+||t.Keterangan  : ____________________||
+|\------------------------------------/|
+||spasi                               ||
+||spasi                               ||
+\--------------------------------------/
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+ketstr1        ALLCAPS         INPUTRI     1
+ketstr2        PROTECT         INPUTRI     2
+
+DEFAULTS(tmptranst)
+lAWALPIU       INIT            AWALPIU
+lthbl1         INIT            {cthbl1}
+ketdata        INIT            PENARIKAN
+ketstr1        DFALT_SCAN      BLANKS
+                                1 "PELUNASAN"
+                                2 "BAYAR SESUAI TGGKAN"
+                                3 "RETUR"
+MAP(mjoinakr)
+akrawlkwi		lakrawlkwi		REPLACE
+
+DBCALCS(djoinakr)
+DBC_COMMAND     JOIN
+DBC_TARGET      akrdatbukth   lAWALPIU tlmnoasal lthbl1
+DBC_MAP         mjoinakr
+
+MAP(misiket1)
+cket1           ketstr2     DO_CALC
+
+MAP(misiket2)
+cket2           ketstr2     DO_CALC
+
+MAP(misiket3)
+cket3           ketstr2     DO_CALC
+
+CALCS()
+ctrans2g6       tlmsts=="INPG" || tlmsts=="CLSD"
+cpenyelesaian1  (ketstr1=="1" && piksts=="PLNS") || ketstr1=="2" || ketstr1=="3"
+cpenyelesaian2  (ketstr1=="2" && piksts!="PLNS" && (djoinakr==1 && (lakrawlkwi<=pikke-pikkeblnll))) || ketstr1=="1" || ketstr1=="3" 
+cpenyelesaian3  (ketstr1=="3" && piksts!="PLNS" && (djoinakr==1 && (lakrawlkwi>pikke-pikkeblnll))) || ketstr1=="1" || ketstr1=="2"
+
+EDITS(tmptranst)
+e.Mandatory     ketstr1        MANDATORY
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=ketstr1   DO_MAP SHOW IF cket1x misiket1
+AFTER_INPUT     cur_field=ketstr1   DO_MAP SHOW IF cket2x misiket2
+AFTER_INPUT     cur_field=ketstr1   DO_MAP SHOW IF cket3x misiket3
+
+AFTER_INPUT     cur_field=ketstr1  DO_MAP SHOW
+                IF cpenyelesaian1 mdum
+                ELSE HKCURSOR STAY 
+                HKMSG Selesaikan Pembayaran Secara Lunas
+
+AFTER_INPUT     cur_field=ketstr1  DO_MAP SHOW
+                IF  cpenyelesaian2  mdum
+                ELSE HKCURSOR STAY 
+                HKMSG Selesaikan Pembayaran Sesuai Tunggak
+
+AFTER_INPUT     cur_field=ketstr1  DO_MAP SHOW
+                IF  cpenyelesaian3  mdum
+                ELSE HKCURSOR STAY 
+                HKMSG Sudah Melakukan Pelunasan/Sudah Bayar Tunggakan
+
+AFTER_INPUT     cur_keybd=EN  DO_MAP SHOW
+                IF cpenyelesaian1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Selesaikan Pembayaran Secara Lunas
+
+AFTER_INPUT     cur_keybd=EN  DO_MAP SHOW
+                IF  cpenyelesaian2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Selesaikan Pembayaran Sesuai Tunggak
+
+AFTER_INPUT     cur_keybd=EN  DO_MAP SHOW
+                IF  cpenyelesaian3  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Sudah Melakukan Pelunasan/Sudah Bayar Tunggakan
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctrans2g6
+SFL_SHOW_NEXT
+SFL_TARGET
+            ketdatbukkod   lPENARIKAN tlmnobuk
+
+SFL_MAP
+lPENARIKAN	ketdata		REPLACE
+tlmnobuk	ketnobuk	REPLACE
+
+CALCS()
+cisiselesai 	(tlmsts=="INPG" && djoinket1==0) || (g_grpnam=="RI" || g_grpnam=="IT")
+cubhselesai	(g_grpnam=="RI" || g_grpnam=="IT")
+PERMIT(tmptrans)
+PMT_ADD_COND            cisiselesai
+PMT_UPDALL_COND	        cubhselesai
+PMT_DEL_COND		cubhselesai
+
+
+

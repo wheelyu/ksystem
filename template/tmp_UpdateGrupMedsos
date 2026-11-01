@@ -1,0 +1,209 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------\
+ /--------s.UPLOAD--------------\/---------------------------------------------\ 
+ |                              || t.Upload    :____                           |
+ |                              || t.NipVerif  :_________ ___________________  |
+ |                              || t.Verifikasi:____  t.KetVrf:______________  |  
+ |                              || t.SmbrLink  :____                           |  
+ |                              || t.LinkWeb   :______________________________ |
+ |                              || t.KetLink   :______________________________ |
+ |                              ||              ___                            |
+ |                              ||                                             |
+ |                              ||                                             | 
+ |                              ||                                             | 
+ \------------------------------/\---------------------------------------------/ 
+\-------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdsisstr       PROTECT             INPUTRI 1 /*upload OK*/
+tkdnoll         NOCHANGE            INPUTRI 2 /*NIP*/
+lnamaacc3       PROTECT             INPUTRI 3 /*Nama*/
+tkdjenis        ALLCAPS             INPUTRI 4 /*Verifikasi*/
+tkdjwbstr2      ALLCAPS SCROLL      INPUTRI 4 /*Ket Verif*/
+tkdjwbstr1      ALLCAPS             INPUTRI 5 /*Sumber Link*/
+tkdket          TEXTAREA            INPUTRI 5 /*LinkWeb*/
+lketlink        TEXTAREA PROTECT    INPUTRI 6 /*Ket Link*/
+ldum            NOCHANGE            INPUTRI         10
+
+CALCS()
+cubahupdate     (tlmgrup != g_usrkode) && (tlmpst != g_usrkode)
+cmandatMGA      g_usrkode == tlmgrup || g_usrkode == tlmpst
+
+EDITS(tmptranst)
+t.ValidatePsi  tkdnoll          VALIDATE psikodidx mpsix 0
+e.Mandatory    tkdjenis         MANDATORY_IF cmandatMGA
+e.Mandatory    tkdjwbstr1         MANDATORY_IF cmandat2
+e.Mandatory    tkdket           MANDATORY_IF cmandat
+
+DEFAULTS(tmptranst)
+tkdjenis        DFALT_SCAN_BLANKS	YA TDK
+IF cmandat2 tkdjwbstr1      DFALT_SCAN_BLANKS	HP WEB FB_LITE
+IF ctipetg  tkdjwbstr1      DFALT_SCAN_BLANKS	t.me web.telegram
+IF ctipeox  tkdjwbstr1      DFALT_SCAN_BLANKS	HP WEB
+
+MAP(mpsix)
+psikode		tkdnoll		REPLACE
+psinama		lnamaacc3	REPLACE
+/*
+CALCS()
+cnipsama    abkkym  == tlmgrup2 && abknobuk*/
+
+MAP(macc2)
+tlmnobuk        tkdnobuk        REPLACE
+gv_OPEN         tkdsts          REPLACE
+lUPDATE         tkddata         REPLACE
+c1		tkdnourt	DO_CALC_IF cdjointkd0
+cnourt2		tkdnourt	DO_CALC_IF cdjointkd1
+ctkdrek		tkdrek		DO_CALC_IF ctamb
+g_usrkode	tkdnoll		REPLACE_IF cupdateuser
+
+/*MAP(mnull)
+cblanks         tkdjwbstr2      DO_CALC_IF cYA*/
+
+MAP(mupdtkdfotoupd)
+cok             tkdsisstr         DO_CALC
+
+DBCALCS(dupdtkdfotoupd)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx   tkdprm
+        DBC_MAP         mupdtkdfotoupd
+
+MAP(misi)
+g_tgltrn    tkdtgl      REPLACE_IF ctmbh
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjenis       	DO_SKIP_IF cubahupdate
+/*AFTER_INPUT     cur_field=tkdnoll               DO_MAP SHOW
+                IF csesuai mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JumlahAnggotaGrupHarusMemenuhiKuotaMinimal*/
+BEFORE_INPUT    cur_field=tkdjwbstr2        DO_SKIP_IF cYA
+/*AFTER_INPUT     cur_field=tkdjenis              DO_MAP SHOW mnull*/
+AFTER_INPUT     cur_keybd=EN                DO_MAP SHOW misi
+BEFORE_INPUT    	cur_field=tkdjenis      DO_MAP SHOW macc2
+BEFORE_INPUT    	cur_field=tkdjwbstr1    DO_SKIP_IF cbknfb
+AFTER_INPUT     	cur_field=tkdjenis      DO_MAP SHOW macc2
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln25,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkIG mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkIG
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB_IF cbknfbhp ap_amstr(tkdket,ln1i,ln24,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkFB  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkFB
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB_IF cfbhp ap_amstr(tkdket,ln1i,ln22,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkFB2  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkFBdariHp
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln21,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkFB3  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkFBLite
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln13,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkTG mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkTG2
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln24,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkTG2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkTG
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln22,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkTT mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkTT
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln25,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkWA mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkWA
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln16,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkYT mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkYT
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln13,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkTW mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkTW
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln12,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkLN mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkLN
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln21,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkPN mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkPN
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln26,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkDK mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkDK
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln24,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkLI mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkLI
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln18,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkGL mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkGL
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln21,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkOX mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkOX
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln13,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkOX2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkOX2
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln24,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkJS mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkJS
+
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW
+                        IF cOKsemua mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.BlmUploadFoto   
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkdnourt
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD tkddata tkdnobuk
+SFL_COND	cmgasaja
+SFL_UPLFLD_DBCALCS     dupdtkdfotoupd
+SFL_TARGET	tkddatbukll lUPDATE tlmnobuk
+SFL_MAP
+    lUPDATE     tkddata     REPLACE
+    tlmnobuk    tkdnobuk    REPLACE
+    gv_OPEN     tkdsts      REPLACE
+    g_tgltrn    tkdtgl      REPLACE

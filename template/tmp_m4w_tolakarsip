@@ -1,0 +1,509 @@
+LOCAL
+PGM_FIELDS
+luploadokx	STRING		11
+lenter2         STRING		11
+lversix2	STRING		11
+lTOLAKAN11      STRING		11
+lLNKPTLK11      STRING		11
+lLNKPTLKM4W     STRING		21
+ltkdjwbstr2     STRING		21
+lakttype        STRING		21
+laktoto         STRING		21
+ljmlkunciarsip	INT2		2
+lurtsvi       	INT2		2
+lakttotal     	INT2		4
+lakttotal2    	INT2		4
+lsvidf1a      	INT2		4
+lsviyt2ver	STRING		2
+lsvistr33ver    STRING		21
+lsviketver	STRING		251
+lkettolak2      STRING          31
+ltgltlk         DATE            4 
+ltgllkp         DATE            4 
+lakttgl         DATE            4 
+lakttgl2a       DATE            4 
+lakttgl2        DATE            4 
+ltkdtgl         DATE            4 
+ltglacc         DATE            4 
+ltglacc2        DATE            4 
+ltgldok         DATE            4 
+ltgldok2        DATE            4 
+ldok            STRING          5 
+ldok11          STRING          11
+ltkdjenis       STRING          21
+lkunciabsn      STRING          11
+ljam            TIME            8
+lniprm          STRING          21
+lnipcm          STRING          21
+lnipad          STRING          21
+lcm             STRING          21
+lrm             STRING          21
+lBM4WADHDVH     STRING          21
+labknoll        STRING          21
+labktype        STRING          21
+labktgl         DATE            4
+
+CALCS()
+cscannip	abkkym==svistr3
+
+DBCALCS(djoinkuncixx)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lKUNCIABSEN lnobukkunci
+
+MAP(mscankunciarsip)
+c1	ljmlkunciarsip		DO_CALC_IF cscannip
+
+DBCALCS(dscankunciarsip)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	abkdatbukidx lKUNCIABSEN lnobukkunci
+	DBC_SUM_MAP	mscankunciarsip
+
+MAP(mjoinakthis)
+akttotal        lakttotal       REPLACE
+akttgl          lakttgl         REPLACE
+akttgl2         lakttgl2a       REPLACE
+akttype         lakttype        REPLACE
+aktprm          laktoto         REPLACE
+
+DBCALCS(djoinakthis)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      aktkodtypidx svinobuk lTOLAKAN11  svikode     
+        DBC_MAP         mjoinakthis
+
+MAP(mjoinaktlkp)
+akttotal        lakttotal2      REPLACE
+akttgl          lakttgl2        REPLACE
+
+DBCALCS(djoinaktlkp)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      aktkodtypidx svinobuk lLNKPTLK11  svikode     
+        DBC_MAP         mjoinaktlkp
+
+MAP(mjoinaktdok)
+akttgl          ltgldok         REPLACE
+akttgl2         ltgldok2        REPLACE
+
+DBCALCS(djoinaktdok)
+        DBC_COMMAND     JOIN              
+        DBC_TARGET      aktkodtypidx svinobuk ldok11 svikode
+        DBC_MAP         mjoinaktdok
+
+MAP(mjoinpdok)
+tkdtgl          ltkdtgl         REPLACE
+tkdjwbstr2      ltkdjwbstr2     REPLACE
+tkdjenis        ltkdjenis       REPLACE
+
+DBCALCS(djoinpdok)
+        DBC_COMMAND     JOIN         
+        DBC_TARGET      tkdbukidx svinobuk ldok  lurtsvi   
+        DBC_MAP         mjoinpdok 
+
+MAP(mjoinrm)
+sgmstr5         lniprm    REPLACE
+
+DBCALCS(djoinrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab gv_m4w21 lrm lthblx btmcab btmcab
+        DBC_MAP         mjoinrm
+
+MAP(mjoincm)
+sgmstr5         lnipcm    REPLACE
+
+DBCALCS(djoincm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab gv_m4w21 lcm lthblx btmcab btmcab
+        DBC_MAP         mjoincm
+
+MAP(mjoinad)
+usrkode        lnipad    REPLACE
+
+DBCALCS(djoinad)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      usrgrpidx       lBM4WADHDVH
+        DBC_MAP         mjoinad
+
+MAP(mjoinabkpdok)
+abknoll       labknoll  REPLACE
+abktype       labktype  REPLACE
+abktgl        labktgl   REPLACE
+
+DBCALCS(djoinabkpndok)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lkunciabsn btmnobuk
+        DBC_MAP         mjoinabkpdok 
+
+CALCS()
+cin		"IN"
+cuplokx		(svistr31=="IN" && (svidf1 == 1 || svidf1 == 2 || svidf1 == 0) 
+                || (svistr31=="IN" && svidf1 != 0 && svidf1 != 1 && svidf1 != 2 && (g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "B.M4WRM" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD"|| g_grpnam == "B.M4WADHDVH"))) 
+cupdkunci	djoinkuncixx==1 && svistr31=="OK" 
+cupdkuncix	djoinkuncixx==1 && sviyt2=="T" && svists != "PDOK" && djointbdakt == 1 && ltbdlv1akt == "BUKA"
+cupdkunciy	djoinkuncixx==1 && sviyt2!="Y" && svists != "PDOK"
+cupdkunciy2	djoinkuncixx==1 && sviyt2=="Y" && svists != "PDOK"
+cupdtglkuy2	djoinkuncixx==1 && (g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD"|| g_grpnam == "B.M4WADHDVH") &&  svists != "PDOK"
+cvertbdok	sviyt2=="T" && svists != "PDOK"
+cvery		sviyt2=="Y"
+cakt1           lakttotal + 1 
+cakt2           lakttotal2 + 1 
+cdf1            svidf1 + 1 
+cjoinrm         djoinrm==1
+cjoincm         djoincm==1
+cjoinad         djoinad==1
+ctlk3           g_curcmd==2 && svidf1 ==3 && svists != "PDOK"
+ctlk4           g_curcmd==2 && svidf1 ==4 && svists != "PDOK"
+cubahtlk        g_curcmd==2 && svists != "PDOK" && djointbdakt == 1 && ltbdlv1akt == "BUKA"
+cbdok           svists != "PDOK" 
+cbho            g_grpnam !="RI" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WADHDVH"
+cubahakt0       djoinaktdok == 0 &&  g_curcmd==2 && svists == "PDOK" && djointbdakt == 1 && ltbdlv1akt == "BUKA"
+cubahakt        djoinaktdok == 1 &&  g_curcmd==2 && svists == "PDOK" 
+caccakt         djoinaktdok == 1 &&  g_curcmd==2 && svists == "PDOK" && svistr5 == "ACC"
+cupdabkpndok    g_curcmd==2 && djoinabkpndok==1 && svistr4=="ACC" 
+cupdabkpndok2   g_curcmd==2 &&  djoinabkpndok==1  && svistr5=="ACC" 
+cupdaccpndok    svistr4 =="ACC"
+cpdok           svists == "PDOK" 
+cpdokho         svists == "PDOK" && g_grpnam !="RI" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WADHDVH"  
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}   
+/----------------------------------\
+|  _______________________         |
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| \-------------------------------/|
+|  _______________________         |
+| /-------------------------------\|
+| |i.Ket _________________________||
+| |t.UplodOk    __________________||
+| |t.Tanggal    _________________ ||
+| |t.Tolakan    _________________ ||
+| |t.Ket                          ||
+| |______________________________ ||
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.Verifikasi __________________||
+| |t.Ket                          ||
+| |_______________________________||
+| |t.tlkke  _____ _______  _      ||
+| |t.tlkakh _____________         ||
+| |t.lkpakh _____________         ||
+| |spasi                          ||
+| |t.Acc1     ___________         ||
+| |t.Deadline ____________        ||
+| |t.StsBB    ____________        ||
+| |t.Acc1     ___________         ||
+| |           ___________         ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	svists          PROTECT          	INPUTRI	8
+	luploadokx	TOMBOL                  INPUTRI 1
+        svinama		PROTECT         	INPUTRI 1
+	svistr31	PROTECT {DD-MM-YYYY}	INPUTRI 2
+	svitgl2		ALLCAPS NONE NOLIMIT {DD-MM-YYYY} INPUTRI 3
+	svistr2         PROTECT                 INPUTRI 5
+        lkettolak2      PROTECT                 INPUTRI 6
+        sviyt2		NOCHANGE		INPUTRI 4
+	sviket		TEXTAREA ALLCAPS	INPUTRI 5
+	svidf1		PROTECT			INPUTRI 7 
+	lenter		ALLCAPS			INPUTRI 6 
+	svinobuk	PROTECT UNSEEN		INPUTRI	8
+	ltgltlk 	PROTECT {DD-MM-YYYY}    INPUTRI	9
+	ltgllkp 	PROTECT {DD-MM-YYYY}    INPUTRI	10
+	svistr4         ALLCAPS			INPUTRI 11
+	ltglacc       	PROTECT {DD-MM-YYYY}    INPUTRI 12
+	ltglacc2  	NONE NOLIMIT {DD-MM-YYYY} INPUTRI 13
+	svistr5         ALLCAPS			INPUTRI 14
+	lenter2  	ALLCAPS			INPUTRI 15
+
+
+DEFAULTS(tmptranst)
+lyes			INIT		"OK"
+lfotodokp		INIT		"FOTODOKP"
+IF cubahxxx sviyt2		DFALT_SCAN_BLANKS Y T
+IF cubahxxx svistr5             DFALT_SCAN_BLANKS ACC TACC
+IF cubahxxx svistr4             DFALT_SCAN_BLANKS ACC TACC
+luploadokx		INIT		"UPLOADOK"
+lKUNCIABSEN		INIT		"KUNCIABSEN"
+lversix2		INIT		110822v2
+lTOLAKAN11              INIT            TOLAKANM4W
+lLNKPTLKM4W             INIT            LNKPTLKM4W
+lLNKPTLK11              INIT            LNKPTLKM4W
+ldok                    INIT            PDOK       
+ldok11                  INIT            PDOK       
+ljam                    INIT            SYSTIME
+lcm                     INIT            CM     
+lrm                     INIT            RM     
+lBM4WADHDVH             INIT            B.M4WADHDVH
+lkunciabsn              INIT            KUNCIABSEN
+lenter2                 INIT            ENTER     
+
+EDITS(tmptranst)
+e.Mandatory		sviyt2		MANDATORY_IF cbdok 
+e.Mandatory		sviket		MANDATORY_IF cvertbdok
+e.validatea             svinobuk        VALIDATE btmbukidx mbtmz 0
+e.tolakan               svistr2         VALIDATE_IF cbdok tbddtmstidx mtbdtlk stbd1 {Pgv_dttabel} {PlARSIP} {PlTOLAKANM4W} {Plblank} {Plkode2} 
+
+CALCS()
+cjoinakthis0    djoinakthis == 0
+cjoinakthis1    djoinakthis == 1 && svikode == lakttype 
+cjoinakthis     djoinakthis == 1                             
+cjoinaktlkp0    djoinaktlkp == 0
+cjoinaktlkp1    djoinaktlkp == 1
+cjoinpdok       djoinpdok   == 1 
+cjoinaccdok_1   (djoinpdok  == 1 && ltkdtgl != ltglacc2 && g_curcmd != 2) || djoinpdok == 0
+cjoinaccdok_2   (djoinpdok  == 0 && ltkdtgl != ltglacc2 && g_curcmd != 2) || djoinpdok == 0                                       
+cjoinpdok0      djoinpdok   == 0
+cjoinaktdok     svists == "PDOK" && djoinaktdok == 1 
+cjoinaktdok_1   (djoinaktdok == 1 && ltgldok2 != ltglacc2 && g_curcmd != 2) || djoinaktdok == 0
+
+MAP(mtbdtlk)
+tbdkode         svistr2         REPLACE
+cBLANKS         lkettolak2      DO_CALC
+tbdket          lkettolak2      REPLACE
+
+
+MAP(mbtmz)
+btmnobuk svinobuk		REPLACE
+cnobukkunci     lnobukkunci     DO_CALC
+svinourt        lkode2x         REPLACE
+svidf2          lurtsvi         REPLACE
+svikode         lakttype        REPLACE_IF cjoinakthis  
+cBLANKS         ltgltlk         DO_CALC_IF cjoinakthis0
+lakttgl         ltgltlk         REPLACE_IF cjoinakthis1
+cBLANKS         ltgllkp         DO_CALC_IF cjoinakthis0
+lakttgl2        ltgllkp         REPLACE_IF cjoinaktlkp1
+lkode2x         lkode2          REPLACE
+cBLANKS         ltglacc         DO_CALC_IF cjoinpdok0   
+cBLANKS         lsvistr33ver    DO_CALC_IF cjoinpdok0   
+ltkdtgl         ltglacc         REPLACE_IF cjoinpdok    
+cBLANKS         ltgldok2        DO_CALC
+cBLANKS         ltkdtgl         DO_CALC_IF cjoinaccdok_2
+cBLANKS         ltglacc2        DO_CALC_IF cjoinaktdok_1
+cBLANKS         ltglacc2        DO_CALC_IF cjoinaccdok_1
+ltgldok2        ltgldok2        REPLACE_IF cjoinaktdok  
+ltgldok2        ltglacc2        NO_REPLACE                 
+ltglacc2        ltgldok2        REPLACE
+ltglacc2        ltkdtgl         REPLACE
+
+MAP(mdumver)
+sviyt2		lsviyt2ver		REPLACE
+sviket		lsviketver		REPLACE
+svistr5         lsvistr33ver            REPLACE
+cdf1            lsvidf1a                DO_CALC_IF cubahxxx        
+lsvidf1a        svidf1                  REPLACE_IF cjoinakthis1
+
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadokx	DO_SPCALCS suploadok
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mdumver
+BEFORE_INPUT    cur_field=sviyt2        DO_SKIP_IF cpdok   
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cpdok     
+BEFORE_INPUT    cur_field=lenter        DO_SKIP_IF cpdok     
+BEFORE_INPUT    cur_field=lenter2       DO_SKIP_IF cbdok     
+BEFORE_INPUT    cur_field=svistr4       DO_SKIP_IF cpdokho   
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cpdokho   
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cvery   
+BEFORE_INPUT    cur_field=ltglacc2       DO_SKIP_IF cvery   
+BEFORE_INPUT    cur_field=svistr5        DO_SKIP_IF cbdok   
+BEFORE_INPUT    cur_field=svistr4        DO_SKIP_IF cbdok   
+BEFORE_INPUT    cur_field=ltglacc2       DO_SKIP_IF cbdok   
+BEFORE_INPUT    cur_field=svitgl2        DO_SKIP_IF cbho    
+
+MAP(mupdsviftmandx)
+cin 		svistr31	DO_CALC
+g_tgltrn	svitgl2		REPLACE
+
+DBCALCS(dbftmandx)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx
+
+CALCS()
+chanyasdvyx	(((btmflag1 == "SDVY" && svists != "OPEN") || btmflag1 != "SDVY") && sviyt1=="T" ) || svists == "PDOK"
+cupdtmptrans	((svists != "PDOK" && sviyt2!="Y" && 
+                 (g_grpnam=="FINARSIP" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="IT" || 
+	  	  g_grpnam=="FINARSIPCO" ||g_grpnam=="RI")) || 
+                (svists == "PDOK" && svistr4 != "ACC" && (g_grpnam ==  "B.M4WBM" || g_grpnam == "B.M4WADH" ||  g_grpnam=="FINARSIP" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="IT" || g_grpnam=="FINARSIPCO" || g_grpnam=="RI")))
+cbesokx		g_tgltrn + 1
+cbesokarsip	g_tgltrn + 2
+cniparsip	abkkym==svistr3
+ckuncikexx	((dscankunciarsip==0 || dscankunciarsip==1) && ljmlkunciarsip>0)
+cketerangantlk  "History Tolakan" +" "+ STRIP(svinobuk)
+cketlngkp       "History lengkapi Tolakan" +" "+ STRIP(svinobuk)
+cketdok         "pending dokumen " +" "+ STRIP(svinobuk)
+cSYSTIME        SYSTIME
+cupdabkpendokx1 djoinpdok == 1 && (svikode==abknoll || (svikode=="CEKQA049" && labktype=="GIRO"))
+cupdabkpendokx2 djoinpdok == 1 && (svikode==abknoll || (svikode=="CEKQA049" && labktype=="GIRO")) && labktgl>g_tgltrn
+cupdabkpendokx3 djoinpdok == 1 && (svikode==abknoll || (svikode=="CEKQA049" && labktype=="GIRO")) && labktgl<=g_tgltrn
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftmandx
+SFL_SELECT chanyasdvyx 
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOSVY btmnobuk lfotodokp
+
+
+MAP(muploadokx)
+cnobukkunci	lnobukkunci	DO_CALC
+g_tgltrn	svitgl2		REPLACE_IF cuplokx
+lyes		svistr31	REPLACE_IF cuplokx
+
+MAP(mupdtmptrans)
+cnobukkunci	lnobukkunci	DO_CALC
+cBLANKS		svistr31	DO_CALC
+cBLANKS		svitgl2		DO_CALC
+lsviyt2ver	sviyt2		REPLACE
+lsviketver	sviket		REPLACE	
+lsvistr33ver    svistr5         REPLACE                 
+lsvidf1a        svidf1          REPLACE                                            
+lsvidf1a        svidf1          REPLACE                                            
+
+MAP(mupdkunciy)
+gv_CLSD		abksts		REPLACE
+
+
+MAP(mupdtglkun)
+gt_RINP		abksts		REPLACE
+svitgl2         abktgl          REPLACE
+
+MAP(mupdkuncix)
+gt_RINP		abksts		REPLACE
+cbesokx         abktgl          DO_CALC
+cbesokarsip	abktgl		DO_CALC_IF cniparsip
+
+MAP(maddabkarsip)
+svistr3         abkkym          REPLACE
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+cbesokx		abktgl          DO_CALC
+cbesokarsip	abktgl		DO_CALC_IF ckuncikexx
+gt_RINP         abksts          REPLACE
+
+MAP(maddkuncirm)
+lniprm          abkkym          REPLACE_IF cjoinrm
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+clusa           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+MAP(maddkuncicm)
+lnipcm          abkkym          REPLACE_IF cjoincm
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+clusa           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+MAP(maddkunciad)
+lnipad          abkkym          REPLACE_IF cjoinad
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+clusa           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+
+
+MAP(maddaktarsip)
+lTOLAKAN11      aktdata         REPLACE
+svikode         akttype         REPLACE
+svinobuk        aktkode         REPLACE
+g_usrkode       aktkode2        REPLACE
+g_tgltrn        akttgl          REPLACE_IF cbdok    
+cBLANKS         akttgl          DO_CALC_IF cubahakt 
+cSYSTIME        aktjam          DO_CALC
+cketerangantlk  aktket          DO_CALC
+c1              akttotal        DO_CALC_IF cjoinakthis0
+cakt1           akttotal        DO_CALC_IF cjoinakthis1
+
+
+MAP(maddaktlngkp)
+lLNKPTLK11      aktdata         REPLACE
+svikode         akttype         REPLACE
+svinobuk        aktkode         REPLACE
+g_usrkode       aktkode2        REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+cketlngkp       aktket          DO_CALC
+c1              akttotal        DO_CALC_IF cjoinaktlkp0
+cakt2           akttotal        DO_CALC_IF cjoinaktlkp1
+
+MAP(maddaktpdok)
+ldok            aktdata         REPLACE
+svikode         akttype         REPLACE
+svinobuk        aktkode         REPLACE
+g_usrkode       aktkode2        REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+cketdok         aktket          DO_CALC
+
+
+MAP(mupdakt)
+ltglacc2        akttgl2         REPLACE_IF cjoinaktdok              
+
+MAP(mupdtkd)
+ltglacc2        tkdtgl         REPLACE_IF cjoinaktdok  
+
+MAP(mupdabkpndok)
+gv_CLSD         abksts          REPLACE_IF cupdabkpndok 
+
+MAP(maddaccpendok)
+lPDOK           aktdata         REPLACE
+svinobuk        aktkode         REPLACE
+ltkdjenis       akttype         REPLACE_IF cjoinpdok 
+g_usrkode       aktcrtusr       REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+
+MAP(mupdabkpndok2)
+ltglacc2        abktgl          REPLACE_IF cupdabkpendokx1
+gt_RINP         abksts          REPLACE_IF cupdabkpendokx2
+gv_INPG         abksts          REPLACE_IF cupdabkpendokx3
+
+
+SPCALCS(suploadok)
+DO_LIB ap_dbclc(DNAME duploadokx,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP muploadokx);
+DO_LIB_IF cupdkunci ap_dbclc(DNAME dupdkunciy,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lnobukkunci,DMAP mupdkunciy);
+DO_LIB_IF cupdkuncix ap_dbclc(DNAME daddaktlngkp,DCOMMAND ADD,DFILE akt,DMAP maddaktlngkp);                                        
+DO_LIB_IF cupdkunciy ap_dbclc(DNAME daddabkarsip,DCOMMAND ADD,DFILE abk,DMAP maddabkarsip);
+
+SPCALCS(stmptrans)
+DO_LIB_IF cubahtlk   ap_dbclc(DNAME daddaktarsip,DCOMMAND ADD,DFILE akt,DMAP maddaktarsip);                                        
+DO_LIB_IF cupdkuncix ap_dbclc(DNAME dupdkuncix,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lnobukkunci,DMAP mupdkuncix);
+DO_LIB_IF cupdkunciy2 ap_dbclc(DNAME dupdkunciy2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lnobukkunci,DMAP mupdkunciy);
+DO_LIB_IF cupdtglkuy2 ap_dbclc(DNAME dupdtglkuy2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lnobukkunci,DMAP mupdtglkun);
+DO_LIB_IF ctlk3      ap_dbclc(DNAME daddabkrm,DCOMMAND ADD,DFILE abk,DMAP maddkuncirm);
+DO_LIB_IF ctlk4      ap_dbclc(DNAME daddabkcm,DCOMMAND ADD,DFILE abk,DMAP maddkuncicm);
+DO_LIB_IF ctlk4      ap_dbclc(DNAME daddabkad,DCOMMAND ADD,DFILE abk,DMAP maddkunciad);
+DO_LIB_IF cupdkuncix ap_dbclc(DNAME dupdtmptrans,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdtmptrans);
+DO_LIB_IF cubahakt0  ap_dbclc(DNAME daddaktpdok,DCOMMAND ADD,DFILE akt,DMAP maddaktpdok);             
+DO_LIB_IF cubahakt   ap_dbclc(DNAME dupdakt,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx svinobuk ldok11 svikode,DMAP mupdakt);
+DO_LIB_IF caccakt    ap_dbclc(DNAME dupdtkd,DCOMMAND UPDATE,DTARGET tkdbukidx svinobuk ldok  lurtsvi,DMAP mupdtkd);
+DO_LIB_IF cupdabkpndok ap_dbclc(DNAME dupdabkpndok,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsn svinobuk,DMAP mupdabkpndok);
+DO_LIB_IF cupdaccpndok ap_dbclc(DNAME daddaccpndok,DCOMMAND ADD,DFILE akt,DMAP maddaccpendok);
+DO_LIB_IF cupdabkpndok2 ap_dbclc(DNAME dupdabkpndok2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsn svinobuk,DMAP mupdabkpndok2);
+
+POSTING(tmptrans)
+	PST_UPDCMD	stmptrans
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cupdtmptrans
+  PMT_DEL_COND  c0
+

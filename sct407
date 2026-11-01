@@ -1,0 +1,465 @@
+SCREEN 407 QUERY_TYPE s.GanKdBrg
+SCR_FILE mts
+SCR_JRNFLD mtsnobuk mtstgl
+SCR_LOGFLD mtsnobuk 
+SCR_NXT_POSTING 4314
+SCR_NXT_MAP mnext
+SCR_NXT_COND cmtsOPEN
+
+MAP(mnext)
+mtsnobuk     	r_string1    REPLACE
+mtstgl     	r_date1      REPLACE
+
+LOCAL
+PGM_FIELDS
+ltomdet_d    	STRING		20
+lcablok      	STRING		21
+ldipenuhi     	DFLOAT          8
+ltothpp       	DFLOAT          8
+lhrgrata        DFLOAT          8  
+lkodebukti	STRING		21
+lnamtrnjml      STRING          21
+lurut  		INT2   		2
+ldumm		STRING		2
+lkettotal       STRING          16  
+lbrchrgbl	DFLOAT		8
+lbrdsisprc	DFLOAT		8
+lmapbtf         STRING          30   
+
+
+/*---------------djoinbrc--------------*/
+MAP(mjoinbrc)
+brchrgbl	lbrchrgbl	REPLACE
+
+DBCALCS(djoinbrc)  /*Cabang saja*/
+DBC_COMMAND	JOIN
+DBC_TARGET	brcdtbrgidx   gv_dtbrgcab mtdbrg mtscab 
+DBC_MAP		mjoinbrc
+
+/* ------------------ djoinmtdu --------------*/
+MAP(mjoinmtdu)
+mtdnourt   lurut   REPLACE
+
+DBCALCS(djoinmtdu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET      mtdbukurtidx   mtsnobuk  
+        DBC_MAP         mjoinmtdu
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /-------------------------------\ /------------------------------------------------------------\ |
+| |i.Tgl   : ________             | | i.NoBuk       : _____________________                      | |
+| |i.Sts   : ______               | | i.KatBrg	    : _________                                  | |
+| |i.Cab   : _____                | | i.Keterangan  : ________________________________________   | |
+| |i.Dvs   : _____   ________     | | spasi                                                      | |
+| \-------------------------------/ \------------------------------------------------------------/ |
+|    ____________________                                                                  ______  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+| /----------------------------------------------------------------------------------------------\ |
+| | ___________________   ______________________________________________________________________ | |
+| |                                                                                              | |
+| |                                                                                              | |
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+   mtstgl        NONE {DD-MM-YY}  INPUTRI       1 /* Tanggal  */
+   mtsnobuk      PROTECT NOCHANGE INPUTRI       6 /* No Bukti */
+   mtssts        PROTECT NOCHANGE INPUTRI       2
+   mtstype1	 NOCHANGE	  INPUTRI       7
+   mtscab        ALLCAPS SCROLL   INPUTRI       3 /* Cabang   */
+   mtsket        ALLCAPS SCROLL   INPUTRI       8 /* Keterangan  */
+   mtsdvs        ALLCAPS SCROLL   INPUTRI       4 /* Divisi   */
+   mtsbisnis  	 PROTECT	  NONE          5 /* Bisnis   */
+
+   ltomdet_d  	 TOMBOL	      	  INPUTRI	38 /* Tombol Detil d*/
+   mtsdata       PROTECT QPROTECT UNSEEN NONE   10
+
+   lkettotal     PROTECT          BIG       	11 /* Keterangan Total*/
+   mtstotal      PROTECT          BIG           12
+
+CALCS()
+cgsglbisdvs1		g_sglbisdvs == 1 && g_sglcab == 1
+cgsglcabbisdvs1		g_sglcabbisdvs == 1 
+cgsglcab1		g_sglcab == 1 
+cmtsOPEN		mtssts == "OPEN"
+cSPM			mtstype1 == "SPM"
+cLain			mtstype1 == "LAIN"
+
+DEFAULTS(master)
+ltomdet_d    	        INIT   	   "1d.Isi Barang"
+lkettotal               INIT       NETTO 
+mtsscr                  INIT       {g_scrnumstr}
+IF cgsglbisdvs1 mtsdvs  INIT  	   {g_grpbisdvs}
+IF cgsglcab1 mtscab     INIT  	   {g_grpcab}
+mtstgl   	        INIT  	   {g_tgltrn}
+mtssts   	        INIT 	   OPEN
+mtsdata                 INIT_ADD   GANKOD 
+mtsdata                 INIT_QUERY GANKOD 
+mtstype1		DFALT_SCAN SPM LAIN
+
+EDITS(master)
+e.Tombol ltomdet_d SHOW_SFL trans
+e.MandatoryDvs mtsdvs MANDATORY
+e.MandatoryCab mtscab MANDATORY
+e.MandatoryBuk mtsnobuk MANDATORY
+e.MandatoryTgl mtstgl MANDATORY
+e.MandatoryKet mtsket MANDATORY
+e.ValidateCab tidak ada mtscab VALIDATE cabstskodidx mcab scab {Pgv_INPG}
+e.DupkeyBuk mtsnobuk DUPKEY mtsbukidx
+e.ValidateDvs mtsdvs VALIDATE cadcabdtidx mcadDV scad {Pmtscab} {Pgv_cabbis} {Pmtscab}
+e.ValidateDvs mtsdvs VALIDATE dtmkodidx mdtmDV 0
+
+MAP(mcadDV)
+cadkode		mtsdvs		REPLACE
+
+MAP(mdtmDV)
+dtmcab   	mtsbisnis	REPLACE
+
+MAP(mcab)
+cabkode		mtscab		REPLACE
+g_cabbisdvs	mtsdvs	        REPLACE_IF cgsglcabbisdvs1
+
+MAP(mdumm)
+ldumm		ldumm		REPLACE
+
+CALCS()
+cotY       	stsotobukti == "Y"
+ckodebukti	DO_LIB ap_amdvs(mtsdvs,mtsscr,lkodebukti); 
+cnomer     	STRIP(lkodebukti) + STRIP(cabkdfak) + THBLS(g_tgltrn) + "-"
+ctypadd    	g_curcmd == 1
+csettglmmT     	stssettglmm == "T"
+cbisdvs1	mtsdvs != BLANKS
+
+MAP(mnomer)
+ckodebukti	lkodebukti	DO_CALC_IF cbisdvs1
+cnomer     	mtsnobuk    	DO_CALC_IF ctypadd
+
+HOOKS(master)
+BEFORE_INPUT    cur_field=mtscab   	DO_SKIP_IF cgsglcab1  
+BEFORE_INPUT    cur_field=mtsdvs   	DO_SKIP_IF cgsglcabbisdvs1  
+BEFORE_INPUT   	cur_field=mtsnobuk   	DO_SKIP_IF cotY  
+AFTER_INPUT    	cur_field=mtstgl  	DO_MAP SHOW IF cotY mnomer
+AFTER_INPUT    	cur_field=mtsdvs  	DO_MAP SHOW IF cotY mnomer
+BEFORE_INPUT	cur_field=mtstgl  	DO_SKIP_IF csettglmmT
+
+/*** SUBFILE INFORMATION ***/
+IMAGE(transt)
+/--t------t----------t------------t------t--------------t-----------------t-----t-----t------t----------t----------t--------\
+|No|i.Kat |i.Brg     |i.BrgBaru   |i.Lok |i.Mesin       |i.Rangka         |i.Ukr|i.Sat|i.Jml |    i.Hrg | i.Sub    |i.TglEx |
+\--.------.----------.------------.------.--------------.-----------------.-----.-----.------.----------.----------.--------/
+
+IMAGE(trans)
+|__|______|__________|____________|______|______________|_________________|_____|_____|____._|__________|__________|________|
+
+FIELD(trans)
+   mtdnourt          PROTECT             INPUTRI     1 /* No urut */
+   mtdkat            ALLCAPS SCROLL      INPUTRI     2 /* Kode Brg */
+   mtdbrg            ALLCAPS SCROLL      INPUTRI     3 /* Kode Brg */
+   mtdlok2           ALLCAPS SCROLL      INPUTRI     4 /* Kode Brg Baru */
+
+   mtdlok            ALLCAPS SCROLL      INPUTRI     5
+   mtdnomesin	     ALLCAPS SCROLL      INPUTRI     6
+   mtdnorangka       PROTECT NOCHANGE	 INPUTRI     7
+   mtdukrwrn         PROTECT NOCHANGE    INPUTRI     8
+   mtdsat            PROTECT NOCHANGE    INPUTRI     9
+   mtdjml            NUMERIC             INPUTRI     10 /* Jumlah Barang */
+   mtdhrg            PROTECT NUMERIC     INPUTRI     11
+
+   mtdsubtot         PROTECT NUMERIC     INPUTRI     12 /* Jumlah Barang */
+   mtdtgl2           NONE {DD-MM-YY} NOLIMIT INPUTRI 13
+
+DEFAULTS(trans)
+lnamtrnjml      INIT            "mtdjml"
+mtdsatbsr       INIT            1
+mtddk           INIT            K
+mtddk           INIT_UPDATE     K
+mtdsisbrg       INIT            {stssetsisbrg}
+lmapbtf         INIT            mapbtf
+
+CALCS()
+ckatisi         mtdkat != BLANKS
+cTglExpY        brgytexp == "Y"
+cTglExpT        brgytexp != "Y"
+/*cytukrY       brgytukr != "T" */
+cytukrT         brgytukr == "T"
+cFIFOO          stssetsisbrg == "O" || stssetsisbrg == "R"
+cFIFOM          stssetsisbrg == "M" && mtdkat != "SPM"
+
+EDITS(trans)
+e.MandatoryTglExp mtdtgl2 MANDATORY_IF cTglExpY
+e.MandatoryUrt mtdnourt MANDATORY
+e.MandatoryBrg mtdbrg  MANDATORY
+e.MandatoryBrg mtdlok2 MANDATORY
+e.MandatoryJml mtdjml MAND_PLUS
+e.MandatoryUkr mtdukrwrn MANDATORY_IF cSPM
+e.MandatoryLok mtdlok MANDATORY
+e.MandatorySat mtdsat MANDATORY_IF cSPM
+
+e.ValidateKatbrg mtdkat VALIDATE tbddatkodidx  mkat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_kategori} /*kategori*/
+e.ValidateKatBrg mtdbrg VALIDATE_IF ckatisi brgstdtkatbr mbrg sbrgKat {Pgv_INPG} {Pgv_dtbarang} {Pmtdkat}
+
+e.ValidateBrg mtdbrg VALIDATE brgstsdatbrg mbrg sbrg {Pgv_INPG} {Pgv_dtbarang}
+e.ValidateKatBrg ini ya mtdlok2 VALIDATE_IF ckatisi brgstdtkatbr mbrgbr sbrgKat {Pgv_INPG} {Pgv_dtbarang} {Pmtdkat} /*tambahan*/
+e.ValidateBrg mtdlok2 VALIDATE brgstsdatbrg mbrgbr sbrg {Pgv_INPG} {Pgv_dtbarang} /*adit*/
+e.ValidatebrdLok mtdlok VALIDATE_RKP_IF cFIFOO brdbrglokoto mbrdLok  sbrdLok {Pgv_INPG} {Pmtdbrg} {Pmtdcab}
+e.ValidatebrdLok mtdlok VALIDATE_IF cFIFOM brdbrglokoto mbrdLok2  sbrdLok {Pgv_INPG} {Pmtdbrg} {Pmtdcab} {Smtdukrwrn}  {Smtdsat} {Smtdbrdoto}
+e.ValidateLok mtdlok VALIDATE_IF cSPM tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {Pgv_lokmotor} {Pgv_BR} {Pmtdcab}
+
+e.ValidatebrdMs mtdnomesin VALIDATE_IF cSPM brdstslokmr mbrdRM sbrd2_a {Pgv_INPG} {Pmtdlok} {Pmtdbrg} {Smtdnorangka} {Smtdbrdoto}
+
+e.ValidateUkr mtdukrwrn VALIDATE_RKP_IF cFIFOO brdstbrlkust mbrdUkr sbrdUkr {Pgv_INPG} {Pmtdbrg} {Pmtdlok}
+e.ValidatebrdSat mtdsat VALIDATE_RKP_IF cFIFOO brdstbrlkust mbrdSat sbrdSat {Pgv_INPG} {Pmtdbrg} {Pmtdlok} {Pmtdukrwrn}
+
+MAP(mbrdRM)
+brdnomesin      mtdnomesin      REPLACE
+brdnorangka     mtdnorangka     REPLACE
+brdoto          mtdbrdoto       REPLACE
+brdthbrg        mtdbisnis       REPLACE
+brdukrwrn       mtdukrwrn       REPLACE
+brdhrg          mtdhrg          REPLACE
+brdsisprc       lbrdsisprc      REPLACE
+brdsat		mtdsat		REPLACE
+
+MAP(mbrdUkr)
+brdukrwrn       mtdukrwrn       REPLACE
+
+MAP(mbrdSat)
+brdsat          mtdsat          REPLACE
+brdsisprc       lbrdsisprc      REPLACE
+
+MAP(mbrdLok)
+brdlok          mtdlok          REPLACE
+brdsisprc	lbrdsisprc	REPLACE
+
+MAP(mbrdLok2)
+brdlok          mtdlok          REPLACE
+brdsisprc       lbrdsisprc      REPLACE
+brdukrwrn       mtdukrwrn       REPLACE
+brdoto          mtdbrdoto       REPLACE
+brdsat          mtdsat          REPLACE
+
+MAP(mkat)
+tbdkode         mtdkat          REPLACE
+
+MAP(mtbdLK2)
+tbdkode         mtdlok          REPLACE
+
+CALCS()
+csubtot                 mtdjml * mtdhrg
+c1                      1
+curut                   lurut + 1
+cjoinmtdu0              djoinmtdu == 0 && g_curcmd == 1 && mtdnourt == 0
+cjoinmtdu1              djoinmtdu == 1 && g_curcmd == 1 && mtdnourt == 0
+cjoinbrc1               djoinbrc == 1
+csaldobrd1              mtdjml <= lbrdsisprc + ~mtdjml
+cBknSPM			mtdkat != "SPM"
+
+MAP(mbrg)
+brgkode        mtdbrg       REPLACE
+brgytseri      brgytseri    REPLACE
+brgytexp       brgytexp     REPLACE
+brgytukr       brgytukr     REPLACE
+
+MAP(mbrgbr)
+brgkode        mtdlok2      REPLACE
+brgkat         mtdkat       REPLACE
+brgbbmprs      mtdnobbm     REPLACE
+
+MAP(mhitsubtot)
+csubtot         mtdsubtot     DO_CALC
+
+MAP(mhrgbrg)
+lbrchrgbl    mtdhrg      REPLACE_IF cjoinbrc1
+
+MAP(murut)
+c1              mtdnourt        DO_CALC_IF cjoinmtdu0
+curut           mtdnourt        DO_CALC_IF cjoinmtdu1
+mtscab          mtdcab          REPLACE
+mtsbisnis       mtdbisnis       REPLACE
+mtsdvs          mtddvs          REPLACE
+mtstype1	mtdkat		REPLACE_IF cSPM
+
+MAP(mmtdkat)
+mtdkat		mtdkat		REPLACE
+
+HOOKS(trans)
+BEFORE_INPUT    cur_field=mtdkat	DO_SKIP_IF cSPM
+BEFORE_INPUT    cur_field=mtdbrg        DO_MAP SHOW murut
+BEFORE_INPUT    cur_field=mtdtgl2       DO_SKIP_IF cTglExpT
+BEFORE_INPUT    cur_field=mtdukrwrn     DO_SKIP_IF cytukrT
+BEFORE_INPUT    cur_field=mtdukrwrn     DO_SKIP_IF cBknSPM
+BEFORE_INPUT    cur_field=mtdsat        DO_SKIP_IF cBknSPM
+AFTER_INPUT     cur_field=mtdjml        DO_MAP SHOW mhrgbrg
+AFTER_INPUT     cur_field=mtdjml        DO_MAP SHOW mhitsubtot
+AFTER_INPUT     cur_field=mtdhrg        DO_MAP SHOW mhitsubtot
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+                IF cBknSPM mmtdkat
+                ELSE HKCURSOR STAY
+                HKMSG Kategori SPM tidak boleh dipiih
+AFTER_INPUT     cur_field=mtdjml        DO_MAP SHOW
+                IF csaldobrd1  mdumm
+                ELSE HKCURSOR STAY
+                HKMSG Jumlah Dalam satuan ini tidak cukup
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mhitsubtot
+
+/*****/
+SUBFILE(trans)
+SFL_LINES(6)
+SFL_TITLE(transt)
+SFL_COND cSPM
+
+SFL_TARGET
+     mtdbukurtidx                 mtsnobuk
+
+SFL_MAP
+     mtsnobuk           mtdnobuk
+     mtssts             mtdsts
+     mtstgl             mtdtglfak
+     mtscab             mtdcab
+     mtsbisnis          mtdbisnis
+     mtsdvs             mtddvs
+     mtsscr             mtdscr
+     mtsdata            mtddata
+
+
+/*** SUBFILE INFORMATION ***/
+IMAGE(transg1t) 
+/--t------t----------t------------t------t------t------t-------t------------t-----------t----------\
+|No|i.Kat |i.Brg     |i.BrgBaru   |i.Lok |i.Ukr |i.Sat |i.Jml  |    i.Hrg   | i.Sub     |i.TglEx   |
+\--.------.----------.------------.------.------.------.-------.------------.-----------.----------/
+
+IMAGE(transg1) {IMG_HOOKS=trans} {IMG_DEFAULT=trans} {IMG_HELP=trans} {COVER_MASTER} {IMG_EDIT=trans}
+|__|______|__________|____________|______|______|______|_____._|_________.__|___________|__________| 
+
+FIELD(transg1)
+   mtdnourt          PROTECT             INPUTRI     1 /* Jumlah Barang */
+   mtdkat            ALLCAPS SCROLL      INPUTRI     2 /* Kode Brg */
+   mtdbrg            ALLCAPS SCROLL      INPUTRI     3 /* Kode Brg */
+   mtdlok2           ALLCAPS SCROLL      INPUTRI     4 /* Kode Brg Baru */
+
+   mtdlok  	     ALLCAPS SCROLL      INPUTRI     5
+   mtdukrwrn	     ALLCAPS SCROLL      INPUTRI     6
+   mtdsat 	     ALLCAPS SCROLL      INPUTRI     7
+   mtdjml            NUMERIC             INPUTRI     8 /* Jumlah Barang */
+   mtdhrg            PROTECT             INPUTRI     9
+
+   mtdsubtot         PROTECT             INPUTRI     10 /* Jumlah Barang */
+   mtdtgl2           NONE {DD-MM-YY} NOLIMIT INPUTRI  11 
+   
+/*****/
+SUBFILE(transg1)
+SFL_LINES(6)
+SFL_TITLE(transg1t)
+SFL_COND cLain
+
+SFL_TARGET
+     mtdbukurtidx        	  mtsnobuk
+
+SFL_MAP 
+     mtsnobuk         	mtdnobuk
+     mtssts	 	mtdsts
+     mtstgl	 	mtdtglfak
+     mtscab             mtdcab
+     mtsbisnis          mtdbisnis
+     mtsdvs             mtddvs
+     mtsscr             mtdscr 
+     mtsdata		mtddata
+
+/*------------------daddmts--------------*/
+CALCS(master)
+cmtstotal_a		mtstotal + mtdsubtot
+cmtstotal_u		mtstotal + mtdsubtot - ~mtdsubtot
+cmtstotal_d		mtstotal - mtdsubtot
+
+MAP(mupdmts_a)
+cmtstotal_a		mtstotal	   	DO_CALC
+
+MAP(mupdmts_u)
+cmtstotal_u		mtstotal	   	DO_CALC
+
+MAP(mupdmts_d)
+cmtstotal_d		mtstotal		DO_CALC	
+
+MAP(maddsub)
+mtsnobuk   mtsnobuk  REPLACE
+
+CALCS()
+ctothpp			mtdsubtot / mtdjml
+ctothpp1		mtdsubtot != 0  && mtdjml != 0
+
+MAP(mmapmtd)
+mtdjml   		mtdjml2		REPLACE  /* Pada saat diisi Operator */
+ldipenuhi		mtdjml		REPLACE
+ltothpp			mtdsubtot	REPLACE
+ctothpp			mtdhrg   	DO_CALC_IF ctothpp1
+
+DBCALCS(dmapmtd)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapmtd
+
+MAP(mapbtf)
+mtstgl   	btftglfak	REPLACE
+
+/*-------------------------------------------*/
+SPCALCS(spadd) 	
+DO_LIB ap_adbtf(mtdsisbrg,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);
+dmapmtd
+DO_LIB ap_dbclc(DNAME dupdmts_a,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_a);
+
+SPCALCS(spupd) 	
+DO_LIB ap_dlbtf(mtdsisbrg,~mtdbrdoto,mtsnobuk,~mtdbrg,~mtdlok,mtdoto,~mtdukrwrn,~mtdsat,~mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,g_strksg,g_str_empty,lnamtrnjml);
+DO_LIB ap_adbtf(mtdsisbrg,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,mtstgl);
+dmapmtd
+DO_LIB ap_dbclc(DNAME dupdmts_u,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_u);
+
+SPCALCS(spdel) 	
+DO_LIB ap_dbclc(DNAME dupdmts_d,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_d);
+DO_LIB ap_dlbtf(mtdsisbrg,mtdbrdoto,mtsnobuk,mtdbrg,mtdlok,mtdoto,mtdukrwrn,mtdsat,mtdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,g_strksg,g_str_empty,lnamtrnjml);
+
+SPCALCS(sadd)
+DO_LIB_IF cotY	ap_dbclc(DNAME daddsub,DCOMMAND ADD_SUB,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+
+POSTING(master)
+   PST_UPD_DET_COND c1
+   PST_SUB_ADDCMD sadd
+				
+POSTING(trans)
+   PST_ADDCMD 	spadd
+   PST_UPDCMD 	spupd
+   PST_DELCMD 	spdel
+
+POSTING(transg1)
+   PST_ADDCMD 	spadd
+   PST_UPDCMD 	spupd
+   PST_DELCMD 	spdel
+
+CALCS(master)
+   cmtsOPENKP 	mtssts == "OPEN" && mtsdata == "GANKOD" 
+   cadadetail	djoinmtdu == 1 
+
+PERMIT(master)
+   PMT_UPDALL_COND cmtsOPENKP
+   PMT_DEL_COND cmtsOPENKP
+   PMT_EXIT_COND cadadetail
+   PMT_EXIT_MOV_COND cadadetail
+   PMT_EXIT_MSG Detil harus diisi atau hapus data ini
+
+PERMIT(trans)
+   PMT_ADD_COND	cmtsOPENKP
+   PMT_UPDALL_COND cmtsOPENKP
+   PMT_DEL_COND	cmtsOPENKP
+
+PERMIT(transg1)
+   PMT_ADD_COND	cmtsOPENKP
+   PMT_UPDALL_COND cmtsOPENKP
+   PMT_DEL_COND	cmtsOPENKP
+
+END_SCREEN

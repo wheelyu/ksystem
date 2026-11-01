@@ -1,0 +1,552 @@
+LOCAL
+PGM_FIELDS
+lket7why	STRING	61
+lpanjang        INT2    2
+lpanjangtlp     INT2    2
+lSPK		STRING  21
+lTEMPATBERTEMU  STRING  21
+lBARANG		STRING	21
+lSERIES		STRING	21
+lktp		STRING	21
+lenter		STRING	11
+lmobilx		STRING	21
+
+ltglakhbl	DATE	4
+ltglakhplus1	DATE	4
+ltglakhbldpn	DATE	4
+ltgmke		INT2	2
+ltgmtyp		STRING	3
+llatktp         DFLOAT  8
+llonktp         DFLOAT  8
+llattagih       DFLOAT  8
+llontagih       DFLOAT  8
+llatitude       DFLOAT  8
+llongitude      DFLOAT  8
+lpiksts         STRING  5
+lALMTAGIHx      STRING  11
+lKAPANMINATc	STRING	21
+lspk11		STRING	11
+lnotelp		STRING	15
+ltelpsama	INT2	2
+lsalestkm	STRING	21
+ltglawlbl	DATE	4
+
+ltglplusx	DATE	4
+ltgmtyp_2	STRING	3
+
+
+CALCS()
+cakhplus1	ltglakhbl+1
+cblnplus1	DO_LIB	ap_akhbl(g_tgltrn,&ltglakhbl);
+cblnplus1bln	DO_LIB	ap_akhbl(ltglakhplus1,&ltglakhbldpn);
+
+
+DBCALCS(djoinket7why)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketdatbuktgl	l7WHY tkmnobuk l7WHY
+
+
+MAP(mjoinpik)
+pikplg		lktp	REPLACE
+DBCALCS(djoinpikx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	pikdatbukidx	gv_dtpiu tkmbuk1
+	DBC_MAP		mjoinpik
+
+MAP(mjoinalmktp)
+almlat          llatktp         REPLACE
+almlon          llonktp         REPLACE
+DBCALCS(djoinalmktp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatotobuk    gv_psmktp svistr1
+        DBC_MAP         mjoinalmktp
+
+MAP(mjoinalmtagih)
+almlat          llattagih       REPLACE
+almlon          llontagih       REPLACE
+DBCALCS(djoinalmtagih)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatotobuk lALMTAGIHx svistr1
+        DBC_MAP         mjoinalmtagih
+
+MAP(mjointgmspk)
+tgmke		ltgmke	REPLACE
+tgmtype		ltgmtyp	REPLACE
+DBCALCS(djointgmspk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx	gv_dttgl svitgl2
+	DBC_MAP		mjointgmspk
+MAP(mjointgmspk_2)
+tgmtype         ltgmtyp_2          REPLACE
+DBCALCS(djointgmspk_2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tgmdattglidx    gv_TGL ltglplusx
+        DBC_MAP         mjointgmspk_2
+
+
+
+MAP(mjoinsvitlp)
+svitblkode	lnotelp		REPLACE
+DBCALCS(djoinsvitmp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp	tkmdata tkmnobuk lFOLLOWUP
+	DBC_MAP		mjoinsvitlp
+ 
+CALCS()
+ctlpsama	djoinsvitmp==1 && lnotelp == svitblkode
+
+MAP(mscantkmtlp)
+c1              ltelpsama	DO_CALC_IF ctlpsama
+DBCALCS(dbscantkmtlp)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tkmdatplgtgl    lspk11 lsalestkm ltglawlbl
+        DBC_LAST_TARGET tkmdatplgtgl    lspk11 lsalestkm g_tgltrn
+        DBC_SUM_MAP     mscantkmtlp
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk     ____________________||
+||i.Ktp       ____________________||
+||t.NoTelpAktf____________________||
+||t.Dikunjungi____________________||
+||t.JwbTdk    ____________________||
+||t.Bertemu   ____________________||
+||t.MntHmc    ____________________||
+||t.MntM2w    ____________________||
+||t.MntM4w    ____________________||
+||t.MntAhass  ____________________||
+||t.MntFurni  ____________________||
+||t.MinatMotor____________________||
+||t.Type      ____________________||
+||t.jdpk      ____________________||
+||t.AlsnTdkJd ____ _______________||
+||t.Ket       ____________________||
+||t.MauFuLagi ____________________||
+||t.TglFuLagi _________________ __||
+||270224                          ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk	NOCHANGE		INPUTRI		1
+svistr1		DIGITS SCROLL		INPUTRI		2 /* ktp */
+svitblkode	DIGITS SCROLL		INPUTRI		2 /* Tlp */
+svistr3		NOCHANGE		INPUTRI		3 /* kunjungi */
+svistr7		NOCHANGE		INPUTRI		4 /* jwb tdk */
+svistr2		NOCHANGE		INPUTRI		5 /* bertemu */
+
+svistr5		NOCHANGE		INPUTRI		6 /* minat Hmc  */
+svistr31 	NOCHANGE		INPUTRI		7 /* minat M2w  */
+svistr32     	NOCHANGE		INPUTRI		8 /* minat M4w  */
+svistr33 	NOCHANGE		INPUTRI		9 /* minat ahass*/
+svistr34    	NOCHANGE		INPUTRI		10 /* minat furni*/
+svistr8    	ALLCAPS SCROLL		INPUTRI		11 /* minat motor*/
+sviyt1	    	NOCHANGE		INPUTRI		11 /* minat motor*/
+
+svistr35	NOCHANGE		INPUTRI		12 /* jadi pk */
+svistr6   	ALLCAPS 		INPUTRI		13 /* alasan tdk jd */
+lket7why	PROTECT 		INPUTRI		14 /* alasan tdk jd */
+svistr10  	ALLCAPS 		INPUTRI		15 /* alasan */
+svistr36	NOCHANGE		INPUTRI		16 /* mau fu lagi */
+svitgl2  	NONE NOLIMIT {DD-MM-YYYY}	INPUTRI	17 /* alasan */
+lenter		NOCHANGE		INPUTRI		18
+
+
+CALCS()
+ctglawl		ststglprjgl + 1
+cbrrevn		tkmkode == "FU_BROSUR" || tkmkode == "FU_EVENT"
+cbknevn		tkmkode != "FU_BROSUR" && tkmkode != "FU_EVENT"	
+
+DEFAULTS(tmptranst)
+svistr5		DFALT_LIST	BLANKS
+				Y
+				T
+
+svistr35	DFALT_LIST	BLANKS
+				Y
+				T
+svistr31 	DFALT_LIST	BLANKS
+				Y
+				T
+svistr32     	DFALT_LIST	BLANKS
+				Y
+				T
+svistr33 	DFALT_LIST	BLANKS
+				Y
+				T
+svistr34    	DFALT_LIST	BLANKS
+				Y
+				T
+IF 	cbrrevn	svistr7		DFALT_SCAN_BLANKS
+				TIDAK_JAWAB	
+				JAWAB
+IF	cbknevn	svistr7		DFALT_SCAN_BLANKS
+				JAWAB
+svistr36	DFALT_SCAN_BLANKS
+				Y
+				T
+sviyt1          DFALT_LIST      BLANKS
+                                K
+                                T
+
+lmobilx		INIT		MOBIL
+lTEMPATBERTEMU  INIT            TEMPATBERTEMU
+lSPK		INIT            SPK	
+lBARANG		INIT		BARANG
+lSERIES		INIT		SERIES
+lALMTAGIHx      INIT            ALMTAGIH
+lKAPANMINATc	INIT		KAPANMINAT
+ltglakhplus1	INIT		{cakhplus1}
+lspk11		INIT		SPK
+ltglawlbl	INIT		{ctglawl}
+
+
+CALCS()
+ctdkjdpk	svistr35 == "T"
+cfuref0		(svistr35 == "T" && tkmkode != "FU_LAIN" && svistr6 != "BELUM/TIDAK" && svistr6 != "SUDAH_AMBIL_LAIN" && svistr6 != "TIDAK_MINAT")
+cfuref1		(svistr35 == "T" && tkmkode != "FU_LAIN") || svistr35 == "Y" || svistr7 == "TIDAK_JAWAB" || (svistr6 == "BELUM/TIDAK" || svistr6 != "TIDAK_MINAT" || svistr6 == "SUDAH_AMBIL_LAIN")
+cfuref2		(svistr35 == "T" && tkmkode != "FU_LAIN" && svistr6 != "BELUM/TIDAK" && svistr6 != "TIDAK_MINAT" && svistr6 != "SUDAH_AMBIL_LAIN") || (svistr36 == "Y" && tkmkode == "FU_LAIN")
+cfuref2x	(svistr35 == "T" && tkmkode != "FU_LAIN" && svistr6 != "BELUM/TIDAK" && svistr6 != "TIDAK_MINAT" && svistr6 != "SUDAH_AMBIL_LAIN") || (svistr36 == "Y" && tkmkode == "FU_LAIN") || svistr7 == "TIDAK_JAWAB" 
+cpanjang        DO_LIB ap_strln(svistr1,&lpanjang);
+cpanjangtlp     DO_LIB ap_strln(svitblkode,&lpanjangtlp);
+ctipeisi	tkmkode !="FU_CP" && tkmkode!="CIC" && tkmkode!="SAMSAT" && tkmkode!="WA_BLAST" && tkmkode!="GCI" && tkmkode !="WIC" && tkmkode !="KU_SAMSAT"
+cxTelp		svistr3 != "Y2" && svistr3!="T" && svistr3!=BLANKS
+cTelp		svistr3 == "Y2"
+/* ctdkRo		(tkmkode!="FU_RO" && tkmkode!="FU_TOPUP" && tkmkode!="FU_WB" && tkmkode!="FUTUGCI") &&
+ 		djoinsviminat == 1 && lberiktp == "T"               */
+chmcx		svistr5 == "Y"
+chmcT		svistr5 == "T"
+ctidakT		((tkmkode == "FU_EVENT" || tkmkode == "FU_BROSUR" || tkmkode == "FU_TOPUP" || tkmkode == "FU_WB" || tkmkode== "FUTUGCI" || tkmkode == "FU_REFF" || tkmkode == "FU_GCI" || tkmkode == "FU_AHASS" || tkmkode == "FU_TUNAI" || tkmkode=="FU_PROSPEK" || tkmkode == "FU_SPK1" || tkmkode == "FU_SPK2") && svistr3=="Y1") ||
+		(tkmkode != "FU_EVENT" && tkmkode != "FU_BROSUR" && tkmkode != "FU_TOPUP" && tkmkode != "FU_WB" && tkmkode != "FUTUGCI" && tkmkode != "FU_REFF" && tkmkode != "FU_GCI" && tkmkode != "FU_AHASS" && tkmkode != "FU_TUNAI" && tkmkode!="FU_PROSPEK" && tkmkode != "FU_SPK1" && tkmkode != "FU_SPK2") 
+cviatelp	svistr3 != "Y2"
+cdjoinpikx1	(tkmkode=="FU_RO" || tkmkode=="FU_TOPUP" || tkmkode=="FU_WB" || tkmkode=="FUTUGCI" || tkmkode=="FU_TUNAI") && djoinpikx == 1
+cdjointldx1	tkmkode!="FU_RO" && tkmkode!="FU_TOPUP" && tkmkode!="FU_WB" && tkmkode!="FUTUGCI" && tkmkode!="FU_TUNAI" && djointldInfo == 1
+ccounter	(g_grpnam != "CTRDTN" && g_grpnam != "COUNTER")
+cminathmc	svistr5=="Y"
+cHMC		tkmbuk2 == "MINATHMC"
+cM2W		tkmbuk2 == "MINATM2W"
+
+EDITS(tmptranst)
+t.Mandatory          	svistr7		MANDATORY_IF cTelp
+t.Mandatory          	svitblkode	MANDATORY_IF ccounter
+t.Mandatory          	svistr2		MANDATORY_IF cviatelp
+t.Mandatory          	svistr5		MANDATORY_IF ctidakT
+t.Mandatory		svistr31 	MANDATORY_IF ctidakT
+t.Mandatory		svistr32     	MANDATORY_IF ctidakT
+t.Mandatory		svistr33 	MANDATORY_IF ctidakT
+t.Mandatory		svistr34    	MANDATORY_IF ctidakT
+t.Mandatory		svistr3	   	MANDATORY_IF ctipeisi
+t.Mandatory		svistr8   	MANDATORY_IF chmcx
+t.Mandatory		sviyt1   	MANDATORY_IF cminathmc
+
+t.MandatoryJdPk		svistr35	MANDATORY_IF ctidakT
+t.Mandatory1		svistr36	MANDATORY_IF cfuref2
+t.MandatoryAlsnTdkJdPk	svistr6		MANDATORY_IF ctdkjdpk
+t.Mandatory2   		svitgl2    	MANDATORY_IF cfuref2x
+t.MandatoryKet		svistr10	MANDATORY_IF ctdkjdpk
+
+e.validate              svistr6		VALIDATE tbddatkodidx malasan stbd {Pgv_dttabel} {PlSPK} {PlKAPANMINATc}
+t.Validate              svistr2		VALIDATE tbddatkodidx mtbd6 stbd {Pgv_dttabel} {PlSPK} {PlTEMPATBERTEMU}
+t.Validate              svistr3		VALIDATE tbddatkodidx mtbdKu stbd {Pgv_dttabel} {PlALASANPK} {PlKUNJFURO}
+t.Validate              svistr8		VALIDATE tbddatkodidx mtbdBrg stbdHonda  {Pgv_dttabel} {Pgv_barang} {Pgv_series}
+t.Validate		svistr10	VALIDATE_IF cHMC tbddatkodidx mtdkminat stbd {Pgv_dttabel} {PlSPK} {PlTIDAKMINATHMC}
+t.Validate		svistr10	VALIDATE_IF cM2W tbddatkodidx mtdkminat stbd {Pgv_dttabel} {PlSPK} {PlTIDAKMINATM2W}
+
+MAP(mtbdBrg)
+tbdkode         svistr8		REPLACE
+lktp		svistr1		REPLACE_IF cdjoinpikx1
+
+MAP(malasan)
+tbdkode		svistr6   	REPLACE
+tbdket		lket7why	REPLACE
+
+MAP(mtbd6)
+tbdkode         svistr2	      	REPLACE
+
+MAP(mtbdKu)
+tbdkode         svistr3		REPLACE
+
+MAP(mtdkminat)
+tbdkode		svistr10	REPLACE
+
+CALCS()
+cjdpk   	svistr35 == "Y" 
+cjdpka  	(svistr35 == "Y" && tkmjmltlk == 3) || tkmjmltlk != 3
+cjdpkx   	(svistr35 == "Y") || (svistr6 == "BELUM/TIDAK" || svistr6 == "SUDAH_AMBIL_LAIN" || svistr6 == "TIDAK_MINAT")
+cpilbenar	(svistr35 == "T" && (svistr6=="BELUM/TIDAK" || svistr6=="SUDAH_AMBIL_LAIN" || svistr6=="DUA_BLN_LAGI" || svistr6 == "TIDAK_MINAT" ||  svistr6=="BULAN_DEPAN" || svistr6 == "BULAN_INI")) || 
+		svistr35 == "Y" || svistr3=="T" || svistr7=="TIDAK_JAWAB"
+cpjgktp         lpanjang == 16 || (lpanjang <= 16 && djoinsviminat == 1 && lberiktp == "T") || tkmkode=="FU_WB" || tkmkode=="FU_TOPUP" || tkmkode=="FU_TUNAI"
+cpjgktp2        lpanjangtlp == 10 || lpanjangtlp == 11 || lpanjangtlp==12 || lpanjangtlp==13 || lpanjangtlp==14
+cFOLLOWUP	"FOLLOWUP"
+ctidakRo	(tkmkode != "FU_EVENT" && tkmkode != "FU_BROSUR" && tkmkode!="FU_RO" && tkmkode!="FU_TOPUP" && tkmkode!="FU_REFFRO" && tkmkode!="FU_WB" && tkmkode!="FUTUGCI" && tkmkode!="FU_REFF" && tkmkode!="FU_GCI" && tkmkode!="FU_AHASS" && tkmkode!="FU_TUNAI" && tkmkode!="FU_PROSPEK" && tkmkode != "FU_SPK1" && tkmkode != "FU_SPK2")
+cRosaja		(tkmkode=="FU_RO" || tkmkode=="FU_REFFRO" || tkmkode=="FU_TOPUP" || tkmkode=="FU_WB" || tkmkode=="FUTUGCI" || tkmkode=="FU_TUNAI")
+cadapk          (svistr5 == "T" && svistr31=="T" && svistr32=="T" && svistr33=="T" && svistr35 == "T") ||
+                (svistr5 == "Y" || svistr31=="Y" || svistr32=="Y" || svistr33=="Y" || svistr3=="T" || svistr7 == "TIDAK_JAWAB") 
+ctlpTdkjwbx	svistr7 == "TIDAK_JAWAB" || tkmbuk2 == "MINATM2W"
+ctlpTdkjwby	svistr7 == "TIDAK_JAWAB" || tkmbuk2 == "MINATHMC"
+ctlpTdkjwbz	svistr7 == "TIDAK_JAWAB" || (svistr3 == "Y2" && svistr7 == "JAWAB")
+ctlpTdkjwb	svistr7 == "TIDAK_JAWAB" 
+ctlpTdkjwba	(svistr7 == "TIDAK_JAWAB" && tkmjmltlk == 3) || tkmjmltlk != 3
+cminggux	(djointgmspk == 1 && ltgmke != BLANKS) || svistr6 == "BELUM/TIDAK" || svistr6 == "SUDAH_AMBIL_LAIN" || svistr6 == "TIDAK_MINAT"
+cdikunj		svistr3 == "Y1"
+cpikktp         tkmtype == "RO" && djoinpikx == 1 && djoinalmktp == 1 && llatktp != BLANKS && llonktp != BLANKS
+cpiktagih       tkmtype == "RO" && djoinpikx == 1 && lpiksts =="INPG" && djoinalmtagih == 1
+crosaja         tkmtype == "RO"
+
+ctdkmundur	(svistr6 != "TIDAK_MINAT" && svistr6 != "BELUM/TIDAK" && svistr6 != "SUDAH_AMBIL_LAIN" && svistr35 != "Y" && svitgl2 > g_tgltrn) || 
+		svistr6 == "BELUM/TIDAK" || svistr6 == "SUDAH_AMBIL_LAIN" || svistr35 == "Y" || svistr6 == "TIDAK_MINAT"
+ctglblnini	(svistr6 == "BULAN_DEPAN" && svitgl2 > tkmtgl && svitgl2 <= ltglakhbl) || (svistr6 != "BULAN_DEPAN") || g_usrkode != BLANKS
+ctglblnlain	(svistr6 == "DUA_BLN_LAGI" && svitgl2 > ltglakhbl && svitgl2 <= ltglakhbldpn) || (svistr6 != "DUA_BLN_LAGI") || g_usrkode != BLANKS
+ctgltdkktmu	((svistr6 == "TDK_KETEMU_KOSONG" || svistr6 == "TDK_KETEMU_PINDAH") && svitgl2 > tkmtgl && svitgl2 < tkmtgl + 7) || 
+		(svistr6 != "TDK_KETEMU_KOSONG" && svistr6 != "TDK_KETEMU_PINDAH")
+cselainCR	tkmkode != "CR_AGEN"
+cdjoinsviminat1	 djoinsviminat == 1 && tkmkode!="FU_PROSPEK"
+cdjoinsviminat1_spk	 tkmjmltlk != 3                          
+cdjoinsviminat1x djoinsviminat == 1 && ljdpkminat == "T"
+ctelpsama	(tkmjmltlk!=3 && ltelpsama==0) || (tkmkode=="FU_WB" || tkmkode=="FU_TOPUP" || tkmkode=="FU_AHASS" || tkmkode=="FU_TUNAI" || tkmjmltlk==3) || 
+		g_usrkode != BLANKS
+csdhminathmc	(svistr5 == "T" && svistr31 == "Y") || (svistr5 == "T" && svistr31 == "T") || (svistr5 == "Y" && svistr31 == "T") || 
+		(svistr5 == BLANKS && svistr31 == BLANKS)
+csdhminatm2w	(svistr5 == "Y" && svistr31 == "T") || (svistr5 == "T" && svistr31 == "T") || (svistr5 == "T" && svistr31 == "Y") ||
+		(svistr5 == BLANKS && svistr31 == BLANKS)
+ctdkminat	svistr6 == "TIDAK_MINAT"
+ctglblndpn_2x     g_tgltrn + 30
+ctglblndpn1_2x    g_tgltrn + 31
+ctgl2blnlg_2x     g_tgltrn + 60
+ctgl2blnlg1_2x    g_tgltrn + 61
+
+/*cfublnini_2x    (svistr31 == "Y" || svistr5=="Y") && svistr6 == "BULAN_INI"*/
+cfublndpn_2x    (svistr31 == "Y" || svistr5=="Y") && svistr6 == "BULAN_DEPAN"
+cfu2blnlg_2x    (svistr31 == "Y" || svistr5=="Y") && svistr6 == "DUA_BLN_LAGI"
+cfublndpn1_2x   (svistr31 == "Y" || svistr5=="Y") && svistr6 == "BULAN_DEPAN" && djointgmspk_2 == 1 && ltgmtyp_2 == "HL"
+cfu2blnlg1_2x   (svistr31 == "Y" || svistr5=="Y") && svistr6 == "DUA_BLN_LAGI" && djointgmspk_2 == 1 && ltgmtyp_2 == "HL"
+cmstm2w1         tkmbuk2 == "MINATM2W" && (svistr7 == "JAWAB" || svistr7 == BLANKS)
+cmsthmc1         tkmbuk2 == "MINATHMC" && (svistr7 == "JAWAB" || svistr7 == BLANKS)
+clewat		 svistr7 == "TIDAK_JAWAB"
+
+
+MAP(mpanjangktp1)
+cpanjang        lpanjang        DO_CALC
+MAP(mpanjangtlp1)
+cpanjangtlp     lpanjangtlp     DO_CALC
+
+MAP(mktp)
+lktp		svistr1		REPLACE_IF cdjoinpikx1
+ltldplg		svistr1		REPLACE_IF cdjointldx1
+tkmplg		lsalestkm	REPLACE
+
+MAP(mbutuh)
+gv_Y            svistr5         REPLACE_IF cmsthmc1 
+gv_T		svistr31	REPLACE_IF cmsthmc1
+gv_Y            svistr31        REPLACE_IF cmstm2w1 
+gv_T            svistr5         REPLACE_IF cmstm2w1 
+
+MAP(mfulagi)
+cblanks		svistr36	DO_CALC
+cblanks		svitgl2		DO_CALC_IF cjdpkx
+/*cblanks		svitgl2		DO_CALC_IF cfublnini_2x*/
+cblanks		svitgl2		DO_CALC_IF ctdkminat
+
+MAP(mfulagi1)
+gv_Y		svistr36	REPLACE_IF cfuref0
+cblnplus1	ltglakhbl	DO_CALC
+cakhplus1	ltglakhplus1	DO_CALC
+cblnplus1bln	ltglakhbldpn	DO_CALC
+
+ctglblndpn_2x     ltglplusx       DO_CALC_IF cfublndpn_2x
+ctgl2blnlg_2x     ltglplusx       DO_CALC_IF cfu2blnlg_2x
+
+ctglblndpn_2x     svitgl2         DO_CALC_IF cfublndpn_2x
+ctgl2blnlg_2x     svitgl2         DO_CALC_IF cfu2blnlg_2x
+
+ctglblndpn1_2x    svitgl2         DO_CALC_IF cfublndpn1_2x
+ctgl2blnlg1_2x    svitgl2         DO_CALC_IF cfu2blnlg1_2x
+
+
+/*cblnplus3	ltgl1thn	DO_CALC*/
+
+MAP(mlatlon)
+llattagih       llatitude       REPLACE_IF cpiktagih
+llontagih       llongitude      REPLACE_IF cpiktagih
+llatktp         llatitude       REPLACE_IF cpikktp
+llonktp         llongitude      REPLACE_IF cpikktp
+
+MAP(mdariminat)
+ltelpminat	svitblkode	REPLACE_IF cdjoinsviminat1
+ljdpkminat	svistr35	REPLACE
+lalasanminat 	svistr6		REPLACE_IF cdjoinsviminat1x
+/*ltglminat 	svitgl2		REPLACE_IF cdjoinsviminat1x*/
+
+MAP(mupdtkmt2)
+llatitude       tkmjml          REPLACE
+llongitude      tkmjml2         REPLACE
+
+MAP(mblank)
+cblanks		svistr7		DO_CALC_IF cdikunj
+
+MAP(mblankx)
+cblanks		svistr5		DO_CALC
+cblanks		svistr31	DO_CALC
+cblanks		svistr32	DO_CALC
+cblanks		svistr33	DO_CALC
+cblanks		svistr34	DO_CALC
+cblanks		svistr8		DO_CALC
+cblanks		svistr35	DO_CALC
+cblanks		svistr6		DO_CALC
+cblanks		svistr10	DO_CALC
+cblanks		svistr36	DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cdjoinsviminat1_spk
+BEFORE_INPUT	cur_field=svitblkode	DO_SKIP_IF cdjoinsviminat1
+BEFORE_INPUT	cur_field=svistr35	DO_SKIP_IF cdjoinsviminat1
+/*BEFORE_INPUT	cur_field=svistr6	DO_SKIP_IF cdjoinsviminat1*/
+/*BEFORE_INPUT	cur_field=svitgl2	DO_SKIP_IF cfublnini_2x*/
+AFTER_INPUT	cur_field=svinobuk 	DO_MAP SHOW mktp
+BEFORE_INPUT	cur_field=svistr1 	DO_SKIP_IF cRosaja
+BEFORE_INPUT	cur_field=svistr3 	DO_SKIP_IF ctidakRo
+BEFORE_INPUT	cur_field=svistr7 	DO_SKIP_IF ctidakRo
+BEFORE_INPUT	cur_field=svistr8 	DO_SKIP_IF chmcT
+BEFORE_INPUT	cur_field=svistr7 	DO_SKIP_IF cxTelp
+BEFORE_INPUT	cur_field=svistr2 	DO_SKIP_IF ctlpTdkjwbz
+BEFORE_INPUT	cur_field=svistr5 	DO_SKIP_IF ctlpTdkjwby
+BEFORE_INPUT	cur_field=svistr5 	DO_SKIP_IF ctlpTdkjwbx
+BEFORE_INPUT	cur_field=svistr6 	DO_SKIP_IF ctlpTdkjwba
+BEFORE_INPUT	cur_field=svistr8 	DO_SKIP_IF ctlpTdkjwb
+BEFORE_INPUT	cur_field=svistr31 	DO_SKIP_IF ctlpTdkjwbx
+BEFORE_INPUT	cur_field=svistr5  	DO_SKIP_IF ctlpTdkjwbx
+BEFORE_INPUT	cur_field=svistr32	DO_SKIP_IF ctlpTdkjwb
+BEFORE_INPUT	cur_field=svistr33	DO_SKIP_IF ctlpTdkjwb
+BEFORE_INPUT	cur_field=svistr34	DO_SKIP_IF ctlpTdkjwb
+BEFORE_INPUT	cur_field=svistr35	DO_SKIP_IF ctlpTdkjwb
+BEFORE_INPUT	cur_field=svistr10	DO_SKIP_IF ctlpTdkjwb
+BEFORE_INPUT	cur_field=svistr10 	DO_SKIP_IF cjdpk
+BEFORE_INPUT	cur_field=svistr6    	DO_SKIP_IF cjdpka
+BEFORE_INPUT	cur_field=svitgl2    	DO_SKIP_IF cjdpkx
+BEFORE_INPUT	cur_field=svistr36	DO_SKIP_IF cfuref1
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF clewat
+
+AFTER_INPUT	cur_field=svinobuk	DO_MAP SHOW mdariminat
+AFTER_INPUT     cur_field=svitblkode    DO_SCAN dbscantkmtlp
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW mlatlon
+AFTER_INPUT	cur_field=svistr3	DO_MAP SHOW mblank
+AFTER_INPUT	cur_field=svistr2	DO_MAP SHOW mbutuh
+AFTER_INPUT	cur_field=svistr7	DO_MAP SHOW IF ctlpTdkjwb mblankx
+AFTER_INPUT	cur_field=svistr2	DO_MAP SHOW mfulagi
+AFTER_INPUT     cur_field=svistr2     	DO_MAP SHOW mpanjangktp1
+AFTER_INPUT     cur_field=svitblkode   	DO_MAP SHOW mpanjangtlp1
+/*AFTER_INPUT     cur_field=svistr1     	DO_MAP SHOW*/
+AFTER_INPUT     cur_field=svistr6     	DO_MAP SHOW mfulagi
+AFTER_INPUT     cur_field=svistr36     	DO_MAP SHOW mfulagi1
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mfulagi1
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+                IF cpjgktp mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KtpLimit16Digits
+AFTER_INPUT     cur_field=svitblkode     	DO_MAP SHOW
+                IF cpjgktp2	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PanjangNoTelpHarusBenar
+AFTER_INPUT	cur_field=svitblkode   	DO_MAP SHOW 
+ 		IF ctelpsama   mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NoTelpSdhMilikOrgLainCariKonsLagi
+AFTER_INPUT	cur_keybd=EN          	DO_MAP SHOW 
+ 		IF cpilbenar   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Pilih yang benar, cari konsumen masa tdk bertemu konsumen
+
+AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF ctdkmundur	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglFuLbhDrHariIni
+AFTER_INPUT	cur_field=svitgl2     	DO_MAP SHOW 
+ 		IF ctglblnini	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnIniMaxAkhBulan
+AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF ctglblnlain	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.MinatBlnDpnMax1Bulan
+AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF ctgltdkktmu	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TdkKetemuMax7Hari
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctdkmundur	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglFuLbhDrHariIni
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ctglblnini   mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnIniMaxAkhBulan
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ctglblnlain  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnDpnMax1Bulan
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ctgltdkktmu  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkKetemuMax7Hari
+
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF cminggux      mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Bisa Hari Minggu
+AFTER_INPUT     cur_field=svistr35      DO_MAP SHOW
+                IF cadapk   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Jka Minat T Semua, maka isi tdk ada PK
+
+AFTER_INPUT     cur_field=svistr31      DO_MAP SHOW
+                IF csdhminathmc mdum
+                ELSE HKCURSOR STAY
+                HKMSG Sudah Minat HMC. Jika Minat M2W Juga, Maka Input SPK Baru
+AFTER_INPUT     cur_field=svistr5       DO_MAP SHOW
+                IF csdhminatm2w mdum
+                ELSE HKCURSOR STAY
+                HKMSG Sudah Minat M2W. Jika Minat HMC Juga, Maka Input SPK Baru
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cselainCR
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp	tkmdata tkmnobuk
+
+SFL_MAP
+tkmnobuk	svinobuk	REPLACE
+cFOLLOWUP	svitype		DO_CALC
+tkmplg		svidtmkode	REPLACE
+tkmsts		svists		REPLACE
+tkmdata		svidata		REPLACE
+tkmtgl		svitgl1		REPLACE
+c1		svinourt	REPLACE
+
+
+
+
+CALCS()
+cupdtrans       (tkmsts=="OPEN" || tkmsts == "INPG") && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS" || g_grpnam=="TI") && djoinsvitmp==0
+cupdtransu      (tkmsts=="OPEN" || tkmsts == "INPG") && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS" || g_grpnam=="TI") && djoinsvitmp==1
+cdjoinket1	djoinket7why == 1
+
+SPCALCS(sptmptrans)
+        DO_LIB_IF crosaja       ap_dbclc(DNAME dupdtkmt2, DCOMMAND UPDATE, DTARGET tkmbukidx svinobuk, DMAP mupdtkmt2);
+SPCALCS(spupdtmptrans)
+	DO_LIB_IF cdjoinket1	ap_dbclc(DNAME ddelket, DCOMMAND DELETE_RANGE, DTARGET ketdatbuktgl l7WHY tkmnobuk l7WHY);
+        DO_LIB_IF crosaja       ap_dbclc(DNAME dupdtkmt2a, DCOMMAND UPDATE, DTARGET tkmbukidx svinobuk, DMAP mupdtkmt2);
+
+POSTING(tmptrans)
+        PST_ADDCMD      sptmptrans
+        PST_UPDCMD      spupdtmptrans
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cupdtrans
+PMT_UPDALL_COND cupdtransu
+PMT_DEL_COND    c0
+

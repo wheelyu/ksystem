@@ -1,0 +1,120 @@
+CALCS()
+clistriksama1           doclok==nhdkode
+ctotallistrik		ltotallistrik + ltotallistrik2
+ctdkisi3                (lsegmen=="CUB" && (nhdkode!="AKI" && nhdkode!="CDI" && nhdkode!="BUSI" && nhdkode!="ECM" && nhdkode!="STARTER" 
+			&& nhdkode!="COIL" && nhdkode!="KABELBODY" && nhdkode!="KUNCIKONTAKMANUAL" && nhdkode!="KIPROK")) ||
+                        (lsegmen=="MATIC" && (nhdkode!="AKI" && nhdkode!="CDI" && nhdkode!="BUSI" && nhdkode!="ECM" && nhdkode!="STARTER"
+                        && nhdkode!="COIL" && nhdkode!="KABELBODY" && nhdkode!="KUNCIKONTAKMANUAL" && nhdkode!="KIPROK" && nhdkode!="ACG"
+                        && nhdkode!="SENSORSTANDARSAMPING")) ||
+                        (lsegmen=="SPORT1" && (nhdkode!="AKI" && nhdkode!="BUSI" && nhdkode!="ECM" && nhdkode!="STARTER" && nhdkode!="BRUSH" && 
+			nhdkode!="SPULL" && nhdkode!="MAGNET" && nhdkode!="KOIL" && nhdkode!="KEPALABUSI"))
+
+cadaisi3                (lsegmen=="CUB" && (nhdkode=="AKI" || nhdkode=="CDI" || nhdkode=="BUSI" || nhdkode=="ECM" || nhdkode=="STARTER"
+                        || nhdkode=="COIL" || nhdkode=="KABELBODY" || nhdkode=="KUNCIKONTAKMANUAL" || nhdkode=="KIPROK")) ||
+                        (lsegmen=="MATIC" && (nhdkode=="AKI" || nhdkode=="CDI" || nhdkode=="BUSI" || nhdkode=="ECM" || nhdkode=="STARTER"
+                        || nhdkode=="COIL" || nhdkode=="KABELBODY" || nhdkode=="KUNCIKONTAKMANUAL" || nhdkode=="KIPROK" || nhdkode=="ACG"
+                        || nhdkode=="SENSORSTANDARSAMPING")) ||
+                        (lsegmen=="SPORT1" && (nhdkode=="AKI" || nhdkode=="BUSI" || nhdkode=="ECM" || nhdkode=="STARTER" || nhdkode=="BRUSH" ||
+                        nhdkode=="SPULL" || nhdkode=="MAGNET" || nhdkode=="KOIL" || nhdkode=="KEPALABUSI"))
+
+DBCALCS(djoindoclistrik)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      docdatbukidx lUPLPARTEST tlmnobuk lpartlistrik
+        DBC_SELECT      clistriksama1
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||i.Kode   : _______________________||
+||t.Pil    : _______________________||
+||t.Imts   : _______________________||
+||t.Ket    : _______________________||
+||t.Pot    : __________             ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+nhdkode                 PROTECT SCROLL                  INPUTRI 1
+nhdkode2                ALLCAPS SCROLL                  INPUTRI 2
+nhdkodeapr              ALLCAPS SCROLL                  INPUTRI 3
+nhdnobbm                PROTECT SCROLL                  INPUTRI 4
+nhdhrg1                 PROTECT SCROLL                  INPUTRI 5
+
+EDITS(tmptranst)
+e.Validate nhdkode	VALIDATE tbtdattypkod  mtbt2 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Pgv_listrik}  {Slsegmen}
+e.validate nhdkode2     VALIDATE tbtdattypkod mtbt7 stbt1 {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Plsegmen} {Pnhdkode}
+e.validate nhdkodeapr   VALIDATE_IF ctdkisi3 tbddatkodidx mtbd7 stbd {Pgv_dttabel} {Pgv_estimasi21} {PlIMITASI}
+e.validate nhdnobbm     VALIDATE tbddatkodidx mtbd3 stbd {Pgv_dttabel} {Pgv_estimasi21} {PlTARIK}
+
+e.Mandatory nhdkode2 MANDATORY
+e.Mandatory nhdkodeapr MANDATORY_IF ctdkisi3
+
+MAP(mtbd7)
+tbdkode         nhdkodeapr      REPLACE
+
+MAP(mtbt7)
+tbtkode         nhdkode2        REPLACE
+tbtkat          nhdnobbm        REPLACE
+
+MAP(mtbd3)
+tbdkode		nhdnobbm	REPLACE
+
+MAP(mtbt2)
+tbttbdkode      nhdkode		REPLACE
+tbttot   	nhdhrg1		REPLACE_IF cganti1
+tbtdf1          nhdhrg1         REPLACE_IF cimitasi
+tbtdf2          nhdhrg1         REPLACE_IF cadalecet
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=nhdkodeapr      DO_SKIP_IF cadaisi3
+
+SUBFILE(tmptrans)
+SFL_LINES(5)        
+SFL_TITLE(tmptranst)
+SFL_SELECT cbagianpart
+SFL_SHOW_NEXT
+SFL_TARGET
+nhdbukidx   tlmnobuk gv_estimasi
+
+CALCS()
+cganti1b         (nhdnobbm=="GANTI" || nhdnobbm=="IMITASI" || nhdnobbm=="LECET") && djoindoclistrik==0
+
+/*--------Update Ke Master Perhitungan-----------*/
+MAP(mmapmap2)
+nhdkode		lnhdkode	REPLACE
+nhdhrg1         ltotalestimasi2 REPLACE
+nhdhrg1         ltotallistrik2  REPLACE
+ltotalestimasi  ltotalestimasi  REPLACE_IF cscannhd
+ltotallistrik   ltotallistrik   REPLACE_IF cscannhd
+ctotallistrik   ltotallistrik   DO_CALC
+ctotalestimasi  ltotalestimasi  DO_CALC
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mupdtlm2)
+ltotalestimasi  tlmjml          REPLACE
+ltotallistrik   tlmperppn       REPLACE
+cnilaiper       tlmtotal        DO_CALC
+cpersenest      tlmperdisd      DO_CALC_IF clbrcdf2ada
+DEBUG		ldum	ldum	REPLACE
+
+MAP(madddoclistrik)
+lUPLPARTEST     docdata         REPLACE
+tlmnobuk        docnobuk        REPLACE
+lpartlistrik    doctype         REPLACE
+c1              docnourt        DO_CALC_IF cdjoindocurt0
+cnourt		docnourt	DO_CALC_IF cdjoindocurt1
+nhdkode         doclok          REPLACE
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapmap2,DCOMMAND MAPMAP,DMAP mmapmap2);
+DO_LIB ap_dbclc(DNAME dupdtlm2,DCOMMAND UPDATE,DTARGET tlmbukidx nhdnobuk,DMAP mupdtlm2);
+DO_LIB_IF cjoinrmddisest ap_ambts(gv_INPG,ldisest,tlmjml2,tlmperdisd,lNol,&lhasil1dis,&lhasil2dis,&lhasil3dis,lhasil1strdis,lhasil2strdis);
+DO_LIB ap_dbclc(DNAME dupdtlmdis2,DCOMMAND UPDATE,DTARGET tlmbukidx nhdnobuk,DMAP mupdtlmdis);
+DO_LIB_IF cganti1b ap_dbclc(DNAME dadddoclistrik,DCOMMAND ADD,DFILE doc,DMAP madddoclistrik);
+
+POSTING(tmptrans)
+PST_UPDCMD sptmptrans
+

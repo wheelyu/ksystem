@@ -1,0 +1,74 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|i.Data       : ___________________ |
+|t.Kode       : ___________________ |
+|i.Handphone  : ___________________ |
+|i.Sts        : ___________________ |
+|t.GsmWa      : _____________ 	    |
+ spasi
+|               ___________________ |
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+condata         PROTECT SCROLL          INPUTRI 1
+conkode         PROTECT SCROLL          INPUTRI 2
+conhp           DIGITS SCROLL          INPUTRI 3
+consts          PROTECT SCROLL          INPUTRI 5
+congrup         PROTECT SCROLL          INPUTRI 6
+lhp_enter       NOCHANGE                INPUTRI 7
+
+EDITS(tmptranst)
+e.Mandatory             conhp   MANDATORY
+e.Mandatory             congrup MANDATORY
+
+DEFAULTS(tmptranst)
+lhp_enter       INIT    	ENTER
+condata		INIT_ADD	TELP
+congrup		INIT_ADD	WAREKRUT
+
+CALCS()
+cjoinktpsdm	djoinpsmsdm==1
+cwarekrut	congrup=="WAREKRUT"
+cbolehwarek	g_usrkode==psikode || g_grpnam=="IT" || g_grpnam=="RI" || g_usrkode=="1225113" || g_grpnam=="SUPPORT"
+
+MAP(mdataktp)
+lpsmktprk	conkode		REPLACE_IF cjoinktpsdm
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln1i,ln1,&ldigit1);
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=conhp       DO_MAP SHOW mpanjangnom
+AFTER_INPUT             cur_field=condata DO_MAP SHOW  mdataktp
+
+AFTER_INPUT             cur_field=conhp DO_MAP SHOW
+                        IF cbukan08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT             cur_field=conhp DO_MAP SHOW
+                        IF cjointelp  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon   Sudah Pernah Di input
+
+AFTER_INPUT             cur_keybd=EN    DO_MAP SHOW
+                        IF cjointelp2  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon   Sudah Pernah Di input
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SELECT	cwarekrut
+SFL_COND	cbolehwarek
+SFL_TARGET
+conkodstsidx   psmktp gv_INPG
+
+SFL_MAP
+psmktp          conkode                 REPLACE
+gv_INPG         consts                  REPLACE
+
+
+
+

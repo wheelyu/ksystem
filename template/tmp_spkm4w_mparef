@@ -1,0 +1,111 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.NamaUsaha  __________________ ||
+||t.NoTelp     __________________ ||
+||t.MinatMitra ____               ||
+||t.Ket        __________________ ||
+||t.Ktp        __________________ ||
+||t.NamaMitra  __________________ ||
+||t.Referensi  __________________ ||
+||t.Nama       __________________ ||
+||t.NoTelp     __________________ ||
+||t.TglFu      __________________ ||
+||             ________           ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama		PROTECT		INPUTRI 2
+svistr5		PROTECT		INPUTRI 7
+sviyt1		ALLCAPS SCROLL	INPUTRI 8
+sviket2		ALLCAPS		INPUTRI 9
+svikode		DIGITS		INPUTRI 10
+sviket3		ALLCAPS		INPUTRI 11
+sviyt2		ALLCAPS SCROLL	INPUTRI 12
+svistr6		ALLCAPS		INPUTRI 13
+svistr7		DIGITS		INPUTRI 14
+svitgl2		ALLCAPS NONE NOLIMIT {DD-MM-YYYY} INPUTRI 15
+lenter		ALLCAPS		INPUTRI 16
+
+DEFAULTS(tmptranst)
+sviyt1		DFALT_SCAN	BLANKS
+				Y ""
+				T ""
+sviyt2		DFALT_SCAN	BLANKS
+				Y ""
+				T ""
+
+EDITS(tmptranst)
+e.Mandatory	sviyt1		MANDATORY
+e.Mandatory	sviket2		MANDATORY
+e.Mandatory	svikode		MANDATORY_IF cmandmpa1
+e.Mandatory	sviket3		MANDATORY_IF cmandmpa1
+e.Mandatory	sviyt2		MANDATORY
+e.Mandatory	svistr6		MANDATORY_IF cmandmpa2
+e.Mandatory	svistr7		MANDATORY_IF cmandmpa2
+e.Mandatory	svitgl2		MANDATORY_IF cmandmpa2
+e.DupkeyKtp	svikode		DUPKEY psmktpidx
+
+MAP(mcektandampa)
+cBLANKS		lcektanda	DO_CALC
+sviyt1		lcektanda	REPLACE
+
+CALCS()
+ccektandamparef0	lcektanda == BLANKS
+
+MAP(mupdtkmmparef)
+ctamfuro	tkmtotal	DO_CALC_IF ccektandamparef0
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=sviyt1 	DO_MAP SHOW mcektandampa
+BEFORE_INPUT	cur_field=svikode	DO_SKIP_IF cskipmpa1
+BEFORE_INPUT	cur_field=sviket3	DO_SKIP_IF cskipmpa1
+BEFORE_INPUT	cur_field=svistr6	DO_SKIP_IF cskipmpa2
+BEFORE_INPUT	cur_field=svistr7	DO_SKIP_IF cskipmpa2
+BEFORE_INPUT	cur_field=svitgl2	DO_SKIP_IF cskipmpa2
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF ctglmaju2    mdum
+                ELSE HKCURSOR STAY
+                HKMSG TANGGAL FU HARUS DIATAS HARI INI
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        svidatbuktyp    tkmtype tkmnobuk lMPAREF
+
+MAP(maddrefmparef)
+tkmtype         svidata         REPLACE
+lMPAREF         svitype         REPLACE
+lsvistr6ref4    svinama         REPLACE
+lsvistr7ref4 	svistr5         REPLACE
+lnobukfuref4    svinobuk        REPLACE
+
+CALCS()
+cMPREF		"MP_REF"
+
+MAP(maddaktmparef)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cMPREF          akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_usrkode       aktkode2        REPLACE
+cMPREF          aktbrg          DO_CALC
+
+SPCALCS(spmparef)
+DO_LIB ap_dbclc(DNAME dmapmparef,DCOMMAND MAPMAP,DMAP mmapfuro);
+DO_LIB ap_dbclc(DNAME dmapawalmparef,DCOMMAND MAPMAP,DMAP mapawaldet2);
+DO_LIB ap_dbclc(DNAME dmapakhirmparef,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mapakhirdet2);
+DO_LIB_IF cYmpa ap_dbclc(DNAME daddrefmparef,DCOMMAND ADD,DFILE svi,DMAP maddrefmparef);
+DO_LIB ap_dbclc(DNAME dupdtkmmparef,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP mupdtkmmparef);
+DO_LIB ap_dbclc(DNAME daddaktmpref,DCOMMAND ADD,DFILE akt,DMAP maddaktmparef);
+
+POSTING(tmptrans)
+PST_UPDCMD      spmparef

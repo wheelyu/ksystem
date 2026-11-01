@@ -1,0 +1,96 @@
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|t.PenilaiHead                            t.HasilSistem                             |
+|/---------------------------------------\|/---------------------------------------\|
+||t.Tgl       : _ _______________        ||t.TglMulai       :_________________     ||
+||t.Hasil     :   _________              ||t.TglSelesai     :_________________     ||
+||                                       ||t.Output         :_________________     ||
+||t.Ket       :   _________________      ||t.SmbrData       :_________________     ||
+||t.Penilaian :   ____                   ||\---------------------------------------/|
+||              ___                      |                                          |
+|\---------------------------------------/                                          |
+\-----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+
+
+g_usrkode       PROTECT UNSEEN          INPUTRI 1
+svitgl1         PROTECT {DD-MM-YY}      INPUTRI 1
+ltglmulai       PROTECT {DD-MM-YYYY}    INPUTRI 1
+svikode         NOCHANGE                INPUTRI 2
+ltglselesai     PROTECT {DD-MM-YYYY}    INPUTRI 2
+lOutput         TEXTAREA PROTECT        INPUTRI 3
+sviket          TEXTAREA                INPUTRI 3
+lSumberData     TEXTAREA PROTECT        INPUTRI 3
+svidf1          NOCHANGE                INPUTRI 4
+lenter          NOCHANGE                INPUTRI 5
+
+
+DEFAULTS(tmptranst)
+svitgl1     INIT        {g_tgltrn}
+svikode DFALT_SCAN_BLANKS   ACC
+                            TACC
+
+svidf1 DFALT_SCAN_BLANKS        0
+                                1
+                                2
+                                3
+                                4
+CALCS()
+cKETINPG14        ketnourt == svinourt
+
+MAP(mmapjoinketjasil2)
+ketstr1          lOutput         REPLACE
+ketstr2          lSumberData     REPLACE
+kettgl1          ltglmulai       REPLACE
+kettgl2          ltglselesai     REPLACE
+
+EDITS(tmptranst)
+t.ValidateNip           g_usrkode          VALIDATE psikodidx mjoinkethasil2 0
+i.Mandatory     svikode         MANDATORY
+i.Mandatory     sviket          MANDATORY
+i.Mandatory     svidf1          MANDATORY
+
+DBCALCS(djoinkethasil2)
+DBC_COMMAND     JOIN
+DBC_TARGET      ketdatbuktgl    tlmdata tlmnobuk lHSLANLS
+DBC_SELECT      cKETINPG14
+DBC_MAP         mmapjoinketjasil2                                 
+
+CALCS()
+cdetINPGBLJR       ((tlmbrdoto == "HEAD_ISI_DETAIL" || tlmbrdoto == "DEV_TERIMA_KERJA" || tlmbrdoto == "HEAD_PENILAIAN"|| tlmbrdoto == "OPR_PENILAIAN") && svists == "INPG") || (tlmbrdoto != "HEAD_PENILAIAN" && (tlmbrdoto == "CLSD" || tlmtotal >= 1))
+cdjoinkethasil2  djoinkethasil2 == 1
+
+
+MAP(mjoinkethasil2)
+lOutput         lOutput         REPLACE_IF cdjoinkethasil2
+lSumberData     lSumberData     REPLACE_IF cdjoinkethasil2
+ltglmulai       ltglmulai       REPLACE_IF cdjoinkethasil2
+ltglselesai     ltglselesai     REPLACE_IF cdjoinkethasil2
+
+HOOKS(tmptranst)
+BEFORE_INPUT   cur_field=svikode        DO_MAP SHOW murut4
+BEFORE_INPUT   cur_field=svikode        DO_MAP SHOW mjoinkethasil2
+AFTER_INPUT   cur_field=svikode        DO_MAP SHOW mjoinkethasil2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svinourt
+SFL_SELECT cdetINPGBLJR
+SFL_TARGET
+        svidatbuktyp  tlmdata tlmnobuk lNILAIDATA
+SFL_MAP
+tlmdata   svidata     REPLACE
+tlmnobuk    svinobuk    REPLACE  
+lNILAIDATA   svitype     REPLACE  
+gv_INPG     svists      REPLACE
+
+
+
+POSTING(tmptrans)
+        PST_ADDCMD supd
+        PST_UPDCMD supd

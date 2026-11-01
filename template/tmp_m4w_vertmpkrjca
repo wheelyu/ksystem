@@ -1,0 +1,69 @@
+DBCALCS(djoinsvivertkerja) 
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   ldt703 btmnobuk gv_vertkerja 
+
+IMAGE(tmptranst) 
+ /------------------------------------------------------------------------------------------------\
+ |i.t                                                                                             |
+ |i.Notelpdihub       			  : ____________________                                  |
+ |i.Bisadihubungi     			  : ____                                                  |
+ |i.Namasumberinformasi                   : ____________________                                  |
+ |i.Namakantorusaha                       : _____________________________________________________ |
+ |i.Alamatkantor                          : _____________________________________________________ |
+ |i.Nomortelpkantor                       : ____________________                                  |
+ |i.Jenisbidangusaha                      : __________________                                    |
+ |i.Apakahcadebbenarbekerjadist		  : ____                                                  |
+ |i.Statuskaryawancadeb			  : _____________________                                 |
+ |i.Jabatancadebdikantor                  : _____________________                                 |
+ |i.Lamabekerja                           : ____ i.Th                                             |
+ |i.t                                                                                             |
+ \------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+sviyt1			NOCHANGE			INPUTRI 2
+svistr2			ALLCAPS SCROLL			INPUTRI 3
+svinama			ALLCAPS SCROLL			INPUTRI 4
+sviket			TEXTAREA  			INPUTRI 5  /* alamat kantor	*/
+svistr3			ALLCAPS SCROLL			INPUTRI 6
+svistr4			ALLCAPS SCROLL			INPUTRI 7
+sviyt2			NOCHANGE			INPUTRI 8
+svistr5			ALLCAPS SCROLL			INPUTRI 9
+svistr6			ALLCAPS SCROLL			INPUTRI 10
+svidf1			NUMERIC				INPUTRI 11
+
+DEFAULTS(tmptranst)
+sviyt1			DFALT_LIST 		Y T
+sviyt2			DFALT_LIST		Y T
+
+MAP(mverkerja)
+almjalan_6		sviket			REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=svistr1	DO_MAP SHOW mverkerja
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   ldt703 btmnobuk gv_vertkerja
+
+SFL_MAP
+ldt703			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_vertkerja		svitype			REPLACE
+
+
+CALCS()
+cadd_vertkerja		djoinsvivertkerja == 0 && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD")
+cupd_vertkerja		(btmsts == "705" || btmsts == "703") && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD")
+
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_vertkerja	
+  	PMT_UPDALL_COND cupd_vertkerja
+  	PMT_DEL_COND  	cupd_vertkerja

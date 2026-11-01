@@ -1,0 +1,100 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+|| t.UplBuktiSerahTrm             ||
+|\--------------------------------/|
+|/----------s.UPLOAD--------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| t.NobukTrm : _________________ ||
+|| t.TglUpld1 : ___________       ||
+|| t.JnsUpld  : ______________    ||
+|| t.jmlUpld  : ____ ____         ||
+|| t.StsUpld  : ____              ||
+||		______		  ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| t.TglAcc   : ____________	  ||
+|| t.Acc Head : ____              ||
+|| t.KetTacc  : _________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk                        PROTECT                         INPUTRI         1
+tkdtgl                          PROTECT {DD-MM-YYYY}            INPUTRI         2
+tkdjenis                        PROTECT                         INPUTRI         3
+tkdnourt                        PROTECT                         INPUTRI         4
+tkdtype				PROTECT				INPUTRI		4
+tkdsts                          PROTECT                         INPUTRI         5
+lenter                          ALLCAPS                         INPUTRI         6
+tkdtgl2                         PROTECT {DD-MM-YYYY}            INPUTRI         7
+tkdjwbstr1                      ALLCAPS SCROLL                  INPUTRI         8
+tkdket                          TEXTAREA                        INPUTRI         9
+
+DEFAULTS(tmptranst)
+tkdjenis        INIT                    BUKTI_TERIMA
+tkdtgl          INIT                    {g_tgltrn}
+tkdnoll         INIT                    UPLOAD_RESUME
+IF ctamurt2     tkdnourt     INIT       {ctambahurt2}
+tkdsts          INIT                    "INPG"
+lenter          INIT                    ENTER
+tkdjwbstr1      DFALT_SCAN_BLANKS       Y "ACC"
+                                        T "TACC"
+IF cubahacc     tkdtgl2     INIT_UPDATE {g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory     tkdket          MANDATORY_IF crestacc
+
+MAP(mupdtkd2)
+gv_CLSD         tkdsts        REPLACE
+
+MAP(mupdtkd3)
+lOK         	tkdtype       REPLACE
+
+DBCALCS(dupdtkd2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx   tkdprm
+        DBC_MAP         mupdtkd3
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjwbstr1     DO_SKIP_IF cblmclsd
+BEFORE_INPUT    cur_field=tkdket         DO_SKIP_IF cresumacc
+BEFORE_INPUT    cur_field=lenter         DO_SKIP_IF chhead
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD  tkdtgl
+SFL_UPLFLD tkdoto tkdjenis
+SFL_SORT_BY_FIELD tkdnourt 
+SFL_SORT_UPDOWN DOWN
+SFL_UPLFLD_DBCALCS   dupdtkd2
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll   lBUKTITRM tlmnobuk
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+lBUKTITRM       tkddata         REPLACE
+tlmnobuk        tkdrek          REPLACE
+
+SPCALCS(spdet82)
+        DO_LIB_IF ctkdok        ap_dbclc(DNAME dupdtlmmstr4,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtkd2);
+
+POSTING(tmptrans)
+ PST_UPDCMD     spdet82
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    ctamrsm
+PMT_UPDALL_COND cupdrsm
+PMT_DEL_COND    c0
+
+

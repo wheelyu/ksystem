@@ -1,0 +1,80 @@
+IMAGE(tmptranst)
+/-------------t-----t-----------t--------------t--------------t----------------t----t------------\
+|   t.NoBuk   |t.Sts|t.TipeEvent|t.TanggalInput|t.TanggalMulai|t.TanggalSelesai|t.H-|t.TipeRevisi|
+\-------------.-----.-----------.--------------.--------------.----------------t----t------------/
+
+IMAGE(tmptrans)
+|_____________|_____|___________|______________|______________|________________|____|____________|
+
+FIELD(tmptrans)
+tldnobuk 	PROTECT		                        INPUTRI	1
+tldsts	        PROTECT		                        INPUTRI	1
+tldbrg          ALLCAPS                                 INPUTRI 2
+tldtglfak       PROTECT {DD-MM-YYYY}	                INPUTRI	2
+tldtgl2         ALLCAPS NOLIMIT {DD-MM-YYYY}            INPUTRI 3
+tldtgl3         ALLCAPS NOLIMIT {DD-MM-YYYY}            INPUTRI 4
+tldjml          PROTECT                                 INPUTRI 1
+tldkat		PROTECT		                        INPUTRI	60
+
+DEFAULTS(tmptrans)
+tlddata         INIT            {lDTCOEH1}
+tldsts          INIT            OPEN
+tldsts          INIT_UPDATE     OPEN
+tldtglfak       INIT            {g_tgltrn}
+tldtgl2         INIT            {ltglawlblplus1}
+tldtgl3         INIT            {ltglakhblplus1}
+
+EDITS(tmptrans)
+e.Mandatory     tldbrg          MANDATORY
+e.Mandatory     tldtgl2         MANDATORY
+e.Mandatory     tldtgl3         MANDATORY
+e.Validate      tldbrg          VALIDATE tbddtmstidx mtipeevent stbd2 {Pgv_dttabel} {Pgv_infoumum} {PlTIPEAKTIVITAS} {PlBLANKS} {PlCOEBTL}
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=tldtgl2       DO_MAP SHOW mtgl
+AFTER_INPUT     cur_field=tldtgl3       DO_MAP SHOW mtgl
+AFTER_INPUT	cur_keybd=EN            DO_MAP mtgl
+AFTER_INPUT     cur_field=tldtgl2     	DO_MAP
+                IF crentangblplus1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Harus Dalam Rentang M+1 Bulan Dari Tanggal Terbentuk Master COE
+AFTER_INPUT     cur_field=tldtgl3     	DO_MAP
+                IF crentangblplus1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Harus Dalam Rentang M+1 Bulan Dari Tanggal Terbentuk Master COE
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+                IF crentangblplus1ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Harus Dalam Rentang M+1 Bulan Dari Tanggal Terbentuk Master COE
+AFTER_INPUT     cur_field=tldtgl2       DO_MAP SHOW
+                IF ctglhmin14 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Event Wajib H-14 dari Hari ini
+AFTER_INPUT     cur_field=tldtgl2       DO_MAP SHOW
+                IF ctgleventok mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG t.Terdapat Event Lain Pada Rentang Tanggal Tersebut, Apakah Yakin Ingin Menambahkan Event Ini? Jika Ya Klik OK
+AFTER_INPUT     cur_field=tldtgl3       DO_MAP SHOW
+                IF ctgleventok mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG t.Terdapat Event Lain Pada Rentang Tanggal Tersebut, Apakah Yakin Ingin Menambahkan Event Ini? Jika Ya Klik OK
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+		IF ctgleventok mdum
+		ELSE HKCURSOR NOSTAY
+		HKMSG t.Terdapat Event Lain Pada Rentang Tanggal Tersebut, Apakah Yakin Ingin Menambahkan Event Ini? Jika Ya Klik OK
+
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+                IF ctglmulaislsok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tanggal Mulai Tidak Boleh Lebih Dari Tanggal Selesai Dan Sebaliknya
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tldtgl2
+SFL_SORT_UPDOWN UP
+SFL_SELECT cseltambahevent
+SFL_TARGET
+        tldbukurtidx tkmnobuk
+SFL_MAP
+        tkmnobuk tldnobuk

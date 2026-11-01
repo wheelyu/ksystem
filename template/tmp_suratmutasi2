@@ -1,0 +1,96 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|/------------------------------------------------------------------------------\|
+||                         t.SuratPernyataan                                    ||
+||   t.Denganinimenyatakanbahwa                                                 ||
+|| t.danadalahbenarmerupakanaset                                                ||
+|| t.Groupyangdiserahkankepada                                                  ||
+||                                                                              ||
+||                                                                              ||
+||                                                                              ||
+||      t.Demikiansuratpernyataanini                                            ||
+|| t.untukdapatdipergunakan                                                     ||
+||                                                                              ||
+||       t.Acc1 : ___ ___  t.Ya                                                 ||
+|\------------------------------------------------------------------------------/|
+| t.UploadFotoCUG                                                                |
+|/--UPLOAD--------------------------\/----------------\                          |
+||                                  || t.Upload : ___ |                          |
+||                                  || ______  ______ |                          |
+||                                  || ______________ |                          |
+||                                  |\----------------/                          |
+||                                  |spasi                                       |
+||                                  |spasi                                       |
+||                                  |spasi                                       | 
+|\----------------------------------/spasi                                       |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+  lend              NOCHANGE             INPUTRI            1
+  tldsisbrg         PROTECT              INPUTRI            2
+  tldukrwrn	PROTECT 		INPUTRI		3
+  ltomacc	TOMBOL			INPUTRI		4
+  ltomtacc	TOMBOL			INPUTRI		5
+  tldsat  	PROTECT			INPUTRI		6
+
+EDITS(tmptranst)
+e.Mandatory tldsisbrg MANDATORY
+
+DEFAULTS(tmptranst)
+lend            INIT    Y
+ltomacc		INIT	ACC
+ltomtacc	INIT	TACC
+
+
+CALCS()
+cacc	"ACC"
+ctacc	"TACC"
+cmasuk2		tlmsts=="OPEN" && (g_grpnam=="BM" || g_grpnam=="BMMGADAI" || g_grpnam=="B.M4WBM" || g_grpnam == "MM" || g_grpnam == "NSOHEAD" || g_grpnam == "IT" || g_grpnam=="RASADH" || g_grpnam=="RI" || g_usrkode==tlmdari || g_grpnam=="GAHEAD" || g_grpnam=="RMGADAI")
+catasan		(g_grpnam=="BM" || g_grpnam=="BMMGADAI" || g_grpnam=="B.M4WBM" || g_grpnam == "MM" || g_grpnam == "NSOHEAD" || g_grpnam == "IT" || g_grpnam=="RASADH" || g_grpnam=="RI" || g_grpnam=="GAHEAD") && tldukrwrn=="OK"
+
+MAP(macc)
+cacc	tldsat		DO_CALC
+
+MAP(mtacc)
+ctacc	tldsat		DO_CALC
+
+SPCALCS(spacc)
+	DO_LIB_IF catasan	ap_dbclc(DNAME dupdacc,DCOMMAND UPDATE,DTARGET tldotoidx tldoto,DMAP macc);
+
+SPCALCS(sptacc)
+	DO_LIB_IF catasan	ap_dbclc(DNAME dupdtacc,DCOMMAND UPDATE,DTARGET tldotoidx tldoto,DMAP mtacc);
+
+HOOKS(tmptranst)
+/*AFTER_INPUT     cur_keybd=EN              DO_LIB_IF ctest ap_ceksj(tldplg);*/
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbolehacc mdum
+                ELSE HKCURSOR STAY
+                HKMSG Harap ACC dahulu, Tekan Spasi
+AFTER_INPUT     cur_field=tldsisbrg      DO_MAP SHOW misi
+AFTER_INPUT     cur_field=tldsisbrg      DO_MAP SHOW
+                IF cclsd mdum
+                ELSE HKCURSOR STAY
+                HKMSG Status Sudah CLS1 Tidak Bisa Posting
+CLICKED         cur_field=ltomacc        DO_SPCALCS spacc
+CLICKED         cur_field=ltomtacc        DO_SPCALCS sptacc
+
+
+MAP(mupdtldfoto)
+cOK             tldukrwrn       DO_CALC
+DBCALCS(dupdtldfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldotoidx tldoto  
+        DBC_MAP         mupdtldfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPLFLD tldoto             
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdtldfoto 
+SFL_COND cmasuk2
+SFL_TARGET
+        tldotoidx tldoto  

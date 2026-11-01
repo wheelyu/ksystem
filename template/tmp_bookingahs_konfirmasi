@@ -1,0 +1,537 @@
+LOCAL
+PGM_FIELDS
+ltldjasbrg      STRING          61
+ltldsisbrg      STRING          61
+ltldnoll	STRING		61
+ltldgrup        STRING          61
+ltldtotdis	INT2		2
+ltgl30		DATE		4
+lurut		INT2		2
+ltime		TIME		4
+l10000		TIME		4
+l070000		TIME		4
+l170000		TIME		4
+lAHASS          STRING          21
+lJAMJADWALULANG STRING          21
+lDTTABEL        STRING          11
+l0800           TIME            4  
+l0900           TIME            4
+l1000           TIME            4  
+l1100           TIME            4   
+l1200           TIME            4  
+l1300           TIME            4   
+l1400           TIME            4  
+l1500           TIME            4   
+l1600           TIME            4
+lDTBOOK		STRING		11
+lFU1		STRING		21
+lFU2		STRING		21
+lFU3		STRING		21
+lRSC1		STRING		21
+lRSC2		STRING		21
+lRSC3		STRING		21
+l4429		INT2            2
+lmapnxttldpost	STRING		21
+
+MAP(mjointld2)
+tldnourt	lurut		REPLACE
+tldtotdis       ltldtotdis      REPLACE
+
+DBCALCS(djointld2)
+	DBC_COMMAND     JOIN_LAST_SFL
+	DBC_TARGET      tldstsbrgukr    btmdata gv_OPEN btmnobuk lBOOKAHS
+	DBC_MAP         mjointld2
+
+IMAGE(tmptranst)
+/------------------------------------------------------\
+/------------------------------------------------------\
+| t.StatusDesk        : ______________        _____    |
+| t.StatusKonfirmasi  : ______________
+| t.Hasil             : ___  _________________________ |
+| t.KonsBooking       : ___  _________________________ |
+| t.JadwalUlang       : ___  _________________________ |
+| t.Alasan            : ___  _________________________ |
+| t.AlasanLain        : ______________________________ |
+| t.TglBookBaru       : __________________ 	       |
+| t.JamBookBaru       : ________  ________ ___________ |
+| t.CaraInputJam				       |
+| t.CaraInputJam2				       |
+\------------------------------------------------------/
+\------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldlok          NOCHANGE                        INPUTRI 1   /* Status Deskcall          */
+tldnobuk        PROTECT QPROTECT UNSEEN         INPUTRI 3   /* Nobuk                    */
+tldstr2		PROTECT                        INPUTRI 2   /* Status Konfirmasi        */
+tldjasbrg       NOCHANGE                        INPUTRI 4   /* Hasil DC                 */
+ltldjasbrg      PROTECT                         INPUTRI 5   /* Ket Hasil DC             */
+tldsisbrg       NOCHANGE                        INPUTRI 6   /* Konsfirmasi Booking      */
+ltldsisbrg      PROTECT                         INPUTRI 7   /* Ket Konsfirmasi Booking  */
+
+tldnoll         NOCHANGE                        INPUTRI 8   /* Alasan Tdk Datang        */
+ltldnoll	PROTECT				INPUTRI 9   /* Ket Alasan Tdk Datang	*/
+tldgrup         NOCHANGE                        INPUTRI 10  /* Alasan Reschedule        */
+ltldgrup        PROTECT                         INPUTRI 11
+tldket          TEXTAREA                	INPUTRI 11
+tldtglfak       ALLCAPS {DD-MM-YY} NOLIMIT      INPUTRI 12  /* Tanggal Booking Baru     */
+tldstr1         NOCHANGE                        INPUTRI 13
+ltime	        PROTECT                         INPUTRI 14  /* Jam Booking Baru         */
+lenter		NOCHANGE			INPUTRI 15
+
+CALCS()
+cTerhubung	tldlok == "TERHUBUNG"
+cTdkTerhubung	tldlok == "TDK_TERHUBUNG"
+
+DEFAULTS(tmptranst)
+tlddata                         INIT                    BOOKING
+tldsts                          INIT_ADD                OPEN
+tldukrwrn                       INIT_ADD                BOOKAHS
+lDTBOOK				INIT			DTBOOK
+
+l0800                           INIT                    0800
+l0900                           INIT                    0900
+l1000                           INIT                    1000
+l1100                           INIT                    1100
+l1200                           INIT                    1200
+l1300                           INIT                    1300
+l1400                           INIT                    1400
+l1500                           INIT                    1500
+l1600                           INIT                    1600
+l1700                           INIT                    1700
+
+l4429				INIT			4429
+lmapnxttldpost			INIT			mapnxttldpost
+
+l10000				INIT			10000
+l070000				INIT			070000
+l170000				INIT			170000
+
+tldlok          		DFALT_SCAN              BLANKS
+							TERHUBUNG
+							TDK_TERHUBUNG
+
+lFU1				INIT			FU1
+lFU2				INIT			FU2
+lFU3				INIT			FU3
+lRSC1				INIT			RSC1
+lRSC2				INIT			RSC2
+lRSC3				INIT			RSC3
+
+IF cTerhubung       tldjasbrg       DFALT_SCAN          1 "PEMILIK MOTOR"
+			                                2 "BUKAN PEMILIK MOTOR"
+                                                        3 "SALAH SAMBUNG"
+                                                        4 "MOTOR DIJUAL"
+                                                        5 "MOTOR DITARIK LEASING"
+IF cTdkTerhubung    tldjasbrg       DFALT_SCAN          1 "TELEPON TIDAK DIANGKAT"
+							2 "TELEPON TIDAK AKTIF"
+                                                        3 "TELEPON SALAH / TIDAK TERDAFTAR"
+                                                        4 "TELEPON DILUAR JANGKAUAN"
+                                                        5 "TELEPON DIMATIKAN KONSUMEN"
+
+/*tldjasbrg			DFALT_SCAN_BLANKS	1 "TELEPON DIANGKAT"
+							2 "TELEPON TIDAK DIANGKAT"
+							3 "PANGGILAN DITOLAK"*/
+
+tldsisbrg       		DFALT_SCAN_BLANKS       1 "DATANG SESUAI TANGGAL BOOKING"
+                                                        2 "TIDAK JADI DATANG / CANCEL"
+
+tldgrup        		        DFALT_SCAN_BLANKS       1 "SIBUK / TIDAK SEMPAT"
+                                                        2 "SAKIT / ADA KENDALA PRIBADI"
+                                                        3 "LUPA"
+                                                        4 "LAIN-LAIN"
+
+tldnoll         		DFALT_SCAN_BLANKS       1 "PENJADWALAN ULANG"
+                                                        2 "SERVICE TEMPAT LAIN"
+                                                        3 "ALASAN MENDESAK"
+                                                        4 "SPAREPART TIDAK TERSEDIA"
+                                                        5 "TIDAK ADA BIAYA"
+                                                        6 "TERLALU JAUH"
+                                                        7 "LAIN-LAIN"
+
+lAHASS                          INIT                    "AHASS"
+lJAMJADWALULANG                 INIT                    "JAMJADWALULANG"
+lDTTABEL                        INIT                    "DTTABEL"
+
+CALCS()
+
+cDiAngkat	tldjasbrg == "1" && tldlok == "TERHUBUNG"
+cTdkDiangkat	(tldjasbrg == "2" || tldjasbrg == "3" || tldjasbrg == "4" || tldjasbrg == "5")
+
+cDatang		tldsisbrg == "1"
+cTdkDatang	tldsisbrg == "2"
+
+cJadwalUlang	tldnoll == "1"
+cAlasanLain	(tldnoll == "2" || tldnoll == "3" || tldnoll == "4" || tldnoll == "5" || tldnoll == "6" || tldnoll == "7")
+
+cks1		tldjasbrg == BLANKS
+cks2		tldsisbrg == BLANKS
+cks3		tldnoll == BLANKS
+
+clainlain       tldnoll !="7" && tldgrup !="4"
+
+cjdwlulgskip    tldlok != "TERHUBUNG" || tldnoll != "1" || tldsisbrg != "2" || tldjasbrg != "1"
+
+ckett1a		tldjasbrg == "1" && tldlok == "TERHUBUNG"
+ckett2a		tldjasbrg == "2" && tldlok == "TERHUBUNG"
+ckett3a		tldjasbrg == "3" && tldlok == "TERHUBUNG"
+ckett4a		tldjasbrg == "4" && tldlok == "TERHUBUNG"
+ckett5a		tldjasbrg == "5" && tldlok == "TERHUBUNG"
+
+ckettdk1a	tldjasbrg == "1" && tldlok == "TDK_TERHUBUNG"
+ckettdk2a	tldjasbrg == "2" && tldlok == "TDK_TERHUBUNG"
+ckettdk3a	tldjasbrg == "3" && tldlok == "TDK_TERHUBUNG"
+ckettdk4a	tldjasbrg == "4" && tldlok == "TDK_TERHUBUNG"
+ckettdk5a	tldjasbrg == "5" && tldlok == "TDK_TERHUBUNG"
+
+cketjwl1        tldgrup == "1" && tldlok == "TERHUBUNG" && tldnoll == "1"
+cketjwl2        tldgrup == "2" && tldlok == "TERHUBUNG" && tldnoll == "1"
+cketjwl3        tldgrup == "3" && tldlok == "TERHUBUNG" && tldnoll == "1"
+cketjwl4        tldgrup == "4" && tldlok == "TERHUBUNG" && tldnoll == "1"
+
+cket4a		tldsisbrg == "1"
+cket5a		tldsisbrg == "2"
+
+cket6a		tldnoll == "1"
+cket7a		tldnoll == "2"
+cket8a		tldnoll == "3"
+cket9a		tldnoll == "4"
+cket10a		tldnoll == "5"
+cket11a		tldnoll == "6"
+cket12a		tldnoll == "7"
+
+ckett1		"PEMILIK MOTOR"
+ckett2		"BUKAN PEMILIK MOTOR"
+ckett3		"SALAH SAMBUNG"
+ckett4		"MOTOR DIJUAL"
+ckett5		"MOTOR DITARIK LEASING"
+
+ckettdk1	"TELEPON TIDAK DIANGKAT"
+ckettdk2	"TELEPON TIDAK AKTIF"
+ckettdk3	"TELEPON SALAH / TIDAK TERDAFTAR"
+ckettdk4	"TELEPON DILUAR JANGKAUAN"
+ckettdk5	"TELEPON DIMATIKAN KONSUMEN"
+
+cket4		"DATANG SESUAI TANGGAL BOOKING"
+cket5		"TIDAK JADI DATANG"
+cket6		"PENJADWALAN ULANG"
+cket7		"SERVICE TEMPAT LAIN"
+cket8		"ALASAN MENDESAK"
+cket9		"SPAREPART TIDAK TERSEDIA"
+cket10		"TIDAK ADA BIAYA"
+cket11		"TERLALU JAUH"
+cket12		"LAIN-LAIN"
+
+cjdwlulg1       "SIBUK / TIDAK SEMPAT"
+cjdwlulg2       "SAKIT / ADA KENDALA PRIBADI"
+cjdwlulg3       "LUPA"
+cjdwlulg4       "LAIN-LAIN"
+
+csdhlewat	((tldnoll == "1" && tldtglfak > btmtglpros2) || tldnoll != "1")
+clewatjam       ((tldnoll == "1" && ltime >= l10000) || tldnoll != "1")
+cblhinputjam	((tldnoll == "1" && ltime >= l070000 && ltime <= l170000) || tldnoll != "1")
+ctgl30		btmtglpros2 + 30
+clewattgl	((tldnoll == "1" && tldtglfak <= ltgl30) || tldnoll != "1")
+
+ctmbhdtl	ltldtotdis + 1
+ctdkangkat0     djointld2 == 0 && g_curcmd == 1
+ctdkangkat1     djointld2 == 1 && g_curcmd == 1
+curut		lurut + 1
+ctdktambah	g_curcmd != 1 && tldnoll == "1"
+ctdkrevisitgl	(tldnoll != "1" || tldnoll == BLANKS)
+ctldstr8        tldstr1 == "0800"
+ctldstr9        tldstr1 == "0900"
+ctldstr10       tldstr1 == "1000"
+ctldstr11       tldstr1 == "1100"
+ctldstr12       tldstr1 == "1200"
+ctldstr13       tldstr1 == "1300"
+ctldstr14       tldstr1 == "1400"
+ctldstr15       tldstr1 == "1500"
+ctldstr16       tldstr1 == "1600"
+ctldstr17       tldstr1 == "1700"
+
+EDITS(tmptranst)
+e.Mandatory     tldlok          MANDATORY
+e.Mandatory     tldgrup         MANDATORY_IF cJadwalUlang
+e.Mandatory     tldjasbrg       MANDATORY
+e.Mandatory     tldsisbrg       MANDATORY_IF cDiAngkat
+e.Mandatory     tldnoll         MANDATORY_IF cTdkDatang
+
+e.Mandatory     tldtglfak       MANDATORY_IF cJadwalUlang
+e.MandatoryJam  ltime           MANDATORY_IF cJadwalUlang
+
+
+
+e.Validate      tldnobuk        VALIDATE btmbukidx mbtm
+e.Validate      tldstr1         VALIDATE tbddatkodidx mtime stbd {PlDTTABEL} {PlAHASS} {PlJAMJADWALULANG}
+
+MAP(mtime)
+tbdkode         tldstr1        	REPLACE
+l0800           ltime          	REPLACE_IF ctldstr8
+l0900           ltime          	REPLACE_IF ctldstr9
+l1000           ltime          	REPLACE_IF ctldstr10
+l1100           ltime          	REPLACE_IF ctldstr11
+l1200           ltime          	REPLACE_IF ctldstr12
+l1300           ltime          	REPLACE_IF ctldstr13
+l1400           ltime          	REPLACE_IF ctldstr14
+l1500           ltime          	REPLACE_IF ctldstr15
+l1600           ltime          	REPLACE_IF ctldstr16
+l1700           ltime          	REPLACE_IF ctldstr17
+/* DEBUG ltime   	ltime   	REPLACE */
+
+MAP(mbtm)
+btmnobuk	tldnobuk	REPLACE
+cBLANKS		ltime		DO_CALC_IF ctdkrevisitgl
+cBLANKS		ltldjasbrg	DO_CALC_IF cks1
+cBLANKS		ltldsisbrg	DO_CALC_IF cks2
+cBLANKS		ltldnoll	DO_CALC_IF cks3
+
+ckett1		ltldjasbrg	DO_CALC_IF ckett1a
+ckett2		ltldjasbrg	DO_CALC_IF ckett2a
+ckett3		ltldjasbrg	DO_CALC_IF ckett3a
+ckett4		ltldjasbrg	DO_CALC_IF ckett4a
+ckett5		ltldjasbrg	DO_CALC_IF ckett5a
+
+ckettdk1	ltldjasbrg	DO_CALC_IF ckettdk1a
+ckettdk2	ltldjasbrg	DO_CALC_IF ckettdk2a
+ckettdk3	ltldjasbrg	DO_CALC_IF ckettdk3a
+ckettdk4	ltldjasbrg	DO_CALC_IF ckettdk4a
+ckettdk5	ltldjasbrg	DO_CALC_IF ckettdk5a
+
+cjdwlulg1       ltldgrup        DO_CALC_IF cketjwl1
+cjdwlulg2       ltldgrup        DO_CALC_IF cketjwl2
+cjdwlulg3       ltldgrup        DO_CALC_IF cketjwl3
+cjdwlulg4       ltldgrup        DO_CALC_IF cketjwl4
+
+cket4		ltldsisbrg	DO_CALC_IF cket4a
+cket5		ltldsisbrg	DO_CALC_IF cket5a
+cket6		ltldnoll  	DO_CALC_IF cket6a
+cket7		ltldnoll  	DO_CALC_IF cket7a
+cket8		ltldnoll  	DO_CALC_IF cket8a
+cket9		ltldnoll  	DO_CALC_IF cket9a
+cket10		ltldnoll  	DO_CALC_IF cket10a
+cket11		ltldnoll  	DO_CALC_IF cket11a
+cket12		ltldnoll  	DO_CALC_IF cket12a
+tldperdism	ltime		REPLACE_IF ctdktambah
+
+MAP(murut)
+cBLANKS         tldjasbrg       DO_CALC
+cBLANKS         ltldjasbrg      DO_CALC
+cBLANKS         tldsisbrg       DO_CALC
+cBLANKS         ltldsisbrg      DO_CALC
+cBLANKS         tldnoll         DO_CALC
+cBLANKS         ltldnoll        DO_CALC
+cBLANKS         tldgrup         DO_CALC
+cBLANKS         ltldgrup        DO_CALC
+cBLANKS         tldtglfak       DO_CALC
+cBLANKS         ltime           DO_CALC
+cBLANKS         tldstr1         DO_CALC
+
+c1		tldnourt	DO_CALC_IF ctdkangkat0
+curut		tldnourt	DO_CALC_IF ctdkangkat1
+
+MAP(misitipe1)
+cBLANKS         tldsisbrg       DO_CALC
+cBLANKS         ltldsisbrg      DO_CALC
+cBLANKS         tldnoll         DO_CALC
+cBLANKS         ltldnoll        DO_CALC
+cBLANKS         tldgrup         DO_CALC
+cBLANKS         ltldgrup        DO_CALC
+cBLANKS         tldtglfak       DO_CALC
+cBLANKS         ltime           DO_CALC
+cBLANKS         tldstr1         DO_CALC
+
+ckett1          ltldjasbrg      DO_CALC_IF ckett1a
+ckett2          ltldjasbrg      DO_CALC_IF ckett2a
+ckett3          ltldjasbrg      DO_CALC_IF ckett3a
+ckett4          ltldjasbrg      DO_CALC_IF ckett4a
+ckett5          ltldjasbrg      DO_CALC_IF ckett5a
+ckettdk1	ltldjasbrg	DO_CALC_IF ckettdk1a
+ckettdk2	ltldjasbrg	DO_CALC_IF ckettdk2a
+ckettdk3	ltldjasbrg	DO_CALC_IF ckettdk3a
+ckettdk4	ltldjasbrg	DO_CALC_IF ckettdk4a
+ckettdk5	ltldjasbrg	DO_CALC_IF ckettdk5a
+ctgl30		ltgl30		DO_CALC
+
+MAP(misitipe2)
+cBLANKS         tldnoll         DO_CALC
+cBLANKS         ltldnoll        DO_CALC
+cBLANKS         tldgrup         DO_CALC
+cBLANKS         ltldgrup        DO_CALC
+cBLANKS         tldtglfak       DO_CALC
+cBLANKS         ltime           DO_CALC
+cBLANKS         tldstr1         DO_CALC
+
+cket4           ltldsisbrg      DO_CALC_IF cket4a
+cket5           ltldsisbrg      DO_CALC_IF cket5a
+
+MAP(misitipe3)
+cBLANKS         tldgrup         DO_CALC
+cBLANKS         ltldgrup        DO_CALC
+cBLANKS         tldtglfak       DO_CALC
+cBLANKS         ltime           DO_CALC
+cBLANKS         tldstr1         DO_CALC
+
+cket6           ltldnoll        DO_CALC_IF cket6a
+cket7           ltldnoll        DO_CALC_IF cket7a
+cket8           ltldnoll        DO_CALC_IF cket8a
+cket9		ltldnoll  	DO_CALC_IF cket9a
+cket10		ltldnoll  	DO_CALC_IF cket10a
+cket11		ltldnoll  	DO_CALC_IF cket11a
+cket12		ltldnoll  	DO_CALC_IF cket12a
+
+MAP(misitipe4)
+ltime		tldperdism	REPLACE_IF ctambah
+
+MAP(mbatasantmbh)
+c1		tldtotdis	DO_CALC_IF ctdkangkat0
+ctmbhdtl	tldtotdis	DO_CALC_IF ctdkangkat1
+
+MAP(mjadwalulg)
+cBLANKS         tldtglfak       DO_CALC
+cBLANKS         ltime           DO_CALC
+cBLANKS         tldstr1         DO_CALC
+
+cjdwlulg1       ltldgrup        DO_CALC_IF cketjwl1
+cjdwlulg2       ltldgrup        DO_CALC_IF cketjwl2
+cjdwlulg3       ltldgrup        DO_CALC_IF cketjwl3
+cjdwlulg4       ltldgrup        DO_CALC_IF cketjwl4
+
+MAP(mtimeju)
+l0800           ltime          	REPLACE_IF ctldstr8
+l0900           ltime          	REPLACE_IF ctldstr9
+l1000           ltime          	REPLACE_IF ctldstr10
+l1100           ltime          	REPLACE_IF ctldstr11
+l1200           ltime          	REPLACE_IF ctldstr12
+l1300           ltime          	REPLACE_IF ctldstr13
+l1400           ltime          	REPLACE_IF ctldstr14
+l1500           ltime          	REPLACE_IF ctldstr15
+l1600           ltime          	REPLACE_IF ctldstr16
+l1700           ltime          	REPLACE_IF ctldstr17
+
+CALCS()
+cblmFU		tldlok == "TDK_TERHUBUNG" && ltottldfu == 0
+csdhFU1		tldlok == "TDK_TERHUBUNG" && ltottldfu == 1
+csdhFU2		tldlok == "TDK_TERHUBUNG" && ltottldfu >= 2
+cblmRSC		tldlok == "TERHUBUNG" && tldjasbrg == "1" && tldsisbrg == "2" && tldnoll == "1" && ltottldrsc == 0
+csdhRSC1	tldlok == "TERHUBUNG" && tldjasbrg == "1" && tldsisbrg == "2" && tldnoll == "1" && ltottldrsc == 1
+csdhRSC2	tldlok == "TERHUBUNG" && tldjasbrg == "1" && tldsisbrg == "2" && tldnoll == "1" && ltottldrsc >= 2
+ctldsdhsesuai	tldlok == "TERHUBUNG" && tldjasbrg == "1" && tldsisbrg == "1"
+cOK		"OK"
+cjikastr2fu	tldstr2 == "FU1" || tldstr2 == "FU2" || tldstr2 == "FU3"
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldlok	DO_MAP SHOW murut
+AFTER_INPUT	cur_field=tldjasbrg	DO_MAP SHOW misitipe1
+AFTER_INPUT	cur_field=tldsisbrg	DO_MAP SHOW misitipe2
+AFTER_INPUT	cur_field=tldnoll	DO_MAP SHOW misitipe3
+AFTER_INPUT	cur_field=ltime		DO_MAP SHOW misitipe4
+AFTER_INPUT	cur_field=tldgrup	DO_MAP SHOW mjadwalulg
+BEFORE_INPUT    cur_field=ltime         DO_MAP SHOW mtimeju
+
+/*BEFORE_INPUT	cur_field=tldjasbrg	DO_SKIP_IF cTdkTerhubung*/
+BEFORE_INPUT	cur_field=tldsisbrg	DO_SKIP_IF cTdkTerhubung
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF cTdkTerhubung
+BEFORE_INPUT	cur_field=tldtglfak	DO_SKIP_IF cTdkTerhubung
+BEFORE_INPUT	cur_field=ltime     	DO_SKIP_IF cTdkTerhubung
+
+BEFORE_INPUT	cur_field=tldsisbrg	DO_SKIP_IF cTdkDiangkat
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF cTdkDiangkat
+BEFORE_INPUT	cur_field=tldtglfak	DO_SKIP_IF cTdkDiangkat
+BEFORE_INPUT	cur_field=ltime     	DO_SKIP_IF cTdkDiangkat 
+
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF cDatang
+BEFORE_INPUT	cur_field=tldtglfak	DO_SKIP_IF cDatang
+BEFORE_INPUT	cur_field=ltime     	DO_SKIP_IF cDatang
+
+BEFORE_INPUT	cur_field=tldtglfak	DO_SKIP_IF cAlasanLain
+BEFORE_INPUT	cur_field=ltime     	DO_SKIP_IF cAlasanLain
+
+BEFORE_INPUT	cur_field=tldgrup     	DO_SKIP_IF cjdwlulgskip
+BEFORE_INPUT	cur_field=tldstr1     	DO_SKIP_IF cjdwlulgskip
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF clainlain
+
+/* AFTER_INPUT 	cur_field=tldnoll 	DO_SPCALCS IF cTerhubung spscantld
+AFTER_INPUT 	cur_field=tldlok	DO_SPCALCS IF cTdkTerhubung spscantld */
+
+BEFORE_INPUT	cur_field=tldlok	DO_MAP SHOW mbatasantmbh
+
+AFTER_INPUT     cur_field=tldtglfak	DO_MAP SHOW
+                IF csdhlewat mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHrsLbhBsrDrHrIni
+
+AFTER_INPUT     cur_field=tldtglfak	DO_MAP SHOW
+                IF clewattgl mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhLewat30Hari
+
+AFTER_INPUT     cur_field=ltime	DO_MAP SHOW
+                IF clewatjam mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.JamHarusLebih10000
+
+AFTER_INPUT     cur_field=ltime	DO_MAP SHOW
+                IF cblhinputjam mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyaBlhBookdiJam
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF csdhlewat mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHrsLbhBsrDrHrIni
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF clewattgl mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhLewat7Hari
+
+AFTER_INPUT     cur_keybd=EN   	DO_MAP SHOW
+                IF clewatjam mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.JamHarusLebih10000
+
+AFTER_INPUT     cur_keybd=EN 	DO_MAP SHOW
+                IF cblhinputjam mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyaBlhBookdiJam
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tldnourt
+SFL_TARGET      tldstsbrgukr    btmdata gv_OPEN btmnobuk lBOOKAHS
+SFL_MAP
+        btmdata         tlddata
+        gv_OPEN         tldsts
+        lBOOKAHS        tldukrwrn
+        btmnobuk        tldnobuk
+        btmnobuk        tldbrg
+
+MAP(mhittld)
+gv_int1         ltottldrsc	REPLACE_IF ctldrsc
+gv_int1		ltottldfu	REPLACE_IF ctldfu
+
+MAP(mdumtld)
+lFU1		tldstr2		REPLACE_IF cblmFU
+lFU2		tldstr2		REPLACE_IF csdhFU1
+lFU3		tldstr2		REPLACE_IF csdhFU2
+lRSC1		tldstr2		REPLACE_IF cblmRSC
+lRSC2		tldstr2		REPLACE_IF csdhRSC1
+lRSC3		tldstr2		REPLACE_IF csdhRSC2
+cOK		tldstr2		DO_CALC_IF ctldsdhsesuai
+DEBUG ldum 	ldum            REPLACE
+
+MAP(mapnxttldpost)
+btmnobuk	r_string1	REPLACE
+btmdata		r_string2	REPLACE
+lUPLBOOK	r_string4	REPLACE
+tldstr2		r_string5	REPLACE
+
+SPCALCS(spscantld)
+	DO_LIB  ap_dbclc(DNAME dscantld, DCOMMAND SCANSCAN, DTARGET tldstsbrgukr btmdata gv_OPEN btmnobuk lBOOKAHS, DBC_SUM_MAP mhittld);
+	DO_LIB  ap_dbclc(DNAME dmapmap, DCOMMAND MAPMAP, DMAP mdumtld);
+	DO_LIB_IF cjikastr2fu ap_nxpst(l4429, lmapnxttldpost);
+	
+POSTING(tmptrans)
+	PST_ADDCMD spscantld	

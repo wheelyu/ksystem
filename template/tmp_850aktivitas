@@ -1,0 +1,118 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+ /------------------------------------------------------------------------------------------------\
+  t.NoUrt       : ___
+  t.Tanggal     : ________      t.Jam    : ________      t.Menit  : ____________
+  t.DetVerif1   : _______________________________________________________________________
+  t.Acc         : ________      t.Jam    : ________      t.Menit  : ____________
+  t.AlTACC      : _______________________________________________________________________
+                                               ___
+  t.t
+ \------------------------------------------------------------------------------------------------/
+\--------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketnourt                PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 1
+kettgl1                 PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 2
+ketnama                 ALLCAPS SCROLL                  INPUTRI 3
+ketdf1                  ALLCAPS SCROLL                  INPUTRI 5
+ketisi                  TEXTAREA                        INPUTRI 6
+ketyt1                  ALLCAPS SCROLL                  INPUTRI 7
+ketkode                 ALLCAPS SCROLL                  INPUTRI 8
+ketdf2                  ALLCAPS SCROLL                  INPUTRI 9
+ketisi2                 TEXTAREA                        INPUTRI 10
+lOK                     ALLCAPS SCROLL                  INPUTRI 16
+
+DEFAULTS(tmptranst)
+lOK                     INIT            	OK
+kettgl1                 INIT           	 	{g_tgltrn}
+ketyt1                  DFALT_SCAN_BLANKS       Y "ACC"
+                                              	T "TACC"
+ketnama                 DFALT_SCAN_BLANKS       08:30-09:00
+                                                09:00-10:00
+                                                10:00-11:00
+                                                11:00-12:00
+                                                13:00-14:00
+                                                14:00-15:00
+                                                15:00-16:00
+                                                16:00-17:00
+ketkode                 DFALT_SCAN_BLANKS       08:30-09:00
+                                                09:00-10:00
+                                                10:00-11:00
+                                                11:00-12:00
+                                                13:00-14:00
+                                                14:00-15:00
+                                                15:00-16:00
+                                                16:00-17:00
+
+CALCS()
+ctambah12               g_curcmd == 1 && djoinketakt == 0
+ctambah22               g_curcmd == 1 && djoinketakt == 1
+cd6spv                  tlmplg != g_usrkode
+cd6spv1                 tlmplg == g_usrkode
+cd6spv2                 tlmplg == g_usrkode && ketyt1 == "T"
+cd6spv3                 tlmkode == g_usrkode || (tlmplg == g_usrkode && ketyt1 != "T")
+cd6jr                 	tlmkode != g_usrkode
+cd6jr1                  tlmkode == g_usrkode
+cisid6          	ketyt1 != BLANKS && ~ketyt1 != ketyt1
+cabkd6jr        	abkkym2 == "ISI AKTIVITAS DI 850"
+cabkd6spv       	abkkym2 == "CEK AKTIVITAS DI 850"
+cadd6           	(tlmkode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tlmpst == "AUDSPV_POSTING" || tlmpst == "FINSPV_POSTING")
+cadd6k2         	(tlmsts == "OPEN" || tlmsts == "INPG") && (tlmkode == g_usrkode || tlmplg == g_usrkode) && (tlmpst == "AUDSPV_POSTING" || tlmpst == "FINSPV_POSTING")
+
+EDITS(tmptranst)
+e.MandatoryJam     	ketnama       MANDATORY_IF cd6jr1
+e.Mandatorymen     	ketdf1        MANDATORY_IF cd6jr1
+e.MandatoryIsi     	ketisi        MANDATORY_IF cd6jr1
+e.Mandatoryacc     	ketyt1        MANDATORY_IF cd6spv1
+e.Mandatoryisitacc      ketisi2       MANDATORY_IF cd6spv2
+
+MAP(misiurut2)
+cno11                   ketnourt      DO_CALC_IF ctambah12
+curut2                  ketnourt      DO_CALC_IF ctambah22
+
+MAP(mupdabkd6jr)
+gv_CLSD         	abksts          REPLACE_IF cabkd6jr
+
+MAP(mupdabkd6spv)
+gv_CLSD         	abksts          REPLACE_IF cabkd6spv
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN           DO_MAP SHOW misiurut2
+BEFORE_INPUT            cur_field=ketnama      DO_SKIP_IF cd6jr
+BEFORE_INPUT            cur_field=ketdf1       DO_SKIP_IF cd6jr
+BEFORE_INPUT            cur_field=ketisi       DO_SKIP_IF cd6jr
+BEFORE_INPUT            cur_field=ketyt1       DO_SKIP_IF cd6spv
+BEFORE_INPUT            cur_field=ketkode      DO_SKIP_IF cd6spv
+BEFORE_INPUT            cur_field=ketdf2       DO_SKIP_IF cd6spv
+BEFORE_INPUT            cur_field=ketisi2      DO_SKIP_IF cd6spv3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        ketdatbuktgl   tlmdata tlmnobuk lakt
+
+SFL_MAP
+tlmdata         ketdata                 REPLACE
+tlmnobuk        ketnobuk                REPLACE
+lakt            kettype                 REPLACE
+
+SPCALCS(spadd6)
+        DO_LIB                  ap_dbclc(DNAME dupdabk4,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkd6jr);
+
+SPCALCS(spupd6)
+        DO_LIB_IF cisid6        ap_dbclc(DNAME dupdabk5,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkd6spv);
+
+
+POSTING(tmptrans)
+  PST_ADDCMD    spadd6
+  PST_UPDCMD    spupd6
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cadd6
+PMT_UPDALL_COND cadd6k2
+PMT_DEL_COND    c0
+

@@ -1,0 +1,132 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------------\|
+  _______________                                                                               
+  t.TglInput    : _______________                                                   
+  t.Pil         : _______________
+  t.AlasanMd    : ____________________ ___________________________________          
+  t.Ket         : _____________________________________                             
+  t.Deadline    : _______________                                                   
+  t.User        : ____________ ________________________
+|\---------------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtype			PROTECT			INPUTRI 1
+psdtgl2			PROTECT NOLIMIT {DD-MM-YY}	INPUTRI 2
+psdstr2			NOCHANGE		INPUTRI 3
+psdstr4			ALLCAPS			INPUTRI 4
+lalasan_hrd		PROTECT			INPUTRI 5
+psdket  		ALLCAPS       	 	INPUTRI 7
+psdtgl1 		NONE NOLIMIT {DD-MM-YY} INPUTRI 8
+psdstr5 		PROTECT       	 	INPUTRI 9
+lbtmnama3   		PROTECT			INPUTRI	10
+
+CALCS()
+cbukan_md	psdstr2!="MD" 
+cmd2       	psdstr2=="MD"
+cbukanFU4	psdtype!="KODEFU4"
+cFU4     	psdtype=="KODEFU4"
+clnjtintv	psdstr2=="LANJUT_INTERVIEW"
+ctdkbshub	psdstr2=="TDK_BISA_DIHUB"
+ctdkbshub2	psdstr2!="TDK_BISA_DIHUB"
+cnodateline	psdstr2=="TDK_BISA_DIHUB" || psdstr2=="MD"
+
+DEFAULTS(tmptranst)
+IF cbukanFU4 	psdstr2		DFALT_SCAN_BLANKS LANJUT_INTERVIEW
+						  TDK_BISA_DIHUB
+				  		  MD            
+IF cFU4 	psdstr2		DFALT_SCAN_BLANKS MD            
+psdstr5         INIT_ADD        {g_usrkode}
+psdstr5         INIT_UPDATE     {g_usrkode}
+
+EDITS(tmptranst)
+t.Mandatory psdstr2	MANDATORY
+t.Mandatory psdstr4 	MANDATORY_IF cmd2 
+t.Mandatory psdket 	MANDATORY_IF ctdkbshub2
+t.Mandatory psdtgl1 	MANDATORY_IF clnjtintv
+t.Validate psdstr4 VALIDATE tbddatkodidx mtbd_fu134 stbd {Pgv_dttabel} {Pgv_personal} {PljwbFU134}
+t.Validate psdstr5 VALIDATE  psikodidx mbtm_interview3
+
+MAP(mbtm_interview3)
+psikode		psdstr5		REPLACE
+psinama		lbtmnama3	REPLACE
+
+MAP(mtbd_fu134)
+tbdkode		psdstr4		REPLACE
+tbdket 		lalasan_hrd   	REPLACE
+
+CALCS()
+cjoinpsdhrd_FU0	djoinpsd_FU1==0 && g_curcmd==1
+cjoinpsdhrd_FU1	djoinpsd_FU1==1 && g_curcmd==1
+cjoinpsdhrd_FU2	djoinpsd_FU2==1 && g_curcmd==1
+cjoinpsdhrd_FU3	djoinpsd_FU3==1 && g_curcmd==1
+cbelum4         djoinpsd_FU1==0 || djoinpsd_FU2==0 || djoinpsd_FU3==0 || djoinpsd_FU4==0
+
+cbelum_md	psdtype=="KODEFU1" || 
+		(psdtype=="KODEFU2" && (djoinpsd_FU1==1 && lpilhrd_FU1!="MD")) || 
+		(psdtype=="KODEFU3" && (djoinpsd_FU2==1 && lpilhrd_FU2!="MD")) || 
+		psdtype=="KODEFU4"
+
+ckondateline	(psdstr2=="LANJUT_INTERVIEW" && psdtgl1>=g_tgltrn && psdtgl1 <= g_tgltrn + 7) || psdstr2!="LANJUT_INTERVIEW"
+ 
+MAP(mtanggal)
+g_tgltrn	psdtgl2		REPLACE
+lKODEFU1	psdtype		REPLACE_IF cjoinpsdhrd_FU0
+lKODEFU2	psdtype		REPLACE_IF cjoinpsdhrd_FU1
+lKODEFU3	psdtype		REPLACE_IF cjoinpsdhrd_FU2
+lKODEFU4	psdtype		REPLACE_IF cjoinpsdhrd_FU3
+
+MAP(mtanggal_deadline)
+cplus1		psdtgl1		DO_CALC_IF ctdkbshub
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr2	DO_MAP SHOW mtanggal
+BEFORE_INPUT	cur_field=psdstr4	DO_SKIP_IF cbukan_md
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW mtanggal_deadline
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF ctdkbshub
+BEFORE_INPUT	cur_field=psdtgl1	DO_SKIP_IF cnodateline
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF cbelum_md    mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.FuSblmSdhMd      
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF cbelum4 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SdhMelebihiBatasFu
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF ckondateline mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TanggalMaxH+7
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cbelum_md    mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.FuSblmSdhMd
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cbelum4 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SdhMelebihiBatasFu
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ckondateline mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TanggalMaxH+7
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod gv_clnkry11 btmnobuk lJAWABINTHRD 
+
+SFL_MAP
+gv_clnkry11   	psddata		REPLACE
+btmnobuk  	psdpsmkode	REPLACE
+lJAWABINTHRD  	psdkode		REPLACE

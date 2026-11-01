@@ -1,0 +1,92 @@
+LOCAL
+PGM_FIELDS
+lpaket862	STRING		11
+ltipebksass	STRING		21
+lurt1		INT2		2
+
+/*--------------nourut--------------*/
+MAP(mjointlda)
+tldnourt                lurt1	REPLACE
+
+DBCALCS(djointlda)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukurtidx   #tlmnobuk
+        DBC_MAP         mjointlda
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------------------------------------\|
+||t.Berkasclm1		t.Berkasclm2		t.Berkasclm3		t.Berkasclm4		       ||
+||t.Berkasclm5		t.Berkasclm6		t.Berkasclm7		t.Berkasclm8		       ||
+|\-----------------------------------------------------------------------------------------------------/|
+|----t-------t---------t---------------t---t---t---t---t---t---t---t---t------------------t-------------|
+|t.No|t.Type |t.CabAsl |t.NoBuk        |t.1|t.2|t.3|t.4|t.5|t.6|t.7|t.8|t.Ket		  |t.ANstnk	|
+\----.-------.---------.---------------.---.---.---.---.---.---.---.---.------------------.-------------/
+
+IMAGE(tmptrans)
+|____|_______|_________|_______________|_._|_._|_._|_._|_._|_._|_._|_._|__________________|_____________|
+
+FIELD(tmptrans)
+tldnourt        PROTECT SCROLL		INPUTRI         1	/* No Urut      */
+tldkat          PROTECT SCROLL		INPUTRI         2	/* Type         */
+tldcab          PROTECT SCROLL		INPUTRI         2	/* Cabang Asal  */
+tldnobuk        ALLCAPS SCROLL		INPUTRI         3	/* No Mutasi    */
+tldperdism	NOCHANGE		INPUTRI		4	/* Stnk		*/
+tldperdis1	NOCHANGE		INPUTRI		5	/* Kunci Asli	*/
+tldperdis2	NOCHANGE		INPUTRI		6	/* Copy Sim C	*/
+tldperdis3	NOCHANGE		INPUTRI		7	/* Copy Ktp Plp	*/
+tldperdis4	NOCHANGE		INPUTRI		8	/* Copy Ktp Ttg	*/
+tldperdis5	NOCHANGE		INPUTRI		9	/* STPL Asli	*/
+tldperdis6	NOCHANGE		INPUTRI		10	/* Bpkb Asli	*/
+tldperdis7	NOCHANGE		INPUTRI		11	/* Srt Ket RT	*/
+tldket          ALLCAPS SCROLL		INPUTRI         12	/* Keterangan   */
+tldbisnis	ALLCAPS			INPUTRI		13	/* AN STNK	*/
+
+DEFAULTS(tmptrans)
+ltipebksass	INIT		BERKAS_ASS
+lpaket862	INIT		PAKET
+tldperdism	DFALT_SCAN_BLANKS	1 2
+tldperdis1	DFALT_SCAN_BLANKS	1 2
+tldperdis2	DFALT_SCAN_BLANKS	1 2
+tldperdis3	DFALT_SCAN_BLANKS	1 2
+tldperdis4	DFALT_SCAN_BLANKS	1 2
+tldperdis5	DFALT_SCAN_BLANKS	1 2
+tldperdis6	DFALT_SCAN_BLANKS	1 2
+tldperdis7	DFALT_SCAN_BLANKS	1 2
+
+CALCS()
+cTMPSMGKRBKSASS		tmpkode=="SMGKRMBKSASS"
+curt1			lurt1 + 1
+cjointlda_0		tldnourt==BLANKS && djointlda == 0
+cjointlda_1		tldnourt==BLANKS && djointlda == 1
+
+EDITS(tmptrans)
+e.ValidateNoBuk862	tldnobuk	VALIDATE_BUF3_IF ctbh tlmdatstsasl mtlmass862 stlm862arsip {Plpaket862} {Pgv_OPEN} {Pltipebksass}
+
+MAP(mtlmass862)
+#tlmnobuk	tldnobuk	REPLACE
+lnofakmaster	tldplg		REPLACE
+#tlmnoasal	tldkat		REPLACE
+#tlmsts		tldsts		REPLACE
+#tlmdari	tldukrwrn	REPLACE
+#tlmtgl		tldtglfak	REPLACE
+#tlmtgljtp	tldtgl2		REPLACE
+lnobukmaster	tldnoll		REPLACE
+#tlmnoasal	tldbrg		REPLACE
+#tlmcab		tldcab		REPLACE
+#tlmuntuk	tldlok		REPLACE
+
+MAP(misiurt862)
+c1              tldnourt   DO_CALC_IF cjointlda_0
+curt1           tldnourt   DO_CALC_IF cjointlda_1
+
+HOOKS(tmptrans)
+AFTER_INPUT    cur_field=tldnobuk 	DO_MAP SHOW misiurt862
+
+SUBFILE(tmptrans)
+SFL_LINES(5)   
+SFL_TITLE(tmptranst)
+SFL_COND        cTMPSMGKRBKSASS
+SFL_TARGET
+tldllbrgurt	lnobukmaster ltipebksass
+

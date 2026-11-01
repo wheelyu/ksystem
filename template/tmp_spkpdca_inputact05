@@ -1,0 +1,147 @@
+/*FINALISASI NOTULENSI MEETING DIREKSI*/
+IMAGE(tmptranst)
+/-------------------------------------------------------------\
+|/-----------------------------------------------------------\|
+||t.InputHslSpk                                              ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.Nobuk               ___________________________________  ||
+||t.TanggalInput        _________                            ||
+||t.Activity            _________                            ||
+||                      ___________________________________  ||
+||t.VarKpi              ___________________________________  ||
+||t.NipPdca             ___________________________________  ||
+||t.NmPdca              ___________________________________  ||
+||t.NipPic              ___________________________________  ||
+||t.NamaPic             ___________________________________  ||
+||t.NpHead              ___________________________________  ||
+||t.NmHead              ___________________________________  ||
+||spasi                                                      ||
+||t.Sesuaix             ___________________________________  ||
+||t.Ket                 ___________________________________  ||
+||t.PicLengkap          ___________________________________  ||
+||t.DeadlineLkp         ___________________________________  ||
+||                                               __________  ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.Upload                                                   ||
+|\-----------------------------------------------------------/|
+|/----------------------- DOCUPLOAD -------------------------\|
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.ApprovalHead        _______                              ||
+|\-----------------------------------------------------------/|
+\-------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spknobuk                PROTECT                         INPUTRI 1               /*Nobuk*/
+spktgl                  PROTECT                         INPUTRI 2               /*Tanggal Input*/
+spktgg                  PROTECT                         INPUTRI 3               /*Activity*/
+lketacttmp              PROTECT                         INPUTRI 4               /*Ket Activity*/
+spknoasal               PROTECT                         INPUTRI 5               /*VarKpi*/
+spktgg2                 PROTECT                         INPUTRI 6               /*NIP PDCA*/
+lpdcatmp                PROTECT                         INPUTRI 7               /*Nama PDCA*/
+spktgg3                 PROTECT                         INPUTRI 8               /*NIP PIC*/
+lpictmp                 PROTECT                         INPUTRI 9               /*Nama PIC*/
+spktgg4                 PROTECT                         INPUTRI 10              /*NIP Head*/
+lheadpdcatmp            PROTECT                         INPUTRI 11              /*Nama Head*/
+spkkat                  NOCHANGE                        INPUTRI 12              /*Sesuai? YA-TIDAK*/
+spkket                  TEXTAREA                        INPUTRI 13              /*Keterangan*/
+spkkat3                 NOCHANGE                        INPUTRI 14              /*PIC Lengkap*/
+spkkat4                 NOCHANGE                        INPUTRI 15              /*Deadline Lengkap*/
+lenter                  NOCHANGE                        INPUTRI 16              /*Enter*/
+spkhasil2               NOCHANGE                        INPUTRI 17              /*Approval Head PDCA*/
+
+DEFAULT(tmptranst)
+spktgl                  INIT_ADD                        {g_tgltrn}
+spkkat                  DFALT_SCAN_BLANKS               YA
+                                                        TIDAK
+
+spkhasil2               DFALT_SCAN_BLANKS               ACC
+                                                        TACC
+
+spkkat3                 DFALT_SCAN_BLANKS               YA
+                                                        TIDAK
+
+spkkat4                 DFALT_SCAN_BLANKS               YA
+                                                        TIDAK                     
+
+EDITS(tmptranst)
+e.Mandatory                     spkket          MANDATORY
+
+e.Validate Activity             spktgg          VALIDATE tbddatkodidx mactivitytmp05 {Pgv_dttabel} {PlSPKPDCA21} {PlACTIVITY}
+e.Validate PDCA                 spktgg2         VALIDATE psikodidx    mpsipdcatmp05  0
+e.Validate PIC                  spktgg3         VALIDATE psikodidx    mpsipictmp05   0
+e.Validate HEAD PDCA            spktgg4         VALIDATE psikodidx    mpsiheadtmp05  0
+
+
+MAP(mactivitytmp05)
+tbdkode                 spktgg          REPLACE
+tbdket                  lketacttmp      REPLACE
+tbtkettype              spknoasal       REPLACE
+
+MAP(mpsipdcatmp05)
+psikode                 spktgg2         REPLACE
+psinama                 lpdcatmp        REPLACE
+
+MAP(mpsipictmp05)
+psikode                 spktgg3         REPLACE
+psinama                 lpictmp         REPLACE
+
+MAP(mpsiheadtmp05)
+psikode                 spktgg4         REPLACE
+psinama                 lheadpdcatmp    REPLACE
+
+MAP(mdataact05)
+lINPACT                 spkdata         REPLACE
+lINPACT05	        spktype         REPLACE
+tlmnobuk                spknobuk        REPLACE
+tlmnobbm                spktgg          REPLACE
+tlmuntuk                spktgg2         REPLACE
+tlmplg                  spktgg3         REPLACE
+tlmbisnis               spktgg4         REPLACE
+
+MAP(mmapkodefoto05)
+ckode1                  lspkkode        DO_CALC
+lspkkode                spkkode         REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=spkkat                DO_MAP SHOW mdataact05
+AFTER_INPUT             cur_field=spkkat                DO_MAP SHOW mmapkodefoto05
+
+BEFORE_INPUT            cur_field=spkkat                DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkket                DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkkat3               DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkkat4               DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=lenter                DO_SKIP_IF clogusrinput
+
+BEFORE_INPUT            cur_field=spkhasil2             DO_SKIP_IF cloghead
+
+AFTER_INPUT             cur_field=spkhasil2             DO_MAP SHOW
+                        IF cstsdiaprspk                 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG   Isi Approval saat status APRSPK, mohon posting dahulu
+
+MAP(mupdact05b)
+cY                      spkfoto3         DO_CALC
+DBCALCS(dupdact05b)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx spkprm
+        DBC_MAP         mupdact05b
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD          spknobuk spkkode  /*upload Dokumen Mandatory*/
+SFL_DOCUPLFLD_DBCALCS  dupdact05b
+SFL_TARGET
+        spkdatbuktyp    lINPACT tlmnobuk lINPACT05
+

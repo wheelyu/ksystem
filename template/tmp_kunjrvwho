@@ -1,0 +1,89 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.HasilReviewGM                 ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.Userinput     : _________     ||
+||t.Nama          : ______________||
+||t.GrpLog        : ______________||
+||t.TglInput      : ______________||
+||                  _________     ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviket			TEXTAREA	INPUTRI	1
+sviket2                 TEXTAREA        INPUTRI 2
+svikode			PROTECT		INPUTRI	4
+lnamarevgm              PROTECT         INPUTRI 5
+lgruprevgm              PROTECT         INPUTRI 6
+svitgl2                 PROTECT {DD-MM-YYYY} NOLIMIT    INPUTRI 7
+lENTER                  NOCHANGE        INPUTRI 8
+
+DEFAULT(tmptranst)
+svikode			INIT		{g_usrkode}
+svikode			INIT_UPDATE	{g_usrkode}
+svitgl2                 INIT            {g_tgltrn}
+svinourt		INIT		1
+svinourt		INIT_UPDATE	1
+
+EDITS(tmptranst)
+Nama tidak ada          svikode         VALIDATE        psikodidx mpsipic8 0
+Jabatan tidak ada       svikode         VALIDATE        usrkodidx musrpic8 0
+e.Mandatory		sviket		MANDATORY
+
+MAP(musrpic8)
+usrgrp                  lgruprevgm      REPLACE
+
+MAP(mpsipic8)
+psinama                 lnamarevgm      REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW mpanjango
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW
+                        IF cpjgrvwo mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin20
+
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF cisirvwcreditspv  mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.IsiReviewHo 
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF ccreditspv726 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiSesuaiHo
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csdhambil
+SFL_TARGET
+        svidatbuktyp    gv_datasurvey mtsnobuk lkunjrvwho l1
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svidtmkode      REPLACE
+gv_datasurvey   svidata         REPLACE
+lkunjrvwho      svitype         REPLACE
+l1		svinourt	REPLACE
+g_tgltrn        svitgl2         REPLACE
+
+SPCALCS(sptrans2g18)
+DO_LIB ap_dbclc(DNAME dmaptrans2gm,DCOMMAND MAPMAP,DMAP mmaptrans2creditdvh726);
+DO_LIB ap_dbclc(DNAME dupdmtsgm,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmtscreditdvh726);
+DO_LIB_IF ctambah ap_dbclc(DNAME dupdftmgm, DCOMMAND UPDATE, DTARGET ftmdatbukidx gv_datasurvey mtsnoasal, DMAP mupdftmcreditdvh726);
+DO_LIB_IF cdjoinabkgm ap_dbclc(DNAME dupdabkgm, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnobukabkgm, DMAP mupdabkcreditdvh726);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptrans2g18
+PST_UPDCMD      sptrans2g18

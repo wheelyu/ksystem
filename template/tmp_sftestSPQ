@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD--------------------------------------------\/----------------\   |
+| |___| |                                                      ||spasi           !   |
+| \---/ |                                                      ||spasi           !   |
+|       |                                                      ||spasi           !   |
+|       |                                                      ||spasi           !   |
+|       |                                                      |!spasi           !   |
+|       |                                                      |!spasi           !   |
+|       |                                                      |!                !   |
+|       |                                                      |!___             !   |
+|       |                                                      |!                !   |
+|       |                                                      |!spasi           !   |
+|       |                                                      |!_______________ !   |
+|       |                                                      |!spasi           !   |
+|       |                                                      |!spasi           !   |
+|       |                                                      |!spasi           !   |
+|       |                                                      |!spasi           !   |
+|       \------------------------------------------------------/\----------------/   |
+\------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   sgmurt       PROTECT                 INPUTRI          1
+   sgmstr4      ALLCAPS                 BIG              2
+   sgmstr5	NOCHANGE		INPUTRI		3
+
+DEFAULTS(tmptranst)
+sgmstr4		DFALT_SCAN_BLANKS	A "Sangat Tidak Setuju"
+ 					B "Tidak Setuju"
+					C "Setuju"
+					D "Sangat Setuju"
+CALCS()
+cbolehSpq	sgmstr4=="A" || sgmstr4=="B" || sgmstr4=="C" || sgmstr4=="D"
+cpendapat1	"Sangat Tidak Setuju"
+cpendapat2	"Tidak Setuju"
+cpendapat3	"Setuju"
+cpendapat4	"Sangat Setuju"
+
+cpilA		sgmstr4=="A"
+cpilB		sgmstr4=="B"
+cpilC		sgmstr4=="C"
+cpilD		sgmstr4=="D"
+cdjoinsgm13      (djoinsgm13 == 1 && btmstsdata!="CLSD" && ((btmstsbrg=="PROMOSI" && g_usrkode==btmkdkms) || btmstsbrg!="PROMOSI")) || g_usrkode=="1802178" || g_grpnam=="HRDSPV" || g_grpnam=="HRDHEAD" || g_grpnam=="HRDDVH" || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD"
+clewat_jam6     (djoinsgmspqtime == 1 && sgmjam <= lsgmjamspqA) || djoinpsd9spq==1 || djoinsgmspqtime == 0 || g_tgltrn==20210413
+cjoinsgmSPQ    djoinsgmspqtime==1
+ctambahjamSPQ    lsgmjamspq + l0045
+
+MAP(mpendapat)
+cpendapat1	sgmstr5		DO_CALC_IF cpilA
+cpendapat2	sgmstr5		DO_CALC_IF cpilB
+cpendapat3	sgmstr5		DO_CALC_IF cpilC
+cpendapat4	sgmstr5		DO_CALC_IF cpilD
+cSYSTIME	sgmjam		DO_CALC
+ctambahjamSPQ   lsgmjamspqA DO_CALC_IF cjoinsgmSPQ
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=sgmstr4	DO_MAP SHOW mpendapat
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW maddtgltes
+AFTER_INPUT     cur_field=sgmstr4       DO_MAP SHOW
+                IF cbolehSpq mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyBlhAbcd
+
+AFTER_INPUT     cur_field=sgmstr4       DO_MAP SHOW
+                IF clewat_jam6 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuTesSudahBerahkir
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF clewat_jam6 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuTesSudahBerahkir
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     sgmstr2
+SFL_UPLREADONLY
+SFL_COND        cdjoinsgm13
+SFL_TARGET
+        sgmdabrplgtb    gv_testkry11   btmnobuk ltest_spq
+

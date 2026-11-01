@@ -1,0 +1,277 @@
+LOCAL
+PGM_FIELDS
+ldalamkota      STRING  11
+lluarkota       STRING  11
+lcablevel2	STRING	21
+laststs		STRING	21
+ltahunini	STRING	11
+lthndfl		DFLOAT	8
+lthndflini	DFLOAT	8
+lrmdgabcair6a	STRING	61
+lhasil1cair6a	DFLOAT	8
+ln1             INT2    2	
+ln2             INT2    2	
+lcadkode	STRING  21
+ldigit1         STRING  3
+ldigit2         STRING  3       
+
+DBCALCS(djoinrmdcair6a)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx gv_INPG lrmdgabcair6a
+
+MAP(mjoincadplat)
+cadkode         lcablevel2        REPLACE
+DBCALCS(djoincadplat)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx     btmcab gv_cabplat btmcab laststs
+        DBC_MAP         mjoincadplat
+
+
+MAP(mmapcad)
+cadkode		lcadkode	REPLACE
+DBCALCS(djoincadnopol)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx btmcab gv_cabplat
+	DBC_MAP		mmapcad
+
+CALCS()
+caststs		ldigit1 + ldigit2
+ckodes1          DO_LIB  ap_amstr(astnopol,ln1,ln1,&ldigit1);
+ckodes2		DO_LIB	ap_amstr(astnopol,ln2,ln1,&ldigit2);
+cbknnum		(ldigit2 == "0" || ldigit2 == "1" || ldigit2 == "2" || ldigit2 == "3" || ldigit2 == "4" || ldigit2 == "5" ||
+		ldigit2 == "6" || ldigit2 == "7" || ldigit2 == "8" || ldigit2 == "9" )
+
+IMAGE(tmptranst) 
+/----------------------------------\
+ /---t.InfoDebitur----------------\
+  i.Ktp     _________________
+ \--------------------------------/
+ /---t.InfoStnk-------------------\
+  t.Pemilik _________
+  i.NoPol   _________  ______
+  i.Tahun   _________________
+  t.HrgBks  _____________.___
+  t.Wilayah _________________
+  i.JtpStnk _________________
+  t.JtpPajak_________________
+  i.Norang  ______________________
+  i.Nosin   ______________________
+  t.NoSTNK  ______________________
+  t.AnStnk  ______________________
+  i.alstnk  ______________________
+  t.AnBpkb  ______________________
+  t.AlBpkb  ______________________
+ \--------------------------------/
+ /---t.Potongan-------------------\
+  t.PotSert ___________________.__
+  t.PotStnk ___________________.__
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans) 
+    
+FIELD(tmptranst)
+astpsmkode		PROTECT QPROTECT		INPUTRI 2
+
+asttype			NOCHANGE			INPUTRI	3
+astnopol		ALLCAPS ALPHANUMERIC 		INPUTRI	4
+aststs			PROTECT				INPUTRI	5
+astth			ALLCAPS SCROLL			INPUTRI 4
+asthrg			PROTECT NUMERIC			INPUTRI 6
+astjnsbbm		PROTECT SCROLL			INPUTRI 6
+asttgl2			NUMERIC {DD-MM-YYYY} NOLIMIT	INPUTRI	8
+asttgl3			NUMERIC {DD-MM-YYYY} NOLIMIT	INPUTRI 9
+astrangka		ALLCAPS SCROLL			INPUTRI 10
+astmesin		ALLCAPS SCROLL			INPUTRI	11
+aststnk                 ALLCAPS SCROLL                  INPUTRI 12
+astanstnk		ALLCAPS SCROLL			INPUTRI	13
+astalmstnk		ALLCAPS SCROLL			INPUTRI	14
+astanbpkb		ALLCAPS SCROLL			INPUTRI 15
+astalmbpkb		ALLCAPS SCROLL			INPUTRI 16
+
+astpj			PROTECT NUMERIC			INPUTRI	24
+astlb			PROTECT NUMERIC			INPUTRI 25
+
+DEFAULTS(tmptranst)
+astdata         INIT            {gv_dtassets}
+astjns          INIT            {gv_bpkb}
+asttgl          INIT            {g_tgltrn}
+ln1		INIT		1
+ln2		INIT		2
+ldalamkota      INIT            "DK"
+lluarkota       INIT            "LK"
+ldigit2         INIT            ""
+
+asttype		DFALT_SCAN	BLANKS
+				PEMOHON
+				PENJAMIN
+
+
+EDITS(tmptranst)
+e.Mandatory		asttype		MANDATORY
+e.Mandatory		astth		MANDATORY
+e.Mandatory		asttgl2  	MANDATORY
+e.Mandatory		asttgl3  	MANDATORY
+e.Mandatory             aststnk         MANDATORY
+t.MandatoryNamaStnk 	astanstnk 	MANDATORY
+t.MandatoryAlmStnk 	astalmstnk 	MANDATORY
+e.MandatoryMesin 	astmesin 	MANDATORY
+e.MandatoryRangka 	astrangka 	MANDATORY
+e.Mandatory		astanbpkb	MANDATORY
+e.Mandatory		astalmbpkb	MANDATORY
+
+e.ValidateThn astth VALIDATE tbddatkodidx mtbdTHN stbdTHN {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+
+CALCS()
+cbpkb		astbrg == btmtypmtr
+cdalamkota      djoincadplat==1
+cluarkota       djoincadplat==0
+cdjoinbrcMtr1	djoinbrcMtr==1
+cthnini		THBLS_YYYY(g_tgltrn)
+c13tahun	lthndflini - lthndfl <= 13
+
+cpajak		(asttgl3 + 365) >= g_tgltrn
+ctglh		g_tgltrn < asttgl3
+ctglm1		(g_tgltrn - asttgl3) < 365
+ctglm2		(g_tgltrn - asttgl3) > 365
+ctglm3		(g_tgltrn - asttgl3) > 730
+ctglm4		(g_tgltrn - asttgl3) > 1095
+ctglm5		(g_tgltrn - asttgl3) > 1460
+cekplat		djoincadnopol==1
+cplatlk		djoincadnopol==1 && lcadkode != aststs
+cplatdk		djoincadnopol==1 && lcadkode == aststs
+cblanks         BLANKS
+
+MAP(mplat)
+DEBUG ckodes1          ldigit1         DO_CALC
+DEBUG ckodes2          ldigit2         DO_CALC
+DEBUG cblanks          ldigit2         DO_CALC_IF cbknnum
+DEBUG caststs		laststs		DO_CALC
+DEBUG laststs		aststs		REPLACE
+DEBUG ldalamkota	astjnsbbm	REPLACE_IF cdalamkota
+DEBUG lluarkota 	astjnsbbm	REPLACE_IF cluarkota
+
+MAP(mtbdTHN)
+tbdkode         astth           REPLACE
+tbdkode		ltahun21	REPLACE
+ltahun21	lthndfl		REPLACE
+cthnini		ltahunini	DO_CALC
+ltahunini	lthndflini	REPLACE
+
+MAP(mthpajak)
+lhidup		lketpajak	REPLACE_IF ctglh
+lmati1		lketpajak	REPLACE_IF ctglm1
+lmati2		lketpajak	REPLACE_IF ctglm2
+lmati3		lketpajak	REPLACE_IF ctglm3
+lmati4		lketpajak	REPLACE_IF ctglm4
+
+CALCS()
+crmdcair6a	"KATCAIR" + STRIP(btmnorangka) + STRIP(btmnomesin)
+crmdpajak	"PAJAKMATI" + STRIP(lGADAI) + STRIP(lketpajak) + STRIP(astjnsbbm) 
+cdjoinrmdbatas1	djoinrmdcair6a==1
+ccair6a		(asthrg * lhasil1cair6a)/100
+cdjoinrmdpajak	djoinrmdpajak == 1 && djoinbrcMtr == 1
+chrgbekas       (lhasil1pajak * lbrchrgpasar)
+
+MAP(mkodermd)
+crmdcair6a	lrmdgabcair6a	DO_CALC
+crmdpajak	lrmdgabpajak	DO_CALC
+
+MAP(mharga)
+lbrchrgjl       asthrg          REPLACE_IF cdjoinbrcMtr1
+ccair6a		astnilai	DO_CALC
+
+MAP(mkodenopol)
+lluarkota	astjnsbbm	REPLACE_IF cplatlk
+ldalamkota	astjnsbbm	REPLACE_IF cplatdk		
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=astnopol      DO_MAP SHOW mplat
+AFTER_INPUT             cur_field=astth         DO_MAP SHOW mharga
+
+AFTER_INPUT		cur_field=asttype	DO_MAP SHOW mthpajak
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW mthpajak
+
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mkodermd
+AFTER_INPUT		cur_keybd=EN		DO_LIB_IF cdjoinrmdbatas1	ap_ambts(gv_INPG,lrmdgabcair6a,lNol,lNol,lNol,&lhasil1cair6a,&lhasil2btscair,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT		cur_keybd=EN	        DO_LIB_IF cdjoinrmdpajak        ap_ambts(gv_INPG,lrmdgabpajak,lNol,lNol,lNol,&lhasil1pajak,&lhasil2pajak,&lhasil3pajak,lhasilstr1bg,lhasilstr2bg);
+
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mharga
+
+AFTER_INPUT		cur_field=astnopol	DO_MAP SHOW
+			IF cekplat mkodenopol
+			ELSE HKCURSOR STAY
+			HKMSG Silahkan Isi NOPOL Cabang di 3105
+
+/* AFTER_INPUT            	cur_field=asttgl2       DO_MAP SHOW
+                        IF cpajak mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Jtp STNK + 120 >= Tanggal Hari ini */
+AFTER_INPUT            	cur_field=asttgl3       DO_MAP SHOW
+                        IF cpajak mdum
+                        ELSE HKCURSOR NOSTAY
+                        HKMSG Jtp Pajak + 120 >= Tanggal Hari ini
+AFTER_INPUT            	cur_field=astth         DO_MAP SHOW
+                        IF c13tahun mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Maksimal usia motor 13Tahun
+/*
+AFTER_INPUT            	cur_field=astanstnk     DO_MAP SHOW
+                        IF catasnama1 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Atas Nama STNK Harus Pemohon
+AFTER_INPUT            	cur_field=astanbpkb     DO_MAP SHOW
+                        IF catasnama2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Atas Nama BPKB Harus Pemohon
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_SELECT	cbpkb
+SFL_TARGET
+	astdatkodidx	lasset	btmplg lBPKB 
+SFL_MAP
+btmplg		astpsmkode      REPLACE
+btmtypmtr	astbrg		REPLACE
+/************************************************/
+
+MAP(mmapmapBpkb)
+ldum		ldum		REPLACE
+crmdcair6a      lrmdgabcair6a   DO_CALC
+crmdpajak	lrmdgabpajak	DO_CALC
+
+MAP(mupdnhm6a)
+chrgbekas	nhmhrgpasar	DO_CALC
+c0		nhmhrgpasar	DO_CALC_IF ctglm5
+c0		nhmcairpinj	DO_CALC
+
+
+MAP(mupdbtm6a)
+astnopol	btmplat		REPLACE
+
+SPCALCS(sptransadd)
+	DO_LIB				ap_dbclc(DNAME dmapmapBpkbA, DCOMMAND MAPMAP, DMAP mmapmapBpkb);
+	DO_LIB_IF cdjoinrmdbatas1	ap_ambts(gv_INPG,lrmdgabcair6a,lNol,lNol,lNol,&lhasil1cair6a,&lhasil2btscair,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+	DO_LIB_IF cdjoinrmdpajak	ap_ambts(gv_INPG,lrmdgabpajak,lNol,lNol,lNol,&lhasil1pajak,&lhasil2pajak,&lhasil3pajak,lhasilstr1bg,lhasilstr2bg);
+	DO_LIB				ap_dbclc(DNAME dupdnhm6a, DCOMMAND UPDATE, DTARGET nhmdatbukidx gv_bukutamu btmnobuk, DMAP mupdnhm6a);
+	DO_LIB				ap_dbclc(DNAME dupdbtm6a, DCOMMAND UPDATE, DTARGET btmotoidx btmoto, DMAP mupdbtm6a);
+
+SPCALCS(sptransupd)
+	DO_LIB				ap_dbclc(DNAME dmapmapBpkbU, DCOMMAND MAPMAP, DMAP mmapmapBpkb);
+	DO_LIB_IF cdjoinrmdbatas1	ap_ambts(gv_INPG,lrmdgabcair6a,lNol,lNol,lNol,&lhasil1cair6a,&lhasil2btscair,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+	DO_LIB_IF cdjoinrmdpajak        ap_ambts(gv_INPG,lrmdgabpajak,lNol,lNol,lNol,&lhasil1pajak,&lhasil2pajak,&lhasil3pajak,lhasilstr1bg,lhasilstr2bg);
+	DO_LIB				ap_dbclc(DNAME dupdnhm6aU, DCOMMAND UPDATE, DTARGET nhmdatbukidx gv_bukutamu btmnobuk, DMAP mupdnhm6a);
+	DO_LIB				ap_dbclc(DNAME dupdbtm6aU, DCOMMAND UPDATE, DTARGET btmotoidx btmoto, DMAP mupdbtm6a);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransadd
+        PST_UPDCMD sptransupd
+CALCS()
+ctmp1		btmsts=="OPEN"
+
+PERMIT(tmptrans)
+PMT_ADD_COND    ctmp1
+PMT_UPDALL_COND ctmp1
+PMT_DEL_COND	c0

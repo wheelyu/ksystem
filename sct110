@@ -1,0 +1,110 @@
+SCREEN 110 APP_TYPE s.TutupHarian
+SCR_G_POSTING
+SCR_ENTER_COND chanyarootri
+SCR_GRPMENU s.MenuTutup
+SCR_NXT_POSTING 1437
+SCR_NXT_MAP mnext
+SCR_TGLTRN_PASS_OK
+SCR_NO_REKAM
+
+CALCS()
+chanyarootri		g_grpnam == "ROOT" || g_usrkode == "1027492" || g_grpnam == "RI"
+
+
+LOCAL
+PGM_FIELDS
+ltgl      	DATE  		4
+ljam5sore 	TIME  		4
+lthbl    	STRING		11
+lket     	STRING		120
+lket2     	STRING		120
+lenter    	STRING		11
+lnobukakt	STRING		21
+
+CALCS()
+cthbl  		THBLS(ltgl) 
+
+MAP(mnext)
+ltgl		r_date1		REPLACE
+
+IMAGE(master) 
+/-------------------------------------------------------------------------------------------------\
+|    /----------------------------------------------------------------------------------------\   | 
+|    |i.Fungsi                                                                                |   |
+|    |i.PrmjHari                                                                              |   |
+|    |_______________________________________________________________________________________ |   |
+|    |_______________________________________________________________________________________ |   |
+|    |                                                                                        |   |
+|    \----------------------------------------------------------------------------------------/   |
+|    /----------------------------------------------------------------------------------------\   | 
+|    |spasi                                                                                   |   |
+|    |i.Tgl        : __________  ___________                                                  |   |
+|    |i.Enter      : _______________________  ___________                                     |   |
+|    \----------------------------------------------------------------------------------------/   |
+\-------------------------------------------------------------------------------------------------/
+		
+FIELD(master)
+   lket           PROTECT                     	 INPUTRI            1 
+   lket2          PROTECT                     	 INPUTRI            1 
+   ltgl           NONE NOLIMIT {DD-MM-YY}        INPUTRI            3 
+   lthbl          PROTECT                     	 INPUTRI            4 
+   lnobukakt      PROTECT                    	 INPUTRI            8
+   lenter         NOCHANGE                    	 INPUTRI            9 
+
+CALCS()
+cket  		"1. Mengubah Tanggal Akhir Proses Harian "
+cket2 		"2.                                      "
+ctglisi		r_date1 != BLANKS
+ctglksg		r_date1 == BLANKS 
+ctglok		ltgl < SYSDATE || (ltgl == SYSDATE && SYSTIME >= ljam5sore) /* 17x60=1020. 17 adalah jam 5 sore*/
+cnobuk		"PROSES110-" + THBLS(g_tgltrn) + THS(g_tgltrn)
+c110		"110"
+
+
+DEFAULTS(master)
+ljam5sore         INIT          170000
+lket		  INIT		{cket}
+lket2		  INIT		{cket2}
+IF ctglisi ltgl	  INIT		{r_date1}
+IF ctglksg ltgl   INIT		{g_tgltrn}
+lnobukakt	  INIT		{cnobuk}
+/*
+IF ctglksg2 ltgl  INIT	{ststglmun}
+ctglksg2	r_date1 == BLANKS && ststglmun != BLANKS
+*/
+
+MAP(mtglawl)
+cthbl  		lthbl	DO_CALC
+
+HOOKS(master)
+AFTER_INPUT    	cur_field=ltgl    	DO_MAP SHOW 
+		IF ctglok mtglawl
+		HKCURSOR STAY
+		HKMSG "Tanggal tdk boleh lebih dari tanggal hari ini"
+BEFORE_INPUT    cur_keybd=EN     	DO_MAP SHOW mtglawl
+
+CALCS()
+ctgl1		ststglproses + 1
+ctglpros1	ststglproses != BLANKS
+ctglpros0	ststglproses == BLANKS
+
+MAP(mupdsts)
+ctgl1		ststglproses	DO_CALC_IF ctglpros1
+g_tgltrn	ststglproses	REPLACE_IF ctglpros0
+
+MAP(maddakt)
+cnobuk		aktnobuk	DO_CALC
+g_usrkode	aktcrtusr	REPLACE
+c110		aktkode		DO_CALC
+c110		akttype		DO_CALC
+g_tgltrn	akttgl		REPLACE
+c110		aktdata		DO_CALC
+
+SPCALCS(spmaster)
+DO_LIB 	ap_dbclc(DNAME dupdsts,DCOMMAND UPDATE,DTARGET stskodidx gv_Y,DMAP mupdsts);
+DO_LIB 	ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+
+POSTING(master)
+PST_COMMAND spmaster
+
+END_SCREEN

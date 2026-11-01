@@ -1,0 +1,149 @@
+LOCAL
+PGM_FIELDS
+/*
+llink			STRING		100
+*/
+lsublink		STRING		100
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk:____________________    ||
+||i.Ket  :________________________||
+||        _____________           ||
+||t.TtdMirip                      ||
+||        ___  __________________ ||
+/*
+||        	     ____________ ||
+||_______________________________ ||
+*/
+|\--------------------------------/|
+|/--SIGNATURE---------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode		PROTECT                 INPUTRI         1
+aktket 		PROTECT                 INPUTRI         2
+akttgl2		PROTECT	NOLIMIT	{DD-MM-YY}	INPUTRI	3
+aktdk		NOCHANGE		INPUTRI		3
+lketmirip	NOCHANGE		INPUTRI		4
+/*
+ltomfly2177	TOMBOL			INPUTRI		5
+llink		TEXTAREA PROTECT			INPUTRI		6
+*/
+
+DEFAULT(tmptranst)
+aktdk	DFALT_SCAN BLANKS
+			Y
+
+lsublink	INIT			"https://nusantara-sakti.co.id/?qr=5.2177.nobuk="
+ 
+MAP(mupdttdkonsumen)
+g_tgltrn        akttgl2         REPLACE
+cSYSTIME        aktjam          DO_CALC
+llon            akttotal        REPLACE
+llat            aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+g_grpnam	aktcrtusr	REPLACE
+
+DBCALCS(dupdttdkonsumen)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	aktprmidx   aktprm
+	DBC_MAP		mupdttdkonsumen
+
+CALCS()
+cBLANKS		BLANKS
+
+MAP(mupdttdkonsumenhps)
+cBLANKS         akttgl2         DO_CALC
+cBLANKS         aktjam          DO_CALC
+cBLANKS         akttotal        DO_CALC
+cBLANKS         aktjml          DO_CALC
+cBLANKS         aktcab          DO_CALC
+cBLANKS		aktcrtusr	DO_CALC
+
+DBCALCS(dupdttdkonsumenhps)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdkonsumenhps
+
+
+CALCS()
+cbolehbuka	/*(tmpkode=="TTDPEMOHON" && ((lbtmsts!="OPEN" && (btdsisbrg=="1" || btdsisbrg=="2")) || (lbtmsts== "OPEN" && btdsisbrg == "" && (btdbrg=="1" || btdbrg=="2"))) && btdjaba==BLANKS) || 
+		(tmpkode=="TTDPENJAMIN" && ((lbtmsts!="OPEN" && (btdsisbrg=="1" || btdsisbrg=="3")) || (lbtmsts == "OPEN" && btdsisbrg=="" && (btdbrg=="1" || btdbrg=="3"))) && btdjaba==BLANKS) || 
+		
+		(tmpkode=="TTDPEMOHON" && ((lbtmsts!="OPEN" && btdsisbrg=="2") || (lbtmsts!="OPEN" && btdbrg==BLANKS && btdsisbrg=="3") || (lbtmsts=="OPEN" && btdsisbrg == "" && btdbrg=="2")) && btdjaba!=BLANKS && (btdjml == 2 || btdjml==0)) || 
+		(tmpkode=="TTDPENJAMIN" && ((lbtmsts!="OPEN" && btdsisbrg=="3") || (lbtmsts!="OPEN" && btdbrg==BLANKS && btdsisbrg=="2") || (lbtmsts=="OPEN" && btdsisbrg == "" && btdbrg == "3")) && btdjaba!=BLANKS && (btdtothrg == 2 || btdtothrg==0)) || 
+		((tmpkode=="TTDPEMOHON" || tmpkode=="TTDPENJAMIN") && btdsisbrg=="4" && btdjaba!=BLANKS) ||
+
+		
+		(tmpkode == "TTDPEMOHON" && lbtmsts != "OPEN" && btdsts == "OPEN" && btdjml == 2) || 
+		(tmpkode == "TTDPENJAMIN" && lbtmsts != "OPEN" && btdsts == "OPEN" && btdtothrg == 2 ) ||
+		(tmpkode == "TTDPEMOHON" && lbtmsts != "OPEN" && (lbtmflag1=="BTTD" || lbtmflag1=="ACCD") && btdsts == "OPEN" && (btdjml == 2 || btdjml==0)) ||
+                (tmpkode == "TTDPENJAMIN" && lbtmsts != "OPEN" && (lbtmflag1=="BTTD" || lbtmflag1=="ACCD") && btdsts == "OPEN" && (btdtothrg == 2 || btdtothrg==0)) ||
+*/
+		(btdsts=="OPEN" && tmpkode=="TTDPEMOHON") ||
+		(btdsts=="OPEN" && tmpkode=="TTDPENJAMIN") || 
+		tmpkode=="TTDCMO" || tmpkode=="TTDANSTNK" || tmpkode=="TTDBM" || tmpkode=="TTDADH" || tmpkode=="TTDRT" || 
+		(tmpkode=="TTDHO" && (g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="B.M4WCOO" || g_grpnam=="RI" || g_grpnam=="IT")) ||
+		(btdsts=="OPEN" && tmpkode=="TTDPEMOHON" && btdukrwrn=="TOLAKAN 721") || 
+		(btdsts=="OPEN" && tmpkode=="TTDPENJAMIN" && btdukrwrn=="TOLAKAN 721")
+
+ctmppmh		tmpkode=="TTDPEMOHON"
+ctmppnj		tmpkode=="TTDPENJAMIN"
+ctmanst		tmpkode=="TTDANSTNK"
+cblmttd		(akttgl2!=0 && aktdk=="Y") || aktdk==BLANKS
+csudahttd	(aktdk=="Y" && tmpkode=="TTDPEMOHON" && lsudahada==0) || (aktdk=="Y" && tmpkode=="TTDPENJAMIN" && lsudahadapnj==0) || (aktdk=="Y" && tmpkode=="TTDANSTNK" && lsudahadaanstnk==0) || aktdk==BLANKS
+/*
+clink1		lsublink + STRIP(r_string6)
+
+
+MAP(mlink)
+clink1		llink		DO_CALC_IF	ctmppnj	
+
+SPCALCS(splink)
+DO_LIB	ap_dbclc(DNAME dlink, DCOMMAND MAPMAP, DMAP mlink);
+*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=aktdk DO_SCAN_IF ctmppmh dscanaktttdpemohon
+BEFORE_INPUT    cur_field=aktdk DO_SCAN_IF ctmppnj dscanaktttdpenjamin
+BEFORE_INPUT	cur_field=aktdk	DO_SCAN_IF ctmanst dscanaktttdanstnk
+/*
+CLICKED		cur_field=ltomfly2177	DO_SPCALCS splink
+*/
+
+
+AFTER_INPUT cur_field=aktdk DO_MAP SHOW
+        IF cblmttd    mdum
+        ELSE HKCURSOR STAY
+        HKMSG t.ttd
+
+AFTER_INPUT cur_field=aktdk DO_MAP SHOW
+        IF csudahttd    mdum
+        ELSE HKCURSOR STAY
+        HKMSG t.SudahPilihTtdMirip
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cbolehbuka
+SFL_SGNFLD	aktbrg
+SFL_SGNFLD_DBCALCS dupdttdkonsumen
+SFL_SGNFLD_DELDBCALCS dupdttdkonsumenhps
+SFL_UPL_DIRFLD  btdtgl1
+SFL_TARGET
+aktkodtypidx	btdnobuk gv_datasurvey   tmpkode

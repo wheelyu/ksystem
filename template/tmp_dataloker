@@ -1,0 +1,95 @@
+LOCAL
+PGM_FIELDS
+lCLNKRY		STRING 11
+lsource		STRING 61
+lSOURCELOKER	STRING 21
+
+DBCALCS(djoinabklok)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN aktkode2
+
+IMAGE(tmptranst)
+/--------------------------------------\
+ /------------------------------------\
+  t.Noktp	: ___________________
+  t.Nipsdm	: ___________________
+  t.Nipreff	: ___________________
+  t.MediaSource	: ___________________
+  t.PilSource	: _____  ____________
+ \------------------------------------/
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktkode		PROTECT		INPUTRI 1
+aktkode2	PROTECT		INPUTRI 2
+aktcrtusr	PROTECT		INPUTRI 3
+aktbrg		ALLCAPS		INPUTRI 4
+aktlok		ALLCAPS		INPUTRI 5
+lsource		PROTECT		INPUTRI 6
+
+DEFAULTS(tmptranst)
+lCLNKRY		INIT		CLNKRY
+lSOURCELOKER	INIT		SOURCELOKER
+
+EDITS(tmptranst)
+e.Mandatory1	aktbrg		MANDATORY
+e.Mandatory2	aktlok		MANDATORY
+e.Validate	aktbrg		VALIDATE tbddatkodidx mtbdx stbd {Pgv_dttabel} {PlHRD} {PlSOURCELOKER}
+e.Validate	aktlok		VALIDATE tbtdatkodtyp mtbtx stbt {Pgv_dttabel} {PlHRD} {PlSOURCELOKER} {Paktbrg} {Pgv_dttabel21}
+
+MAP(mtbdx)
+tbdkode		aktbrg		REPLACE
+
+MAP(mtbtx)
+tbtkode		aktlok		REPLACE
+tbtket		lsource		REPLACE
+
+MAP(mupdabklok)
+gv_CLSD		abksts		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	aktkod2typid   psikode lCLNKRY 
+SFL_MAP
+lCLNKRY		aktdata		REPLACE
+
+CALCS()
+cdjoinabklok	djoinabklok == 1
+cupdloker       g_grpnam == "IT" || g_grpnam == "RI" || g_usrkode == psikode
+
+SPCALCS(sptmpupdlok)
+	DO_LIB_IF cdjoinabklok	ap_dbclc(DNAME dupdabklok, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN aktkode2, DMAP mupdabklok);
+
+POSTING(tmptrans)
+	PST_UPDCMD	sptmpupdlok
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND cupdloker
+        PMT_DEL_COND    c0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

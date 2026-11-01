@@ -1,0 +1,46 @@
+LOCAL
+PGM_FIELDS
+	ltbdlv4_koreksi		STRING		21
+
+MAP(mjointbdlokmotor_koreksi)
+tbdlv4		ltbdlv4_koreksi	REPLACE
+
+DBCALCS(djointbdlokmotor_koreksi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx	gv_dttabel gv_barang gv_lokmotor ppdlok
+	DBC_MAP		mjointbdlokmotor_koreksi
+
+IMAGE(tmptrans)
+|___________________|__________|_______________________|___________________|
+
+FIELD(tmptrans)
+ppdlok		NOCHANGE	INPUTRI		1
+ppdcab		PROTECT		INPUTRI		2
+ppdnorangka	PROTECT		INPUTRI		3
+ppdnomesin	PROTECT		INPUTRI		4
+
+CALCS()
+ckoreksicabstok	ppmsts == "OPEN" && ppdlok_1 != BLANKS && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHSPV" || g_grpnam == "ADHHO")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_APP_TYPE
+SFL_COND ckoreksicabstok
+SFL_TARGET
+	ppdbukurtidx	ppmnobuk l1 l1
+
+CALCS()
+cjointbdlokmotor_koreksi	ppdlok != BLANKS && djointbdlokmotor_koreksi
+	
+MAP(mmapinitkoreksicabstok)
+ltbdlv4_koreksi	ltbdlv4_koreksi	REPLACE_IF cjointbdlokmotor_koreksi
+
+MAP(mupdppdkoreksicabstok)
+ltbdlv4_koreksi	ppdcab		REPLACE
+
+SPCALCS(sptransc2g6)
+DO_LIB		ap_dbclc(DNAME dmapinitkoreksicabstok,DCOMMAND MAPMAP,DMAP mmapinitkoreksicabstok);
+DO_LIB		ap_dbclc(DNAME dupdppdkoreksicabstok,DCOMMAND UPDATE,DTARGET ppdotoidx ppdoto,DMAP mupdppdkoreksicabstok);
+
+POSTING(transc2g6)
+PST_COMMAND	sptransc2g6

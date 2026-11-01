@@ -1,0 +1,87 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------\|
+  i.No              :  ___                                                                               
+  t.SdhPengalaman   :  ___________
+  i.NmPt            :  ________________________________                                                  
+  i.BidPt           :  ________________________________                                                  
+  i.Telp            :  ________________________________                                                  
+  i.LmKrj           :  ____ ___________                                                                       
+  i.Jabatan         :  ________________________________                                                       
+  i.AlsKlr          :  __________________________________________________________________                                                       
+  i.Gaji            :  ________________________________                                                                                         
+  i.HslSvy          :  __________________________________________________________________                                                       
+  i.NmInforman      :  ________________________________                                                                                         
+  i.Jabatan         :  ________________________________                                                                                         
+|\---------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt		PROTECT           	INPUTRI 1
+psdtype3		NOCHANGE        		INPUTRI 2
+psdket2 		ALLCAPS           	INPUTRI 3
+psdstr1 		ALLCAPS                	INPUTRI 4
+psdstr2 		DIGITS                	INPUTRI 5
+psdtype  		DIGITS           	INPUTRI 6
+psdtype2  		NOCHANGE         	INPUTRI 7
+psdstr4   		ALLCAPS                	INPUTRI 8
+psdket    		ALLCAPS                	INPUTRI 9
+psdtot  		DIGITS                 	INPUTRI 10
+psdkode 		ALLCAPS                	INPUTRI 11
+psdstr5 		ALLCAPS                	INPUTRI 12
+psdstr3 		ALLCAPS                	INPUTRI 13
+
+
+DEFAULTS(tmptranst)
+psdtype3		DFALT_SCAN BLANKS ADA TIDAK
+psdtype2		DFALT_SCAN BLANKS BULAN TAHUN
+
+CALCS()
+cjoinpsd22u0     djoinpsd22 == 0 && g_curcmd == 1
+cjoinpsd22u1     djoinpsd22 == 1 && g_curcmd == 1
+cada		 psdtype3=="ADA"
+ctidak		 psdtype3=="TIDAK"
+
+EDITS(tmptranst)
+e.Mandatory psdkode 	MANDATORY_IF cada
+e.Mandatory psdstr1 	MANDATORY_IF cada
+e.Mandatory psdstr2 	MANDATORY_IF cada
+e.Mandatory psdtype 	MANDATORY_IF cada
+e.Mandatory psdtype 	MANDATORY_IF cada
+e.Mandatory psdstr4 	MANDATORY_IF cada
+e.Mandatory psdket  	MANDATORY_IF cada	
+e.Mandatory psdtot  	MANDATORY_IF cada
+e.Mandatory psdket2 	MANDATORY_IF cada
+e.Mandatory psdstr5 	MANDATORY_IF cada
+
+
+MAP(murutHistKerja)
+csatu           psdnourt      DO_CALC_IF cjoinpsd22u0
+curut_psd       psdnourt      DO_CALC_IF cjoinpsd22u1
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdket2         DO_MAP SHOW murutHistKerja
+BEFORE_INPUT	cur_field=psdstr1	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdstr2	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtype	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtype2	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdstr4	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdket	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtot	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdkode	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdstr5	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdstr3	  DO_SKIP_IF ctidak
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_histkerja  btmplg    
+
+SFL_MAP
+gv_histkerja    psddata         REPLACE
+btmplg          psdpsmkode      REPLACE
+

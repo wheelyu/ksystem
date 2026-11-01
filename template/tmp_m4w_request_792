@@ -1,0 +1,144 @@
+LOCAL
+PGM_FIELDS
+ljamdf		DFLOAT		8
+ljamupd		TIME		4
+ljamselesaislik	TIME		4
+lFKB01		STRING		11
+ldtsliklm	STRING		11
+ldtcclm		STRING		11
+lsvistr5pas	STRING		21
+lsvistr4pas	STRING		21
+lnipreq1	STRING		21
+lkunciabsenreq	STRING		11
+ljamdf1		TIME		4
+
+MAP(mjoinpsmpasangan)
+svistr5		lsvistr5pas		REPLACE
+svistr4		lsvistr4pas		REPLACE
+
+DBCALCS(djoinpsmpasangan)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatkodtyp lSLIK btmplg lDTPASPEN11 gv_INPG
+	DBC_MAP		mjoinpsmpasangan
+
+CALCS()
+cnipreqsama		abkkym == lnipreq1 && abksts == "INPG"
+
+DBCALCS(djoinabkreq)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cnipreqsama
+	DBC_TARGET	abkdatbukidx lkunciabsenreq svinobuk 
+
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.NoBuk      : ________________ |
+ |t.Iddeb      : ________________ |
+ |t.Req        : ________________ |
+ |t.NipReq     : _________        |
+ |t.WaktuReq   : _________ ______ |
+ |t.SelesaiSlik: _________        |
+ |t.SelesaiSlik: _________ ______ |
+ |t.Enter      : _________        |
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+svinobuk	PROTECT					INPUTRI 1
+svikode		PROTECT					INPUTRI 1
+svistr1		ALLCAPS SCROLL				INPUTRI 1
+
+svistr2		ALLCAPS	SCROLL				INPUTRI 2
+svitgl1		PROTECT NONE NOLIMIT {DD-MM-YYYY}	INPUTRI 3
+ljamupd		PROTECT					INPUTRI 4
+
+svistr3		PROTECT SCROLL				INPUTRI 5
+svistr4		PROTECT NONE NOLIMIT {DD-MM-YYYY}	INPUTRI 6
+ljamselesaislik	PROTECT					INPUTRI 7
+lenter		ALLCAPS SCROLL				INPUTRI 2
+
+
+CALCS()
+cbukanspv	g_grpnam != "B.M4WMSPV"
+/*ckurangjam	svidf1 - 100000*/
+DEFAULTS(tmptranst)
+svidata		INIT			SLIK
+lkunciabsenreq	INIT			KUNCIABSEN
+lkunciabsenreq	INIT_UPDATE		KUNCIABSEN
+ldtcclm		INIT			DTJENIS
+ldtsliklm	INIT			DTSLIKLM
+svitype		INIT			REQUEST
+svitgl1		INIT			{g_tgltrn}
+ljamdf1		INIT			SYSTIME
+ljamdf		INIT			{ljamdf1}
+svistr1		DFALT_SCAN		BLANKS
+					REQUEST /*_BARU "APABILA DEBITUR BARU PERTAMA REQ SLIK"
+					REQUEST_UPDATE "APABILA SEBELUMNYA SUDAH ADA INPUT SLIK"*/
+svistr2		INIT			{g_usrkode}
+lFKB01		INIT			FKB0001
+
+
+
+EDITS(tmptranst)
+e.Mandatory	svistr1			MANDATORY
+e.Validate	svikode		VALIDATE psmktpidx mpsmreq
+
+MAP(mpsmreq)
+psmktp		svikode		REPLACE
+svidf1		ljamupd		REPLACE
+svidf3		ljamselesaislik	REPLACE
+/*ckurangjam	svidf1		DO_CALC*/
+
+MAP(msvinobuk)
+btmplg		svikode		REPLACE
+
+MAP(mnipreq)
+svistr2		lnipreq1	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr1	DO_MAP SHOW msvinobuk
+BEFORE_INPUT	cur_field=svistr1	DO_MAP SHOW mnipreq
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF cbukanspv
+
+CALCS()
+cbolehmasuk	(btmdvs=="M4W" && ((djoinsviposslik == 1 && lsvistr1debitur == "NONTUNGGAL" && djoinpsmpasangan == 1 && (lsvistr4pas != BLANKS || lsvistr5pas != BLANKS)) || (djoinsviposslik == 1 && lsvistr1debitur == "TUNGGAL"))) ||
+		(btmdvs=="UMROH" && ((djoinposslikumr==1 && lsvistr1debitur == "NONTUNGGAL") || (djoinposslikumr==1 && lsvistr1debitur == "TUNGGAL")))                                                        
+cdjoinabkreq	djoinabkreq == 1
+creq		"REQ"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND  cbolehmasuk
+SFL_TARGET
+        svidatbuktyp lSLIK btmnobuk lreq
+
+SFL_MAP
+btmplg		svikode		REPLACE
+gv_INPG		svists		REPLACE
+btmnobuk	svinobuk	REPLACE
+lreq		svitype		REPLACE
+lSLIK		svidata		REPLACE
+ljamdf		svidf1		REPLACE
+
+MAP(mupdbtmlok)
+g_usrkode	btmlok		REPLACE
+g_tgltrn	btmtgl		REPLACE
+creq		btmstsdata	DO_CALC
+
+MAP(mupdabkreq)
+svistr2		abkkym		REPLACE_IF cnipreqsama
+
+SPCALCS(sptransreq)
+	DO_LIB ap_dbclc(DNAME dupdbtmlok,DCOMMAND UPDATE,DTARGET btmbukidx svinobuk,DMAP mupdbtmlok);
+SPCALCS(sptransrequbah)
+	DO_LIB ap_dbclc(DNAME dupdbtmlokubah,DCOMMAND UPDATE,DTARGET btmbukidx svinobuk,DMAP mupdbtmlok);
+	DO_LIB_IF cdjoinabkreq ap_dbclc(DNAME dupdabkreq,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsenreq svinobuk,DMAP mupdabkreq);
+	
+
+POSTING(tmptrans)
+	PST_ADDCMD sptransreq
+	PST_UPDCMD sptransrequbah

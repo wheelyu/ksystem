@@ -1,0 +1,133 @@
+LOCAL
+PGM_FIELDS
+lnamaKabeng		STRING		61
+lnamaSa			STRING		61
+lnamaFd			STRING		61
+lnamaKabeng1		STRING		61
+lnamaSa1		STRING		61
+lnamaFd1		STRING		61
+
+MAP(mjoinpsi_kabeng1)
+psinama		lnamaKabeng1		REPLACE
+
+DBCALCS(djoinpsi_kabeng1)
+DBC_COMMAND	JOIN
+DBC_TARGET	psikodidx	btdno
+DBC_MAP		mjoinpsi_kabeng1
+
+MAP(mjoinpsi_sa1)
+psinama		lnamaSa1		REPLACE
+
+DBCALCS(djoinpsi_sa1)
+DBC_COMMAND	JOIN
+DBC_TARGET	psikodidx	btdno2
+DBC_MAP		mjoinpsi_sa1
+
+MAP(mjoinpsi_fd1)
+psinama		lnamaFd1		REPLACE
+
+DBCALCS(djoinpsi_fd1)
+DBC_COMMAND	JOIN
+DBC_TARGET	psikodidx	btdno3
+DBC_MAP		mjoinpsi_fd1
+
+IMAGE(tmptranst)
+/----t.KomisiLCR-------------------\
+|/--------------------------------\|
+|| i.NoBuk      _________________ ||
+|| t.NipKabeng  _________         ||
+|| t.NamaKabeng _________________ ||
+|| t.NipSa      _________         ||
+|| t.NamaSa     _________________ ||
+|| t.NipFd      _________         ||
+|| t.NamaFd	_________________ ||
+||                         ______ ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnobuk                PROTECT                 INPUTRI 1 /* Nobuk */
+btdno                   ALLCAPS   SCROLL        INPUTRI 2 /* Nip Kabeng */
+lnamaKabeng             PROTECT                 INPUTRI 3 /* Nama Kabeng */
+btdno2                  ALLCAPS   SCROLL        INPUTRI 4 /* Nip Sa */
+lnamaSa                 PROTECT			INPUTRI 5 /* Nama Sa */
+btdno3                  ALLCAPS   SCROLL        INPUTRI 6 /* Nip Fd */    
+lnamaFd			PROTECT			INPUTRI 7 /* Nama Fd */
+lenter                  NOCHANGE                INPUTRI 8
+
+CALCS()
+cadaNipKabeng		btdno != BLANKS
+cadaNipSa		btdno2 != BLANKS
+cadaNipFd		btdno3 != BLANKS
+cdjoinpsi_kabeng1	djoinpsi_kabeng1 == 1
+cdjoinpsi_sa1		djoinpsi_sa1 == 1
+cdjoinpsi_fd1		djoinpsi_fd1 == 1
+
+cKabengAja		((btdno != BLANKS && (psijabatan == "AHASSKEPALABENGOFF" || psijabatan == "PLTAHASSKEPALABENGOF" || psijabatan == "AHASSKEPALAMEKOFF")) || (btdno == BLANKS))
+cSaAja			((btdno2 != BLANKS && psijabatan == "AHASSSERVICEADVOFF") || (btdno2 == BLANKS))
+cFdAja			((btdno3 != BLANKS && psijabatan == "AHASSFRONTDESK") || (btdno3 == BLANKS))
+
+cLogSA			(g_grpnam == "AHASSSA")
+cLogFD			(g_grpnam == "AHASSFD")
+
+
+EDITS(tmptranst)
+e.Validate  btdnobuk	VALIDATE btmbukidx mbtmnobuk 0
+/*e.Validate1 btdno	VALIDATE psistscabkod mpsiKabeng spsiBKL {Pgv_INPG} {Pbtmcab}*/
+e.Validate2 btdno2	VALIDATE psistscabkod mpsiSa spsiBKL {Pgv_INPG} {Pbtmcab}
+e.Validate2 btdno3	VALIDATE psistscabkod mpsiFd spsiBKL {Pgv_INPG} {Pbtmcab}
+
+MAP(mbtmnobuk)
+btmnobuk	btdnobuk	REPLACE
+lnamaKabeng1	lnamaKabeng1	REPLACE_IF cdjoinpsi_kabeng1
+lnamaSa1	lnamaSa1	REPLACE_IF cdjoinpsi_sa1
+lnamaFd1	lnamaFd1	REPLACE_IF cdjoinpsi_fd1
+lnamaKabeng1	lnamaKabeng	REPLACE
+lnamaSa1	lnamaSa		REPLACE
+lnamaFd1	lnamaFd		REPLACE
+
+/*
+MAP(mpsiKabeng)
+psikode		btdno		REPLACE
+psinama		lnamaKabeng	REPLACE
+*/
+
+MAP(mpsiSa)
+psikode		btdno2		REPLACE
+psinama		lnamaSa		REPLACE
+
+MAP(mpsiFd)
+psikode		btdno3		REPLACE
+psinama		lnamaFd		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=btdno 	DO_SKIP_IF cadaNipKabeng
+BEFORE_INPUT		cur_field=btdno2	DO_SKIP_IF cadaNipSa    
+BEFORE_INPUT		cur_field=btdno3	DO_SKIP_IF cadaNipFd    
+
+BEFORE_INPUT		cur_field=btdno		DO_SKIP_IF cLogSA
+BEFORE_INPUT		cur_field=btdno		DO_SKIP_IF cLogFD
+BEFORE_INPUT		cur_field=btdno2	DO_SKIP_IF cLogFD
+
+AFTER_INPUT		cur_field=btdno		DO_MAP
+			IF cKabengAja mdumstr
+			ELSE HKCURSOR STAY
+			HKMSG t.KabengAja
+
+AFTER_INPUT		cur_field=btdno2	DO_MAP
+			IF cSaAja mdumstr
+			ELSE HKCURSOR STAY
+			HKMSG t.SaAja
+
+AFTER_INPUT		cur_field=btdno3	DO_MAP
+			IF cFdAja mdumstr
+			ELSE HKCURSOR STAY
+			HKMSG t.FdAja
+			
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+btdbukurtidx   btmnobuk lKOMLCRAHS
+

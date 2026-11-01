@@ -1,0 +1,295 @@
+LOCAL
+PGM_FIELDS
+	lurut1		INT2		2
+	lspmb		STRING		21
+	lastjml		STRING		21
+	lasthrg		STRING		21
+	lpjg_noka	INT2		2
+	lpjg_nosin	INT2		2
+	lplat01         STRING  	3
+	lplat02         STRING  	5
+	lplat03         STRING  	4
+	lp01a           STRING  	2
+	lp01b           STRING  	2
+	lp03a           STRING  	2
+	lp03b           STRING  	2
+	lp03c           STRING  	2
+	lnil1           INT2    	2
+	lnil2           INT2    	2
+	lnil3           INT2    	2
+
+
+MAP(mjoinast)
+astnourt	lurut1		REPLACE
+
+DBCALCS(djoinast)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	astdatjnsurt	gv_dtassets psmktp gv_bpkb
+	DBC_MAP		mjoinast
+/*
+DBCALCS(djoinastnopolisi)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	astjnspolidx   gv_bpkb lastnopolisi
+
+CALCS()
+cdjoinastnopolisi1	djoinastnopolisi==1 && g_curcmd == 1
+*/
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------\
+|/------------------------------------\/---------------------------------------\|
+||i.NoPol   ____ _______ ______       ||spasi                                  ||
+||          __________________________||t.AnStnk  _____________________________||
+||t.TypMtr  __________________________||i.alstnk  _____________________________||
+||i.NamMtr  __________________________||i.Nosin   _____________________________||
+||t.Series  __________________________||i.Norang  _____________________________||
+|\------------------------------------/\---------------------------------------/|
+|/------------------------------------\/---------------------------------------\|
+||i.Telp    __________________________||t.TglBeli _____________________________||
+||i.Tahun   __________________________||t.Sert    _____  ______________________||
+||i.Warna   __________________________||i.JtpStnk _____________________________||
+||i.KM      __________________________||t.JtpNoti _____________________________||
+|\------------------------------------/\---------------------------------------/|
+|/------------------------------------\/---------------------------------------\|
+||t.AnBpkb  __________________________||t.NsNon   _____  ______________________||
+||t.AlBpkb  __________________________||          ___________________ ________ ||
+||spasi                               ||          ________  ________           ||
+|\------------------------------------/\---------------------------------------/|
+|t.UbhInfoMtrTdkAkanUpdJmn631                                                   |
+|t.HrsBlk631UtkUbhDataJmn                                                       |
+\-------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lplat01           	ALLCAPS ALPHANUMERIC NOSPACE    MEDIUM INPUTRI  1
+lplat02           	DIGITS                  	MEDIUM INPUTRI  2
+lplat03           	ALLCAPS ALPHANUMERIC NOSPACE    MEDIUM INPUTRI  3
+astnopol		NOCHANGE		        INPUTRI		3
+astanstnk		ALLCAPS SCROLL			INPUTRI		7
+astbrg			ALLCAPS	SCROLL			MEDIUM INPUTRI	4
+astalmstnk		ALLCAPS SCROLL			INPUTRI		8
+astnama			PROTECT ALLCAPS SCROLL		INPUTRI		5
+astmesin		ALLCAPS NOSPACE	SCROLL		MEDIUM INPUTRI	9
+astno2			PROTECT ALLCAPS SCROLL		INPUTRI		6
+astrangka		ALLCAPS NOSPACE SCROLL		MEDIUM INPUTRI	10
+
+astno1			NUMERIC				INPUTRI		11
+asttgl			ALLCAPS NOLIMIT {DD-MM-YYYY}	INPUTRI		15
+astth			NUMERIC				INPUTRI		12
+astjml			NOCHANGE			INPUTRI		16
+lastjml			PROTECT				INPUTRI		16
+astwarna		ALLCAPS SCROLL			INPUTRI		13
+asttgl2			NONE NOLIMIT {DD-MM-YYYY}	INPUTRI		17
+astpj			NUMERIC				INPUTRI		14
+asttgl3			NONE NOLIMIT {DD-MM-YYYY}	INPUTRI		18
+
+astanbpkb		PROTECT ALLCAPS SCROLL		INPUTRI		19
+asthrg			NOCHANGE			INPUTRI		21
+lasthrg			PROTECT				INPUTRI		21
+astalmbpkb		PROTECT ALLCAPS SCROLL		INPUTRI		20
+lenter    		NOCHANGE              		INPUTRI		22
+astkode			PROTECT				INPUTRI		23
+astjns			PROTECT				INPUTRI		24
+astdata			PROTECT				INPUTRI		25
+
+DEFAULTS(tmptranst)
+astdata		INIT		{gv_dtassets}
+astjns		INIT		{gv_bpkb}
+asttgl		INIT		{g_tgltrn}
+lspmb		INIT		"SPMB"
+astjml		DFALT_SCAN_BLANKS	1 "ADA"
+					2 "TIDAK ADA"
+asthrg		DFALT_SCAN_BLANKS	1 "NS"
+					2 "NON NS"
+
+
+lplat01		INIT_LABEL		"B"
+lplat02		INIT_LABEL		"1234"
+lplat03		INIT_LABEL		"XXX"
+
+lnil1            INIT                    1
+lnil2            INIT                    2
+lnil3            INIT                    3
+
+EDITS(tmptranst)
+e.MandatoryNopol astnopol MANDATORY
+t.MandatoryNamaStnk astanstnk MANDATORY
+t.MandatoryAlmStnk astalmstnk MANDATORY
+e.MandatoryMesin astmesin MANDATORY
+e.MandatoryRangka astrangka MANDATORY
+t.MandatoryTelp astno1 MANDATORY
+e.MandatoryTgl asttgl MANDATORY
+t.MandatoryNsNon asthrg	MANDATORY
+
+t.ValidateBrgModel astbrg VALIDATE brgstdtkatbr mbrgM sbrgModelKat {Pgv_INPG} {Pgt_dtmodel} {Plspmb}
+e.ValidateThn astth VALIDATE tbddatkodidx mtbdTHN stbdTHN {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+
+CALCS()
+cNS		"NS"
+cNNS		"NON NS"
+cADA		"ADA"
+cTDKADA		"TIDAK ADA"
+castjml1	astjml == 1
+castjml2	astjml == 2
+casthrg1	asthrg == 1
+casthrg2	asthrg == 2
+
+MAP(mbrgM)
+brgnama		astnama		REPLACE
+brgkode		astbrg		REPLACE
+brgkat4		astno2		REPLACE
+cNS		lasthrg		DO_CALC_IF casthrg1
+cNNS		lasthrg		DO_CALC_IF casthrg2
+cADA		lastjml		DO_CALC_IF castjml1
+cTDKADA		lastjml		DO_CALC_IF castjml2
+
+MAP(mtbdTHN)
+tbdkode		astth		REPLACE
+
+CALCS()
+cjoinast0	djoinast == 0
+cjoinast1	djoinast == 1
+curut1		lurut1 + 1
+cnopolnotnull	astnopol != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+cmotornotnull	astbrg != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+canstnknotnull	astanstnk != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+calmstnknotnull	astalmstnk != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+cmesinnotnull	astmesin != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+crangkanotnull	astrangka != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+chapenotnull	astno1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+cthnnotnull	astth != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+cwrnnotnull	astwarna != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+cjtpstnknotnull	asttgl2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+cjtpnotinotnull	asttgl3 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam != "AHASSHEAD" && g_grpnam!="AHASSSPV"  && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam !="BUM" && g_grpnam!="BUMM2W" && g_grpnam!="ARDVH" && g_grpnam !="BMM" && g_grpnam !="BMMM2W" && g_grpnam != "KAWIL" && g_grpnam != "MSOHEAD" && g_usrkode != "2470890"
+
+cplat01a        DO_LIB ap_amstr(lplat01,lnil1,lnil1,&lp01a);
+cplat01b        DO_LIB ap_amstr(lplat01,lnil2,lnil1,&lp01b);
+cplat03a        DO_LIB ap_amstr(lplat03,lnil1,lnil1,&lp03a);
+cplat03b        DO_LIB ap_amstr(lplat03,lnil2,lnil1,&lp03b);
+cplat03c        DO_LIB ap_amstr(lplat03,lnil3,lnil1,&lp03c);
+
+ckonadangka1    lp01a != "0" && lp01a != "1" && lp01a != "2" && lp01a != "3" && lp01a != "4" && lp01a != "5" && lp01a != "6" && lp01a != "7" && lp01a != "8" && lp01a != "9" &&
+                lp01b != "0" && lp01b != "1" && lp01b != "2" && lp01b != "3" && lp01b != "4" && lp01b != "5" && lp01b != "6" && lp01b != "7" && lp01b != "8" && lp01b != "9"
+
+ckonadangka2    lp03a != "0" && lp03a != "1" && lp03a != "2" && lp03a != "3" && lp03a != "4" && lp03a != "5" && lp03a != "6" && lp03a != "7" && lp03a != "8" && lp03a != "9" &&
+                lp03b != "0" && lp03b != "1" && lp03b != "2" && lp03b != "3" && lp03b != "4" && lp03b != "5" && lp03b != "6" && lp03b != "7" && lp03b != "8" && lp03b != "9" &&
+                lp03c != "0" && lp03c != "1" && lp03c != "2" && lp03c != "3" && lp03c != "4" && lp03c != "5" && lp03c != "6" && lp03c != "7" && lp03c != "8" && lp03c != "9"
+
+cgabnopol       STRIP(lplat01) + STRIP(lplat02) + STRIP(lplat03)
+ckongab		(g_curcmd == 1 || ( g_curcmd == 2 && lplat01 != BLANKS && lplat02 != BLANKS && lplat03 != BLANKS))
+ckosong		BLANKS
+
+MAP(misinourt)
+c1		astnourt	DO_CALC_IF cjoinast0
+curut1		astnourt	DO_CALC_IF cjoinast1
+
+MAP(mcekplat1)
+cplat01a        lp01a           DO_CALC
+cplat01b        lp01b           DO_CALC
+
+MAP(mcekplat3)
+cplat03a        lp03a           DO_CALC
+cplat03b        lp03b           DO_CALC
+cplat03c        lp03c           DO_CALC
+
+MAP(misigabnopol)
+cgabnopol       astnopol        DO_CALC_IF ckongab
+
+MAP(misinopol)
+astnopol	astkode		REPLACE
+
+MAP(mresetnopol)
+ckosong         lplat01         DO_CALC
+ckosong         lplat02         DO_CALC
+ckosong         lplat03         DO_CALC
+
+MAP(misianbpkb)
+astanstnk	astanbpkb	REPLACE
+
+MAP(misialmbpkb)
+astalmstnk	astalmbpkb	REPLACE
+
+CALCS()
+cpjg_noka	DO_LIB ap_strln(astrangka,&lpjg_noka);
+cpjg_nosin	DO_LIB ap_strln(astmesin,&lpjg_nosin);
+
+MAP(mpjg_nokanosin)
+cpjg_noka	lpjg_noka	DO_CALC
+cpjg_nosin	lpjg_nosin	DO_CALC
+
+CALCS()
+cpanjang_ok	lpjg_noka >= lpjg_nosin
+ckdplat01ksg	(g_curcmd == 1 && lplat01 != BLANKS) || g_curcmd != 1
+ckdplat02ksg	(g_curcmd == 1 && lplat02 != BLANKS) || g_curcmd != 1
+ckdplat03ksg	(g_curcmd == 1 && lplat03 != BLANKS) || g_curcmd != 1
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=lplat01    DO_MAP SHOW mcekplat1
+AFTER_INPUT     cur_field=lplat01    DO_MAP SHOW
+                IF ckdplat01ksg   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Kosong
+
+AFTER_INPUT     cur_field=lplat01    DO_MAP SHOW
+                IF ckonadangka1   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Input Karakter Angka
+
+AFTER_INPUT     cur_field=lplat02    DO_MAP SHOW
+                IF ckdplat02ksg   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Kosong
+
+
+AFTER_INPUT     cur_field=lplat03    DO_MAP SHOW mcekplat3
+
+AFTER_INPUT     cur_field=lplat03    DO_MAP SHOW
+                IF ckdplat03ksg   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Kosong
+
+AFTER_INPUT     cur_field=lplat03    DO_MAP SHOW
+                IF ckonadangka2   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Input Karakter Angka
+
+AFTER_INPUT     cur_field=lplat03    DO_MAP SHOW misigabnopol
+
+BEFORE_INPUT	cur_field=astnopol	DO_SKIP_IF cnopolnotnull
+BEFORE_INPUT	cur_field=astbrg	DO_SKIP_IF cmotornotnull
+BEFORE_INPUT	cur_field=astanstnk	DO_SKIP_IF canstnknotnull
+BEFORE_INPUT	cur_field=astalmstnk	DO_SKIP_IF calmstnknotnull
+BEFORE_INPUT	cur_field=astmesin	DO_SKIP_IF cmesinnotnull
+BEFORE_INPUT	cur_field=astrangka	DO_SKIP_IF crangkanotnull
+BEFORE_INPUT	cur_field=astno1	DO_SKIP_IF chapenotnull
+BEFORE_INPUT	cur_field=astth		DO_SKIP_IF cthnnotnull
+BEFORE_INPUT	cur_field=astwarna	DO_SKIP_IF cwrnnotnull
+BEFORE_INPUT	cur_field=asttgl2	DO_SKIP_IF cjtpstnknotnull
+BEFORE_INPUT	cur_field=asttgl3	DO_SKIP_IF cjtpnotinotnull
+
+/*BEFORE_INPUT	cur_field=astnopol	DO_SKIP_IF cjoinupd*/
+AFTER_INPUT	cur_field=astnopol	DO_MAP SHOW misinopol
+AFTER_INPUT	cur_field=astanstnk	DO_MAP SHOW misianbpkb
+AFTER_INPUT	cur_field=astalmstnk	DO_MAP SHOW misialmbpkb
+AFTER_INPUT	cur_field=astmesin	DO_MAP SHOW mpjg_nokanosin
+AFTER_INPUT	cur_field=astrangka	DO_MAP SHOW mpjg_nokanosin
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW misinourt
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mpjg_nokanosin
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mresetnopol
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpanjang_ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.PjgNoKaHrsLbhDrNoSin
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	astdatkodidx	gv_dtassets psmktp gv_bpkb
+SFL_MAP
+psmktp		astpsmkode		REPLACE
+
+
+

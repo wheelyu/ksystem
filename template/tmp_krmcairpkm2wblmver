@@ -1,0 +1,90 @@
+LOCAL
+PGM_FIELDS
+lm2w	      	STRING	     	21
+lnamaknsmm2w 	STRING	     	21
+lpencairan	DFLOAT		8
+langsuranm2w	DFLOAT		8
+ltenorm2w	DFLOAT		8
+
+/*----------JOIN--------*/
+
+MAP(mpsmkonsumenm2w)
+psmnama    lnamaknsmm2w     REPLACE
+
+DBCALCS(djoinpsmkonsumenm2w)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmktpidx btmplg
+DBC_MAP         mpsmkonsumenm2w
+
+MAP(mnhmrincim2w)
+nhmcairpinj  lpencairan    REPLACE
+nhmbsrang    langsuranm2w  REPLACE
+nhmtenor     ltenorm2w	   REPLACE
+
+DBCALCS(djoinnhmm2w)
+DBC_COMMAND     JOIN
+DBC_TARGET      nhmdatbukidx	gv_dtbukutamu btmnobuk
+DBC_MAP         mnhmrincim2w
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.Tgl719       : _________         ||
+||i.NoPK         : _________________ ||
+||t.CabLok       : __________        ||
+||t.Dvs          : __________        ||
+||t.NamaKonsumen : _________________ ||
+||i.TypMtr       : _________________ ||
+||i.Thn          : __________        ||
+||i.Cair         : _________________ ||
+||t.Angs         : _________________ ||
+||t.Tenor        : ____              ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   btmtgl           PROTECT {DD-MM-YY}         INPUTRI         1
+   btmnobuk         NOCHANGE SCROLL            INPUTRI         2
+   btmlokjual       NOCHANGE SCROLL            INPUTRI         3
+   btmdvsjl         NOCHANGE SCROLL            INPUTRI         4
+   lnamaknsmm2w     NOCHANGE SCROLL            INPUTRI         5
+   btmtypmtr        NOCHANGE SCROLL            INPUTRI         6
+   btmthn           NOCHANGE SCROLL            INPUTRI         7
+   lpencairan       NOCHANGE SCROLL            INPUTRI         9
+   langsuranm2w     NOCHANGE SCROLL            INPUTRI         10
+   ltenorm2w        NOCHANGE SCROLL            INPUTRI         11
+   
+DEFAULTS(tmptranst)
+lm2w		INIT		m2w
+
+CALCS()
+cdjoinpsmkonsumenm2w0	djoinpsmkonsumenm2w==0
+cdjoinpsmkonsumenm2w1	djoinpsmkonsumenm2w==1
+cdjoinnhmm2wa		djoinnhmm2w==0
+cdjoinnhmm2wb		djoinnhmm2w==1
+cblanksm2w		BLANKS
+c0m2w			0
+cACCm2w			btmflag1 == "ACC"
+
+EDITS(tmptranst)
+e.Validate btmnobuk  VALIDATE btmbukidx mbtmm2w 0
+
+MAP(mbtmm2w)
+btmnobuk        btmnobuk        REPLACE
+cblanksm2w      lnamaknsmm2w	DO_CALC_IF cdjoinpsmkonsumenm2w0
+lnamaknsmm2w	lnamaknsmm2w	REPLACE_IF cdjoinpsmkonsumenm2w1
+c0m2w		lpencairan	DO_CALC_IF cdjoinnhmm2wa
+lpencairan	lpencairan	REPLACE_IF cdjoinnhmm2wb
+c0m2w		langsuranm2w	DO_CALC_IF cdjoinnhmm2wa
+langsuranm2w	langsuranm2w	REPLACE_IF cdjoinnhmm2wb
+c0m2w		ltenorm2w	DO_CALC_IF cdjoinnhmm2wa
+ltenorm2w	ltenorm2w	REPLACE_IF cdjoinnhmm2wb
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT cACCm2w
+SFL_TARGET btmstsposbuk l719 cabkode lm2w
+
+

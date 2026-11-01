@@ -1,0 +1,77 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.Nobuk       :______________________ ||
+||t.KatTrn      :______________________ ||
+||t.KlsTrn      :______________________ ||
+||t.Dari908     :______________________ ||
+||t.Nobuk908    :______________________ ||
+||t.Materi      :______________________ ||
+||t.Ceklis      :______________________ ||
+||t.Ket         :______________________ ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk        PROTECT                 INPUTRI         1
+tkdstr3         ALLCAPS                 INPUTRI         2
+tkdjwbstr2      ALLCAPS                 INPUTRI         3
+tkdkodejsa      NOCHANGE                INPUTRI         4
+tkdjenis        ALLCAPS                 INPUTRI         5
+tkdket          ALLCAPS                 INPUTRI         6
+tkdstr1         NOCHANGE                INPUTRI         7
+tkdstr2         ALLCAPS                 INPUTRI         8
+
+
+DEFAULTS(tmptranst)
+tkdkodejsa       DFALT_SCAN_BLANKS      Y
+                                        T
+
+tkdstr1          DFALT_SCAN_BLANKS      Y
+                                        T
+
+CALCS()
+c908		tkdkodejsa=="T"
+cy908		tkdkodejsa=="Y"
+cyamateri	tkdstr1=="T"
+
+
+EDITS(tmptranst)
+e.Mandatory     tkdkodejsa      MANDATORY
+e.Mandatory     tkdjenis        MANDATORY_IF cy908
+e.Mandatory     tkdket          MANDATORY
+e.Mandatory     tkdstr1	        MANDATORY_IF cinpg
+e.Mandatory     tkdstr2         MANDATORY_IF cyamateri
+e.Validate      tkdjenis        VALIDATE_BUF3 tlmdatstsbuk mtlm908 stlm {PlMODULTRN}  {Pgv_INPG}
+e.Validate      tkdstr3         VALIDATE tbddatkodidx mtbd stbd {Pgv_dttabel} {Pgv_personal} {PlTIPETRN914}
+e.Validate      tkdjwbstr2      VALIDATE tbtdattypkod mtbt stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlTIPETRN914} {Ptkdstr3}
+
+MAP(mtlm908)
+#tlmnobuk	tkdjenis	REPLACE
+#tlmket		tkdket		REPLACE
+
+MAP(mtbd)
+tbdkode         tkdstr3         REPLACE
+
+MAP(mtbt)
+tbtkode         tkdjwbstr2      REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdstr1        DO_SKIP_IF copen1
+BEFORE_INPUT    cur_field=tkdstr2        DO_SKIP_IF ctdk
+BEFORE_INPUT    cur_field=tkdjenis       DO_SKIP_IF cinpg
+BEFORE_INPUT    cur_field=tkdkodejsa     DO_SKIP_IF cinpg
+BEFORE_INPUT    cur_field=tkdket         DO_SKIP_IF cinpg
+BEFORE_INPUT    cur_field=tkdjenis       DO_SKIP_IF c908
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+        tkddatbukll lDTTRAINER tlmnobuk
+
+

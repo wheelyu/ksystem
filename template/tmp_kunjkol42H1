@@ -1,0 +1,140 @@
+/**************************************************************************/
+IMAGE(tmptranst) 
+/----------------------------------\
+|      ______________________      |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|t.t      ___________________      |
+|t.Ket ____________________________|
+|t.StsUpl   ________________       |
+|t.TglFt    ________________       |
+|t.lat    _____________.______     |
+|t.long   _____________.______     |
+|                                  |
+|t.LongLatKolResurv                |
+|t.lat    _____________.______     |
+|t.long   _____________.______     |
+|t.Jar    _____________.___ t.M    |_
+|                                  |
+|t.LongLatKolSurvey                |
+|t.lat    _____________.______     |
+|t.long   _____________.______     |
+|t.Jar    _____________.______     |
+|                                  |
+|t.LongLatResurv                   |
+|t.lat    _____________.______     |
+|t.long   _____________.______     |
+|                                  |
+|t.LongLatSurvey                   |
+|t.lat    _____________.______     |
+|t.long   _____________.______     |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+lketerangan             PROTECT                 INPUTRI         1
+lUplFoto7d              TOMBOL                  INPUTRI         3
+lketerangan		PROTECT			INPUTRI		2
+svistr1                 NOCHANGE        	INPUTRI         2
+svitgl1			PROTECT			INPUTRI		2
+svidf2                  PROTECT                 INPUTRI         5
+svidf1                  PROTECT                 INPUTRI         4
+svidf3                  PROTECT                 INPUTRI         6
+svidf4                  PROTECT                 INPUTRI         7
+svidf5                  PROTECT                 INPUTRI         8
+svidtmkode		PROTECT			INPUTRI		9
+llatsvy                 PROTECT NUMERIC {99,999999999}          INPUTRI         10
+llonsvy                 PROTECT NUMERIC {99,999999999}          INPUTRI         11
+svidf6                  PROTECT                 INPUTRI         12
+
+llatgmap                PROTECT NUMERIC {99,999999999}          INPUTRI         14
+llongmap                PROTECT NUMERIC {99,999999999}          INPUTRI         15
+
+llatsvy                 PROTECT NUMERIC {99,999999999}          INPUTRI         16
+llonsvy                 PROTECT NUMERIC {99,999999999}          INPUTRI         17
+
+DEFAULTS(tmptranst)
+g_fotolat1              INIT            BLANKS
+g_fotolon1              INIT            BLANKS
+svidata			INIT		KUNJUNGAN
+svitype			INIT		KUNJKOL3
+svinourt		INIT		1
+
+EDITS(tmptranst)
+t.ValidateFak   svidtmkode      VALIDATE pikdatbukidx mpik3 0 {Pgv_dtpiu}
+
+CALCS()
+cisi1   "SRT PERNYATAAN KONS DI MATERAI"
+cisi2   "SRT HRS STEMPEL RESMI & TTD RT/RW"
+cisi3   "SELFIE DENGAN UNIT"
+cisi4   "SRT PERNYATAAN KEMATIAN KONS / FOTO KEADAAN RUMAH"
+cisi5   "SRT PERNYATAAN KONSUMEN HANYA ATAS NAMA"
+cisi6   "UPLOAD UNDANGAN PLNS ZDEN"
+cisi7	"FOTO DENGAN UNIT"
+
+cisi1x  djointrans == 1 && ( lsvistr3 == "100" || lsvistr3 == "101" || lsvistr36 == "T")
+cisi2x  djointrans == 1 && (lsvistr3 == "200" || lsvistr3 == "300" || lsvistr3 == "301")
+cisi3x  mtsdvs=="M4W" && djointrans == 1 && (lsvistr3 == "999" || lsvistr36 == "Y")
+cisi4x  djointrans == 1 && lsvidf4 == 11
+cisi5x  djointrans == 1 && lsvidf4 == 12
+cisi6x  mtsgrup2 == "ZDEN"
+cisi7x  mtsdvs=="M2W" && djointrans == 1 && lsvistr3 == "999" && lsvistr36 == "Y"
+
+
+MAP(mpik3)
+cisi1			lketerangan		DO_CALC_IF cisi1x 		
+cisi2			lketerangan		DO_CALC_IF cisi2x
+cisi3			lketerangan		DO_CALC_IF cisi3x
+cisi4			lketerangan		DO_CALC_IF cisi4x
+cisi5			lketerangan 		DO_CALC_IF cisi5x
+cisi6			lketerangan		DO_CALC_IF cisi6x
+cisi7			lketerangan		DO_CALC_IF cisi7x
+llatsvy         	llatsvy         	REPLACE_IF cjoinsvisvy
+llonsvy         	llonsvy         	REPLACE_IF cjoinsvisvy
+
+MAP(mupdmaster7d)
+cOK     mtshcin         DO_CALC
+
+SPCALCS(supd7d)
+        DO_LIB ap_dbclc(DNAME dmap7d,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mmap6d);
+        DO_LIB_IF cadajarak ap_dsGPS(svidf2,svidf1,svidf3,svidf4,&ljarak);
+        dmapmapjarak
+        DO_LIB ap_dbclc(DNAME dmap7d2,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mmap6d2);
+        DO_LIB_IF cadauploadok ap_dbclc(DNAME dupdmaster7d,DCOMMAND UPDATE,DTARGET mtsbukidx svinobuk,DMAP mupdmaster7d);
+
+HOOKS(tmptranst)
+   CLICKED      cur_field=lUplFoto7d    DO_SPCALCS supd7d
+
+CALCS()
+condtmptrans    djointrans==1 && g_grpnam!="KOL" && g_grpnam!="REM" && g_grpnam!="SPVKOL" /*&& (lsvistr31=="1" || lsvistr31=="3")*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPLFLD      svitype svinobuk
+SFL_UPL_DELCOND chapusfoto
+SFL_UPL_DIRFLD mtstgl
+SFL_COND	condtmptrans
+SFL_UPLREADONLY
+SFL_TARGET
+svidatbuktyp    gv_kunjungan11 mtsnobuk lKUNJKOL3
+
+SFL_MAP
+mtsnobuk	svinobuk	REPLACE
+mtsnoasal	svidtmkode	REPLACE
+gv_kunjungan11	svidata         REPLACE
+lKUNJKOL3	svitype         REPLACE
+l1		svinourt        REPLACE
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cIT
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

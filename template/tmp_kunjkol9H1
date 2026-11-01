@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/----t------------t----------------\
+|t.No|t.Keterangan|t.Jawab         |
+\----.------------.----------------/
+IMAGE(tmptrans)
+|____|____________|________________|
+FIELD(tmptrans)
+svinourt                PROTECT SCROLL                  INPUTRI 1
+sviket                  TEXTAREA PROTECT                INPUTRI 1
+sviket2                 ALLCAPS SCROLL                  INPUTRI 3
+
+DBCALCS(djoinsvi7why)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_kunjungan11 mtsnobuk lKUNJKOL9 l1
+
+DEFAULTS(tmptrans)
+ldum		INIT		BLANKS
+lTHBL		INIT		{cthbls}
+l7WHYPIUT	INIT		7WHYPIUT
+
+EDITS(tmptrans)
+e.Mandatory     sviket2        MANDATORY
+
+CALCS()
+cpanjangjwb     DO_LIB ap_strln(sviket2,&lpanjangjwb);
+cjawab          lpanjangjwb<=15
+cjoinsvi	djointrans==1 
+
+MAP(mpanjangjwb)
+cpanjangjwb                lpanjangjwb          DO_CALC
+
+MAP(mdum)
+ldum            ldum            REPLACE
+
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=sviket2     DO_MAP SHOW mpanjangjwb
+AFTER_INPUT     cur_field=sviket2     DO_MAP
+                IF cjawab mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang Maksimal 15 karakter
+
+AFTER_INPUT     cur_keybd=EN     DO_MAP
+                IF cjawab mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang Maksimal 15 karakter
+
+             
+SUBFILE(tmptrans)
+SFL_LINES(12)
+SFL_TITLE(tmptranst)
+SFL_SELECT	cjoinsvi
+SFL_TARGET
+	svidatkodtyp   gv_kunjungan11 mtsnoasal lKUNJKOL9 lTHBL
+
+CALCS()
+cupdtransg9       (mtssts=="OPEN" && djoinsvi7why==1 && (mtsplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS" || g_grpnam=="DIVHEAD" || g_grpnam=="B.M4WAR" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WCSPV" || g_grpnam=="IT")) 
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cupdtransg9
+PMT_DEL_COND    c0
+
+
+

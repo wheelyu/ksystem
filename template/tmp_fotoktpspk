@@ -1,0 +1,68 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------------------------------------------------------------\
+| /-------s.UPLOAD----------\/-------------------------------------------------------------\ |
+| |                         !! i.Ket      : _______________________________________        ! |
+| |                         !!              ___________                                    ! |
+| |                         !! t.TglFoto  : __________                                     ! |
+| |                         !! t.Latitude : ________.__                                    ! |
+| |                         !! t.Longitude: ________.__                                    ! |
+| |                         |! t.Jam      : __.__                                          ! |
+| |                         |! __________________                                          ! |
+| \-------------------------/\-------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2
+svitgl2			PROTECT {DD-MM-YYYY}	INPUTRI		3
+svidf6			PROTECT NUMERIC		INPUTRI		3
+svidf7			PROTECT NUMERIC		INPUTRI		3
+svidf8			PROTECT			INPUTRI		4
+luploadOK		TOMBOL			INPUTRI		5
+
+CALCS()
+cY		"Y-OK"
+cadagps2        g_fotolat1 != "" && g_fotolon1 != "" && g_fotodate1 == g_tgltrn
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+g_fotolat1              INIT            BLANKS
+g_fotolon1              INIT            BLANKS
+g_fotodate1             INIT            BLANKS
+
+MAP(mupdsviktpspk)
+cY              sviyt1          DO_CALC
+g_fotolat1	svidf6		REPLACE
+g_fotolon1	svidf7		REPLACE
+g_fototime1	svidf8		REPLACE
+g_fotodate1 	svitgl2		REPLACE
+
+
+CALCS()
+cktpspk		tmpkode == "FOTOKTPSPK"
+cktpspk1	sviyt1 == "T"
+
+SPCALCS(supdktp)
+	DO_LIB_IF cadagps2 ap_dbclc(DNAME dupdktpspk,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdsviktpspk);
+
+HOOKS(tmptranst)
+   CLICKED      cur_field=luploadOK	DO_SPCALCS supdktp
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cktpspk
+SFL_UPL_DELCOND	cktpspk1
+SFL_UPLFLD svinobuk svikode
+
+SFL_TARGET
+	svidatbuktyp   ldtspk tkmnobuk lfotospk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

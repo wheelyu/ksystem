@@ -1,0 +1,127 @@
+LOCAL
+PGM_FIELDS
+lpsmnama3201		STRING	61
+lpsmgender3201		STRING	5
+lpsmtgllahir3201	DATE	4
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.UbahBioSdm            ___                         !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.Ubah       : ___________                          !                   |
+|       !t.Nama       : ______________________________       !                   |
+|       !t.Jnskel     : ____                                 !                   |
+|       !t.Agama      : ____________                         !                   |
+|       !t.StsNikah   : _______                              !                   |
+|       !t.Hp         : _______________________              !                   |
+|       !t.TmptLahir  : _______________________              !                   |
+|       !t.TglLhr     : _______________________ _            !                   |
+|       !t.AccHrd     : _______                              !                   |
+|       !t.Ket        : _____________________________________!                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt        NOCHANGE                INPUTRI 1
+psdtgl1         PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+psdtype         NOCHANGE                INPUTRI 3
+psdket          ALLCAPS                 INPUTRI 4
+psdtype2	NOCHANGE		INPUTRI 5
+psdstr1         ALLCAPS                 INPUTRI 6
+psdstr2         NOCHANGE                INPUTRI 7
+psdstr3		DIGITS        		INPUTRI 9
+psdstr5         ALLCAPS                 INPUTRI 10
+psdtgl2		ALLCAPS NOLIMIT {DD-MM-YY} INPUTRI 11
+lenter		NOCHANGE		INPUTRI	12
+psdtype3	NOCHANGE		INPUTRI 13
+psdket2		ALLCAPS	SCROLL		INPUTRI 14
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD                {g_tgltrn}
+psdtype		DFALT_SCAN_BLANKS NAMA GENDER AGAMA STATUS NOTELP TGL_LAHIR TMPT_LHR
+psdtype2	DFALT_SCAN_BLANKS L "LAKI-LAKI"
+				  P "PEREMPUAN"
+psdtype3        DFALT_SCAN_BLANKS ACC TACC
+psdstr2		DFALT_SCAN_BLANKS BELUMKAWIN "Belum Kawin"
+				  KAWIN    "Kawin"
+                                  DUDA     "Duda"
+                                  JANDA    "Janda"
+
+MAP(mjoinpsm3201)
+psmnama		lpsmnama3201		REPLACE
+psmgender	lpsmgender3201		REPLACE
+psmtgllahir	lpsmtgllahir3201	REPLACE
+
+DBCALCS(djoinpsm3201)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx       btmplg
+	DBC_MAP		mjoinpsm3201
+
+CALCS()
+cbkn_hrd        g_grpnam!="HRDREC" && g_grpnam!="HRDRECAREA" && g_grpnam!="HRDHEAD" && djointbdakshrdheada==0 && djointbdakshrdheadb==0 && g_grpnam!="HRDSPV" && g_grpnam!="RI" && g_grpnam!="B.IVAROHRD" && g_usrkode!="2610667"
+ckode1		"UBAHBIO"+FLD_TO_STRING(psdnourt)
+cbkn_nama	psdtype!="NAMA" || (psdtype=="NAMA" && djoinpsm3201==1)
+cbkn_gen 	psdtype!="GENDER" || (psdtype=="GENDER" && djoinpsm3201==1)
+cbkn_agm 	psdtype!="AGAMA"
+cbkn_nikah	psdtype!="STATUS"
+cbkn_telp	psdtype!="NOTELP"
+cbkntmpt_lahir	psdtype!="TMPT_LHR"
+cbkn_lahir	psdtype!="TGL_LAHIR" || (psdtype=="TGL_LAHIR" && djoinpsm3201==1)
+ctacchrd	psdtype3=="TACC"
+cubh_nama	psdtype=="NAMA" && djoinpsm3201==1 && lpsmnama3201!=BLANKS
+cubh_gen	psdtype=="GENDER" && djoinpsm3201==1 && lpsmgender3201!=BLANKS
+cubh_lahir	psdtype=="TGL_LAHIR" && djoinpsm3201==1 && lpsmtgllahir3201!=0
+
+EDITS(tmptranst)
+t.Mandatory  psdket  MANDATORY_IF cunama
+t.Mandatory  psdtype2 MANDATORY_IF cugender
+t.Mandatory  psdstr1 MANDATORY_IF cuagama
+t.Mandatory  psdstr2 MANDATORY_IF custsnikah
+t.Mandatory  psdstr3 MANDATORY_IF cutelp
+t.Mandatory  psdtgl2 MANDATORY_IF culahir
+t.Mandatory psdket2 MANDATORY_IF ctacchrd
+t.Mandatory psdstr5 MANDATORY_IF cutmptlahir
+e.ValidateKota  psdstr5 VALIDATE tbldtkodidx mtblKotapsd stbl {Pgv_dtkota}
+t.Validate   psdstr1 VALIDATE tbddatkodidx mpsdAgm stbd {Pgv_dttabel} {Pgv_personal} {Pgv_agama}
+
+MAP(mtblKotapsd)
+tblkode             psdstr5         REPLACE
+
+MAP(mpsdAgm)
+tbdkode		psdstr1		REPLACE
+
+MAP(mnourt)
+c0              psdnourt        DO_CALC_IF cjoinpsd7a0
+ctbh1a           psdnourt        DO_CALC_IF cjoinpsd7a1
+
+MAP(mkode)
+ckode1           psdkode         DO_CALC
+lpsmnama3201	psdket		REPLACE_IF cubh_nama
+lpsmgender3201	psdtype2	REPLACE_IF cubh_gen
+lpsmtgllahir3201	psdtgl2	REPLACE_IF cubh_lahir
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdtype       DO_MAP SHOW mnourt
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cbkn_nama
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cbkn_gen
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cbkn_agm
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cbkn_nikah
+BEFORE_INPUT	cur_field=psdstr3	DO_SKIP_IF cbkn_telp
+BEFORE_INPUT	cur_field=psdstr5	DO_SKIP_IF cbkntmpt_lahir
+BEFORE_INPUT	cur_field=psdtgl2	DO_SKIP_IF cbkn_lahir
+BEFORE_INPUT    cur_field=psdtype3      DO_SKIP_IF cbkn_hrd
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF cbkn_hrd
+AFTER_INPUT     cur_field=psdtype       DO_MAP SHOW mkode
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD       psdnourt
+SFL_TARGET
+        psddatpsmkod lUBAHBIO11 btmplg  
+SFL_MAP
+lUBAHBIO11              psddata         REPLACE
+btmplg                  psdpsmkode      REPLACE
+btmnobuk		psdstr4		REPLACE	

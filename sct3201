@@ -1,0 +1,1813 @@
+SCREEN 3201 QUERY_TYPE s.DataKtp
+SCR_LOGFLD psmktp 
+SCR_FILE psm
+SCR_UPL_DIRFLD psmdataplg
+SCR_JOIN_FILE1	almotodatidx	psmktp gv_psmktp 
+SCR_JOIN_FILE2	almotodatidx 	psmktp gt_psmtinggal 
+SCR_JOIN_FILE3	kkddatktpidx    gt_datakk psmktp NOCHANGE
+SCR_IMAGE_MAP mimage
+SCR_QRY_SEARCH
+SCR_CHECK_GPS
+SCR_ENTER_COND cstsisi
+SCR_ENTER_MSG t.SelesaikanIzin1032
+
+CALCS()
+ctld_izin	tlddata == "IZINAKT"
+
+DBCALCS(djointldizin)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldtglidx	g_tgltrn g_usrkode gv_INPG21
+	DBC_SELECT	ctld_izin
+
+CALCS()
+cstsisi	((g_grpnam == "DIGMKT" && djointldizin == 0) || g_grpnam != "DIGMKT")
+
+LOCAL
+PGM_FIELDS
+lversi			STRING	21
+lpropinsi1		STRING 	61
+lpropinsi2		STRING 	61
+lkota1			STRING 	61
+lkota2			STRING	61
+lkec1			STRING	61
+lkec2			STRING	61
+lkel1			STRING	61
+lkel2			STRING	61
+l1			INT2	2
+lKATMITRA		STRING	11
+lenter			STRING 	11
+lTELP			STRING	11
+lEMAIL			STRING	11
+lEML			STRING	5
+lSOSMED			STRING	11
+lSMED			STRING	5
+
+ldum                    STRING  61
+l5840                   INT2    2
+lkotalahir		STRING	21
+lpanjang                INT2    2
+ld1                     STRING  21
+ld16                    STRING  21
+ln1                     INT2    2
+ln2                     INT2    2
+ln1i                    INT2    2
+ln2i                    INT2    2
+ldigit1                 STRING  2
+ldigit2                 STRING  2
+ldigit1x                 STRING  2
+ldigit2x                 STRING  2
+ldigit1y                 STRING  2
+ldigit2y                 STRING  2
+/*ldigit1_ubahhp          STRING  2
+ldigit2_ubahhp          STRING  2
+ldigit1_ubahhp2         STRING  2
+ldigit2_ubahhp2         STRING  2*/
+ljumlahnomor		INT2	2
+ljumlahnomorx		INT2	2
+ljumlahnomory		INT2	2
+/*ljumlahnomor_ubah       INT2	2
+ljumlahnomor_ubah2       INT2	2*/
+lkodert                 STRING  21
+
+lDTHP			STRING	11
+ltomdet                 STRING  61
+ltomdet2                STRING  61
+ltomdet3		STRING	61
+ltomdet4		STRING	61
+ltomdet5		STRING	61
+ltomdet6		STRING	61
+ltomdet2_d              STRING  21
+lTMP_3201		STRING	21
+lPERMITUPD      	STRING  21
+lPERMITDEL      	STRING  21
+lDTTMPLAP               STRING  11
+lpromosubsidi		STRING	21
+lHIS3201DET		STRING	11
+lADD3201		STRING	11
+lpertama		STRING	2
+/*ltbdlv1			STRING	21
+ltbdlv2			STRING	21*/
+lenter_nongc		STRING	61
+ldvsm2w4w               STRING  21
+lUBAHALM        	STRING  11
+lUBAHKTP        	STRING  11
+lUBAHTIGL       	STRING  11
+lubahkerja		STRING	21
+lubahalm		STRING	21
+lbisaaccalm		STRING	21
+lnobukakt		STRING	21
+lalasanubah     	STRING  251
+laccpkakt		STRING	21
+lnipaccpk		STRING	21
+laccpkaktx		STRING	21
+lnipaccpkx		STRING	21
+lALMTAGIH		STRING	11
+lkkdnobuk		STRING	21
+lFKTAWLMGA              STRING  11
+lpiksts                 STRING  5
+ltipefkt                STRING  21
+lpik2sts                STRING  5
+lLELANGMGA              STRING  11
+lLEGD                   STRING  21
+
+lGSM11          STRING          11
+lWA11           STRING          11
+lGSM21          STRING          21
+lWA21           STRING          21
+/*
+lconhpwa	STRING		21
+lconkotawa	STRING          21
+*/
+lconhpgsm	STRING          21
+lconkotagsm	STRING          21
+lUBAHNOTELP     STRING          11
+lHISTORISNOHP   STRING          11
+lHISTORIS       STRING          21
+lDESKCALL	STRING	        11
+lDESKCALL21	STRING		21
+ldarurat	STRING		21
+ldtdarurat	STRING		21
+ldtfukons	STRING		11
+
+lTUTUP3201      STRING          21
+lpsidvs         STRING          21
+lpsijabatan     STRING          21
+
+ljenisINput     STRING          21
+ltglinput       DATE            4
+luserAgent      STRING          101
+lHISKTPOCR      STRING          11
+lHISKTPOCR21    STRING          21
+lOCR            STRING          21
+
+lbkmdata        STRING          11
+
+CALCS()
+c1		1
+ca	   	"a"
+cb	   	"b" 
+cc	   	"c" 
+cmobile		g_mobile == 1 && g_usrkode != "1000635"
+cmmobile	g_mobile == 1 && g_usrkode == "1000635"
+cmkomp		g_mobile != 1 && g_usrkode == "1000635"
+csystime	SYSTIME
+
+MAP(mimage)
+ca         g_master_type    	DO_CALC_IF cmobile 
+cb	   g_master_type	DO_CALC_IF cmkomp
+cc	   g_master_type	DO_CALC_IF cmmobile
+
+DBCALCS(djoinpik)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	pikplgstsidx	psmktp
+
+DBCALCS(djoinpps)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppsstsplgdat   gv_INPG psmktp gv_dthut 
+
+MAP(mjoinkkdktp)
+kkdnobuk		lkkdnobuk	REPLACE
+
+DBCALCS(djoinkkdktp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	kkddatktpidx	gt_datakk psmktp
+	DBC_MAP		mjoinkkdktp
+
+CALCS()
+cpilihhp	(condata == "TELP" || condata == "TELP2" || condata == "TELP3" || condata == "TELP4" ||condata == "TELP5" ||
+                 condata == "TELP6" || condata == "TELP7" || condata == "TELP8" || condata == "TELP9" ||condata == "TELP10" ||
+                 condata == BLANKS) && congrup != "CUG"
+cpilihgsm	(condata == "GSM" || condata == BLANKS) && congrup != "CUG"
+cpilihwa	(condata == "WA" || condata == BLANKS) && congrup != "CUG"
+ctidak_valid	conkel == "TDK_VALID"
+cselectocr       akttype == "HISKTPOCR"
+
+DBCALCS(djoinconhp)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cpilihhp
+	DBC_TARGET	conkodstsidx	psmktp gv_INPG
+
+DBCALCS(djoinconhpx)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cpilihgsm
+	DBC_TARGET	conkodstsidx	psmktp gv_INPG
+
+DBCALCS(djoinconhpy)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cpilihwa
+	DBC_TARGET	conkodstsidx	psmktp gv_INPG
+
+DBCALCS(djoinnodarurat)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrglok	psmktp ldtdarurat ldarurat 
+	
+CALCS()
+cpilihsosmed	condata == lSOSMED
+
+DBCALCS(djoinconsosmed)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx	psmktp lSMED
+	DBC_SELECT	cpilihsosmed
+/*
+MAP(mjointbdprop)
+tbdlv1		ltbdlv1		REPLACE
+tbdlv2		ltbdlv2		REPLACE
+
+DBCALCS(djointbdprop)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddtdtmkod	gv_dttabel gv_infoumum cabtwr
+	DBC_MAP		mjointbdprop
+*/
+
+MAP(mjoinpsim2w4w)
+psidvs          ldvsm2w4w         REPLACE
+
+DBCALCS(djoinpsim2w4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx g_usrkode
+        DBC_MAP         mjoinpsim2w4w
+
+DBCALCS(djointbdubahkerja)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_survey21 lubahkerja g_usrkode
+
+DBCALCS(djointbdgrupubahkerja)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_survey21 lubahkerja g_grpnam
+
+MAP(mjointbdubahalm)
+tbdkode2		lbisaaccalm	REPLACE
+
+DBCALCS(djointbdubahalm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_survey21 lubahalm g_usrkode
+	DBC_MAP		mjointbdubahalm
+
+MAP(mjointbdgrupubahalm)
+tbdkode2		lbisaaccalm	REPLACE
+
+DBCALCS(djointbdgrupubahalm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_survey21 lubahalm g_grpnam
+	DBC_MAP		mjointbdgrupubahalm
+
+DBCALCS(djoinpsinip)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx psmkode
+
+DBCALCS(djoinaktlelang)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx tkdjwbstr1 lLELANGMGA
+
+/*
+MAP(mjoinconwa)
+conhp           lconhpwa        REPLACE
+conkota         lconkotawa      REPLACE
+
+DBCALCS(djoinconwa)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodgrpidx psmktp lWA21
+        DBC_MAP         mjoinconwa
+*/
+
+MAP(mjoincongsm)
+conhp           lconhpgsm        REPLACE
+conkota         lconkotagsm      REPLACE
+
+DBCALCS(djoincongsm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodgrpidx psmktp lGSM21
+        DBC_MAP         mjoincongsm
+
+DBCALCS(djoinhpgsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lGSM11 conhp	
+	DBC_SELECT	ctidak_valid
+
+DBCALCS(djoinhpwa)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lWA11 conhp
+	DBC_SELECT	ctidak_valid
+
+DBCALCS(djoinhptelp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lTELP conhp
+	DBC_SELECT	ctidak_valid
+
+MAP(mmappsiuser)
+psidvs          lpsidvs         REPLACE
+psijabatan      lpsijabatan     REPLACE
+
+DBCALCS(djoinpsiuser)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx   g_usrkode
+        DBC_MAP         mmappsiuser
+
+DBCALCS(djointbdadd3201dvs)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_survey21 lTUTUP3201 lpsidvs
+
+DBCALCS(djointbdadd3201grupnam)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_survey21 lTUTUP3201 g_grpnam
+
+DBCALCS(djointbdadd3201jab)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_survey21 lTUTUP3201 lpsijabatan
+
+DBCALCS(djointbdadd3201nip)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_survey21 lTUTUP3201 g_usrkode
+
+
+MAP(mmaphisktpocr)
+akttgl          ltglinput       REPLACE
+aktbrg          luserAgent      REPLACE
+
+DBCALCS(djoinakthisktpocr)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_SELECT      cselectocr
+        DBC_TARGET      aktkodtypidx   psmktp lHISKTPOCR lHISKTPOCR21
+        DBC_MAP         mmaphisktpocr
+
+
+IMAGE(master) {BASE_ROW=2} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/--------------------------------------------------------------------------------------------------\
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.JnsDeb     : _____________________          i.Tanggal       : ________
+   i.Ktp        : _____________________          i.Status        : _______________  ______                         
+   i.Cab        : _____________________          t.TipeDebitur   : _______________              
+   i.Nama       : ____________________________   t.TipeDebitur2  : _______________
+   i.Tmplahir   : _____________________          s.DataMitra     : __________                          
+   i.Tgllahir   : ___________                    i.StsMitra      : _____                        
+   t.JenisKel   : ___                            i.NoKK          : _____________________________   
+   i.GolDrh     : ___________                    i.Kode          : _____________________________
+| \--------------------------------------------/\------------------------------------------------/ |
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.Alamatktp  : _____________________________  i.Alamattinggal : _____  ______________________
+   i.RT         : ____            i.RW   : ____  i.RT            : ____            i.RW   : ____   
+   i.Propinsi   : ______________  _____________  i.Propinsi      : ______________  _____________
+   i.Kota       : ______________  _____________  i.Kota          : ______________  _____________
+   i.Kec        : ______________  _____________  i.Kec           : ______________  _____________
+   i.Kel        : ______________  _____________  i.Kel           : ______________  _____________
+   i.KodePos    : ________                       i.KodePos       : _______
+| \--------------------------------------------/\------------------------------------------------/ |
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.Agama      : ________                       t.GroupCust     : _____________________________
+   i.Stsnikah   : _________________              spasi                        
+   i.Pek        : ________________               spasi
+   i.Warganegara: _____________                  spasi
+   t.TglJtpKtp  : _____________                  spasi
+   spasi                                         t.jnsInpt       : _______  __________ _________
+| \--------------------------------------------/\------------------------------------------------/ |
+  __________________  __________________  __________________ __________________ __________________
+  spasi
+  __________________
+  t.3201UserHanyaBisaTambah
+  t.3201UserUpdateHanyaAnsysuat
+  t.3201NpwpBisaSampai16Digit
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(master)
+psmins			NOCHANGE			INPUTRI 1
+psmtgl			PROTECT NOLIMIT {DD-MM-YY}		INPUTRI    1
+psmktp			DIGITS SCROLL QNONMANDATORY	INPUTRI 2
+psmdataplg		NOCHANGE SCROLL			INPUTRI    2
+psmstsplg		NOCHANGE SCROLL QMANDATORY	INPUTRI    2
+psmcab			ALLCAPS SCROLL                  INPUTRI 3
+psmstsbill	        PROTECT SCROLL			INPUTRI    51
+psmnama			ALLCAPS SCROLL			INPUTRI 4
+psmstsbill2		PROTECT	SCROLL			INPUTRI	   52
+psmtmplahir		ALLCAPS SCROLL			INPUTRI 5 
+psmdatasup		NOCHANGE               		INPUTRI    10
+psmtgllahir		NONE NOLIMIT {DD-MM-YY}		INPUTRI 6 
+psmstssup  		NOCHANGE               		INPUTRI    11
+psmgender		NOCHANGE			INPUTRI 7
+kkdnobuk_3   	        NOCHANGE      			INPUTRI    12
+psmgoldrh		ALLCAPS SCROLL			INPUTRI 8
+psmkode  		NOCHANGE  QNONMANDATORY INPUTRI    13
+
+ 
+almjalan_1		ALLCAPS SCROLL			INPUTRI 14
+psmstspek               ALLCAPS                         INPUTRI 22
+almjalan_2		ALLCAPS SCROLL			INPUTRI 22
+
+almrt_1			NUMERIC				INPUTRI	15
+almrw_1			NUMERIC 			INPUTRI	16
+almrt_2			NUMERIC				INPUTRI	23
+almrw_2			NUMERIC				INPUTRI	24
+
+almprop_1               PROTECT SCROLL                  INPUTRI 17
+lpropinsi1              PROTECT QPROTECT                INPUTRI 17
+almprop_2               PROTECT SCROLL                  INPUTRI 25
+lpropinsi2              PROTECT QPROTECT                INPUTRI 25
+almkota_1               ALLCAPS SCROLL                  INPUTRI 18
+lkota1                  PROTECT QPROTECT                INPUTRI 18
+almkota_2               ALLCAPS SCROLL                  INPUTRI 26
+lkota2                  PROTECT QPROTECT                INPUTRI 26
+almkec_1                ALLCAPS SCROLL                  INPUTRI 19
+lkec1                   PROTECT QPROTECT                INPUTRI 19
+almkec_2                ALLCAPS SCROLL                  INPUTRI 27
+lkec2                   PROTECT QPROTECT                INPUTRI 27
+almkel_1                ALLCAPS SCROLL                  INPUTRI 20
+lkel1                   PROTECT QPROTECT                INPUTRI 20
+almkel_2                ALLCAPS SCROLL                  INPUTRI 28
+lkel2                   PROTECT QPROTECT                INPUTRI 28
+almkdpos_1              ALLCAPS SCROLL                  INPUTRI 21
+almkdpos_2              ALLCAPS SCROLL                  INPUTRI 29
+
+psmagama                ALLCAPS SCROLL                  INPUTRI 30
+psmnegara		ALLCAPS SCROLL			INPUTRI		35
+psmstsnikah             ALLCAPS SCROLL                  INPUTRI 31
+psmpend                 ALLCAPS SCROLL                  INPUTRI 32
+psmwn                   NOCHANGE SCROLL                 INPUTRI 33
+psmjtpktp		NONE NOLIMIT {DD-MM-YYYY}	INPUTRI	34
+ljenisINput             PROTECT                         INPUTRI 35
+ltglinput               PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 36
+luserAgent              PROTECT                         INPUTRI 37
+ltomdet			TOMBOL				INPUTRI	34
+ltomdet2		TOMBOL				INPUTRI	34
+ltomdet3		TOMBOL				INPUTRI	34
+ltomdet4                TOMBOL                          INPUTRI 34
+ltomdet5		TOMBOL				INPUTRI 34
+ltomdet6		TOMBOL				INPUTRI 34
+
+IMAGE(mastera) {IMG_DEFAULT=master} {IMG_EDITS=master} {IMG_HOOKS=master} {IMG_HELP=master} 
+/----------------------------------\
+|/--------------------------------\|
+||i.Cabang   : __________________ ||
+||i.JnsDeb   : __________________ ||
+||i.Ktp      : __________________ ||
+||i.Nama     : __________________ ||
+||i.Tmplahir : __________________ ||
+||i.Tgllahir : _________________  ||
+||i.Jeniskel : ____               ||
+||i.GolDrh   : ____               ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Alamatktp: __________________  |
+||i.RT       : ____  i.RW  : ____ ||
+||i.Propinsi : __________________ ||
+||i.Kota     : __________________ ||
+||i.Kec      : __________________ ||
+||i.Kel      : __________________ ||
+||i.KodePos  : ________           ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.AlamatTgl: ____  ____________ ||
+||i.RT       : ____ i.RW   : ____ || 
+||i.Propinsi : __________________ ||
+||i.Kota     : __________________ ||      
+||i.Kec      : __________________ ||         
+||i.Kel      : __________________ ||           
+||i.KodePos  : _______            ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Agama    : __________________ ||
+||i.Stsnikah : __________________ ||
+||i.Pek      : __________________ ||
+||t.WN       : __________________ ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.GroupCust: ___________________||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Tanggal  : __________________ ||
+||t.DtKons   : __________________ ||
+||i.Sts      : __________________ ||
+||t.TipeDeb  : __________________ ||
+||t.DtMitra  : __________________ ||
+||i.StsMitra : __________________ ||
+|\--------------------------------/|
+|_______________  _________________|
+|_______________  _________________|
+|_______________  _________________|
+|                                  |
+|spasi                             |
+|spasi                             |
+|spasi                             |
+\----------------------------------/
+
+
+FIELD(mastera)
+psmcab			ALLCAPS SCROLL  	 	INPUTRI 1
+psmins			NOCHANGE			INPUTRI	2
+psmktp			DIGITS SCROLL	QNONMANDATORY	INPUTRI 3
+psmnama			ALLCAPS SCROLL			INPUTRI 5
+psmtmplahir		ALLCAPS SCROLL			INPUTRI 6 
+psmtgllahir		NONE NOLIMIT {DD-MM-YY}		INPUTRI 7 
+psmgender		ALLCAPS SCROLL			INPUTRI 8
+psmgoldrh		ALLCAPS SCROLL			INPUTRI 9
+
+
+almjalan_1		ALLCAPS SCROLL			INPUTRI 10
+almrt_1			NUMERIC				INPUTRI	11
+almrw_1			NUMERIC 			INPUTRI	12
+almprop_1		PROTECT SCROLL			INPUTRI 13
+almkota_1		ALLCAPS SCROLL			INPUTRI 14
+almkec_1		ALLCAPS SCROLL			INPUTRI 15
+almkel_1		ALLCAPS SCROLL			INPUTRI 16
+almkdpos_1		ALLCAPS SCROLL			INPUTRI 17
+
+psmstspek               ALLCAPS                         INPUTRI 18
+almjalan_2		ALLCAPS SCROLL			INPUTRI 18
+almrt_2			NUMERIC				INPUTRI	19
+almrw_2			NUMERIC				INPUTRI	20
+almprop_2		PROTECT SCROLL			INPUTRI 21
+almkota_2		ALLCAPS SCROLL			INPUTRI 22
+almkec_2		ALLCAPS SCROLL			INPUTRI 23
+almkel_2		ALLCAPS SCROLL			INPUTRI 24
+almkdpos_2		ALLCAPS SCROLL			INPUTRI 25
+
+psmagama                ALLCAPS SCROLL                  INPUTRI 26
+psmstsnikah             ALLCAPS SCROLL                  INPUTRI 27
+psmpend                 ALLCAPS SCROLL                  INPUTRI 28
+psmwn                   NOCHANGE SCROLL                 INPUTRI 29
+
+psmnegara		ALLCAPS SCROLL			INPUTRI	30
+
+psmtgl			PROTECT NOLIMIT {DD-MM-YY}		INPUTRI 40
+psmdataplg		PROTECT SCROLL			INPUTRI 41
+psmstsplg		PROTECT SCROLL QMANDATORY	INPUTRI 42
+psmstsbill	        PROTECT SCROLL			INPUTRI 51
+psmdatasup		NOCHANGE               		INPUTRI 52
+psmstssup  		NOCHANGE               		INPUTRI 53
+
+ltomdet			TOMBOL				INPUTRI	61
+ltomdet2		TOMBOL				INPUTRI	61
+ltomdet3		TOMBOL				INPUTRI	61
+ltomdet4		TOMBOL				INPUTRI	61
+ltomdet5		TOMBOL				INPUTRI	61
+ltomdet6		TOMBOL				INPUTRI 61
+
+IMAGE(masterb) {BASE_ROW=2} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/--------------------------------------------------------------------------------------------------\
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.Ktp        : ______________                 i.Status        : ____________ ______ _________                        
+   i.Cab        : _____________________          t.TipeDebitur   : _______________              
+   i.Nama       : ____________________________   t.TipeDebitur2  : _______________
+   i.Tmplahir   : _____________________          s.DataMitra     : __________                          
+   i.Tgllahir   : ___________                    i.StsMitra      : _____                        
+   t.JenisKel   : ___                            i.NoKK          : _____________________________   
+   i.GolDrh     : ___                            i.Kode          : _____________________________
+| \--------------------------------------------/\------------------------------------------------/ |
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.Alamatktp  : _____________________________  i.Alamattinggal : _____  ______________________
+   i.RT         : ____            i.RW   : ____  i.RT            : ____            i.RW   : ____   
+   i.Propinsi   : ______________  _____________  i.Propinsi      : ______________  _____________
+   i.Kota       : ______________  _____________  i.Kota          : ______________  _____________
+   i.Kec        : ______________  _____________  i.Kec           : ______________  _____________
+   i.Kel        : ______________  _____________  i.Kel           : ______________  _____________
+   i.KodePos    : ________                       i.KodePos       : _______
+| \--------------------------------------------/\------------------------------------------------/ |
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.Agama      : ________                       t.GroupCust     : _____________________________
+   i.Stsnikah   : _________________              spasi                        
+   i.Pek        : ________________               spasi
+   i.Warganegara: _____________                  spasi
+   t.TglJtpKtp  : _____________                  spasi
+| \--------------------------------------------/\------------------------------------------------/ |
+  __________________  __________________  __________________  __________________ __________________
+  spasi
+  _________________
+  t.3201UserHanyaBisaTambah
+  t.3201UserUpdateHanyaAnsysuat
+  t.3201NpwpBisaSampai16Digit
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(masterb)
+psmktp			UNSEEN SCROLL QNONMANDATORY	INPUTRI 2
+psmdataplg		NOCHANGE SCROLL			INPUTRI    2
+psmstsplg		NOCHANGE SCROLL QMANDATORY	INPUTRI    2
+psmtgl			NONE NOLIMIT {DD-MM-YY}	INPUTRI    3
+psmcab			ALLCAPS SCROLL                  INPUTRI 3
+psmstsbill	        PROTECT SCROLL			INPUTRI    51
+psmnama			UNSEEN        			INPUTRI 4
+psmstsbill2		PROTECT	SCROLL			INPUTRI	   52
+psmtmplahir		UNSEEN        			INPUTRI 5 
+psmdatasup		NOCHANGE               		INPUTRI    10
+psmtgllahir		UNSEEN NOLIMIT {DD-MM-YY}		INPUTRI 6 
+psmstssup  		NOCHANGE               		INPUTRI    11
+psmgender		NOCHANGE			INPUTRI 7
+kkdnobuk_3   	        UNSEEN      			INPUTRI    12
+psmgoldrh		ALLCAPS SCROLL			INPUTRI 8
+psmkode  		UNSEEN			        QNONMANDATORY INPUTRI    13
+
+
+almjalan_1		ALLCAPS SCROLL			INPUTRI 14
+psmstspek               ALLCAPS                         INPUTRI 22
+almjalan_2		ALLCAPS SCROLL			INPUTRI 22
+
+almrt_1			NUMERIC				INPUTRI	15
+almrw_1			NUMERIC 			INPUTRI	16
+almrt_2			NUMERIC				INPUTRI	23
+almrw_2			NUMERIC				INPUTRI	24
+
+almprop_1		PROTECT SCROLL			INPUTRI 17
+lpropinsi1		PROTECT QPROTECT		INPUTRI 17
+almprop_2		PROTECT SCROLL			INPUTRI 25
+lpropinsi2		PROTECT QPROTECT		INPUTRI 25
+almkota_1		ALLCAPS SCROLL			INPUTRI 18
+lkota1			PROTECT QPROTECT 		INPUTRI 18
+almkota_2		ALLCAPS SCROLL			INPUTRI 26
+lkota2			PROTECT QPROTECT 		INPUTRI 26
+almkec_1		ALLCAPS SCROLL			INPUTRI 19
+lkec1			PROTECT QPROTECT		INPUTRI 19
+almkec_2		ALLCAPS SCROLL			INPUTRI 27
+lkec2			PROTECT QPROTECT		INPUTRI 27
+almkel_1		ALLCAPS SCROLL			INPUTRI 20
+lkel1			PROTECT QPROTECT		INPUTRI 20
+almkel_2		ALLCAPS SCROLL			INPUTRI 28
+lkel2			PROTECT QPROTECT		INPUTRI 28
+almkdpos_1		ALLCAPS SCROLL			INPUTRI 21
+almkdpos_2		ALLCAPS SCROLL			INPUTRI 29
+
+psmagama                ALLCAPS SCROLL                  INPUTRI 30
+psmnegara		ALLCAPS SCROLL			INPUTRI		35
+psmstsnikah             ALLCAPS SCROLL                  INPUTRI 31
+psmpend                 ALLCAPS SCROLL                  INPUTRI 32
+psmwn                   NOCHANGE SCROLL                 INPUTRI 33
+psmjtpktp		NONE NOLIMIT {DD-MM-YYYY}	INPUTRI	34
+ltomdet			TOMBOL				INPUTRI	34
+ltomdet2		TOMBOL				INPUTRI	34
+ltomdet3		TOMBOL				INPUTRI	34
+ltomdet4		TOMBOL				INPUTRI	34
+ltomdet5		TOMBOL				INPUTRI	34
+ltomdet6		TOMBOL				INPUTRI	34
+
+IMAGE(masterc) {IMG_DEFAULT=master} {IMG_EDITS=master} {IMG_HOOKS=master} {IMG_HELP=master} 
+/----------------------------------\
+|/--------------------------------\|
+||i.Cabang   : __________________ ||
+||i.Ktp      : ________________   ||
+||i.Nama     : __________________ ||
+||i.Tmplahir : __________________ ||
+||i.Tgllahir : _________________  ||
+||i.Jeniskel : ____               ||
+||i.GolDrh   : ____               ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Alamatktp: __________________  |
+||i.RT       : ____  i.RW  : ____ ||
+||i.Propinsi : __________________ ||
+||i.Kota     : __________________ ||
+||i.Kec      : __________________ ||
+||i.Kel      : __________________ ||
+||i.KodePos  : ________           ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.AlamatTgl: ____  ____________ ||
+||i.RT       : ____ i.RW   : ____ || 
+||i.Propinsi : __________________ ||
+||i.Kota     : __________________ ||      
+||i.Kec      : __________________ ||         
+||i.Kel      : __________________ ||           
+||i.KodePos  : _______            ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Agama    : __________________ ||
+||i.Stsnikah : __________________ ||
+||i.Pek      : __________________ ||
+||t.WN       : __________________ ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.GroupCust: ___________________||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Tanggal  : __________________ ||
+||t.DtKons   : __________________ ||
+||i.Sts      : __________________ ||
+||t.TipeDeb  : __________________ ||
+||t.DtMitra  : __________________ ||
+||i.StsMitra : __________________ ||
+|\--------------------------------/|
+|_______________  _________________|
+|_______________  _________________|
+|_______________  _________________|
+|                                  |
+|spasi                             |
+|spasi                             |
+|spasi                             |
+\----------------------------------/
+
+
+FIELD(masterc)
+psmcab			ALLCAPS SCROLL  	 	INPUTRI 1
+psmktp			UNSEEN SCROLL	QNONMANDATORY	INPUTRI 3
+psmnama			UNSEEN SCROLL			INPUTRI 5
+psmtmplahir		UNSEEN  SCROLL			INPUTRI 6 
+psmtgllahir		NONE NOLIMIT {DD-MM-YY}		INPUTRI 7 
+psmgender		ALLCAPS SCROLL			INPUTRI 8
+psmgoldrh		ALLCAPS SCROLL			INPUTRI 9
+
+
+almjalan_1		ALLCAPS SCROLL			INPUTRI 10
+almrt_1			NUMERIC				INPUTRI	11
+almrw_1			NUMERIC 			INPUTRI	12
+almprop_1		PROTECT SCROLL			INPUTRI 13
+almkota_1		ALLCAPS SCROLL			INPUTRI 14
+almkec_1		ALLCAPS SCROLL			INPUTRI 15
+almkel_1		ALLCAPS SCROLL			INPUTRI 16
+almkdpos_1		ALLCAPS SCROLL			INPUTRI 17
+
+psmstspek               ALLCAPS                         INPUTRI 18
+almjalan_2		ALLCAPS SCROLL			INPUTRI 18
+almrt_2			NUMERIC				INPUTRI	19
+almrw_2			NUMERIC				INPUTRI	20
+almprop_2		PROTECT SCROLL			INPUTRI 21
+almkota_2		ALLCAPS SCROLL			INPUTRI 22
+almkec_2		ALLCAPS SCROLL			INPUTRI 23
+almkel_2		ALLCAPS SCROLL			INPUTRI 24
+almkdpos_2		ALLCAPS SCROLL			INPUTRI 25
+
+psmagama                ALLCAPS SCROLL                  INPUTRI 26
+psmstsnikah             ALLCAPS SCROLL                  INPUTRI 27
+psmpend                 ALLCAPS SCROLL                  INPUTRI 28
+psmwn                   NOCHANGE SCROLL                 INPUTRI 29
+
+psmnegara		ALLCAPS SCROLL			INPUTRI	30
+
+psmtgl			PROTECT NOLIMIT {DD-MM-YY}		INPUTRI 40
+psmdataplg		PROTECT SCROLL			INPUTRI 41
+psmstsplg		PROTECT SCROLL QMANDATORY	INPUTRI 42
+psmstsbill	        PROTECT SCROLL			INPUTRI 51
+psmdatasup		NOCHANGE               		INPUTRI 52
+psmstssup  		NOCHANGE               		INPUTRI 53
+
+ltomdet			TOMBOL				INPUTRI	61
+ltomdet2		TOMBOL				INPUTRI	61
+ltomdet3		TOMBOL				INPUTRI	61
+ltomdet4		TOMBOL				INPUTRI	61
+ltomdet5		TOMBOL				INPUTRI	61
+ltomdet6		TOMBOL				INPUTRI	61
+
+CALCS()
+cgsglcab1       g_sglcab == 1
+ckota1isi	almkota_1!=BLANKS
+ckota2isi	almkota_2!=BLANKS
+c3209		g_scrnumstr == "3209"
+cisidataplg	g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT"  && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && 
+		g_grpnam!="CRHMCSPV" && g_grpnam!="CREDITDCA" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam != "RMGADAI"
+
+cinstansi2	psmins == "INSTANSI" && (g_grpnam == "RI" || g_grpnam == "HMCSPV" || g_grpnam == "ADHDVH" || g_grpnam == "ANSYSUAT" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV" || g_grpnam == "MKTHEAD" || g_grpnam=="DCAOPR")
+
+cinstansi2a	psmins == "INSTANSI" && (g_grpnam != "RI" && g_grpnam != "HMCSPV" && g_grpnam != "ADHDVH" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam!="CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam != "RMGADAI" && g_grpnam != "MKTHEAD" && g_grpnam!="DCAOPR")
+
+cinstansi2ab	psmins == "INSTANSI" && (g_grpnam != "RI" && g_grpnam != "HMCSPV" && g_grpnam != "ADHDVH" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam!="CRHMCSPV" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam != "MKTHEAD" && g_grpnam!="DCAOPR") && (g_curcmd == 2 && (psmnegara == "NONGC" || psmnegara == BLANKS))
+cgpskosong	g_lat != 0 && g_usrkode != "1000635"
+cpsinip         djoinpsinip==1 && g_curcmd==2
+
+DEFAULT(master)
+psmins		DFALT_SCAN_BLANKS	PERORANGAN
+					INSTANSI
+					EKITAP 
+					NPWP   
+psmstspek       DFALT_SCAN_BLANKS 	Y "Alamat Tinggal Sesuai KTP"
+					T "Alamat Tinggal Tidak Sesuai KTP"
+psmwn           DFALT_SCAN_BLANKS	WNA "Warga Negara Asing"
+					WNI "Warga Negara Indonesia"
+lversi			INIT		20261015
+l1			INIT		1
+lenter			INIT		ENTER
+lKATMITRA		INIT		KATMITRA
+almnobuk_1		INIT		{psmktp}
+almnobuk_2		INIT		{psmktp}
+psmdataplg		INIT		KONSUMEN
+psmdataplg		INIT_QUERY		KONSUMEN
+IF cisidataplg psmdataplg		INIT_QUERY	KONSUMEN
+psmdataplg		INIT_UPDATE	KONSUMEN
+IF c3209 psmdatasup	INIT_QUERY      DTMITRA
+psmstsplg		INIT            INPG
+psmdatasup		INIT            DTMITRA
+psmdatasup		INIT_UPDATE     DTMITRA
+psmstssup  	        INIT            OPEN 
+psmstsplg		INIT_UPDATE	INPG
+ppmsts			INIT_UPDATE	INPG
+psmtgl			INIT		{g_tgltrn}
+psmgender		DFALT_RADIO_BUTTON	L 
+						P 
+IF cgsglcab1    psmcab        INIT_ADD    {g_grpcab}
+IF cinstansi2ab	psmnegara	INIT_UPDATE	NONGC
+lTELP			INIT		TELP
+lEMAIL			INIT		EMAIL
+lEML			INIT		EML
+lSOSMED			INIT		SOSMED
+lSMED			INIT		SMED
+
+
+psmstsbill		INIT_ADD	NEW
+l5840                   INIT            5840
+
+ln1			INIT		1
+ln2			INIT		16
+ln1i			INIT		1
+ln2i			INIT		2
+lkotalahir		INIT		"KOTALAHIR"
+lkodert                 INIT             KODERT
+lDTHP			INIT		DTHP
+ltomdet			INIT		"1d. Informasi Konsumen"
+ltomdet2		INIT		"2d. Info No HP"
+ltomdet3		INIT		"3d. Ubah ke NONGC"
+ltomdet4                INIT            "4d. Historis No Hp"
+ltomdet5                INIT            "5d. Info No Darurat"
+ltomdet6		INIT		"6d. FU Konsumen"
+lPERMITUPD              INIT            PERMITUPD3201
+lPERMITDEL              INIT            PERMITDEL3201
+lDTTMPLAP               INIT            DTTMPLAP
+lpromosubsidi		INIT		PROMOSUBSIDI
+lHIS3201DET		INIT		HIS3201DET
+lADD3201		INIT		ADD3201
+lUBAHALM        INIT    UBAHALM
+lUBAHKTP        INIT    UBAHKTP
+lUBAHTIGL       INIT    UBAHTIGL
+lubahkerja		INIT		UBAHKERJA
+lubahalm		INIT		UBAHALM
+lALMTAGIH		INIT		ALMTAGIH
+lFKTAWLMGA              INIT            FKTAWLMGA
+lLELANGMGA              INIT            LELANGMGA
+lLEGD                  INIT            LEGD
+
+lGSM11			INIT		GSM
+lWA11			INIT		WA
+lGSM21                  INIT            GSM
+lWA21                   INIT            WA
+lUBAHNOTELP             INIT            UBAHNOTELP
+lHISTORISNOHP           INIT            HSTRNOHP
+lHISTORIS               INIT            HISTORIS
+lDESKCALL               INIT            DESKCALL
+lDESKCALL21		INIT		DESKCALL
+ldarurat		INIT		DARURAT
+ldtdarurat		INIT		DTDARURAT
+ldtfukons		INIT		DTFUKONS
+lTUTUP3201              INIT            TUTUP3201
+lHISKTPOCR              INIT            HISKTPOCR
+lHISKTPOCR21            INIT            HISKTPOCR
+lOCR                    INIT            OCR
+
+DEFAULTS(masterb)
+ltomdet			INIT		"1d. Informasi Konsumen"
+ltomdet2		INIT		"2d. Info No HP"
+ltomdet3		INIT		"3d. Ubah ke NONGC"
+ltomdet4                INIT            "4d. Historis No Hp"
+ltomdet5		INIT		"5d. Info No Darurat"
+ltomdet6		INIT		"6d. FU Konsumen"
+lbkmdata                INIT            "CAIRPINJ"
+
+CALCS()
+cperorangan		g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam!="CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam != "RMGADAI" && (psmins == "PERORANGAN" || psmins == "EKITAP")
+
+cinstansi		g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && psmins == "INSTANSI" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam!="CRHMCSPV" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam != "RMGADAI"
+/*cdjointbdprop		djointbdprop==1 && g_curcmd==1*/
+cadd                    g_curcmd == 1
+cdjoinaktlelang         lpik2sts == "INPG" && djoinaktlelang == 1
+cdjoinakthisktpocr      djoinakthisktpocr==1
+
+EDITS(master)
+e.Mandatory		almrt_1	MANDATORY_IF cisidataplg
+e.Mandatory		almrw_1	MANDATORY_IF cisidataplg
+e.mandatoryalmktp	almjalan_1 MANDATORY_IF cisidataplg
+e.mandatoryKota1	almkota_1 MANDATORY_IF cisidataplg
+e.mandatoryKec1		almkec_1 MANDATORY_IF cisidataplg
+e.mandatoryNama		psmnama 	MANDATORY_IF cisidataplg
+e.mandatoryKTP		psmktp		MANDATORY
+e.mandatoryTmplahir	psmtmplahir	MANDATORY_IF cisidataplg
+e.mandatoryTgllahir	psmtgllahir	MANDATORY_IF cisidataplg
+e.mandatoryStatusnikah	psmstsnikah	MANDATORY_IF cperorangan
+e.mandatoryJeniskel	psmgender	MANDATORY_IF cperorangan
+e.Dupkeyktp		psmktp		DUPKEY psmktpidx
+e.Dupkeyktp		psmkode   	DUPKEY psmktpidx
+
+e.mandatory             psmpend         MANDATORY_IF cperorangan
+e.mandatory             psmagama        MANDATORY_IF cperorangan
+e.mandatory             psmwn           MANDATORY_IF cisidataplg
+e.Mandatory		psmins		MANDATORY
+t.MandatoryGc		psmnegara	MANDATORY_IF cinstansi2
+
+t.ValidateCab		psmcab	VALIDATE cabkodidx mcab scab
+e.validatePropinsi1     almprop_1 VALIDATE_IF ckota1isi dtmdtkodidx  mdtm sdtm {Pgv_dtkota}
+e.validatePropinsi2     almprop_2 VALIDATE_IF ckota2isi dtmdtkodidx  mdtm2 sdtm {Pgv_dtkota}
+e.validateKota1         almkota_1 VALIDATE tbldtkodidx mtbl stbl {Pgv_dtkota}
+e.validateKota2         almkota_2 VALIDATE tbldtkodidx mtbl2 stbl {Pgv_dtkota}
+e.validateKec1          almkec_1 VALIDATE tbddatkodidx mtbd stbd {Pgv_dtkota} {Palmprop_1} {Palmkota_1}
+e.validateKec2          almkec_2 VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dtkota} {Palmprop_2} {Palmkota_2}
+e.validateKel1          almkel_1 VALIDATE tbtdattypkod mtbt stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop_1} {Palmkota_1} {Palmkec_1}
+e.validateKel2          almkel_2 VALIDATE tbtdattypkod mtbt2 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop_2} {Palmkota_2} {Palmkec_2}
+
+/*
+e.validateKel1		almkel_1 VALIDATE_SEARCH tbtkodeidx mtbt stbtkel 
+*/
+
+e.Validatestsnikah	psmstsnikah VALIDATE tbddatkodidx mtbdstsnikah stbd {Pgv_dttabel} {Pgv_personal} {Pgt_stsnikah}
+e.Validate              psmagama    VALIDATE tbddatkodidx mtbdagama    stbd {Pgv_dttabel} {Pgv_personal} {Pgv_agama}
+e.Validate              psmpend     VALIDATE tbddatkodidx mtbdkerja    stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21}
+e.Validate              psmgoldrh   VALIDATE tbddatkodidx mtbdgoldrh    stbd {Pgv_dttabel} {Pgv_personal} {Pgt_darah}      
+e.Validate              psmtmplahir VALIDATE tbddatkodidx mtmplahir    stbd {Pgv_dttabel} {Pgv_infoumum} {Plkotalahir}
+
+e.Mandatoryjalan2	almjalan_2 	MANDATORY_IF cisidataplg
+e.Mandatoryrt2		almrt_2 	MANDATORY_IF cisidataplg
+e.Mandatoryrw 		almrw_2 	MANDATORY_IF cisidataplg
+e.Mandatoryprop 	almprop_2 	MANDATORY_IF cisidataplg
+e.Mandatorykota 	almkota_2 	MANDATORY_IF cisidataplg
+e.Mandatorykec 		almkec_2 	MANDATORY_IF cisidataplg
+e.Mandatorykel 		almkel_2 	MANDATORY_IF cisidataplg
+/*e.Mandatorykdpos 	almkdpos_2 	MANDATORY*/
+t.validateRT            almrt_1 VALIDATE tbddatkodidx mtbdrt1 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            almrw_1 VALIDATE tbddatkodidx mtbdrw1 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+
+t.validateRT            almrt_2 VALIDATE tbddatkodidx mtbdrt2 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            almrw_2 VALIDATE tbddatkodidx mtbdrw2 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+
+t.ValidateGc		psmnegara VALIDATE_IF cinstansi2 tbddatkodidx mtbdIns stbdSubsIns {Pgv_dttabel} {Pgv_infoumum} {Plpromosubsidi}
+
+MAP(mtbdrt1)
+tbdkode         almrt_1         REPLACE
+
+MAP(mtbdrw1)
+tbdkode         almrw_1         REPLACE
+
+MAP(mtbdrt2)
+tbdkode         almrt_2         REPLACE
+
+MAP(mtbdrw2)
+tbdkode         almrw_2         REPLACE
+
+
+MAP(mtbdstsnikah)
+tbdkode			psmstsnikah		REPLACE
+
+MAP(mtbdagama)
+tbdkode                 psmagama                REPLACE
+
+MAP(mtbdkerja)
+tbdkode                 psmpend                 REPLACE
+
+MAP(mtbdgoldrh)
+tbdkode                 psmgoldrh               REPLACE
+
+MAP(mtmplahir)
+tbdkode                 psmtmplahir             REPLACE
+
+MAP(mcab)
+cabkode			psmcab			REPLACE
+cabtwr			cabtwr			REPLACE
+cabkdjam		cabkdjam		REPLACE
+
+lOCR                    ljenisINput             REPLACE_IF cdjoinakthisktpocr
+ltglinput               ltglinput               REPLACE_IF cdjoinakthisktpocr
+luserAgent              luserAgent              REPLACE_IF cdjoinakthisktpocr
+
+/*
+MAP(mcab2)
+ltbdlv1			almprop_1		REPLACE_IF cdjointbdprop
+ltbdlv2			almkota_1		REPLACE_IF cdjointbdprop
+*/
+	
+MAP(mtbt2)
+tbtkode			almkel_2		REPLACE_IF cadd
+tbtket			lkel2			REPLACE_IF cadd
+
+MAP(mtbt)
+tbtkode			almkel_1		REPLACE_IF cadd
+tbttbdkode              almkec_1                REPLACE_IF cadd
+tbttblkode              almkota_1               REPLACE_IF cadd
+tbtdtmkode              almprop_1               REPLACE_IF cadd
+
+
+MAP(mtbd2)
+tbdkode			almkec_2		REPLACE_IF cadd
+tbdket			lkec2			REPLACE_IF cadd
+
+MAP(mtbd)
+tbdkode			almkec_1		REPLACE
+tbdket			lkec1			REPLACE
+
+MAP(mtbl2)
+tblkode			almkota_2		REPLACE_IF cadd
+tblket			lkota2			REPLACE_IF cadd
+tbldtmkode		almprop_2		REPLACE_IF cadd
+
+MAP(mtbl)
+tblkode			almkota_1		REPLACE
+tblket			lkota1			REPLACE
+tbldtmkode		almprop_1		REPLACE
+
+MAP(mdtm)
+dtmkode			almprop_1		REPLACE
+dtmket			lpropinsi1		REPLACE
+
+MAP(mdtm2)
+dtmkode			almprop_2		REPLACE_IF cadd
+dtmket			lpropinsi2		REPLACE_IF cadd
+
+MAP(mtbdIns)
+tbdkode			psmnegara		REPLACE
+tbdkode			psmprefix		REPLACE
+
+MAP(mpik)
+piksts                  lpiksts                 REPLACE
+
+MAP(mpik2)
+piksts                  lpik2sts                REPLACE
+pikstspiubll            ltipefkt                REPLACE
+lLEGD                   ltipefkt                REPLACE_IF cdjoinaktlelang
+
+CALCS()
+/*cnomer			"M" + STRIP(psmcab) + THBLS(psmtgl)*/
+cubah                   g_curcmd == 2
+cBLANKS			BLANKS
+calmy                   psmstspek == "Y"
+calmt                   psmstspek == "T" && ~almjalan_2 == BLANKS
+calmt2			psmstspek == "T" && ~almjalan_2 != BLANKS
+cpanjang                DO_LIB ap_strln(psmktp,&lpanjang);
+cpjgktp                 (lpanjang == 16 && psmins == "PERORANGAN") || (psmins == "INSTANSI") || (psmins == "EKITAP" || psmins=="NPWP")
+cktp0                  	(psmins == "PERORANGAN" && (lpertama=="1" || lpertama=="2" || lpertama=="3" || lpertama=="4" || lpertama=="5" || lpertama=="6" || lpertama =="7" || lpertama=="8" || lpertama=="9")) || psmins == "INSTANSI"
+cpjgnpwp		(lpanjang >= 15 && lpanjang <= 16 && (psmins == "INSTANSI" || psmins=="NPWP")) || (psmins == "PERORANGAN") || (psmins == "EKITAP")
+cktpawal                DO_LIB ap_amstr(psmktp,ln1,ln1,&ld1);
+cktpakhir               DO_LIB ap_amstr(psmktp,ln2,ln2,&ld16);
+ctdkkitap		psmins != "EKITAP"
+
+/*MAP(mnoawal)
+psmkode			psmkode		REPLACE*/
+
+/*CALCS()
+ckodektpy 		stsplgktp == "Y"*/
+
+MAP(mnomer)
+/*cnomer			psmkode			DO_CALC_IF cadd*/
+psmktp			psmkode			REPLACE_IF cadd 
+
+MAP(mdum)
+ldum                    ldum                    REPLACE
+
+CALCS()
+cumurok                 ((g_tgltrn - psmtgllahir) > l5840 && psmins == "PERORANGAN") || psmins == "INSTANSI" || psmins == "EKITAP" || psmins =="NPWP"
+cbukan08		ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=10 && ljumlahnomor<=13
+cbukan08x		ldigit1x=="0" && ldigit2x=="8" && ljumlahnomorx>=10 && ljumlahnomorx<=13
+cbukan08y		ldigit1y=="0" && ldigit2y=="8" && ljumlahnomory>=10 && ljumlahnomory<=13
+/*cbukan08_ubah		(ldigit1_ubahhp=="0" && ldigit2_ubahhp=="8" && ljumlahnomor_ubah>=10 && ljumlahnomor_ubah<=13) || (ljumlahnomor_ubah <= 0)*/
+/*cbukan08_ubah2		(ldigit1_ubahhp2=="0" && ldigit2_ubahhp2=="8" && ljumlahnomor_ubah2>=10 && ljumlahnomor_ubah2<=13) || (ljumlahnomor_ubah2 <= 0)*/
+
+MAP(misialamat)
+almrt_1			almrt_2			REPLACE_IF calmy
+almrw_1			almrw_2			REPLACE_IF calmy
+almjalan_1              almjalan_2              REPLACE_IF calmy
+almprop_1               almprop_2               REPLACE_IF calmy
+almkota_1               almkota_2               REPLACE_IF calmy
+almkec_1                almkec_2                REPLACE_IF calmy
+almkel_1                almkel_2                REPLACE_IF calmy
+almkdpos_1              almkdpos_2              REPLACE_IF calmy
+cBLANKS			almrt_2			DO_CALC_IF calmt
+cBLANKS			almrw_2			DO_CALC_IF calmt
+cBLANKS                 almjalan_2              DO_CALC_IF calmt
+cBLANKS                 almkota_2               DO_CALC_IF calmt
+cBLANKS                 almprop_2               DO_CALC_IF calmt
+cBLANKS                 almkec_2                DO_CALC_IF calmt
+cBLANKS                 almkel_2                DO_CALC_IF calmt
+cBLANKS                 almkdpos_2              DO_CALC_IF calmt
+cBLANKS                 lkota2                  DO_CALC_IF calmt
+cBLANKS                 lpropinsi2              DO_CALC_IF calmt
+cBLANKS                 lkec2                   DO_CALC_IF calmt
+cBLANKS                 lkel2                   DO_CALC_IF calmt
+~almrt_2		almrt_2			REPLACE_IF calmt2
+~almrw_2		almrw_2			REPLACE_IF calmt2
+~almjalan_2		almjalan_2		REPLACE_IF calmt2
+~almkota_2		almkota_2		REPLACE_IF calmt2
+~almprop_2		almprop_2		REPLACE_IF calmt2
+~almkec_2		almkec_2		REPLACE_IF calmt2
+~almkel_2		almkel_2		REPLACE_IF calmt2
+~almkdpos_2		almkdpos_2		REPLACE_IF calmt2
+
+CALCS()
+cadanokkd2	djoinkkdktp==1 && lkkdnobuk!=BLANKS
+
+MAP(mpanjangktp)
+psmktp		lpertama	REPLACE
+cpanjang        lpanjang        DO_CALC
+lkkdnobuk	psmnokk		REPLACE_IF cadanokkd2
+
+MAP(maturanktp)
+cktpawal        ld1             DO_CALC_IF ctdkkitap
+cktpakhir       ld16            DO_CALC_IF ctdkkitap
+
+MAP(mnama_alm)
+psmnama		almnama_1		REPLACE
+psmnama		almnama_2		REPLACE
+
+CALCS()
+cadafaktur		(djoinpik==1 || (psmktp!=BLANKS && djoinpps==1)) && g_curcmd == 2
+
+cktpnotnull		psmktp != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "MKTHEAD" && g_grpnam != "MKTM2WDVH" && g_grpnam != "MKTHMCDVH" && g_grpnam!="CRHMCSPV" && g_grpnam!="CREDITDCA" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" &&
+g_grpnam!="RMGADAI"
+
+cnamanotnull		psmnama != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "MKTHEAD" && g_grpnam != "MKTM2WDVH" && g_grpnam != "MKTHMCDVH" && g_grpnam!="CRHMCSPV" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" &&
+g_grpnam!="RMGADAI"
+
+ctgllahirnotnull	psmtgllahir != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+cjlnktpnotnull		almjalan_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+crtktpnotnull		almrt_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+crwktpnotnull		almrw_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+cpropktpnotnull		almprop_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+ckotaktpnotnull		g_curcmd!=1 && almkota_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+ckecktpnotnull		almkec_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+ckelktpnotnull		almkel_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+cposktpnotnull		almkdpos_1 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+/*cytktpnotnull		psmstspek != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC"*/
+
+cjlntglnotnull		almjalan_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV"
+
+crttglnotnull		almrt_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+crwtglnotnull		almrw_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+cproptglnotnull		almprop_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+ckotatglnotnull		almkota_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+ckectglnotnull		almkec_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+ckeltglnotnull		almkel_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+cpostglnotnull		almkdpos_2 != BLANKS && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "ANSYSUAT" && g_grpnam!="CREDITSPV" && g_grpnam!="CREDITDVH" && g_grpnam != "SPVAREA" && g_grpnam != "CRHMCSPV" && g_grpnam!="CREDITHEAD" && g_grpnam!="CREDITDCA" && g_grpnam != "HMCSPV" && g_grpnam != "BMM" && g_grpnam!="BMMM2W" && g_grpnam != "AHASSHEAD" && g_grpnam != "B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam != "B.M4WCM" && g_grpnam != "KAWIL" && g_grpnam != "MKTHEAD" && g_grpnam != "B.IVAROHRD" && g_grpnam != "HRDHEAD" && g_grpnam != "HRDSPV" && g_grpnam != "HRDREC" && g_grpnam!="CRM2WSPV" && g_grpnam!="CREDITM2WSPV" && g_grpnam!="CREDITHMCSPV" && g_grpnam!="DIGMKTSPV" && g_grpnam!="RMGADAI"
+
+cktp_ok		((g_curcmd == 2 && psmktp != BLANKS && ~psmktp != psmktp && (g_grpnam == "RMGADAI" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ANSYSUAT" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WCM" || g_grpnam == "MKTHEAD" || g_grpnam == "MKTM2WDVH" || g_grpnam == "MKTHMCDVH" || g_grpnam=="CRHMCSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV")) || (g_curcmd == 2 && psmktp != BLANKS && ~psmktp == psmktp) || (g_curcmd == 2 && psmktp == BLANKS) || g_curcmd != 2)
+
+cnama_ok	((g_curcmd == 2 && psmnama != BLANKS && ~psmnama != psmnama && (g_grpnam == "RMGADAI" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ANSYSUAT" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WCM" || g_grpnam == "MKTHEAD" || g_grpnam == "MKTM2WDVH" || g_grpnam == "MKTHMCDVH" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV")) || (g_curcmd == 2 && psmnama != BLANKS && ~psmnama == psmnama) || (g_curcmd == 2 && psmnama == BLANKS) || g_curcmd != 2)
+
+ctbdtutupadd     (psmins == "PERORANGAN" && djoinpsiuser==1 && (djointbdadd3201dvs==0 || djointbdadd3201grupnam==1 || djointbdadd3201jab==1 || djointbdadd3201nip==1) ) || psmins != "PERORANGAN" || g_curcmd==2
+
+
+CALCS()
+cNONGC		"NONGC"
+cnonnpwp	psmins != "NPWP" || g_grpnam =="RI"
+/*ctypeall        svitype == "ALL"*/
+
+MAP(misinongc)
+cNONGC		psmprefix	DO_CALC_IF cinstansi2a
+cNONGC		psmnegara	DO_CALC_IF cinstansi2a
+cBLANKS		psmprefix	DO_CALC_IF cperorangan
+cBLANKS		psmnegara	DO_CALC_IF cperorangan
+
+MAP(maddtombol)
+psmktp		aktkode         REPLACE
+lHIS3201DET	aktdata         REPLACE
+lHIS3201DET	akttype         REPLACE
+lHIS3201DET	aktbrg          REPLACE
+g_tgltrn        akttgl          REPLACE
+g_usrkode       aktkode2        REPLACE
+csystime        aktjam          DO_CALC
+g_lat		aktdf1		REPLACE
+g_lon		aktdf2		REPLACE
+g_mobile	aktdf3		REPLACE
+
+MAP(madd3201)
+psmktp		aktkode         REPLACE
+lADD3201        aktdata         REPLACE
+lADD3201        akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+g_usrkode       aktkode2        REPLACE
+csystime        aktjam          DO_CALC
+
+SPCALCS(stombol)
+DO_LIB		ap_dbclc(DNAME daddtombol,DCOMMAND ADD,DFILE akt,DMAP maddtombol);
+
+SPCALCS(sadd3201)
+DO_LIB          ap_dbclc(DNAME dadd3291,DCOMMAND ADD,DFILE akt,DMAP madd3201);
+
+HOOKS(master)
+CLICKED			cur_field=ltomdet2	DO_SPCALCS stombol
+BEFORE_INPUT		cur_field=psmktp	DO_SKIP_IF cktpnotnull
+BEFORE_INPUT		cur_field=psmnama	DO_SKIP_IF cnamanotnull
+BEFORE_INPUT		cur_field=psmtgllahir	DO_SKIP_IF ctgllahirnotnull
+
+BEFORE_INPUT		cur_field=almjalan_1	DO_SKIP_IF cjlnktpnotnull
+BEFORE_INPUT		cur_field=almrt_1	DO_SKIP_IF crtktpnotnull
+BEFORE_INPUT		cur_field=almrw_1	DO_SKIP_IF crwktpnotnull
+BEFORE_INPUT		cur_field=almprop_1	DO_SKIP_IF cpropktpnotnull
+BEFORE_INPUT		cur_field=almkota_1	DO_SKIP_IF ckotaktpnotnull
+BEFORE_INPUT		cur_field=almkec_1	DO_SKIP_IF ckecktpnotnull
+BEFORE_INPUT		cur_field=almkel_1	DO_SKIP_IF ckelktpnotnull
+BEFORE_INPUT		cur_field=almkdpos_1	DO_SKIP_IF cposktpnotnull
+
+/*BEFORE_INPUT		cur_field=psmstspek	DO_SKIP_IF cytktpnotnull*/
+BEFORE_INPUT		cur_field=almjalan_2	DO_SKIP_IF cjlntglnotnull
+BEFORE_INPUT		cur_field=almrt_2	DO_SKIP_IF crttglnotnull
+BEFORE_INPUT		cur_field=almrw_2	DO_SKIP_IF crwtglnotnull
+BEFORE_INPUT		cur_field=almprop_2	DO_SKIP_IF cproptglnotnull
+BEFORE_INPUT		cur_field=almkota_2	DO_SKIP_IF ckotatglnotnull
+BEFORE_INPUT		cur_field=almkec_2	DO_SKIP_IF ckectglnotnull
+BEFORE_INPUT		cur_field=almkel_2	DO_SKIP_IF ckeltglnotnull
+BEFORE_INPUT		cur_field=almkdpos_2	DO_SKIP_IF cpostglnotnull
+
+BEFORE_INPUT		cur_field=psmgender	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmgoldrh	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=kkdnobuk_3	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmagama	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmstsnikah	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmdatasup	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmdataplg	DO_SKIP_IF cadd
+BEFORE_INPUT		cur_field=psmstsplg	DO_SKIP_IF cadd
+AFTER_INPUT		cur_field=psmcab   	DO_MAP SHOW mnomer
+AFTER_INPUT		cur_field=psmktp   	DO_MAP SHOW mnomer
+AFTER_INPUT		cur_field=psmnama   	DO_MAP SHOW mnama_alm
+BEFORE_INPUT		cur_field=psmktp	DO_SKIP_IF cadafaktur
+BEFORE_INPUT		cur_field=psmnama	DO_SKIP_IF cadafaktur
+BEFORE_INPUT            cur_field=psmpend       DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almjalan_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=psmstspek	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almjalan_2	DO_SKIP_IF cubah
+
+BEFORE_INPUT            cur_field=almrt_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almrw_1	DO_SKIP_IF cubah	
+BEFORE_INPUT            cur_field=almrt_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almrw_2	DO_SKIP_IF cubah
+	
+BEFORE_INPUT            cur_field=almprop_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almprop_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkota_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkota_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkec_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkec_2	DO_SKIP_IF cubah	
+BEFORE_INPUT            cur_field=almkel_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkel_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkdpos_1	DO_SKIP_IF cubah	
+BEFORE_INPUT            cur_field=almkdpos_2	DO_SKIP_IF cubah
+
+AFTER_INPUT		cur_field=psmstspek	DO_MAP SHOW misialamat
+BEFORE_INPUT		cur_field=almrt_2	DO_SKIP_IF calmy
+BEFORE_INPUT		cur_field=almrw_2	DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almjalan_2    DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almprop_2     DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkota_2     DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkec_2      DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkel_2      DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkdpos_2    DO_SKIP_IF calmy
+BEFORE_INPUT		cur_field=psmnegara	DO_SKIP_IF cinstansi2a
+/*AFTER_INPUT		cur_field=psmcab	DO_MAP SHOW mcab2*/
+AFTER_INPUT		cur_field=psmins	DO_MAP SHOW misinongc
+BEFORE_INPUT            cur_field=psmktp        DO_SKIP_IF cpsinip
+BEFORE_INPUT            cur_field=psmnama       DO_SKIP_IF cpsinip
+
+AFTER_INPUT             cur_field=psmtgllahir   DO_MAP SHOW IF
+                        cumurok mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Pemilik Ktp Usianya Belum 17th
+
+AFTER_INPUT             cur_field=psmins  DO_MAP SHOW IF
+                        cnonnpwp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Anda Tidak boleh Input Type ini
+
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW mpanjangktp
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW
+                        IF cktp0 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KtpTidakBolehDepanNol
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW
+                        IF cpjgktp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KtpLimit16Digits
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW
+                        IF cpjgnpwp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.NpwpLimit15Sd16Digits
+
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW maturanktp
+AFTER_INPUT             cur_keybd=EN            DO_SPCALCS sadd3201
+AFTER_INPUT		cur_field=psmktp	DO_MAP SHOW
+			IF cktp_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian KTP, tidak bisa selesaikan perubahan
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cktp_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian KTP, tidak bisa selesaikan perubahan
+AFTER_INPUT		cur_field=psmnama	DO_MAP SHOW
+			IF cnama_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian Nama, tidak bisa selesaikan perubahan
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cnama_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian Nama, tidak bisa selesaikan perubahan
+
+AFTER_INPUT		cur_field=psmins	DO_MAP SHOW
+			IF ctbdtutupadd mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.InputDariOcr
+
+AFTER_INPUT		cur_keybd=EN	        DO_MAP SHOW
+			IF ctbdtutupadd mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.InputDariOcr
+
+
+
+HOOKS(mastera)
+CLICKED			cur_field=ltomdet2	DO_SPCALCS stombol
+BEFORE_INPUT		cur_field=psmktp	DO_SKIP_IF cktpnotnull
+BEFORE_INPUT		cur_field=psmnama	DO_SKIP_IF cnamanotnull
+BEFORE_INPUT		cur_field=psmtgllahir	DO_SKIP_IF ctgllahirnotnull
+
+BEFORE_INPUT		cur_field=almjalan_1	DO_SKIP_IF cjlnktpnotnull
+BEFORE_INPUT		cur_field=almrt_1	DO_SKIP_IF crtktpnotnull
+BEFORE_INPUT		cur_field=almrw_1	DO_SKIP_IF crwktpnotnull
+BEFORE_INPUT		cur_field=almprop_1	DO_SKIP_IF cpropktpnotnull
+BEFORE_INPUT		cur_field=almkota_1	DO_SKIP_IF ckotaktpnotnull
+BEFORE_INPUT		cur_field=almkec_1	DO_SKIP_IF ckecktpnotnull
+BEFORE_INPUT		cur_field=almkel_1	DO_SKIP_IF ckelktpnotnull
+BEFORE_INPUT		cur_field=almkdpos_1	DO_SKIP_IF cposktpnotnull
+
+/*BEFORE_INPUT		cur_field=psmstspek	DO_SKIP_IF cytktpnotnull*/
+BEFORE_INPUT		cur_field=almjalan_2	DO_SKIP_IF cjlntglnotnull
+BEFORE_INPUT		cur_field=almrt_2	DO_SKIP_IF crttglnotnull
+BEFORE_INPUT		cur_field=almrw_2	DO_SKIP_IF crwtglnotnull
+BEFORE_INPUT		cur_field=almprop_2	DO_SKIP_IF cproptglnotnull
+BEFORE_INPUT		cur_field=almkota_2	DO_SKIP_IF ckotatglnotnull
+BEFORE_INPUT		cur_field=almkec_2	DO_SKIP_IF ckectglnotnull
+BEFORE_INPUT		cur_field=almkel_2	DO_SKIP_IF ckeltglnotnull
+BEFORE_INPUT		cur_field=almkdpos_2	DO_SKIP_IF cpostglnotnull
+
+BEFORE_INPUT		cur_field=psmgender	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmgoldrh	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmagama	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmstsnikah	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmdatasup	DO_SKIP_IF cinstansi
+BEFORE_INPUT		cur_field=psmdataplg	DO_SKIP_IF cadd
+BEFORE_INPUT		cur_field=psmstsplg	DO_SKIP_IF cadd
+AFTER_INPUT		cur_field=psmcab   	DO_MAP SHOW mnomer
+AFTER_INPUT		cur_field=psmktp   	DO_MAP SHOW mnomer
+AFTER_INPUT		cur_field=psmnama   	DO_MAP SHOW mnama_alm
+BEFORE_INPUT		cur_field=psmktp	DO_SKIP_IF cadafaktur
+BEFORE_INPUT		cur_field=psmnama	DO_SKIP_IF cadafaktur
+BEFORE_INPUT            cur_field=psmpend       DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almjalan_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=psmstspek	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almjalan_2	DO_SKIP_IF cubah
+
+BEFORE_INPUT            cur_field=almrt_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almrw_1	DO_SKIP_IF cubah	
+BEFORE_INPUT            cur_field=almrt_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almrw_2	DO_SKIP_IF cubah
+	
+BEFORE_INPUT            cur_field=almprop_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almprop_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkota_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkota_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkec_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkec_2	DO_SKIP_IF cubah	
+BEFORE_INPUT            cur_field=almkel_1	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkel_2	DO_SKIP_IF cubah
+BEFORE_INPUT            cur_field=almkdpos_1	DO_SKIP_IF cubah	
+BEFORE_INPUT            cur_field=almkdpos_2	DO_SKIP_IF cubah
+
+AFTER_INPUT		cur_field=psmstspek	DO_MAP SHOW misialamat
+BEFORE_INPUT		cur_field=almrt_2	DO_SKIP_IF calmy
+BEFORE_INPUT		cur_field=almrw_2	DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almjalan_2    DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almprop_2     DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkota_2     DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkec_2      DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkel_2      DO_SKIP_IF calmy
+BEFORE_INPUT            cur_field=almkdpos_2    DO_SKIP_IF calmy
+BEFORE_INPUT		cur_field=psmnegara	DO_SKIP_IF cinstansi2a
+AFTER_INPUT		cur_field=psmins	DO_MAP SHOW misinongc
+
+AFTER_INPUT             cur_field=psmtgllahir   DO_MAP SHOW IF
+                        cumurok mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Pemilik Ktp Usianya Belum 17th
+
+AFTER_INPUT             cur_field=psmins  DO_MAP SHOW IF
+                        cnonnpwp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Anda Tidak boleh Input Type ini
+
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW mpanjangktp
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW
+                        IF cpjgktp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KtpLimit16Digits
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW
+                        IF cpjgnpwp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.NpwpLimit15Digits
+
+AFTER_INPUT             cur_field=psmktp        DO_MAP SHOW maturanktp
+AFTER_INPUT		cur_field=psmktp	DO_MAP SHOW
+			IF cktp_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian KTP, tidak bisa selesaikan perubahan
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cktp_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian KTP, tidak bisa selesaikan perubahan
+AFTER_INPUT		cur_field=psmnama	DO_MAP SHOW
+			IF cnama_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian Nama, tidak bisa selesaikan perubahan
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cnama_ok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Terdeteksi ada perubahan Isian Nama, tidak bisa selesaikan perubahan
+
+AFTER_INPUT		cur_field=psmins	DO_MAP SHOW
+			IF ctbdtutupadd mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.InputDariOcr
+
+AFTER_INPUT		cur_keybd=EN	        DO_MAP SHOW
+			IF ctbdtutupadd mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.InputDariOcr
+
+/*DBCALCS(djointml3117upd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tmldatbukidx            lDTTMPLAP       lPERMITUPD     g_grpnam
+
+DBCALCS(djointml3117del)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tmldatbukidx            lDTTMPLAP       lPERMITDEL     g_grpnam*/
+
+
+IMAGE(master2)
+/--------------------------------------------------------------------------------------------------\
+| /--------------------------------------------\/------------------------------------------------\ |
+   i.Iddebitur   : ______ ____________________   i.Tanggal       : ________
+   i.Ktp         : ___________________________   i.Status        : ______
+   i.NoKK        : ___________________________   spasi                                          
+   i.Nama        : ___________________________   i.Namaemail     : _____________________________
+   i.Kode        : ___________________________   spasi                                           
+| \--------------------------------------------/\------------------------------------------------/ |
+   i.t
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master2)
+psmcab			PROTECT SCROLL			INPUTRI 2
+psmkode			PROTECT SCROLL			INPUTRI 2
+psmtgl			NONE NOLIMIT {DD-MM-YY}			INPUTRI 3
+psmktp			ALLCAPS SCROLL			INPUTRI 4
+psmstsplg		PROTECT SCROLL			INPUTRI 5
+psmnokk			ALLCAPS SCROLL			INPUTRI 6
+/*psmhp			ALLCAPS SCROLL			INPUTRI 7*/
+psmnama			ALLCAPS SCROLL			INPUTRI 8
+psmemail		ALLCAPS SCROLL			INPUTRI 9
+psmkode          	ALLCAPS SCROLL			INPUTRI 9
+
+
+IMAGE(transt)
+/-----------------------------------------\
+|t.Ktp       _____________________        |
+|t.TipeMitra _____________________        |
+|t.KatMitra  _____________________        |
+|t.Enter     ______                       |
+\-----------------------------------------/
+
+IMAGE(trans)
+
+FIELD(transt)
+psdpsmkode	NOCHANGE	INPUTRI 1
+psdstr2		ALLCAPS SCROLL	INPUTRI 2
+psdstr1		PROTECT		INPUTRI 3
+lenter		ALLCAPS		INPUTRI 4
+
+DBCALCS(djoinpsd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmurt   lKATMITRA psmktp l1
+	
+
+DEFAULTS(transt)
+psdstr2		DFALT_SCAN_BLANKS	CRO ""
+					EKSTERNAL ""
+					INTERNALGROUP ""
+					INTERNALM4W ""
+					SALESM4W ""
+psdstr1		INIT_ADD		ONYX
+EDITS(transt)
+e.Mandataory	psdstr2			MANDATORY
+
+CALCS()
+cbukanaku	g_usrkode != "1000635"
+
+SUBFILE(trans)
+SFL_TITLE(transt)
+SFL_COND	cbukanaku
+SFL_LINES(1)
+SFL_COND	c3209
+
+SFL_TARGET
+psddatpsmurt   lKATMITRA psmktp l1
+
+SFL_MAP
+psmktp		psdpsmkode	REPLACE
+psmktp		psdkode		REPLACE
+lKATMITRA	psddata		REPLACE
+l1		psdnourt	REPLACE
+
+IMAGE(transg1t)
+/----------------------------------\
+|____________________              |
+|--------------t-------------------|
+| i.Detil      | i.Keterangan      |
+\--------------.-------------------/
+FIELD(transg1t)
+ltomdet2_d               TOMBOL                          INPUTRI 1
+
+DEFAULTS(transg1t)
+ltomdet2_d              INIT            "d.UntukMelihatDetil"
+
+
+IMAGE(transg1)
+|______________|__________________________|
+
+FIELD(transg1)
+tmpkode                 NOCHANGE                        INPUTRI 1
+tmpket                  PROTECT SCROLL                  INPUTRI 2
+
+DEFAULTS(transg1)
+lTMP_3201                INIT            TMP_3201
+
+SUBFILE(transg1)
+SFL_LINES(13)
+SFL_TITLE(transg1t)
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+SFL_COND	cbukanaku
+SFL_TARGET
+        tmpdatkodurt   gv_dttemplate lTMP_3201
+
+SUBFILE(trans2g1)
+SFL_TEMPLATE(tmp_3201_2) /* ALAMAT EMAIL */
+
+
+SUBFILE(trans2g2)
+SFL_TEMPLATE(tmp_foto_debitur) /* ALAMAT EMAIL */
+
+SUBFILE(trans2g3)
+SFL_TEMPLATE(tmp_info_motor) /* INFO MOTOR */
+
+SUBFILE(trans2g4)
+SFL_TEMPLATE(tmp_ubah_kerja)
+
+SUBFILE(trans2g5)
+SFL_TEMPLATE(tmp_ubahalm3201)
+
+SUBFILE(trans2g6)
+SFL_TEMPLATE(tmp_3201_3) /* SOSIAL MEDIA */
+
+SUBFILE(trans2g7)
+SFL_TEMPLATE(tmp_3201_4) /* HISTORI LIHAT NO TELP */
+
+SUBFILE(trans2g8)
+SFL_TEMPLATE(tmp_3201_5) /* Registrasi Klik Nss */
+
+SUBFILE(trans2g9)
+SFL_TEMPLATE(tmp_3201_fakturawalMGA)
+
+SUBFILE(trans2g10)
+SFL_TEMPLATE(tmp_3201_6) /* Info Pengajuan */
+
+SUBFILE(transa)
+SFL_TEMPLATE(tmp_3201_tlp) /* NOMOR HANDPHONE */
+
+SUBFILE(transc)
+SFL_TEMPLATE(tmp_3201_9) /* History HANDPHONE */
+
+SUBFILE(transd)
+SFL_TEMPLATE(tmp_3201_10)
+
+SUBFILE(transe)
+SFL_TEMPLATE(tmp_3201_11)
+
+IMAGE(transbt)
+/-----------------------------------------\
+|t.UbhKeNonGc                             |
+|--------------------------------t--------|
+|________________________________|        |
+\--------------------------------.--------/
+
+IMAGE(transb)
+
+FIELD(transbt)
+lenter_nongc	NOCHANGE	INPUTRI		1
+
+DEFAULTS(transbt)
+lenter_nongc	INIT	"Tekan ENTER untuk ubah ke NON GC"
+
+CALCS()
+cubh_nongc	(g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "HMCSPV" || g_grpnam=="MKTHEAD" || g_grpnam=="DCAOPR") && g_usrkode != "1000635"
+calmawal	"ALMAWAL"
+
+SUBFILE(transb)
+SFL_LINES(1)
+SFL_TITLE(transbt)
+SFL_APP_TYPE
+SFL_COND cubh_nongc
+SFL_TARGET
+	psmktpidx	psmktp
+
+MAP(mupdpsmnongc)
+cNONGC		psmnegara	DO_CALC
+cNONGC		psmprefix	DO_CALC
+
+MAP(maddsvialmawl)
+lUBAHALM        svidata         REPLACE
+psmktp          svinobuk        REPLACE
+gv_int1         svinourt        REPLACE
+lUBAHKTP        svitype         REPLACE
+calmawal	svitblkode	DO_CALC
+
+almjalan_1      sviket2         REPLACE
+almprop_1       svistr4         REPLACE
+almkota_1       svistr6         REPLACE
+almkec_1        svistr8         REPLACE
+almkel_1        svistr10        REPLACE
+almkdpos_1      sviket3         REPLACE
+almrt_1         svitype2        REPLACE
+almrw_1         svinama         REPLACE
+
+almjalan_2      sviket          REPLACE
+almprop_2       svistr3         REPLACE
+almkota_2       svistr5         REPLACE
+almkec_2        svistr7         REPLACE
+almkel_2        svistr9         REPLACE
+almkdpos_2      svidtmkode      REPLACE
+almrt_2         svistr1         REPLACE
+almrw_2         svistr2         REPLACE
+g_usrkode	svikode		REPLACE
+g_tgltrn	svitgl1		REPLACE
+
+
+SPCALCS(spmaster)
+DO_LIB ap_dbclc(DNAME daddsvialmktp,DCOMMAND ADD,DFILE svi,DMAP maddsvialmawl);
+
+SPCALCS(sptransb)
+DO_LIB ap_dbclc(DNAME dupdpsmnongc,DCOMMAND UPDATE,DTARGET psmktpidx psmktp,DMAP mupdpsmnongc);
+
+POSTING(master)
+PST_ADDCMD spmaster
+
+POSTING(transb)
+PST_COMMAND sptransb
+
+/********************PENAMBAHAN NOMOR OTOMATIS ****************/
+       /*  DBCALCS(daddsub)
+	 	 DBC_COMMAND	ADD_SUBSTITUTE
+	 	 DBC_FILE	psm
+	 	 DBC_LAST_LEN   14
+	 	 DBC_LAST_TARGET  psmkodidx	psmkode
+		 DBC_MAP	mnoawal*/
+
+
+CALCS()
+c0		0
+cjoinpsd	djoinpsd == 0
+cjoinpsd1	djoinpsd == 1 && (g_grpnam == "RI" || g_grpnam == "B.M4WMSPV" || g_grpnam == "DIGMKT")
+cansysuat       g_grpnam=="ANSYSUAT" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH" || g_grpnam=="RI" || g_grpnam=="ROOT" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WCM" || g_grpnam == "IT"  || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV" || g_grpnam == "RMGADAI" || g_grpnam == "DIGMKT"
+cjoinconhp0	djoinconhpx == 0 || djoinconhpy == 0
+cdjoinnodarurat0 djoinnodarurat == 0
+/*cjoinconhp1	((g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ANSYSUAT" || g_grpnam == "SPVAREA" || g_grpnam == "CRHMCSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam == "HMCSPV" || g_grpnam == "BMM" || g_grpnam=="BMMM2W" || g_grpnam == "AHASSHEAD" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WCM" || g_grpnam =="ARDVH" || g_grpnam == "KAWIL" || g_grpnam == "B.M4WADHDVH") && djoinconhp == 1)*/
+
+cjoinconhp1ubah ((g_grpnam == "RMGADAI" || g_grpnam=="BOM"||g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ANSYSUAT" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH" || g_grpnam == "AHASSHEAD" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam =="ARDVH" || g_grpnam=="KAWIL" || g_grpnam == "M2WAM" || g_grpnam == "HMCAM" || g_grpnam=="BUM" || g_grpnam=="MSOHEAD" || g_grpnam=="MKTHEAD" || g_grpnam=="AHASSHEAD" || g_grpnam=="AHASSDVH" || g_grpnam == "B.IVAROHRD" || g_grpnam == "HRDHEAD" || g_grpnam == "HRDSPV" || g_grpnam == "HRDREC" || g_grpnam == "MKTM2WDVH" || g_grpnam == "DIGMKTHEAD" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV" || g_grpnam == "DIGMKTSPV" || g_grpnam == "B.M4WADHDVH" || g_grpnam=="BMMGADAI" || g_grpnam=="HMCSPV" || g_grpnam=="BMMM2W" || g_grpnam=="DIGMKT" || g_grpnam=="DIGMKTDVH") && ( djoinconhpy == 1 ||djoinconhpx == 1 || djoinconhp == 1))
+
+cjoinconhpdarubah ((g_grpnam == "RMGADAI" || g_grpnam=="BOM"||g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ANSYSUAT" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH" || g_grpnam == "AHASSHEAD" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam =="ARDVH" || g_grpnam=="KAWIL" || g_grpnam == "M2WAM" || g_grpnam == "HMCAM" || g_grpnam=="BUM" || g_grpnam=="MSOHEAD" || g_grpnam=="MKTHEAD" || g_grpnam=="AHASSHEAD" || g_grpnam=="AHASSDVH" || g_grpnam == "B.IVAROHRD" || g_grpnam == "HRDHEAD" || g_grpnam == "HRDSPV" || g_grpnam == "HRDREC" || g_grpnam == "MKTM2WDVH" || g_grpnam == "DIGMKTHEAD" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV" || g_grpnam == "DIGMKTSPV" || g_grpnam == "B.M4WADHDVH" || g_grpnam=="BMMGADAI" || g_grpnam=="HMCSPV" || g_grpnam=="BMMM2W" || g_grpnam=="DIGMKT" || g_grpnam=="DIGMKTDVH") && djoinnodarurat == 1)
+
+cubahkerja      djointbdubahkerja==1 || djointbdgrupubahkerja==1
+cubahalm        djointbdubahalm==1 || djointbdgrupubahalm==1
+cubahalmacc     ((djointbdubahalm==1 && lbisaaccalm=="ACC") || (djointbdgrupubahalm==1 && lbisaaccalm=="ACC")) && lnobukakt!=BLANKS && laccpkakt==BLANKS
+ctambahalmpk	((djointbdubahalm==1 && lbisaaccalm!="ACC") || (djointbdgrupubahalm==1 && lbisaaccalm!="ACC") || (djointbdubahalm==0  && djointbdgrupubahalm==0))
+cubahaccalmpk	((djointbdubahalm==1 && lbisaaccalm=="ACC") || (djointbdgrupubahalm==1 && lbisaaccalm=="ACC")) && lnobukakt==BLANKS
+cubahsdhacc	((djointbdubahalm==1 && lbisaaccalm=="ACC") || (djointbdgrupubahalm==1 && lbisaaccalm=="ACC")) && laccpkakt!=BLANKS
+
+chapuscondouble	 g_grpnam=="ROOT" || g_grpnam=="IT" || g_grpnam=="RI"||g_grpnam=="CREDITSPV" || g_grpnam=="CREDITDVH"  || g_grpnam=="ANSYSUAT" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHEAD" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITHMCSPV" || (djoinpsim2w4w==1 && g_grpnam=="CREDITHEAD" && ldvsm2w4w=="M2W4W")
+
+cjoinconsosmed0	djoinconsosmed == 0
+cjoinconsosmed1	djoinconsosmed == 1
+
+cdjoincongsm	djoincongsm == 1
+/*
+cconwagsmok	(djoinconwa == 1 && lconhpwa != BLANKS && (lconkotawa != BLANKS || lconkotawa == BLANKS) && djoincongsm == 1 && lconhpgsm != BLANKS && (lconkotagsm != BLANKS || lconkotagsm == BLANKS)) || 
+		(djoincongsm == 0 && djoinconwa == 0)
+*/
+/*cdjoincon0      (djoinconhp == 0 || djoincongsm == 0 || djoinconwa == 0) && (g_grpnam == "RI" || g_grpnam == "IT")
+cdjoincon1      (djoinconhp == 1 || djoincongsm == 1 || djoinconwa == 1) && (g_grpnam == "RI" || g_grpnam == "IT")*/ 
+
+PERMIT(master)
+PMT_DEL_COND    c0
+
+PERMIT(mastera)
+PMT_DEL_COND  c0
+
+PERMIT(masterb)
+PMT_DEL_COND  c0
+
+PERMIT(masterc)
+PMT_DEL_COND  c0
+
+PERMIT(trans)
+PMT_ADD_COND cjoinpsd
+PMT_UPDALL_COND cjoinpsd1
+PMT_DEL_COND c0
+
+PERMIT(transg1)
+PMT_ADD_COND c0 
+PMT_UPDALL_COND c0 
+PMT_DEL_COND c0
+
+PERMIT(trans2)
+PMT_ADD_COND cjoinconhp0
+PMT_ADD_MSG Tidak Boleh Menambah Nomor HP lagi. Harus Ubah Nomor HP oleh Supervisor masing-masing
+PMT_UPDALL_COND cjoinconhp1ubah
+PMT_UPD_MSG Harus Ubah Nomor HP oleh Supervisor masing-masing
+PMT_DEL_COND chapuscondouble
+PMT_DEL_MSG Nomor HP tidak boleh dihapus
+
+PERMIT(transa)
+PMT_ADD_COND cjoinconhp0
+PMT_ADD_MSG Tidak Boleh Menambah Nomor HP lagi. Harus Ubah Nomor HP oleh Supervisor masing-masing
+PMT_UPDALL_COND c0
+PMT_UPD_MSG Tidak Bisa Ubah Nomor Hp
+PMT_DEL_COND chapuscondouble
+PMT_DEL_MSG Nomor HP tidak boleh dihapus
+/*
+PMT_EXIT_COND   cconwagsmok
+PMT_EXIT_MSG 	No Telepon dan Jam Bisa Ditelpon DATA=WA GSM Wajib Di Isi
+*/
+
+PERMIT(transc)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(transd)
+PMT_ADD_COND cdjoinnodarurat0
+PMT_ADD_MSG Tidak Boleh Menambah Nomor HP lagi. Harus Ubah Nomor HP oleh Supervisor masing-masing
+PMT_UPDALL_COND cjoinconhpdarubah
+PMT_UPD_MSG Tidak Bisa Ubah Nomor Hp
+PMT_DEL_COND chapuscondouble
+PMT_DEL_MSG Nomor HP tidak boleh dihapus
+
+PERMIT(trans2g1)
+PMT_UPDALL_COND cansysuat 
+PMT_DEL_COND c0
+
+PERMIT(trans2g2)
+PMT_UPDALL_COND cansysuat 
+PMT_DEL_COND c0
+
+PERMIT(trans2g3)
+/*PMT_UPDALL_COND cansysuat */
+PMT_DEL_COND c0
+
+PERMIT(trans2g4)
+PMT_ADD_COND cubahkerja
+PMT_UPDALL_COND c0
+PMT_UPD_MSG Tidak Boleh Diubah, Ditambah Jika Ada Perubahan Pekerjaan
+PMT_DEL_COND c0
+PMT_DEL_MSG Tidak Boleh Dihapus
+
+PERMIT(trans2g5)
+PMT_ADD_COND cubahalm
+PMT_UPDALL_COND cubahalmacc
+PMT_UPD_MSG	IF ctambahalmpk t.TambahUntukUbahAlm
+                IF cubahaccalmpk t.UbahHanyaACCPK
+                IF cubahsdhacc t.SdhAccAlm
+PMT_DEL_COND c0
+PMT_DEL_MSG Tidak Boleh Dihapus
+
+PERMIT(trans2g6)
+PMT_ADD_COND	cjoinconsosmed0
+PMT_UPDALL_COND	cjoinconsosmed1
+PMT_DEL_COND	cjoinconsosmed1
+
+PERMIT(trans2g7)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(trans2g8)
+PMT_ADD_COND   c0
+PMT_UPDALL_COND   c0
+PMT_DEL_COND   c0
+
+PERMIT(trans2g9)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+					     
+PERMIT(trans2g10)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+					     
+END_SCREEN

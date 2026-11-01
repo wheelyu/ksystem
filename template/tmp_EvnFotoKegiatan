@@ -1,0 +1,81 @@
+LOCAL
+PGM_FIELDS
+lOK		STRING		11
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  ____	____
+  t.Upload	: _________
+  t.NamaAgen	: ______________
+  t.NamaUpline	: ______________
+  t.TglFt	: ______________
+  t.lat	: _________.____
+  t.long	: _________.____ 
+
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode	PROTECT UNSEEN	INPUTRI	1
+psdstr1	PROTECT UNSEEN	INPUTRI	1
+psdtype3	PROTECT	INPUTRI	1
+lnamasdm	PROTECT	INPUTRI 	2
+lnamaupline	PROTECT	INPUTRI	3
+psdtgl1	PROTECT	INPUTRI	4
+psdtot3	PROTECT NUMERIC INPUTRI 4
+psdtot4	PROTECT NUMERIC INPUTRI 5
+
+DEFAULTS(tmptranst)
+g_fotolat1  	INIT     	BLANKS
+g_fotolon1   	INIT  		BLANKS
+lOK		INIT		OK
+
+EDITS(tmptranst)
+t.Validate	psdpsmkode	VALIDATE psmkodidx mpsmFK 0
+t.Validate	psdstr1	VALIDATE psikodidx mpsiFK 0
+
+MAP(mpsmFK)
+psmkode	psdpsmkode	REPLACE
+psmnama	lnamasdm 	REPLACE
+psmkdtmp2	psdstr1	REPLACE
+
+MAP(mpsiFK)
+psinama	lnamaupline	REPLACE
+
+CALCS()
+ccondfk	(tlmdari == "STICKER" || tlmdari == "SPANDUK") && tlmgrup2 == "PROMOSI_AGEN"
+
+MAP(mupdpsdfk)
+lOK		psdtype3	REPLACE
+g_tgltrn	psdtgl1	REPLACE	
+g_fotolat1	psdtot3	REPLACE
+g_fotolon1	psdtot4	REPLACE
+
+DBCALCS(dupdpsdfk)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psddatkodidx ltrainknsc tlmnobuk
+	DBC_MAP	mupdpsdfk
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD psdpsmkode	psdkode
+SFL_UPLFLD_DBCALCS dupdpsdfk
+SFL_COND	ccondfk
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+SFL_UPL_DELCOND c0
+SFL_SHOW_NEXT
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+	psddatkodidx	ltrainknsc tlmnobuk

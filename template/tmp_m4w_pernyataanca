@@ -1,0 +1,107 @@
+DBCALCS(djoinsvipernyataan) 
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp	ldt703  btmnobuk gv_pernyataan
+
+IMAGE(tmptranst) 
+/-----------------------------------------------------------------------------------------------------------------\
+|  i.Suratpernyataanca           : _________________________                                                      |
+|  t.t                                                                                                            |
+|  i.Bahwasaya                   : _________________________                                                      |
+|  i.Nip                         : _________________________                                                      |
+|  i.SDep                        : _________________________                                                      |
+|  i.Grup                        : _________________________                                                      |
+|  t.Pernyataan1ca                                                                                                |
+|          _______________________   i.Atasnama: _____________________________                                    |   
+|  t.Pernyataan2ca                                                                                                |
+|  t.Pernyataan3ca                                                                                                |
+|  t.Pernyataan4ca                                                                                                |
+|  t.Pernyataan5ca                                                                                                |
+|  t.Pernyataan6ca                                                                                                |
+|  t.Pernyataan7ca                                                                                                |
+|  t.Pernyataan8ca                                                                                                |
+|  t.Pernyataan10ca                                                                                               |
+|  t.Pernyataan11ca                                                                                               |
+|  t.Pernyataan12ca                                                                                               |
+|  t.Pernyataan13ca                                                                                               |
+|                                                  t.MENYATAKAN       : ____                                      |
+|                                                                                                                 |
+\-----------------------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			PROTECT SCROLL		INPUTRI 1
+svistr2			PROTECT SCROLL		INPUTRI 2
+svikode			PROTECT SCROLL		INPUTRI 3
+svistr4			PROTECT SCROLL 		INPUTRI 4
+svistr5			PROTECT SCROLL 		INPUTRI 5
+svistr6			PROTECT SCROLL 		INPUTRI 6
+svinama			PROTECT SCROLL 		INPUTRI	7
+sviyt1			NOCHANGE		INPUTRI 8
+
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+svistr2			INIT			{g_usrnam}
+svistr2			INIT_UPDATE		{g_usrnam}
+svikode			INIT			{g_usrkode}
+svikode			INIT_UPDATE		{g_usrkode}
+svinama			INIT			{psmnama_2}
+svinama			INIT_UPDATE		{psmnama_2}
+svistr4                 INIT                    {g_grpnam}
+svistr4                 INIT_UPDATE             {g_grpnam}
+svistr5                 INIT                    {g_grpnam}
+svistr5                 INIT_UPDATE             {g_grpnam}
+
+
+sviyt1			DFALT_LIST		Y T
+/*
+
+EDITS(tmptranst)
+e.Validatesdep		svikode		VALIDATE psikodidx mpsi spsi
+
+MAP(mpsi)
+psikode			svikode		REPLACE
+psisdep			svistr4		REPLACE
+psidep			svistr5		REPLACE
+*/
+
+CALCS()
+cnourt1         	1
+cnourt2         	svinourt + 1
+cjoinsvisrt1		djoinsvipernyataan == 0
+cjoinsvisrt2		djoinsvipernyataan == 1
+
+MAP(mnourtsvi)
+cnourt1                 svinourt        DO_CALC_IF cjoinsvisrt1
+cnourt2                 svinourt        DO_CALC_IF cjoinsvisrt2
+
+MAP(misikok2)
+ldt703			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+btmnobuk		svistr1			REPLACE
+btmnobuk		svistr6			REPLACE
+gv_pernyataan		svitype			REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW misikok2 
+BEFORE_INPUT            cur_field=sviyt1        DO_MAP SHOW mnourtsvi
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mnourtsvi
+/*AFTER_INPUT             cur_field=svikode       DO_LIB  ap_ceksj(svikode);*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   ldt703 btmnobuk gv_pernyataan
+
+SFL_MAP
+
+CALCS()
+cadd_pernyataan		/*btmsts == "705"*/ btmsts == "703" && djoinsvipernyataan == 0
+cupd_pernyataan		/*btmsts == "705"*/ btmsts == "703"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_pernyataan	
+  	PMT_UPDALL_COND cupd_pernyataan
+  	PMT_DEL_COND  	cupd_pernyataan

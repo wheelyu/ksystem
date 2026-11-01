@@ -1,0 +1,122 @@
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   t.AlamatTagih
+   t.SumberTagih: ________________  _
+   i.Alamat     : _____________________________________________________________
+   i.Propinsi   : _______________ _____________________________________________
+   i.Kota       : _______________ _____________________________________________
+   i.Kec        : _______________ _____________________________________________
+   i.Kel        : _______________ _____________________________________________
+   i.RT         : ______
+   i.RW         : ______
+   i.KodePos    : ________
+ 	spasi                        
+ 	spasi                        
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almnama                 NOCHANGE                        INPUTRI 1
+lalmbukoto              NOCHANGE                        INPUTRI 2
+almjalan                TEXTAREA ALLCAPS                INPUTRI 3
+almprop                 ALLCAPS SCROLL                  INPUTRI 4
+lpropinsi3              PROTECT QPROTECT                INPUTRI 5
+almkota                 ALLCAPS SCROLL                  INPUTRI 6
+lkota3                  PROTECT QPROTECT                INPUTRI 7
+almkec                  ALLCAPS SCROLL                  INPUTRI 8
+lkec3                   PROTECT QPROTECT                INPUTRI 9
+almkel                  ALLCAPS SCROLL                  INPUTRI 10
+lkel3                   PROTECT QPROTECT                INPUTRI 11
+almrt			PROTECT				INPUTRI	11
+almrw			PROTECT				INPUTRI	12
+almkdpos                ALLCAPS SCROLL                  INPUTRI 12
+
+DEFAULTS(tmptranst)
+almnama         DFALT_LIST      ALAMAT_TINGGAL
+
+lalmbukoto      INIT            {btmplg}
+lPSMKTP         INIT            PSMKTP
+lALMSURVEY      INIT            PSMTINGGAL
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+
+CALCS()
+cdariktp                almnama=="ALAMAT_KTP"
+cdarisurvey             almnama=="ALAMAT_TINGGAL" && g_curcmd!=0
+cyglama			almnama!="ALAMAT_BARU"
+
+EDITS(tmptranst)
+e.validatePropinsi3     almprop VALIDATE dtmdtkodidx  mdtm3 0 {Pgv_dtkota}
+e.validateKota3         almkota VALIDATE tbldtdtmkod mtbl3 0 {Pgv_dtkota} {Palmprop}
+e.validateKec3          almkec VALIDATE tbddatkodidx mtbd3 0 {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel3          almkel VALIDATE tbtdattypkod mtbt3 0 {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+e.Validate              lalmbukoto      VALIDATE_BUF3_IF cdariktp	almdatotobuk malmsurvey  0 {PlPSMKTP}
+e.Validate              lalmbukoto      VALIDATE_BUF3_IF cdarisurvey	almdatotobuk malmsurvey  0 {PlALMSURVEY}
+
+t.JenisTagih            almnama         MANDATORY
+
+t.mandatoryJalan	almjalan	MANDATORY
+t.mandatoryProp         almprop		MANDATORY
+e.mandatoryKota1	almkota		MANDATORY
+e.mandatoryKec1		almkec		MANDATORY
+e.mandatoryKel1		almkel		MANDATORY
+
+
+MAP(malmsurvey)
+#almjalan                       almjalan                REPLACE
+#almprop                        almprop                 REPLACE
+#almkota                        almkota                 REPLACE
+#almkec                         almkec                  REPLACE
+#almkel                         almkel                  REPLACE
+#almkdpos                       almkdpos                REPLACE
+#almrt				almrt			REPLACE
+#almrw				almrw			REPLACE
+
+MAP(mtbt3)
+tbtkode                 almkel                  REPLACE
+tbtket                  lkel3                   REPLACE
+
+MAP(mtbd3)
+tbdkode                 almkec                  REPLACE
+tbdket                  lkec3                   REPLACE
+
+MAP(mtbl3)
+tblkode                 almkota                 REPLACE
+tblket                  lkota3                  REPLACE
+
+MAP(mdtm3)
+dtmkode                 almprop                 REPLACE
+dtmket                  lpropinsi3              REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=almnama          DO_MAP SHOW mmapjaminput
+
+
+BEFORE_INPUT cur_field=almkel		DO_SKIP_IF cyglama
+BEFORE_INPUT cur_field=almkdpos		DO_SKIP_IF cyglama
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+almdatbukidx   lALMTAGIH btmnobuk
+SFL_MAP
+lALMTAGIH       almdata         REPLACE
+btmplg          almbukoto       REPLACE
+btmnobuk        almnobuk        REPLACE
+
+SPCALCS(spalmtagih)
+DO_LIB ap_nxpst(l4461,lm4461det4);
+
+POSTING(tmptrans)
+        PST_ADDCMD spalmtagih
+        PST_UPDCMD spalmtagih
+
+

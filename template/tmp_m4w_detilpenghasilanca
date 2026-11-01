@@ -1,0 +1,70 @@
+LOCAL 
+PGM_FIELDS
+/*
+ldetpenghsl		DFLOAT		8
+ldettblpenghsl		DFLOAT		8
+*/
+
+
+DBCALCS(djoinsvidethslca1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   ldt703 btmnobuk gv_penghasilanpmh
+
+
+IMAGE(tmptranst) 
+IMAGE(tmptrans)
+|________|___________________________________________________________|_______________.__|
+
+    
+FIELD(tmptrans)
+svinourt		PROTECT			INPUTRI 1
+sviket			PROTECT SCROLL		INPUTRI 2
+svidf1			NUMERIC			INPUTRI 3
+
+CALCS()
+cjoindetsvihsl		djoinsvidethslca1 == 1
+
+SUBFILE(tmptrans)
+SFL_LINES(18)       
+SFL_COND cjoindetsvihsl
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   ldt703 btmnobuk gv_penghasilanpmh
+
+/*
+MAP(mscansvipenghsl)
+r_long8			ldetpenghsl 		REPLACE
+
+DBCALCS(dbscansvipenghsl)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	svidatbuktyp   ldt703 btmnobuk gv_penghasilanpmh
+	DBC_SUM_FIELD	svinourt
+	DBC_MAP		mscansvipenghsl
+
+
+MAP(mscantblpenghsl)
+r_long8			ldettblpenghsl		REPLACE
+
+DBCALCS(dbscantblpenghsl)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tbtdaturtidx   gv_dttemplate gv_tmpverifikasi gv_penghasilan gv_penghasilan 
+	DBC_SUM_FIELD	tbtnourt
+	DBC_MAP		mscantblpenghsl
+*/
+
+CALCS()
+cdetpenghsl0		0
+cCA1			 g_grpnam == "B.M4WCA" || g_grpnam == "RI"
+
+/* 
+cdetpenghslok		dbscansvipenghsl == 0 || (dbscansvipenghsl != 0 && dbscantblpenghsl != 0 && ldetpenghsl == ldettblpenghsl + 6) 
+*/
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cdetpenghsl0
+  PMT_UPDALL_COND cdetpenghsl0 
+  PMT_DEL_COND cCA1
+
+
+

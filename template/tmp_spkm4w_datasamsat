@@ -1,0 +1,515 @@
+LOCAL
+PGM_FIELDS
+lalamat         STRING		31
+lprop	        STRING		21
+lkota           STRING		21
+lkec            STRING		21
+lkel            STRING		21
+lkdpos	        STRING		21 
+ltelp1          STRING		21 
+ltahun          STRING		21 
+lketbertemu	STRING		21
+lsadurt		INT2		2
+lsadcc		INT2		2
+lsadprm		STRING		5
+lsvistr31	STRING		3
+lREFTLPSAM	STRING		11
+lsadktp		STRING		21	
+lsadnama	STRING		61            
+lsadalamat	STRING		101     
+lsadprop	STRING		21
+lsadkota	STRING		21
+lsadkec		STRING		21
+lsadkel		STRING		21
+lsadkdpos	STRING		11
+lsadkdalm	STRING		21
+lsadthrakit	STRING		5
+
+/*DBCALCS(djoinkelcab)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdatcabkod   lSALESM4W tkmlok2 lkel*/
+
+MAP(mjoinsad)
+sadcc		lsadcc		REPLACE
+sadktp		lsadktp		REPLACE
+sadnama		lsadnama	REPLACE
+sadalamat	lsadalamat	REPLACE
+sadprop		lsadprop	REPLACE
+sadkota		lsadkota	REPLACE
+sadkec		lsadkec		REPLACE
+sadkel		lsadkel		REPLACE
+sadkdpos	lsadkdpos	REPLACE
+sadkdalm	lsadkdalm	REPLACE
+sadthrakit	lsadthrakit	REPLACE
+sadurt		lsadurt		REPLACE
+sadprm		lsadprm		REPLACE
+
+DBCALCS(djoinsad)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sadstsfakurt lRINP svikode
+	DBC_MAP		mjoinsad
+/*
+MAP(mjoinsvisam)
+svitype3        lnipmo          REPLACE
+DBCALCS(djoinsvisam)
+DBC_COMMAND     JOIN
+DBC_TARGET      svidatkodtyp lBAGIAREA11 lkel lcab     
+DBC_MAP         mjoinsvisam
+*/
+
+CALCS()
+/*ckelcab		 (tkmtype == "SPKCNTR" && djoinkelcabang == 1 && lkel == lkelcabang) || svikode == BLANKS || tkmtype == "SPKSALESMO" 
+ckelcab2	 (tkmtype == "SPKSALESMO" && djoinsvisam == 1 && tkmplg == lnipmo) || svikode == BLANKS || tkmtype == "SPKCNTR"
+*/
+cref1x           svistr33=="Y" && sviyt1 != "T"
+cref0x           svistr33!="Y"
+cbertemu1	 svistr32!="Y"
+cbertemudeb	 svistr31 == "T" || svistr32 == "Y"
+cbertemu0	 svistr32=="Y" && sviyt1 != "T"
+cbertemuorg	 svistr32=="T" && sviyt1 != "T"
+cbertemu1x	 svistr32=="Y" && svidf1<=1
+cbertemu1xx	 svistr32=="Y" && svidf1>=2 /*PILIH MINAT_NANTI MAKSIMAL 2 KALI*/
+ctemuhp2	 svistr31 == "Y" && svistr32 == "Y" && sviyt1 != "T"
+ctemuhp2T	 svistr31 == "T" ||  (svistr31 == "Y" && svistr32 == "T")
+cdjoinsad        (g_curcmd==1 || (g_curcmd==2 && lsvistr31==BLANKS)) && djoinsad == 1
+cjoinsad	djoinsad == 1 
+ctamsad		sadcc + 1
+cadatelp	svistr4!=BLANKS
+chitktp2         DO_LIB ap_strln(svistr2,&llongktp);
+ctidakminat2	svistr3 == "TIDAK_MINAT"
+cnobukfuref2    "DAC"+STRIP(tkmplg)+STRIP(lthblref)+STRIP(ltglref)
+/*cthblfuref2     THBLS(svitgl2)*/
+cadarefdet2        lsvistr33ref4=="Y" && lsvistr5ref4 != "MOTOR"
+ctidakada	sviyt1 != "T"
+/*cadadata	(sviyt1 == "T" && djoinsadt == 1) || (djoinsadt == 1 && djoinsvisam == 1 && tkmplg == lnipmo && sviyt1 == BLANKS)
+calmvalid	 svistr31 == "Y" 
+*/
+cdtsam1menit     tkdnourt==svinourt && djointkddtsam == 1 && ((ljamakhirdtsam - ljamawaldtsam) <= 1) && svistr31 == "Y" && svidf8 == 1
+cdtsamdiatas1    tkdnourt==svinourt && djointkddtsam == 1 && ((ljamakhirdtsam - ljamawaldtsam) > 1 && (ljamakhirdtsam - ljamawaldtsam) <= 105) && svistr31 == "Y" && svidf8 == 1 
+cdtsamtole       tkdnourt==svinourt && djointkddtsam == 1 && ((ljamakhirdtsam - ljamawaldtsam) > 105) &&  svistr31 == "Y" && svidf8 == 1
+cseldtsam        ljamakhirdtsam - ljamawaldtsam
+cfotokunjsam	 FLD_TO_STRING(svinourt) + "SAM"
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoBukti   : ___ _______________||
+||t.kelurahanisi                   ||
+||t.NoBukuTamu: ___________________||
+||t.AdaData   : ____               ||
+||i.Ktp       : ___________________||
+||t.Nama      : ___________________||
+||t.Alamat    : ___________________||
+||i.Propinsi  : ___________________||
+||i.Kota      : ___________________||
+||i.Kec       : ___________________||
+||i.Kel       : ___________________||
+||i.KodePos   : ___________________||
+||i.Telp      : ___________________||
+||t.ThnMobil  : ___________________||
+||t.AlamatValid ___________________||
+||t.bertemuDeb: ___________________||
+||t.bertemudg : __  _______________||
+||t.Namaditemui ___________________||
+||t.Telp2     : ___________________||
+||t.HasilFu   : ___________________||
+||t.KTPditemui  ___________________||
+||t.Ket       : ___________________||
+||t.TglFuUlang: _________          ||
+||t.AdaRefer  : __                 ||
+||t.NamaRefer : ___________________||
+||t.TelpRef   : ___________________||
+||t.Kendaraan : ___________________||
+||t.TglFu     : _________          ||
+||t.Lat	      :	__________________ ||
+||t.Long      : __________________ ||
+||t.tgl	      : _________ 	   ||
+||t.Enter     : _________       __ ||
+|\---------------------------------/|
+|/---------------------------------\|
+||/---------s.UPLOAD--------------\||
+|||                               |||
+|||				  |||
+|||				  |||
+|||				  |||
+||\-------------------------------/||
+|| _____________________________   ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt	PROTECT			INPUTRI 1	/*nourt*/
+svinobuk	PROTECT			INPUTRI 2 	/*nobuk*/
+svikode		ALLCAPS        		INPUTRI 3 	/*NOBUK SAMSAT*/
+sviyt1		ALLCAPS			INPUTRI 4
+svidtmkode	PROTECT			INPUTRI	4	/*KTP*/
+svinama		PROTECT			INPUTRI 5 	/*nama*/
+lalamat		PROTECT			INPUTRI	6
+lprop		PROTECT			INPUTRI	7
+lkota		PROTECT			INPUTRI	8
+lkec		PROTECT			INPUTRI	9
+lkel		PROTECT			INPUTRI	10
+lkdpos		PROTECT			INPUTRI	11
+ltelp1		PROTECT			INPUTRI	12
+ltahun		PROTECT			INPUTRI	13
+svistr31	NOCHANGE		INPUTRI 14	/*alamat valid*/
+svistr32	NOCHANGE		INPUTRI	15	/*bertemudengan*/
+svistr1		ALLCAPS			INPUTRI	16	/*bertemudengan*/
+lketbertemu	PROTECT			INPUTRI	17	/*ket bertemu*/
+sviket		ALLCAPS			INPUTRI	18	/*Nama yg ditemui*/
+svistr6		DIGITS 			INPUTRI	19
+svistr3		ALLCAPS			INPUTRI	20	/*Hasil FU*/
+svistr2		DIGITS			INPUTRI	21	/*KTP yg ditemui*/
+sviket2		ALLCAPS			INPUTRI	22	/*Keterangan Hasil FU*/
+svitgl2		NONE NOLIMIT {DD-MM-YYYY)	INPUTRI	22 /*Tgl FU Ulang*/
+svistr33	NOCHANGE		INPUTRI	23	/*Ada refer*/
+sviket3		ALLCAPS			INPUTRI	24	/*Nama Refer*/
+svistr4		DIGITS			INPUTRI	25	/*HP Refer*/
+svistr5		NOCHANGE		INPUTRI	26	/*Kendaraan refer*/
+svitgl1		PROTECT {DD-MM-YYYY}	INPUTRI	27 /*Tgl fu refer*/
+svidf3		PROTECT			INPUTRI 28
+svidf4		PROTECT			INPUTRI 29
+svitype3	PROTECT			INPUTRI 30
+lenter		ALLCAPS			INPUTRI	35
+svidf2		NOCHANGE		INPUTRI 36
+ltomkunjsam	TOMBOL			INPUTRI 37
+
+DEFAULTS(tmptranst)
+svistr31	DFALT_SCAN_BLANKS	Y T
+svistr32	DFALT_SCAN_BLANKS	Y T
+svistr33	DFALT_SCAN_BLANKS	Y T
+sviyt1		DFALT_SCAN_BLANKS	T
+lREFTLPSAM	INIT		"REFTLPSAM"
+/*lalamat         INIT		BLANKS
+lprop           INIT		BLANKS
+lkota           INIT		BLANKS
+lkec            INIT		BLANKS
+lkel            INIT		BLANKS 
+lkdpos          INIT		BLANKS 
+ltelp1          INIT		BLANKS 
+ltahun          INIT		BLANKS */
+svitgl1		INIT		{g_tgltrn}
+IF cbertemu1x  svistr3        DFALT_SCAN_BLANKS       MINAT TIDAK_MINAT MINAT_NANTI
+IF cbertemu1xx  svistr3        DFALT_SCAN_BLANKS       MINAT TIDAK_MINAT 
+svistr5		DFALT_SCAN_BLANKS	MOBIL MOTOR MOBIL_MOTOR                                 
+
+EDITS(tmptranst)
+Nobuk SAMSAT Tdk Ada 1		svikode		VALIDATE_DUP_IF ctambah4 sadstsfakurt msad ssadspk {PlRINP} /*{Plthblhariini11} {Ptkmlok2}*/
+/*Nobuk SAMSAT Tdk Ada 2		svikode		VALIDATE_DUP_IF cupdate sadstsfakurt msad {PlRINP}  */
+Bertemu dengan			svistr1		VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dttabel} {Pgv_infoumum} {PlBERTEMU}
+e.DupkeyKtp	svistr2		DUPKEY psmktpidx
+/*e.Mandatory	svikode         MANDATORY*/
+e.Mandatory	svistr31        MANDATORY_IF ctidakada
+e.Mandatory	svistr32        MANDATORY_IF cbertemu0
+e.Mandatory	svistr1         MANDATORY_IF cbertemuorg
+e.Mandatory	sviket          MANDATORY_IF cbertemuorg
+e.Mandatory	svistr2         MANDATORY_IF cminat2
+e.Mandatory	svistr3         MANDATORY_IF cbertemu0
+e.Mandatory	sviket2         MANDATORY_IF ctidakada
+e.Mandatory	svitgl2         MANDATORY_IF cmandtglfu
+e.Mandatory	svistr33        MANDATORY_IF cbertemu0
+e.Mandatory	sviket3         MANDATORY_IF cref1x
+e.Mandatory	svistr4         MANDATORY_IF cref1x
+e.Mandatory	svistr5         MANDATORY_IF cref1x
+/*e.Mandatory	svitgl2         MANDATORY_IF cref1x*/
+e.Mandatory	svistr6		MANDATORY_IF ctemuhp2
+e.Mandatory	sviyt1		MANDATORY_IF crokosong
+
+MAP(mtbd2)
+tbdkode		svistr1		REPLACE
+tbdket		lketbertemu	REPLACE
+
+
+MAP(msad)
+sadnobuk	svikode		REPLACE
+sadktp		svidtmkode	REPLACE
+sadnama		svinama		REPLACE
+sadalamat	lalamat		REPLACE
+sadprop		lprop		REPLACE
+sadkota		lkota		REPLACE
+sadkec		lkec		REPLACE
+sadkel		lkel		REPLACE
+sadkdpos	lkdpos		REPLACE
+sadkdalm	ltelp1		REPLACE
+sadthrakit	ltahun		REPLACE
+sadcc		svidf1		REPLACE
+sadurt		lsadurt		REPLACE
+sadprm		lsadprm		REPLACE
+tkmlok2		lcab		REPLACE
+
+MAP(mpriosad)
+lsadktp		svidtmkode	REPLACE_IF cjoinsad
+lsadnama	svinama		REPLACE_IF cjoinsad
+lsadalamat	lalamat		REPLACE_IF cjoinsad
+lsadprop	lprop		REPLACE_IF cjoinsad
+lsadkota	lkota		REPLACE_IF cjoinsad
+lsadkec		lkec		REPLACE_IF cjoinsad
+lsadkel		lkel		REPLACE_IF cjoinsad
+lsadkdpos	lkdpos		REPLACE_IF cjoinsad
+lsadkdalm	ltelp1		REPLACE_IF cjoinsad
+lsadthrakit	ltahun		REPLACE_IF cjoinsad
+lsadcc		svidf1		REPLACE_IF cjoinsad
+lsadurt		lsadurt		REPLACE_IF cjoinsad
+lsadprm		lsadprm		REPLACE_IF cjoinsad
+tkmlok2		lcab		REPLACE_IF cjoinsad
+
+
+MAP(mtanggal)
+c1bulan		svitgl2		DO_CALC_IF ctidakminat2
+
+MAP(menter2)
+cBLANKS		svistr1		DO_CALC_IF cbertemu1
+cBLANKS		sviket 		DO_CALC_IF cbertemu1
+cBLANKS		svistr2		DO_CALC_IF cbertemu1
+cBLANKS		svistr3		DO_CALC_IF cbertemu1
+cBLANKS		svitgl2		DO_CALC_IF cskiptglfu
+cBLANKS		sviket3		DO_CALC_IF cref0x
+cBLANKS		svistr4		DO_CALC_IF cref0x
+cBLANKS		svistr5		DO_CALC_IF cref0x
+/*cBLANKS		svitgl2		DO_CALC_IF cref0x*/
+l1		svidf2		REPLACE
+
+MAP(murut2)
+tkmtype		svidata		REPLACE
+tkmnobuk	svinobuk	REPLACE
+lDET2		svitype		REPLACE
+c1              svinourt        DO_CALC_IF cjoindet2_0urt
+curut           svinourt        DO_CALC_IF cjoindet2_1urt
+cBLANKS		svistr1		DO_CALC
+cBLANKS		sviket		DO_CALC
+svistr31	lsvistr31	REPLACE
+
+MAP(mhitktp2)
+chitktp2         llongktp        DO_CALC
+
+MAP(myt1)
+cBLANKS		sviyt1		DO_CALC
+cBLANKS		svistr2		DO_CALC
+
+/*-------------------------------------------------*/
+MAP(mmapdtsamx)
+svidata         lmain1data      REPLACE
+svinobuk        lmain1nobuk     REPLACE
+svinourt        lmain1urt       REPLACE
+svitype         lmain1type      REPLACE
+
+DBCALCS(dmapdtsam_x)
+	DCOMMAND MAPMAP
+	DMAP     mmapdtsamx
+
+MAP(mmapjamdtsam)
+cBLANKS		l1menitdtsam	 DO_CALC
+cBLANKS		lmenitdtsam 	 DO_CALC
+c1              l1menitdtsam     DO_CALC_IF cdtsam1menit
+cseldtsam       lmenitdtsam      DO_CALC_IF cdtsamdiatas1
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dmapjamdtsam)
+	DBC_COMMAND     MAPMAP
+	DBC_MAP         mmapjamdtsam
+
+
+MAP(mupdsvikunjsam)
+cfotolat1        svidf3          DO_CALC
+cfotolon1        svidf4          DO_CALC
+g_fotodate1     svitype3         REPLACE
+ctandapoin	svidf8		DO_CALC_IF ctglsamafu2
+DEBUG		ldum	ldum	REPLACE
+DBCALCS(dbgpsdetkunjsam)
+	DCOMMAND	UPDATE
+	DTARGET		sviprmidx sviprm
+	DMAP            mupdsvikunjsam	
+
+MAP(mupdsam1)
+c1              tkdjml3     	DO_CALC_IF cdtsam1menit
+cseldtsam       tkdjml3      	DO_CALC_IF cdtsamdiatas1
+cmenit105x	tkdjml3		DO_CALC_IF cdtsamtole
+
+DBCALCS(dupdsam1)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_TARGET      tkddatbukll svidata svinobuk lDET221
+	DBC_MAP         mupdsam1
+
+
+MAP(mupddf2dtsam)
+c2x             svidf2        DO_CALC_IF csdh1dtsam
+DBCALCS(dupddf2dtsam)
+	DCOMMAND UPDATE
+	DTARGET sviotoidx svioto
+	DMAP 	mupddf2dtsam
+
+SPCALCS(supddtsam)
+	dmapdtsam_x
+	dupdjam1
+	dmapjamdtsam
+	/*dupdmenitdtsam*/
+	dupdsam1
+	dupddf2dtsam
+
+HOOKS(tmptranst)
+AFTER_INPUT 	cur_field=svikode 	DO_MAP SHOW mpriosad
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF cjamtarget	mdum
+		ELSE HKCURSOR STAY
+		HKMSG JAM SUDAH LEWAT DARI JAM TARGET
+
+/* AFTER_INPUT	cur_field=svikode	DO_SCAN dscansad */
+BEFORE_INPUT    cur_field=svikode       DO_SKIP_IF cupdate
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW myt1
+BEFORE_INPUT    cur_field=svistr31       DO_MAP SHOW murut2
+
+/*AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF ckelcab mdum
+                ELSE HKCURSOR STAY
+                HKMSG KELURAHAN CALON DEBITUR TIDAK SAMA DENGAN KELURAHAN CABANG (RING 0)
+
+AFTER_INPUT     cur_field=sviyt1         DO_MAP SHOW
+                IF cadadata mdum
+                ELSE HKCURSOR STAY
+                HKMSG Anda Ada Data Samsat
+
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF ckelcab2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG KELURAHAN CALON DEBITUR TIDAK SAMA DENGAN AREA GARAP ANDA
+*/
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF cdatakosong
+AFTER_INPUT	cur_field=svistr3	DO_MAP SHOW mtanggal
+BEFORE_INPUT	cur_field=svistr6	DO_SKIP_IF ctemuhp2T
+BEFORE_INPUT    cur_field=svistr32       DO_SKIP_IF cbertemudeb
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF cbertemudeb
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbertemudeb
+BEFORE_INPUT    cur_field=svistr2       DO_SKIP_IF cnotvalid
+BEFORE_INPUT    cur_field=svistr3       DO_SKIP_IF cbertemu1
+BEFORE_INPUT    cur_field=svistr33       DO_SKIP_IF cbertemu1
+BEFORE_INPUT    cur_field=svitgl2       DO_SKIP_IF cskiptglfu
+AFTER_INPUT     cur_field=svistr2       DO_MAP SHOW mhitktp2
+AFTER_INPUT     cur_field=svistr2          DO_MAP SHOW
+                IF cpanjangktp2   mdum
+                ELSE HKCURSOR STAY
+                HKMSG PANJANG KTP HARUS 16 DIGIT
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF ctglmaju2    mdum
+                ELSE HKCURSOR STAY
+                HKMSG TANGGAL FU TIDAK BOLEH MUNDUR
+
+/*AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF ctglmaju2    mdum
+                ELSE HKCURSOR STAY
+                HKMSG TANGGAL FU TIDAK BOLEH MUNDUR
+*/
+AFTER_INPUT	cur_field=sviyt1	DO_MAP SHOW
+		IF cceksad mdum
+		ELSE HKCURSOR STAY
+		HKMSG Anda Ada Data Samsat
+
+
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cref0x
+BEFORE_INPUT    cur_field=svistr4       DO_SKIP_IF cref0x
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cref0x
+/*BEFORE_INPUT    cur_field=svitgl2       DO_SKIP_IF cref0x*/
+AFTER_INPUT	cur_keybd=EN   		DO_MAP SHOW menter2
+CLICKED         cur_field=ltomkunjsam   DO_SPCALCS supddtsam
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tkmnobuk svists
+SFL_UPLFLD_DBCALCS dbgpsdetkunjsam
+SFL_UPL_DIRFLD  tkmtgl
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp   tkmtype tkmnobuk lDET2
+SFL_MAP
+tkmtype         svidata         REPLACE
+tkmnobuk        svinobuk        REPLACE
+lDET2           svitype         REPLACE
+
+MAP(mupdsad)
+ctamsad		sadcc		DO_CALC_IF cdjoinsad
+svistr6		sadjenis	REPLACE_IF cadatelp
+
+MAP(mmapmap)
+DEBUG		ldum	ldum	REPLACE
+/*cthblfuref2     lthblref       DO_CALC
+svitgl2         ltglref        REPLACE*/
+cnobukfuref2    lnobukfuref4    DO_CALC
+cthblfulagi     lthbllg       DO_CALC
+svitgl2         ltgllg        REPLACE
+cnobukfulagi	lnobukfulagi	DO_CALC
+
+MAP(maddrefdet2)
+tkmtype     svidata         REPLACE
+lnobukfuref4    svinobuk        REPLACE
+lREFTLPSAM    svitype         REPLACE
+lsviket3ref4    svinama         REPLACE
+lsvistr4ref4    svistr5         REPLACE
+lsvinamaref4    sviket3         REPLACE
+lsvistr2ref4	svistr7		REPLACE
+c1              svinourt        DO_CALC_IF cjoinref4_0urt
+curutref        svinourt        DO_CALC_IF cjoinref4_1urt
+
+MAP(maddfusamsatlagi)
+tkmtype		svidata		REPLACE
+lnobukfulagi	svinobuk	REPLACE
+lDET2		svitype		REPLACE
+lsvikoderef4	svikode		REPLACE
+lsvidtmkoderef4	svidtmkode	REPLACE
+lsvistr31ref4	svistr31	REPLACE
+lsvistr32ref4	svistr32	REPLACE
+lsvistr1ref4	svistr1		REPLACE
+lsviketref4	sviket		REPLACE
+lsvistr6ref4	svistr6		REPLACE
+c1              svinourt        DO_CALC_IF cjoinfuro_0urt
+curutref        svinourt        DO_CALC_IF cjoinfuro_1urt
+	
+CALCS()
+cSAMSAT		"SAMSAT"
+
+MAP(maddakt)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cSAMSAT         akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam      	DO_CALC   
+g_usrkode       aktkode2        REPLACE
+cSAMSAT         aktbrg          DO_CALC
+
+MAP(maddjamdtsam)
+svinobuk	tkdnobuk	REPLACE
+svidata		tkddata		REPLACE
+lDET2		tkdnoll		REPLACE
+tlmnobuk	tkdsisstr	REPLACE
+svinourt        tkdnourt        REPLACE
+gv_OPEN         tkdsts          REPLACE
+ljam1tlpsam     tkdjml          REPLACE
+cfotokunjsam	svists		DO_CALC
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dadddtsam1,DCOMMAND ADD, DFILE tkd,DMAP maddjamdtsam);
+DO_LIB_IF cdatakosong ap_dbclc(DNAME dupdsad,DCOMMAND UPDATE,DTARGET sadstsfakurt lRINP svikode lsadurt,DMAP mupdsad);
+/*DO_LIB ap_dbclc(DNAME dupdatas2,DCOMMAND UPDATE,DTARGET tkmbukidx tkmnobuk,DMAP mupdatas2); */
+DO_LIB ap_dbclc(DNAME dmapawaldet2,DCOMMAND MAPMAP,DMAP mapawaldet2);
+DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB_IF cadarefdet2 ap_dbclc(DNAME daddref2,DCOMMAND ADD,DFILE svi,DMAP maddrefdet2);
+DO_LIB_IF cmntsamsat ap_dbclc(DNAME daddrefsamsat,DCOMMAND ADD,DFILE svi,DMAP maddfusamsatlagi);
+DO_LIB ap_dbclc(DNAME dmapakhirdet2,DCOMMAND MAPMAP,DMAP mapakhirdet2);
+DO_LIB ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+
+SPCALCS(sptmptrans2)
+DO_LIB ap_dbclc(DNAME dupdsad2,DCOMMAND UPDATE,DTARGET sadstsfakurt lRINP svikode lsadurt,DMAP mupdsad);
+/*DO_LIB ap_dbclc(DNAME dupdatas22,DCOMMAND UPDATE,DTARGET tkmbukidx tkmnobuk,DMAP mupdatas2);*/
+DO_LIB ap_dbclc(DNAME dmapawaldet22,DCOMMAND MAPMAP,DMAP mapawaldet2);
+DO_LIB ap_dbclc(DNAME dmapmap2,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB ap_dbclc(DNAME dmapakhirdet22,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mapakhirdet2);
+DO_LIB_IF cadarefdet2 ap_dbclc(DNAME daddrefu,DCOMMAND ADD,DFILE svi,DMAP maddrefdet2);
+DO_LIB_IF cmntsamsat ap_dbclc(DNAME daddrefsamsatu,DCOMMAND ADD,DFILE svi,DMAP maddfusamsatlagi);
+
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptmptrans
+	PST_UPDCMD	sptmptrans2
+

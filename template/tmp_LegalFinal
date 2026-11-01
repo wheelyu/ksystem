@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.AccHead    _______  __________ ||
+||t.OkUp       _______             ||
+|\---------------------------------/|
+|/--DOCUPLOAD----------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldlok2  	NOCHANGE         	INPUTRI		1
+tldgrup  	PROTECT          	INPUTRI		2
+tldgrup2 	PROTECT          	INPUTRI		2
+
+DEFAULT(tmptranst)
+tldlok2 	DFALT_SCAN_BLANKS	ACC "ACC" 
+					TDK "TDK"
+
+CALCS()
+cheadokfinal    tldlok2 != BLANKS
+cheadtlfinal    tldlok2 == "TDK" 
+
+MAP(mheadfinal)
+g_usrkode       tldgrup         REPLACE_IF cheadokfinal
+cblanks         tldgrup2        DO_CALC_IF cheadtlfinal
+
+
+
+EDIT(tmptranst)
+e.Mandatory	tldlok2  	MANDATORY
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldlok2      DO_MAP SHOW mheadfinal
+
+
+MAP(mupdtldfinal)
+gv_ok		tldgrup2	REPLACE
+DBCALCS(dupdtldfinal)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tldprmidx tldprm
+	DBC_MAP		mupdtldfinal 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_DOCUPLFLD tlmnobuk tlmuntuk
+SFL_DOCUPLFLD_DBCALCS dupdtldfinal 
+SFL_TARGET
+tldbukbrgoto tlmnobuk lprg lfinal
+
+
+

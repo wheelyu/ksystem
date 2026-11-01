@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------------------------\
+| t.914KetUbhKonf												   |
+|/------------t-------------t----------t----------------t---------------t---------t-------------------------------\|
+|| t.NipInput | t.Tgl	   | t.NipSDM | t.Nama         | t.Konf109     | t.Rev   | t.AlasanRevisi	  	  ||
+|\------------.-------------.----------.----------------.---------------.---------.-------------------------------/|
+\------------------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|____________|_____________|__________|___________________________|_______________|____________|____________________________|
+
+FIELD(tmptrans)
+psdstr3		PROTECT                 INPUTRI         1
+psdtgl1		PROTECT {DD-MM-YYYY}	INPUTRI	2
+psdstr5		ALLCAPS			INPUTRI 3	
+lsdmtr          PROTECT                 INPUTRI 4
+psdstr1		PROTECT			INPUTRI 5	
+psdstr2		NOCHANGE		INPUTRI	6
+psdket		ALLCAPS 		INPUTRI 7
+
+DEFAULTS(tmptrans)
+psdstr3		INIT			{g_usrkode}
+psdtgl1		INIT			{g_tgltrn}
+psdstr2		DFALT_SCAN_BLANKS      	Y
+
+MAP(mjointldubhkonf)
+tldlok2		ltldlok2		REPLACE
+
+DBCALCS(djointldubhkonf)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	tldplgbrgidx lDTLISTRN11 gv_OPEN psdstr5 lDTLISTRN tlmnobuk
+	DBC_MAP		mjointldubhkonf
+
+CALCS()
+cjointldubhkonf		djointldubhkonf == 1
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=psdstr5	DO_MAP SHOW
+		IF cjointldubhkonf mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.914NipTidakBisaInput
+
+EDITS(tmptrans)
+e.Mandatory     psdstr5		MANDATORY
+e.Mandatory     psdstr2		MANDATORY
+e.Mandatory     psdket		MANDATORY
+e.Validate      psdstr5		VALIDATE psikodidx mpsiubhkonf
+
+MAP(mpsiubhkonf)
+psikode		psdstr5		REPLACE
+psinama         lsdmtr          REPLACE
+ltldlok2 	psdstr1		REPLACE_IF cjointldubhkonf
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_COND cjointkdubhtrn
+SFL_LINES(10)
+SFL_TARGET
+        psddatpsmkod tlmdata tlmnobuk lUBAHKONF
+
+SFL_MAP
+tlmdata		psddata		REPLACE
+tlmnobuk        psdpsmkode	REPLACE
+lUBAHKONF 	psdkode		REPLACE
+psdstr5		psdtype		REPLACE

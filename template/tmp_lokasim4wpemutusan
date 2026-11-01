@@ -1,0 +1,83 @@
+IMAGE(tmptranst)
+/----------------------------------------------\
+|/--------------------------------------------\|
+||                t.PemutusanLOK              ||
+|\--------------------------------------------/|
+|/--------------------------------------------\|
+||t.NoBuk          :_________________________ ||
+||t.IDLokasi       :_________________________ ||
+||t.NamaLokasi     :_________________________ ||  
+||t.NamaPemilik    :_________________________ ||
+||t.TipePemutusan  :_________________________ ||  
+||t.Ket            :_________________________ || 
+||t.user           :________ __________       || 
+|\--------------------------------------------/|
+\----------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketkode 	PROTECT			INPUTRI	1
+ketnobuk	PROTECT			INPUTRI 2
+tlmket		PROTECT			INPUTRI 3
+tlmplg		PROTECT			INPUTRI	4
+ketnama		NOCHANGE		INPUTRI	5
+ketisi		TEXTAREA ALLCAPS	INPUTRI 6
+ketisi2		PROTECT			INPUTRI	7
+kettgl1		PROTECT			INPUTRI 8
+
+DEFAULTS(tmptranst)
+ketnama		DFALT_SCAN_BLANKS	KINERJA_BURUK PELANGGARAN_PERJANJIAN
+ketisi2		INIT		{g_usrkode}
+ketisi2		INIT_UPDATE	{g_usrkode}
+kettgl1		INIT		{g_tgltrn}
+kettgl1		INIT_UPDATE	{g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory	ketnama		MANDATORY
+e.Mandatory	ketisi		MANDATORY
+
+MAP(mjoinputuslok)
+ketnourt	lurut		REPLACE
+
+DBCALCS(djoinputuslok)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	ketbukurtidx lPUTUSANLOK mtsnobuk
+	DBC_MAP		mjoinputuslok
+
+CALCS()
+cjoinputuslok1	djoinputuslok==1 && g_curcmd==1
+cjoinputuslok0	djoinputuslok==0 && g_curcmd==1
+ckode1		"B" + STRIP(mtsnobuk) + STRIP(lurutstr)
+cPEMUTUSAN	"PEMUTUSAN"
+
+MAP(mmapsublok1)
+c1		ketnourt	DO_CALC_IF cjoinputuslok0
+curut		ketnourt	DO_CALC_IF cjoinputuslok1
+ketnourt	lurutstr	REPLACE_IF ctambah
+ckode1		ketkode		DO_CALC_IF ctambah
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mmapsublok1
+
+MAP(mupdmaster1)
+gv_INPG		mtssts		REPLACE
+cPEMUTUSAN	mtsdvs		DO_CALC
+
+SPCALCS(saddsublok1)
+	DO_LIB ap_dbclc(DNAME dupdmaster1,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmaster1);
+
+POSTING(tmptrans)
+	PST_ADDCMD	saddsublok1
+	PST_UPDCMD	saddsublok1
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+ketbukurtidx lPUTUSANLOK mtsnobuk
+SFL_MAP
+lPUTUSANLOK	ketdata		REPLACE
+mtsnobuk	ketnobuk	REPLACE
+lPUTUSANLOK	kettype		REPLACE
+

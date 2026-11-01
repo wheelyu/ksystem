@@ -1,0 +1,118 @@
+LOCAL 
+PGM_FIELDS
+
+ljarak701		DFLOAT	8
+lFOTOSVY11x	    STRING	11
+lFOTORUMAH11x	STRING	11
+luplok1x		STRING	21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/---------------------------------\
+| /-------s.UPLOAD---------------\|
+| |                              !|
+| |                              !!
+| |                              !!
+| |                              !!
+| |                              !!
+| |                              !!
+| |                              !!
+| |                              !!
+| |                              |! 
+| \------------------------------/|
+|/-------------------------------\|
+||i.Ket    : ___________________ !|
+||t.Lat    : ________.__________ !|
+||t.Lon    : ________.__________ !|
+||spasi                          !|
+||t.Latged : ________.__________ !|
+||t.Longed : ________.__________ !|
+||t.jarak  : ________.__________ !|
+||t.Wajib  : ___________________ !|
+||           ___________________ !| 
+|\-------------------------------/|
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+svidf6			NOCHANGE		INPUTRI 	2
+svidf7			NOCHANGE		INPUTRI 	3
+svidf2    		NOCHANGE		INPUTRI		3
+svidf1    		NOCHANGE		INPUTRI		3
+svidf5			NOCHANGE 		INPUTRI		4
+svists			NOCHANGE		INPUTRI 	5
+luplok1x	 	        TOMBOL		        INPUTRI 8
+
+
+DEFAULTS(tmptranst)
+lFOTOSVY11x		INIT		FOTOSVY
+lFOTORUMAH11x		INIT		FOTORUMAH
+luplok1x			INIT		"UPLOAD OK"
+
+CALCS()
+cjalanap1	DO_LIB ap_dsGPS(svidf2,svidf1,svidf6,svidf7,&ljarak701);
+cadajarak1       svidf1!=BLANKS && svidf2!=BLANKS && svidf6!=BLANKS && svidf7!=BLANKS
+cjarak1          (ljarak701/1000)/1000
+
+cfr001x		svikode == "FR001"
+csudahok1	sviyt1 == "Y" 
+
+MAP(mupdsvi1x)
+g_fotolat1	svidf6		REPLACE_IF csudahok1
+g_fotolon1	svidf7		REPLACE_IF csudahok1
+g_fototime1	svidf8		REPLACE_IF csudahok1
+llatgedung701	svidf2		REPLACE_IF cjoingedung1
+llongedung701	svidf1		REPLACE_IF cjoingedung1
+c0		svidf5		DO_CALC
+cjalanap1  	svidf5		DO_CALC_IF cadajarak1
+cjarak1		svidf5	 	DO_CALC_IF csudahok1                  
+
+MAP(mok1)
+cY		sviyt1		DO_CALC
+
+
+DBCALCS(dbgpsrumahxokx)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mok1  
+DBCALCS(dbgpsrumahx)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvi1x  
+
+MAP(mupdbtmdf1x)
+cjalanap1        btmdf1          DO_CALC_IF cadajarak1
+cjarak1          btmdf1          DO_CALC
+
+SPCALCS(supdmasker1)
+	dbgpsrumahx
+        DO_LIB_IF cfr001x  ap_dbclc(DNAME dupdbtmdf1x,DCOMMAND UPDATE,DTARGET btmbukidx svinobuk,DMAP mupdbtmdf1x);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luplok1x  IF	csudahok1  DO_SPCALCS supdmasker1
+				   ELSE t.UplFotoDulu
+
+CALCS()
+cdarihp1		(btmsts == "701" && (btmflag1 == "SRVY" || btmflag1 == "UPL") && (g_mobile == 1 || g_mobile == 2)) || g_grpnam == "RI" || g_grpnam == "IT" ||
+		g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WCOO" || 
+		g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WMHEAD" || g_grpnam == "B.M4WCA"
+cfotorumahusaha1	(svitype == "FOTORUMAH"  || svitype == "FOTOKRY" || svitype == "FOTOCEKRMH") 
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbgpsrumahxokx
+/*L_UPLREADONLY*/
+SFL_COND cdarihp1
+SFL_SELECT cfotorumahusaha1
+SFL_UPLFLD btmnobuk svikode
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_CAMERAONLY
+
+SFL_TARGET
+	svidatbuktyp   lFOTOSVY11x btmnobuk
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0

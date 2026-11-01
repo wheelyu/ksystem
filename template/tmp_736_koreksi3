@@ -1,0 +1,140 @@
+LOCAL
+PGM_FIELDS
+labktglbm	DATE	4
+lnamabm2	STRING	31
+
+
+CALCS()
+cabkbm		abksts=="INPG" && abkkym==tldplg
+
+
+MAP(mjointglabkbm)
+abktgl		labktglbm		REPLACE
+
+DBCALCS(djointglabkbm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsen mtsnobuk
+	DBC_MAP		mjointglabkbm
+	DBC_SELECT	cabkbm 
+
+DBCALCS(djointglabk736)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lkunciabsen mtsnobuk
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.Nourt      :____                ||
+||t.NoBuk      :____________________||
+||t.NipInp     :____________________||
+||t.NamaBm     :____________________||
+||i.Login      :____________________||
+||t.TglKunci   :____________________||
+||t.TglMunKunc :____________________||
+||t.Ket                             ||
+||:                                 ||
+||:                                 ||
+||:_________________________________||
+||t.Ac/T       :______              ||
+||                            ______||
+|\----------------------------------/|
+\------------------------------------/
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+tldnourt        NOCHANGE        	INPUTRI 1
+tldnobuk        PROTECT         	INPUTRI 2
+tldplg          PROTECT         	INPUTRI 3
+lnamabm2	PROTECT			INPUTRI	4
+tldlok2         PROTECT         	INPUTRI 5
+tldtgl2		PROTECT			INPUTRI	6
+tldtgl3		NONE {DD-MM-YYYY}	INPUTRI 7
+tldket          TEXTAREA        	INPUTRI 8
+tldtydis	NOCHANGE		INPUTRI 9
+lenter          NOCHANGE        	INPUTRI 10
+
+
+DEFAULTS(tmptranst)
+lenter          INIT            ENTER
+tlddata         INIT            RESURVEY
+tldlok2         INIT            {g_grpnam}
+tldsts          INIT            INPG
+tldplg          INIT            {g_usrkode}
+tldtglfak	INIT		{g_tgltrn}
+tldbrg		INIT		UBHKUNCICBG
+
+tldtydis                          DFALT_SCAN_BLANKS     ACC "ACC"
+							TACC "TACC"
+
+CALCS()
+ctmbhf		g_curcmd==1 && g_grpnam!="KAWIL" && g_grpnam!="ADHSYOMA" && g_grpnam!="IT" && g_grpnam!="BPI" && g_grpnam != "DCARESURVEY"
+cubhf		g_curcmd==2 && (g_grpnam=="RI" || g_grpnam=="KAWIL" ||g_grpnam=="REMDVH" || g_grpnam=="ADHSYOMA" || g_grpnam=="BPI" || g_grpnam == "DCARESURVEY")
+
+EDITS(tmptranst)
+e.Mandatory     tldtgl3         MANDATORY_IF ctmbhf
+e.Mandatory     tldket          MANDATORY_IF ctmbhf
+e.Mandatory     tldtydis        MANDATORY_IF cubhf
+
+t.ValidateNip   tldplg          VALIDATE psmdtkodidx mpsinip3  {Pgv_dtkaryawan} {Pgv_INPG}
+
+MAP(mpsinip3)
+psmkode         tldplg          REPLACE
+psmnama		lnamabm2	REPLACE
+cthblk          lthblk          DO_CALC_IF cjointldf
+
+CALCS()
+/*
+cjointld_0      djointld == 0 && g_curcmd==1
+cjointld_1      djointld == 1 && g_curcmd==1
+*/
+
+cjoinkunciabk	djointglabkbm==1
+cbtstgl3        tldtgl3 > g_tgltrn && tldtgl3 <= (g_tgltrn + 7)
+cststgl		(abksts=="RINP" || abksts=="INPG")
+cjointglabk736	djointglabk736==1 && tldtydis=="ACC"
+clogkwl		g_grpnam!="BM" && g_grpnam!="IT" && g_grpnam!="ADHSYOMA" && g_grpnam!="BPI" && g_grpnam != "DCARESURVEY"
+clognotkwl	g_grpnam!="KAWIL" && g_grpnam!="RI" && g_grpnam!="REMDVH" && g_grpnam!="ADHSYOMA" && g_grpnam!="BPI" && g_grpnam != "DCARESURVEY"
+
+MAP(misiuruty3)
+csatu2x         tldnourt        DO_CALC_IF cjointld_0
+cplus2x         tldnourt        DO_CALC_IF cjointld_1
+
+MAP(misitranse3)
+mtsnobuk        tldnobuk        REPLACE
+labktglbm	tldtgl2		REPLACE_IF cjoinkunciabk
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldnourt      DO_MAP misiuruty3
+
+BEFORE_INPUT    cur_field=tldtgl3      DO_SKIP_IF clogkwl
+BEFORE_INPUT    cur_field=tldket       DO_SKIP_IF clogkwl
+BEFORE_INPUT    cur_field=tldtydis     DO_SKIP_IF clognotkwl
+
+
+AFTER_INPUT     cur_field=tldtgl2       DO_MAP SHOW misitranse3
+
+AFTER_INPUT     cur_field=tldtgl3      DO_MAP  SHOW
+                IF cbtstgl3 mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Max mundur kuncian yaitu 3 hari
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tldbukbrgoto   mtsnobuk gv_INPG lUBHKUNCICBG
+
+MAP(mupdabktranse3)
+tldtgl3                 abktgl          REPLACE_IF cststgl
+gt_RINP                 abksts          REPLACE_IF cststgl
+
+SPCALCS(sptmptrans)
+DO_LIB_IF cjointglabk736 ap_dbclc(DNAME dupdabktranse3,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabktranse3);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans
+PST_UPDCMD      sptmptrans 
+

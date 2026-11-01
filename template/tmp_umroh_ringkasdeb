@@ -1,0 +1,209 @@
+LOCAL
+PGM_FIELDS
+lindjun     STRING          21
+lPEKERJAAN211	STRING		21
+lgabseries	STRING		61
+l0		DFLOAT          8	
+lhasil1m        DFLOAT          8
+lhasil2m        DFLOAT          8
+lhasil3m        DFLOAT          8
+lastmerk	STRING		21
+lastth		STRING		11
+lasttype	STRING		21
+lbtmjnsdeb	STRING		21
+l701ADD		STRING		21
+l701y		STRING		11
+lsystime1	TIME		4
+lSLA11		STRING		11
+lSLA21x		STRING		21
+lkatdeb1	STRING		2
+lkatdeb2	STRING		2
+
+/*CALCS()
+c701add		abktype=="701ADD"
+*/
+
+DBCALCS(djoinrmdseries)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx gv_INPG lgabseries
+
+MAP(mjoinast)
+astmerk		lastmerk		REPLACE	
+astth		lastth			REPLACE
+asttype		lasttype		REPLACE
+
+DBCALCS(djoinast)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      astdatkodidx gv_dtassets btmplg gv_bpkb svitblkode
+	DBC_MAP		mjoinast
+
+/*DBCALCS(djoinakt701add)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx  btmnobuk lSLA11 lSLA21x 
+	DBC_SELECT	c701add
+
+*/
+
+IMAGE(tmptranst)
+/--------------------------------\
+|t.Tanggal   : __________________|
+|t.Pekerjaan : __________________|
+|t.Industri  : __________________|
+|t.Lamakerja : ___ t.Th          |
+|t.Asset     : _______           |
+|t.Merk      : __________________|
+|t.Series    : __________________|
+|t.Tahun     : __________________|
+|t.Type      : __________________|
+|t.Induk     : __________________|
+|t.Kategori  : _____________ ____|
+|t.SubMilik  : __________________|
+|t.SubBkr    : __________________|	   
+|            	             _ _ |
+\--------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svitgl1		PROTECT NONE {DD-MM-YYYY}		INPUTRI 1 /*pekerjaan*/
+svistr1		ALLCAPS SCROLL    	INPUTRI 1 /*pekerjaan*/
+svistr4		ALLCAPS SCROLL		INPUTRI 1 /*industri*/
+svidf7		NUMERIC			INPUTRI 3 /*lamakerja*/
+svitblkode	PROTECT 		INPUTRI 4
+svistr2		ALLCAPS 		INPUTRI 4 /*merk*/
+svistr3		PROTECT 		INPUTRI 5 /*Series*/
+svistr5		ALLCAPS 		INPUTRI 6 /*Tahun*/
+svistr6		ALLCAPS  		INPUTRI 7 /*Type*/
+svistr7		PROTECT 		INPUTRI 8 /*Induk*/
+svistr8		ALLCAPS 		INPUTRI 9 /*Kategori*/
+lOK		ALLCAPS			INPUTRI 12
+svistr10	ALLCAPS	SCROLL		INPUTRI 14
+svidtmkode	ALLCAPS			INPUTRI 16
+
+svidata		PROTECT QPROTECT UNSEEN 		INPUTRI 10
+svitype		PROTECT	QPROTECT UNSEEN		INPUTRI 11
+
+DEFAULTS(tmptranst)
+lOK		INIT		"OK"
+lPEKERJAAN211    INIT            PEKERJAAN2
+lindjun		INIT            INDUSTRIM4W
+svidata		INIT		{gv_dt1106}
+svitype		INIT		"SCORCMO"
+svitgl1		INIT		{g_tgltrn}
+l701ADD		INIT		701ADD
+l701y		INIT		701
+lsystime1	INIT		SYSTIME
+lSLA11		INIT		SLAM4W
+lSLA21x		INIT		SLAM4W
+
+CALCS()
+cgabseries	STRIP(svistr2)+STRIP(svistr6)
+
+
+cjoinrmdseries	djoinrmdseries == 1
+
+cjoinast	djoinast== 1
+ctglksg		svitgl1 == BLANKS
+/*cakt701add	djoinakt701add == 0
+*/
+
+EDITS(tmptranst)
+e.Mandatory     svistr1         MANDATORY
+e.Mandatory	svistr4		MANDATORY
+e.Mandatory	svidf7		MANDATORY
+e.Mandatory	svistr2		MANDATORY
+e.Mandatory	svistr5		MANDATORY
+e.Mandatory	svistr6		MANDATORY
+e.Validate	svistr1		VALIDATE tbddatkodidx mtbdkerja2 stbdpekerjaan {Pgv_dttabel} {Pgv_infokredit} {PlPEKERJAAN211}
+e.Validateok    svistr4         VALIDATE tbddatkodidx mtbdindustri2 stbdindustri {Pgv_dttabel} {Pgv_infokredit} {Plindjun}
+e.Validatemerk  svistr2         VALIDATE tbddatkodidx mtblmerk22 stbd {Pgv_dttabel} {Pgv_barang} {Pgv_MERK}
+e.Validateth    svistr5         VALIDATE tbddatkodidx mtbdth22 stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+e.Validatetype  svistr6         VALIDATE tbtdatkodtyp mtbttype22 stbt {Pgv_dttabel} {Pgv_barang} {Pgv_merk21} {Psvistr2} {Pgv_m4w21}
+
+
+MAP(mtbdkerja2)
+tbdkode         svistr1         REPLACE
+cBLANKS		lbtmjnsdeb	DO_CALC
+lkatdeb1	svistr38	REPLACE
+lkatdeb2	svistr39	REPLACE
+
+MAP(mtbdindustri2)
+tbdkode         svistr4         REPLACE
+tbdket          svinama         REPLACE
+
+MAP(mtbttype22)
+tbtkode         svistr6         REPLACE
+
+MAP(mtbdth22)
+tbdkode         svistr5         REPLACE
+
+MAP(mtblmerk22)
+tbdkode         svistr2         REPLACE
+
+MAP(mseries)
+cgabseries	lgabseries	DO_CALC
+g_tgltrn	svitgl1		REPLACE_IF ctglksg
+
+MAP(mupdsviseries)
+lhasiltxt1	svistr3		REPLACE
+
+MAP(mbpkb)
+nhmjns_2	svitblkode	REPLACE
+lastmerk	svistr2		REPLACE_IF cjoinast
+lastth		svistr5		REPLACE_IF cjoinast
+lasttype	svistr6		REPLACE_IF cjoinast
+
+CALCS()
+caddhp		(btmflag1 == "SRVY" && djoinsviringkas == 0 && g_mobile == 1) ||  g_grpnam == "RI" || g_grpnam == "IT" 
+cupdhp		(btmflag1 == "SRVY" && djoinsviringkas == 1 && g_mobile == 1) || (btmflag1 == "BM" && djoinsviringkas==1 && (g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WRM" || g_grpnam=="B.M4WMSPV" || g_grpnam=="B.M4WDVH" || g_grpnam=="B.M4WCOO")) || g_grpnam == "RI" || g_grpnam == "IT"
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svidf7	DO_MAP SHOW mbpkb
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mseries
+AFTER_INPUT	cur_keybd=EN	DO_LIB_IF cjoinrmdseries  ap_ambts(gv_INPG,lgabseries,l0,l0,l0,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mupdsviseries
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp   lUMROH11 btmnobuk lSCORCMO
+
+SFL_MAP
+lUMROH11                svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+lSCORCMO                svitype                 REPLACE
+btmcab			svistr7			REPLACE
+
+/*MAP(maddakt)
+l701ADD         aktkode2                REPLACE
+lSLA11          aktdata                 REPLACE
+btmnobuk        aktkode                 REPLACE
+btmnobuk        aktnobuk                REPLACE
+btmnobuk        aktbrg                  REPLACE
+g_tgltrn	akttgl			REPLACE
+lsystime1       aktjam                  REPLACE
+lSLA11          akttype                 REPLACE
+g_usrkode       aktcrtusr               REPLACE
+btmcab 	        aktcab                  REPLACE
+l701y            aktscr                  REPLACE
+cA		aktlok			DO_CALC
+
+
+SPCALCS(saddbuk701)
+DO_LIB_IF cakt701add ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+
+POSTING(tmptrans)
+PST_ADDCMD  saddbuk701
+PST_UPDCMD  saddbuk701
+*/
+
+PERMIT(tmptrans)
+	PMT_ADD_COND		caddhp
+	PMT_UPDALL_COND		cupdhp
+	PMT_DEL_COND		cupdhp
+
+
+

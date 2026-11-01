@@ -1,0 +1,167 @@
+LOCAL
+PGM_FIELDS
+lhasilspkOK	STRING		21
+lhasilspkOK2	STRING		21
+ltomhpsaprlaro 	STRING          31
+CALCS()
+c757		tlmtype1 == "757"
+csl757		tlmtype1 != "757"
+MAP(mjoinspklaro)
+spkhasil	lhasilspkOK 	REPLACE
+spkhasil2	lhasilspkOK2 	REPLACE
+DBCALCS(djoinspklaro1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      spkdatbuktyp   llegal11 tlmnobuk l751LAROSPV1
+        DBC_MAP         mjoinspklaro
+
+/**************************************************************************/
+IMAGE(tmptranst) 
+/---------------------------------------------------------------------------------------------------------------------\
+|						t.InfoFotoDetail						      |
+|														      |
+| t.FotoBerkas9	             t.FotoBerkas10	         t.FotoBerkas11		     t.FotoBerkas12       	      |
+|/---------s.UPLOAD--------\/---------s.UPLOAD2--------\/---------s.UPLOAD3--------\/--------s.UPLOAD4---------\      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+|\-------------------------/\--------------------------/\--------------------------/\--------------------------/      |
+|t.Kode   ___________________ t.Kode   __________________ t.Kode   __________________ t.Kode   __________________     |
+|t.TglFt  ___________________ t.TglFt  __________________ t.TglFt  __________________ t.TglFt  __________________     |
+|t.NoBuk  ___________________ t.NoBuk  __________________ t.NoBuk  __________________ t.NoBuk  __________________     |
+|t.Ket    ___________________ t.Ket    __________________ t.Ket    __________________ t.Ket    __________________     |
+\---------------------------------------------------------------------------------------------------------------------/
+/-----------------------------------------------------------------------\
+|t.AprLaro			     				        |
+|t.Nip	        :___________________________________		        |
+|t.Nama	        :___________________________________		        |
+|t.Approval     :___________________________________		        |
+|t.KetTACC      :___________________________________		        |
+|		:________________				        |
+\-----------------------------------------------------------------------/
+/-----------------------------------------------------------------------\
+|t.AprSpvLaro			     				        |
+|t.Nip	        :___________________________________		        |
+|t.Nama	        :___________________________________		        |
+|t.Approval     :___________________________________		        |
+|t.KetTACC      :___________________________________		        |
+|t.JmlTACC      :___ ___                                                |
+\-----------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spkfoto			PROTECT                 INPUTRI 1
+spkfoto2		PROTECT                 INPUTRI 2
+spkfoto3		PROTECT                 INPUTRI 3
+spkfoto4		PROTECT                 INPUTRI 4
+
+spktglft		PROTECT			INPUTRI 5
+spktglft2		PROTECT			INPUTRI 6
+spktglft3		PROTECT			INPUTRI 7
+spktglft4		PROTECT			INPUTRI 8
+
+spkkode			PROTECT			INPUTRI 9
+spkkode2		PROTECT			INPUTRI 10
+spkkode3		PROTECT			INPUTRI 11
+spkkode4		PROTECT			INPUTRI 12
+
+spkkat			PROTECT			INPUTRI	17
+spkkat2			PROTECT			INPUTRI	18
+spkkat3			PROTECT			INPUTRI	19
+spkkat4			PROTECT			INPUTRI	20
+
+spknohp			PROTECT			INPUTRI 21
+lnama			PROTECT			INPUTRI 22
+spkhasil		NOCHANGE		INPUTRI 23
+spkreview		TEXTAREA ALLCAPS	INPUTRI 24
+
+ltomhpsaprlaro          TOMBOL                  INPUTRI 25
+
+spknohp2		PROTECT			INPUTRI 26
+lnama2			PROTECT			INPUTRI 27
+spkhasil2		NOCHANGE		INPUTRI 28
+spkreview2		TEXTAREA ALLCAPS	INPUTRI 29
+
+spklmtg			PROTECT			INPUTRI	30
+lenter1			NOCHANGE		INPUTRI 31
+DEFAULTS(tmptranst)
+spknohp			INIT_UPDATE	{g_usrkode}
+llegal11		INIT		LEGAL
+l751LAROSPV2		INIT		751LRSPV2
+IF c757  spkhasil	DFALT_SCAN      BLANKS
+                                        ACC
+IF csl757  spkhasil	DFALT_SCAN      BLANKS
+                                        ACC
+                                        TACC
+spkhasil2		DFALT_SCAN      BLANKS
+                                        ACC
+                                        TACC
+ltomhpsaprlaro		INIT		HAPUS APR LARO
+	
+CALCS()
+cjikaTaccLaro		spkhasil == "TACC"
+cjikaTaccSpvLaro	spkhasil2 == "TACC"
+cspkLAROSPV		djoinspklaro1 == 1 && (
+			(g_grpnam == "RI" ||g_grpnam == "IT") || (lhasilspkOK == "OK" && (g_grpnam == "LARO" || g_grpnam == "LITIGASISPV")) || 
+			(lhasilspkOK2 == "OK" && g_grpnam == "LITIGASISPV" && spkhasil == "TACC")
+			) && tlmsts == "751"
+cspkLAROx		djoinspklaro1 == 1 && lhasilspkOK != "OK"	
+cspkLAROx2		djoinspklaro1 == 1 && (lhasilspkOK != "OK" || lhasilspkOK == "OK") && tlmsts != "751"	
+cspkSPVLAROx		djoinspklaro1 == 1 && lhasilspkOK == "OK" && lhasilspkOK2 != "OK"
+cspkSPVLAROx2		djoinspklaro1 == 1 && (lhasilspkOK != "OK" || lhasilspkOK == "OK") && (lhasilspkOK2 != "OK" || lhasilspkOK2 == "OK") && tlmsts != "751"	
+cupdlaro		g_curcmd == 2 && g_grpnam == "LARO"   
+/*cupdspvlaro		g_curcmd == 2 && g_grpnam == "LITIGASISPV" */   
+chpsapr			tlmsts == "751" && ((spkhasil == "TACC" && tlmjml2 < 3))   
+claro751		(g_grpnam == "LARO" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "LITIGASISPV")
+
+EDITS(tmptranst)
+e.validate	spknohp	VALIDATE_IF claro751  psikodidx mpsispk1 0 
+e.validate	spknohp2 VALIDATE_IF claro751  psikodidx mpsispk2 0 
+e.MandatoryKet	spkreview MANDATORY_IF cjikaTaccLaro
+e.MandatoryKet2	spkreview2 MANDATORY_IF cjikaTaccSpvLaro
+
+MAP(mpsispk1)
+psinama		lnama		REPLACE
+tlmjml2		spklmtg		REPLACE	
+
+MAP(mpsispk2)
+psinama         lnama           REPLACE
+tlmjml2         spklmtg         REPLACE
+
+MAP(mupdspklaroapr)
+        cBLANKS         spkhasil        DO_CALC
+        cBLANKS         spkreview       DO_CALC
+SPCALCS(sptomrev3)
+        DO_LIB_IF  	chpsapr ap_dbclc(DNAME dupdspklracc,DCOMMAND UPDATE,DTARGET spkdatbuktyp llegal11 tlmnobuk l751LAROSPV2,DMAP mupdspklaroapr);
+
+HOOKS(tmptranst)/*
+BEFORE_INPUT     cur_field=spkhasil     DO_SKIP_IF  cupdspvlaro
+BEFORE_INPUT     cur_field=spkreview    DO_SKIP_IF  cupdspvlaro*/
+BEFORE_INPUT     cur_field=spkhasil2    DO_SKIP_IF  cupdlaro
+BEFORE_INPUT     cur_field=spkreview2   DO_SKIP_IF  cupdlaro
+CLICKED          cur_field=ltomhpsaprlaro DO_SPCALCS sptomrev3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD  spktglft
+SFL_UPL_DIRFLD2 spktglft2
+SFL_UPL_DIRFLD3 spktglft3
+SFL_UPL_DIRFLD4 spktglft4
+SFL_UPLFLD      spknobuk spkkode 
+SFL_UPLFLD2	spknobuk spkkode2 
+SFL_UPLFLD3	spknobuk spkkode3 
+SFL_UPLFLD4	spknobuk spkkode4 
+SFL_UPLREADONLY
+SFL_TARGET
+	spkdatbuktyp   llegal11 tlmnobuk l751LAROSPV2
+
+PERMIT(tmptrans)
+PMT_DEL_COND c0
+PMT_ADD_COND c0
+PMT_UPDALL_COND  cspkLAROSPV
+PMT_UPD_MSG IF   cspkLAROx  	CEK DAHULU FOTO DI DETIL "ACC FOTO LARO DAN SPV 1" KEMUDIAN KLIK TOMBOL "LARO SUDAH CEK" 
+	    IF   cspkLAROx2 	STATUS SUDAH TIDAK 751 LAGI
+	    IF   cspkSPVLAROx	CEK DAHULU FOTO DI DETIL "ACC FOTO LARO DAN SPV 1" KEMUDIAN KLIK TOMBOL "SPV SUDAH CEK"  
+	    IF   cspkSPVLAROx2  STATUS SUDAH TIDAK 751 LAGI

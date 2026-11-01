@@ -1,0 +1,130 @@
+/*KELENGKAPAN BAHAN MEETING DIREKSI*/
+IMAGE(tmptranst)
+/-------------------------------------------------------------\
+|/-----------------------------------------------------------\|
+||t.InputHslSpk                                              ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.NoBuk               ___________________________________  ||
+||t.TanggalInput        _________                            ||
+||t.Activity            _________                            ||
+||                      ___________________________________  ||
+||t.VarKpi              ___________________________________  ||
+||t.NipPdca             ___________________________________  ||
+||t.NmPdca              ___________________________________  ||
+||t.NipPic              ___________________________________  ||
+||t.NamaPic             ___________________________________  ||
+||t.NpHead              ___________________________________  ||
+||t.NmHead              ___________________________________  ||
+||spasi                                                      ||
+||t.Sesuaix             ___________________________________  ||
+||t.Ket                 ___________________________________  ||
+||                                               __________  ||
+|/-----------------------------------------------------------\|
+||t.Upload                                                   ||
+|\-----------------------------------------------------------/|
+|/---------------------- DOCUPLOAD --------------------------\|
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+||                                                           ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+||t.ApprovalHead        _______                              ||
+|\-----------------------------------------------------------/|
+\-------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spknobuk                PROTECT                         INPUTRI 1               /*Nobuk*/
+spktgl                  PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 2               /*Tanggal Input*/
+spktgg                  PROTECT                         INPUTRI 3               /*Activity*/
+lketacttmp              PROTECT                         INPUTRI 4               /*Ket Activity*/
+spknoasal               PROTECT                         INPUTRI 5               /*VarKpi*/
+spktgg2                 PROTECT                         INPUTRI 6               /*NIP PDCA*/
+lpdcatmp                PROTECT                         INPUTRI 7               /*Nama PDCA*/
+spktgg3                 PROTECT                         INPUTRI 8               /*NIP PIC*/
+lpictmp                 PROTECT                         INPUTRI 9               /*Nama PIC*/
+spktgg4                 PROTECT                         INPUTRI 10              /*NIP Head*/
+lheadpdcatmp            PROTECT                         INPUTRI 11              /*Nama Head*/
+spkkat                  NOCHANGE                        INPUTRI 12              /*Sesuai? YA-TIDAK*/
+spkket                  TEXTAREA                        INPUTRI 13              /*Keterangan*/
+lenter                  NOCHANGE                        INPUTRI 14              /*Enter*/
+spkhasil2               NOCHANGE                        INPUTRI 15              /*Approval Head PDCA*/
+
+DEFAULT(tmptranst)
+spktgl                  INIT_ADD                        {g_tgltrn}
+
+spkkat                  DFALT_SCAN_BLANKS               YA
+                                                        TIDAK
+
+spkhasil2               DFALT_SCAN_BLANKS               ACC
+                                                        TACC
+
+EDITS(tmptranst)
+e.Mandatory                     spkket          MANDATORY
+
+e.Validate Activity             spktgg          VALIDATE tbddatkodidx mactivitytmpall {Pgv_dttabel} {PlSPKPDCA21} {PlACTIVITY}
+e.Validate PDCA                 spktgg2         VALIDATE psikodidx    mpsipdcatmpall  0
+e.Validate PIC                  spktgg3         VALIDATE psikodidx    mpsipictmpall   0
+e.Validate HEAD PDCA            spktgg4         VALIDATE psikodidx    mpsiheadtmpall  0
+
+
+MAP(mactivitytmpall)
+tbdkode                 spktgg          REPLACE
+tbdket                  lketacttmp      REPLACE
+tbtkettype              spknoasal       REPLACE
+
+MAP(mpsipdcatmpall)
+psikode                 spktgg2         REPLACE
+psinama                 lpdcatmp        REPLACE
+
+MAP(mpsipictmpall)
+psikode                 spktgg3         REPLACE
+psinama                 lpictmp         REPLACE
+
+MAP(mpsiheadtmpall)
+psikode                 spktgg4         REPLACE
+psinama                 lheadpdcatmp    REPLACE
+
+MAP(mdataactall)
+lINPACT                 spkdata         REPLACE
+lINPACTALL	        spktype         REPLACE
+tlmnobuk                spknobuk        REPLACE
+tlmnobbm                spktgg          REPLACE
+tlmplg                  spktgg2         REPLACE
+tlmkode                 spktgg3         REPLACE
+tlmbisnis               spktgg4         REPLACE
+
+MAP(mmapkodefotoall)
+ckode3                  lspkkode3       DO_CALC
+lspkkode3               spkkode3        REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=spkkat                DO_MAP SHOW mdataactall
+AFTER_INPUT             cur_field=spkkat                DO_MAP SHOW mmapkodefotoall
+
+BEFORE_INPUT            cur_field=spkkat                DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=spkket                DO_SKIP_IF clogusrinput
+BEFORE_INPUT            cur_field=lenter                DO_SKIP_IF clogusrinput
+
+BEFORE_INPUT            cur_field=spkhasil2             DO_SKIP_IF cloghead
+
+MAP(mupdactallb)
+cY                      spkfoto3         DO_CALC
+DBCALCS(dupdactallb)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx spkprm
+        DBC_MAP         mupdactallb
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD          spknobuk spkkode3  /*upload Dokumen Mandatory*/
+SFL_DOCUPLFLD_DBCALCS  dupdactallb
+SFL_TARGET
+        spkdatbuktyp    lINPACT tlmnobuk lINPACTALL
+

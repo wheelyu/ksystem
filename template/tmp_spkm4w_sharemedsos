@@ -1,0 +1,220 @@
+LOCAL
+PGM_FIELDS
+ltombolupl		STRING		21
+lsharemedsos		STRING		21
+lurl			STRING		100
+ljam1msos		TIME		4
+ljamawalmsos		TIME		4
+ljamakhirmsos		TIME		4
+l1menitmsos		DFLOAT		8
+lmenitmsos		DFLOAT		8
+
+CALCS()
+ctkdmsos	 tkdnoll == lMEDSOS
+/*cnomer1		 svinourt == 1 && sviyt2=="Y" && g_fotodate1 == tkmtgl*/
+curl		 "https://nusantara-sakti.co.id/?qr=5.2171.ftmkode1="+STRIP(tkmnobuk)+".ftmno4="+STRIP(tkmplg)
+/*
+curl		 "https://uat.nusantara-sakti.co.id/?qr=5.2171.ftmkode1="+STRIP(tkmnobuk)+".ftmno4="+STRIP(tkmplg)
+*/
+
+MAP(mjointkdmsos)
+tkdjml          ljamawalmsos   REPLACE
+tkdjml2         ljamakhirmsos  REPLACE
+DBCALCS(djointkdmsos)
+DBC_COMMAND	JOIN
+DBC_TARGET      tkdbukidx svinobuk gv_OPEN svinourt
+DBC_SELECT      ctkdmsos
+DBC_MAP         mjointkdmsos
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|  
+||t.ShareMedsos ___  		  ||
+||t.sharevia : ________________   ||
+||t.kontennsc: ____	          ||_
+||t.LinkShr  : __________________ ||
+||t.buktiurl : __________________ ||
+||t.UPloadok : _____ ________  __ ||
+|\--------------------------------/|
+||/---------s.UPLOAD-------------\||
+|||                              |||
+|||                              |||
+|||                              |||
+||\------------------------------/||
+||___________________________     ||
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt		PROTECT			INPUTRI 1
+svistr1			ALLCAPS SCROLL		INPUTRI 2 
+sviyt1			ALLCAPS SCROLL		INPUTRI 3
+svidf3			PROTECT	UNSEEN		INPUTRI 4
+lurl			TEXTAREA		INPUTRI 5
+sviket			TEXTAREA		INPUTRI 6
+svistr2			PROTECT			INPUTRI 7
+svitgl1			PROTECT			INPUTRI 6
+sviyt2			PROTECT			INPUTRI 9
+ltombolupl		TOMBOL			INPUTRI	10
+
+DEFAULTS(tmptranst)
+svitype		INIT		MEDSOS 
+svitype2	INIT		OPEN
+svinourt	INIT_ADD	1
+sviyt1		DFALT_SCAN	BLANKS Y T 
+lsharemedsos	INIT		SHAREMEDSOS
+ltombolupl	INIT		"UPLOAD OK"
+ljam1msos	INIT		{cSYSTIME}
+/*
+lurl		INIT		"https://uat.nusantara-sakti.co.id/?qr=5.2171.ftmno3=1900931"
+*/
+
+EDITS(tmptranst)
+e.Mandatory	svistr1		MANDATORY
+e.Mandatory	sviyt1		MANDATORY
+e.Validate	svistr1	 	VALIDATE tbddatkodidx mtbdmedsos stbd {Pgv_dttabel} {Plspkm4w} {Plsharemedsos}
+
+MAP(mtbdmedsos)
+tbdkode		svistr1		REPLACE
+curl		lurl		DO_CALC
+
+CALCS()
+ctidakbolehsama	sviket != lurl && sviket != BLANKS
+/*csudahupl	sviyt2 == BLANKS
+clonglatmedsos	g_fotodate1 == tkmtgl */
+cudahuploadoke	sviyt2 == "Y"
+cmsos1menit     tkdnourt==svinourt && djointkdmsos == 1 && ((ljamakhirmsos - ljamawalmsos <= 1)) && svistr2 == BLANKS && sviyt2 != BLANKS 
+cmsosdiatas1    tkdnourt==svinourt && djointkdmsos == 1 && ((ljamakhirmsos - ljamawalmsos) > 1 && (ljamakhirmsos - ljamawalmsos) <= 30) && svistr2 == BLANKS && sviyt2 != BLANKS
+cmsostole       tkdnourt==svinourt && djointkdmsos == 1 && ((ljamakhirmsos - ljamawalmsos) > 30) && svistr2 == BLANKS && sviyt2 != BLANKS
+		/*((ljamakhirmsos - ljamawalmsos) <= ((lmenit30x * 0.20) + lmenit30x))) && svidf8 == 1*/
+cselmsos        ljamakhirmsos - ljamawalmsos
+
+MAP(mupdsvimedsos)
+cY		sviyt2		DO_CALC /*_IF clonglatmedsos*/
+g_fotodate1     svitgl1          REPLACE_IF cudahuploadoke
+cfotolat1       svidf1          DO_CALC_IF cudahuploadoke
+cfotolon1       svidf2          DO_CALC_IF cudahuploadoke
+DEBUG		ldum	ldum	REPLACE
+
+DBCALCS(dbgpsbrfmedsos)
+        DCOMMAND UPDATE
+        DTARGET sviotoidx svioto
+        DMAP mupdsvimedsos
+
+MAP(mmapmsosx)
+svidata         lmain1data      REPLACE
+svinobuk        lmain1nobuk     REPLACE
+svinourt        lmain1urt       REPLACE
+svitype         lmain1type      REPLACE
+DBCALCS(dmapmsos_x)
+	DCOMMAND	MAPMAP
+	DMAP            mmapmsosx
+
+MAP(mmapjammsos)
+cBLANKS		l1menitmsos	  DO_CALC
+cBLANKS		lmenitmsos	  DO_CALC
+l1              l1menitmsos       REPLACE_IF cmsos1menit
+cselmsos        lmenitmsos        DO_CALC_IF cmsosdiatas1
+DEBUG		ldum	ldum	REPLACE
+DBCALCS(dmapjammsos)
+DBC_COMMAND	MAPMAP
+DBC_MAP         mmapjammsos
+
+/*CALCS()
+c1menitmsos            tkmtotal + l1menitmsos
+cmenitmsos             tkmtotal + lmenitmsos
+
+MAP(mupdmedsos)
+c1menitmsos            tkmtotal        DO_CALC_IF cpoinmedsos
+cmenitmsos             tkmtotal        DO_CALC_IF cpoinmedsos
+cmenit30               tkmtotal        DO_CALC_IF cmsostole
+DEBUG		ldum	ldum		REPLACE
+
+DBCALCS(dupdmedsos)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkmprmidx tkmprm
+	DBC_MAP		mupdmedsos
+*/
+
+MAP(mupdsviok)
+lOK		svistr2		REPLACE_IF cadafoto
+DBCALCS(dupdsviok)
+DBC_COMMAND	UPDATE
+DBC_TARGET 	sviotoidx svioto
+DBC_MAP		mupdsviok
+
+
+CALCS()
+cmedsos11	tkdnourt == svinourt
+
+MAP(mupdmedsos1)
+l1              tkdjml3       REPLACE_IF cmsos1menit
+cselmsos        tkdjml3       DO_CALC_IF cmsosdiatas1
+cmenit30x	tkdjml3	      DO_CALC_IF cmsostole
+DEBUG		ldum	ldum		REPLACE
+
+DBCALCS(dupdmedsos1)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_SELECT	cmedsos11
+	DBC_TARGET	tkddatbukll svidata svinobuk lMEDSOS21
+	DBC_MAP		mupdmedsos1
+
+
+
+
+SPCALCS(supdfotomedsos)
+dmapmsos_x
+dupdjam1
+/*dbgpsbrfmedsos*/
+dmapjammsos
+/*dupdmedsos*/
+dupdmedsos1
+dupdsviok
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW
+		IF cjamtarget mdum
+		ELSE HKCURSOR STAY
+		HKMSG JAM SUDAH LEWAT DARI JAM TARGET
+
+AFTER_INPUT	cur_field=sviket	DO_MAP
+		IF ctidakbolehsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Bukti Link Share TIDAK BOLEH SAMA dengan Link Share / Tidak Boleh Kosong
+AFTER_INPUT	cur_keybd=EN	DO_SCAN dscanterhubung
+CLICKED		cur_field=ltombolupl	DO_SPCALCS supdfotomedsos
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbgpsbrfmedsos
+SFL_UPLFLD      tkmnobuk svistr1
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tkmtgl
+SFL_TARGET
+        svidatbuktyp	tkmtype tkmnobuk lMEDSOS 
+SFL_MAP
+tkmnobuk	svinobuk	REPLACE
+tkmtype		svidata		REPLACE
+gv_OPEN		svitype2	REPLACE
+lMEDSOS		svitype		REPLACE
+
+
+MAP(maddtkdmsos)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+svitype         tkdnoll         REPLACE
+svinourt        tkdnourt        REPLACE
+gv_OPEN         tkdsts          REPLACE
+ljam1msos       tkdjml          REPLACE
+
+
+SPCALCS(spdetailmsos)
+DO_LIB          ap_dbclc(DNAME daddtkdmsos,DCOMMAND ADD, DFILE tkd,DMAP maddtkdmsos);
+
+
+POSTING(tmptrans)
+PST_ADDCMD      spdetailmsos
+

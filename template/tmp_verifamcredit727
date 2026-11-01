@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+|| t.Userinput     : __________        ||
+|| t.Nama          : __________________||
+|| t.Rekomendasi   : ______            ||
+|| t.Keterangan    : __________________||
+|\-------------------------------------/|
+|/-----------s.UPLOAD------------------\|
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+|\-------------------------------------/|
+|                ___________  ________  |
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1        PROTECT           INPUTRI 1
+lnamaamcrdt    PROTECT           INPUTRI 1
+svitype3       NOCHANGE          INPUTRI 2
+sviket3        TEXTAREA          INPUTRI 3
+luplokok       TOMBOL            INPUTRI 4
+lent           NOCHANGE          INPUTRI 5
+
+DEFAULTS(tmptranst)
+svistr1         INIT_UPDATE     {g_usrkode}
+svitype3        DFALT_SCAN BLANKS       ACC
+                                        TACC
+
+EDITS(tmptranst)
+e.Mandatory     svitype3                MANDATORY
+e.Mandatory     sviket3                 MANDATORY
+e.Validate      svistr1 VALIDATE psikodidx mpsiamcrdt
+
+MAP(mpsiamcrdt)
+psinama         lnamaamcrdt             REPLACE
+
+CALCS()
+ckonaddamcredit		 djoinsviamcredit==0 && btmsts=="727" && 
+			 ((djoinsgmkawil==1 && lnipkawil==g_usrkode) || (djoinsgmcreditam==1 && lnipcreditam == g_usrkode) ||
+                         (btmdvsjl =="M2W4W" && (g_grpnam == "M2WAM" || g_grpnam=="CREDITHEAD" || g_grpnam =="BMMM2W")) ||
+                         g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RI")
+ckonupdtamcredit	 djoinsviamcredit==1 && btmsts=="727" && btmflag1=="ACD4" &&
+			 ((djoinsgmkawil==1 && lnipkawil==g_usrkode) || (djoinsgmcreditam==1 && lnipcreditam == g_usrkode) ||
+                         (btmdvsjl =="M2W4W" && (g_grpnam == "M2WAM" || g_grpnam=="CREDITHEAD" || g_grpnam =="BMMM2W")) ||
+                         g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RI")
+
+MAP(mupdsviupl)
+cY              sviyt1          DO_CALC
+g_tgltrn        svitgl2         REPLACE
+
+DBCALCS(dupdsviupl)
+        DCOMMAND UPDATE
+        DTARGET sviotoidx svioto
+        DMAP mupdsviupl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdsviupl
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svitype
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk lveramcrdt
+SFL_MAP
+gv_datasurvey            svidata         REPLACE
+btmnobuk                 svinobuk        REPLACE
+lveramcrdt             svitype         REPLACE
+lveramcrdt             svikode         REPLACE
+l1                       svinourt        REPLACE
+g_usrkode                svistr1         REPLACE
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ckonaddamcredit
+        PMT_UPDALL_COND ckonupdtamcredit
+        PMT_DEL_COND    c0
+

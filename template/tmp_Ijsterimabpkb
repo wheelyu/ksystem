@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|       t.UplTerima                                                                 |
+|       /-------------------------------------------------------\                   |
+|       |_____________________                                  !                   |
+|	|/-s.UPLOAD---------------------\/---------------------\!                   | 
+|	||                              ||t.Tgl    : _________ |!                   |
+|	||                              ||t.Nip    : _________ |!                   |
+|	||                              ||t.Acc    : _________ |!                   |
+|       ||                              ||t.CabAdh : _______   |!                   |
+|	||                              ||t.OkUp   : ____      |!                   |
+|	||                              ||t.Acc    : _________ |!                   |
+|	||                              ||_______ _______      |!                   |
+|	||                              ||                     |!                   |
+|	|\------------------------------/\---------------------/!                   |
+|	\-------------------------------------------------------/                   |      
+\-----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL          INPUTRI 1
+psdtgl1          PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 2
+psdstr1         PROTECT SCROLL         INPUTRI 3
+psdstr2		PROTECT SCROLL		INPUTRI 4
+psdstr3		PROTECT SCROLL		INPUTRI 4
+psdtype2        PROTECT SCROLL          INPUTRI 5
+psdtype3	PROTECT SCROLL		INPUTRI 6
+luploadtacc1	TOMBOL			INPUTRI 7
+luploadacc1	TOMBOL			INPUTRI 8
+
+DEFAULTS(tmptranst)
+luploadtacc1	INIT		TACC
+luploadacc1	INIT		ACC
+
+MAP(mupdpsdtrmtacc)
+ctacc1          psdtype3        DO_CALC
+cBLANKS         psdtype2        DO_CALC
+g_usrkode       psdstr2         REPLACE
+g_tgltrn        psdtgl1         REPLACE
+
+MAP(mupdpsdtrmacc)
+cacc1           psdtype3        DO_CALC
+cacc1           psdtype2        DO_CALC
+g_usrkode       psdstr2         REPLACE
+g_tgltrn        psdtgl1         REPLACE
+
+MAP(mupdterimaupl)
+cOK             psdtype2         DO_CALC
+g_usrkode       psdstr1         REPLACE
+g_tgltrn        psdtgl1         REPLACE
+lcabkrm		psdstr3		REPLACE_IF cjoincab
+
+DBCALCS(dupdterimaupl)
+DBC_COMMAND     UPDATE
+DBC_TARGET      psdprmidx       psdprm
+DBC_MAP         mupdterimaupl
+
+CALCS()
+cada_terima1	(UPLEXIST(l_count7) == 1  || UPLEXIST(l_count7) == 0) && hrmcab2=="KIRIM_CAB" && hrmstsapr=="IN"
+
+SPCALCS(supdpsdtrmtacc)
+        DO_LIB_IF cada_terima1 ap_dbclc(DNAME dupdpsdtrmtacc,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdtrmtacc);
+
+SPCALCS(supdpsdtrmacc)
+        DO_LIB_IF cada_terima1 ap_dbclc(DNAME dupdpsdtrmacc,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdtrmacc);
+
+CALCS()
+csudah_acc	djoinpsd_pinjam==1 && laccmktg=="Y" 
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadtacc1   DO_SPCALCS supdpsdtrmtacc
+CLICKED         cur_field=luploadacc1    DO_SPCALCS supdpsdtrmacc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND csudah_acc
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  gv_krmbks11    hrmnobuk hrmnip1    
+SFL_UPLFLD_DBCALCS dupdterimaupl
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod    gv_sfbrkslain  hrmnobuk gv_TRMBERKAS gv_sfbrkslain
+

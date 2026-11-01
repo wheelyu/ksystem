@@ -1,0 +1,109 @@
+LOCAL
+PGM_FIELDS
+lklikok7                 STRING          31
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket   : ______________________||
+||          _____ ____ _____      ||
+!!t.TglFt : __________            ||
+!!t.Jam   : __________            ||
+!!t.Lat   : ___.__________________||
+!!t.Lon   : ___.__________________||
+||          _______________      _||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2 
+sviyt2                  NOCHANGE                INPUTRI         3 
+svistr32                NOCHANGE                INPUTRI         3
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+ljamfoto                PROTECT                 INPUTRI         5
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         5 
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         6 
+lklikok7                 TOMBOL                  INPUTRI         7 
+svinobuk                PROTECT UNSEEN          INPUTRI         8
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+lklikok7         INIT    "UPLOAD OK"
+ljaminput1      INIT    SYSTIME
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msvikry
+
+MAP(msvikry)
+cBLANKS         ljamfoto        DO_CALC
+svidf8          ljamfoto        REPLACE
+
+MAP(mupdsvikry)
+cY              sviyt1          DO_CALC
+cSYSTIME         svidf8          DO_CALC
+g_tgltrn        svitgl2         REPLACE
+
+DBCALCS(dupdsvikry)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvikry
+
+CALCS()
+cok7             "OK"
+cadalonlat7      svidf7!=0 && (g_fotodate1==g_tgltrn || g_grpnam=="RI" || g_grpnam=="IT")
+csdhupload7      sviyt1=="Y"
+
+MAP(mupdsvikryok)
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+cok7            sviyt2          DO_CALC_IF cadalonlat7
+
+DBCALCS(dupdsvikryok)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvikryok
+
+SPCALCS(spcaluplkryok)
+dupdsvikryok
+/*DO_LIB ap_nxpst(l4461,lm4461det2);*/
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lklikok7       DO_SPCALCS IF csdhupload7 spcaluplkryok
+
+
+CALCS()
+cbuktikry	(svitype == "BUKTIKRY" && djoinftmcapacity==1 && (lftmdvs2=="PN" || lftmdvs2=="SW")) || ((svitype == "BUKTISTOK") && djoinftmcapacity==1 && (lftmdvs2=="AG" || lftmdvs2=="TN" || lftmdvs2=="TP" || lftmdvs2=="TR" || lftmdvs2=="W1" || lftmdvs2=="W2" || lftmdvs2=="D1" || lftmdvs2=="D2")) || ((svitype=="BUKTIJUAL") && djoinftmcapacity==1 && (lftmdvs2=="TN" || lftmdvs2=="TP" || lftmdvs2=="TR" || lftmdvs2=="NL" || lftmdvs2=="W1" || lftmdvs2=="D1" || lftmdvs2=="D2" || lftmdvs2=="W2" || lftmdvs2=="AG")) || ((svitype == "BUKTISUPP" || svitype=="BAKUKANAN" || svitype=="BAKUKIRI" || svitype=="BAKUDEPAN") && djoinftmcapacity==1 && (lftmdvs2=="AG" || lftmdvs2=="TN" || lftmdvs2=="TP" || lftmdvs2=="TR" || lftmdvs2=="W1" || lftmdvs2=="D1"  || lftmdvs2=="D2")) || (svitype == "PEMILIK" && djoinftmcapacity==1 && lftmdvs2=="TN") 
+cbuktikry1	sviyt1 != "Y"
+cfototambahan	djoinftmcapacity==1 && (lftmdvs2=="PN" || lftmdvs2=="SW" || lftmdvs2=="AG" || lftmdvs2=="TN" || lftmdvs2=="TP" || lftmdvs2=="TR" || lftmdvs2=="W1" || lftmdvs2=="D1" || lftmdvs2=="D2" || lftmdvs2=="NL" || lftmdvs2=="AG" || lftmdvs2=="W2")
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_COND cfototambahan
+SFL_SELECT cbuktikry
+SFL_UPLFLD_DBCALCS dupdsvikry
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svitype
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND cbuktikry1
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

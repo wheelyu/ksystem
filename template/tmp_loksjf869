@@ -1,0 +1,51 @@
+IMAGE(tmptranst)
+/-----------------------------\
+|/---------------------------\|
+||            t.LokBrks      ||
+||                           ||
+||t.Lokasi : ________        ||
+||t.NoUrt  : _________       ||
+|\---------------------------/|
+\-----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlmgrup2                ALLCAPS SCROLL          INPUTRI 1
+tlmjml                  NOCHANGE                INPUTRI 2
+
+CALCS()
+cnourut                 tbddf1 + 1
+
+DEFAULTS(tmptranst)
+lLOKSJF                 INIT            LOKSJF
+
+EDITS(tmptranst)
+e.ValidateLokasiBerkas tlmgrup2 VALIDATE tbddatkodidx mtbd stbd1 {Pgv_dttabel} {Pgv_barang} {PlLOKSJF}
+
+MAP(mtbd)
+tbdkode         tlmgrup2        REPLACE
+cnourut         lnourt          DO_CALC
+
+MAP(mnourt)
+lnourt          tlmjml        REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tlmgrup2 DO_MAP SHOW mnourt
+
+MAP(mupdtbd)
+tlmjml        tbddf1          REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND    chnyFINARSIP
+SFL_TARGET  tlmbukidx   tlmnobuk
+
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dupdtbd,DCOMMAND UPDATE,DTARGET tbddatkodidx gv_dttabel gv_barang lloksjf tlmgrup2 ,DMAP mupdtbd);
+
+POSTING(tmptrans)
+PST_UPDCMD sptmptrans
+

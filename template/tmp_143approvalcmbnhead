@@ -1,0 +1,89 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.KetIsiCMBN143a			|
+|t.KetIsiCMBN143b			|
+|/-------------------------------------\|
+|| t.NoBuk 	: ____________________ ||
+|| t.tglnextapr	: ____________________ ||
+|| t.apr1	: ___________________  ||
+|| t.apr2	: ___________________  ||
+|| t.apr3	: ___________________  ||
+|| t.apr4	: ___________________  ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ psdpsmkode	NOCHANGE			INPUTRI 1
+ psdtgl2	PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI	2
+ psdstr1	NOCHANGE			INPUTRI	2
+ psdstr2	NOCHANGE			INPUTRI	3
+ psdstr3	NOCHANGE			INPUTRI	3
+ psdstr4	NOCHANGE			INPUTRI	3
+
+DEFAULT(tmptranst)
+ psdstr1	DFALT_SCAN_BLANKS	ACC
+					TACC
+ psdstr2	DFALT_SCAN_BLANKS	ACC
+					TACC
+ psdstr3	DFALT_SCAN_BLANKS	ACC
+					TACC
+ psdstr4	DFALT_SCAN_BLANKS	ACC
+					TACC
+ psddata	INIT			"ACCSKTPJG"
+ psdtype	INIT			"ACCSKTPJG"
+ psdsts 	INIT			{gv_INPG}
+
+CALCS()
+ cupd2g1	hrmdvs2 == lSAKITBERKEPANJANGAN 
+		&& hrmsts == gv_INPG
+  		&& (g_grpnam == "CMBNHEAD" || g_grpnam == "RI")
+		&& psdtgl2 <= g_tgltrn
+ cinp1		hrmsts == gv_INPG && hrmkep == "INP1" && hrmjmltlk >= 30 && hrmjmltlk <= 120 
+ ccls1		hrmsts == gv_INPG && (hrmkep == "CLS1" || (hrmkep == "INP1" && hrmjmltlk >= 121 && hrmjmltlk <= 240)) 
+ ccls2		hrmsts == gv_INPG && (hrmkep == "CLS2" || (hrmkep == "INP1" && hrmjmltlk >= 241 && hrmjmltlk <= 360)) 
+ ccls3		hrmsts == gv_INPG && (hrmkep == "CLS3" || hrmkep == "CLS4" || (hrmkep == "INP1" && hrmjmltlk >= 361)) 
+
+ cnoinp1	hrmsts == gv_INPG && (hrmkep != "INP1" || (hrmkep == "INP1" && hrmjmltlk > 120))
+ cnocls1	hrmsts == gv_INPG 
+		&& ((hrmkep != "CLS1" && hrmkep != "INP1") || (hrmkep == "INP1" && (hrmjmltlk <= 120 || hrmjmltlk >= 240)))
+ cnocls2	hrmsts == gv_INPG 
+		&& ((hrmkep != "CLS2" && hrmkep != "INP1") || (hrmkep == "INP1" && (hrmjmltlk <= 240 || hrmjmltlk >= 360)))
+ cnocls3	hrmsts == gv_INPG 
+		&& ((hrmkep != "CLS3" && hrmkep != "CLS4" && hrmkep != "INP1") || (hrmkep == "INP1" && hrmjmltlk <= 360))
+ cblmapr1	psdtgl2 > g_tgltrn
+ ccmbn		g_grpnam != "CMBNHEAD" && g_grpnam != "CMBNSPV" && g_grpnam != "RI"
+
+EDITS(tmptranst)
+ e.Mandatory	psdstr1		MANDATORY_IF cinp1
+ e.Mandatory	psdstr2		MANDATORY_IF ccls1
+ e.Mandatory	psdstr3		MANDATORY_IF ccls2
+ e.Mandatory	psdstr4		MANDATORY_IF ccls3
+
+MAP(mnobuk2)
+ hrmnobuk 	psdpsmkode	REPLACE
+ hrmnip1	psdkode		REPLACE
+
+HOOKS(tmptranst)
+ BEFORE_INPUT	cur_field=psdpsmkode 	DO_MAP SHOW mnobuk2
+ BEFORE_INPUT	cur_field=psdstr1 	DO_SKIP_IF cnoinp1
+ BEFORE_INPUT	cur_field=psdstr2 	DO_SKIP_IF cnocls1
+ BEFORE_INPUT	cur_field=psdstr3 	DO_SKIP_IF cnocls2
+ BEFORE_INPUT	cur_field=psdstr4 	DO_SKIP_IF cnocls3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+ psddattypidx lACCSKTPJG lACCSKTPJG hrmnobuk
+SFL_MAP
+  hrmnobuk	psdpsmkode
+
+PERMIT(tmptrans)
+ PMT_ADD_COND c0
+ PMT_UPDALL_COND cupd2g1
+ PMT_UPD_MSG 	IF cblmapr1 t.SaatTglApr
+		IF ccmbn t.HanyaCmbn
+	     	IF c1 t.TidakBolehUbah
+ PMT_DEL_COND c0

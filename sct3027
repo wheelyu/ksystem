@@ -1,0 +1,81 @@
+SCREEN 3027 QUERY_TYPE  s.KirimNotifikasi
+SCR_FILE msg
+SCR_LOGFLD msgnobuk 
+
+LOCAL
+PGM_FIELDS
+lscrnum		INT2	  2
+
+IMAGE(master) 
+/-------------------------------------------------------------------------------------\ 
+|/-----------------------------------------------------------------------------------\|
+||i.Utk  : ________________________________________________________                  ||
+|\-----------------------------------------------------------------------------------/|
+spasi
+|/-----------------------------------------------------------------------------------\|
+||i.Pesan: _________________________________________________________________________ ||
+||                                                                                   ||
+|\-----------------------------------------------------------------------------------/|
+spasi
+spasi
+|/-----------------------------------------------------------------------------------\|
+||i.NoBuk: __________________   i.Tgl :___________    i.Jam:_____                    ||
+||i.Sts  :_____                 i.Type: _____                                        ||
+|\-----------------------------------------------------------------------------------/|
+\-------------------------------------------------------------------------------------/
+
+FIELD(master)
+   msguntuk              ALLCAPS          INPUTRI          1 /* to */
+   msgpesan              TEXTAREA 3       INPUTRI          2 /* Pesan */
+
+   msgnum                PROTECT          INPUTRI          3 
+   msgtgl                PROTECT          INPUTRI          4 
+   msgjam                PROTECT          INPUTRI          5 
+   msgsts                PROTECT          INPUTRI          6 
+   msgtipe               PROTECT          INPUTRI          7 
+
+
+CALCS()
+cnum	"MSG3024" + THBLS(g_tgltrn) + "-"
+
+DEFAULTS(master)
+lscrnum		INIT		2110
+msguntuk INIT  ROOT
+msgtgl	INIT	{g_tgltrn}
+msgsts	INIT	OPEN
+msgtipe	INIT	SMS
+msgnum	INIT	{cnum}
+msgdari	INIT	{g_usrkode}
+msgjam  INIT	SYSTIME
+
+EDITS(master)
+e.MandatoryPesan msgpesan MANDATORY
+e.Validate msguntuk VALIDATE usrkodidx   musr susr 	
+
+MAP(musr)
+usrkode  msguntuk  REPLACE
+
+
+
+/********************PENAMBAHAN NOMOR OTOMATIS ****************/
+MAP(maddsub)
+msgnum   msgnum  REPLACE
+
+DBCALCS(daddsub)
+DBC_COMMAND	ADD_SUBSTITUTE
+DBC_FILE	msg
+DBC_MAP         maddsub
+DBC_LAST_LEN    20
+DBC_LAST_TARGET  msgnumidx  msgnum
+			 
+SPCALCS(sadd)
+        daddsub
+
+SPCALCS(spcalc1)
+  DO_LIB ap_krntf(msguntuk,msgpesan); 
+
+POSTING(master)
+   PST_SUB_ADDCMD sadd
+   PST_ADDCMD    spcalc1       /* APPLICATION_TYPE */
+				
+END_SCREEN

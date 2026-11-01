@@ -1,0 +1,169 @@
+LOCAL
+PGM_FIELDS
+ljam		TIME		2
+lREVIEWSPK	STRING		11
+ldataspk  	STRING		11
+lnamareviw	STRING		21
+lusrgrp		STRING		21
+ltomdet2_d              STRING  31
+lstatus		STRING		5
+lsystime	TIME		4
+
+MAP(mjoinusr)
+usrgrp		lusrgrp		REPLACE
+DBCALCS(djoinusr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	usrkodidx	tkdrek
+	DBC_MAP		mjoinusr
+
+DBCALCS(djoinabk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatstskym lKUNCIABSEN gv_INPG tkdrek l874 tkdtgl tkdnobuk
+
+IMAGE(tmptranst)
+/------------------------------------\
+|           __________________       |
+|i.NoBuk    __________________       |
+|i.Nip      _________          _____ |
+|i.Nama     __________________       |
+|i.Grup     _________                |
+|i.Tanggal  _________                |
+|t.JamAct   ______                   |
+|t.7why     _____                    |
+|t.FotoKunj _____  t.FotoKtp : _____ |
+|t.IsiSPK   ______                   |
+|t.Koreksi  ________________         |
+|t.Enter    ________________         |
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	ltomdet2_d             TOMBOL                  	INPUTRI 1
+	tkdnobuk	NOCHANGE         SCROLL		INPUTRI 1
+	tkdrek   	PROTECT          SCROLL         INPUTRI 1
+	lstatus  	PROTECT          SCROLL         INPUTRI 1
+	lnamareviw	PROTECT QPROTECT SCROLL         INPUTRI 1
+	lusrgrp   	PROTECT QPROTECT SCROLL         INPUTRI 1
+	tkdtgl		PROTECT          {DD-MM-YYYY}	INPUTRI	2
+	tkdjml		PROTECT         		INPUTRI	3
+	tkdjwbstr1	NOCHANGE SCROLL			INPUTRI	4
+	tkdjenis	NOCHANGE SCROLL			INPUTRI	4
+	tkdsisstr 	NOCHANGE SCROLL                 INPUTRI 5
+	tkdjwbstr2	NOCHANGE SCROLL                 INPUTRI 6
+	tkdket		TEXTAREA			INPUTRI	7	
+	tkddata		NOCHANGE			INPUTRI	8	
+
+CALCS()
+cdjoinusr1	djoinusr == 1
+cUsrOk		(tkdrek == g_usrkode) || g_grpnam =="RAS" || g_grpnam == "IT"
+cNipada		tkdrek != BLANKS
+
+
+DEFAULTS(tmptranst)
+ldataspk  		INIT		"DATASPK"
+lREVIEWSPK		INIT		"REVIEWSPK"
+lREVIEWSPK		INIT_UPDATE	"REVIEWSPK"
+
+tkdjenis		DFALT_SCAN_BLANKS
+					Y "SESUAI"
+					T "TIDAK_SESUAI"
+
+tkdsisstr		DFALT_SCAN_BLANKS
+					Y "SESUAI"
+					T "TIDAK_SESUAI"
+
+tkdjwbstr1		DFALT_SCAN_BLANKS
+					Y "SESUAI"
+					T "TIDAK_SESUAI"
+tkdjwbstr2		DFALT_SCAN_BLANKS
+					BENAR
+					TIDAK
+
+ltomdet2_d              INIT		"d.UntukMelihatDetil"
+lsystime		INIT		SYSTIME
+
+
+EDITS(tmptranst)
+e.validate	tkdnobuk	VALIDATE tkmbukidx mtkm 0
+e.Mandatory	tkdjenis	MANDATORY
+e.Mandatory	tkdsisstr 	MANDATORY
+e.Mandatory	tkdjwbstr1 	MANDATORY
+e.Mandatory	tkdjwbstr2 	MANDATORY
+e.Mandatory	tkdket    	MANDATORY
+
+t.KryNull       tkdrek          VALIDATE_IF cNipada psikodidx mpsi2 0
+
+MAP(mtkm)
+tkmnobuk	tkmnobuk	REPLACE
+cblanks		lnamareviw	DO_CALC
+cblanks		lusrgrp   	DO_CALC
+lusrgrp		lusrgrp		REPLACE_IF cdjoinusr1
+tkdjml		ljam		REPLACE
+
+MAP(mpsi2)
+psinama		lnamareviw	REPLACE
+psists		lstatus		REPLACE
+
+MAP(mjam)
+lsystime	tkdjml		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mjam
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+		IF cUsrOk  mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.NipUserTdkSama
+AFTER_INPUT	cur_keybd=EN      	DO_MAP SHOW
+		IF cUsrOk  mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.NipUserTdkSama
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/*SFL_SELECT      cnobuksama*/
+SFL_TARGET
+tkddatbukll	lREVIEWSPK tkmnobuk
+/**************************************************/
+IMAGE(trans2t)
+/------------------------t----------\
+|t.Ket                   |t.Ket     |
+\------------------------.----------/
+
+IMAGE(trans2)
+|________________________|__________|
+
+FIELD(trans2)
+ketisi          TEXTAREA PROTECT                INPUTRI         1
+ketisi2         NOCHANGE SCROLL                 INPUTRI         1
+
+SUBFILE(trans2)
+SFL_LINES(5)
+SFL_TITLE(trans2t)
+SFL_TARGET
+ketdatbukkod	ldataspk tkmnobuk
+/**************************************************/
+
+CALCS()
+cdjoinabk1	djoinabk == 1
+
+MAP(mupdabk)
+gv_CLSD         abksts          REPLACE
+
+
+SPCALCS(sptmptrans)
+	DO_LIB_IF cdjoinabk1 	ap_dbclc(DNAME dupdabk, DCOMMAND UPDATE_RANGE, DTARGET abkdatstskym lKUNCIABSEN gv_INPG tkdrek l874 tkdtgl tkdnobuk, DMAP mupdabk);
+
+POSTING(tmptrans)
+	PST_UPDCMD	sptmptrans
+
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_DEL_COND    c0
+
+PERMIT(tmptrans2)
+PMT_ADD_COND    c0
+PMT_DEL_COND    c0

@@ -1,0 +1,198 @@
+LOCAL                                           
+PGM_FIELDS
+luploadok_u1    STRING  21
+luploadok_u2    STRING  21
+lnosin          STRING  21
+lnoka           STRING  21
+lurltok2                STRING          41
+lemail                  STRING          31
+lpassword               STRING          41
+lurlainosin         STRING          61
+lmsttitle               STRING  31
+lreqmstlabels           STRING          201
+lreqmstfields           STRING          201
+lreqmstfieldsnoka       STRING          201
+lfoto                   STRING          500
+lfoto2                   STRING          500
+lreturnlabel            STRING          50
+lexpectedreturnvalue    STRING          50
+lmstlabelsnosin     STRING          301
+lmstfieldsnosin     STRING          301
+/*
+lnosinocr           STRING          41
+lisvalidnosin       STRING          11
+*/
+lmstmapocr305       STRING          51 
+lmstmapocr305b       STRING          51 
+ldetlabels              STRING       500
+ldetfields              STRING          301
+ldetnamamap             STRING          51                                                                                                              
+lsaveflg                INT2            2
+lurlainoka          STRING          61
+lmstlabelsnoka      STRING          301
+ldir                STRING          10
+laktlok                 STRING          21
+laktstr3                STRING          21
+
+MAP(mjonaktocr)
+aktlok          laktlok          REPLACE
+aktstr3         laktstr3        REPLACE
+
+DBCALCS(djoinaktocr618)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx   mtdplg   locr ltipeocr
+        DBC_MAP         mjonaktocr
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|t.NomorFaktur  : ______________    |
+|t.NomorBarang  : ______________    |
+|t.NosinPPD     : ______________    |
+|t.NosinOCR     : ______________    |
+|t.HasilOCRNosin: ______________    |
+|/--s.UPLOAD--------\               |
+||                  |               |
+||                  |               |
+||                  |               |
+||                  |               |
+||                  |               |
+||                  |               |
+|\------------------/               |
+||__________________|               |
+||__________________|               |
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ppdnobuk        PROTECT         INPUTRI         1
+ppdbrg          PROTECT         INPUTRI         2
+ppdnomesin      PROTECT         INPUTRI         3
+laktlok         PROTECT         INPUTRI         4   /*kode ocr mesin*/
+laktstr3        PROTECT         INPUTRI         5    /*y/t nomesin*/
+lnosin          PROTECT         INPUTRI         9
+luploadok_u1            TOMBOL                  INPUTRI         11 /*Tombol1*/
+
+CALCS()
+cthblupl         THBLS(ppdtglfak)
+chasilocr       djoinaktocr618==1
+cnosin          djoinaktocr618 == 0
+chapusfotoocr   g_grpnam == "ADH" || g_grpnam == "IT" || g_grpnam == "DRIVER" || g_grpnam == "RI" || mtshcex_1 == g_usrkode  
+
+EDITS(tmptranst)
+e.Validate      ppdnobuk        VALIDATE ppmbukidx mppmx2 0
+
+MAP(mppmx2)
+ppmnobuk        ppdnobuk        REPLACE
+cthblupl        ldir            DO_CALC
+laktlok         laktlok         REPLACE_IF chasilocr
+laktstr3        laktstr3        REPLACE_IF chasilocr
+
+DEFAULTS(tmptranst)
+luploadok_u1    INIT            "UPLOAD OK1"
+luploadok_u2    INIT            "UPLOAD OK2"
+lnosin          INIT            "NOMOR MESIN"
+lnoka           INIT            "NOMOR RANGKA"
+lurltok2        INIT    "http://172.16.1.180:8080/api/login"
+lemail          INIT    "nss@rectmedia.id" 
+lpassword       INIT    "nssocr2026!"
+lurlainosin     INIT    "http://172.16.1.180:8080/api/ocr/foto-no-mesin" 
+lmsttitle               INIT     ""
+lreqmstlabels   INIT    "FILEimage_base64"
+lreqmstfields   INIT    "lfoto"
+lfoto           INIT            "11"
+
+/* Tambahkan baris di bawah ini untuk Noka */
+lreqmstfieldsnoka INIT  "lfoto2"
+lfoto2            INIT  "12"
+
+lreturnlabel          INIT       "" 
+lexpectedreturnvalue  INIT       ""
+lmstlabelsnosin     INIT    "no_mesin+is_valid"
+lmstfieldsnosin     INIT    "lnosinocr+lisvalidnosin"
+lmstmapocr305           INIT    "mupdaktocr305"
+lmstmapocr305b          INIT    "mupdaktocr305b"
+lsaveflg        INIT    1 
+lurlainoka      INIT    "http://172.16.1.180:8080/api/ocr/foto-no-rangka"
+lmstlabelsnoka      INIT    "no_rangka+is_valid"
+ldetlabels      INIT BLANKS
+ldetfields      INIT    BLANKS
+ldetnamamap     INIT BLANKS
+
+
+CALCS()
+/*
+cocrnosin_sesuai        lnosinocr != BLANKS && lnosinocr == ppdnomesin && lisvalidnosin == "true"
+cocrnosin_tdk_sesuai    (lnosinocr != BLANKS && lnosinocr != ppdnomesin)
+cocr_nosin      lnosin == "NOMOR MESIN"
+cTdknokanosin           "T"*/
+cYnokanosin              "Y"
+cocr            "OCR618"
+ctipeocr        "TIPEOCR618"
+cocrnosin       (mtdsts == gv_INPG && ((djoinppmmtd == 1 && lppmtk == "K" && ppmfinexin_2!="EX" && djoinspkverakl618 == 1 && lspkhasil2!="TIDAK") || 
+				      (djoinppmmtd == 1 && (lppmtk == "T" ||ppmfinexin_2=="EX")))) || 
+		g_grpnam == "IT" || 
+		g_grpnam == "ADHDVH" || 
+		g_grpnam == "ADHHEAD" || 
+		g_grpnam == "BPI" || 
+		g_grpnam == "RI"
+
+
+/*EDITS(tmptranst)
+e.Validate      ppdnobuk        VALIDATE_BUF3        ppdbukidx mppd_ocr 0
+
+
+(MAP)mppd_ocr
+#ppdnobuk                ppdnobuk                REPLACE
+#ppdbrg                 ppbrg           REPLACE
+*/
+
+MAP(maddaktocr)
+mtdplg          aktkode         REPLACE
+cocr            aktdata         DO_CALC
+ctipeocr        akttype         DO_CALC
+ppdnomesin      aktlok          REPLACE
+cYnokanosin     aktstr3    DO_CALC
+
+/*
+MAP(mupdaktocr305)                                                                                                       
+   lnosinocr            aktlok          REPLACE_IF cocr_nosin
+   cYnokanosin          aktstr3            DO_CALC_IF cocrnosin_sesuai
+   cYnokanosin          aktstr3            DO_CALC_IF cocrnosin_tdk_sesuai
+   DEBUG ldum   ldum                REPLACE
+
+   MAP(mmapdum)
+DEBUG   ldum    ldum    REPLACE
+
+*/
+SPCALCS(spocr1)
+DO_LIB_IF  cnosin   ap_dbclc(DNAME daddaktocr,DCOMMAND ADD,DFILE akt,DMAP maddaktocr);
+/*DO_LIB                 ap_aitok(lurltok2, lemail, lpassword);
+DO_LIB   ap_rqjsp(lurlainosin, lmsttitle, lreqmstlabels, lreqmstfields, lreturnlabel, lexpectedreturnvalue, lmstlabelsnosin, lmstfieldsnosin, lmstmapocr305, ldetlabels, ldetfields, ldetnamamap, lsaveflg);
+DO_LIB                 ap_dbclc (DNAME dmapocr, DCOMMAND MAPMAP, DMAP mmapdum);
+DO_LIB_IF chasilocr ap_dbclc(DNAME dupdaktocr1, DCOMMAND UPDATE_RANGE, DTARGET aktkodtypidx   mtdplg locr ltipeocr, DMAP mupdaktocr305);
+DO_LIB                 ap_dbclc (DNAME dmapocr3, DCOMMAND MAPMAP, DMAP mmapdum);
+*/
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadok_u1    DO_SPCALCS spocr1
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND cocrnosin
+SFL_UPL_DIRFLD ldir
+SFL_UPLFLD ppdoto ppdnomesin
+/*SFL_UPLFLD_DBCALCS dupdmtdBAST4*/
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND chapusfotoocr
+SFL_TARGET      ppdbukurtidx    mtdplg  lnourut1  lnourut1
+
+SFL_MAP
+mtdplg          ppdnobuk        REPLACE
+lnourut1        ppdnourt        REPLACE
+lnourut1        ppdnourt2       REPLACE
+

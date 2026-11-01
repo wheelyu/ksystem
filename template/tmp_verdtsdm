@@ -1,0 +1,124 @@
+IMAGE(tmptranst) 
+/---------------------------------------------------------\
+|/-------------------------------------------------------\|
+|! i.Ktp          : ____________________                 !|
+|! i.Tmplahir     : _______________                      !|
+|! t.TglLahir     : ________________                     !|
+|! t.Agama        : _______________                      !|
+|! t.Alamat       : ____________________________________ !|
+|! t.RtRw         : ____ _____                           !|
+|! t.Propinsi     : _______________  ___________________ !|
+|! i.Kota         : _______________  ___________________ !|
+|! t.Kecamatan    : _______________  ___________________ !|
+|! t.Kelurahan    : _______________  ___________________ !|
+|\-------------------------------------------------------/|
+\---------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdgrup                 NOCHANGE                 INPUTRI         1
+mtdbrg                  ALLCAPS                  INPUTRI         3
+mtdtglfak               NOLIMIT {DD-MM-YY}      INPUTRI		 4
+mtdlok                  ALLCAPS                  INPUTRI         5
+mtdket                  TEXTAREA ALLCAPS                INPUTRI         6
+mtdkat                  ALLCAPS                  INPUTRI         7
+mtdsat                  ALLCAPS                  INPUTRI         8
+mtdplg                  ALLCAPS                  INPUTRI         9
+lnamaProp               PROTECT                  INPUTRI         10
+mtddvs                  ALLCAPS                  INPUTRI         11
+lkota1                  PROTECT                  INPUTRI         12
+mtdukrwrn               ALLCAPS                  INPUTRI         13
+lkec1                   PROTECT                  INPUTRI         14
+mtdnobbm                ALLCAPS                  INPUTRI         15
+lnamakel                PROTECT                  INPUTRI         16
+
+
+EDITS(tmptranst)
+e.Mandatory mtdgrup    MANDATORY
+e.Mandatory mtdbrg     MANDATORY
+e.Mandatory mtdnobbm    MANDATORY
+e.Mandatory mtdukrwrn   MANDATORY
+e.Mandatory mtddvs      MANDATORY
+e.Mandatory mtdplg      MANDATORY
+e.Mandatory mtdtglfak   MANDATORY
+e.Mandatory mtdlok      MANDATORY
+e.Mandatory mtdkat       MANDATORY
+e.Mandatory mtdsat       MANDATORY
+e.Validate              mtdbrg VALIDATE tbddatkodidx  mtmplahir stbdon {Pgv_dttabel} {Pgv_infoumum} {Plkotalahir}
+/* t.validateRT            mtdkat   VALIDATE tbddatkodidx mtbdrt2 stbdon {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            mtdsat   VALIDATE tbddatkodidx mtbdrw2 stbdon {Pgv_dttabel} {Pgv_personal} {Plkodert} */
+e.ValidateDtmProp mtdplg  VALIDATE dtmdtkodidx mdtm sdtmProp {Pgv_dtkota}
+e.validateKota1         mtddvs  VALIDATE tbldtdtmkod mtbl stblon {Pgv_dtkota} {Pmtdplg} 
+e.validateKec1          mtdukrwrn VALIDATE tbddatkodidx mtbd stbdon {Pgv_dtkota} {Pmtdplg}  {Pmtddvs}
+e.ValidateTbtKel mtdnobbm       VALIDATE tbtdattypkod mtbt stbtKEL {Pgv_dtkota} {Pgv_dtkota21} {Pmtdplg}  {Pmtddvs}  {Pmtdukrwrn} 
+
+
+MAP(mtmplahir)
+tbdkode                 mtdbrg          REPLACE
+
+MAP(mdtm)
+dtmkode         mtdplg          REPLACE
+dtmket          lnamaProp       REPLACE
+
+MAP(mtbt)
+tbtkode         mtdnobbm                REPLACE
+tbtket          lnamakel   		     REPLACE
+
+
+/*
+MAP(mtbdrt1)
+tbdkode         mtdkat          REPLACE
+
+MAP(mtbdrw1)
+tbdkode         mtdsat          REPLACE 
+*/
+
+MAP(mtbl)
+tblkode                 mtddvs                REPLACE
+tblket                  lkota1                REPLACE
+
+MAP(mtbd)
+tbdkode                 mtdukrwrn               REPLACE
+tbdket                  lkec1                   REPLACE
+
+
+DEFAULTS(tmptranst)
+mtdlok  	DFALT_SCAN		BLANKS
+					ISLAM
+					HINDU
+					BUDHA
+					KRISTEN
+					KATOLIK
+					KONGHUCU
+					LAIN-LAIN
+
+mtdlok2		INIT_ADD		{psmktp}
+
+mtdgrup		INIT_ADD		{psmktp_1}
+
+CALCS()
+cdet1OPEN			hrmsts   != "OPEN"
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT      cur_field=mtdbrg        DO_SKIP_IF cdet1OPEN
+
+CALCS()
+ccondsdh	hrmsts == "OPEN" || hrmsts =="CLSD"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	ccondsdh 
+SFL_TARGET
+	mtdbukurtidx    hrmnobuk 
+
+SFL_MAP
+hrmdata         mtddata         REPLACE
+hrmnobuk	mtdnobuk  	REPLACE
+
+
+
+
+
+

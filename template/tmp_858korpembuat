@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+|/-----------------------------------------\|
+||t.Tipe        : ________________         ||
+||t.KdLama      : _________________        ||
+||t.KdBaru      : ________________         ||
+|| ________  ________  __________ _________||
+|\-----------------------------------------/|
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akttype         NOCHANGE                INPUTRI 1
+aktbrg          PROTECT                 INPUTRI 2
+aktkode2        ALLCAPS                 INPUTRI 3
+aktcrtusr       PROTECT                 INPUTRI 4
+aktjam          PROTECT                 INPUTRI 5
+akttgl          PROTECT {DD-MM-YYYY}    INPUTRI 6
+aktdata         PROTECT                 INPUTRI 7
+                                                                                                                                            
+DEFAULTS(tmptranst)
+aktcrtusr       INIT            {g_usrkode}
+akttgl          INIT            {g_tgltrn}
+aktdata         INIT            UBHDATA858
+akttype		INIT		{tmpkode}
+
+CALCS()
+ctmp858ubhdata	tmpdtmkode == "TMPVERDOC" && tmpkode == "KORPEMBUAT"
+ckonubhdt858	aktdata == "UBHDATA858"
+ckor858utkINPG	psists == "INPG"
+cblhubhkor858	g_grpnam == "DOC" || g_usrkode == "1935049" || g_grpnam == "RI"
+
+EDITS(tmptranst)
+e.Mandatory     aktkode2        MANDATORY
+t.ValidateNip	aktkode2	VALIDATE psikodidx mpsikor858 0
+
+MAP(mpsikor858)
+psikode		aktkode2	REPLACE
+
+MAP(misitypkor)
+tlmnobuk	aktkode		REPLACE
+tlmkode		aktbrg		REPLACE
+cjam            ljam            DO_CALC
+ljam            aktjam          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktkode2	DO_MAP SHOW misitypkor
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ckor858utkINPG mdum
+		ELSE HKCURSOR STAY
+		HKMSG Hanya Nip INPG Saja
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctmp858ubhdata
+SFL_SELECT ckonubhdt858
+SFL_TARGET aktkodtypidx tlmnobuk lubhdata858
+
+MAP(mupdtlm858kor)
+aktkode2	tlmkode		REPLACE
+
+SPCALCS(spcaladdkor858)
+DO_LIB	ap_dbclc(DNAME dupdtlm858kor,DCOMMAND UPDATE,DTARGET tlmbukidx aktkode,DMAP mupdtlm858kor);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdkor858
+
+PERMIT(tmptrans)
+        PMT_ADD_COND	cblhubhkor858
+        PMT_UPDALL_COND	c0
+        PMT_DEL_COND	c0   

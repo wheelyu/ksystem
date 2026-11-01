@@ -1,0 +1,119 @@
+LOCAL
+PGM_FIELDS
+ltombolr3		STRING		21
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-s.DOCUPLOAD-------------------------------\|
+||                                           ||
+||                                           ||
+||                                           ||
+|\-------------------------------------------/|
+|/-------------------------------------------\|
+||t.NoUrt          :__                       ||
+||t.Upload         :__                       ||
+||t.tglu           :_________________        ||
+||t.Sts            :_____                    ||
+||t.Tanggal        :_________________        ||
+||t.Indikator      :_________________        ||
+||t.Type      	   :_________________        ||
+||t.fnlpoint       :_________________        ||
+||t.Ket            :_____________________    ||
+||                            _____  _______ ||
+|\-------------------------------------------/|
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt	PROTECT			INPUTRI	1
+tlddk           PROTECT SCROLL  	INPUTRI 2
+tldtgl2         PROTECT {DD-MM-YYYY}  	INPUTRI 3
+tldsts		PROTECT			INPUTRI	4
+tldtglfak       NOLIMIT {DD-MM-YYYY} 	INPUTRI 5
+tldstr4         PROTECT         	INPUTRI 6
+tldbrg         	PROTECT         	INPUTRI 7
+tldtmp2         PROTECT         	INPUTRI 8
+tldket          TEXTAREA        	INPUTRI 9
+lenter		NOCHANGE		INPUTRI	10
+ltombolr3	TOMBOL			INPUTRI	11
+
+DEFAULTS(tmptranst)
+ltombolr3	INIT		"REVIEW"
+
+CALCS()
+cabkdetail3     abktype == tldstr4 && abktype2 == tldbrg && abkkym == g_usrkode
+cselectHOHMC2            sgmtype == "DCAOPR" && sgmbrg == tlmcab && sgmplg == "H1"
+DBCALCS(dcekkunciand3)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx    lKUNCIABSEN     tlmnobuk
+DBC_SELECT      cabkdetail3
+
+MAP(mnipHOHMC)
+sgmstr5                 lnipHOHMC               REPLACE
+
+
+DBCALCS(djoinHOHMC2)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              sgmdatstr215    lsgmdata        lTHBL21
+        DBC_SELECT              cselectHOHMC2
+        DBC_MAP                 mnipHOHMC
+
+
+CALCS()
+cstsopen3       tldsts == "OPEN" && tldtglfak > g_tgltrn && dcekkunciand3 == 1
+cekkunciand3a	dcekkunciand3 == 1 && ((tldsts == "OPEN" && (tldtglfak == g_tgltrn || tldtglfak == BLANKS) && tlddk != BLANKS) || (tldsts == "OPEN" && tldtglfak != BLANKS) || (tldsts == "INPG" && tlddk != BLANKS))
+cekkunciand3    dcekkunciand3 == 1
+cdca		djoinHOHMC2 == 1
+
+MAP(mupdabk3)
+gv_CLSD		abksts		REPLACE_IF cabkdetail3
+
+MAP(mapmap3)
+DEBUG	ldum	ldum	REPLACE
+
+MAP(maddabk3)
+lKUNCIABSEN     abkdata         REPLACE
+g_scrnumstr     abkscr          REPLACE
+gt_RINP         abksts          REPLACE
+tlmnobuk        abknobuk        REPLACE
+lnipHOHMC        abkkym          REPLACE_IF cdca
+lCEKREVIEW      abkkym2         REPLACE
+tldtglfak       abktgl          REPLACE
+tldstr4		abktype		REPLACE
+tldbrg		abktype2	REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mupdtld3)
+gv_CLSD         tldsts          REPLACE_IF cstsinpg
+gv_INPG         tldsts          REPLACE_IF cstsopen3
+gv_CLSD         tldsts          REPLACE_IF cstsdone
+DEBUG   ldum    ldum            REPLACE
+
+
+SPCALCS(spreview3)
+DO_LIB			ap_dbclc(DNAME dmapmap3,DCOMMAND MAPMAP,DMAP mapmap3);
+DO_LIB_IF cekkunciand3a ap_dbclc(DNAME dupdabk3,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk3);
+DO_LIB_IF cstsopen3     ap_dbclc(DNAME daddabk3,DCOMMAND ADD,DFILE abk,DMAP maddabk3);
+DO_LIB_IF cekkunciand3  ap_dbclc(DNAME dupdtld3,DCOMMAND UPDATE,DTARGET tldotoidx tldoto,DMAP mupdtld3);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombolr3		DO_SPCALCS	spreview3
+BEFORE_INPUT    cur_field=tldket                DO_SKIP_IF      cskip
+
+CALCS()
+creviewkawil	tlddata == lREVIEWKAWIL
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SORT_BY_FIELD tldnourt
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DELCOND c0
+SFL_DOCUPLFLD tldnobuk tldoto
+SFL_DOCUPLFLD_DBCALCS dupdfoto15
+SFL_SELECT	creviewkawil
+SFL_TARGET
+tldbukurtidx    tlmnobuk
+
+

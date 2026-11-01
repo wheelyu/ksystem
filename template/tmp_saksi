@@ -1,0 +1,82 @@
+LOCAL
+PGM_FIELDS
+lsaksix		STRING	21
+lnourt1		INT2	2
+llegal11d	STRING	11
+
+MAP(mjoinnourt1)
+tldnourt        lnourt1          REPLACE
+
+DBCALCS(djointldnourt1)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              tldstsbrgukr	llegal11d gv_OPEN tlmnobuk lsaksix
+        DBC_MAP                 mjoinnourt1
+
+IMAGE(tmptranst)
+/----t---------t--------t---------------------------------t------------\
+|t.No|t.Int/Ext|t.Nip   |t.Nama                           |t.Pekerjaan |
+\----.---------.--------.---------------------------------.------------/
+
+IMAGE(tmptrans)
+|____|_________|________|_________________________________|___________|
+
+FIELDS(tmptrans)
+tldnourt        PROTECT            INPUTRI 1
+tldkat          ALLCAPS            INPUTRI 2
+tldplg          ALLCAPS            INPUTRI 3
+tldsat          ALLCAPS            INPUTRI 4
+tlddvs          ALLCAPS            INPUTRI 5
+
+DEFAULTS(tmptrans)
+llegal11d	INIT			LEGAL
+lsaksix		INIT			SAKSI
+tldkat          DFALT_SCAN_BLANKS       INTERNAL
+                                        EXTERNAL
+
+EDITS(tmptrans)
+e.mandatory	tldnourt	MANDATORY
+e.Mandatory	tldplg  	MANDATORY_IF cint
+e.Mandatory	tldkat 		MANDATORY
+e.Mandatory     tldsat          MANDATORY
+e.Mandatory     tlddvs          MANDATORY
+
+e.Validate      tldplg   	VALIDATE psikodidx mpsi1 spsi
+e.validate      tlddvs          VALIDATE_IF cext tbldtdtmkod mtbl1 stbl {Pgv_dttabel} {Pgv_pekerjaan21}
+
+MAP(mpsi1)
+psikode		tldplg  	REPLACE
+psinama		tldsat 		REPLACE_IF cint
+psijabatan      tlddvs          REPLACE_IF cint
+cBLANKS		tldplg  	DO_CALC_IF cext
+cBLANKS		tlddvs 		DO_CALC_IF cext
+
+MAP(mtbl1)
+tblkode         tlddvs          REPLACE
+
+CALCS()
+cjoinchdnourt1          djointldnourt1==0
+cjoinchdnourt2          djointldnourt1==1
+cnourt1                 lnourt1+1 
+
+MAP(mnourt1)
+c1              tldnourt        DO_CALC_IF cjoinchdnourt1
+cnourt1         tldnourt        DO_CALC_IF cjoinchdnourt2
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=tldkat        DO_MAP SHOW mnourt1
+BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF cext
+BEFORE_INPUT    cur_field=tldsat        DO_SKIP_IF cint
+BEFORE_INPUT    cur_field=tlddvs        DO_SKIP_IF cint
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldstsbrgukr   llegal11d gv_OPEN tlmnobuk lsaksix
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+llegal11d       tlddata         REPLACE
+gv_OPEN		tldsts		REPLACE
+tlmnobuk	tldbrg		REPLACE
+lsaksix		tldukrwrn       REPLACE
+

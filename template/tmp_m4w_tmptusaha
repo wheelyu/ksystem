@@ -1,0 +1,114 @@
+CALCS()
+cjointldusaha1	djointldtmptusaha == 1 && g_curcmd == 1
+cjointldusaha0	djointldtmptusaha == 0 && g_curcmd == 1
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------------------------\
+|--------------t-----------------t-----------t-------------t----------t--------t---------t--------------t-------------|
+|t.JenisUsaha  |t.NamaUsaha      |t.Alamat   |t.NamaPic    |t.NoTelp  |t.Prop  |t.Kota   |t.Kec         |t.Kel        |
+\--------------.-----------------.-----------.-------------.----------.--------.---------.--------------.-------------/
+
+IMAGE(tmptrans)
+|______________|_________________|___________|_____________|__________|________|_________|______________|_____________|
+
+FIELD(tmptrans)
+tldbisnis	ALLCAPS SCROLL	INPUTRI 2
+tldlok2		ALLCAPS		INPUTRI 3
+tldket		ALLCAPS		INPUTRI 4
+tldkat		ALLCAPS		INPUTRI 5
+tldbrdoto	DIGITS		INPUTRI 6
+tldgrup		ALLCAPS		INPUTRI 7
+tldgrup2	ALLCAPS		INPUTRI 8
+tldlok		ALLCAPS		INPUTRI 8
+tldukrwrn	ALLCAPS		INPUTRI 9
+
+DEFAULTS(tmptrans)
+lsystime        INIT    SYSTIME
+lsystimedf      INIT    {lsystime}
+
+
+EDITS(tmptrans)
+e.Mandatory	tldbisnis	MANDATORY
+e.Mandatory	tldlok2		MANDATORY
+e.Mandatory	tldket		MANDATORY
+e.Mandatory	tldkat		MANDATORY
+e.Mandatory	tldbrdoto	MANDATORY
+e.Mandatory	tldgrup		MANDATORY
+e.Mandatory	tldgrup2	MANDATORY
+e.Mandatory	tldlok		MANDATORY
+e.Mandatory	tldukrwrn	MANDATORY
+e.Validate	tldbisnis		VALIDATE	tbddatkodidx mtbdu stbd {Pgv_dttabel} {Pgv_infoumum} {Plusahamitra}
+e.Validate	tldgrup		VALIDATE	tbddtmstidx  mtbdged stbdtype {Pgv_dttabel} {Pgv_infoumum} {Pgv_gedung} {Stbdlv2} {Scabtwr}
+e.Validate	tldgrup2	VALIDATE	tbldtdtmkod mtbl stbl {Pgv_dtkota} {Ptldgrup}
+e.Validate	tldlok		VALIDATE	tbddatkodidx mtbd stbd {Pgv_dtkota} {Ptldgrup} {Ptldgrup2}
+e.Validate	tldukrwrn	VALIDATE	tbtdattypkod mtbt stbt {Pgv_dtkota} {Pgv_dtkota21} {Ptldgrup} {Ptldgrup2} {Ptldlok}
+
+MAP(mtbdu)
+tbdkode		tldbisnis		REPLACE
+
+MAP(mtbdged)
+tbdlv1		tldgrup		REPLACE
+
+MAP(mtbl)
+tblkode		tldgrup2	REPLACE
+
+MAP(mtbd)
+tbdkode		tldlok		REPLACE
+
+MAP(mtbt)
+tbtkode		tldukrwrn	REPLACE
+
+CALCS()
+cnompa		"MPA"+STRIP(cabkode)+THBLS(g_tgltrn)
+
+MAP(mnobukmpa)
+cnompa		tldnobuk	DO_CALC
+
+MAP(mnourt)
+c1		tldnourt	DO_CALC_IF cjointldusaha0
+curut		tldnourt	DO_CALC_IF cjointldusaha1
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldbisnis	DO_MAP SHOW mnourt
+AFTER_INPUT	cur_field=tldbisnis	DO_MAP SHOW mnobukmpa
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_SELECT	cdatausaha
+SFL_TITLE(tmptranst)
+SFL_TARGET
+       tldllbrgurt     cabkode
+
+
+
+
+MAP(maddmpa)
+tldnobuk	tldnobuk	REPLACE
+
+MAP(mupdmpa)
+gv_INPG         tldsts          REPLACE
+ldtmitra4w      tlddata         REPLACE
+ltmptusaha      tldsat          REPLACE
+ltmptusaha      tldnobbm        REPLACE
+cabkode         tldcab          REPLACE
+cabkode         tldnoll          REPLACE
+cabkode         tldbrg          REPLACE
+gv_m4w21        tlddvs          REPLACE
+tldnobuk	tldplg		REPLACE
+
+SPCALCS(sptransmpa)
+DO_LIB_IF ctambah ap_dbclc(DNAME daddtldmpa,DCOMMAND ADD_SUB,DFILE tld,DLTARGET tldbukurtidx tldnobuk,DLLEN {stspjbuk},DMAP maddmpa);
+
+SPCALCS(sptrans)
+DO_LIB ap_dbclc(DNAME dupdtldmpa,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mupdmpa);
+DO_LIB_IF cjoinakt0 ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cjoinakt1 ap_dbclc(DNAME dupdakt,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx cabkode ldtmitra4w ldtmitra4w21,DMAP mupdakt);
+
+SPCALCS(sptransu)
+DO_LIB_IF cjoinakt0 ap_dbclc(DNAME daddaktm2,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cjoinakt1 ap_dbclc(DNAME dupdaktm2,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx cabkode ldtmitra4w ldtmitra4w21,DMAP mupdakt);
+
+POSTING(tmptrans)
+PST_SUB_ADDCMD sptransmpa
+PST_ADDCMD sptrans
+PST_UPDCMD	sptransu

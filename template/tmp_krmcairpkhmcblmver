@@ -1,0 +1,110 @@
+LOCAL
+PGM_FIELDS
+
+l719		STRING          5
+lh1	      	STRING	     	21
+lnamakonsumen 	STRING	     	21
+luangmuka	DFLOAT		8
+langsuran	DFLOAT		8
+ltenor		DFLOAT		8
+lstok		INT2		2
+
+/*----------JOIN--------*/
+
+MAP(mpsmkonsumen)
+psmnama    lnamakonsumen     REPLACE
+
+DBCALCS(djoinpsmkonsumen)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmktpidx btmplg
+DBC_MAP         mpsmkonsumen
+
+MAP(mnhmrincih1)
+nhmumriil    luangmuka     REPLACE
+nhmbsrang    langsuran	   REPLACE
+nhmtenor     ltenor	   REPLACE
+
+DBCALCS(djoinnhmh1)
+DBC_COMMAND     JOIN
+DBC_TARGET      nhmdatbukidx	gv_dtbukutamu btmnobuk
+DBC_MAP         mnhmrincih1
+
+/*------------------Menghitung Jumlah Stok-----------------------*/
+MAP(mbrd)
+brdsisa     lstok       REPLACE
+
+DBCALCS(dscanbrd)
+    DBC_COMMAND     SCANSCAN
+    DBC_TARGET      brdstscabbrg    gv_INPG btmcabjl btmtypmtr
+    DBC_SUM_MAP     mbrd
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.Tgl719       : _________         ||
+||i.NoPK         : _________________ ||
+||t.CabLok       : __________        ||
+||t.Dvs          : __________        ||
+||t.NamaKonsumen : _________________ ||
+||i.TypMtr       : _________________ ||
+||i.Thn          : __________        ||
+||t.TypJual      : ____              ||
+||t.UangMuka     : _________________ ||
+||t.Angs         : _________________ ||
+||t.Tenor        : ____              ||
+||t.JmlStok      : _________         ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   btmtgl           PROTECT {DD-MM-YY}         INPUTRI         1
+   btmnobuk         NOCHANGE SCROLL            INPUTRI         2
+   btmlokjual       NOCHANGE SCROLL            INPUTRI         3
+   btmdvsjl         NOCHANGE SCROLL            INPUTRI         4
+   lnamakonsumen    NOCHANGE SCROLL            INPUTRI         5
+   btmtypmtr        NOCHANGE SCROLL            INPUTRI         6
+   btmthn           NOCHANGE SCROLL            INPUTRI         7
+   btmtypjl         NOCHANGE SCROLL            INPUTRI         8
+   luangmuka        NOCHANGE SCROLL            INPUTRI         9
+   langsuran        NOCHANGE SCROLL            INPUTRI         10
+   ltenor           NOCHANGE SCROLL            INPUTRI         11
+   lstok            NOCHANGE SCROLL            INPUTRI         12
+   
+DEFAULTS(tmptranst)
+l719		INIT		719
+lh1		INIT		H1
+
+CALCS()
+cdjoinpsmkonsumen0	djoinpsmkonsumen==0
+cdjoinpsmkonsumen1	djoinpsmkonsumen==1
+cdjoinnhmh1a		djoinnhmh1==0
+cdjoinnhmh1b		djoinnhmh1==1
+cblanksh1		BLANKS
+c0h1			0
+cdscanbrd		dscanbrd >= 0
+cACCh1			btmflag1 == "ACC"
+
+EDITS(tmptranst)
+e.Validate btmnobuk  VALIDATE btmbukidx mbtmh1 0
+
+MAP(mbtmh1)
+btmnobuk        btmnobuk        REPLACE
+cblanksh1       lnamakonsumen	DO_CALC_IF cdjoinpsmkonsumen0
+lnamakonsumen   lnamakonsumen	REPLACE_IF cdjoinpsmkonsumen1
+c0h1		luangmuka	DO_CALC_IF cdjoinnhmh1a
+luangmuka	luangmuka	REPLACE_IF cdjoinnhmh1b
+c0h1		langsuran	DO_CALC_IF cdjoinnhmh1a
+langsuran	langsuran	REPLACE_IF cdjoinnhmh1b
+c0h1		ltenor		DO_CALC_IF cdjoinnhmh1a
+ltenor		ltenor		REPLACE_IF cdjoinnhmh1b
+lstok		lstok		REPLACE_IF cdscanbrd
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT cACCh1
+SFL_TARGET btmstsposbuk l719 cabkode lh1
+
+

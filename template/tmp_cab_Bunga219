@@ -1,0 +1,92 @@
+LOCAL
+PGM_FIELDS
+lrmdgabbgarea		STRING	61
+lrmdgabbgcab		STRING	61
+lrmdtotal1		DFLOAT	8
+lrmdttlcab		DFLOAT	8
+
+
+DBCALCS(djoincadbg219)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	cabkode lBG219 lBUNGA219 lBUNGA219
+
+MAP(mjoinrmdbgMD)
+rmdtotal1	lrmdtotal1	REPLACE
+DBCALCS(djoinrmdbgMD)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx	gv_INPG	lrmdgabbgarea
+	DBC_MAP		mjoinrmdbgMD
+MAP(mjoinrmdcabBg)
+rmdtotal1	lrmdttlcab	REPLACE
+DBCALCS(djoinrmdcabBg)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx	gv_INPG	lrmdgabbgcab
+	DBC_MAP		mjoinrmdcabBg
+
+IMAGE(tmptranst)
+/-------t-----------------t--------\
+|i.Cab  |t.Area219        |t.Bg219 |
+\-------.-----------------.--------/ 
+
+IMAGE(tmptrans)
+|_______|_________________|_____.__|
+
+FIELD(tmptrans)
+cadkdcab	PROTECT		INPUTRI		1
+cadarea		ALLCAPS SCROLL	INPUTRI		2
+cadtot1		NOCHANGE	INPUTRI		3
+
+DEFAULTS(tmptrans)
+caddata		INIT		BG219
+cadtype		INIT		BUNGA219
+cadkode		INIT		BUNGA219
+
+					
+EDITS(tmptrans)
+e.Mandatory	cadarea		MANDATORY
+e.Mandatory	cadtot1		MANDATORY
+e.ValidateCmpHl cadarea		VALIDATE cmpkodidx mcmp219 scmp_DLR
+
+CALCS()
+crmdbgarea	"BUNGA219MD" + STRIP(cadarea)
+crmdbgareacab	"BUNGA219MD" + STRIP(cadarea) + STRIP(cabkode)
+cdjoinrmdbgMD1	djoinrmdbgMD == 1
+cdjoinrmdcabBg1	djoinrmdcabBg == 1
+
+MAP(mcmp219)
+cmpkode         cadarea		REPLACE
+
+
+MAP(marea219)
+crmdbgarea	lrmdgabbgarea	DO_CALC
+crmdbgareacab	lrmdgabbgcab	DO_CALC
+
+MAP(mmapbunga)
+lrmdtotal1	cadtot1		REPLACE_IF cdjoinrmdbgMD1
+lrmdttlcab	cadtot1		REPLACE_IF cdjoinrmdcabBg1
+
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=cadarea	DO_MAP SHOW marea219
+AFTER_INPUT	cur_field=cadarea	DO_MAP SHOW mmapbunga
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW marea219
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mmapbunga
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cdealer2
+SFL_TARGET
+	cadcabdtidx	cabkode lBG219 lBUNGA219 lBUNGA219
+SFL_MAP
+	cabkode		cadkdcab	REPLACE
+
+CALCS()
+cjoincadbg2190          djoincadbg219 == 0 && (g_usrkode == "1000055" || g_usrkode=="1006460" || g_usrkode=="1931509" || g_usrkode=="1326445" || g_usrkode=="1038688")
+cjoincadbg2191          djoincadbg219 == 1 && (g_usrkode == "1000055" || g_usrkode=="1006460" || g_usrkode=="1931509" || g_usrkode=="1326445" || g_usrkode=="1038688")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cjoincadbg2190
+	PMT_UPDALL_COND	cjoincadbg2191
+	PMT_DEL_COND	cjoincadbg2191
+

@@ -1,0 +1,59 @@
+LOCAL
+PGM_FIELDS
+lFID                 STRING             11
+lFID21               STRING             21
+
+DBCALCS(djoincadfid)
+DBC_COMMAND     JOIN
+DBC_TARGET      cadcabdtidx     cabkode lFID lFID21 lFID21
+
+
+IMAGE(tmptranst)
+/----------t------------------------t------t-------t---------t---------\
+|  t.Kode  | i.Keterangan           |i.ThBl|t.Fid30|t.FidGold|t.FidPlat|
+\----------.------------------------.------.-------.---------.---------/
+
+IMAGE(tmptrans)
+|__________|________________________|______|____.__|______.__|______.__|
+
+FIELD(tmptrans)
+   cadkode      PROTECT SCROLL  	INPUTRI          1
+   cadket       PROTECT         	INPUTRI          2
+   cadthbl      PROTECT         	INPUTRI          3
+   cadtot1      NUMERIC         	INPUTRI          5
+   cadtot2      NUMERIC         	INPUTRI          6
+   cadtot3      NUMERIC         	INPUTRI          8
+
+/*CALCS()
+cthbl		THBLS(g_tgltrn)
+*/
+DEFAULTS(tmptrans)
+cadkode		INIT		FID
+cadket		INIT		FID
+cadthbl		INIT		{cthbl}
+caddata		INIT		FID
+cadtype		INIT		FID
+
+EDITS(tmptrans)
+e.Mandatory	cadkode		MANDATORY
+e.Mandatory	cadket		MANDATORY
+
+
+SUBFILE(tmptrans)
+SFL_LINES(5)   
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+cadcabdtidx	cabkode lFID lFID21 lFID21
+
+SFL_MAP
+cabkode          cadkdcab  REPLACE
+
+CALCS()
+cjoincadfid0            djoincadfid == 0 && (g_grpnam == "RI" || g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "ADHSPV" || g_usrkode == "1736672" || g_usrkode == "1521092")
+cjoincadfid1            djoincadfid == 1 && (g_grpnam == "RI" || g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "ADHSPV" || g_usrkode == "1736672" || g_usrkode == "1521092")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cjoincadfid0
+	PMT_UPDALL_COND	cjoincadfid1
+	PMT_DEL_COND	cjoincadfid1

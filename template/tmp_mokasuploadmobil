@@ -1,0 +1,83 @@
+LOCAL
+PGM_FIELDS
+
+ljamupload2        TIME         4
+
+
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-------------------------------------------------------------------------------------------\
+| /-------s.UPLOAD----------\/-------------------------------------------------------------\| 
+| |                         !! i.Ket : _______________________________________  _____      !| 
+| |                         !! t.Lat : ________.__________                                 !| 
+| |                         !! t.Lon : ________.__________                                 !| 
+| |                         !! t.user: _________                                           !| 
+| |                         !! t.tgl : ________ ____________________                       !| 
+| |                         |! _____                                                       !| 
+| \-------------------------/\-------------------------------------------------------------/| 
+\-------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                PROTECT                 INPUTRI         1
+svistr2                ALLCAPS SCROLL          INPUTRI         2
+svidf6                 PROTECT                 INPUTRI         4
+svidf7                 PROTECT                 INPUTRI         5
+svistr1                PROTECT                 INPUTRI         6
+svitgl1                PROTECT {DD-MM-YY}      INPUTRI         7
+ljamupload2            PROTECT {99:99}         INPUTRI         8
+lOK			ALLCAPS		INPUTRI		9
+
+
+EDITS(tmptranst)
+e.adhhoacc          svistr2        MANDATORY
+
+
+
+DEFAULTS(tmptranst)
+svistr2              DFALT_SCAN                BLANKS
+                                               ACC
+                                               TACC
+
+
+CALCS()
+cY                "Y"
+cADHHO4            tlmsts=="INPG" && tlmsts2=="206" && (g_grpnam=="ADHDVH" || g_grpnam=="ADHSPV" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH")
+cfotolat1          g_lat                             
+cfotolon1          g_lon                                   
+cfototime1         g_fototime1                                
+cfotodate1         g_fotodate1                                   
+cusrkode           g_usrkode                                     
+
+
+MAP(mupdsvifotombl)
+cY             sviyt1          DO_CALC
+cfotolat1      svidf6          DO_CALC
+cfotolon1      svidf7          DO_CALC
+cfototime1     svidf1          DO_CALC
+cfotodate1     svitgl1         DO_CALC
+cusrkode       svistr1         DO_CALC
+svidf1         svidf1          REPLACE
+svidf1         ljamupload2     REPLACE
+
+
+DBCALCS(dbfotomobil)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvifotombl
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbfotomobil
+SFL_UPLFLD tlmnobuk     svikode
+SFL_UPL_DELCOND chapusfoto
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+        svidatbuktyp   tlmdata    tlmnobuk lMOKAS 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cADHHO4
+  PMT_DEL_COND  c0
+

@@ -1,0 +1,92 @@
+LOCAL                                                                                                                                                       
+PGM_FIELDS
+lbukabkftomga9          STRING          21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| |t.Isijawabketikatacc     !|
+| |t.Jwb : ________________ !|
+| |        __               !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		PROTECT		        INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+docnobuk2                   TEXTAREA         	INPUTRI		12
+ldoc                   NOCHANGE         	INPUTRI		12
+ltombol			TOMBOL			INPUTRI		99
+
+EDITS(tmptranst)
+e.Mandatory             docnobuk2                MANDATORY
+
+CALCS()
+ctgluplisi9		doctgljadi != BLANKS 
+cstsuplisi9     doclok=="OK"
+cbukabkftomga9  STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddockonfkonspj)
+/*cY              doclok          DO_CALC*/
+/*g_fotodate1     doctgljadi      REPLACE*/
+g_tgltrn	doctgljadi	REPLACE
+DEBUG ldum      ldum    REPLACE     
+
+MAP(mupddockonfkonspj_9)
+lY              doclok          REPLACE_IF ctgluplisi9
+cbukabkftomga9  lbukabkftomga9  DO_CALC
+DEBUG ldum      ldum    REPLACE
+
+DBCALCS(dupddockonfkonspj)
+        DCOMMAND UPDATE
+        DTARGET  docprmidx docprm
+        DMAP     mupddockonfkonspj
+
+CALCS()
+ckonfkonspj tmpkode == "KNFKNSPPRJ"
+
+MAP(mupdabkftomga9)
+gv_CLSD         abksts          REPLACE
+
+SPCALCS(spuplftomga9)
+DO_LIB_IF csdhisijwb    ap_dbclc(DNAME dupddockonfkonspj_9,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddockonfkonspj_9);
+DO_LIB_IF cstsuplisi9   ap_dbclc(DNAME dupdabkftomga9,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga9,DMAP mupdabkftomga9);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombol               DO_SPCALCS spuplftomga9
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND ckonfkonspj
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD_DBCALCS dupddockonfkonspj
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+        docdatbukidx lUPGAD  btmnobuk lknfknspprj l9
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cjwbpic
+  PMT_DEL_COND  c0
+

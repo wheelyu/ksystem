@@ -1,0 +1,79 @@
+LOCAL
+PGM_FIELDS
+
+luplok7		STRING	11
+lenter7		STRING	21
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||i.Upload	  : ______	    ||
+||i.Tgl           : _________       ||
+||t.TglTF   	  : _________       ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT          	INPUTRI 1
+aktdk		PROTECT		 	INPUTRI 2
+akttgl          PROTECT {DD-MM-YY}	INPUTRI 3
+akttgl2		NONE NOLIMIT {DD-MM-YY} INPUTRI 4
+lenter7		NOCHANGE	 	INPUTRI 5
+luplok7		TOMBOL		 	INPUTRI 8
+
+
+DEFAULTS(tmptranst)
+lenter7		INIT		ENTER
+luplok7		INIT		UPLOAD_OK
+
+EDITS(tmptranst)
+e.Mandatory	akttgl2 MANDATORY
+
+CALCS()
+cdjoinaktCairJ		(tkmsts == "OPEN" ||tkmsts == "INPG" || tkmsts == "CLSD" || tkmsts == "RINP") && 
+			(tkmkode == "CAIR_JASA" || tkmkode == "CAIR_OLI" || tkmkode == "CAIR_GARANSI" || tkmkode == "CAIR_VOUCHER")
+cY7			"Y"
+cfotobaru7		akttgl == g_tgltrn
+
+MAP(mupdaktcair)
+g_tgltrn	akttgl	REPLACE
+cY7		aktdk	DO_CALC_IF cfotobaru7
+
+DBCALCS(dupdfoto7)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktcair
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdjoinaktCairJ
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tkmnobuk akttype
+SFL_UPL_DIRFLD tkmtgl 
+SFL_UPLFLD_DBCALCS dupdfoto7
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+aktkodtypidx       tkmnobuk tkmdata     lKODECAIR
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c1
+PMT_DEL_COND c0

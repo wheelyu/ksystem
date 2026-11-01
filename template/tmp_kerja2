@@ -1,0 +1,139 @@
+LOCAL
+PGM_FIELDS
+lpekerjaan2		STRING		21
+lrmdgabkrj		STRING		61
+lhasil1_krj		DFLOAT		8
+lhasil2_krj		DFLOAT		8
+lhasil3_krj		DFLOAT		8
+lNol			DFLOAT		8
+lhasiltxt1              STRING          31
+lhasiltxt2              STRING          31
+lINDUSTRI		STRING		21
+
+DBCALCS(djoinrmd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    gv_INPG lrmdgabkrj
+
+IMAGE(tmptranst) 
+ /----------------------------------------------------------------------------------------------\ 
+ |                      __________________________________                                      |
+ | t.Namaperusahaan   : __________________________________                                      |
+ | i.Pekerjaan        : _____________________                                                   |
+ | t.Subkerja         : _____________________                                                   |
+ | t.Subkerja1        : _____________________                                                   |
+ | i.Industri         : _____________________                                                   |
+ | i.Namaindustri     : __________________________________                                      |
+ | i.Jabatan          : _____________________                                                   |
+ | t.Gaji             : ___________________.__                                                  |
+ | i.Skalabisnis      : _____________________                                                   |
+ | i.Jmlkaryawan      : _________ i.Orang                                                       |
+ | i.Statuskerja      : _____________________                                                   |
+ | t.Lamakerja2       : _________ i.Tahun                                                       |
+ | i.Jmltanggung      : _________ i.Orang                                                       |
+ | t.NoTelpKantor     : _____________________                                                   |
+ \----------------------------------------------------------------------------------------------/ 
+
+FIELD(tmptranst)
+lrmdgabkrj		PROTECT UNSEEN			INPUTRI 1
+sviket			ALLCAPS SCROLL			INPUTRI 1
+svistr1			ALLCAPS SCROLL			INPUTRI 2 /*pekerjaan*/
+svistr2			ALLCAPS SCROLL			INPUTRI 3 /*subpekerjaan*/
+svistr3			ALLCAPS SCROLL			INPUTRI 4 /*subpekerjaan1*/
+svistr4			ALLCAPS SCROLL			INPUTRI 5 /*industri*/
+svinama			ALLCAPS SCROLL			INPUTRI 6
+svistr8			ALLCAPS SCROLL			INPUTRI 6
+svidf5 			NUMERIC				INPUTRI 6
+svistr9			ALLCAPS SCROLL			INPUTRI 7
+svidf6			NUMERIC				INPUTRI 8
+svistr7			ALLCAPS SCROLL			INPUTRI 9
+svidf7			NUMERIC				INPUTRI 10
+svidf8			NUMERIC				INPUTRI 11
+svidf4			NUMERIC				INPUTRI 11
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+lpekerjaan2			INIT		PEKERJAAN2
+svistr7				DFALT_SCAN_BLANKS
+						TETAP
+						KONTRAK
+						MAGANG
+lINDUSTRI			INIT		INDUSTRI
+
+CALCS()
+cpilihan		svistr10 == "PILIHAN"
+
+EDITS(tmptranst)
+e.Mandatory	svistr1		MANDATORY	
+e.Mandatory 	svistr2		MANDATORY	
+e.Mandatory	svistr3		MANDATORY		
+e.Mandatory	svistr4			MANDATORY	
+e.Mandatory	svinama			MANDATORY	
+e.Mandatory	svistr8			MANDATORY	
+e.Mandatory	svidf5 			MANDATORY	
+e.Mandatory	svistr9			MANDATORY	
+e.Mandatory	svistr7			MANDATORY	
+e.Mandatory	svidf4   		MANDATORY	
+e.ValidatePekerjaan	svistr1		VALIDATE tbddatkodidx mtbdkerja stbdpekerjaan {Pgv_dttabel} {Pgv_infokredit} {Plpekerjaan2} 
+e.ValidateSubkerja 	svistr2		VALIDATE tbddatkodidx mtbdsubkerja stbdpekerjaan {Pgv_dttabel} {Plpekerjaan2} {Psvistr1} 
+e.ValidateJenis         svistr3         VALIDATE tbtdattypkod mtbtsub2 stbtjenis {Pgv_dttabel} {Pgv_dttabel21} {Plpekerjaan2} {Psvistr1} {Psvistr2}
+e.Validateok		svistr4		VALIDATE_IF cpilihan tbddatkodidx mtbdindustri stbdindustri {Pgv_dttabel} {Pgv_infokredit} {PlINDUSTRI}
+
+MAP(mtbdkerja)
+tbdkode				svistr1		REPLACE
+
+MAP(mtbdsubkerja)
+tbdkode				svistr2		REPLACE
+
+MAP(mtbtsub2)
+tbtkode				svistr3		REPLACE
+
+MAP(mtbdindustri)
+tbdkode				svistr4		REPLACE
+tbdket				svinama		REPLACE
+
+CALCS()
+crmdgabkrj	        STRIP(svistr2) + STRIP(lpekerjaan2) + STRIP(svistr3)
+cdjoinrmd         	djoinrmd == 1
+cdjoinrmd1         	djoinrmd == 1 && rmdkode4 !="PILIHAN"
+cBLANKS			BLANKS
+
+MAP(mjalan)
+cBLANKS			lrmdgabkrj		DO_CALC
+crmdgabkrj 	        lrmdgabkrj              DO_CALC
+
+MAP(misinid)
+lhasil1_krj       	svidf1                 REPLACE 
+lhasil2_krj       	svidf2                 REPLACE 
+lhasil3_krj       	svidf3                 REPLACE 
+
+MAP(misiindustri)
+rmdkode4	svistr10		REPLACE
+rmdkode4	svistr4			REPLACE_IF cdjoinrmd1
+rmdkode4	svinama			REPLACE_IF cdjoinrmd1
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr4	DO_MAP SHOW mjalan
+BEFORE_INPUT 	cur_field=svistr4 	DO_LIB_IF cdjoinrmd ap_ambts(gv_INPG,lrmdgabkrj,lNol,lNol,lNol,&lhasil1_krj,&lhasil2_krj,&lhasil3_krj,&lhasiltxt1,&lhasiltxt2);
+BEFORE_INPUT    cur_field=svistr4       DO_MAP SHOW misinid 
+BEFORE_INPUT    cur_field=svistr4       DO_MAP SHOW misiindustri
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	svidatbuktyp   tlmdata tlmnobuk gv_pekerjaan
+
+SFL_MAP
+tlmdata			svidata			REPLACE
+tlmnobuk		svinobuk		REPLACE
+gv_pekerjaan		svitype			REPLACE
+
+CALCS()
+caddtmptrans		((tlmsts=="INPG" && tlmsts2=="CAB") || (tlmsts=="INPG" && tlmsts2=="HO" && g_grpnam=="B.M4WMKTSPV")) && djoinkerja==0
+cupdtmptrans		(tlmsts=="INPG" && tlmsts2=="CAB") || (tlmsts=="INPG" && tlmsts2=="HO" && g_grpnam=="B.M4WMKTSPV")
+
+PERMIT(tmptrans)
+  PMT_UPDALL_COND  	cupdtmptrans
+  PMT_ADD_COND		caddtmptrans
+  PMT_DEL_COND  	c0

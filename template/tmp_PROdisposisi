@@ -1,0 +1,57 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------\
+|/-------------------------------------------------------------------\|
+||t.NoBuk          :_________________________                        ||
+||t.User	   :_____________                                    ||
+||t.Tgl            :_______________                                  ||
+||t.Disposisi      :____                                             ||
+||t.Ket            :________________________________________________ ||
+|\-------------------------------------------------------------------/|
+\---------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode		PROTECT                	INPUTRI 1
+psdstr1  		PROTECT SCROLL                  	INPUTRI 2
+psdtgl1  		PROTECT NOLIMIT {DD-MM-YY}      	INPUTRI 3
+psdtype			NOCHANGE		INPUTRI	4
+psdket			ALLCAPS SCROLL  			INPUTRI 5
+
+DEFAULTS(tmptranst)
+psdstr1			INIT_ADD	{g_usrkode}
+psdtgl1			INIT_ADD	{g_tgltrn}
+psdtype			DFALT_SCAN_BLANKS YA TIDAK
+
+EDITS(tmptranst)
+t.Mandatory psdtype	MANDATORY
+t.Mandatory psdket   	MANDATORY
+
+CALCS()
+ctbh1a			lnourt_dis+1	
+ckode			STRIP(psdpsmkode)+"-"+FLD_TO_STRING(psdnourt)
+cjoinpsd0		djoinpsddis==0 && g_curcmd==1
+cjoinpsd1		djoinpsddis==1 && g_curcmd==1
+
+MAP(mnourtz)
+c0              psdnourt        DO_CALC_IF cjoinpsd0
+ctbh1a          psdnourt        DO_CALC_IF cjoinpsd1
+
+MAP(mkode)
+ckode		psdkode		DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=psdtype		DO_MAP SHOW mnourtz
+AFTER_INPUT		cur_field=psdtype		DO_MAP SHOW mkode
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod 	lDISPOSISI11 hrmnobuk	
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+lDISPOSISI	psddata		REPLACE
+

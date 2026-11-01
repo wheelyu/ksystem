@@ -1,0 +1,99 @@
+LOCAL
+PGM_FIELDS
+lhitktpsk	INT2		2
+lSLIK		STRING		11
+lPOSSLIK	STRING		11
+ltunggal	STRING		21
+
+MAP(mjointunggal)
+svistr1		ltunggal	REPLACE
+
+DBCALCS(djointunggal)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp lSLIK nhmfinco_3 lPOSSLIK
+	DBC_MAP		mjointunggal
+
+IMAGE(tmptranst)
+/-------------------------------------\
+ t.Suratkuasa   ________              
+ t.NoKTP        ______________________
+ t.NamaPenerima ______________________
+ t.Atasnama     ______________________
+ t.Bank         ______________________
+ t.NoRek        ______________________
+ t.Tanggal      ______________________
+                ________
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviyt1		NOCHANGE			INPUTRI	1
+svistr1		ALLCAPS				INPUTRI 2
+svinama		ALLCAPS				INPUTRI 3
+svistr2		ALLCAPS				INPUTRI 4
+svistr3		ALLCAPS				INPUTRI 5
+svistr4		NUMERIC				INPUTRI 6
+svitgl1		NONE NOLIMIT {DD-MM-YYYY}	INPUTRI 7
+lenter		ALLCAPS				INPUTRI	8 
+
+DEFAULT(tmptranst)
+sviyt1		DFALT_SCAN_BLANKS	Y T
+lSLIK		INIT			SLIK
+lPOSSLIK	INIT			POSSLIK
+
+CALCS()
+cskreky		sviyt1=="Y"
+cskrekt		sviyt1=="T"
+chitktpsk       DO_LIB ap_strln(svistr1,&lhitktpsk);
+chitktpsk1      lhitktpsk==16 || sviyt1=="T"
+ctunggalx1	djointunggal==1 && ((ltunggal=="TUNGGAL" && sviyt1=="T") || ltunggal!="TUNGGAL")
+
+EDITS(tmptranst)
+e.Mandatory	sviyt1		MANDATORY
+e.Mandatory	svistr1		MANDATORY_IF cskreky
+e.Mandatory	svinama		MANDATORY_IF cskreky
+e.Mandatory	svistr2		MANDATORY_IF cskreky
+e.Mandatory	svistr3		MANDATORY_IF cskreky
+e.Mandatory	svistr4		MANDATORY_IF cskreky
+e.Mandatory	svitgl1		MANDATORY_IF cskreky
+
+MAP(mskrek)
+cBLANKS		svistr1		DO_CALC_IF cskrekt
+cBLANKS		svinama		DO_CALC_IF cskrekt
+cBLANKS		svistr2		DO_CALC_IF cskrekt
+cBLANKS		svistr3		DO_CALC_IF cskrekt
+cBLANKS		svistr4		DO_CALC_IF cskrekt
+cBLANKS		svitgl1		DO_CALC_IF cskrekt
+
+MAP(mhitktpsk)
+chitktpsk	lhitktpsk	DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cskrekt
+BEFORE_INPUT	cur_field=svinama	DO_SKIP_IF cskrekt
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF cskrekt
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF cskrekt
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF cskrekt
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF cskrekt
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mskrek
+AFTER_INPUT	cur_field=sviyt1	DO_MAP SHOW
+		IF ctunggalx1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG PEMOHON TUNGGAL
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW mhitktpsk
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW
+		IF chitktpsk1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG KTP HARUS 16 DIGIT
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp btmdata btmnobuk lSKREKM4W
+SFL_MAP
+btmdata		svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lSKREKM4W	svitype		REPLACE
+

@@ -1,0 +1,150 @@
+LOCAL
+PGM_FIELDS
+l21GANTIAKTIVA             STRING  21
+ltotgantiaktiva	           DFLOAT  8
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.TekanTambah                                     ||
+||t.SisaHari       :__________________              ||
+||t.HariEff        :__________________              ||
+||t.Cuti           :__________________              ||
+||t.Upah           :_______________.__              ||
+||t.SisaGaji       :_______________.__              ||
+||t.SisaCuti       :_______________.__              ||
+||t.UangPisah      :_______________.__              ||
+||t.Lain           :_______________.__              ||
+||t.GantiAkt       :_______________.__              ||
+||t.Total          :_______________.__              ||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.User           :_______________________         ||
+||                 :______________________________  ||
+||t.KetHrd         :______________________________  ||
+||    __________   :_____________________           ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldsatbsr               NUMERIC            	INPUTRI 1
+tldjmlren               NUMERIC            	INPUTRI 2
+tldperdism              NUMERIC            	INPUTRI 3
+tldjmlpos               NUMERIC            	INPUTRI 4
+tldhrg                  PROTECT            	INPUTRI 5
+tldsubtot               PROTECT            	INPUTRI 6
+tldperdis               NUMERIC            	INPUTRI 7
+tldtotdis               NUMERIC            	INPUTRI 8
+tldtotdism              NUMERIC            	INPUTRI 9
+tldjml                  PROTECT            	INPUTRI 10
+tldsat                  NOCHANGE           	INPUTRI 11
+psinama                 PROTECT           	INPUTRI 12
+tldket                  TEXTAREA  ALLCAPS     	INPUTRI 13 
+tldsts                  PROTECT           	INPUTRI 14
+tldlok2                 PROTECT           	INPUTRI 15
+
+EDITS(tmptranst)
+e.Mandatory tldket   	MANDATORY
+t.ValidatePsi tldsat  VALIDATE psikodidx mpsix4 0
+
+MAP(mpsix4)
+psikode		ketkode		REPLACE
+
+CALCS()
+ctotal		tldhrg + tldsubtot + tldperdis + tldtotdis - tldtotdism
+csisagj		tldsatbsr/tldjmlren * tldjmlpos
+csisact		tldperdism/25 * tldjmlpos
+cjika1		tldjmlren != 0
+
+MAP(mtotal)
+ltotgantiaktiva tldtotdism	REPLACE	
+csisagj		tldhrg   	DO_CALC_IF cjika1
+csisact		tldsubtot	 DO_CALC	
+ctotal		tldjml		DO_CALC
+
+MAP(mmapgantiakt) 
+tldhrg          ltotgantiaktiva         REPLACE
+
+DBCALCS(dbscantldakt)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tldbukbbmidx			hrmnobuk   l21GANTIAKTIVA    
+        DBC_SUM_MAP     mmapgantiakt
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldsatbsr            DO_SCAN  dbscantldakt
+AFTER_INPUT     cur_field=tldhrg   DO_MAP SHOW mtotal
+AFTER_INPUT     cur_field=tldsubtot DO_MAP SHOW mtotal
+AFTER_INPUT     cur_field=tldperdis DO_MAP SHOW mtotal
+AFTER_INPUT     cur_field=tldtotdis DO_MAP SHOW mtotal
+AFTER_INPUT     cur_field=tldjmlpos DO_MAP SHOW mtotal
+
+
+DEFAULTS(tmptranst)
+tldsat 		INIT_ADD   	{g_usrkode}
+tldsat 		INIT_UPDATE	{g_usrkode}
+l21GANTIAKTIVA	INIT		GANTIAKTIVA
+
+CALCS()
+cSISAHAK	tmpkode=="SISAHAK" && (g_grpnam=="CMBNHEAD" || g_grpnam=="CMBNSPV" || g_grpnam=="RI")
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND	cSISAHAK
+
+SFL_LINES(1)
+
+SFL_TARGET
+	tldbukurtidx      hrmnobuk  l1
+
+
+SFL_MAP
+hrmnobuk        tldnobuk        REPLACE
+hrmnobuk        tldbrg          REPLACE
+hrmdata         tlddata         REPLACE
+l1		tldnourt	REPLACE
+
+DBCALCS(djointld1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukurtidx		hrmnobuk	l1
+
+CALCS()
+cboleh_tambah		(hrmsts=="INPG" || hrmsts=="RCLS") && (g_grpnam=="RI" || g_grpnam=="CMBNHEAD" || g_grpnam=="CMBNSPV") && djointld1==0
+cboleh_ubah  		(hrmsts=="INPG" || hrmsts=="RCLS") && (g_grpnam=="RI" || g_grpnam=="CMBNHEAD" || g_grpnam=="CMBNSPV") 
+
+caddhrm 	   hrmdf1 + tldjml      
+cupdhrm 	   hrmdf1 + tldjml  - ~tldjml
+cdelhrm 	   hrmdf1 - tldjml
+
+MAP(mupdhrma2)
+caddhrm 	  hrmdf1	DO_CALC
+
+MAP(mupdhrmu2)
+cupdhrm 	  hrmdf1	DO_CALC
+
+MAP(mupdhrmd2)
+cdelhrm 	  hrmdf1	DO_CALC
+
+SPCALCS(spcaladd1)
+DO_LIB ap_dbclc(DNAME dupdhrm2da,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrma2);
+
+SPCALCS(spcalupd1)
+DO_LIB ap_dbclc(DNAME dupdhrm2du,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrmu2);
+
+SPCALCS(spcaldel1)
+DO_LIB ap_dbclc(DNAME dupdhrm2dd,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrmd2);
+
+POSTING(tmptrans)
+ 	PST_ADDCMD 	spcaladd1
+	PST_UPDCMD 	spcalupd1
+	PST_DELCMD 	spcaldel1
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cboleh_tambah
+        PMT_UPDALL_COND cboleh_ubah
+        PMT_DEL_COND    cboleh_ubah   
+
+

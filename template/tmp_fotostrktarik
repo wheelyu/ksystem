@@ -1,0 +1,167 @@
+LOCAL
+PGM_FIELDS
+ltglhisctksom		DATE		4
+lHISCTKSOM		STRING		11
+lSTRK21			STRING		21
+lY			STRING		2
+lENTER                  STRING          11
+
+MAP(mjoinhisctksom)
+akttgl		ltglhisctksom		REPLACE
+
+DBCALCS(djoinhisctksom)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkod2typid   tlmnoasal lHISCTKSOM lSTRK21
+	DBC_MAP		mjoinhisctksom
+
+CALCS()
+ctarik          tlmnobbm=="TARIK"
+ctitip          tlmnobbm=="TITIP"
+
+IMAGE(tmptranst)
+/--------------------------------\
+|/--------s.UPLOAD--------------\|
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+|\------------------------------/|
+|/------------------------------\|
+||t.Berkas   ___________________||
+||           ___________________||
+||           _______            ||
+||t.TglHisSom___________________||
+||t.KonsPlns _______            ||
+||t.KpnPlns  ___________________||
+||t.KonsTdkPenebusan            ||
+||           _______     ______ ||
+|\------------------------------/|
+\--------------------------------/ _
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+docnobuk        NOCHANGE                INPUTRI 1
+docno           PROTECT                 INPUTRI 2
+docsts          PROTECT                 INPUTRI 3
+ltglhisctksom	PROTECT {DD-MM-YYYY}    INPUTRI 4
+doclok		NOCHANGE		INPUTRI 5
+doctgldaf	NONE    {DD-MM-YYYY}	INPUTRI	6
+doccab		NOCHANGE		INPUTRI	7
+lENTER          NOCHANGE                INPUTRI 9
+lY		PROTECT			INPUTRI 8
+
+DEFAULTS(tmptranst)
+lUPLSRTSTR      INIT            UPLSRTSTR
+lHISCTKSOM	INIT		HISCTKSOM
+lSRTSTR		INIT		SRTSTR
+lSTRK21		INIT		STRK
+docdata         INIT            UPLSRTSTR
+docnourt        INIT            8
+doctype         INIT            SRTSTR
+docno           INIT            SERAH TERIMA SURAT STRK
+lY		INIT		Y
+lENTER          INIT            ENTER
+
+/* doclok	        DFALT_SCAN_BLANKS	Y
+					T */
+
+IF ctitip       doclok  DFALT_SCAN_BLANKS       Y
+IF ctarik       doclok  DFALT_SCAN_BLANKS       T
+
+IF ctitip       doccab	DFALT_SCAN_BLANKS       T
+IF ctarik       doccab	DFALT_SCAN_BLANKS       Y
+
+CALCS()
+cyaplns		doclok == "Y"
+ctdkplns	doclok == "T"
+cadatglhis	djoinhisctksom==1
+
+EDITS(tmptranst)
+e.Mandatory     doclok          MANDATORY                               /* Konsumen Mau Pelunasan			*/
+e.Mandatory	doccab		MANDATORY/* _IF ctdkplns */
+e.Mandatory     doctgldaf       MANDATORY_IF cyaplns                    /* Kapan Mau Pelunasan                          */
+e.Validate     lY VALIDATE stskodidx mstsx 0
+
+MAP(mstsx)
+cblanks         ltglhisctksom           DO_CALC
+ltglhisctksom   ltglhisctksom           REPLACE_IF cadatglhis
+
+
+CALCS()
+/* cplus7		ltglhisctksom + 7 
+cnow		ltglhisctksom
+cplus7x		doclok == "T" && doccab == "T" && djoinhisctksom==1
+cnowx		doclok == "T" && doccab == "Y" && djoinhisctksom==1
+cmaxtgl		(djoinhisctksom==1 && doctgldaf >= ltglhisctksom && doctgldaf <= (ltglhisctksom + 30)) || doclok == "T"  */
+
+cnow            tlmtgl  
+cnowx           doclok == "T" && doccab == "Y"
+cmaxtgl         doctgldaf >= g_tgltrn && doctgldaf <= g_tgltrn+7
+cblmisitrkunit	tlmnobbm!="" || tlmdvs=="M4W"
+
+MAP(misitglplns)
+cblanks		doctgldaf		DO_CALC_IF cyaplns
+cblanks		doccab			DO_CALC_IF cyaplns
+
+MAP(misitglplns2)
+cblanks		doctgldaf		DO_CALC_IF ctdkplns
+cnow            doctgldaf               DO_CALC_IF cnowx
+
+/* cplus7		doctgldaf		DO_CALC_IF cplus7x
+cnow            doctgldaf               DO_CALC_IF cnowx */
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=doclok	DO_MAP SHOW misitglplns
+/* BEFORE_INPUT    cur_field=doccab   	DO_SKIP_IF cyaplns */
+AFTER_INPUT	cur_field=doccab	DO_MAP SHOW misitglplns2
+BEFORE_INPUT    cur_field=doctgldaf	DO_SKIP_IF ctdkplns
+AFTER_INPUT     cur_field=doctgldaf     DO_MAP SHOW
+                IF cmaxtgl mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max7HariTglHrIni
+
+AFTER_INPUT     cur_field=docnobuk      DO_MAP SHOW
+                IF cblmisitrkunit mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BelumIsiTrkUnitMaster
+
+
+
+
+MAP(mupdtmptrans)
+cY              docsts          DO_CALC
+g_tgltrn        doctgljadi      REPLACE
+
+DBCALCS(dupdtmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      docprmidx docprm
+        DBC_MAP         mupdtmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND csdhY
+SFL_UPLFLD_DBCALCS dupdtmptrans
+SFL_UPLFLD docnobuk doctype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_CAMERAONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+        docdatbukidx    lUPLSRTSTR tlmnobuk lSRTSTR
+
+SFL_MAP
+lUPLSRTSTR      docdata         REPLACE
+tlmnobuk        docnobuk        REPLACE
+
+CALCS()
+cftsrtstrOPEN  (djoindoc9==0 && tlmdvs != "M4W" && (tlmplg==g_usrkode || g_usrkode==tlmuntuk || g_grpnam=="ARPIC" || g_grpnam=="PICPIUT" || 
+		g_grpnam=="BM" || g_grpnam=="SPV" || g_grpnam =="RI" || g_grpnam=="RASSPV" || g_grpnam == "KOOREM" || g_grpnam=="B.M4WCSPV"))
+                || g_grpnam == "RI" || g_grpnam == "IT"
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cftsrtstrOPEN
+PMT_UPDALL_COND         c0
+PMT_DEL_COND            c0
+

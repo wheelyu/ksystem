@@ -1,0 +1,118 @@
+LOCAL
+PGM_FIELDS
+luserinput	STRING		31
+lVONIS		STRING		21
+lKMBLAST	STRING		21
+lVNSKMBL	STRING		21
+
+DBCALCS(djointld1)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldllbrgurt    llegal tlmnobuk lkmblast tlmnobuk
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  t.Tgl      : ___________________
+  t.UserInput: ______ ____________
+  t.Tipe     : ___________________
+  t.LmaVonis : _____  t.Tahun     
+  t.TglTahan : ___________________
+  t.JnsAset  : ___________________
+  t.RpAset   : ___________________
+  t.Ket      : ___________________
+ \---------------------------------/
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldtglfak       PROTECT {DD-MM-YY} INPUTRI 1
+tldkat          PROTECT            INPUTRI 2
+luserinput      PROTECT            INPUTRI 3
+tldgrup		NOCHANGE	   INPUTRI 4
+tldperdis	NUMERIC		   INPUTRI 5
+tldtgl2		NONE {DD-MM-YY} NOLIMIT INPUTRI	6
+tldnobbm        NOCHANGE           INPUTRI 7
+tldjml          ALLCAPS            INPUTRI 8
+tldket		ALLCAPS		   INPUTRI 9
+
+DEFAULTS(tmptranst)
+tldnobbm	DFALT_SCAN_BLANKS	UANG PENGAMANAN_ASET UNIT
+lVNSKMBL	INIT			VONIS_KEMBALI_ASET
+lVONIS		INIT			VONIS
+lKMBLAST	INIT			KEMBALI_ASET
+
+CALCS()
+cbknaset	tldnobbm=="UANG" || tldnobbm=="UNIT"
+cdjointld1	djointld1==0
+cvonis          tlmsts2=="J"
+ckembali        tlmsts2=="H"
+cvnskmbl        tlmsts2=="K"
+cnotkmas	tlmsts2!="H"
+cnotvnis	tlmsts2!="J"
+
+EDITS(tmptranst)
+e.Mandatory	tldperdis	MANDATORY_IF cnotkmas
+e.Mandatory	tldtgl2		MANDATORY_IF cnotkmas
+e.Mandatory	tldnobbm	MANDATORY_IF cnotvnis
+e.Mandatory     tldjml          MANDATORY_IF cbknaset
+
+e.ValidatePsi	tldkat		VALIDATE psikodidx mpsi4 0
+
+MAP(mpsi4)
+psikode		tldkat		REPLACE
+psinama		luserinput	REPLACE
+
+CALCS()
+/*cnadd		(g_curcmd==1 && djointldast==0) || g_curcmd!=1*/
+
+MAP(mtanggal)
+g_tgltrn	tldtglfak	REPLACE
+g_usrkode	tldkat		REPLACE
+lVONIS		tldgrup		REPLACE_IF cvonis
+lKMBLAST	tldgrup		REPLACE_IF ckembali
+lVNSKMBL	tldgrup		REPLACE_IF cvnskmbl
+
+MAP(mnourutx)
+c1		tldnourt	DO_CALC_IF cdjointld1
+
+HOOKS(tmptranst)
+/*BEFORE_INPUT    cur_field=tldnobbm      DO_MAP SHOW
+                IF cnadd mdumb
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhDiTambah
+BEFORE_INPUT    cur_field=tldjml        DO_MAP SHOW
+                IF cnadd mdumb
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhDiTambah
+BEFORE_INPUT    cur_field=tldket        DO_MAP SHOW
+                IF cnadd mdumb
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhDiTambah*/
+BEFORE_INPUT	cur_field=tldgrup 	DO_MAP SHOW mtanggal
+AFTER_INPUT     cur_field=tldgrup       DO_MAP SHOW mnourutx
+BEFORE_INPUT	cur_field=tldperdis	DO_SKIP_IF ckembali
+BEFORE_INPUT	cur_field=tldtgl2	DO_SKIP_IF ckembali
+BEFORE_INPUT	cur_field=tldnobbm	DO_SKIP_IF cvonis
+BEFORE_INPUT	cur_field=tldjml	DO_SKIP_IF cvonis
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldllbrgurt    llegal tlmnobuk lkmblast tlmnobuk
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+llegal          tldnoll         REPLACE
+tlmnobuk        tldbrg          REPLACE
+lkmblast        tldlok          REPLACE
+
+MAP(mupdtldjml1)
+tldjml		tlmjml  	REPLACE
+
+SPCALCS(spcalupdjml1)
+DO_LIB ap_dbclc(DNAME dupdtldjml1,DCOMMAND UPDATE,DTARGET tlmbukidx tldnobuk,DMAP mupdtldjml1);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spcalupdjml1
+        PST_UPDCMD      spcalupdjml1

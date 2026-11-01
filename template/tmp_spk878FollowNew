@@ -1,0 +1,252 @@
+LOCAL
+PGM_FIELDS
+ltldnourtN	INT2	2
+lconhpN		STRING	16
+lKATMITRA	STRING	11
+lnipkba		STRING	21
+lalasanpk	STRING	21
+
+MAP(mjointldNew1)
+tldnourt        ltldnourtN       REPLACE
+DBCALCS(djointldNew1)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukbrgoto	tkmnobuk gv_OPEN lNEWSPK
+        DBC_MAP         mjointldNew1
+
+MAP(mjoinconN)
+conhp           lconhpN         REPLACE
+DBCALCS(djoinconN)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx tldplg
+        DBC_MAP         mjoinconN
+
+MAP(mjoinpsdUp)
+psdkode		lnipkba		REPLACE
+DBCALCS(djoinpsdUp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod	lKATMITRA tldplg
+	DBC_MAP		mjoinpsdUp
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.NoBuk         ___  ___________||
+||t.Ktp           ________________||
+||t.Nama          ________________||
+||t.Telp          ________________||
+||t.NoTelpAkt     ________________||
+||t.Alamat        ________________||
+||                t.RT___  t.RW___||
+||t.Prop          ________________||
+||t.Kota          ________________||
+||t.Kec           ________________||
+||t.Kel           ________________||
+||t.JnsMitra      ________________||
+||t.MntHmc        ____  __________||
+||t.MntM2w        ____  __________||
+||t.JdpkHmc       ____  __________||
+||t.JdpkM2W       ____  __________||
+||t.AlsnTdkJ      ____  __________||
+||t.KnpTdkProspek ________________||
+||t.SistemKomisi  ________________||
+||t.SolusiKba     ________________||
+||t.Data          ________________||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tldnourt                PROTECT                         INPUTRI         1  /* No Buk */
+        tldnobuk                PROTECT                         INPUTRI         1  /* No Buk */
+	tldplg			DIGITS SCROLL			INPUTRI		2
+	tldkat			ALLCAPS SCROLL			INPUTRI		3
+	lconhpN			NOCHANGE SCROLL			INPUTRI		5
+	tldnobbm		DIGITS SCROLL			INPUTRI		5
+	tldket			TEXTAREA			INPUTRI		6
+	tldppdoto		ALLCAPS SCROLL			INPUTRI		7
+	tldbrdoto		ALLCAPS SCROLL			INPUTRI		7	
+
+	tldlok			PROTECT SCROLL			INPUTRI		8
+	tldlok2			ALLCAPS SCROLL			INPUTRI		9
+	tldgrup			ALLCAPS SCROLL			INPUTRI		10
+	tldgrup2		ALLCAPS SCROLL			INPUTRI		11
+	tldbisnis		NOCHANGE			INPUTRI		15	
+
+	tldtydis		NOCHANGE			INPUTRI		17
+	tldperdis1		NUMERIC				INPUTRI		17	
+	tlddk			NOCHANGE			INPUTRI		18
+	tldperdis2		NUMERIC				INPUTRI		18	
+
+	tldjasbrg		NOCHANGE			INPUTRI		19	
+	tldperdis		NUMERIC				INPUTRI		19
+	tldsisbrg		NOCHANGE			INPUTRI		20
+	tldtotdis		NUMERIC				INPUTRI		20
+
+	tlddvs			ALLCAPS SCROLL			INPUTRI		21
+	lalasanpk		PROTECT SCROLL			INPUTRI		21
+	
+	tldnoll			NOCHANGE			INPUTRI		22
+	tldcab			NOCHANGE			INPUTRI		23
+	tldukrwrn		ALLCAPS SCROLL			INPUTRI		24
+
+	tlddata			NOCHANGE			INPUTRI		30
+
+
+
+CALCS()
+cdjointldNew0	djointldNew1 == 0
+cdjointldNew1	djointldNew1 == 1
+ctldNew		ltldnourtN + 1
+cCrMitraN	tkmkode == "CR_AGEN"
+csdhadaN	(tkmkode == "CR_AGEN" && djoinpsmagen1 == 0 && djoinpsmagen2 == 0) || tkmkode !="CR_AGEN"
+cNotCrAgenN	tkmkode !="CR_AGEN"
+ctdkhasil	(djoinsviFu == 1 && ((lsvistr2 == "TDK_BERTEMU" || lsvistr2 == "TDK_TERHUBUNG") || ((tkmkode=="CR_AGEN" || tkmkode=="VR_FREE") && lsvistr39 == "T"))) || tkmkode != "DC_AGEN"
+cdjoinconhpN1	djoinconN==1
+cBknDownline	djoinpsdUp == 1 && g_usrkode == lnipkba 
+cnotPK		tldjasbrg== "T" && tldsisbrg == "T"
+
+DEFAULTS(tmptranst)
+tlddata         INIT            NEWSPK
+tldbrg          INIT            NEWSPK
+tldsts          INIT            OPEN
+tldbisnis	DFALT_SCAN_BLANKS
+				PERORANGAN
+				INSTANSI
+lKATMITRA	INIT		KATMITRA
+tlddk	       DFALT_LIST      BLANKS
+                                Y
+                                T
+tldtydis       DFALT_LIST      BLANKS
+                                Y
+                                T
+tldjasbrg      DFALT_LIST      BLANKS
+                                Y
+                                T
+tldsisbrg      DFALT_LIST      BLANKS
+                                Y
+                                T
+tldnoll        DFALT_SCAN_BLANKS
+                                MEDIA_JUAL  "TDK_ADA_MEDIA_JUAL"
+                                ATURAN_MAIN "TDK_FAHAM_ATURAN_MAIN"
+                                HARGA_SAING "HARGA_TDK_BERSAING"
+                                TDK_JUAL    "TIDAK_TAHU_CARA_JUAL"
+tldcab		DFALT_SCAN_BLANKS
+                                BERSAING
+                                TDK_BERSAING
+
+
+EDITS(tmptranst)
+e.Mandatory		tldbisnis	MANDATORY_IF cCrMitraN
+e.Mandatory		tldnoll		MANDATORY_IF cnotPK
+e.Mandatory		tldcab		MANDATORY_IF cnotPK
+e.Mandatory		tldukrwrn	MANDATORY_IF cnotPK
+
+e.mandatoryKota1        tldlok2         MANDATORY
+e.mandatoryKec1         tldgrup         MANDATORY
+e.Mandatorykel          tldgrup2        MANDATORY
+
+e.Validate		tldnobuk	VALIDATE tkmbukidx mtkmNew 0
+e.Validate		tldplg		VALIDATE_IF cNotCrAgen psmktpidx mpsmNew 0
+e.Validate		tldplg		VALIDATE_IF cNotCrAgen almdatotobuk malmNew 0 {Pgt_psmtinggal} {Salmnobuk}
+t.validateRT            tldppdoto       VALIDATE tbddatkodidx mtbdrtNew stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            tldbrdoto       VALIDATE tbddatkodidx mtbdrwNew stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+e.validatePropinsi2     tldlok          VALIDATE_IF ckerja dtmdtkodidx mdtmNew 0 {Pgv_dtkota}
+e.validateKota2         tldlok2         VALIDATE_IF ckerja tbldtkodidx mtblNew stblDT {Pgv_dtkota}
+e.validateKec2          tldgrup         VALIDATE_IF ckerja tbddatkodidx mtbdNew stbd {Pgv_dtkota} {Ptldlok} {Ptldlok2}
+e.validateKel2          tldgrup2        VALIDATE_IF ckerja tbtdattypkod mtbtNew stbt  {Pgv_dtkota} {Pgv_dtkota21} {Ptldlok} {Ptldlok2} {Ptldgrup}
+e.Validate              tlddvs          VALIDATE_IF cnotPK tbddatkodidx mtbdNot stbd {Pgv_dttabel} {PlALASANPK} {PlALASANPK}
+
+MAP(mtbdNot)
+tbdkode         tlddvs		REPLACE
+
+MAP(mtkmNew)
+tkmnobuk	tldnobuk	REPLACE
+lconhp		lconhp		REPLACE_IF cdjoinconhpN1
+
+MAP(mpsmNew)
+psmnama		tldkat		REPLACE
+
+MAP(malmNew)
+almnobuk	almnobuk	REPLACE
+almjalan	tldket		REPLACE
+almprop		tldlok		REPLACE
+almkota		tldlok2		REPLACE
+almkec		tldgrup		REPLACE
+almkel		tldgrup2	REPLACE
+almrt		tldppdoto	REPLACE
+almrw		tldbrdoto	REPLACE
+
+MAP(mtbdrtNew)
+tbdkode         tldppdoto       REPLACE
+tkmnobuk	tldnobuk	REPLACE
+
+MAP(mtbdrwNew)
+tbdkode         tldbrdoto       REPLACE
+
+MAP(mtbtNew)
+tbtkode         tldgrup2        REPLACE
+tbtdf2		tldtmp2		REPLACE
+tbtdf1		tldtmp1		REPLACE
+
+MAP(mtbdNew)
+tbdkode         tldgrup         REPLACE
+
+MAP(mtblNew)
+tblkode         tldlok2         REPLACE
+tbldtmkode      tldlok          REPLACE
+
+MAP(mdtmNew)
+dtmkode         tldlok          REPLACE
+
+
+MAP(muruttldNew)
+c1	tldnourt	DO_CALC_IF cdjointldNew0
+ctldNew	tldnourt	DO_CALC_IF cdjointldNew1
+
+CALCS()
+chmcMinatx	tldtydis== "Y" && tlddk=="T" && tlddvs=="MINAT_BLN_DPN"
+cm2wMinatx	tldtydis== "T" && tlddk=="Y" && tlddvs=="MINAT_BLN_DPN"
+chmcm2wx	tldtydis== "Y" && tlddk=="Y" && tlddvs=="MINAT_BLN_DPN"
+cHMCMinatx	"MINATHMC"
+cM2WMinatx	"MINATM2W"
+cHMCM2WMx	"MINATHMCM2W"
+
+MAP(mMinatKbax)
+cHMCMinatx	tldsat		DO_CALC_IF chmcMinatx
+cM2WMinatx	tldsat		DO_CALC_IF cm2wMinatx
+cHMCM2WMx	tldsat		DO_CALC_IF chmcm2wx
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW muruttldNew
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mMinatKbax
+AFTER_INPUT     cur_field=tldplg	DO_MAP SHOW
+                IF csdhadaN mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KtpSudahAda
+AFTER_INPUT     cur_field=tldplg	DO_MAP SHOW
+                IF cBknDownline mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MitraBknDownline
+BEFORE_INPUT	cur_field=tldbisnis	DO_SKIP_IF cNotCrAgenN
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	ctdkhasil
+SFL_TARGET
+        tldbukbrgoto	tkmnobuk gv_OPEN lNEWSPK
+
+SFL_MAP
+tkmnobuk        tldnobuk	REPLACE
+
+MAP(mupdtkmMinatKbax)
+tldsat		tkmlok2		REPLACE
+
+SPCALCS(sptmptrans2g12)
+DO_LIB  ap_dbclc(DNAME dupdtkmMinatKbax, DCOMMAND UPDATE, DTARGET tkmbukidx tldnobuk, DMAP mupdtkmMinatKbax);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans2g12
+PST_UPDCMD      sptmptrans2g12
+

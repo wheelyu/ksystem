@@ -1,0 +1,327 @@
+LOCAL
+PGM_FIELDS
+l4694z3         INT2    2
+lm4694z3        STRING  15
+ljamkos3	TIME	4
+ltglakhbl2      DATE    4
+ltglawlbldpn	DATE	4
+ltglakhbldpn2	DATE	4
+ltkmscr		STRING	5
+l4666           INT2    2
+lm4666          STRING  15
+
+CALCS()
+ctglawlbldpn	ltglakhbl2 + 1
+ctglakhbl2      DO_LIB  ap_akhbl(g_tgltrn,&ltglakhbl2);
+ctglakhblndpn	DO_LIB	ap_akhbl(ltglawlbldpn,&ltglakhbldpn2);
+
+DBCALCS(djoinabkrev3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN spknobuk
+
+MAP(mjointkmspk)
+tkmnobuk        ltkmnobuk       REPLACE
+tkmscr		ltkmscr		REPLACE
+
+DBCALCS(djointkmspk)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkmbukidx       spknobuk
+        DBC_MAP         mjointkmspk
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|t.Ktp                t.FotoRumah     |
+|/--s.UPLOAD------\ /--s.UPLOAD2-----\|
+||                | |                ||
+||                | |                ||
+||                | |                ||
+||                | |                ||
+||                | |                ||
+||                | |                ||
+|\----------------/ \----------------/|
+|spasi				      |
+| t.Kk				      |
+|/--s.UPLOAD3-----\		      |
+||                |		      |
+||                |		      |
+||                |		      |
+||                |		      |
+||                |		      |
+||                |		      |
+|\----------------/		      |
+|				      |
+|-------------------------------------|
+| t.NipReview    : ________________   |
+| t.Nama         : ________________   |
+| t.Jabatan      : ________________   |
+| t.TglReview    : ________________   |
+| t.JamReview    : ________________   |
+| t.Rm           : ___ ____________   |
+| t.Pe           : ___ ____________   |
+| t.Us           : ________________   |
+| 				      |
+| t.FSS		 : ____		      |
+| t.FKS		 : ____		      |
+| t.Telp	 : ________________   |
+| t.Vld		 : ____		      |
+| t.Terhub	 : ____		      |
+| t.DFLC	 : ____		      |
+| t.Minat	 : ____		      |
+| t.KpnMnt	 : _______________    |
+| t.TglMnt	 : ________________   |
+| t.TdkMnt	 : _______________    |
+| t.H		 : ________________   |
+| 		   ________________   |
+|-------------------------------------|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkkode9        PROTECT                 INPUTRI 1       /* nip */
+lnamarev        PROTECT                 INPUTRI 2       /* nama */
+spknama3        PROTECT                 INPUTRI 3       /* jabatan */
+spktglft4       PROTECT {DD-MM-YYYY}    INPUTRI 4       /* tgl */
+lsystimeR4      PROTECT                 INPUTRI 5       /* Jam Review */
+spkkat5         PROTECT                 INPUTRI 6       /* rumah */
+lketrmh         PROTECT                 INPUTRI 6       /* ket rumah */
+spkkat4         PROTECT                 INPUTRI 7       /* pekerjaan */
+lketkerja       PROTECT                 INPUTRI 7       /* ket kerja */
+spkkat2         PROTECT                 INPUTRI 8       /* usia */
+
+spkkode10       NOCHANGE             	INPUTRI 9       /* FOTO SPK SESUAI */
+spknoasal       NOCHANGE             	INPUTRI 10      /* FOTO KTP SESUAI */
+spknohp         TEXTAREA PROTECT     	INPUTRI 11      /* NO TELP */
+spkket2         NOCHANGE             	INPUTRI 12      /* VALID */
+spkket3         NOCHANGE             	INPUTRI 13      /* TERHUBUNG */
+spkreview       NOCHANGE             	INPUTRI 14      /* DIKUNJ/FU LC */
+spknama4        NOCHANGE             	INPUTRI 17      /* MINAT*/
+spkfoto7        ALLCAPS              	INPUTRI 19      /* KAPAN MINAT */
+spktglft6       NOLIMIT {DD-MM-YYYY} 	INPUTRI 20      /* TANGGAL MINAT */
+spkfoto8        ALLCAPS              	INPUTRI 21      /* ALASAN TIDAK MINAT */
+spkreview3      PROTECT              	INPUTRI 26      /* HASIL */
+spkkode9        PROTECT QPROTECT     	INPUTRI 22      /* HASIL */
+
+CALCS()
+/* cbukrev3        "PICASPK" + STRIP(spkkode9) + THBLS(g_tgltrn) */
+csystimeR3	SYSTIME
+
+DEFAULTS(tmptranst)
+ltglawlbldpn    INIT            {ctglawlbldpn}
+/* lkode3	INIT            {cbukrev3} */
+/* l1093 	INIT            109 */
+l4694z3         INIT            4694
+lm4694z3        INIT            m4694z3
+ljamkos3        INIT            0000
+l4666           INIT            4666
+lm4666          INIT            m4666
+
+spkkode10       DFALT_SCAN      BLANKS  Y T
+spknoasal       DFALT_SCAN      BLANKS  Y T
+spkket2         DFALT_SCAN      BLANKS  Y T
+spkket3         DFALT_SCAN      BLANKS  Y T
+spkreview       DFALT_SCAN      BLANKS  Y T
+spknama4        DFALT_SCAN      BLANKS  Y T
+
+CALCS()
+csesuaiJDPK     spkkode10 == "Y" && spknoasal == "Y" && spkket2 == "Y" && spkket3 == "Y" && spkreview == "Y" && spkfoto7=="SEKARANG"
+csesuaix3       spkkode10 == "Y" && spknoasal == "Y" && spkket2 == "Y" && spkket3 == "Y" && spkreview == "Y" && 
+		(spkfoto7=="BULAN_INI" || spkfoto7=="BULAN_DEPAN" || spkfoto7=="MINAT_BLN_INI" || spkfoto7=="MINAT_BLN_DPN" || spkfoto7=="DUA_BLN_LAGI")
+ctdksesuaix3    spkkode10 == "T" || (spknoasal == "T" || spknoasal == BLANKS) || spkket2 == "T" || spkket3 == "T" || spkreview == "T" || spkfoto7=="BELUM/TIDAK"
+
+csesuaiyJDPK    "SESUAI_JDPK"
+csesuaiy3       "SESUAI"
+ctdksesuaiy3    "TIDAK_SESUAI"
+cH3		"H"
+cHADIR3		"HADIR"
+cjamlewat3	lSYSTIME > ltbdjam2
+cjamblm3	lSYSTIME <= ltbdjam2
+cjoinpsiusr3	djoinpsiusr == 1
+
+cKtpY           djoinspkInfo == 1 && lspkkat == "Y"
+cKtpT           djoinspkInfo == 1 && lspkkat == "T"
+cValidY         spkket2 == "Y"
+cValidT         spkket2 == "T"
+cTerhubungY     spkket2 == "Y" && spkket3 == "Y"
+cTerhubungT     spkket2 == "T" || spkket3 == "T"
+cMinatY         spkket2 == "Y" && spkket3 == "Y" && spknama4 == "Y"
+cMinatT         spkket2 == "T" || spkket3 == "T" || spknama4 == "T"
+
+EDITS(tmptranst)
+t.Mandatory     spkkode10          MANDATORY
+t.Mandatory     spknoasal          MANDATORY_IF cKtpY
+t.Mandatory     spkket2            MANDATORY
+t.Mandatory     spkket3            MANDATORY_IF cValidY
+t.Mandatory     spkreview          MANDATORY_IF cTerhubungY
+t.Mandatory     spknama4           MANDATORY_IF cTerhubungY
+t.Mandatory     spkfoto7           MANDATORY_IF cMinatY
+t.Mandatory     spktglft6          MANDATORY_IF cMinatY
+t.Mandatory     spkfoto8           MANDATORY_IF cMinatY
+
+t.Validate      spkkode9         VALIDATE psikodidx mpsirev3 0
+e.Validate      spkfoto7         VALIDATE tbddatkodidx malasanR3 stbd {Pgv_dttabel} {PlALASANPK} {PlALASANPK}
+t.Validate      spkfoto8         VALIDATE tbddatkodidx mtdkminat2 stbd {Pgv_dttabel} {PlSPK21} {PlTIDAKMINATHMC}
+
+MAP(mkondisitgl)
+ctglakhbl2	ltglakhbl2	DO_CALC
+ctglawlbldpn	ltglawlbldpn	DO_CALC
+ctglakhblndpn   ltglakhbldpn2	DO_CALC
+
+MAP(mpsirev3)
+psikode         spkkode9        REPLACE
+psinama         lnamarev        REPLACE
+/* spkjam	lsystimeR3	REPLACE */
+
+MAP(malasanR3)
+tbdkode         spkfoto7         REPLACE
+
+MAP(mjam3)
+csystimeR3      spkjam          DO_CALC
+/* spkjam	lsystimeR	REPLACE */
+csesuaiy3       spkreview3      DO_CALC_IF csesuaix3
+csesuaiyJDPK    spkreview3      DO_CALC_IF csesuaiJDPK
+ctdksesuaiy3    spkreview3      DO_CALC_IF ctdksesuaix3
+
+MAP(mupdsvirev3)
+g_usrkode       spkkode9        REPLACE
+ljabatan        spknama3        REPLACE_IF cjoinpsiusr3
+g_tgltrn        spktglft4       REPLACE
+
+MAP(mtdkminat2)
+tbdkode         spkfoto8         REPLACE
+
+CALCS()
+ctglhrini       (spkfoto7 == "SEKARANG" && spktglft6 == g_tgltrn) || (spkfoto7 != "SEKARANG")
+cblnini         (spkfoto7 == "BULAN_INI" && spktglft6 > tkmtgl && spktglft6 <= ltglakhbl2) || (spkfoto7 != "BULAN_INI")
+cblndpn         (spkfoto7 == "BULAN_DEPAN" && spktglft6 >= ltglawlbldpn && spktglft6 <= ltglakhbldpn2) || (spkfoto7 != "BULAN_DEPAN")
+cinihrlibur     (spktglft6 != BLANKS && djointgmrev2 == 1 && ltgmke3 != BLANKS) || (spktglft6 == BLANKS || spkkode10 == "T" && ((spknoasal == BLANKS || spknoasal == "T")
+                || (spkket2 == BLANKS || spkket2 == "T") || (spkket3 == BLANKS || spkket3 == "T") || (spkreview == BLANKS || spkreview == "T") || (spknama4 == BLANKS || spknama4 == "T")
+                || (spkfoto7 == BLANKS || spkfoto7 == "T")))
+cREV		"REV"
+crwbfu          tkmsts != "OPEN" && tkmkode != "FU_ADS" && tkmkode != "FU_ADS1" && (lpsidvs == "H1" || lpsidvs == "HMC" || lpsidvs == "KLIKNSCHMC") 
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=spkkode10     DO_MAP  SHOW    mkondisitgl
+BEFORE_INPUT    cur_field=spknoasal     DO_SKIP_IF cKtpT
+BEFORE_INPUT    cur_field=spkket3       DO_SKIP_IF cValidT
+BEFORE_INPUT    cur_field=spkreview     DO_SKIP_IF cTerhubungT
+BEFORE_INPUT    cur_field=spknama4      DO_SKIP_IF cTerhubungT
+BEFORE_INPUT    cur_field=spkfoto7      DO_SKIP_IF cMinatT
+BEFORE_INPUT    cur_field=spktglft6     DO_SKIP_IF cMinatT
+BEFORE_INPUT    cur_field=spkfoto8      DO_SKIP_IF cMinatT
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mupdsvirev3
+AFTER_INPUT     cur_field=spkkode10     DO_MAP SHOW mjam3
+AFTER_INPUT     cur_field=spknoasal     DO_MAP SHOW mjam3
+AFTER_INPUT     cur_field=spkket2       DO_MAP SHOW mjam3
+AFTER_INPUT     cur_field=spkket3       DO_MAP SHOW mjam3
+AFTER_INPUT     cur_field=spkreview     DO_MAP SHOW mjam3
+AFTER_INPUT     cur_field=spkfoto7      DO_MAP SHOW mjam3
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mjam3
+
+AFTER_INPUT     cur_field=spktglft6     DO_MAP SHOW
+                IF ctglhrini            mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusHariIni
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ctglhrini            mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusHariIni
+
+AFTER_INPUT     cur_field=spktglft6     DO_MAP SHOW
+                IF cblnini              mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusBulanIni
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cblnini              mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusBulanIni
+
+AFTER_INPUT     cur_field=spktglft6     DO_MAP SHOW
+                IF cblndpn              mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusBulanDepan
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cblndpn              mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusBulanDepan
+
+AFTER_INPUT     cur_field=spktglft6     DO_MAP SHOW
+                IF cinihrlibur          mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBisaHariMinggu/Libur
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cinihrlibur          mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBisadiHariMinggu/Libur
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND crwbfu
+SFL_UPL_DIRFLD tkmcab
+SFL_UPLFLD  spknobuk spkfoto
+SFL_UPLFLD2 spknobuk spkfoto5
+SFL_UPLFLD3 spknobuk spkfoto6
+SFL_UPLREADONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+	spkdatbuktyp   lSPKLCK tkmnobuk
+
+SFL_MAP
+lSPKLCK         spkdata         REPLACE
+tkmnobuk        spknobuk        REPLACE
+
+MAP(mupdabkmmsls3)
+gv_CLSD         abksts          REPLACE
+
+MAP(m4694z3)
+tkmnobuk        r_string20      REPLACE
+
+MAP(mupdtkmrev3)
+spknama3        tkmscr          REPLACE
+
+MAP(mupdabdsls3)
+lSYSTIME	abdjam2		REPLACE_IF cjamlewat3
+DEBUG ltbdjam2	abdjam2		REPLACE_IF cjamblm3
+g_ipname	abdipakh	REPLACE
+g_tgltrn	abdtgl2		REPLACE
+cHADIR3		abdtype		DO_CALC
+cH3		abdhari		DO_CALC
+g_scrnumstr	abdnobuk	REPLACE
+
+MAP(mupdtkmsvi)
+cREV		tkmscr		DO_CALC
+gv_int1		tkmnil4		REPLACE_IF csesuaix3
+gv_int1		tkmnil5		REPLACE_IF ctdksesuaix3
+
+MAP(m4666)
+tkmnobuk        r_string1       REPLACE
+spktglft6	r_string3	REPLACE
+spkreview3	r_string4	REPLACE
+
+CALCS()
+crevgab3	tkmsts != "CLSD" && (g_usrkode == spkkode9 || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "KDH" || g_grpnam == "RAS" || g_grpnam=="TLDHMC" || g_grpnam=="TLDDTN" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" ||
+		g_grpnam == "PICMKT" || g_grpnam == "PICMKTM2W" || g_grpnam == "M2WAM") && djointkmspk == 1 && ltkmscr != "REVY"
+cpicmm3		g_usrkode == BLANKS && (tkmscr == "PICM" || tkmscr == "BUM")
+cdjoinabkrev3	djoinabkrev3 == 1
+cdjoinabdsls3	g_usrkode == BLANKS && djoinabdDTG == 1 && labdsts == "INPG" && labdtype == "DATANG" && labdjam2 == ljamkos3 && 
+		spkreview3 == "SESUAI" && djoinabdDTG == 1 && djointbdSH == 1 && lpsijabatan=="MKTLAPANGANHMC"
+cdjointkmsvi	djointkmspk == 1 && spkreview3 != "TIDAK_SESUAI"
+
+SPCALCS(sptmprevmm3)
+        DO_LIB                  ap_dbclc(DNAME dupdtkmmm3,DCOMMAND UPDATE,DTARGET tkmbukidx spknobuk,DMAP mupdtkmrev3);
+        DO_LIB_IF cpicmm3	ap_nxpst(l4694z3,lm4694z3);
+        DO_LIB_IF cdjoinabkrev3	ap_dbclc(DNAME dupdabka3,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN spknobuk,DMAP mupdabkmmsls3);
+	DO_LIB_IF cdjoinabdsls3	ap_dbclc(DNAME dupdabd3,DCOMMAND UPDATE,DTARGET abdkymtglidx tkmplg g_tgltrn,DMAP mupdabdsls3);
+	DO_LIB_IF cdjointkmsvi	ap_dbclc(DNAME dupdtkmspk,DCOMMAND UPDATE,DTARGET tkmbukidx ltkmnobuk, DMAP mupdtkmsvi);
+	DO_LIB                  ap_nxpst(l4666,lm4666);
+
+	DO_LIB          	ap_dbclc(DNAME dupdtkmrev2,DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkmmaster);
+
+POSTING(tmptrans)
+PST_UPDCMD      sptmprevmm3
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	crevgab3
+	PMT_DEL_COND	c0

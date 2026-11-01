@@ -1,0 +1,49 @@
+DBCALCS(djoinsvitrf635)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp	gv_datasurvey btmnobuk gv_fotopk ltmpnourt
+
+IMAGE(tmptranst) 
+/---------------t--------------------t------\
+|i.Kode         |i.Ket               |t.Urt |
+\---------------.--------------------.------/                                                                                               
+IMAGE(tmptrans) 
+|_______________|____________________|______|
+    
+FIELD(tmptrans)
+tmpkode       	NOCHANGE        INPUTRI	1 
+tmpket        	PROTECT SCROLL  INPUTRI	2 
+tmpnourt	PROTECT		INPUTRI	3
+
+CALCS()
+ctrfmga		btmstr2=="TRANSFER" && btmrekomen=="BARU" && djoinsvitrf==0
+cdjoinsvitrf635	djoinsvitrf635==0
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_LINES(5)    
+SFL_COND ctrfmga
+
+SFL_TARGET
+tmpdatdvskod   gv_dttemplate ltmpfotopk btmdvsjl
+
+MAP(mmaptransd635)
+tmpnourt	ltmpnourt	REPLACE
+
+MAP(maddsvitrf635)
+gv_datasurvey   svidata         REPLACE
+btmnobuk        svinobuk        REPLACE
+gv_fotopk       svitype         REPLACE
+tmpnourt        svinourt        REPLACE
+tmpkode         svikode         REPLACE
+tmpket          svinama         REPLACE
+g_tgltrn        svitgl1         REPLACE
+btmdvsjl        svidtmkode      REPLACE
+tmptypjl        svitblkode      REPLACE
+
+SPCALCS(sptransd635)
+DO_LIB ap_dbclc(DNAME dmaptransd635,DCOMMAND MAPMAP,DMAP mmaptransd635);
+DO_LIB_IF cdjoinsvitrf635 ap_dbclc(DNAME daddsvitrf635,DCOMMAND ADD,DFILE svi,DMAP maddsvitrf635);
+
+POSTING(tmptrans)
+PST_COMMAND sptransd635 

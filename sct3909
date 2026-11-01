@@ -1,0 +1,89 @@
+SCREEN 3909 APP_TYPE api_KliknssSPK
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+lkopi			STRING	5
+lnamfil               	STRING  31
+lrequestreply         	STRING  31
+linplabels             	STRING  3000
+linpfields             	STRING  3000
+linpmap			STRING	21
+ldatetype             	INT2    2
+lsavedata	  	INT2	2
+lmsttitle               STRING  31
+lmstlabel               STRING  100
+lmstfields              STRING  100
+lstatus			STRING	5
+
+lNoFaktur              	STRING  21
+lADSKLIKNS		STRING	11
+lVERSI			STRING	21
+ljamskrng		TIME	4
+l4996			INT2	2
+lm4996			STRING	15
+
+IMAGE(master) 
+/--------------------------------------------------------\
+| /----------------------------------------------------\ |
+| |i.NoBuk   : ____________________                    | |
+| \----------------------------------------------------/ |
+\--------------------------------------------------------/
+
+FIELDS(master)
+   lNoFaktur            NONE           INPUTRI          1 
+
+DEFAULTS(master)
+lkopi		INIT	SF
+lnamfil		INIT     {r_string1}
+ldatetype 	INIT	1
+lADSKLIKNS	INIT	ADSKLIKNS
+
+linplabels      INIT    "api_KliknssSPK:[{TipeRequest}]+Data:[{type+bisnis+jadiPk+nama+ktp+noTelp+alasanTidakJadiPk+kategori+sumber+alamat+provinsi+kota+kecamatan+kelurahan+noSpk878+minatMotor+tipeJual+pekerjaan+kepemilikanRumah+akanDiFuLagi+tanggalFuLagi+punyaMotor+tahunMotor+nipSales+penjawabanCounterSesuaiGuidance+alasanTidakJadiPkSesuai+informasiKonsumenLengkap+cobaHubungiKonsumenUlang+adaAlamat+jadiPk2+layakDiFuUlang+tanggalPenugasan+penjawabanCounterSesuaiGuidance2+alasanTidakJadiPkSesuai2+informasiKonsumenLengkap2+cobaHubungiKonsumenUlang2+adaAlamat2+jadiPk3+atasan1LayerSdmReviewSpkSesuaiGuidance+atasan1LayerSdmSudahMemberiContohFollowUp+nipSalesYangDitugaskan+idcampaign+response+IdIklan}]"
+linpfields      INIT     "ftmnobuk1+ftmno2+ftmdvs+ftmno4+ftmnama1+ftmplg+ftmnofak+ftmket1+ftmket2+ftmsup+ftmalamat1+ftmkode1+ftmkode2+ftmkode3+ftmkode4+ftmno1+ftmbrg+ftmkode6+ftmket3+ftmket4+ftmtype4+ftmtgl2+ftmtype5+ftmtahun+ftmlok+ftmkode5+ftmtype6+ftmtype7+ftmtype8+ftmtype9+ftmtype10+ftmtype11+ftmtgl3+ftmkode7+ftmkode8+ftmyt1+ftmyt2+ftmtype12+ftmsts1+ftmsts2+ftmno3+ftmkat+ftmnobuk2+ftmtype+ftmnobuk3"
+  
+linpmap		INIT	 mmapftm 
+lrequestreply   INIT     "reply"
+lsavedata	INIT		 1
+lVERSI	        INIT	09102026
+ljamskrng	INIT	SYSTIME
+
+lmstlabel       INIT    "status"
+lmstfields      INIT    "lstatus"
+lmsttitle       INIT    ""
+
+l4996		INIT	4996
+lm4996		INIT	m4996
+
+CALCS()
+cOK		"OK"
+
+MAP(m4996)
+ftmnofak        r_string1	   REPLACE
+g_scrnumstr     r_string2          REPLACE
+
+MAP(mmapftm)
+lADSKLIKNS	ftmdata		REPLACE
+gv_OPEN		ftmsts		REPLACE
+
+MAP(mstatus)
+cOK		lstatus		DO_CALC
+
+HOOKS(master)
+   BEFORE_INPUT cur_field=lNoFaktur DO_LIB ap_rdjsa(lnamfil,linplabels,linpfields,linpmap,lsavedata);
+
+MAP(mapmap)
+cOK             lstatus         DO_CALC
+
+/*---------------------------------------------------------------*/
+SPCALCS(spmaster)
+	DO_LIB	ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mstatus);
+	DO_LIB	ap_jsnmt(lrequestreply,lmsttitle,lmstlabel,lmstfields);
+
+	DO_LIB	ap_nxpst(l4996,lm4996);
+
+POSTING(master)
+   PST_COMMAND     spmaster       
+
+
+END_SCREEN

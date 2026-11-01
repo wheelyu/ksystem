@@ -1,0 +1,130 @@
+LOCAL
+PGM_FIELDS
+lurut_rekomca	INT2		2
+
+
+MAP(mjoinsvirekomca)
+svinourt		lurut_rekomca		REPLACE
+
+DBCALCS(djoinsvirekomca)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   gv_dt705 btmnobuk gv_rekomca 
+	DBC_MAP		mjoinsvirekomca
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| t.t                                                                                              |
+| i.Tanggal            : ________                                                                  |
+| i.Rekomendasike      : ________                                                                  |
+| i.Hasilrekomendasi   : _______________________                                                   |
+| t.Notrekomcause      : ________                                                                  |
+| t.kategNotrekom      : _______________________                                                   |
+| t.Deviasidokumen     : ___                                                                       | 
+| t.t                                                                                              |
+\--------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+svitgl1			PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 1
+svinourt		PROTECT 			INPUTRI 3
+svistr1			NOCHANGE			INPUTRI 4
+svistr3			NOCHANGE			INPUTRI 5
+sviket			ALLCAPS SCROLL			INPUTRI 6
+svistr2			NOCHANGE			INPUTRI 10
+
+DEFAULTS(tmptranst)
+svitgl1			INIT		{g_tgltrn}
+svistr1			DFALT_SCAN	BLANKS
+					REKOMEN
+					NOTREKOMEN_BY_OTHER
+
+svistr2			DFALT_SCAN	BLANKS
+					Y
+					T
+
+svistr3			DFALT_SCAN	BLANKS
+					CHARACTER
+					CAPACITY
+					CONDITION
+					CAPITAL
+					COLLATERAL
+					PURPOSE
+
+sviket			DFALT_SCAN	BLANKS
+					SLIK_BAD
+					BL_APPI
+					UNIT_ATAS_NAMA
+					DANA_UNTUK_ORANG_LAIN
+					UNIT_TDK_LAYAK
+					UNIT_TDK_DIBIAYAI
+					TO_PROBLEM
+					KARAKTER
+					KAPASITAS_MINIM
+					DATA_KAPASITAS_MINIM
+					KONDISIONAL_DEBITUR
+					KONDISIONAL_USAHA
+					DOMISILI_APARTMENT
+					DOMISILI_MESS
+					PROFESI_BERESIKO
+					MAFIA
+					RO_BAD
+					DATA_VERIF_TDK_SESUAI
+					JUAL_BELI
+
+CALCS()
+cnotrekomen		svistr1 == "NOTREKOMEN_BY_OTHER"
+crekomen		svistr1 != "NOTREKOMEN_BY_OTHER"
+
+EDITS(tmptranst)
+Kategori Not Rekomen Harus Diisi sviket	MANDATORY_IF cnotrekomen
+e.MandatoryRek		svistr1 MANDATORY
+e.Mandatory5c1p		svistr3 MANDATORY_IF cnotrekomen
+
+CALCS()
+crekomca0		g_curcmd == 1 && djoinsvirekomca == 0
+crekomca1		g_curcmd == 1 && djoinsvirekomca == 1
+curutrekomca		lurut_rekomca + 1
+curutrekomca1		1
+crekom			svistr1 == "REKOMEN"
+
+MAP(murut_rekomca)
+curutrekomca1		svinourt		DO_CALC_IF crekomca0
+curutrekomca		svinourt		DO_CALC_IF crekomca1
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW murut_rekomca
+BEFORE_INPUT		cur_field=svistr3	DO_SKIP_IF crekom
+BEFORE_INPUT		cur_field=sviket	DO_SKIP_IF crekomen
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_dt705 btmnobuk gv_rekomca
+
+SFL_MAP
+gv_dt705		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_rekomca		svitype			REPLACE
+
+
+MAP(mupdbtmrekomen)
+svistr1			btmrekomen		REPLACE
+
+
+SPCALCS(stmptrans)
+	DO_LIB		ap_dbclc(DNAME dupdbtmrekomen,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdbtmrekomen);
+
+POSTING(tmptrans)
+	PST_ADDCMD	stmptrans
+
+CALCS()
+cupd_rekomca		btmsts == "705" && g_grpnam == "ANALYSTSPV" 
+cupd_rekomca0		0
+
+PERMIT(tmptrans)
+  	PMT_ADD_COND cupd_rekomca 
+  	PMT_UPDALL_COND cupd_rekomca0
+  	PMT_DEL_COND  	cupd_rekomca

@@ -1,0 +1,150 @@
+LOCAL
+PGM_FIELDS
+   lpinjaman    STRING          11
+/*   l0		INT2		2*/
+
+IMAGE(tmptranst) 
+/---------------------------------------\
+|/-------------------------------------\|
+||t.CekPinjaman			       ||
+||t.Nama           : _________________ ||
+||t.Jab            : _________________ ||
+||t.adapinj        : _________________ ||
+||t.smbpinj        : _________________ ||
+||t.JumlahPinjaman : _________________ ||
+||t.konpinj        : _________________ ||
+||t.jmltng         : _________________ ||
+||t.lmnunggak      : _________________ ||
+||t.klmnuggak      : _________________ ||
+||______                               ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviket        		ALLCAPS              		INPUTRI 1    /* Nama */
+/*svistr1        	DIGITS                        	INPUTRI 2     No Telp */
+svinama     		ALLCAPS SCROLL       		INPUTRI 3    /* Jabatan */
+svistr3     		ALLCAPS SCROLL       		INPUTRI 4    /* Ada Pinjaman */
+svistr4                 ALLCAPS SCROLL                  INPUTRI 5    /* Sumber Pinjaman */
+svidf1                  NUMERIC                         INPUTRI 6    /* Jmlah Pinjaman */
+svistr5                 ALLCAPS SCROLL                  INPUTRI 7    /* Kondisi Pinjaman */
+svidf2                  NUMERIC                         INPUTRI 8    /* Jmlah Tunggakan */
+svidf3                  NUMERIC                         INPUTRI 9    /* Lama Nunggak */
+svistr6                 PROTECT                  	INPUTRI 10    /* Kelompok Nunggak */
+lenter                  NOCHANGE                        INPUTRI 27
+
+CALCS()
+cadapinjaman                   	svistr3=="YA"
+ctidakpinjaman                 	svistr3=="TIDAK"
+ctidakpinjaman2                 svistr3=="TIDAK" || svistr5 == "LANCAR"
+clancar				svistr5=="LANCAR"
+cadapinjamannunggak            	svistr3=="YA" && svistr5=="NUNGGAK"
+ctunggakan0                    	svidf3 == 0 || svidf3 == BLANKS
+cdibawah30                     	svidf3 >= 1 && svidf3 <=30
+cdibawah60                     	svidf3 >= 31 && svidf3 <=60
+cdibawah90                     	svidf3 >= 61 && svidf3 <=90
+cdiatas90                      	svidf3 >= 91
+c0hari                          "0 HARI"
+c1sampai30                      "1 - 30 HARI"
+c31sampai60                     "31 - 60 HARI"
+c61sampai90                     "61 - 90 HARI"
+clebih90                        ">90 HARI"
+ckurang10k                       svidf1 >= 10000 /*svidf1 < 10000*/
+
+DEFAULT(tmptranst)
+lpinjaman       INIT            PINJAMAN
+svinama         DFALT_SCAN      BLANKS
+                                TEMAN_KANTOR
+                                HRD
+                                SECURITY
+                                SESAMA_PEDAGANG
+                                LAIN_LAIN
+svistr3         DFALT_SCAN      BLANKS
+                                YA
+                                TIDAK
+svistr4         DFALT_SCAN      BLANKS
+                                KOPERASI
+                                TEMAN   
+                                BANK_KELILING
+                                LAIN_LAIN
+svistr5         DFALT_SCAN      BLANKS
+                                LANCAR
+                                NUNGGAK
+/*l0		INIT		0*/
+
+EDITS(tmptranst)
+e.MandatoryNama           sviket      MANDATORY
+/* e.MandatoryTelp   svistr1     MANDATORY */
+e.MandatoryJab    svinama     MANDATORY
+e.MandatorySumbPinj  svistr4     MANDATORY_IF cadapinjaman
+e.MandatoryJmlhPinj  svidf1      MANDATORY_IF cadapinjaman
+e.MandatoryKondPinj     svistr5         MANDATORY_IF cadapinjaman
+e.MandatoryJmlhTngk     svidf2          MANDATORY_IF cadapinjamannunggak
+e.MandatoryJmlhTngk     svidf3          MANDATORY_IF cadapinjamannunggak
+
+
+MAP(mkelompok)
+c0hari                  svistr6         DO_CALC_IF ctunggakan0
+c1sampai30              svistr6         DO_CALC_IF cdibawah30
+c31sampai60             svistr6         DO_CALC_IF cdibawah60
+c61sampai90             svistr6         DO_CALC_IF cdibawah90
+clebih90                svistr6         DO_CALC_IF cdiatas90
+
+MAP(mkosong)
+cblanks                  svistr4         DO_CALC_IF ctidakpinjaman
+cblanks                  svidf1          DO_CALC_IF ctidakpinjaman
+cblanks                  svistr5         DO_CALC_IF ctidakpinjaman
+cblanks                  svidf2          DO_CALC_IF ctidakpinjaman
+cblanks                  svidf3          DO_CALC_IF ctidakpinjaman
+cblanks                  svistr6         DO_CALC_IF ctidakpinjaman
+
+MAP(mkosong2)
+cblanks                  svidf2         DO_CALC_IF clancar
+cblanks                  svidf3         DO_CALC_IF clancar
+c0hari	                 svistr6        DO_CALC_IF clancar 
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=svidf3        DO_MAP SHOW mkelompok
+AFTER_INPUT     cur_field=svistr3       DO_MAP SHOW mkosong
+AFTER_INPUT     cur_field=svistr5       DO_MAP SHOW mkosong2
+
+BEFORE_INPUT    cur_field=svistr4     DO_SKIP_IF ctidakpinjaman
+BEFORE_INPUT    cur_field=svidf1      DO_SKIP_IF ctidakpinjaman
+BEFORE_INPUT    cur_field=svistr5     DO_SKIP_IF ctidakpinjaman
+BEFORE_INPUT    cur_field=svidf2      DO_SKIP_IF ctidakpinjaman2
+BEFORE_INPUT    cur_field=svidf3      DO_SKIP_IF ctidakpinjaman2
+BEFORE_INPUT    cur_field=svistr6     DO_SKIP_IF ctidakpinjaman
+
+AFTER_INPUT             cur_field=svidf1        DO_MAP SHOW
+                        IF ckurang10k mdum714
+                        ELSE HKCURSOR STAY
+                        HKMSG t.Minimal Sepuluh Ribu
+ 
+
+CALCS()
+cadd      g_usrkode==btmsurveyor || g_grpnam=="IT" || g_grpnam=="RI"
+cdel      g_grpnam=="IT" || g_grpnam=="RI"
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+   svidatbuktyp   gv_datasurvey btmnobuk lpinjaman
+
+SFL_MAP
+gv_datasurvey        svidata        REPLACE
+btmnobuk    svinobuk    REPLACE
+lpinjaman      svitype        REPLACE
+lpinjaman      svikode        REPLACE
+c1       svinourt    DO_CALC
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cadd
+        PMT_UPDALL_COND cadd
+        PMT_DEL_COND    cdel

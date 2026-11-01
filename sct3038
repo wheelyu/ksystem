@@ -1,0 +1,154 @@
+SCREEN 3038 APP_TYPE s.replyToJsonRequest
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+lnamfil               	STRING          31
+lrequestreply         	STRING          31
+linptitle         	STRING          31
+ldettitle         	STRING          31
+linplabels              STRING          601
+ldetlabels              STRING          601
+linpfields              STRING          601
+ldetfields              STRING          601
+ldatetype             	INT2            2
+linpnamamap	  	STRING		21
+ldetnamamap	  	STRING		21
+lnumfail                INT2		2
+lsavedata		INT2		2
+lenter			STRING		2
+lmessaging_product	STRING		11
+ldisplay_phone_number	STRING		21
+lphone_number_id	STRING		21
+lname			STRING		41
+lwa_id			STRING		21
+lfrom			STRING		21
+lid			STRING		61
+ltimestamp		STRING		21
+lbody			STRING		601
+ltype			STRING		11
+lwaba_id		STRING		21
+lprovider		STRING		11
+
+lnoktp			STRING		21
+lfotowa			STRING		21
+lSYSTIME		TIME		4
+
+MAP(mjoincon)
+conkode		lnoktp		REPLACE
+DBCALCS(djoincon)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	gt_TELP11 lfrom
+	DBC_MAP		mjoincon
+
+IMAGE(master) 
+/-------------------------------------\
+| /---------------------------------\ |
+| |i.enter  : ____________________  | |
+| |t.t				    | |
+| \---------------------------------/ |
+\-------------------------------------/
+
+FIELDS(master)
+   lenter	      NONE           		INPUTRI          1 
+
+DEFAULTS(master)
+  lnamfil   	INIT     	{r_string1}
+  ldatetype 	INIT		1
+  linpnamamap   INIT  		BLANKS
+  ldetnamamap   INIT  		BLANKS
+  linplabels   	INIT     	"messaging_product+metadata:{display_phone_number+phone_number_id}+contact:[{profile:{name}+wa_id}]+messages:[{from+id+timestamp+text:{body}+type}]+waba_id+provider"
+  linpfields   	INIT     	"lmessaging_product+ldisplay_phone_number+lphone_number_id+lname+lwa_id+lfrom+lid+ltimestamp+lbody+ltype+lwaba_id+lprovider"
+  ldetlabels   	INIT     	""
+  ldetfields   	INIT     	""
+  lrequestreply INIT    	""
+  linptitle    	INIT 	   	"" 
+  ldettitle    	INIT 	   	""
+  lsavedata	INIT		0
+  lnumfail	INIT		0
+  lSYSTIME	INIT		SYSTIME
+  lfotowa       INIT    	FOTOWA
+
+HOOKS(master)
+   BEFORE_INPUT cur_field=lenter           DO_LIB ap_rdjsa(lnamfil,linplabels,linpfields,g_strksg,lsavedata);
+
+
+CALCS()
+cnomer		"CRM" + THBLS(g_tgltrn)
+cnotelp62	UBH62(lfrom)
+cdjoincon	djoincon == 1
+ctlmdatam2w	"DTCRMM2W"
+c934		"934"
+cdarim2w	ldisplay_phone_number == "6281128009691"
+cTERIMA		"TERIMA"
+cWA		"WHATSAPP"
+
+MAP(mmapmap)
+cnomer			tlmnobuk			DO_CALC
+lmessaging_product	lmessaging_product		REPLACE
+ldisplay_phone_number	ldisplay_phone_number		REPLACE
+lphone_number_id	lphone_number_id		REPLACE
+lname			lname				REPLACE
+lwa_id			lwa_id				REPLACE
+lfrom			lfrom				REPLACE
+lid			lid				REPLACE
+ltimestamp		ltimestamp			REPLACE
+lbody			lbody				REPLACE
+ltype			ltype				REPLACE
+lwaba_id		lwaba_id			REPLACE
+lprovider		lprovider			REPLACE
+
+MAP(maddtlm)
+tlmnobuk		tlmnobuk	REPLACE
+cnotelp62		tlmnoasal	DO_CALC
+lfrom			tlmnobbm	REPLACE
+lnoktp			tlmkode		REPLACE_IF cdjoincon
+g_tgltrn		tlmtgljtp	REPLACE
+lSYSTIME		tlmjam1		REPLACE
+c934			tlmscr		DO_CALC
+lfotowa			tlmgrup2	REPLACE
+ctlmdatam2w		tlmdata         DO_CALC_IF cdarim2w
+
+MAP(maddtld)
+lmessaging_product	tlddata		REPLACE
+lmessaging_product	tldnobuk	REPLACE
+ldisplay_phone_number	tldbrg		REPLACE
+lphone_number_id	tldnobbm	REPLACE
+lname			tldket		REPLACE
+lwa_id			tldgrup		REPLACE
+lfrom			tldgrup2	REPLACE
+lid			tldlok2		REPLACE
+ltimestamp		tldukrwrn	REPLACE
+lbody			tldbisnis	REPLACE
+ltype			tldcab		REPLACE
+lwaba_id		tlddvs		REPLACE
+lprovider		tldtydis	REPLACE
+g_tgltrn 		tldtglfak  	REPLACE
+
+MAP(maddchd)
+tlmnobuk		chdnobuk	REPLACE
+lfrom			chdkode2	REPLACE
+ldisplay_phone_number	chdkode		REPLACE
+cTERIMA			chdtype		DO_CALC
+lbody			chdket		REPLACE
+cWA			chddata		DO_CALC
+g_tgltrn		chdtgl		REPLACE
+lSYSTIME		chdjam		REPLACE
+lname			chdnama		REPLACE
+lid			chdid		REPLACE
+lphone_number_id	chdgrup		REPLACE
+
+/*---------------------------------------------------------------*/
+SPCALCS(spmaster)
+	DO_LIB		ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+	DO_LIB		ap_dbclc(DNAME daddtlm,DCOMMAND ADD,DFILE tlm,DLTARGET tlmbukidx tlmnobuk,DLLEN {stspjbuk},DMAP maddtlm);
+	DO_LIB		ap_dbclc(DNAME daddchd,DCOMMAND ADD,DFILE chd,DMAP maddchd);
+	DO_LIB		ap_dbclc(DNAME daddtld,DCOMMAND ADD,DFILE tld,DMAP maddtld);
+
+POSTING(master)
+   PST_COMMAND     spmaster       
+
+END_SCREEN
+
+
+

@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+lnamaacc	STRING		31
+
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------\
+ /--------s.UPLOAD--------------\/---------------------------------------------\ 
+ |                              || t.Upload    :____                           |
+ |                              || t.NipVerif  :_________ ___________________  |
+ |                              || t.Verifikasi:____                           |  
+ |                              || t.SmbrLink  :____                           |  
+ |                              || t.LinkWeb   :______________________________ |
+ |                              || t.KetLink   :______________________________ |
+ |                              ||              ___                            |
+ |                              ||                                             |
+ |                              ||                                             | 
+ |                              ||                                             | 
+ \------------------------------/\---------------------------------------------/ 
+\-------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdsisstr	PROTECT		INPUTRI		1
+tkdnoll		NOCHANGE	INPUTRI		1
+lnamaacc	PROTECT		INPUTRI		2
+tkdjenis	PROTECT		INPUTRI		3
+tkdjwbstr1      NOCHANGE        INPUTRI         4
+tkdket		TEXTAREA	INPUTRI		4
+lketlink        TEXTAREA PROTECT        INPUTRI         6
+ldum            NOCHANGE                INPUTRI 7
+
+DEFAULTS(tmptranst)
+IF cmandat2 tkdjwbstr1      DFALT_SCAN_BLANKS	HP WEB FB_LITE
+IF ctipewa  tkdjwbstr1      DFALT_SCAN_BLANKS   chat.whatsapp wa.me
+IF ctipetg  tkdjwbstr1      DFALT_SCAN_BLANKS   t.me web.telegram
+IF ctipeox  tkdjwbstr1      DFALT_SCAN_BLANKS   HP WEB
+
+
+EDITS(tmptranst)
+t.ValidatePsi  tkdnoll          VALIDATE psikodidx mpsi5 0
+t.Mandatory	tkdket		MANDATORY
+e.Mandatory    tkdjwbstr1         MANDATORY_IF cmandat2x
+
+
+MAP(mpsi5)
+psikode		tkdnoll		REPLACE
+psinama		lnamaacc	REPLACE
+
+MAP(mupdtkdfoto)
+cok             tkdsisstr         DO_CALC
+
+DBCALCS(dupdtkdfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx   tkdprm
+        DBC_MAP         mupdtkdfoto
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjenis	DO_SKIP_IF copensaja
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF cbknfb
+AFTER_INPUT             cur_field=tkdket        DO_LIB_IF cbknfbhp ap_amstr(tkdket,ln1i,ln24,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkFB  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkFB
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB_IF cfbhp ap_amstr(tkdket,ln1i,ln22,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkFB2  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkFBdariHp
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB ap_amstr(tkdket,ln1i,ln21,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkFB3  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkFBLite
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB_IF cwebwa ap_amstr(tkdket,ln1i,ln25,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkWA mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkWA
+
+AFTER_INPUT             cur_field=tkdket        DO_LIB_IF cbknwebwa ap_amstr(tkdket,ln1i,ln14,&llink);
+AFTER_INPUT             cur_field=tkdket        DO_MAP SHOW
+                        IF cbukanlinkWA2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasukanLinkWA2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkdnourt
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD tkdnobuk tkdrek
+SFL_COND	copensaja
+SFL_UPLFLD_DBCALCS     dupdtkdfoto
+SFL_TARGET	tkddatbukll   tlmdata tlmnobuk

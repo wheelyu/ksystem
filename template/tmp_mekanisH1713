@@ -1,0 +1,50 @@
+IMAGE(tmptranst)
+/-------------------t--------------t----------\
+|i.Kode             |i.Keterangan  |t.Potongan|
+\-------------------.--------------.----------/
+
+IMAGE(tmptrans)
+|___________________|______________|__________|
+FIELD(tmptrans)
+nhdkode			PROTECT	SCROLL			INPUTRI	1
+nhdkode2		ALLCAPS SCROLL			INPUTRI	1
+nhdhrg2			PROTECT	SCROLL			INPUTRI	3
+
+DEFAULTS(tmptrans)
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+
+EDITS(tmptrans)
+e.Validate nhdkode	VALIDATE tbtdattypkod  mtbt2 stbtjenis {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Pgv_mekanik}  {Slsegmen}
+e.validate nhdkode2     VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dttabel} {Pgv_estimasi21} {Pgv_ganti21}
+e.Mandatory     nhdkode2  MANDATORY
+
+MAP(mtbd2)
+tbdkode		nhdkode2	REPLACE
+
+MAP(mtbt2)
+tbttbdkode      nhdkode REPLACE
+tbttot		nhdhrg2		REPLACE_IF cganti1
+tbtdf1		nhdhrg2         REPLACE_IF cganti2
+tbtdf2		nhdhrg2         REPLACE_IF cganti3
+ckosong		nhdhrg2		DO_CALC_IF cganti4
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_field=nhdkode2       DO_MAP SHOW mmapjaminput
+
+SUBFILE(tmptrans)
+SFL_LINES(10)        
+SFL_COND cadaunit
+SFL_TITLE(tmptranst)
+
+SFL_TARGET_GTE
+nhdbukidx   btmnobuk gv_estimasi l17	{btmnobuk} {gv_estimasi} {l33}
+
+SPCALCS(spmekanis713)
+DO_LIB ap_nxpst(l4461,lm4461det5);
+
+POSTING(tmptrans)
+        PST_ADDCMD spmekanis713
+        PST_UPDCMD spmekanis713
+

@@ -1,0 +1,82 @@
+LOCAL
+PGM_FIELDS
+ljnsAgen	STRING	21
+
+IMAGE(tmptranst)
+/----------------------------------------\
+ /--------------------------------------\ 
+  t.Id        __________________________
+  t.Divisi    __________________________
+  t.JnsKomisi __________________________
+  t.TipeMitra __________________________
+  t.JnsAgn    __________________________
+  t.TypAgen   __________________________
+  t.KatAgen   ___  ______________________
+  t.NipUpline _________ ________________
+  t.NamaUpline__________________________
+  t.RekMitra  __________________________
+  t.Bank      ______  ______
+  t.AtasNama  __________________________
+  t.Npwp      __________________________
+ \--------------------------------------/
+\----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL  INPUTRI 1
+psdtype         PROTECT         INPUTRI 2
+psdstr5         PROTECT         INPUTRI 3
+psdstr2         PROTECT SCROLL  INPUTRI 4
+
+ljnsAgen	PROTECT		INPUTRI	5
+
+psdstr4         PROTECT         INPUTRI 6
+psdtot7         PROTECT         INPUTRI 7
+lketaktif       PROTECT         INPUTRI 11
+
+psdkode         PROTECT         INPUTRI 12
+ljabatan        PROTECT         INPUTRI 13
+lnamaupl        PROTECT         INPUTRI 14
+psdket2         NUMERIC         INPUTRI 15
+lpsdtype2       ALLCAPS         INPUTRI 16
+psdtype2        PROTECT         INPUTRI 17
+psdstr3         ALLCAPS         INPUTRI 18
+psdket          ALLCAPS         INPUTRI 19
+
+CALCS()
+cINT		"INTERNAL"
+cEXT		"EXTERNAL"
+cBESAR		"BESAR"
+cSEDANG		"SEDANG"
+cKECIL		"KECIL"
+cjkbsr		psdtot7 == 3
+cjksdg		psdtot7 == 2
+cjkkcl		psdtot7 == 1
+cjkint		psmdatakry == "INTERNAL"
+cjkext		psmdatakry == "EXTERNAL"
+
+EDITS(tmptranst)
+e.ValidateBank  lpsdtype2   	VALIDATE tbddatkodidx mtbdbank1 stbd {Pgv_dttabel} {Pgv_BANK} {Pgv_BANK}
+e.Validate      psdkode     	VALIDATE psikodidx mpsi
+
+MAP(mtbdbank1)
+tbdkode         lpsdtype2 	REPLACE
+lpsdtype2       psdtype2  	REPLACE
+psdtype2        lpsdtype2 	REPLACE
+
+MAP(mpsi)
+cblank 		lketaktif	DO_CALC
+cblank 		ljnsAgen 	DO_CALC
+psijabatan      ljabatan	REPLACE
+psinama         lnamaupl	REPLACE
+psists          lstsupl 	REPLACE
+cINT		ljnsAgen	DO_CALC_IF cjkint
+cEXT		ljnsAgen	DO_CALC_IF cjkext
+cBESAR		lketaktif	DO_CALC_IF cjkbsr
+cSEDANG		lketaktif	DO_CALC_IF cjksdg
+cKECIL		lketaktif	DO_CALC_IF cjkkcl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET	psddatpsmurt	lKATMITRA psmkode

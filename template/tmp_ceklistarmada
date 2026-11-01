@@ -1,0 +1,53 @@
+LOCAL
+PGM_FIELDS
+lceklistarmada		STRING		21
+
+IMAGE(tmptranst)
+/----t--------------------------t----------t---------------t-----------------\
+|t.No|t.Perlengkapan            |t.Ada     |t.Tdkada       |t.Ket            |
+\----.--------------------------.----------.---------------.-----------------/
+ 
+IMAGE(tmptrans)
+|____|__________________________|__________|_______________|_________________|
+ 
+FIELDS(tmptrans)
+tmpnourt        PROTECT         INPUTRI 1
+tmpket          PROTECT         INPUTRI 2
+tmpisistr1      NOCHANGE        INPUTRI 3
+tmpisistr2      NOCHANGE        INPUTRI 4
+tmpisiket1      ALLCAPS         INPUTRI 5
+ 
+DEFAULTS(tmptrans)
+lceklistarmada	INIT			TMP_CEKLISTARMADA
+tmpisistr1      DFALT_SCAN_BLANK        BAIK ADA HIDUP
+tmpisistr2      DFALT_SCAN_BLANK        RUSAK
+                                        PECAH
+                                        TIDAK_ADA
+                                        MATI
+                                        AUS 
+
+CALCS()
+cisistr1isi     tmpisistr1 != BLANKS
+cisistr2isi     tmpisistr2 != BLANKS
+cjoinarmada0    djointkd2 == 0 && tlmgrup2 == "ARMADA" && tlmgrup=="BENSIN"
+
+MAP(madatmp)
+lblanks         tmpisistr2      REPLACE_IF cisistr1isi
+ 
+MAP(mtdkadatmp)
+lblanks         tmpisistr1      REPLACE_IF cisistr2isi
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=tmpisistr1    DO_MAP SHOW madatmp
+AFTER_INPUT     cur_field=tmpisistr2    DO_MAP SHOW mtdkadatmp
+ 
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+SFL_COND        cjoinarmada0
+SFL_SORT_BY_FIELD tmpnourt
+SFL_SORT_UPDOWN UP
+SFL_TARGET
+tmpdatdvskod	gv_dttemplate lceklistarmada
+

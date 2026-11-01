@@ -1,0 +1,96 @@
+LOCAL
+PGM_FIELDS
+lurtk		INT2		2
+
+MAP(mjointldk)
+tldnourt	lurtk		REPLACE
+DBCALCS(djointldk)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldbukbrglok	tlmnobuk
+	DBC_MAP		mjointldk
+
+
+IMAGE(tmptranst)
+/-----t---------------t-------------------t---------------------t--------------t---------------\
+|t.No |t.Lok          |t.NoBPKB           |t.NoRangka           |t.Latitude    |t.Longitude    |
+\-----.---------------.-------------------.---------------------.--------------.---------------/
+IMAGE(tmptrans)
+|_____|_______________|___________________|_____________________|______________|_______________|_______|
+
+FIELDS(tmptrans)
+tldnourt	PROTECT			INPUTRI		1
+tldlok       	PROTECT       		INPUTRI		2
+tldnobbm     	ALLCAPS       		INPUTRI		3
+tldbrdoto       PROTECT                 INPUTRI         4
+tldperdis4      PROTECT                 INPUTRI         5
+tldperdis5      PROTECT                 INPUTRI         6
+ltombolgmaps    TOMBOL                  INPUTRI         8
+
+DEFAULTS(tmptrans)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg          INIT_ADD        {g_usrkode}
+
+EDITS(tmptrans)
+e.Mandatory 	tldnobbm	MANDATORY
+e.Dupkey        tldnobbm        DUPKEY          tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}
+
+CALCS()
+curtk		lurtk + 1
+cjointld0k	djointldk == 0 && g_curcmd == 1
+cjointld1k	djointldk == 1 && g_curcmd == 1
+cbknSISTEMk     tldsat != "SISTEM" 
+cadakoordinat7   tldperdis4 != BLANKS && tldperdis5 != BLANKS
+
+SPCALCS(spgmaps7)
+DO_LIB_IF cadakoordinat7 ap_shmap(tldperdis4,tldperdis5);
+
+
+MAP(murtk)
+gv_int1		tldnourt	REPLACE_IF cjointld0k
+curtk  		tldnourt	DO_CALC_IF cjointld1k
+aktkode2	tldlok		REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldnobbm	DO_MAP SHOW murtk
+CLICKED         cur_field=ltombolgmaps          DO_SPCALCS spgmaps7
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbknSISTEMk
+SFL_COND	cbpkbkgw
+SFL_LINES(10)
+SFL_AUTO_ADD
+SFL_TARGET
+tldbukbrglok    tlmnobuk  lblanks aktkode2
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat        	tldperdis4      REPLACE
+g_lon         	tldperdis5      REPLACE
+aktkode2	tlddvs		REPLACE
+
+CALCS()
+cplus1k		tlmtotal + 1
+cmins1k		tlmtotal - 1
+
+
+MAP(mupdtlmaddk)
+cplus1k		tlmtotal	DO_CALC
+
+MAP(mupdtlmupdk)
+cmins1k		tlmtotal	DO_CALC
+
+
+SPCALCS(sptrans2addk)
+DO_LIB		ap_dbclc(DNAME dupdtlmaddk, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmaddk);
+
+SPCALCS(sptrans2updk)
+DO_LIB		ap_dbclc(DNAME dupdtlmupdk, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupdk);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2addk
+	PST_DELCMD	sptrans2updk
+

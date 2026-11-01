@@ -1,0 +1,98 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/----s.UPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| t.Lok       :_________________  ||
+|| t.Urt       :__________________ ||
+|| t.NoRangka  :__________________ ||
+|| t.NoMesin   :__________________ ||
+|| t.Kondisimtr:____   ___________ ||
+|| t.ThnMotor  :______ t.StsUpl ___||
+|| t.Latitude  :_________.__       ||
+|| t.Longitude :_________.__       ||
+||              ____________       ||    
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldukrwrn	ALLCAPS SCROLL		INPUTRI		1
+tldjml   	NUMERIC       		INPUTRI		2
+tldbrdoto 	ALLCAPS 		INPUTRI		3
+tldnobbm	ALLCAPS       		INPUTRI		4
+tldperdis3 	NOCHANGE		INPUTRI		5
+lkonsmtr 	PROTECT			INPUTRI		6
+ltahunmtr       PROTECT                 INPUTRI         7
+tldsisbrg	PROTECT			INPUTRI		7
+tldperdis4	PROTECT			INPUTRI		8
+tldperdis5	PROTECT			INPUTRI		9
+ltombolgmaps    TOMBOL			INPUTRI		10
+
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg   	INIT_ADD	{g_usrkode}
+tldukrwrn	DUP_INIT
+tldperdis3	DFALT_SCAN_BLANKS	1 "BAIK"	
+					2 "RUSAK"			
+tldsisbrg       INIT_ADD        OK
+tldsisbrg       INIT_UPDATE     OK
+
+EDITS(tmptranst)
+e.Mandatory     tldukrwrn       MANDATORY
+e.Mandatory     tldjml          MANDATORY
+e.Mandatory     tldperdis3      MANDATORY
+e.Validate      tldukrwrn       VALIDATE 	tbddtmstidx mtbd stbd1 {Pgv_dttabel} {Pgv_barang} {Pgv_lokmotor} {Pgv_BR} {Ptlmcab}
+/*e.Dupkey	tldnobbm	DUPKEY	tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}*/
+
+
+DBCALCS(djointldmesin)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbbmidx tlmnobuk tldnobbm	
+
+
+CALCS()
+cmesinada	(tldnobbm != BLANKS && djointldmesin == 0) || tldnobbm == BLANKS
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldnobbm      DO_MAP SHOW mampata
+AFTER_INPUT     cur_field=tldbrdoto     DO_MAP SHOW mampata
+CLICKED         cur_field=ltombolgmaps          DO_SPCALCS spgmaps
+AFTER_INPUT	cur_field=tldnobbm	DO_MAP SHOW 
+		IF cmesinada    mdum
+                ELSE  HKCURSOR STAY
+                HKMSG t.MesinSdhAda
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SELECT	cbknSISTEMa
+SFL_COND	cunitbaruzoom
+/*SFL_AUTO_ADD*/
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tldnobuk tldoto
+SFL_UPLFLD_DBCALCS dupdfotospm
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+tldbukbrglok    tlmnobuk   
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat		tldperdis4	REPLACE
+g_lon		tldperdis5	REPLACE
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2adda
+	PST_DELCMD	sptrans2upda
+

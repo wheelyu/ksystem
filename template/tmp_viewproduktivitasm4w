@@ -1,0 +1,109 @@
+LOCAL
+PGM_FIELDS
+ltbdkodex	STRING		21
+lversi7		STRING		11
+
+DBCALCS(djointbdbobotx)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel lit ldtbobot ltbdkodex
+        DBC_MAP         mjointbdbobot
+
+
+IMAGE(tmptranst)
+/---------t---------------t----------t------t----------t--------t-------\
+|t.Tgl    |i.NoBuk        |i.Scr     |t.Tipe|i.Jam     |i.Kode  |i.Nilai|
+\---------.---------------.----------.------.----------.--------.-------/
+IMAGE(tmptrans)
+|_________|_______________|__________|______|__________|________| ___._ |
+
+FIELD(tmptrans)
+logtgl		PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+lognobuk	PROTECT                    INPUTRI 2
+logscr		PROTECT SCROLL		   INPUTRI 3
+logtype		PROTECT	SCROLL		   INPUTRI 4
+logjam		PROTECT SCROLL		   INPUTRI 4
+ltbdkode	PROTECT SCROLL		   INPUTRI 5 
+lnilai    	PROTECT SCROLL		   INPUTRI 6 
+
+CALCS()
+cfilebtm	logfile=="btm"
+cfilepsm	logfile=="psm"
+
+DEFAULTS(tmptrans)
+lit		INIT	IT
+ldtbobot	INIT	DTBOBOT
+lversi7		INIT	101121v7
+
+EDITS(tmptrans)
+e.ValidateNoBuk	lognobuk  VALIDATE_IF cfilebkm bkmbukidx mfilebkmx 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfiletlm tlmbukidx mfiletlmx 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfilemts mtsbukidx mfilemtsx 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfiletkm tkmbukidx mfiletkmx 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfilebtl btlbukstsidx mfilebtlx 0
+e.ValidateNoBuk lognobuk  VALIDATE_DUP_IF cfiletld tldbukurtidx mfiletldx 0
+
+e.ValidateNoBuk	lognobuk  VALIDATE_IF cfilebtm btmbukidx mfilex 0
+e.ValidateNoBuk	lognobuk  VALIDATE_IF cfilepsm psmkodidx mfilex 0
+
+CALCS()
+ctlmstripx	STRIP(logscr)+STRIP(logtype)+"X"
+cdjointbdbobotx	djointbdbobotx == 1
+
+MAP(mfilebkmx)
+cbkmstrip	ltbdkode	DO_CALC
+csatu1		lnilai		DO_CALC
+ltbddf1		lnilai		REPLACE_IF cdjointbdbobot
+
+MAP(mfiletlmx)
+ctlmstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+ctlmstripx	ltbdkodex	DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobotx
+
+MAP(mfilemtsx)
+cmtsstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+ctlmstripx	ltbdkodex	DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobotx
+
+MAP(mfiletkmx)
+ctkmstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+ctlmstripx	ltbdkodex	DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobotx
+
+MAP(mfilebtlx)
+cbtlstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfiletldx)
+ctldstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfilex)
+ctlmstripx      ltbdkodex       DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobotx
+
+
+CALCS()
+cadabobotm4w  	lognobuk != BLANKS && 
+		((logtype=="A" || logtype=="P") && (logfile == "bkm" || logfile == "tlm" || logfile == "mts" || logfile == "tkm" || logfile == "btl" || logfile == "tld" ||
+		logfile=="ast" || logfile=="psm" || logfile=="btm")) 
+
+SUBFILE(tmptrans)
+SFL_LINES(20)      
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD logjam
+SFL_SORT_UPDOWN UP
+SFL_SELECT cadabobotm4w
+SFL_TARGET
+logusrtgltyp	psmkode ltglhariini 
+

@@ -1,0 +1,166 @@
+LOCAL
+PGM_FIELDS
+lENTER		STRING	11
+lurutstr	STRING	4
+lsvisblm	INT2	2
+ltglsvisblm	DATE	4
+
+DBCALCS(djoinabkhisbj)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsen tlmnobuk
+
+MAP(mjoinsvisblm)
+svitgl1		ltglsvisblm	REPLACE
+
+DBCALCS(djoinsvisblm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp ldtbiro tlmnobuk lhistory lsvisblm
+	DBC_MAP		mjoinsvisblm
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------------------------------------------------\
+| /-------s.UPLOAD------------\/-------------------------------------------\ |
+| !			      !!i.No  : ______				   ! |
+| !                           !!i.Tgl : ___________			   ! |
+| !			      !!i.Ket : __________________________________ ! |
+| !                           !! spasi					   ! |
+| !			      !!t.StsUpl : ______			   ! |
+| !			      !!t.AccAdhHo : _____     _______             ! |
+| !                           !!                                           ! |
+| !                           !!                                           ! |
+| !                           !!                                           ! |
+| !                           !!                                           ! |
+| !                           !!                                           ! |
+| \---------------------------/\-------------------------------------------/ |
+\----------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt	PROTECT				INPUTRI 1
+svitgl1		INPUTRI NOLIMIT {DD-MM-YY}      INPUTRI 2
+sviket		TEXTAREA PROTECT	        INPUTRI	3
+svistr31	PROTECT				INPUTRI	4
+svistr1		NOCHANGE			INPUTRI	5
+lENTER		NOCHANGE			INPUTRI 6
+
+CALCS()
+cuplftada	svistr31 != BLANKS
+
+DEFAULTS(tmptranst)
+lENTER		INIT			ENTER
+IF cuplftada	svistr1			DFALT_SCAN_BLANKS	ACC TACC
+
+EDITS(tmptranst)
+e.KetWajibDiisi	sviket	MANDATORY
+
+CALCS()
+chanyaho	(g_grpnam!="B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam!="B.M4WADHDVH" && g_grpnam!="RI" && g_grpnam!="IT") || g_curcmd == 1
+ctglhis		(((djoinsvihistory == 0 && svitgl1 >= g_tgltrn + 1) || (djoinsvihistory == 1 && svitgl1 >= ltglhislalu + 1)) && svitgl1 <= tlmtgl2) || (g_curcmd == 2 && (djoinsvisblm == 0 || (djoinsvisblm == 1 && svitgl1 > ltglsvisblm )) && svitgl1 <= tlmtgl2)
+ckethis		"HIS" + THBLS_DD(svitgl1) + THBLS_MM(svitgl1)
+/*cgabnmft	STRIP(svitype) + STRIP(lurutstr)*/
+csvisblm	svinourt - 1		
+
+MAP(msvisblm)
+cBLANKS		lsvisblm	DO_CALC
+csvisblm	lsvisblm	DO_CALC
+
+MAP(mmapmap1)
+cBLANKS		luruthis	DO_CALC
+cBLANKS		lacchojwb	DO_CALC
+luruthis	luruthis	REPLACE_IF cjoinsvihis
+lacchojwb	lacchojwb	REPLACE_IF cjoinsvihis
+ckethis		svitype2	DO_CALC
+svinourt	lurutstr	REPLACE
+/*cgabnmft	svistr10	DO_CALC*/
+ldum		ldum		REPLACE
+
+/*MAP(misiuruthis)
+cno1his                  svinourt        DO_CALC_IF ctmbh1
+curuthis                 svinourt        DO_CALC_IF ctmbh2*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svitgl1	DO_MAP SHOW msvisblm
+AFTER_INPUT		cur_field=svitgl1	DO_MAP
+			IF ctglhis  mmapmap1
+			ELSE HKCURSOR STAY
+			HKMSG t.tglhistory
+/*BEFORE_INPUT 		cur_field=svitgl1	DO_MAP SHOW misiuruthis*/
+BEFORE_INPUT		cur_field=svistr1	DO_SKIP_IF chanyaho
+
+CALCS()
+chpsfthis	svistr1 == BLANKS
+cketkuncihis	"UPLOAD Foto History"
+cupdabkhisbj	djoinabkhisbj == 1 && svistr1 != BLANKS
+cupdabktgl	djoinabkhisbj == 1 && svitgl1 != ~svitgl1
+cselabkhis	abknoll == svitype2
+cselabktgl	abktgl == ~svitgl1 
+cYhis		"Y"
+caddabkhis      sviyt1==BLANKS
+
+MAP(mmapmap2)
+cYhis    sviyt1    DO_CALC
+
+MAP(maddabkhis)
+tlmnobuk        abknobuk        REPLACE
+lkunciabsen     abkdata         REPLACE
+tlmkode         abkkym          REPLACE
+cketkuncihis    abkkym2         DO_CALC
+ckethis		abknoll		DO_CALC
+svitgl1         abktgl          REPLACE
+gt_RINP         abksts          REPLACE
+tlmscr          abkscr          REPLACE
+
+MAP(mupdabkhis)
+gv_CLSD		abksts		REPLACE_IF cselabkhis
+
+MAP(mupdabktgl)
+svitype2	abknoll		REPLACE_IF cselabktgl
+gt_RINP		abksts		REPLACE_IF cselabktgl
+svitgl1		abktgl		REPLACE_IF cselabktgl
+
+MAP(mupdsvifthis)
+cYhis		svistr31		DO_CALC
+
+DBCALCS(dupdsvifthis)
+        DBC_COMMAND       UPDATE
+	DBC_TARGET	  sviotoidx 	svioto
+        DBC_MAP           mupdsvifthis
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svinourt
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND chpsfthis
+SFL_UPLFLD_DBCALCS dupdsvifthis
+SFL_UPLFLD tlmnobuk svistr10
+
+SFL_TARGET
+        svidatbuktyp   ldtbiro tlmnobuk lhistory
+SFL_MAP
+ldtbiro		svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lhistory	svitype		REPLACE
+
+SPCALCS(sptmptransadd)
+	DO_LIB			ap_dbclc(DNAME dmaphasilhis,DCOMMAND MAPMAP,DMAP mmapmap1);
+
+SPCALCS(sptmptransupd)
+        DO_LIB                  ap_dbclc(DNAME dmapupdhis,DCOMMAND MAPMAP,DMAP mmapmap1);
+	DO_LIB_IF caddabkhis	ap_dbclc(DNAME daddabkhis,DCOMMAND ADD,DFILE abk,DMAP maddabkhis);
+	DO_LIB                  ap_dbclc(DNAME dmapupdhis2,DCOMMAND MAPMAP,DMAP mmapmap2);
+	DO_LIB_IF cupdabktgl	ap_dbclc(DNAME dupdabktgl,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DMAP mupdabktgl);
+	DO_LIB_IF cupdabkhisbj	ap_dbclc(DNAME dupdabkhis,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DMAP mupdabkhis);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptmptransadd
+	PST_UPDCMD	sptmptransupd
+
+CALCS()
+/*caddhis		tlmsts == "OPEN" && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WADH" || g_grpnam == "ADHSPV" || g_grpnam == "RI" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH" || g_grpnam == "IT")*/
+cupdhis         (tlmsts == "OPEN" || tlmsts == "INPG") && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WADH" || g_grpnam == "ADHSPV" || g_grpnam == "RI" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH" || g_grpnam == "IT") && svistr1 == BLANKS
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cupdhis
+  PMT_DEL_COND  c0

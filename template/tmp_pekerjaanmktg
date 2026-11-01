@@ -1,0 +1,204 @@
+LOCAL
+PGM_FIELDS
+lnamay    		STRING	21
+lKetKerja 		STRING	31
+lSubKerja 		STRING	31
+ltglawlbl		DATE	4
+lsubpekerjaan		STRING	21
+lentertmp		STRING	11
+l4544                   INT2    2
+lm4544                  STRING  15
+l713ok                  STRING  5
+lalurotpbarudt		STRING	21
+lalurotpbarujualdt      STRING  21
+lalurotpbarum2wdt	STRING	21	
+lalurotpbaruhmcdt	STRING	21
+lNASIONALdt		STRING	21
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+  i.Ktp            : _____________________   ||__
+  i.Nama           : _____________________   ||
+  i.Pekerjaan      : ____ ________________   ||
+  t.Subkerja       : ____ ________________   ||
+                     _____________________   ||
+|                    _______ ________________||
+|\-------------------------------------------/|
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btppsm		PROTECT SCROLL          INPUTRI 1			
+btpdata		PROTECT QPROTECT UNSEEN	INPUTRI 1
+lnamay		PROTECT			INPUTRI 3	
+btpkodeapr	ALLCAPS SCROLL		INPUTRI	4
+lKetKerja	PROTECT SCROLL		INPUTRI	4
+btpjabatan	ALLCAPS SCROLL		INPUTRI	5
+lSubKerja	PROTECT SCROLL		INPUTRI	5
+btpnobuk2	PROTECT SCROLL		INPUTRI 6
+lentertmp	NOCHANGE		INPUTRI 7
+btptgltrn	NOCHANGE {DD-MM-YYYY}	INPUTRI 7
+
+DBCALCS(djointbalurotpbarudt)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lalurotpbarudt btmcab
+
+DBCALCS(djointbalurotpbarujualdt)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lalurotpbarujualdt btmlokjual
+
+DBCALCS(djointbalurotpbarum2wdt)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lalurotpbarum2wdt lNASIONALdt
+
+DBCALCS(djointbalurotpbaruhmcdt)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lalurotpbaruhmcdt lNASIONALdt
+
+CALCS()
+ctglawal        ststglprjgl+1
+clsubpekerjaan          "SUBPEKERJAAN2"+STRIP(btpkodeapr)
+chanyaK			btmtypjl == "K" || btmtypjl == "T"
+chanyaKlg		((djointbalurotpbarudt==1 && djointbalurotpbarujualdt==1) || (btmdvs=="M2W" && djointbalurotpbarum2wdt==1) || ((btmdvs=="HMC" || btmdvs=="H1") && djointbalurotpbaruhmcdt==1)) && btmtypjl == "K" && btmiklan!="KLIKNSS_CAB" && btmiklan!="KLIKNSS_HO" && btmiklan!="KLIKNSS_RO"
+cgarapksg		BLANKS
+cdjoinsvicapacityP	djoinsvicapacityP == 1
+
+DEFAULT(tmptranst)
+lNASIONALdt		INIT		NASIONAL
+lalurotpbarudt		INIT		ALUROTPBARU
+lalurotpbarujualdt	INIT		ALUROTPBARUJUAL
+lalurotpbarum2wdt	INIT		ALUROTPBARUM2W
+lalurotpbaruhmcdt	INIT		ALUROTPBARUHMC
+ltglawlbl       	INIT   		{ctglawal}
+lkerjamktg		INIT		KERJAMKTG
+lentertmp		INIT		ENTER
+l4544                   INIT            4544
+lm4544                  INIT            m4544
+l713ok                  INIT            "713"
+
+btpkodeapr		DFALT_SCAN_BLANKS	AG	"Agen"
+						D1	"Dagang Makanan Keliling"
+						D2	"Dagang Makanan Punya Tempat Usaha"
+						IR	"Ibu Rumah Tangga (IRT)"
+						MF	"Mafia"
+						NB	"Karyawan NS Group Belum PKT"
+						NL	"Nelayan"
+						PE	"Pengangguran"
+						PN	"Pegawai Negeri"
+						PR	"Profesi"
+						SW	"Karyawan Swasta"
+						TN	"Petani / Pekebun, Pemilik Tanah / Kebun"
+						TP	"Petani / Pekebun, Pekerja"
+						TR	"Ternak"
+						W1	"Dagang Punya Stok"
+						W2	"Dagang Jual Jasa"
+
+EDITS(tmptranst)
+/* e.MandatoryKtp btppsm MANDATORY */
+e.Mandatory    btpkodeapr MANDATORY
+e.Mandatory    btpjabatan MANDATORY
+
+t.ValidateKtp btppsm 	VALIDATE psmplgstsktp   mpsmkerja 0 {Pgv_dtkonsumen} {Pgv_INPG}
+e.validate btpkodeapr 	VALIDATE tbldtdtmkod mtbd2_1  0 {Pgv_dttabel} {Pgv_pekerjaan21}
+e.validate btpjabatan   VALIDATE tbddatkodidx mtbd2_2 stbd {Pgv_dttabel} {Pgv_survey21} {Plsubpekerjaan}
+
+MAP(mpsmkerja)
+psmktp		btppsm		REPLACE
+psmnama		lnamay  	REPLACE
+
+MAP(mtbd2_1)
+tblkode         btpkodeapr       REPLACE
+tblket          lKetKerja	REPLACE
+clsubpekerjaan  lsubpekerjaan   DO_CALC
+clsubpekerjaan  btpnobuk2       DO_CALC
+
+
+MAP(mtbd2_2)
+tbdkode         btpjabatan      REPLACE
+tbdket          lSubKerja       REPLACE
+
+MAP(m4544)
+btmnobuk                r_string1               REPLACE
+l713ok                  r_string16               REPLACE
+
+CALCS()
+/* cjikabeda	btmplg == btppsm  */
+
+MAP(mktp_pekerjaan)
+btmplg          btppsm          REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=btpkodeapr    DO_MAP SHOW mktp_pekerjaan 
+
+/*
+AFTER_INPUT	cur_field=btppsm	DO_MAP SHOW
+		IF cjikabeda mdume	
+		ELSE HKCURSOR STAY
+		HKMSG t.ktpdebitur            
+*/
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	chanyaK
+
+SFL_TARGET
+	btpdatbuktgl gv_historisdm btmnobuk lkerjamktg
+
+SFL_MAP
+btmnobuk	btpnobuk	REPLACE
+g_tgltrn	btptgltrn	REPLACE
+btmscr		btpscr		REPLACE
+lkerjamktg    	btptype		REPLACE
+gv_historisdm	btpdata		REPLACE
+
+MAP(mupdnhmgarap)
+btpnobuk2	nhmgrup		REPLACE
+
+MAP(mupdnhmgarapD)
+cgarapksg	nhmgrup		DO_CALC
+
+MAP(mupdsviverifmktA)
+btpkodeapr	svistr7		REPLACE
+btpjabatan	svitblkode	REPLACE
+cBLANKS		svistr9		DO_CALC
+cBLANKS		svitype2	DO_CALC
+cBLANKS		svistr32	DO_CALC
+cBLANKS		svidf4		DO_CALC
+cBLANKS		svidf5		DO_CALC
+cBLANKS		svistr31	DO_CALC
+cBLANKS		svidf6		DO_CALC
+cBLANKS		svidf7		DO_CALC
+cBLANKS		svidf3		DO_CALC
+
+SPCALCS(spgarap_add)
+DO_LIB_IF chanyaKlg  ap_nxpst(l4544,lm4544);
+DO_LIB ap_dbclc(DNAME dupdnhmgarapA,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btpnobuk,DMAP mupdnhmgarap);
+DO_LIB_IF cdjoinsvicapacityP ap_dbclc(DNAME dupdsviverifmktA,DCOMMAND UPDATE,DTARGET svidatbuktyp gv_datasurvey btmnobuk lVERMKT610 l1,DMAP mupdsviverifmktA);
+
+SPCALCS(spgarap_upd)
+DO_LIB_IF chanyaKlg ap_nxpst(l4544,lm4544);
+DO_LIB ap_dbclc(DNAME dupdnhmgarapU,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btpnobuk,DMAP mupdnhmgarap);
+
+SPCALCS(spgarap_del)
+DO_LIB_IF chanyaKlg ap_nxpst(l4544,lm4544);
+DO_LIB ap_dbclc(DNAME dupdnhmgarapD,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btpnobuk,DMAP mupdnhmgarapD);
+
+POSTING(tmptrans)
+	PST_ADDCMD spgarap_add
+	PST_UPDCMD spgarap_upd
+	PST_DELCMD spgarap_del
+
+/***********************************************************************/
+/***********************************************************************/
+
+CALCS()
+c611a       	((btmsts=="OPEN" && (g_scrnumstr == "610" || g_scrnumstr == "630")) || ((btmsts=="611" || btmsts=="631") && (btmjnsjmn=="REVISI" || btmnoantri==727 || btmnoantri==711))) && 
+		(g_grpnam=="PICMKT" || g_grpnam=="BUM" || g_grpnam=="HMCAM"|| g_grpnam=="BMM" || g_grpnam=="SPVAREA" || g_grpnam=="HMCSPV" || g_grpnam=="ANSYSUAT" || g_grpnam == "RI" || g_grpnam=="CMS" || g_grpnam == "HMCSPV" || 
+		g_grpnam == "DIGMKT" || g_grpnam =="KLIKNSCHMCHEAD" || g_grpnam == "DIGMKTDVH" || g_grpnam == "M2WAM" || g_grpnam == "COUNTER" || 
+		g_grpnam == "SALESM2W" || g_grpnam == "SALESHMC" || g_grpnam == "KBANMC" || g_grpnam == "CTRHO" || g_grpnam=="IT" || g_grpnam == "PICMKTM2W" || g_grpnam=="MSOHEAD" || g_grpnam == "TLDHMC" || g_grpnam == "DIGMKTSPV" || g_grpnam == "BM"  || g_grpnam == "BMMM2W" || g_grpnam == "CRM")
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c611a
+PMT_UPDALL_COND	c0    
+PMT_DEL_COND	c0

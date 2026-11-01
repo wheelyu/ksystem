@@ -1,0 +1,67 @@
+LOCAL
+PGM_FIELDS
+luploadok1	STRING	11
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload	: _____
+  t.TglFt       : ______________
+  t.lat         : _________.____
+  t.long        : _________.____
+       ___________________
+  t.FotoYgUplHrsDrKmr
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1	PROTECT		INPUTRI	1
+tkdtgl2		PROTECT		INPUTRI	2
+tkdjml          PROTECT NUMERIC INPUTRI 3
+tkdjml2         PROTECT NUMERIC INPUTRI 4
+
+luploadok1	TOMBOL          INPUTRI 8
+
+DEFAULTS(tmptranst)
+luploadok1	INIT            UPLOAD_OK
+g_fotolat1      INIT            BLANKS
+g_fotolon1      INIT            BLANKS
+
+CALCS()
+cY1		"OK"
+
+MAP(mupdtkd1)
+g_fotodate1     tldtglfak       REPLACE
+g_usrkode       tkdsisstr       REPLACE
+g_fotolat1      tkdjml          REPLACE
+g_fotolon1      tkdjml2         REPLACE
+g_fotodate1     tkdtgl2         REPLACE
+cY1             tkdjwbstr1      DO_CALC
+
+MAP(mupdtlm1)
+l1		tlmperdisd	REPLACE
+
+SPCALCS(supdtkd1)
+        DO_LIB  ap_dbclc(DNAME dupdtkd1,DCOMMAND UPDATE,DTARGET tkdotoidx tkdoto, DMAP mupdtkd1);
+        DO_LIB  ap_dbclc(DNAME dupdtlm1,DCOMMAND UPDATE,DTARGET tlmbukidx tkdnobuk, DMAP mupdtlm1);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadok1	DO_SPCALCS supdtkd1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD tlmnobuk tkdjenis
+SFL_TARGET
+        tkdbukidx	tlmnobuk lfoto l1

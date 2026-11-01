@@ -1,0 +1,126 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+|/-----------------------------------------\|
+||t.Tipe	: ________________ 	   ||
+||t.KdLama     	: _________________        ||
+||t.KdBaru     	: ________________ 	   ||
+|| ________  ________  __________ _________||
+|\-----------------------------------------/|
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akttype		NOCHANGE		INPUTRI	1
+aktbrg		PROTECT			INPUTRI	2
+aktkode2	ALLCAPS			INPUTRI	3
+aktcrtusr	PROTECT			INPUTRI	4
+aktjam		PROTECT			INPUTRI	5
+akttgl		PROTECT {DD-MM-YYYY}	INPUTRI	6
+aktdata		PROTECT			INPUTRI	7
+
+DEFAULTS(tmptranst)
+aktcrtusr	INIT		{g_usrkode}
+akttgl		INIT		{g_tgltrn}
+akttype		INIT		{g_scrnumstr}
+aktdata		INIT		UBHSSUMTR
+akttype		DFALT_SCAN_BLANKS	UBAH_TYPE "Ubah Kode Barang"
+					UBAH_RANGKA "Ubah Kode Rangka"
+					UBAH_MESIN "Ubah Kode Mesin"
+					UBAH_BPKB "Ubah Nomor BPKB"
+					UBAH_NOPOL "Ubah Nomor Polisi"					
+
+
+
+CALCS()
+ctmp3210ubhdata	tmpkode == "UBAH DATA MTR" 
+cdvspikm2w	((lpikdvs == "M2W" || lpikdvs == "M2W4W") && akttype == "UBAH_TYPE") || akttype != "UBAH_TYPE"
+cubahtipe	akttype == "UBAH_TYPE"
+cubahmesin	akttype == "UBAH_MESIN"
+cubahrangka	akttype == "UBAH_RANGKA"
+cubahbpkb	akttype == "UBAH_BPKB"
+cubahnopol	akttype == "UBAH_NOPOL"
+cadajmnast      djoinjmn == 1 && ljnsikat == "PEMOHON" && djoinast == 1 && akttype == "UBAH_TYPE"
+cadajmnast2     djoinjmn == 1 && ljnsikat == "PENJAMIN" && djoinbtppjm == 1 && djoinast2 == 1 && akttype == "UBAH_TYPE"
+cubahbtm	djoinbtm == 1 && akttype == "UBAH_TYPE"
+ckonubhmtr	aktdata == "UBHSSUMTR"
+
+EDITS(tmptranst)
+e.Mandatory	akttype		MANDATORY
+e.Mandatory	aktkode2	MANDATORY
+t.ValidateBrgModel aktkode2 VALIDATE_IF cubahtipe brgstdtkatbr mbrgM sbrgModelKat {Pgv_INPG} {Pgt_dtmodel} {Plspmb}
+
+MAP(mbrgM)
+brgkode		aktkode2	REPLACE
+
+MAP(misitypbrng)
+ssunobuk2	aktkode		REPLACE
+ssubrg		aktbrg		REPLACE_IF cubahtipe
+ssumesin	aktbrg		REPLACE_IF cubahmesin
+ssurangka	aktbrg		REPLACE_IF cubahrangka
+ssubpkb		aktbrg		REPLACE_IF cubahbpkb
+ssunopol	aktbrg		REPLACE_IF cubahnopol
+ssuoto		aktnobuk	REPLACE
+cjam		ljam		DO_CALC
+ljam		aktjam		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktkode2	DO_MAP SHOW misitypbrng
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF cdvspikm2w mdum
+		ELSE HKCURSOR STAY
+                HKMSG Baru Bisa Untuk M2W / M2W4W
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctmp3210ubhdata
+SFL_SELECT ckonubhmtr
+/*SFL_TARGET aktkodtypidx	ssunobuk2 lubhssumtr*/
+SFL_TARGET aktbukotoidx ssuoto 
+
+MAP(mupdbtmtypmtr)
+aktkode2	btmtypmtr	REPLACE
+brgkode2	btmtypmtr2	REPLACE
+
+MAP(mupdasttypmtr)
+aktkode2	astbrg          REPLACE
+brgnama         astnama         REPLACE
+brgkat4         astno2          REPLACE
+
+MAP(mupdssudatamtr)
+aktkode2	ssubrg		REPLACE_IF cubahtipe
+aktkode2	ssumesin	REPLACE_IF cubahmesin
+aktkode2	ssurangka	REPLACE_IF cubahrangka
+aktkode2	ssubpkb		REPLACE_IF cubahbpkb
+aktkode2	ssunopol	REPLACE_IF cubahnopol
+
+MAP(mupdpikubh)
+aktkode2	pikmesin	REPLACE_IF cubahmesin
+aktkode2	pikrangka	REPLACE_IF cubahrangka
+
+MAP(mupdjmnubh)
+aktkode2	jmnspec1        REPLACE_IF cubahmesin
+aktkode2	jmnspec2	REPLACE_IF cubahrangka
+
+MAP(mupdbrdubh)
+aktkode2	brdnomesin	REPLACE_IF cubahmesin
+ssurangka	brdnorangka	REPLACE_IF cubahrangka
+
+
+SPCALCS(spcaladdubhdatamtr)
+DO_LIB_IF cubahbtm	ap_dbclc(DNAME dupdbtmtypmtr,DCOMMAND UPDATE,DTARGET btmbukidx lppmnoll,DMAP mupdbtmtypmtr);
+DO_LIB_IF cadajmnast	ap_dbclc(DNAME dupdasttypmtr,DCOMMAND UPDATE,DTARGET astdatkodidx lasset lbtmplg gv_bpkb lnopol, DMAP mupdasttypmtr);
+DO_LIB_IF cadajmnast2	ap_dbclc(DNAME dupdasttypmtr2,DCOMMAND UPDATE,DTARGET astdatkodidx lasset lbtppjm gv_bpkb lnopol, DMAP mupdasttypmtr);
+DO_LIB_IF cjoinpik	ap_dbclc(DNAME dupdpikubh,DCOMMAND UPDATE,DTARGET pikdatbukidx gv_dtpiu ssunobuk2,DMAP mupdpikubh);
+DO_LIB_IF cm2wjmn	ap_dbclc(DNAME dupdjmnubh,DCOMMAND UPDATE,DTARGET jmnnoidx lppmnoll,DMAP mupdjmnubh);
+DO_LIB_IF cm2wbrd 	ap_dbclc(DNAME dupdbrdubh,DCOMMAND UPDATE,DTARGET brdbrgstsmr ssubrg gv_CLSD ~ssumesin ~ssurangka lbrdoto,DMAP mupdbrdubh);
+DO_LIB	ap_dbclc(DNAME dupdssutypmtr,DCOMMAND UPDATE,DTARGET ssuprmidx ssuprm,DMAP mupdssudatamtr);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdubhdatamtr
+
+PERMIT(tmptrans)
+        PMT_ADD_COND  cbolehubah
+        PMT_UPDALL_COND  c0
+        PMT_DEL_COND  c0

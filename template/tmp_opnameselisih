@@ -1,0 +1,102 @@
+LOCAL
+PGM_FIELDS
+lnamabrg3	STRING		31
+lstok		DFLOAT		8
+lstokfast	DFLOAT		8
+lunit		DFLOAT		8
+ltldtydis	STRING		5
+ltglubh		STRING		11
+
+MAP(mjoinacckoreksi)
+tldjml          lunit           REPLACE
+tldtydis	ltldtydis	REPLACE
+
+DBCALCS(djoinacckoreksi)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldbukbrgoto   tldnobuk lAHS4 tldbrg
+        DBC_MAP         mjoinacckoreksi
+
+IMAGE(tmptranst)
+/------t----------------------t-----------------t--------------t--------------t-------------------t--------------\
+|t.No  |t.Brg2                |t.NamaBrg        |   t.Lokasi   |t.SlshUnitAwl | t.SlshRp          |t.SlshUnitAkh |
+\------.----------------------.-----------------.--------------.--------------.-------------------.--------------/
+IMAGE(tmptrans)
+|______|______________________|_________________|______________|______________|___________________|______________|
+
+FIELDS(tmptrans)
+tldnourt                PROTECT                 INPUTRI         1
+tldbrg                  ALLCAPS                 INPUTRI         2
+lnamabrg3               PROTECT                 INPUTRI         3
+tldlok			ALLCAPS SCROLL 		INPUTRI		3
+tldjml                  PROTECT                 INPUTRI         4
+tldhrg                  PROTECT                 INPUTRI         5
+tldjml2                 NOCHANGE                INPUTRI         6
+
+DEFAULTS(tmptrans)
+tldtglfak               INIT_ADD        {g_tgltrn}
+tldplg                  INIT_ADD        {g_usrkode}
+ltglubh			INIT		220728
+
+EDITS(tmptrans)
+e.MandatoryLokasi tldlok MANDATORY
+e.MandatoryJml    tldjml MANDATORY
+e.ValidateppdBrg2 tldbrg VALIDATE brgstsdatbrg mbrg3 {Pgv_INPG} {Pgv_dtbarang}
+e.ValidatetbdBrg3 tldlok VALIDATE_IF cahassinti tbddtmstidx mtbdinti stbdLokAsl {Pgv_dttabel} {Pgv_barang} {PlLOKAHASS} {Pgv_BR} {Ptlmcab}
+e.ValidatetbdBrg4 tldlok VALIDATE_IF cahassfast tbddtmstidx mtbdfast stbdLokAsl {Pgv_dttabel} {Pgv_barang} {PlFASTMOVING} {Pgv_BR} {Ptlmcab}
+
+MAP(mbrg3)
+brgkode         tldbrg          REPLACE
+brgnama         lnamabrg3       REPLACE
+
+MAP(mtbdinti)
+tbdkode		tldlok		REPLACE
+
+MAP(mtbdfast)
+tbdkode		tldlok		REPLACE
+
+CALCS()
+cselisihakh		lstok - tldperdis /* Kondisi perhitungan stok lokasi INTI */
+cselisihkoreksi		lstok - lunit    /* Kondisi perhitungan stok lokasi INIT */
+cselisihakhfast		lstokfast - tldperdis /* Kondisi perhitungan stok lokasi FASTMOVING */
+cselisihkoreksifast	lstokfast - lunit    /* Kondisi perhitungan stok lokasi FASTMOVING */
+cdjoinacckoreksifast0	tlmtype1 == "AHASS_FAST" && djoinacckoreksi == 0
+cdjoinacckoreksifast1	tlmtype1 == "AHASS_FAST" && djoinacckoreksi == 1 && ltldtydis == "ACC" && djointbdfastmov == 1
+cdjoinacckoreksiinti0	tlmtype1 == "AHASS_INTI" && djoinacckoreksi == 0
+cdjoinacckoreksiinti1	tlmtype1 == "AHASS_INTI" && djoinacckoreksi == 1 && ltldtydis == "ACC" && djointbdfastmov == 0
+
+MAP(mscanbrdstok)
+brdsisa    	lstok		REPLACE_IF cadastokinti
+brdsisa    	lstokfast	REPLACE_IF cadastokfast
+
+DBCALCS(dbscanbrdstok)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brdbrglokoto    gv_INPG tldbrg tldcab tldlok
+        DBC_SUM_MAP     mscanbrdstok
+
+MAP(misistok)
+cselisihakh		tldjml2		DO_CALC_IF cdjoinacckoreksiinti0
+cselisihkoreksi		tldjml2		DO_CALC_IF cdjoinacckoreksiinti1
+cselisihakhfast		tldjml2		DO_CALC_IF cdjoinacckoreksifast0
+cselisihkoreksifast	tldjml2		DO_CALC_IF cdjoinacckoreksifast1
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldbrg	DO_SCAN dbscanbrdstok
+AFTER_INPUT	cur_field=tldbrg	DO_MAP SHOW misistok
+AFTER_INPUT	cur_field=tldlok	DO_SCAN dbscanbrdstok
+AFTER_INPUT	cur_field=tldlok	DO_MAP SHOW misistok
+BEFORE_INPUT	cur_field=tldlok	DO_SKIP_IF cNoAHASS 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(15)
+SFL_SORT_BY_FIELD  tldnourt 
+SFL_COND        cahass 
+SFL_TARGET
+tldbukbrgoto    tlmnobuk  lAHS3
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+

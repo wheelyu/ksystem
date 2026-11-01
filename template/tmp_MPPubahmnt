@@ -1,0 +1,80 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.UbhJmlMnt                                                              |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.User       : _________ _________________          !                   |
+|       !t.JmlAwl     : ______                               !                   |
+|       !t.JmlAkh     : ______                               !                   |
+|       !t.Ket        : ____________________________________ !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL          INPUTRI 1
+psdtgl1          PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 2
+psdstr1         ALLCAPS SCROLL          INPUTRI 3
+luser           PROTECT SCROLL          INPUTRI 4
+
+psdtot          PROTECT                 INPUTRI 5
+psdtot2         DIGITS SCROLL           INPUTRI 6
+psdket          TEXTAREA ALLCAPS        INPUTRI 7
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD        {g_tgltrn}
+psdstr1         INIT_ADD        {g_usrkode}
+
+EDITS(tmptranst)
+t.Mandatory psdtot2 MANDATORY
+t.Mandatory psdket MANDATORY
+t.Validate psdstr1 VALIDATE psikodidx mpsix
+
+MAP(mpsix)
+psikode         psdstr1 REPLACE
+psinama         luser   REPLACE
+
+CALCS()
+ckode           STRIP(hrmnobuk)+FLD_TO_STRING(psdnourt)
+cjoinpsd0       djoinpsd==0 && g_curcmd==1
+cjoinpsd1       djoinpsd==1 && g_curcmd==1
+c1              1
+ctbh1           lurut+1
+csdmmpp		(dscanaktmppsdm!=0 || dscanaktmppsdm==0) && psdtot2>=ljmlmppsdminpg
+
+MAP(msebelum)
+amtdf3_1        psdtot          REPLACE
+c1              psdnourt        DO_CALC_IF cjoinpsd0
+ctbh1           psdnourt        DO_CALC_IF cjoinpsd1
+
+
+MAP(mkodeurut)
+ckode           psdkode         DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdstr1       DO_MAP SHOW msebelum
+AFTER_INPUT     cur_field=psdtot2       DO_MAP SHOW mkodeurut
+
+AFTER_INPUT     cur_field=psdtot2 DO_MAP SHOW
+                IF csdmmpp mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TargetKecilDrAct
+
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF csdmmpp mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TargetKecilDrAct
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod    lUBAHMINTA hrmnobuk
+
+SFL_MAP
+lUBAHMINTA      psddata REPLACE
+hrmnobuk        psdpsmkode      REPLACE
+

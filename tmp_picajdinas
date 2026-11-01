@@ -1,0 +1,202 @@
+LOCAL
+PGM_FIELDS
+lm4540                  STRING  15
+lsvitgl1		DATE	4
+lsvitgl2		DATE	4
+lnamaprop		STRING	21
+ltypejd 		STRING	40
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.TypeJd   :_____________________||
+||            _____________________||
+||t.CabTujuan:_____________________||
+||t.NamaCab2 :_____________________||
+||t.Propinsi :_____________________||
+||t.Periode  :________t.sd_________||
+||t.Activity :_____________________||
+||t.Target   :_____________________||
+|\---------------------------------/|
+|/--------s.UPLOAD-----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr2  		ALLCAPS                	INPUTRI 1
+ltypejd  		PROTECT                	INPUTRI 1
+svikode  		ALLCAPS                	INPUTRI 2
+lnamaCbg2		PROTECT                	INPUTRI 3
+svistr1  		PROTECT                	INPUTRI 4
+svitgl1   		NOLIMIT {DD-MM-YY}     	INPUTRI 5
+svitgl2   		NOLIMIT {DD-MM-YY}     	INPUTRI 6
+sviket   		TEXTAREA ALLCAPS       	INPUTRI 8
+sviket2   		TEXTAREA ALLCAPS       	INPUTRI 9
+
+MAP(mmaptbd)
+tbdlv1    		lnamaprop		REPLACE
+
+DBCALCS(djointbd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx	gv_dttabel gv_infoumum gv_gedung cabtwr 
+	DBC_MAP		mmaptbd
+
+
+CALCS()
+cinternal	svistr2  =="1"
+cnoninternal	svistr2  !="1"
+cjointbd	djointbd==1
+cblanks		BLANKS	
+
+EDITS(tmptranst)
+t.ValidateCab  svikode  VALIDATE cabstskodidx mcabu scab {Pgv_INPG}
+e.Mandatory svistr2  	MANDATORY
+e.Mandatory svikode 	MANDATORY_IF cinternal
+e.Mandatory sviket  	MANDATORY
+e.Mandatory sviket2  	MANDATORY
+e.Mandatory svitgl1 	MANDATORY
+e.Mandatory svitgl2 	MANDATORY
+e.ValidateProp  svistr1 VALIDATE dtmdtkodidx  mdtmProp sdtmProp {Pgv_dtkota}
+e.ValidateTbd2 svistr2 VALIDATE tbddatkodidx mtbd4 stbd  {Pgv_dttabel} {Pgv_personal} {PlJLNDINAS}
+
+
+MAP(mtbd4)
+tbdkode		svistr2		REPLACE
+tbdket		ltypejd		REPLACE	
+cblanks		svikode		DO_CALC_IF cnoninternal
+cblanks		svistr1 	DO_CALC_IF cnoninternal
+
+MAP(mcabu)
+cabtwr		cabtwr		REPLACE
+cabkode         svikode         REPLACE
+cabnama         lnamaCbg2       REPLACE
+lnamaprop	 svistr1		REPLACE_IF cjointbd
+
+MAP(mdtmProp)
+dtmkode         svistr1         REPLACE
+
+CALCS()
+ctgl2ok         svitgl2 >= svitgl1 && svitgl1 >= g_tgltrn && svitgl2 - svitgl1 <=14 
+ctglbeda        lsvitgl1 != svitgl1 || lsvitgl2 != svitgl2
+chari		(svitgl2 - svitgl1) + 1
+cLN		svistr2 !="5" || (svistr2 =="5" && g_grpnam=="CMBNHEAD")
+
+MAP(mhari)
+chari		svidf1		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF ctgl2ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tglbesar
+AFTER_INPUT     cur_field=svistr2       DO_MAP SHOW
+                IF cLN     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ExternalLn
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW mhari
+BEFORE_INPUT     cur_field=svikode       DO_SKIP_IF cnoninternal
+
+MAP(m4540)
+bkmnobuk        r_string2       REPLACE
+svikode         r_string3       REPLACE
+psishift        r_string4       REPLACE
+svistr2         r_string5       REPLACE
+svidf1		r_double2	REPLACE
+svitgl1		r_date1		REPLACE
+svitgl2		r_date2		REPLACE
+
+
+DEFAULTS(tmptranst)
+/* 
+svistr2         DFALT_SCAN      BLANKS
+                                1 "Dinas Internal [Wajib Absen]"
+                                2 "Dinas External [Tidak Absen]"
+                                3 "PMT Ahass      [Tidak Absen]"
+                                4 "Training External [Tidak Absen]"
+                                5 "Luar Negeri    [Tidak Absen]"
+*/
+lm4540          INIT            m4540
+lsvitgl1	INIT_UPDATE	{svitgl1}
+lsvitgl2	INIT_UPDATE	{svitgl2}
+lJLNDINAS	INIT		JLNDINAS
+
+MAP(mupdsvifotopica)
+cY              sviyt1          DO_CALC
+
+DBCALCS(dupdsvifoto)
+	DBC_COMMAND	UPDATE	
+	DTARGET 	sviprmidx sviprm
+        DMAP 		mupdsvifotopica
+
+CALCS()
+cPICA		tmpkode=="PICA"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_UPL_DELCOND cOPEN_SAJA
+SFL_UPLFLD_DBCALCS dupdsvifoto   
+SFL_UPLFLD bkmnobuk svikode
+SFL_COND	cPICA
+SFL_LINES(1)
+
+SFL_TARGET
+	svidatbuktyp  bkmdata    bkmnobuk     
+
+SFL_MAP
+bkmdata         svidata         REPLACE
+bkmdata         svitype         REPLACE
+bkmnobuk        svinobuk        REPLACE
+gv_INPG		svists		REPLACE
+l1		svinourt	REPLACE
+
+
+MAP(mupdbkmpc)
+svitgl1		bkmtgl1		REPLACE
+svitgl2		bkmtgl2		REPLACE
+svikode		bkmcab2		REPLACE
+
+MAP(mupdbkmpc2)
+svitgl1		bkmtgl1		REPLACE
+svitgl2		bkmtgl2		REPLACE
+svikode		bkmcab2		REPLACE
+
+MAP(mupdbkmpc3)
+svitgl1		bkmtgl1		REPLACE
+svitgl2		bkmtgl2		REPLACE
+svikode		bkmcab2		REPLACE
+
+
+SPCALCS(spcaladdpica)
+DO_LIB ap_dbclc(DNAME dupdbkmaddpica,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmpc);
+DO_LIB_IF ctglbeda	ap_nxpst(l4540,lm4540); 
+
+SPCALCS(spcalupdpica)
+DO_LIB ap_dbclc(DNAME dupdbkmupdpica,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmpc2);
+DO_LIB_IF ctglbeda ap_dbclc(DNAME ddeltldabsen,DCOMMAND DELETE_RANGE,DTARGET tldbukurtidx bkmnobuk);
+DO_LIB_IF ctglbeda	ap_nxpst(l4540,lm4540); 
+
+SPCALCS(spcaldelpica)
+DO_LIB ap_dbclc(DNAME dupdbkmdelpica,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmpc3);
+DO_LIB ap_dbclc(DNAME ddeltldabsen2,DCOMMAND DELETE_RANGE,DTARGET tldbukurtidx bkmnobuk);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdpica
+        PST_UPDCMD      spcalupdpica
+        PST_DELCMD      spcaldelpica
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cOPEN_SAJA
+        PMT_UPDALL_COND cOPEN_SAJA
+        PMT_DEL_COND    cOPEN_SAJA
+
+

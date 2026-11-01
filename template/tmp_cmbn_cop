@@ -1,0 +1,91 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.Sts      _______              ||
+||t.NoBuk    __________________ __||
+||t.Merk     __________________   ||
+||t.Jenis    __________________   ||
+||t.Rangka   __________________   ||
+||t.Mesin    __________________   ||
+||t.Tahun    __________________   ||
+||t.Warna    __________________   ||
+||t.Nopol    __________________   ||
+||t.NoBpkb   __________________   ||
+||t.Plafon   __________________   ||
+||t.Tenor    __________________   ||
+||t.Angsuran __________________   ||
+||t.TunjCop  __________________   ||
+||t.Otr      __________________   ||
+||t.KrgByr   __________________   ||
+||t.Tgl1     __________________   ||
+||t.Tgl2     __________________   ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdsts   	ALLCAPS       	 	   INPUTRI 1
+mtdnobuk	PROTECT SCROLL		   INPUTRI 1
+mtdnourt 	PROTECT       	 	   INPUTRI 1
+mtdkat   	ALLCAPS       	 	   INPUTRI 1
+mtdket   	ALLCAPS       	 	   INPUTRI 1
+mtdnorangka 	ALLCAPS       	 	   INPUTRI 1
+mtdnomesin  	ALLCAPS       	 	   INPUTRI 1
+mtdth       	ALLCAPS       	 	   INPUTRI 1
+mtdukrwrn      	ALLCAPS       	 	   INPUTRI 1
+mtdgrup     	ALLCAPS       	 	   INPUTRI 1
+mtdgrup2     	ALLCAPS       	 	   INPUTRI 1
+mtdhrg       	NUMERIC       	 	   INPUTRI 1
+mtdjml       	NUMERIC       	 	   INPUTRI 1
+mtdsubtot    	PROTECT       	 	   INPUTRI 1
+mtdtotdism   	NUMERIC       	 	   INPUTRI 1
+mtdhrgnet    	NUMERIC       	 	   INPUTRI 1
+mtdjml2       	PROTECT       	 	   INPUTRI 1
+mtdtglfak    	NOLIMIT {DD-MM-YYYY}	   INPUTRI 1
+mtdtgl2      	NOLIMIT {DD-MM-YYYY}	   INPUTRI 1
+
+
+DEFAULTS(tmptranst)
+mtdsts		INIT		INPG
+mtdsts		INIT_UPDATE	INPG
+
+CALCS()
+cang1		mtdhrg / mtdjml
+ctdk01		mtdjml != 0
+ctgl2b 		DO_LIB ap_tambl(mtdtglfak,lmtdjml,&mtdtgl2); 
+cmtdjml2        mtdhrgnet - mtdhrg
+
+
+MAP(mang1)
+cang1		mtdsubtot	DO_CALC_IF ctdk01
+mtdsubtot	mtdtotdism	REPLACE
+cmtdjml2  	mtdjml2  	DO_CALC
+
+MAP(mtambl1)
+mtdjml		lmtdjml		REPLACE
+ctgl2b 		mtdtgl2		DO_CALC 
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=mtdjml        DO_MAP SHOW mang1
+AFTER_INPUT     cur_field=mtdhrgnet     DO_MAP SHOW mang1
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mang1
+AFTER_INPUT     cur_field=mtdtgl2       DO_MAP SHOW mtambl1
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mtambl1
+
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)      
+SFL_TITLE(tmptranst)
+SFL_TARGET	
+mtdbukurtidx   tkmnobuk l1
+
+SFL_MAP
+tkmnobuk	mtdnobuk	REPLACE
+l1		mtdnourt	REPLACE
+tkmdata		mtddata		REPLACE
+tkmtype		mtdplg		REPLACE
+tkmcab		mtdcab		REPLACE
+

@@ -1,0 +1,106 @@
+CALCS()
+ctipetelp       condata=="TELP"
+cTELP           "TELP"
+cupdhp		lpil>=1 && tkdjwbstr2=="Y"
+caddhp		lpil==0 && tkdjwbstr2=="Y"
+cjoinhpkunj	djointrans==1
+
+MAP(mjoinconhp)
+conhp           lhp740          REPLACE_IF ctipetelp
+conprm          lsvitgl1                REPLACE_IF ctipetelp
+congrup		lhpkunj		REPLACE_IF ctipetelp
+
+DBCALCS(djoinconhp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx   pikplg
+        DBC_SELECT      ctipetelp
+        DBC_MAP         mjoinconhp
+
+CALCS()
+cjoinconhp      djoinconhp==1
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.VerifikasiHPKunjungan         ||
+||t.NoBuk ________________________||
+||t.HPKonscair   _________________||
+||t.HPKunjakhir  _________________||
+||t.HPKonsKunj   _________________||
+||t.Verifikasi   _________________||
+||t.UpdateHP     _________________||
+||t.Userinput    _________________||
+||t.TglInput     _________________||
+||               _______          ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtsnobuk	PROTECT		INPUTRI		1
+lhp740  	PROTECT		INPUTRI		1
+lhpkunj 	PROTECT		INPUTRI		1
+tkdrek		PROTECT		INPUTRI		2
+tkdjwbstr1	NOCHANGE	INPUTRI		3
+tkdjwbstr2	NOCHANGE	INPUTRI		4
+tkdsisstr	PROTECT		INPUTRI		5
+tkdtgl		PROTECT		INPUTRI		6
+lenter		ALLCAPS		INPUTRI		7
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+tkdjwbstr1	DFALT_LIST	VALID TDK_VALID
+tkdjwbstr2	DFALT_LIST	Y T
+
+EDITS(tmptranst)
+NOHP KUNJUNGAN TDK ADA	mtsnobuk VALIDATE_DUP svidatbuktyp maphpkunj {Pgv_kunjungan11} {SlKUNJKOL1} {Sl1}
+
+MAP(maphpkunj)
+svistr9		tkdrek		REPLACE
+lhp740		lhp740		REPLACE_IF cjoinconhp
+lhpkunj		lhpkunj		REPLACE_IF cjoinconhp
+
+MAP(misihp)
+lsvistr9	tkdrek		REPLACE_IF cjoinhpkunj
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW misihp
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkdbukllsts   mtsnoasal mtsnobuk gv_CLSD
+SFL_MAP
+gv_kunjungan11	tkddata		REPLACE
+mtsnobuk	tkdnoll 	REPLACE
+mtsnoasal       tkdnobuk        REPLACE
+g_usrkode	tkdsisstr       REPLACE
+l1		tkdnourt        REPLACE
+g_tgltrn	tkdtgl		REPLACE
+gv_CLSD		tkdsts		REPLACE
+
+
+MAP(mupdhp)
+tkdrek		congrup		REPLACE_IF ctipetelp
+
+MAP(maddhp)
+cTELP		condata		DO_CALC
+pikplg		conkode		REPLACE
+tkdrek		congrup		REPLACE
+
+MAP(mmaphp)
+c0		lpil		DO_CALC
+
+MAP(mscanconhp)
+l1  		lpil		REPLACE_IF ctipetelp
+
+SPCALCS(stmptrans)
+	DO_LIB ap_dbclc(DNAME dmaphp,DCOMMAND MAPMAP,DMAP mmaphp);
+	DO_LIB ap_dbclc(DNAME dscanconhp,DCOMMAND SCANSCAN,DTARGET conkodstsidx pikplg,DBC_SUM_MAP mscanconhp);
+	DO_LIB_IF cupdhp ap_dbclc(DNAME dupdhp,DCOMMAND UPDATE_RANGE,DTARGET conkodstsidx pikplg,DMAP mupdhp);
+	DO_LIB_IF caddhp ap_dbclc(DNAME daddhp,DCOMMAND ADD,DFILE con,DMAP maddhp); 
+
+POSTING(tmptrans)
+	PST_ADDCMD	stmptrans

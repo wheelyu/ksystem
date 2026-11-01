@@ -1,0 +1,108 @@
+/****************************************************************************/
+IMAGE(mtdhead) 
+/-------------Daftar PP----------------------------------------------------\			
+|  Kode           Keterangan              Jml PP   PO RENC    PO POST      |
+|--------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|--------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                              |
+\--------------------------------------------------------------------------/
+
+IMAGE(mtdroll) 
+  _____________ ________________________ _________ _________ ____________ _|
+
+FIELD(mtdroll)
+   mtdbrg               NOCHANGE SCROLL          NONE              1  
+   brgnama              PROTECT SCROLL           NONE              1  
+   mtdjml               PROTECT SCROLL           NONE              2  
+   mtdjmlren            PROTECT                  NONE              2  
+   mtdjmlpos            PROTECT                  NONE              2  
+   mtdoto               PROTECT UNSEEN SCROLL           NONE              2  
+
+EDITS(mtdroll)
+. mtdbrg VALIDATE brgdatkodidx mbrg_mtdroll 0 {Pgv_dtbarang}
+
+CALCS()
+cbuksama	~ppdbrg == mtdbrg
+cjmlmtd 	 mtdjmlren - ~ppdjml
+cadasisa	 mtdjml - mtdjmlren - mtdjmlpos > 0 || g_curcmd != 1
+
+MAP(mbrg_mtdroll)
+brgnama		brgnama		REPLACE
+
+MAP(mmtdS)
+cjmlmtd  	mtdjmlren	DO_CALC_IF cbuksama
+
+SCAN(smtd) {IMAGE_OUT=mtdhead} {IMAGE_ROL=mtdroll} {IMAGE_INP=mtdroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_UPD_MAP=mmtdS} {SCAN_SELECT=cadasisa}
+
+IMAGE(mtdkrmhead) 
+/-------------Daftar PP----------------------------------------------------\			
+|  Kode           Faktur                  Sts                              |
+|--------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|--------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                              |
+\--------------------------------------------------------------------------/
+
+IMAGE(mtdkrmroll) 
+  _____________ ________________________ _________ _________ ____________  |
+
+FIELD(mtdkrmroll)
+mtdplg		NOCHANGE SCROLL		INPUTRI		1
+mtdoto		PROTECT SCROLL		INPUTRI		2
+mtdsts		PROTECT SCROLL		INPUTRI		3
+mtdsisbrg	PROTECT	SCROLL		INPUTRI		4
+mtdjasbrg	PROTECT SCROLL		INPUTRI		5
+
+CALCS()
+csdhkirimVOID	mtddata == "KRMHUTBRG" && mtdsts == "CLSD" && mtdplg == btlnobuk && mtdjasbrg == "KR"
+
+SCAN(smtdkrmVOID) {IMAGE_OUT=mtdkrmhead} {IMAGE_ROL=mtdkrmroll} {IMAGE_INP=mtdkrmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=csdhkirimVOID}
+SCAN(smtd617) {IMAGE_OUT=mtdkrmhead} {IMAGE_ROL=mtdkrmroll} {IMAGE_INP=mtdkrmroll} {SELECT_BAR} {ROLL_LINES=8}
+
+
+
+/*-----------------------------------*/
+IMAGE(mtdpithead) 
+/-------------Daftar Pit---------------------------------------------------\			
+|  PIT                                                                    |
+|--------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|--------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                              |
+\--------------------------------------------------------------------------/
+
+IMAGE(mtdpitroll) 
+  _________________________________________________________________________|
+
+FIELD(mtdpitroll)
+mtdnourt		NOCHANGE SCROLL		INPUTRI		1
+
+CALCS()
+cmekanik0  mtdplg == BLANKS
+SCAN(smtdpit) {IMAGE_OUT=mtdpithead} {IMAGE_ROL=mtdpitroll} {IMAGE_INP=mtdpitroll} {SELECT_BAR} {ROLL_LINES=8}
+SCAN(smtdpitmk) {IMAGE_OUT=mtdpithead} {IMAGE_ROL=mtdpitroll} {IMAGE_INP=mtdpitroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cmekanik0}

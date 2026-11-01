@@ -1,0 +1,124 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+||_________________________________||
+|/--------SIGNATURE----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+||_________________________________||
+||t.Lon  ___._______               ||
+||t.Lat  ___._______               ||
+||_______ __ _______               ||
+\-----------------------------------/
+IMAGE(tmptrans)
+
+DEFAULT(tmptranst)
+lttdOK		INIT	"TTD OK"
+akttgl2		INIT	{g_tgltrn}
+
+FIELD(tmptranst)
+tlmnobuk                  PROTECT                 INPUTRI         2
+tmpket                    PROTECT                 INPUTRI         2
+akttotal		  PROTECT		  INPUTRI         2
+aktjml		  	  PROTECT		  INPUTRI         2
+lttdOK			  TOMBOL		  INPUTRI	  2
+akthrg			  PROTECT		  INPUTRI	  2
+aktprm			  NOCHANGE		  INPUTRI	  1
+
+/*CALCS()
+cabkOK		g_usrkode == abkkym*/
+
+
+DBCALCS(djoinabkadh)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx   lkunciabsen lkodettdadh
+/*DBC_SELECT	cabkOK*/
+
+
+DBCALCS(djoinabkbm)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx   lkunciabsen lkodettdbm
+/*DBC_SELECT	cabkOK*/
+
+CALCS()
+cSYSTIME	SYSTIME
+ cboleh		((((tlmscr == "815" && tlmtype1 != "STPJ" && tlmstsapr != "OK") ||(tlmscr == "815" && tlmstsapr == "OK" && tlmtype1 == "STPJ")) && 
+(tmpkode == "TTDTRM" || tmpkode == "TTDUSR")) || 
+		((tlmscr == "815" && ((tmpkode == "TTDBM" && djoinabkbm == 1 ) || (tmpkode == "TTDADH" && djoinabkadh == 1)) && tlmsts == "CLSD"))) ||
+		(g_grpnam =="RI" || g_grpnam =="IT" || g_grpnam =="ADHSPV" || g_grpnam =="ADHHEAD" || g_grpnam =="ADHDVH")
+
+MAP(mupdttdadh)
+g_tgltrn        akttgl2         REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_lon           akttotal        REPLACE
+g_lat           aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+
+DBCALCS(dupdttdadh)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+	DBC_MAP         mupdttdadh
+
+MAP(mupdttdadhok)
+gv_int1		akthrg		REPLACE
+
+DBCALCS(dupdttdadhok)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdadhok
+
+/*MAP(mupdttdadhhps)
+cBLANKS         akttgl2         DO_CALC
+cBLANKS         aktjam          DO_CALC
+cBLANKS         akttotal        DO_CALC
+cBLANKS         aktjml          DO_CALC
+cBLANKS         aktcab          DO_CALC
+
+DBCALCS(dupdttdadhhps)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+	DBC_MAP		mupdttdadhhps
+*/
+MAP(mupdabkadh)
+gv_CLSD         abksts          REPLACE
+
+MAP(mupdabkbm)
+gv_CLSD         abksts          REPLACE
+
+CALCS()
+cttdadhOK	tmpkode == "TTDADH" && djoinabkadh == 1 && akttgl2 != BLANKS
+cttdbmOK	tmpkode == "TTDBM" && djoinabkbm == 1 && akttgl2 != BLANKS
+
+SPCALCS(spcalOK)
+DO_LIB_IF cttdadhOK     ap_dbclc(DNAME dupdabkadh,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lkodettdadh,DMAP mupdabkadh);
+DO_LIB_IF cttdbmOK     ap_dbclc(DNAME dupdabkbm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lkodettdbm,DMAP mupdabkbm);
+dupdttdadhok
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lttdOK DO_SPCALCS spcalOK
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SGNFLD      aktbrg
+SFL_SGNFLD_DBCALCS dupdttdadh
+/*SFL_SGNFLD_DELDBCALCS dupdttdadhhps*/
+SFL_UPLFLD aktbrg    
+SFL_UPL_DIRFLD tlmtgl          
+SFL_UPLREADONLY
+SFL_COND	cboleh
+SFL_TARGET
+aktkodtypidx   tlmnobuk ldataadh tmpkode
+SFL_MAP
+ldataadh        aktdata         REPLACE
+tmpkode        	akttype         REPLACE
+tlmnobuk        aktkode         REPLACE
+cketttdtrm      aktket          DO_CALC
+ckodettdtrm     aktbrg          DO_CALC

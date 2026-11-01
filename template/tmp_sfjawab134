@@ -1,0 +1,124 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------------\|
+  _______________                                                                               
+  t.TglInput    : _______________
+  t.Pil         : ____________________                                              
+  t.Test        : ____________________
+  t.Alasan      : ________________________ __________________________                          
+  t.Ket         : ____________________________________________________________________________
+  t.TglTest     : _______________                                                   
+  t.User        : ____________ ________________________
+|\---------------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtype			PROTECT                    INPUTRI 1
+psdtgl2			PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+psdstr1			NOCHANGE                  	INPUTRI 1
+psdstr2			ALLCAPS 		INPUTRI 2
+psdstr3 		ALLCAPS  	INPUTRI 3
+lketFU134		PROTECT			INPUTRI 4
+psdket  		ALLCAPS       	 	INPUTRI 4
+psdtgl1 		PROTECT NOLIMIT {DD-MM-YY} INPUTRI 5
+psdstr5 		NOCHANGE      	 	INPUTRI 6
+lnamuser1   		PROTECT			INPUTRI	7
+
+CALCS()
+cbisa_hubungi	psdstr1=="BISA_DIHUB"	
+cnobisa_hubungi psdstr1=="TDK_BISA_DIHUB"	
+cnobisa_hubungi2 psdstr1=="TDK_BISA_DIHUB" || psdstr1=="MD" || psdstr1=="NOT_QUALIFIED" || psdstr1=="TDK_LULUS_TEST" || psdstr1=="TAUSER"
+cbersedia	psdstr2=="BERSEDIA" || psdstr1=="TDK_BISA_DIHUB" || psdstr1=="MD" || psdstr1=="TDK_LULUS_TEST" || psdstr1=="TAUSER"
+cbersedia2	psdstr2=="BERSEDIA"                                                  
+cbukan4		psdtype!="KODEFU4"
+cbukan4a	g_grpnam!="HRDHEAD " && djointbdakshrdheada==0 && djointbdakshrdheadb==0 && g_grpnam!="HRDSPV" && g_grpnam!="HRDREC" && g_grpnam!="HRDRECAREA" && g_grpnam!="IT" && g_grpnam!="RI" && g_grpnam!="RAS"
+cbukan4b	g_grpnam=="HRDHEAD " || djointbdakshrdheada==1 || djointbdakshrdheadb==1 || g_grpnam=="HRDSPV" || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA"|| g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="RAS"
+
+DEFAULTS(tmptranst)
+psdtgl2			INIT_ADD	{g_tgltrn}
+psdstr5			INIT_ADD	{g_usrkode}
+IF cbukan4 psdstr2	DFALT_SCAN_BLANKS BERSEDIA TDK_BERSEDIA  
+
+IF cbukan4a psdstr1	DFALT_SCAN_BLANKS BISA_DIHUB TDK_BISA_DIHUB TAUSER MD
+IF cbukan4b psdstr1	DFALT_SCAN_BLANKS BISA_DIHUB TDK_BISA_DIHUB NOT_QUALIFIED TDK_LULUS_TEST TAUSER MD TAHRD
+
+EDITS(tmptranst)
+t.Mandatory psdstr1 MANDATORY 
+t.Mandatory psdstr2 MANDATORY_IF cbisa_hubungi 
+t.Mandatory psdket MANDATORY
+t.Validate psdstr3 VALIDATE tbddatkodidx mtbd_fu134xd stbd {Pgv_dttabel} {Pgv_personal} {PljwbFU134}
+t.Validate psdstr5 VALIDATE  psikodidx mpsi_user134    
+
+MAP(mtbd_fu134xd)
+tbdkode		psdstr3		REPLACE
+tbdket		lketFU134	REPLACE
+
+
+MAP(mpsi_user134)    
+/*psikode		psdstr5		REPLACE*/
+psinama		lnamuser1 REPLACE
+
+
+CALCS()
+cjoinpsd134_FU0	djoinpsd134_FU1==0 && g_curcmd==1
+cjoinpsd134_FU1	djoinpsd134_FU1==1 && g_curcmd==1
+cjoinpsd134_FU2	djoinpsd134_FU2==1 && g_curcmd==1
+cjoinpsd134_FU3	djoinpsd134_FU3==1 && g_curcmd==1
+cbelum4xd		djoinpsd134_FU1==0 || djoinpsd134_FU2==0 || djoinpsd134_FU3==0 || djoinpsd134_FU4==0
+ctdk_bersedia	(djoinpsd134_FU1==1 && lsedia_test1!="BERSEDIA") || 
+		(djoinpsd134_FU2==1 && lsedia_test2!="BERSEDIA") || 
+		(djoinpsd134_FU3==1 && lsedia_test3!="BERSEDIA") || djoinpsd134_FU1==0
+cbelum_mdxd     psdtype=="KODEFU1" ||
+                (psdtype=="KODEFU2" && (djoinpsd134_FU1==1 && lsedia_test1!="MD")) ||
+                (psdtype=="KODEFU3" && (djoinpsd134_FU2==1 && lsedia_test2!="MD")) ||
+                psdtype=="KODEFU4 "
+
+MAP(mtanggalxd)
+g_tgltrn	psdtgl2		REPLACE
+lKODEFU1	psdtype		REPLACE_IF cjoinpsd134_FU0
+lKODEFU2	psdtype		REPLACE_IF cjoinpsd134_FU1
+lKODEFU3	psdtype		REPLACE_IF cjoinpsd134_FU2
+lKODEFU4	psdtype		REPLACE_IF cjoinpsd134_FU3
+
+MAP(mblanks)
+cBLANKS		psdstr3		DO_CALC_IF cbersedia2
+
+MAP(mtanggal_deadlinexd)
+cplus2		psdtgl1		DO_CALC_IF cbisa_hubungi
+cplus1		psdtgl1		DO_CALC_IF cnobisa_hubungi
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr1	DO_MAP SHOW mtanggalxd
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cnobisa_hubungi2
+BEFORE_INPUT	cur_field=psdstr3	DO_SKIP_IF cbersedia
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW mblanks          
+AFTER_INPUT     cur_field=psdstr3       DO_MAP SHOW mtanggal_deadlinexd
+AFTER_INPUT	cur_field=psdstr1	DO_MAP SHOW
+		IF ctdk_bersedia mdum
+		ELSE HKCURSOR STAY 
+		HKMSG t.SdhBersediaFuSblm
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF cbelum_mdxd    mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.FuSblmSdhMd
+
+AFTER_INPUT	cur_field=psdstr1	DO_MAP SHOW
+		IF cbelum4xd mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SdhMelebihiBatasFu
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11 btmnobuk ljwbFU134        
+
+SFL_MAP
+gv_clnkry11   	psddata		REPLACE
+btmnobuk  	psdpsmkode	REPLACE
+ljwbFU134     	psdkode		REPLACE
+

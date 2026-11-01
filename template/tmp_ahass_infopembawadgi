@@ -1,0 +1,236 @@
+LOCAL
+PGM_FIELDS
+lalmlon		STRING		51
+lint1		STRING		11
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/-Detail Info Pembawa-------------\|
+|| t.tipe	: __ ___________   ||
+|| t.Smh	: ___________	   ||
+|| t.Hub	: ___________	   ||
+|| t.Alamat2	: ___  ____________||
+|| t.rt 	: ____ t.rw: _____ ||
+|| t.Nama	: _________________||
+|| t.NoHp       : _________________||
+|| t.Nik        : _________________||
+|| i.Alamat     : _________________||
+|| i.Propinsi   : _________  ______||
+|| i.Kota       : _________  ______||
+|| i.Kec        : _________  ______||
+|| i.Kel        : _________  ______||
+|| i.Kodepos    : _________        ||
+||               _       _________ ||
+|| ______________		   ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almlon		ALLCAPS		INPUTRI 1 /* field baru */
+lalmlon		PROTECT		INPUTRI 25
+almutama  	ALLCAPS		INPUTRI	3
+almnama2   	ALLCAPS		INPUTRI	4
+almlat		NUMERIC 	INPUTRI	5
+lKetTinggal	PROTECT		INPUTRI	24
+almrt		ALLCAPS		INPUTRI 7
+almrw		ALLCAPS		INPUTRI 8
+almnama		ALLCAPS		INPUTRI	9
+almbukoto	ALLCAPS		INPUTRI 10 /* field baru */
+lmntkode	ALLCAPS		INPUTRI 11
+/*mntkode		PROTECT 	INPUTRI	11*/
+almjalan        ALLCAPS         INPUTRI 12
+almprop         ALLCAPS         INPUTRI 13
+almnamprop      PROTECT         INPUTRI 14
+almkota         ALLCAPS         INPUTRI 15
+almnamkota      PROTECT         INPUTRI 16
+almkec          ALLCAPS         INPUTRI 17
+almnamkec       PROTECT         INPUTRI 18
+almkel          ALLCAPS         INPUTRI 19
+almnamkel       PROTECT         INPUTRI 20
+almkdpos	ALLCAPS		INPUTRI	21
+almnobuk	UNSEEN		INPUTRI 26
+lenter          NOCHANGE        INPUTRI 22
+almnobuk	PROTECT		INPUTRI	29
+
+DEFAULTS(tmptranst)
+almlon       DFALT_SCAN_BLANKS        1 "PMK"
+                                      2 "PMB"
+
+almutama     DFALT_SCAN_BLANK
+                                PEMILIK
+                                BKNPEMILIK
+almnama2     DFALT_SCAN_BLANK
+                                SUAMI/ISTRI
+                                ANAK
+                                ORANG_TUA
+                                SAUDARA
+                                KERABAT/TEMAN
+                                SUPIR
+almlat	     DFALT_SCAN_BLANK
+				1 "SAMA DENGAN PEMILIK"
+				2 "TDK SAMA DENGAN PEMILIK"
+lint1	   INIT			"1"
+
+CALCS()
+cPMK1			almlon == 1
+cPMB2			almlon == 2
+cPMK			"PEMILIK"
+cPMB			"PEMBAWA"
+
+cdjoinmnt_PEMILIK1	djoinmnt_PEMILIK == 1
+cdjoinmnt_PEMBAWA1	djoinmnt_PEMBAWA == 1
+
+EDITS(tmptranst)
+e.Mandatory1	almutama MANDATORY_IF cPMB2
+e.Mandatory2	almnama2 MANDATORY_IF cBknPemilik
+e.Mandatory3	almlat	 MANDATORY_IF cBknPemilik
+e.MandatoryNama	almnama MANDATORY
+e.MandatoryTlp	almbukoto MANDATORY
+e.MandatoryJln  almjalan MANDATORY
+e.MandatoryProp almprop MANDATORY
+e.MandatoryKota almkota MANDATORY
+e.MandatoryKec  almkec MANDATORY
+e.MandatoryKel  almkel MANDATORY
+
+e.ValidateNobuk	almnobuk VALIDATE btmbukidx mbtm_alm 0
+
+e.ValidateProp  almprop VALIDATE dtmdtkodidx  mdtmProp1dgi sdtmProp {Pgv_dtkota}
+e.ValidateKota  almkota VALIDATE tbldtdtmkod  mtblKota1dgi stblKota {Pgv_dtkota} {Palmprop}
+e.ValidateKec   almkec VALIDATE tbddatkodidx  mtbdKec1dgi stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.ValidateKel   almkel VALIDATE tbtdattypkod  mtbtKel1dgi stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+t.validateRT    almrt VALIDATE tbddatkodidx mtbdrt stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW    almrw VALIDATE tbddatkodidx mtbdrw stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+
+MAP(mbtm_alm)
+btmnobuk		almnobuk	REPLACE
+cBLANKS			lmntkode	DO_CALC
+cPMK			lalmlon		DO_CALC_IF cPMK1
+cPMB			lalmlon		DO_CALC_IF cPMB2
+lmntkode 		lmntkode	REPLACE_IF cdjoinmnt_PEMILIK1
+lmntkode 		lmntkode	REPLACE_IF cdjoinmnt_PEMBAWA1
+
+
+MAP(mtbdrt)
+tbdkode         almrt           REPLACE
+
+MAP(mtbdrw)
+tbdkode         almrw           REPLACE
+
+
+MAP(malamatdgi)
+lalmjalan1	almjalan	REPLACE_IF ckondalm2
+lalmprop1	almprop		REPLACE_IF ckondalm2
+lalmkota1	almkota		REPLACE_IF ckondalm2
+lalmkec1	almkec		REPLACE_IF ckondalm2
+lalmkel1	almkel		REPLACE_IF ckondalm2
+
+MAP(mpanjangnom_tmpdgi)
+cpanjangnom_tmp          ljumlahnomor            DO_CALC
+
+MAP(mtinggaldgi)
+cSamaTgl	lKetTinggal	DO_CALC_IF cTinggal1
+cTdkSamaTgl	lKetTinggal	DO_CALC_IF cTinggal2
+
+MAP(mlon)
+cPMK        lalmlon     DO_CALC_IF cPMK1
+cPMB        lalmlon     DO_CALC_IF cPMB2
+
+MAP(mbarcodedgi)
+laktlok_barcode	almbukoto	REPLACE_IF cdjoinbarcode	/* No Telp dari Barcode / Antrian */
+laktbrg_barcode	almnama		REPLACE_IF cdjoinbarcode 	/* Nama dari Barcode /Antrian */
+g_strksg	almnama2	REPLACE_IF cPemilik
+cBLANKS		almlat		DO_CALC_IF cPemilik
+g_strksg	lKetTinggal	REPLACE_IF cPemilik
+
+
+MAP(mdum_tmp1)
+DEBUG	ldumstr	ldumstr		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=almutama   DO_SKIP_IF cPMK1
+BEFORE_INPUT	cur_field=almlat     DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almnama2   DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almjalan   DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almprop    DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almkota    DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almkec     DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almkel     DO_SKIP_IF cPemilik
+AFTER_INPUT	cur_field=almutama   DO_MAP SHOW malamatdgi
+AFTER_INPUT	cur_field=almutama   DO_MAP SHOW mbarcodedgi
+AFTER_INPUT	cur_field=almlat     DO_MAP SHOW malamatdgi
+AFTER_INPUT	cur_field=almlat     DO_MAP SHOW mtinggaldgi
+AFTER_INPUT	cur_field=almlon     DO_MAP SHOW mlon
+AFTER_INPUT     cur_field=almbukoto   DO_LIB ap_amstr(almbukoto,ln1i,ln1,&ldigit1);
+AFTER_INPUT     cur_field=almbukoto   DO_LIB ap_amstr(almbukoto,ln2i,ln1,&ldigit2);
+AFTER_INPUT     cur_field=almbukoto   DO_MAP SHOW mpanjangnom_tmpdgi
+
+
+AFTER_INPUT	cur_field=almbukoto DO_MAP SHOW
+                IF cbukan08 mdum_tmp1
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+almdatbukidx    lINFOPEMBW btmnobuk
+
+SFL_MAP
+lINFOPEMBW      almdata         REPLACE
+btmnobuk        almnobuk        REPLACE
+
+MAP(mdtmProp1dgi)
+dtmkode         almprop         REPLACE
+dtmket          almnamprop      REPLACE
+cSamaTgl	lKetTinggal	DO_CALC_IF cTinggal1
+cTdkSamaTgl	lKetTinggal	DO_CALC_IF cTinggal2
+
+MAP(mtblKota1dgi)
+tblkode         almkota         REPLACE
+tblket          almnamkota      REPLACE
+
+MAP(mtbdKec1dgi)
+tbdkode         almkec          REPLACE
+tbdket          almnamkec       REPLACE
+
+MAP(mtbtKel1dgi)
+tbtkode         almkel          REPLACE
+tbtket          almnamkel       REPLACE
+
+MAP(mupdbtmPemdgi)
+almutama	btmstsbrg	REPLACE
+almnama2	btmbisnisjl	REPLACE
+
+MAP(mdelbtmPemdgi)
+cBLANKS		btmstsbrg	DO_CALC
+cBLANKS		btmbisnisjl	DO_CALC
+
+
+
+MAP(maddmnt3dgi)
+almnobuk        mntnobuk        REPLACE
+lsatu           lmntlon3        REPLACE_IF cPMK1
+ldua		lmntlon3	REPLACE_IF cPMB2
+lmntkode        mntkode         REPLACE
+lmntlon3        mntdata         REPLACE
+DEBUG lthbl lthbl               REPLACE
+
+SPCALCS(spaddtmptrans)
+DO_LIB ap_dbclc(DNAME daddbtmdgi,DCOMMAND UPDATE,DTARGET btmbukidx almnobuk,DMAP mupdbtmPemdgi);
+DO_LIB  ap_dbclc(DNAME daddmntdgi,DCOMMAND ADD,DFILE mnt,DMAP maddmnt3dgi);
+
+SPCALCS(spupdtmptrans)
+DO_LIB ap_dbclc(DNAME dupdbtmdgi,DCOMMAND UPDATE,DTARGET btmbukidx almnobuk,DMAP mupdbtmPemdgi);
+
+SPCALCS(spdeltmptrans)
+DO_LIB ap_dbclc(DNAME ddelbtmdgi,DCOMMAND UPDATE,DTARGET btmbukidx almnobuk,DMAP mdelbtmPemdgi);
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtmptrans
+PST_UPDCMD      spupdtmptrans
+PST_DELCMD      spdeltmptrans
+

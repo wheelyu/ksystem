@@ -1,0 +1,89 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ /---------s.DOCUPLOAD-----------\
+
+
+
+ \-------------------------------/
+ /-------------------------------\
+  t.NoBukAsal  : ________________
+  t.NoBuk      : ________________
+  t.TypeGambar : ________________                            
+  t.Upload     : ___  
+  t.Approval   : ___
+               : ________ _______
+	________________
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmkode 	PROTECT		INPUTRI	2
+tkmnobuk	PROTECT		INPUTRI	3
+tkmbuk1		NOCHANGE	INPUTRI	4
+tkmtype 	NOCHANGE	INPUTRI	4
+tkmstsapr	PROTECT 	INPUTRI	5
+tkmusrapr	PROTECT		INPUTRI	6
+lnamaaprdet1	PROTECT		INPUTRI	7 
+ltombolapr	TOMBOL		INPUTRI	8
+
+CALCS()
+crevisi		mtsnopsn=="REVISI_GAMBAR"
+cnotrevisi	mtsnopsn!="REVISI_GAMBAR"
+
+DEFAULTS(tmptranst)
+IF cnotrevisi tkmbuk1		DFALT_SCAN	BLANKS
+				ARSITEKTUR "ARSITEKTUR"
+				MEP "MECHANICAL-ELECTRICAL-PLUMBING"
+				STRUKTUR "STRUKTUR"
+				INFRASTRUKTUR "INFRASTRUKTUR"
+				KOMPOSIT "GAMBAR ALL"
+IF crevisi tkmbuk1		DFALT_SCAN	BLANKS
+				REVARSITEKTUR "REVISI ARSITEKTUR"
+				REVMEP "REV MECHANICAL-ELECTRICAL-PLUMBING"
+				REVSTRUKTUR "REVISI STRUKTUR"
+				REVINFRASTRUKTUR "REVISI INFRASTRUKTUR"
+				REVKOMPOSIT "REVISI GAMBAR ALL"
+ltombolapr	INIT		"HAPUS_APR"
+
+EDITS(tmptranst)
+e.Validate      tkmkode         VALIDATE mtsbukidx mmts
+e.Validate	tkmusrapr	VALIDATE psikodidx mpsi2 0
+
+CALCS()
+caprPM2		tkmbuk1=="REVMEP" || tkmbuk1=="REVARSITEKTUR" || tkmbuk1=="REVKOMPOSIT"
+caprPMSITE2	tkmbuk1=="REVSTRUKTUR" || tkmbuk1=="REVINFRASTRUKTUR"
+cMEP2		tkmbuk1=="REVMEP"
+cAST2		tkmbuk1=="REVARSITEKTUR"
+cSRT2		tkmbuk1=="REVSTRUKTUR"
+cIST2		tkmbuk1=="REVINFRASTRUKTUR"
+cKOM2		tkmbuk1=="REVKOMPOSIT"
+
+
+MAP(mnobuktkm2a)
+cnobukMEP2      tkmnobuk        DO_CALC_IF cMEP2
+cnobukAST2      tkmnobuk        DO_CALC_IF cAST2
+cnobukKOM2      tkmnobuk        DO_CALC_IF cKOM2
+cAPRHMC_PROOFF  tkmlok1         DO_CALC_IF caprPM2  
+cnobukSRT2      tkmnobuk        DO_CALC_IF cSRT2
+cnobukIST2      tkmnobuk        DO_CALC_IF cIST2
+cAPR_GBRKERJA   tkmlok1         DO_CALC_IF caprPMSITE2
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkmbuk1	DO_MAP SHOW mnobuktkm2a
+CLICKED		cur_field=ltombolapr	DO_SPCALCS spdelapr
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cnotpengaduan
+SFL_DOCUPL_DELCOND c0
+SFL_DOCUPLFLD_DBCALCS dupdtkmlay
+SFL_DOCUPLFLD tkmnobuk tkmdata 
+SFL_TARGET
+        tkmdtkdstlok lDTREGAMKER mtsnobuk gv_OPEN                        
+SFL_MAP
+	lDTREGAMKER	tkmdata		REPLACE
+	mtsnobuk	tkmkode 	REPLACE 
+	gv_OPEN		tkmsts		REPLACE
+	mtstgl		tkmtgl		REPLACE

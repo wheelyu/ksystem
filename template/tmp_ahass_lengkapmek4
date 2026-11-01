@@ -1,0 +1,82 @@
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||t.Upload        : ______          ||
+||i.Tgl           : _________       ||
+||t.Pil		  : ______________  ||
+||t.Kondisi	  : ______________  ||
+||                     	    ______  ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT          INPUTRI 1
+aktdk           PROTECT          INPUTRI 2
+akttgl          PROTECT          INPUTRI 3
+aktlok		NOCHANGE	 INPUTRI 4
+aktcab		NOCHANGE	 INPUTRI 5
+lenter          NOCHANGE         INPUTRI 6
+luplok          TOMBOL           INPUTRI 8
+
+CALCS()
+cAda4           aktlok == "ADA"
+cTdkAda4        aktlok == "TIDAK_ADA"
+cfotobaru6      akttgl == g_tgltrn
+
+EDITS(tmptranst)
+e.MandatoryPilihan	aktlok	MANDATORY
+e.MandatoryKondisi	aktcab	MANDATORY_IF cAda4
+
+DEFAULTS(tmptranst)
+aktlok		DFALT_SCAN	BLANKS
+				ADA
+				TIDAK_ADA
+
+aktcab		DFALT_SCAN	BLANKS
+				BERFUNGSI
+				TIDAK_FUNGSI
+
+MAP(mupdaktfoto6)
+g_tgltrn        akttgl  REPLACE
+cY1             aktdk   DO_CALC_IF cfotobaru6
+
+MAP(mupdaktmek4)
+cY1             aktdk   DO_CALC_IF cTdkAda4
+
+DBCALCS(dupdfoto6)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktfoto6
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=aktlok        DO_MAP SHOW mupdaktmek4
+BEFORE_INPUT    cur_field=aktcab        DO_SKIP_IF cTdkAda4
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbisadetail
+SFL_UPL_DELCOND c0
+SFL_UPLFLD tlmnobuk akttype
+SFL_UPLFLD_DBCALCS dupdfoto6
+SFL_UPL_CAMERAONLY
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+aktkodtypidx       tlmnobuk tlmdata     lLENGKAPMEK4
+

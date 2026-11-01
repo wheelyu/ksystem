@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+ljaminput714	TIME		4	
+ljam		TIME		4	
+lketmasalah	STRING		31
+lprobleadtime	STRING		21
+
+IMAGE(tmptranst) {BASE_ROW=2} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/-------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------\|
+||i.NoPK : _______________          t.Jam611631 __.__   t.Jam   __.__    ||
+|\-----------------------------------------------------------------------/|
+|/-----------------------------------------------------------------------\|
+||t.Leadtimeaccpk                                                        ||
+||     t.Permasalahan : ___ ______________________________               ||  
+||     t.Ket          : _____________________ _____________________      ||
+|\-----------------------------------------------------------------------/|
+\-------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnobuk	PROTECT 	INPUTRI		1
+ljaminput714	PROTECT 	INPUTRI		2
+ljam    	PROTECT 	INPUTRI		3
+btdkat		NOCHANGE SCROLL	INPUTRI		4
+lketmasalah	PROTECT 	INPUTRI		5
+btdnorangka	ALLCAPS 	INPUTRI		6
+btdnomesin 	ALLCAPS 	INPUTRI		7
+
+CALCS()
+cjoinaktltime	djoinaktjaminput==1
+
+DEFAULTS(tmptranst)
+ljam		INIT		SYSTIME
+lprobleadtime	INIT		PROBLEADTIME
+
+EDITS(tmptranst)
+e.Validate      btdkat          VALIDATE tbddatkodidx mtbdltime stbd {Pgv_dttabel} {Pgv_survey21} {Plprobleadtime}
+e.Mandatory     btdkat		MANDATORY
+e.Mandatory     btdnorangka     MANDATORY
+
+MAP(mtbdltime)
+tbdkode		btdkat		REPLACE
+tbdket		lketmasalah	REPLACE
+laktjaminput	ljaminput714	REPLACE_IF cjoinaktltime
+
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=btdkat DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	btdstsbukbrg gv_OPEN btmnobuk lleadtime
+SFL_MAP
+	btmnobuk	btdnobuk	REPLACE
+	gv_OPEN		btdsts		REPLACE
+	g_usrkode	btdukrwrn	REPLACE
+	lleadtime  	btdbrg		REPLACE
+
+CALCS()
+ctambah_lead	btmsts=="714" && g_scrnumstr=="714" && djoinbtdlead==0 
+cubah_lead	btmsts=="714" && g_scrnumstr=="714" && djoinbtdlead==1 
+cdel_lead	0            
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	ctambah_lead
+	PMT_UPDALL_COND	cubah_lead
+	PMT_DEL_COND	cdel_lead
+	

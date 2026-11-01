@@ -1,0 +1,70 @@
+IMAGE(tmptranst)
+/------t----------------t-----t---------t-----t--------t----------t---------t------t------t--------t-----t------t-------t---\
+|t.Kode|t.IBDPerformance|t.Tgt|t.TGTAkum|t.act|t.AccAM |t.AccKawil|t.AccDO  |t.PAct|t.%Ach|t.%ACHmd|t.BBT|t.Point|t.Pica|___
+\------.----------------.-----.---------.-----.--------.----------.---------.------.------.--------.-----.------.-------.---/
+IMAGE(tmptrans)
+|______|________________|__.__|______.__|__.__|________|__________|_________|______|______|________|__.__|____.__|______|___|
+
+FIELDS(tmptranst)
+ltomsdhact      TOMBOL                          INPUTRI 1
+
+FIELDS(tmptrans)
+tldstr4         PROTECT                         INPUTRI 1       /* INDIKATOR */
+lket            TEXTAREA PROTECT                INPUTRI 2       /* INDIKATOR */
+tldhrg          PROTECT                         INPUTRI 3       /* TGT */
+tldtmp1         PROTECT                         INPUTRI 4       /* TGT AKUM */
+tldukrwrn       NUMERIC                         INPUTRI 5       /* ACT */
+tldgrup         PROTECT                INPUTRI 6       /* ACC AM */
+tldgrup2        PROTECT                INPUTRI 7       /* ACC KAWIL */
+tldlok          PROTECT                INPUTRI 8       /* ACC DCAOPR */
+tldperdism      NUMERIC                         INPUTRI 9       /* ACT BARU */
+tldsubtot       PROTECT NOCHANGE                INPUTRI 10      /* % ACH */
+tldhrgnet       PROTECT NOCHANGE                INPUTRI 11      /* % ACH MD */
+tldtotdis       PROTECT NOCHANGE                INPUTRI 12      /* BOBOT */
+tldperdis       PROTECT NOCHANGE                INPUTRI 13      /* POINT */
+tldket          TEXTAREA                        INPUTRI 14
+lenter          NOCHANGE                        INPUTRI 15      /* TOMBOL ENTER */
+
+DEFAULTS(tmptrans)
+tldstr3		INIT_UPDATE	{g_usrkode}
+tldgrup         DFALT_SCAN      BLANKS
+                                TIDAK_SESUAI
+tldgrup2        DFALT_SCAN      BLANKS
+                                TIDAK_SESUAI
+tldlok          DFALT_SCAN      BLANKS
+                                TIDAK_SESUAI
+EDITS(tmptrans)
+e.ValidateKet           tldstr4  VALIDATE        tbddatkodidx     mketactPerformance                     {PlDTTABEL}        {PlCUSTOMEREXPERIENCE} {PlKODEMATRIKSIBDA}
+e.PicaWajibDiisi	tldket			 MANDATORY_IF cachkrg
+
+
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_field=tldukrwrn             DO_MAP SHOW mhitung
+AFTER_INPUT             cur_field=tldperdism            DO_MAP SHOW mhitung
+AFTER_INPUT             cur_field=tldperdism            DO_MAP SHOW mACC
+BEFORE_INPUT		cur_field=tldket		DO_SKIP_IF cachlbh
+BEFORE_INPUT		cur_field=tldukrwrn		DO_SKIP_IF cskipact
+AFTER_INPUT             cur_field=tldket                DO_MAP SHOW mcekpanjang
+AFTER_INPUT             cur_field=tldket                DO_MAP SHOW
+                        IF cpanjangcukup                mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Isi PICA kurang
+BEFORE_INPUT            cur_field=tldgrup               DO_SKIP_IF cskipacc
+BEFORE_INPUT            cur_field=tldgrup2              DO_SKIP_IF cskipacc
+BEFORE_INPUT            cur_field=tldperdism            DO_SKIP_IF cskipacc
+BEFORE_INPUT            cur_field=tldlok                DO_SKIP_IF cskipacc
+
+
+HOOKS(tmptranst)
+CLICKED                 cur_field=ltomsdhact    	DO_SPCALCS  ssdhisiact
+
+SUBFILE(tmptrans)
+SFL_LINES(18)
+SFL_SORT_BY_FIELD tldstr4
+SFL_TITLE(tmptranst)
+SFL_SELECT 	cselectactperformancem2
+SFL_TARGET
+tldbukbrglok            tlmnobuk        lPERFORMANCE
+/*tldstsbrgukr    tlmdata*/
+

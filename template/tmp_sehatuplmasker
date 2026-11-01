@@ -1,0 +1,75 @@
+LOCAL
+PGM_FIELDS
+lacc1a		STRING	21
+luplok1         STRING  21
+lenter1		STRING	21
+l7mlm		TIME	4
+l7pgi		TIME	4
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.UplMaskerDanShield
+  t.Upload	: _____
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlddk		PROTECT		INPUTRI	1
+
+DEFAULTS(tmptranst)
+l7mlm		INIT		190000
+l7pgi		INIT		070000
+lenter1		INIT		ENTER
+luplok1         INIT            UPLOAD_OK
+lacc1a		INIT		ACC
+tldnoll 	DFALT_SCAN	BLANKS
+				ACC
+				TACC
+
+CALCS()
+cdjointldupl1	djointldupl1 == 1 && tlmsts != "CLSD"
+cdjointbd1	djointbd1 == 1
+cY1		"Y"
+csatpam1	(tlmgrup == "SATPAM" || tlmgrup == "SECURITY")
+cblanks		BLANKS
+caprtl		tlmstsapr == "TL"
+
+MAP(muser)
+g_usrkode	tldgrup2	REPLACE	
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW muser
+
+MAP(mupdtldmasker)
+lgrupacc1x	tldkat		REPLACE_IF cdjointbd1
+lgrupacc1y	tldgrup		REPLACE_IF cdjointbd1
+cY1		tlddk           DO_CALC
+lacc1a		tldnoll		REPLACE_IF csatpam1
+cblanks		tlmstsapr	DO_CALC_IF caprtl
+
+DBCALCS(dupdtldmasker)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx   tldprm
+        DBC_MAP         mupdtldmasker
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdjointldupl1
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdtldmasker
+SFL_UPLFLD tlmnobuk tldukrwrn
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        tldstsbrgukr	tlmdata gv_OPEN tlmnobuk lsehatmasker
+

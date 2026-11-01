@@ -1,0 +1,159 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------------\
+ t.Cek Aparel
+/--------------------t------------t-------t-------------t-------------------t---------t---------\
+|t.Namabarang        |t.KodeBarang|t.tahun|t.JumlahStok |t.jumlahKebutuhan  | t.info  | __ __ __
+\--------------------.------------.-------.-------------.-------------------.---------.---------/
+\-----------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|____________________|____________|_______|_____________|___________________|___________________|
+
+CALCS()
+chidetomdetailok3c	tlmkode != g_usrkode || ((tlmkode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tkdsts == gv_IN || tkdsts == gv_ok)) && djoindetailhm3 == 1 && lopsidetail == "YA"
+
+FIELD(tmptranst)
+ltombol10acc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombol1tacc    TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombolhm3aok   TOMBOL UNSEEN_IF chidetomdetailok3c       INPUTRI 2
+
+FIELD(tmptrans)
+tkdket   	PROTECT	        INPUTRI	1
+tkdjenis	        ALLCAPS	SCROLL                 INPUTRI	2
+tkdstr2          PROTECT                 INPUTRI	3
+tkdjml        PROTECT 	        INPUTRI	3
+tkdjml2          NUMERIC                 INPUTRI	4
+tkdrek          PROTECT                 INPUTRI 3
+
+DEFAULTS(tmptrans)
+tkdsts INIT            {gv_OPEN}
+
+MAP(mjoinallaparel)
+tkdnourt        ltkdnourt       REPLACE
+
+DBCALCS(djoinallaparel)
+	DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tkddatbukll lEVNH1CHM3 tlmnobuk
+        DBC_MAP         mjoinallaparel
+
+MAP(mbrgaparel)
+brgkode          tkdjenis         REPLACE
+brgnama          lbrdket          REPLACE
+lbrdket          tkdket                 REPLACE
+brgbbmprs        lbrdnobbm           REPLACE 
+brgcab           lbrgcab           REPLACE       
+
+MAP(mjoinbrdaparel)
+brdsisa          lbrdsisa           REPLACE
+brdth            lbrdth           REPLACE
+
+DBCALCS(djoinbrdaparel)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      brdbbmbrgidx lbrdnobbm gv_INPG tlmcab tkdjenis
+        DBC_MAP         mjoinbrdaparel
+
+
+CALCS()
+cdetailhm3aok         tlmkode == g_usrkode && djoindetailhm3 == 1
+ctkdjenissama	        tkdprm != ltkdprm && tkdjenis == ltkdjenis
+DBCALCS(djoinaparel)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      tkddatbukll lEVNH1CHM3 tlmnobuk
+        DBC_SELECT      ctkdjenissama
+        
+CALCS()
+cadaadhbelumacc 	lnipadhhmc != "" && djoindetailhm3 == 1 && lopsidetail == "YA" && tkdtmp1 == ""
+cadaaddmts ladaaddmts == 1 && tkdtmp1 == ""
+cjoinbrdaparelok        djoinbrdaparel == 1
+cstokkosong             (tkdjml != 0 ) 
+ctahunlebihdari2025     tkdstr2 == "2025"||tkdstr2 == "2026"
+cstokkurang             tkdjml >= 0 && tkdjml2 <= tkdjml
+caparelbelumdiinput        djoinaparel == 0
+cadaaparel                 djoinallaparel == 1
+MAP(mbrdaparel)
+lbrdsisa          tkdjml           REPLACE_IF cjoinbrdaparelok
+lbrdth          tkdstr2            REPLACE_IF cjoinbrdaparelok
+tkdjenis          ltkdjenis        REPLACE
+tkdprm            ltkdprm          REPLACE
+
+EDITS(tmptrans)
+e.Mandatory              tkdjenis        MANDATORY
+e.Validate               tkdjenis        VALIDATE brgstdtkatbr mbrgaparel sbrg {Pgv_INPG} {PlDTBARANG} {PlAPAREL}
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW mbrdaparel
+AFTER_INPUT	cur_field=tkdjenis        DO_MAP
+                IF caparelbelumdiinput mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Aparel Sudah Di Input
+AFTER_INPUT     cur_field=tkdjenis        DO_MAP SHOW 
+                IF cstokkosong mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Stok Kosong
+AFTER_INPUT     cur_field=tkdjenis        DO_MAP SHOW 
+                IF ctahunlebihdari2025 mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG t. STOK SUDAH LAMA, APAKAH SUDAH YAKIN JIKA YA KLIK OK
+AFTER_INPUT     cur_field=tkdjml2        DO_MAP SHOW 
+                IF cstokkurang mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Jumlah kebutuhan melebihi stok
+
+SPCALCS(saccdetailrinci3)
+        DO_LIB			        ap_dbclc(DNAME dmapmapAdd, DCOMMAND MAPMAP, DMAP mmapmapAdd);
+        DO_LIB_IF cadaadhbelumacc	ap_dbclc(DNAME daddmts,DCOMMAND ADD,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+        DO_LIB_IF cadaaddmts       ap_dbclc(DNAME daddabkreviewadhm3, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewadh);
+        DO_LIB_IF cadaaddmts       ap_dbclc(DNAME dupddetailreqhm3mts,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdnobukmts);
+        DO_LIB                          ap_dbclc(DNAME dupddetailokaccdetaila3, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailok);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol1tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol10acc    DO_SKIP_IF camkawil
+CLICKED         cur_field=ltombolhm3aok DO_SPCALCS spdetailokhm3a
+
+CLICKED         cur_field=ltombol1tacc   DO_SPCALCS IF camkawilin staccdetailrinci3
+CLICKED         cur_field=ltombol10acc	DO_SPCALCS IF camkawilin saccdetailrinci3      
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNH1CHM3 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1CHM3 tkddata
+
+MAP(mupdtlmmasteraparel)
+cBLANKS                 lselisihjumlahbiaya     DO_CALC
+tkdjml                  lselisihjumlahbiaya     REPLACE
+lselisihjumlahbiaya     tlmjml                REPLACE
+cnourt          ltkdnourt       DO_CALC_IF cadaaparel  
+DEBUG ldum              ldum                    REPLACE
+
+MAP(mresetjumlahkebutuhan)
+cBLANKS                 tkdjml                 DO_CALC
+
+MAP(mupdinfodetailhm3a)
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm3a)
+        DO_LIB_IF cdetailhm3aok   ap_dbclc(DNAME dupddetailreqhm3a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm3a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm3a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm3a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupdinfodetailhm3a);
+
+        
+SPCALCS(staccdetailrinci3)
+        DO_LIB                          ap_dbclc(DNAME dupddetailtacchma3, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailtrinci);
+
+SPCALCS(sptambahhm3c)
+        DO_LIB                  ap_dbclc(DNAME dupdapareltambahhm3c,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasteraparel);
+SPCALCS(spubahhm3c)
+        DO_LIB                  ap_dbclc(DNAME dupdaparelubahhm3c,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasteraparel);
+SPCALCS(sphapushm3c)
+        DO_LIB                  ap_dbclc(DNAME dresetaparelhapushm3c, DCOMMAND MAPMAP, DMAP mresetjumlahkebutuhan);
+        DO_LIB                  ap_dbclc(DNAME dupdaprelhapushm3c,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasteraparel);
+POSTING(tmptrans)
+        PST_ADDCMD sptambahhm3c
+        PST_UPDCMD spubahhm3c
+        PST_DELCMD sphapushm3c

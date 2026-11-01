@@ -1,0 +1,164 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.Tgl     : __________             ||
+||t.NipUser : _________ ___________  ||
+||t.NipSdm  : _________ ___________  ||
+||t.UmrCabAs: ______________         ||
+||t.PengHrd : ______________         ||
+||t.AccHrd  : _______________________||
+||t.Ket     : ___________________    ||
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 1
+psdstr1			NOCHANGE		INPUTRI 2
+lnamainput		PROTECT SCROLL		INPUTRI 3
+psdstr2			NOCHANGE		INPUTRI	4
+lnamasdm		PROTECT SCROLL		INPUTRI 5
+psdtot			PROTECT SCROLL		INPUTRI 6
+psdtot2			ALLCAPS SCROLL          INPUTRI 7
+psdstr3 		NOCHANGE SCROLL		INPUTRI 8
+psdket			TEXTAREA ALLCAPS	INPUTRI 9
+
+DEFAULTS(tmptranst)
+psdstr3		DFALT_LIST BLANKS ACC TACC
+
+CALCS()
+cjkspvhrd	((g_grpnam=="HRDSPV" || g_grpnam=="HRDHEAD" || djointbdakshrdheada==1 || djointbdakshrdheadb==1) && 
+		((btmcabjl=="PST30" && psdtot2 < 5000000) || btmcabjl!="PST30")) || 
+		g_grpnam=="B.IVAROHRD" || g_grpnam=="RI" || g_grpnam=="HRDDVH" || g_grpnam=="SUPPORT" || g_grpnam=="CMBNHEAD"
+
+catas5juta	(psdtot2 > 5000000 && (g_grpnam=="HRDHEAD" || djointbdakshrdheada==1 || djointbdakshrdheadb==1 || g_grpnam=="HRDSPV") && btmcabjl!="PST30") || psdstr3==BLANKS
+		/* ATI230500000506 */
+		|| (psdtot2 > 5000000 && (g_grpnam=="HRDHEAD" || djointbdakshrdheada==1 || djointbdakshrdheadb==1 || g_grpnam=="HRDSPV") && btmcabjl=="PST30")
+		|| psdtot2 <= 5000000 || g_grpnam=="B.IVAROHRD" || g_grpnam=="RI" || g_grpnam=="HRDDVH" || g_grpnam=="SUPPORT" || g_grpnam=="CMBNHEAD"
+
+EDITS(tmptranst)
+t.Validate psdstr1 VALIDATE psikodidx mpsiz
+t.Validate psdstr2 VALIDATE psikodidx mpsizx
+/*t.Mandatory psdtot  MANDATORY*/
+t.Mandatory psdtot2 MANDATORY
+t.Mandatory psdstr3 MANDATORY_IF cjkspvhrd
+t.Mandatory psdket MANDATORY_IF cjkspvhrd
+
+MAP(mpsiz)
+psikode		psdstr1		REPLACE
+psinama		lnamainput 	REPLACE
+
+MAP(mpsizx)
+psikode		psdstr2		REPLACE
+psinama		lnamasdm  	REPLACE
+
+MAP(mjoincad)
+cadtot1			lcadtot1	REPLACE
+
+DBCALCS(djoincad)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	btmcabjl	gt_DTGAJI	lUMR21 btmcabjl
+	DBC_MAP		mjoincad
+
+MAP(mjoinpsdaccgaji)
+psdnourt			lnourtgaji	REPLACE
+
+DBCALCS(djoinpsdaccgaji)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	psddatpsmkod	gv_clnkry11 btmplg lACCGAJI21
+	DBC_MAP		mjoinpsdaccgaji
+
+CALCS()
+cjoincad		djoincad==1
+cjoinpsdaccgaji0	djoinpsdaccgaji==0 && g_curcmd==1
+cjoinpsdaccgaji1	djoinpsdaccgaji==1 && g_curcmd==1
+ckodetipe		"GAJI"+FLD_TO_STRING(psdnourt)
+ctbh1			lnourtgaji + 1
+csdhinputgj		djoinpsdgaji==0 || (djoinpsdgaji==1 && lnipsdm!=btmkdkms) || g_curcmd==2
+cgajiumr		psdtot>0 && psdtot2>=psdtot
+cHMLM			(((djoinhrm176==1 && ltipe176=="HM") || (djoinhrm170x==1 && ljenis170=="PERCEPATANMAGANG")) &&
+			g_grpnam=="CMBNHEAD") || (djoinhrm170x==1 && ljenis170!="PERCEPATANMAGANG") ||
+			(djoinhrm176==1 && ltipe176!="HM") || (djoinhrm176==0 && djoinhrm170x==0) 
+			|| (btmbisnis=="IVR" && g_grpnam=="B.IVAROHRD")
+copensdm		(((djoinhrm176==1 && ltipe176=="HP") || (djoinhrm176==0 && djoinhrm170x==0)) &&
+			(g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA" || g_grpnam=="HRDHEAD" || djointbdakshrdheada==1 || djointbdakshrdheadb==1 || g_grpnam=="HRDDVH" || g_grpnam=="RI")) ||
+			(((djoinhrm176==1 && ltipe176=="HM") || (djoinhrm170x==1 && ljenis170=="PERCEPATANMAGANG")) &&
+                        g_grpnam=="CMBNHEAD")
+			|| (btmbisnis=="IVR" && g_grpnam=="B.IVAROHRD")
+
+MAP(mumrasal)
+lcadtot1		psdtot		REPLACE_IF cjoincad
+
+MAP(mnipsdm)
+btmkdkms	psdstr2		REPLACE
+c1		psdnourt	DO_CALC_IF cjoinpsdaccgaji0
+ctbh1		psdnourt	DO_CALC_IF cjoinpsdaccgaji1
+ckodetipe	psdtype		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=psdstr1	DO_MAP SHOW mnipsdm
+AFTER_INPUT	     cur_field=psdstr2     DO_MAP SHOW mumrasal
+AFTER_INPUT		cur_field=psdstr3	DO_MAP SHOW
+			IF catas5juta mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.Atas5JtHrsHrdHead
+
+AFTER_INPUT             cur_field=psdtot2       DO_MAP SHOW
+                        IF cHMLM mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.AccGaji176HMHanyaCmbn
+
+AFTER_INPUT             cur_field=psdtot2       DO_MAP SHOW
+                        IF copensdm mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.AccGajiOpenSdmHanyaRekrut
+
+AFTER_INPUT		cur_field=psdtot2     	DO_MAP SHOW
+			IF cgajiumr mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.GajiTdkBlhDiBwhUmr
+
+AFTER_INPUT		cur_keybd=EN     	DO_MAP SHOW
+			IF catas5juta mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.Atas5JtHrsHrdHead
+
+AFTER_INPUT		cur_keybd=EN     	DO_MAP SHOW
+			IF csdhinputgj mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.SdhAdaInputGaji
+
+AFTER_INPUT             cur_keybd=EN       	DO_MAP SHOW
+                        IF cHMLM mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.AccGaji176HMHanyaCmbn
+
+AFTER_INPUT             cur_keybd=EN       	DO_MAP SHOW
+                        IF copensdm mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.AccGajiOpenSdmHanyaRekrut
+
+AFTER_INPUT		cur_keybd=EN     	DO_MAP SHOW
+			IF cgajiumr mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.GajiTdkBlhDiBwhUmr
+
+CALCS()
+cselectnip		psdstr2==btmkdkms && psdstr4==btmnobuk
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_SELECT cselectnip
+SFL_COND		cboleh_accgaji
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11 btmplg lACCGAJI21
+
+SFL_MAP
+gv_clnkry11      	psddata		REPLACE
+btmplg 			psdpsmkode	REPLACE
+lACCGAJI21		psdkode		REPLACE
+g_usrkode		psdstr1		REPLACE
+g_tgltrn		psdtgl1		REPLACE
+btmnobuk		psdstr4		REPLACE

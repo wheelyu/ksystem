@@ -1,0 +1,259 @@
+LOCAL
+PGM_FIELDS
+lnipUser		STRING		21
+lnamaUser		STRING		21
+lENTER			STRING		31
+ljwb1			STRING		2
+
+lnobukfeeclsd		STRING		21
+lnobukpiuclsd		STRING		21
+lnobukschclsd		STRING		21
+
+lfeeclsd		STRING		21
+lpiuclsd		STRING		21
+lschclsd		STRING		21
+
+lnofak			STRING		21
+lfakfee			STRING		21
+lfaksch			STRING		21
+lppmsts			STRING		5
+lppmsisa6		DFLOAT		8
+lppmtotbyr		DFLOAT		8
+
+ltotfee		DFLOAT		8
+lppssisafee	DFLOAT		8
+ltotbyrfee	DFLOAT		8
+ltotsch		DFLOAT		8
+lppssisasch	DFLOAT		8
+ltotbyrsch	DFLOAT		8
+
+lbkdstssch	STRING		5
+
+MAP(mjoinakt893feeclsd)
+aktbrg		lnobukfeeclsd		REPLACE
+
+DBCALCS(djoinakt893feeclsd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx tlmnobuk lKLAIMPIU lfeeclsd
+	DBC_MAP		mjoinakt893feeclsd
+
+MAP(mjoinakt893schclsd)
+aktbrg          lnobukschclsd	REPLACE
+
+DBCALCS(djoinakt893schclsd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx tlmnobuk lKLAIMPIU lschclsd
+        DBC_MAP         mjoinakt893schclsd
+
+MAP(mjoinakt893piuclsd)
+aktbrg		lnobukpiuclsd		REPLACE
+
+DBCALCS(djoinakt893piuclsd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx tlmnobuk lKLAIMPIU lpiuclsd
+        DBC_MAP         mjoinakt893piuclsd
+
+MAP(mjointld893)
+tldnoll		lnofak		REPLACE
+tldsat		lfakfee		REPLACE
+tldkat		lfaksch		REPLACE
+
+DBCALCS(djointld893)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukurtidx tlmnobuk
+	DBC_MAP		mjointld893
+
+MAP(mjoinppm893)
+ppmsts		lppmsts		REPLACE
+ppmsisa		lppmsisa6	REPLACE
+
+DBCALCS(djoinppm893)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppmbukidx	lnofak
+	DBC_MAP		mjoinppm893
+
+MAP(mjoinppsfee6)
+ppstotal		ltotfee		REPLACE
+ppssisa			lppssisafee	REPLACE
+ppstotbyr		ltotbyrfee	REPLACE
+
+DBCALCS(djoinppsfee6)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppsbukidx	lfakfee
+        DBC_MAP         mjoinppsfee6
+
+MAP(mjoinppssch6)
+ppstotal                ltotsch         REPLACE
+ppssisa                 lppssisasch     REPLACE
+ppstotbyr		ltotbyrsch	REPLACE
+
+DBCALCS(djoinppssch6)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppsbukidx       lfaksch
+        DBC_MAP         mjoinppssch6
+
+CALCS()
+cscr307		bkdscr=="307"
+
+MAP(mjoinbkd)
+bkdsts		lbkdstssch		REPLACE
+
+DBCALCS(djoinbkdpiusch)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	bkdbukllidx	lfaksch
+	DBC_SELECT	cscr307
+	DBC_MAP		mjoinbkd
+
+DBCALCS(djoinbkdfee)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      bkdbukllidx     lfakfee
+	DBC_SELECT      cscr307
+
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.UbhSts	                        |
+|------------------------------------t--|
+|/-------------------------------------\|
+|| t.ProsUlg	     ___	       ||
+|| t.User			       ||
+|| _________________ __________	       ||
+|| t.Fee			       ||
+|| _________________		       ||
+|| t.Scheme			       ||
+|| _________________		       ||
+|| t.Piutang			       ||
+|| _________________		       ||
+|| ___________________________________ ||
+|\-------------------------------------/|
+\------------------------------------.--/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ljwb1	  	 NOCHANGE	 INPUTRI	 1
+lnamaUser	 PROTECT	 INPUTRI	 2
+lnipUser         PROTECT        INPUTRI          3
+lnobukfeeclsd	 PROTECT	 INPUTRI	 4
+lnobukschclsd	 PROTECT	 INPUTRI	 5
+lnobukpiuclsd	 PROTECT	 INPUTRI	 6 
+lENTER		 NOCHANGE	 INPUTRI	 7
+
+DEFAULTS(tmptranst)
+lnipUser	INIT		{g_usrkode}
+lENTER		INIT		"TEKAN ENTER UNTUK VOID"
+
+lpiuclsd	INIT		UNITCLSD
+lschclsd	INIT		SCHEMECLSD
+lfeeclsd	INIT		FEECLSD
+
+ljwb1		DFALT_SCAN_BLANKS	Y T
+
+EDITS(tmptranst)
+e.Validate	lnipUser	VALIDATE psikodidx mpsiusrkor 0
+
+MAP(mpsiusrkor)
+psikode		tlmdari		REPLACE
+psinama		lnamaUser	REPLACE
+
+MAP(mupdtlmstsvoid)
+gv_VOID		tlmbisnis	REPLACE
+gv_VOID		tlmpst		REPLACE
+gv_VOID		tlmbrdoto	REPLACE
+gv_VOID		tlmsts		REPLACE
+lnipUser	tlmdari		REPLACE
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mupdtldstsvoid)
+gv_VOID         tldsts          REPLACE
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mupdppmdel2)
+cBLANKS         ppmstsret       DO_CALC
+
+CALCS()
+ckoreksivoid	tlmdvs==BLANKS && 
+		(djoinakt893feeclsd==0||djoinakt893feeclsd==1) && 
+		(djoinakt893schclsd==0||djoinakt893schclsd==1) && 
+		(djoinakt893piuclsd==0||djoinakt893piuclsd==1) &&
+		(djointld893==0||djointld893==1) &&
+		(djoinppm893==0||djoinppm893==1) &&
+		(djoinppsfee6==0||djoinppsfee6==1) &&
+		(djoinppssch6==0||djoinppssch6==1)&&
+		(djoinbkdpiusch==0||djoinbkdpiusch==1)&&
+		(djoinbkdfee==0||djoinbkdfee==1)
+
+cbknRINP	tlmsts!="RINP"
+cRINP		tlmsts == "RINP" && ljwb1=="Y" && lppmsts=="INPG"
+cubhvoid1	((tlmsts == "OPEN" && djointldu==0) || 
+		(tlmsts != "OPEN"))
+cubhvoid2	(tlmsts == "RINP" && (ljwb1=="Y" && lppmsts=="INPG"))||
+		(ljwb1=="T" && lppmsts=="VOID") || 
+		(tlmsts!="RINP")
+cubhvoid3	((tlmsts=="INPG"||tlmsts=="CLSD") && lppmsts=="VOID") ||
+		(tlmsts!="INPG"&&tlmsts!="CLSD")
+cubhvoid4       (tlmsts == "INPG" && djoinbkdpiusch==1 && lbkdstssch!="OPEN" && lbkdstssch!="VOID") ||
+		(tlmsts == "INPG" && djoinbkdpiusch==0)||
+		(tlmsts!="INPG" && tlmsts!="CLSD")
+
+cubhvoid5	(tlmsts == "INPG" && tlmbrdoto=="307" && djoinbkdfee==0)||
+		(tlmbrdoto!="307")
+cubhvoid6	((tlmsts == "INPG"||tlmsts=="CLSD") && lppmsisa6!=0 && lppmtotbyr == 0 && lppssisasch==ltotsch && ltotbyrsch==0)||
+		(tlmsts == "INPG" && tlmbisnis=="CLSD" && tlmpst=="CLSD" && tlmbrdoto=="CLSD" && lppssisasch !=0 )||
+		(tlmsts != "INPG"&&tlmsts!="CLSD")
+cubhvoid7	((tlmsts == "INPG"||tlmsts=="CLSD") && lppssisafee==ltotfee && ltotbyrfee==0 )||
+                (tlmsts != "INPG"&&tlmsts!="CLSD")
+		
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=ljwb1	  DO_SKIP_IF cbknRINP
+
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid1  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.voidOPEN893
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.void1INPG893
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid4  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.void3INPG893	/*PIUTANG DAN SCHEME SUDAH DIINPUT DI 307, HAPUS DULU*/
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid5  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.void4INPG893	/*FEE SUDAH DIINPUT DI 307, HAPUS DULU*/
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid7  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.void6INPG893    /*KEMBALIKAN NILAI HL FEEOWNER DAHULU DI 3501*/
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid6  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.void5INPG893    /*KEMBALIKAN NILAI HL PIUTANG DAN SCHEME DAHULU DI 3501*/
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF cubhvoid3  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.void2INPG893	/*INPG DAN CLSD HARUS VOID 614 DAHULU*/
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND	ckoreksivoid
+SFL_TARGET
+        tlmbukidx       tlmnobuk
+
+
+SPCALCS(spubhvoid)
+DO_LIB ap_dbclc(DNAME dupdtldstsvoid, DCOMMAND UPDATE_RANGE, DTARGET tldbukbrgoto tlmnobuk, DMAP mupdtldstsvoid);
+DO_LIB_IF cRINP ap_dbclc(DNAME dupdppmdel2, DCOMMAND UPDATE, DTARGET ppmbukidx lnofak,DMAP mupdppmdel2);
+DO_LIB ap_dbclc(DNAME dupdtlmstsvoid, DCOMMAND UPDATE, DTARGET tlmbukidx tlmnobuk, DMAP mupdtlmstsvoid);
+
+POSTING(transe2g3)
+PST_COMMAND     spubhvoid
+
+PERMIT(tmptrans)
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+

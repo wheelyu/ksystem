@@ -1,0 +1,49 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.Nobuk       :______________________ ||
+||t.Tgl         :______________________ ||
+||t.Ceklis      :______________________ ||
+||t.Ket         :______________________ ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        PROTECT                 INPUTRI         1
+tldtglfak       ALLCAPS NOLIMIT {DD-MM-YYYY}   INPUTRI         3
+tldkat		NOCHANGE		INPUTRI		2
+tldlok		ALLCAPS			INPUTRI		4
+
+DEFAULTS(tmptranst)
+tldkat       DFALT_SCAN_BLANKS      	Y
+                                        T
+
+CALCS()
+ctglfak		tlmsts == "INPG" && (tldkat == "Y" || tldkat==BLANKS)
+
+EDITS(tmptranst)
+e.Mandatory     tldtglfak	 MANDATORY
+e.Mandatory     tldkat    	 MANDATORY_IF cinpg
+e.Mandatory     tldlok    	 MANDATORY_IF cya
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldkat        DO_SKIP_IF copen1
+BEFORE_INPUT    cur_field=tldlok        DO_SKIP_IF ctdk
+BEFORE_INPUT    cur_field=tldtglfak     DO_SKIP_IF ctglfak
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+        tldbukbrgoto   tlmnobuk gv_INPG lDTTGLTRN
+
+SFL_MAP
+lDTTGLTRN        tlddata          REPLACE
+lDTTGLTRN        tldbrg           REPLACE
+gv_INPG          tldsts           REPLACE
+tlmnobuk         tldnobuk         REPLACE
+

@@ -1,0 +1,91 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------------------\
+|i.sdrkdg                                                                                                           |                          
+|i.Tgl          : ______________                                                                                    |                          
+|/--------------------------------------------------\/-------------------------------------------------------------\|
+  i.AdaSdr      : ___ ___________                                      
+  i.Urut        : _____                                                
+  i.Nama        : __________________________________  i.Alamatktp : _______________________________________________
+  i.Tgllahir    : __________                                  
+  i.Notelp      : _______________                             
+  i.Jeniskel    : ___
+|\--------------------------------------------------/\-------------------------------------------------------------/|
+\-------------------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 1
+psdtype3		NOCHANGE		INPUTRI 2
+psdtype2		NOCHANGE		INPUTRI 3
+psdnourt		PROTECT 		INPUTRI 2
+psdket   		ALLCAPS                 INPUTRI 3
+psdket2 		TEXTAREA                INPUTRI 7
+psdtgl2			NONE {DD-MM-YY} NOLIMIT INPUTRI 4
+psdstr2			DIGITS                  INPUTRI 5
+psdtype 		NOCHANGE                INPUTRI 6
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdtgl1		INIT_UPDATE	{g_tgltrn}
+psdtype		DFALT_SCAN BLANKS L  	"Laki-Laki"
+                                  P     "Perempuan"
+psdtype3	DFALT_SCAN BLANKS Y	"Ya"
+                                  T	"Tidak"
+
+CALCS()
+cadasdrY	(psdtype3 == "Y" && psdnourt == 1) || (psdtype3=="" && psdnourt>1) 
+cadasdrY1	(psdtype3 == "Y" && psdnourt == 1)                                    
+cadasdrT	psdtype3 == "T"
+csdhada		djoinpsd2u == 1
+cpilY		psdtype3=="Y"
+cpilT		psdtype3=="T"
+ 
+EDITS(tmptranst)
+e.Mandatory psdket  	MANDATORY_IF cadasdrY
+e.Mandatory psdtype3	MANDATORY_IF cadasdrY1
+/*e.Mandatory psdtgl2 	MANDATORY_IF cadasdrY*/
+e.Mandatory psdstr2 	MANDATORY_IF cadasdrY
+e.Mandatory psdtype 	MANDATORY_IF cadasdrY
+e.Mandatory psdket2 	MANDATORY_IF cadasdrY
+
+CALCS()
+csatu           1
+curut_psd       lurut_psd + 1
+cjoinpsd2u0     djoinpsd2u == 0 && g_curcmd == 1
+cjoinpsd2u1     djoinpsd2u == 1 && g_curcmd == 1
+cgabpsdkode	"KANDUNG" + STRIP(lstr_psd)
+
+MAP(murut2)
+csatu           psdnourt      DO_CALC_IF cjoinpsd2u0
+curut_psd       psdnourt      DO_CALC_IF cjoinpsd2u1
+psdnourt	lstr_psd      REPLACE	
+cgabpsdkode	psdkode	      DO_CALC
+
+MAP(mpilih)
+cYA		psdtype2	DO_CALC_IF cpilY
+cTIDAK		psdtype2	DO_CALC_IF cpilT
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=psdtype2	DO_MAP SHOW mpilih
+AFTER_INPUT    cur_field=psdket         DO_MAP SHOW murut2
+BEFORE_INPUT   cur_field=psdket         DO_SKIP_IF cadasdrT 
+BEFORE_INPUT   cur_field=psdket2        DO_SKIP_IF cadasdrT 
+BEFORE_INPUT   cur_field=psdtgl2        DO_SKIP_IF cadasdrT 
+BEFORE_INPUT   cur_field=psdstr2        DO_SKIP_IF cadasdrT 
+BEFORE_INPUT   cur_field=psdtype        DO_SKIP_IF cadasdrT 
+BEFORE_INPUT   cur_field=psdtype3	DO_SKIP_IF csdhada
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_sdrkdg11   btmplg   
+
+SFL_MAP
+gv_sdrkdg11   		psddata		REPLACE
+btmplg  		psdpsmkode	REPLACE
+g_usrkode		psdstr5		REPLACE
+
+

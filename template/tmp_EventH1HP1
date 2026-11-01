@@ -1,0 +1,82 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.PENGEMBALIAN APAREL
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.NipApr1  : ___________________________
+  t.AlsanTlk : ___________________________
+  i.Enter    : _____
+  _________________________________________
+  __________________     __________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts          PROTECT                                 INPUTRI 2
+tkdstr1         PROTECT                                 INPUTRI 2
+tkdket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhp1ok    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+ltomboltacc     TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 40
+ltombolacc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 40
+
+DEFAULTS(tmptranst)
+tkdtotsj        INIT_UPDATE     0
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+ltkdnoll 	INIT            {ctipedetail}
+tkdjwbstr1      DFALT_LIST      YA TIDAK
+
+CALCS()
+cdetailhp1ok            tlmkode == g_usrkode && djoindetailchm3 == 1 && ((djoinmts == 1 && lmtssts == gv_CLSD ) || tkdjwbstr1 == "TIDAK")
+cadaaparelkosong        djoindetailchm3 == 1 && lopsidetail == ""
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+		IF camkawiltaccok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Beri Alasan Minimal 10 Karakter
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+
+AFTER_INPUT	cur_field=tkdket   DO_MAP SHOW mhitungpanjangalasantacc
+AFTER_INPUT	cur_field=tkdket   DO_MAP
+		IF cpanjangalasantaccok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Alasan Minimal 10 Karakter
+
+BEFORE_INPUT    cur_field=ltomboltacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombolacc    DO_SKIP_IF camkawil
+
+CLICKED         cur_field=ltombolhp1ok  DO_SPCALCS spdetailokhp1
+
+CLICKED         cur_field=ltomboltacc   DO_SPCALCS IF camkawilin staccdetail
+CLICKED         cur_field=ltombolacc	DO_SPCALCS IF camkawilin saccdetail      
+        
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND        cadaaparel1
+SFL_TITLE(tmptranst)
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNBTLHP1 tlmnobuk
+
+
+SPCALCS(spdetailokhp1)
+        DO_LIB			        ap_dbclc(DNAME dmapmapAdd2, DCOMMAND MAPMAP, DMAP mmapmapAdd);
+        DO_LIB_IF cadaadhbelumacck	ap_dbclc(DNAME daddsub2,DCOMMAND ADD_SUB,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+        DO_LIB_IF cadaaddmts       ap_dbclc(DNAME daddabkreviewadhp1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewadh);
+        DO_LIB_IF cadaaddmts       ap_dbclc(DNAME dupddetailreqhp1mts,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdnobukmts);
+        DO_LIB_IF cdetailhp1ok          ap_dbclc(DNAME dupddetailreqhp1,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhp1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhp1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhp1,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhp1);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetail

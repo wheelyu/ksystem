@@ -1,0 +1,85 @@
+LOCAL
+PGM_FIELDS
+lURUS		STRING	11
+	
+DBCALCS(djoinsviurs0)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   tlmdata tlmnobuk lURUS  
+
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------\ |
+||                                        t.mutasibpkb                   | |
+|\-----------------------------------------------------------------------/ |
+|/-----------------------------------------------------------------------\ |
+||t.t                                                                    | |
+||t.Nobuk           : ___________________                                | |
+||t.Uruslain        : ___________________                                | |
+||t.Ket             : __________________________________________________ | |
+|\-----------------------------------------------------------------------/ |
+|/----------s.UPLOAD-----------------------------------------------------\ |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+|\-----------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svidtmkode              NOCHANGE SCROLL                  INPUTRI         1
+svistr1                 ALLCAPS SCROLL                  INPUTRI         2 /*nopollama*/
+sviket                  ALLCAPS SCROLL                  INPUTRI         3 /*nopolbaru*/
+
+DEFAULT(tmptranst)
+svitype                 INIT                    URUS
+lURUS                   INIT                    URUS
+
+EDITS(tmptranst)
+e.Mandatory		svidtmkode		MANDATORY
+e.Mandatory		svistr1   		MANDATORY
+e.Mandatory		sviket    		MANDATORY
+e.Validate              svidtmkode              VALIDATE btmbukidx mbtmurus 0
+
+MAP(mbtmurus)
+btmnobuk                svidtmkode              REPLACE
+
+CALCS()
+curus      	djoinsviurs0 == 1  || (djoinnhd1 == 1 && lnhdkode == "BJ008") /*  && lnhdkode2 == "MUTASI BPKB"  */
+
+MAP(misitmptrans)
+tlmnobbm		svidtmkode		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svidtmkode	DO_MAP SHOW misitmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tlmnobuk svitype
+SFL_SELECT curus   
+SFL_TARGET
+        svidatbuktyp ldtbiro tlmnobuk lURUS  
+
+SFL_MAP
+tlmnobbm                svidtmkode      REPLACE
+tlmnobuk                svinobuk        REPLACE
+tlmnobuk                svitblkode      REPLACE
+tlmdata                 svidata         REPLACE
+nhdkode                 svistr2         REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

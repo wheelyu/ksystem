@@ -1,0 +1,138 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+||t.PrnNotulen                         ||
+|\-------------------------------------/|
+|/-------------------------------------\|
+||t.Tgl         __________________     ||
+||t.Nobuk       __________________     ||
+||t.Ket         __________________     ||
+||t.Namfil      __________________     ||
+||t.Actionpl    _____                  ||
+||              __________             ||
+|\-------------------------------------/|
+|/--------- DOCUPLOAD -----------------\|
+||                                     ||            
+||                                     ||            
+||                                     ||            
+||                                     ||            
+||                                     ||            
+|\-------------------------------------/|
+|/-------------------------------------\|
+||                      ___________ ___||
+|\-------------------------------------/|
+|/-------------------------------------\|
+||t.StatusUpl           ___________ ___||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spktglft                PROTECT {DD-MM-YYYY}                    INPUTRI 1       /*Tanggal PRN*/
+spknobuk                PROTECT                                 INPUTRI 2       /*Nobuk*/
+spkket                  TEXTAREA PROTECT                        INPUTRI 3       /*Ket PRN*/
+spkket2                 PROTECT SCROLL                          INPUTRI 4       /*Nama File*/
+spkkat                  NOCHANGE                                INPUTRI 5       /*Action Plan*/
+lenter                  NOCHANGE                                INPUTRI 6       /*Enter*/
+/*lreset                TOMBOL                                  INPUTRI 7*/     /*Tombol Reset*/
+lsubmitprn              TOMBOL                                  INPUTRI 8       /*Tombol Submit*/
+spkkat2                 PROTECT                                 INPUTRI 9       /*Tanda Klik Submit*/
+luploadok               TOMBOL                                  INPUTRI 10      /*Tombol upload ok*/
+spkhasil                PROTECT                                 INPUTRI 11      /*Tanda sudah upload*/
+
+CALCS()
+/*cbisareset              spkhasil == BLANKS */
+csdhuplprn              spkkat2 == "OK" && spkhasil == BLANKS
+cnamafile               "docupload/" + STRIP(spknobuk) + STRIP(spktype) + "/"+ "notulen.txt"
+cfields                 "tldbrg+tldket+tldtglfak+tldsat+tldplg"  
+curutprn                ltldnourt + 1
+
+DEFAULT(tmptranst)
+spktglft                INIT_ADD                        {g_tgltrn}
+spkket                  INIT_ADD                        "PRN NOTULEN MEETING DIREKSI"
+spkkat                  DFALT_SCAN_BLANKS               YA   
+                                                        TIDAK
+
+lfields                 INIT                            {cfields}
+lpos1                   INIT                            1
+lpos2                   INIT                            2
+lpos3                   INIT                            3
+lpos4                   INIT                            4
+lpos5                   INIT                            5
+lpos6                   INIT                            6
+lpos7                   INIT                            7
+lmap                    INIT                            "mmapprn"
+
+
+MAP(m4478)
+spknobuk                r_string1       REPLACE
+lNEXTPST                r_string5       REPLACE
+lDETPRNNTL              r_string6       REPLACE
+
+MAP(mmapprnnotulen)
+cnamafile               lnamafile       DO_CALC
+DEBUG ldum              ldum            REPLACE
+
+MAP(mmapprn)
+spknobuk                tldnobuk        REPLACE
+lDETPRNNTL              tldnobbm        REPLACE
+curutprn                ltldnourt       DO_CALC
+ltldnourt               tldnourt        REPLACE
+
+/*
+MAP(mklikreset)
+cBLANKS                 spkkat2         DO_CALC
+cBLANKS                 spkket2         DO_CALC
+*/
+
+MAP(mtandakliksubmit)
+lOK                     spkkat2         REPLACE
+DEBUG ldum              ldum            REPLACE
+
+MAP(mtandaklikupload)
+lOK                     spkhasil        REPLACE
+DEBUG ldum              ldum            REPLACE
+
+/*
+SPCALCS(spklikreset)
+DO_LIB_IF cbisareset    ap_dbclc(DNAME dklikreset,DCOMMAND UPDATE,DTARGET spkprmidx spkprm,DMAP mklikreset);
+*/
+
+SPCALCS(spkliksubmit)
+DO_LIB                  ap_dbclc(DNAME dmaptransa,DCOMMAND MAPMAP,DMAP mmapprnnotulen);
+DO_LIB                  ap_arfld(lfields,lpos1,lpos2,lpos3,lpos4,lpos5,lpos6,lpos7);
+DO_LIB                  ap_imtab(lnamafile,lfields,ldatetype,lmap,lnamacalc,&ljmlgagal);
+DO_LIB                  ap_dbclc(DNAME dtandakliksubmit,DCOMMAND UPDATE,DTARGET spkprmidx spkprm,DMAP mtandakliksubmit);
+
+SPCALCS(spklikupldok)
+DO_LIB_IF csdhuplprn    ap_nxpst(l4478,lm4478);
+DO_LIB_IF csdhuplprn    ap_dbclc(DNAME dtandaklikupload,DCOMMAND UPDATE,DTARGET spkprmidx spkprm,DMAP mtandaklikupload);
+
+HOOKS(tmptranst)
+/*CLICKED                 cur_field=lreset                DO_SPCALCS spklikreset*/
+CLICKED                 cur_field=lsubmitprn            DO_SPCALCS spkliksubmit
+CLICKED                 cur_field=luploadok             DO_SPCALCS spklikupldok
+
+MAP(mupduplprn)
+cY                      spkfoto3         DO_CALC
+cBLANKS                 spkkat2          DO_CALC
+cnamafile               spkket2          DO_CALC
+DBCALCS(dupduplprn)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx spkprm
+        DBC_MAP         mupduplprn
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD         spktglft
+SFL_DOCUPLFLD          spknobuk spktype  /*upload Dokumen*/
+SFL_DOCUPLFLD_DBCALCS  dupduplprn
+SFL_DEL_COND           c0
+SFL_TARGET     
+        spkdatbuktyp lSPKPDCA tlmnobuk lPRNNTLN
+SFL_MAP
+        lSPKPDCA        spkdata
+        tlmnobuk        spknobuk
+        lPRNNTLN        spktype

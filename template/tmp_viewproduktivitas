@@ -1,0 +1,265 @@
+LOCAL
+PGM_FIELDS
+ltbdkode	STRING		21
+lnilai		DFLOAT		8
+lit		STRING		21
+ldtbobot	STRING		21
+ltbddf1		DFLOAT		8
+ltomtotal	STRING		21
+lbkmjns		STRING		21
+ltlmtype1	STRING		21
+lmtsuntuk	STRING		21
+ltkmkode	STRING		21
+lbtlscrtrn	STRING		21
+ltlddata	STRING		21
+lpmbgrup	STRING		21
+ltotal 		DFLOAT		8
+ltotalmnt 	DFLOAT		8
+
+
+MAP(mjointbdbobot)
+tbddf1		ltbddf1		REPLACE
+
+DBCALCS(djointbdbobot)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel lit ldtbobot ltbdkode
+	DBC_MAP		mjointbdbobot
+
+
+MAP(mjoinbkm)
+bkmjns		lbkmjns		REPLACE
+DBCALCS(djoinbkm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	bkmbukidx lognobuk
+	DBC_MAP 	mjoinbkm
+
+
+MAP(mjointlm)
+tlmtype1        ltlmtype1       REPLACE
+DBCALCS(djointlm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmbukidx lognobuk
+        DBC_MAP         mjointlm
+
+MAP(mjoinmts)
+mtsuntuk        lmtsuntuk       REPLACE
+DBCALCS(djoinmts)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      mtsbukidx lognobuk
+        DBC_MAP         mjoinmts
+
+MAP(mjointkm)
+tkmkode         ltkmkode        REPLACE
+DBCALCS(djointkm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkmbukidx lognobuk
+        DBC_MAP         mjointkm
+
+MAP(mjoinbtl)
+btlscrtrn       lbtlscrtrn      REPLACE
+DBCALCS(djoinbtl)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btlbukstsidx lognobuk
+        DBC_MAP         mjoinbtl
+
+MAP(mjointld)
+tlddata         ltlddata        REPLACE
+DBCALCS(djointld)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldbukurtidx lognobuk
+        DBC_MAP         mjointld
+
+MAP(mjoinpmb)
+pmbgrup         lpmbgrup        REPLACE
+DBCALCS(djoinpmb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      pmbbukidx lognobuk
+        DBC_MAP         mjoinpmb
+
+DBCALCS(djoinbtmlog)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx lognobuk
+
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------\
+| ________ t.Detik ___________ t.Menit ______                    |
+|---------t---------------t----------t----------t--------t-------|
+|t.Tgl    |i.NoBuk        |i.Scr     |i.Jam     |i.Kode  |i.Nilai|
+\---------.---------------.----------.----------.--------.-------/
+
+FIELD(tmptranst)
+ltomtotal       TOMBOL                     INPUTRI 1
+ltotal          PROTECT                    INPUTRI 2
+ltotalmnt       PROTECT                    INPUTRI 2
+
+DEFAULTS(tmptranst)
+ltomtotal	INIT  		TOTAL
+lit		INIT		IT
+ldtbobot	INIT		DTBOBOT
+
+CALCS()
+cbkmstrip2      STRIP(logscr)+STRIP(lbkmjns)
+ctlmstrip2      STRIP(logscr)+STRIP(ltlmtype1)
+cmtsstrip2      STRIP(logscr)+STRIP(lmtsuntuk)
+ctkmstrip2      STRIP(logscr)+STRIP(ltkmkode)
+cbtlstrip2      STRIP(logscr)+STRIP(lbtlscrtrn)
+ctldstrip2      STRIP(logscr)+STRIP(ltlddata)
+cbtmstrip2      STRIP(logscr)
+cpmbstrip2      STRIP(logscr)+STRIP(lpmbgrup)
+ctotalmnt	ltotal/60
+
+cjoinbkm1	djoinbkm == 1
+cjointlm1	djointlm == 1
+cjoinmts1	djoinmts == 1
+cjointkm1	djointkm == 1
+cjoinbtl1	djoinbtl == 1
+cjointld1	djointld == 1
+cjoinbtm1	djoinbtmlog == 1
+cjoinpmb1	djoinpmb == 1
+cdjointbdbobot	djointbdbobot == 1
+cadabobot  	lognobuk != BLANKS && (logtype == "A" || logtype == "P") && (logfile == "bkm" || (logfile == "tlm" && logscr != "848") || logfile == "mts" || (logfile == "tkm" && logscr != "617") || logfile == "btl" || (logfile == "tld" && logscr != "618") || logfile == "ppm" || logfile == "btm" || logfile == "pmb")
+
+MAP(mscanlog)
+cblanks		ltbddf1		DO_CALC
+cblanks		ltbdkode	DO_CALC
+cbkmstrip2	ltbdkode	DO_CALC_IF cjoinbkm1
+ctlmstrip2	ltbdkode	DO_CALC_IF cjointlm1
+cmtsstrip2	ltbdkode 	DO_CALC_IF cjoinmts1
+ctkmstrip2	ltbdkode	DO_CALC_IF cjointkm1
+cbtlstrip2	ltbdkode  	DO_CALC_IF cjoinbtl1
+ctldstrip2	ltbdkode	DO_CALC_IF cjointld1
+cbtmstrip2	ltbdkode	DO_CALC_IF cjoinbtm1
+cpmbstrip2	ltbdkode	DO_CALC_IF cjoinpmb1
+ltbddf1		ltotal		REPLACE_IF cdjointbdbobot 
+DEBUG logscr	logscr		REPLACE
+
+MAP(mapmapprod)
+ctotalmnt	ltotalmnt	DO_CALC
+
+
+SPCALCS(sisitotal)
+DO_LIB		ap_dbclc(DNAME dscanlog, DCOMMAND SCANSCAN, DTARGET logusrtgltyp psmkode ltglhariini, DBC_SUM_MAP mscanlog, DBC_SELECT cadabobot);
+DO_LIB		ap_dbclc(DNAME dmapmapprod, DCOMMAND MAPMAP, DMAP mapmapprod);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltomtotal	DO_SPCALCS sisitotal
+
+
+
+IMAGE(tmptrans)
+|_________|_______________|__________|__________|________| ___._ |
+
+FIELD(tmptrans)
+logtgl		PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+lognobuk	PROTECT                    INPUTRI 2
+logscr		PROTECT SCROLL		   INPUTRI 3
+logjam		PROTECT SCROLL		   INPUTRI 4
+ltbdkode	PROTECT SCROLL		   INPUTRI 5 
+lnilai    	PROTECT SCROLL		   INPUTRI 6 
+
+CALCS()
+cfilebkm	logfile == "bkm"
+cfiletlm	logfile == "tlm"
+cfilemts	logfile == "mts"
+cfiletkm	logfile == "tkm"
+cfilebtl	logfile == "btl"
+cfilebtmlog	logfile == "btm"
+cfilepmb	logfile == "pmb"
+cfiletld	logfile == "tld"
+
+DEFAULTS(tmptrans)
+lit		INIT	IT
+ldtbobot	INIT	DTBOBOT
+
+EDITS(tmptrans)
+e.ValidateNoBuk	lognobuk  VALIDATE_IF cfilebkm bkmbukidx mfilebkm 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfiletlm tlmbukidx mfiletlm 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfilemts mtsbukidx mfilemts 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfiletkm tkmbukidx mfiletkm 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfilebtl btlbukstsidx mfilebtl 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfilebtmlog btmbukidx mfilebtm 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfilepmb pmbbukidx mfilepmb 0
+e.ValidateNoBuk lognobuk  VALIDATE_DUP_IF cfiletld tldbukurtidx mfiletld 0
+
+CALCS()
+cbkmstrip 	STRIP(logscr)+STRIP(bkmjns)
+ctlmstrip	STRIP(logscr)+STRIP(tlmtype1)
+cmtsstrip	STRIP(logscr)+STRIP(mtsuntuk)
+ctkmstrip	STRIP(logscr)+STRIP(tkmkode)
+cbtlstrip	STRIP(logscr)+STRIP(btlscrtrn)
+ctldstrip	STRIP(logscr)+STRIP(tlddata)
+cbtmstrip	STRIP(logscr)
+cpmbstrip	STRIP(logscr)+STRIP(pmbgrup)
+
+csatu1		1
+
+
+MAP(mfilebkm)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+cbkmstrip	ltbdkode	DO_CALC
+csatu1		lnilai		DO_CALC
+ltbddf1		lnilai		REPLACE_IF cdjointbdbobot
+
+MAP(mfiletlm)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+ctlmstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfilemts)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+cmtsstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfiletkm)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+ctkmstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfilebtl)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+cbtlstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfiletld)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+ctldstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfilepmb)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+cpmbstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+MAP(mfilebtm)
+cblanks		lnilai		DO_CALC
+cblanks		ltbdkode	DO_CALC
+cbtmstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(20)      
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD logjam
+SFL_SORT_UPDOWN UP
+SFL_SELECT cadabobot
+SFL_TARGET	
+logusrtgltyp	psmkode ltglhariini 
+

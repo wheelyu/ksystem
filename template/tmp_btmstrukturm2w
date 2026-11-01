@@ -1,0 +1,141 @@
+IMAGE(tmptranst)
+/------------------------------------\
+ /----------------------------------\
+  t.CabInduk    : __________________
+  t.KdPlaPembia : __________________
+  i.HrgPsr      : __________________
+  t.PengAngs    : __________________
+  t.PengPembia  : __________________
+  t.PengLama    :             ______
+ \----------------------------------/
+ /----------------------------------\
+  t.JmlPikM2w   : _____
+  t.JmlBd       : _____
+  t.PerBd       : __.__
+  t.JmlStnk     : _____
+ \----------------------------------/
+ /----------------------------------\
+  t.InfoKuota     i.Awl t.Tbh i.Akh
+  t.KuotaJmlBd  : _____ _____ _____
+  t.KuotaPerBd  : __.__ __.__ __.__
+  t.KuotaJmlMati: _____ _____ _____
+ \----------------------------------/
+\------------------------------------/
+  _____
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btmcab			PROTECT					INPUTRI 1
+btmkdmaxc               PROTECT                                 INPUTRI 1       /* Kode Plafon Cair */
+btmhrg                  PROTECT                                 INPUTRI 2       /* Hrg Tunai */
+btmtotal                NUMERIC                                 INPUTRI 3       /* Besar Angsuran */
+btmdf1                  NUMERIC                                 INPUTRI 4       /* Pengajuan Cair */
+btmlmang                NUMERIC                                 INPUTRI 5       /* Lama Angsuran */
+
+lcountpik               PROTECT                                 INPUTRI 6
+lcountbeda              PROTECT                                 INPUTRI 7
+lcountperbeda           PROTECT                                 INPUTRI 9
+lcountstnk              PROTECT                                 INPUTRI 11
+
+ljmlstnkbd_awl		PROTECT					INPUTRI	13
+ljmlstnkbd_tbh		PROTECT					INPUTRI	14
+ljmlstnkbd_akh		PROTECT					INPUTRI	15
+lperstnkbd_awl		PROTECT					INPUTRI	16
+lperstnkbd_tbh		PROTECT					INPUTRI	17
+lperstnkbd_akh		PROTECT					INPUTRI	18
+ljmlstnkmt_awl		PROTECT					INPUTRI	19
+ljmlstnkmt_tbh		PROTECT					INPUTRI	20
+ljmlstnkmt_akh		PROTECT					INPUTRI	21
+
+btmthn			PROTECT	UNSEEN				INPUTRI	25
+
+CALCS()
+ctenormin		btmlmang >= lhasil1tenmax
+ctenormax		btmlmang <= lhasil2tenmax
+cCairbesar		btmdf1 <= btmhrg
+cmincair		btmdf1 >= 1000000
+cmincairRO		(btmhrg >= 4500000 && (btmsoa == "RO" || btmsoa == "TOPUP" || btmsoa == "AO")) || (btmsoa != "RO" && btmsoa != "TOPUP" && btmsoa != "AO")
+
+EDITS(tmptranst)
+e.Mandatory             btmtotal		MANDATORY
+e.Mandatory             btmdf1          	MANDATORY
+e.Mandatory             btmlmang		MANDATORY
+
+t.ValidateKuota		btmcab			VALIDATE_IF cjoinalmsurv1 cabstsushkod mcabkuota 0 {Pgv_INPG} {Pgv_finco11}
+e.ValidateThn           btmthn			VALIDATE tbddatkodidx mtbdTHN stbdLok {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+
+MAP(mtenormax)
+crmdgabtenormax         lrmdgabtenormax         DO_CALC
+
+MAP(mtenor)
+btmlmang		nhmtenor_2		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=btmhrg	DO_SKIP_IF chrgisi
+BEFORE_INPUT            cur_field=btmtotal      DO_SKIP_IF cRenc
+BEFORE_INPUT            cur_field=btmdf1        DO_SKIP_IF cRenc
+BEFORE_INPUT            cur_field=btmlmang      DO_SKIP_IF cRenc
+
+AFTER_INPUT             cur_field=btmlmang	DO_MAP SHOW mtenor
+AFTER_INPUT             cur_field=btmdf1        DO_MAP SHOW mtenormax
+AFTER_INPUT             cur_field=btmdf1        DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,btmdf1,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3tenmax,lhasilstr1,lhasilstr2);
+
+AFTER_INPUT             cur_field=btmdf1        DO_MAP SHOW
+                        IF cCairbesar mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.PengCairLessHrgPsr
+
+AFTER_INPUT             cur_field=btmdf1        DO_MAP SHOW
+                        IF cmincair mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MinCair1Juta
+
+AFTER_INPUT 		cur_keybd=EN DO_MAP SHOW
+	    		IF cmincairRO mdumstr
+	    		ELSE HKCURSOR STAY
+	    		HKMSG t.MinCair4Juta
+
+AFTER_INPUT             cur_field=btmlmang      DO_MAP SHOW
+                        IF ctenormax mdumstr
+                        ELSE HKCURSOR btmlmang
+                        HKMSG t.MaxTenorDiAtasBts
+
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW
+                        IF ctenormax mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MaxTenorDiAtasBts
+
+AFTER_INPUT             cur_field=btmlmang      DO_MAP SHOW
+                        IF ctenormin mdumstr
+                        ELSE HKCURSOR btmlmang
+                        HKMSG t.MinTenorDiBwhBts
+			
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW
+                        IF ctenormin mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MinTenorDiBwhBts
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+btmbukidx       btmnobuk
+
+MAP(mupdnhmbtm)
+cBLANKS		btmhrg		DO_CALC
+cBLANKS		nhmhrgotr	DO_CALC
+cBLANKS		nhmtotpok	DO_CALC
+cBLANKS		nhmhrgpasar	DO_CALC
+lbrchrgpsr	btmhrg		REPLACE_IF cjoinbrcmtr2
+btmdf1		nhmtotpok	REPLACE
+btmdf1		nhmcairpinj	REPLACE
+btmhrg		nhmhrgpasar	REPLACE
+btmtgl		nhmtgl		REPLACE
+btmlmang	nhmtenor	REPLACE
+
+SPCALCS(sptrans2)
+	DO_LIB  ap_dbclc(DNAME mupdnhm,DCOMMAND UPDATE, DTARGET nhmdatbukidx gv_bukutamu btmnobuk, DMAP mupdnhmbtm);
+
+POSTING(tmptrans)
+PST_UPDCMD      sptrans2
+

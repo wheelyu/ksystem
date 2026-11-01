@@ -1,0 +1,208 @@
+LOCAL
+PGM_FIELDS
+	lhp_enter	STRING		11
+	ltypehp		STRING		21
+	lSURVEY		STRING		21
+	lJAMTELPON	STRING		21
+	lfungsihp	STRING		21
+	ltype21		STRING		21
+	lketfungsi	STRING		61
+	lTELP2          STRING          11
+	lTELP3          STRING          11
+	lTELP4          STRING          11
+	lTELP5          STRING          11
+	lTELP6          STRING          11
+	lTELP7          STRING          11
+	lTELP8          STRING          11
+	lTELP9          STRING          11
+	lTELP10         STRING          11
+	lTELPa          STRING          11
+
+
+
+	
+MAP(mjointbdfungsihp)
+tbdket		lketfungsi		REPLACE
+
+DBCALCS(djointbdfungsihp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx	gv_dttabel gv_infoumum lfungsihp ltype21
+	DBC_MAP		mjointbdfungsihp
+
+
+DBCALCS(djoincon)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELPa conhp 
+
+
+DBCALCS(djoincon2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP2 conhp
+
+DBCALCS(djoincon3)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP3 conhp
+
+DBCALCS(djoincon4)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP4 conhp
+
+DBCALCS(djoincon5)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP5 conhp
+
+DBCALCS(djoincon6)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP6 conhp
+
+DBCALCS(djoincon7)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP7 conhp
+
+DBCALCS(djoincon8)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP8 conhp
+
+DBCALCS(djoincon9)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP9 conhp
+
+DBCALCS(djoincon10)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      condathpidx  lTELP10 conhp
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|i.Data       : ___________________ |
+|t.Kode       : ___________________ |
+|i.Handphone  : ___________________ |
+|t.JamTelp    : ___________________ |
+|i.Sts        : ___________________ |
+|t.GsmWa      : _____________  ____ |
+|               ___________________ |
+ spasi
+|               ___________________ |
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+condata		ALLCAPS	SCROLL		INPUTRI	1
+conkode         PROTECT SCROLL          INPUTRI 2
+conhp           DIGITS SCROLL          INPUTRI 3
+conkota		NOCHANGE		INPUTRI	4
+consts		PROTECT SCROLL		INPUTRI 5
+congrup		ALLCAPS SCROLL  	INPUTRI 6
+conurtstr	PROTECT			INPUTRI	7
+lketfungsi	PROTECT			INPUTRI	7
+lhp_enter	NOCHANGE		INPUTRI	7
+
+CALCS()
+cjointbdfungsihp	djointbdfungsihp == 1
+cbkninstasi             psmins != "INSTANSI"
+cinstasi                psmins == "INSTANSI"
+
+EDITS(tmptranst)
+/*e.Dupkeyhp              conhp   DUPKEY  condathpidx {PlTELP}*/
+
+e.Mandatory		conhp	MANDATORY
+e.Mandatory 		congrup MANDATORY
+e.Validate              congrup VALIDATE tbddatkodidx mtypehp stbd {Pgv_dttabel} {Pgv_infoumum} {Pltypehp}
+e.Validate		conkota VALIDATE tbddatkodidx mjamtelp stbd {Pgv_dttabel} {PlSURVEY} {PlJAMTELPON}
+/*e.Dupkeyhp            conhp   DUPKEY condathpidx {PlDTHP}*/
+
+MAP(mtypehp)
+tbdkode		congrup		REPLACE
+tbdyt		conurtstr	REPLACE
+tbdyt		ltype21		REPLACE
+lketfungsi	lketfungsi	REPLACE_IF cjointbdfungsihp
+
+MAP(mjamtelp)
+tbdkode		conkota		REPLACE
+
+DEFAULTS(tmptranst)
+IF cbkninstasi  condata   DFALT_SCAN TELP
+IF cinstasi     condata   DFALT_SCAN TELP TELP2 TELP3 TELP4 TELP5 TELP6 TELP7 TELP8 TELP9 TELP10
+lhp_enter	INIT	ENTER
+ltypehp		INIT	TYPEHP
+lSURVEY		INIT	SURVEY
+lJAMTELPON	INIT	JAMTELPON
+lfungsihp	INIT	FUNGSIHP
+lTELPa          INIT    TELP 
+lTELP2          INIT    TELP2
+lTELP3          INIT    TELP3
+lTELP4          INIT    TELP4
+lTELP5          INIT    TELP5
+lTELP6          INIT    TELP6
+lTELP7          INIT    TELP7
+lTELP8          INIT    TELP8
+lTELP9          INIT    TELP9
+lTELP10         INIT    TELP10
+
+CALCS()
+cpanjangnom             DO_LIB ap_strln(conhp,&ljumlahnomor);
+cHP			(condata==lTELP     || condata == "TELP2" || condata == "TELP3" ||  condata == "TELP4" || condata == "TELP5" ||  
+                         condata == "TELP6" || condata == "TELP7" || condata == "TELP8" || condata == "TELP9" || condata == "TELP10" ||
+                         condata== "GSM" || condata==BLANKS) && congrup != "CUG"
+cbmmmnsohead		g_curcmd==2 && (g_grpnam =="BUM" || g_grpnam=="ARDVH" || g_grpnam=="KAWIL")
+
+cjointelp               (g_curcmd == 1 && 
+                        ( condata == "TELP" && djoincon   == 0 ) ||
+                        ( condata == "TELP2" && djoincon2 == 0 ) || 
+                        ( condata == "TELP3" && djoincon3 == 0 ) || 
+                        ( condata == "TELP4" && djoincon4 == 0 ) || 
+                        ( condata == "TELP5" && djoincon5 == 0 ) || 
+                        ( condata == "TELP6" && djoincon6 == 0 ) || 
+                        ( condata == "TELP7" && djoincon7 == 0 ) || 
+                        ( condata == "TELP8" && djoincon8 == 0 ) || 
+                        ( condata == "TELP9" && djoincon9 == 0 ) || 
+                        ( condata == "TELP10" && djoincon10 == 0 ) || g_curcmd == 2) 
+                        
+cjointelp2             ((g_curcmd == 2  && condata == ~condata && conhp == ~conhp ) ||
+                       (g_curcmd == 2  && condata != ~condata && conhp == ~conhp  && djoincon == 0) || 
+                       (g_curcmd == 2  && condata == ~condata && conhp != ~conhp  && djoincon == 0) ||
+                       (g_curcmd == 2  && condata != ~condata && conhp != ~conhp  && (djoincon == 1 || djoincon == 0)) || 
+                        g_curcmd == 1) 
+                          
+
+
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln1i,ln1,&ldigit1);
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=conhp       DO_MAP SHOW mpanjangnom
+
+BEFORE_INPUT		cur_field=conhp		DO_SKIP_IF cbmmmnsohead
+
+AFTER_INPUT             cur_field=conhp DO_MAP SHOW
+                        IF cbukan08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT             cur_field=conhp DO_MAP SHOW
+                        IF cjointelp  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon   Sudah Pernah Di input 
+
+AFTER_INPUT             cur_keybd=EN    DO_MAP SHOW
+                        IF cjointelp2  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon   Sudah Pernah Di input ya 
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_COND	cgpskosong
+SFL_SELECT cHP
+
+SFL_TARGET
+conkodstsidx   psmktp gv_INPG
+
+SFL_MAP
+psmktp          conkode                 REPLACE
+gv_INPG         consts                  REPLACE
+

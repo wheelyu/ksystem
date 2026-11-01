@@ -1,0 +1,46 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+ /-------------------------------------------\
+  t.Status  _______  _______
+  t.Nip     _______  ________________________
+ \-------------------------------------------/
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tlmsts		ALLCAPS 	INPUTRI		1
+tlmsts2		ALLCAPS 	INPUTRI		2
+tlmbrdoto	PROTECT		INPUTRI		3
+lnama5		PROTECT		INPUTRI		4
+
+DEFAULTS(tmptranst)
+/*tlmsts		DFALT_SCAN_BLANKS	BTL OPEN CLS1*/
+tlmbrdoto	INIT_UPDATE	{g_usrkode}
+
+CALCS()
+cupdtmptrans	tlmsts!="CLSD" && (g_grpnam == "B.M4WDVH" || g_grpnam == "CREDITDVH" || g_grpnam == "B.M4WADHSPV")
+cubahsts	tlmsts=="VOID" || tlmsts=="OPEN" || (tlmsts=="INPG" && tlmsts2=="FINA" && ~tlmsts2=="HO")
+cubahsts2	tlmsts=="VOID" || tlmsts=="OPEN"
+
+MAP(menter3)
+cBLANKS		tlmsts2		DO_CALC_IF cubahsts2
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cubahsts  mdum
+                ELSE HKCURSOR STAY
+                HKMSG HANYA BISA UBAH KE STATUS VOID/OPEN/INPG-FINA
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW menter3
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cupdtmptrans
+SFL_TARGET
+tlmbukidx tlmnobuk
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND cupdtmptrans
+	PMT_DEL_COND	c0

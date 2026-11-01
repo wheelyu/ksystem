@@ -1,0 +1,93 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.UplFotoIDCard                        | 
+|/-------------------------------------\|
+|| t.PnyIdCard?     : _______________  ||
+|| t.Ket            : _______________  ||
+|| t.AprAtsn        : _______________  ||
+|| t.Alsn           : _______________  ||
+|| _____ ______ ____   __________      ||
+|\-------------------------------------/|
+|/---------s.UPLOAD--------------------\|
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+|\-------------------------------------/|                         
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmbuk1             ALLCAPS         INPUTRI 1
+tkmbuk2		    TEXTAREA 2		    ALLCAPS			INPUTRI 2
+tkmcab              ALLCAPS         INPUTRI 3
+tkmket              TEXTAREA 2 ALLCAPS         INPUTRI 4
+lstrcrd             NOCHANGE        INPUTRI 5
+tkmtgl              PROTECT         INPUTRI 6
+tkmplg              PROTECT         INPUTRI 7
+tkmlok1              PROTECT         INPUTRI 8
+
+CALCS()
+cacccard        tkmcab == "ACC"
+/*ctacccard       tkmcab == "TACC"*/
+cyacard         tkmbuk1 == "YA"
+/*ctidakcard      tkmbuk1 == "TIDAK"*/
+copentdkcrd        hrmsts == "OPEN" && tkmbuk1 == "TIDAK"
+cinpgtdkcrd        hrmsts == "OPEN" && tkmcab == "TACC"
+/*cstsopen        tkmsts  == "OPEN"
+cstsinpg        tkmsts  == "INPG"*/
+
+EDITS(tmptranst)
+e.Mandatory     tkmbuk1     MANDATORY_IF    cstsopen
+e.Mandatory     tkmbuk2     MANDATORY_IF    copentdkcrd
+e.Mandatory     tkmcab      MANDATORY_IF    cstsinpg
+e.Mandatory     tkmket      MANDATORY_IF    cinpgtdkcrd
+
+DEFAULT(tmptranst)
+tkmbuk1             DFALT_SCAN_BLANKS       BLANKS
+                                            YA
+                                            TIDAK
+tkmcab              DFALT_SCAN_BLANKS       BLANKS
+                                            ACC
+                                            TACC
+lstrcrd             INIT                    ENTER
+
+MAP(mksngcard)
+cblanks         tkmbuk2    DO_CALC_IF  cyacard
+
+MAP(mksngcardats)
+cblanks         tkmket    DO_CALC_IF  caccats
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=tkmbuk1      DO_SKIP_IF cstsinpg
+BEFORE_INPUT cur_field=tkmbuk2      DO_SKIP_IF cstsinpg
+BEFORE_INPUT cur_field=tkmcab       DO_SKIP_IF cstsopen
+BEFORE_INPUT cur_field=tkmket       DO_SKIP_IF cstsopen
+BEFORE_INPUT        cur_field=tkmbuk2       DO_SKIP_IF cyacard
+BEFORE_INPUT        cur_field=tkmket        DO_SKIP_IF cacccard
+
+AFTER_INPUT cur_field=tkmbuk1       DO_MAP SHOW mksngcard
+AFTER_INPUT cur_field=tkmcab       DO_MAP SHOW mksngcardats
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+/*SFL_DEL_COND caccblanks*/
+SFL_UPL_COND cyacard
+SFL_UPL_DIRFLD hrmdvs2
+SFL_UPLFLD  tkmoto lUPLFTICD166
+SFL_UPLFLD_DBCALCS dupdtkmftidcrd
+/*SFL_UPL_DELCOND caccblanks*/
+SFL_COND        cftoidcrd
+SFL_TARGET
+         tkmdtkdstlok   lUPLFTICD166 hrmnobuk
+
+SFL_MAP
+lUPLFTICD166            tkmdata         REPLACE
+hrmnobuk                tkmnobuk        REPLACE
+gv_OPEN                 tkmsts          REPLACE

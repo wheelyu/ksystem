@@ -1,0 +1,70 @@
+IMAGE(tmptranst)
+/---------------------------\
+ t.HoldAng   _______________
+ t.BanyakAng _______________
+ t.Angs      ____________.__
+ t.Nominal   ____________.__
+             ______
+\---------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviyt1		NOCHANGE	INPUTRI	1
+svidf1		NOCHANGE	INPUTRI	2
+svidf2		PROTECT		INPUTRI 3
+svidf3		PROTECT		INPUTRI 4
+lenter		ALLCAPS		INPUTRI	5
+
+DEFAULT(tmptranst)
+sviyt1		DFALT_SCAN_BLANKS	Y T
+svidf1		DFALT_SCAN_BLANKS	1 2 3 4 5 6 7 8 9 10 11 12
+
+CALCS()
+chithold	svidf1 * svidf2
+chithold2	svidf4 - svidf3
+chold1		sviyt1=="Y"
+chold0		sviyt1=="T"
+ctenorlebih	svidf1<=nhmtenor_3
+chitcair	nhmtothrg_3 - nhmumasal_3 - nhmkrepok_3
+
+EDITS(tmptranst)
+e.mandatory	sviyt1		MANDATORY
+e.mandatory	svidf1		MANDATORY_IF chold1
+
+MAP(mhithold)
+chitcair	svidf4		DO_CALC
+nhmbsrang_3	svidf2		REPLACE
+chithold	svidf3		DO_CALC
+cBLANKS		svidf1		DO_CALC_IF chold0
+cBLANKS		svidf3		DO_CALC_IF chold0
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svidf1	DO_SKIP_IF chold0
+AFTER_INPUT	cur_field=svidf1	DO_MAP SHOW mhithold
+AFTER_INPUT	cur_keybd=EN    	DO_MAP SHOW mhithold
+AFTER_INPUT     cur_field=svidf1        DO_MAP SHOW
+                IF ctenorlebih mdum
+                ELSE HKCURSOR STAY
+                HKMSG MELEBIHI TENOR
+
+MAP(mupdholdang)
+chithold2	nhmcairpinj	DO_CALC
+
+SPCALCS(spholdang)
+DO_LIB ap_dbclc(DNAME dupdholdang,DCOMMAND UPDATE,DTARGET nhmdatbukidx btmdata btmnobuk,DMAP mupdholdang);
+
+POSTING(tmptrans)
+	PST_ADDCMD spholdang
+	PST_UPDCMD spholdang
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp btmdata btmnobuk lHOLDANG
+SFL_MAP
+btmdata		svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lHOLDANG	svitype		REPLACE
+

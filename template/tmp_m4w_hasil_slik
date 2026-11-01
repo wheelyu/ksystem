@@ -1,0 +1,755 @@
+LOCAL
+PGM_FIELDS
+lPOSDEV		STRING		11
+lsystime	TIME		4
+lsystimedf	DFLOAT		8
+ltglbesok	DATE		4
+lkunciabsen	STRING		11
+l1522430	STRING		21
+l1600		TIME		4
+lnipreq		STRING		21
+lrunit0		DFLOAT		8
+lrrupiah0	DFLOAT		8
+lrunit115	DFLOAT		8
+lrrupiah115	DFLOAT		8
+lrunit130	DFLOAT		8
+lrrupiah130	DFLOAT		8
+lunit3160	DFLOAT		8
+lrupiah3160	DFLOAT		8
+lrunit6190	DFLOAT		8
+lrupiah6190	DFLOAT		8
+lrunit90	DFLOAT		8
+lrupiah90	DFLOAT		8
+lsvistr1	STRING		5
+lrasio0		DFLOAT		8
+lrasio115	DFLOAT		8
+lrasio1630	DFLOAT		8
+lrasio3160	DFLOAT		8
+lrasio6190	DFLOAT		8
+lrasio90	DFLOAT		8
+/*============== RMD ===================*/
+
+lSLIK5		STRING		5
+lrmdgabslik	STRING		61
+lrmdgabslikkol	STRING		61
+lrmdgabslikumr	STRING		61
+lhasil1m        DFLOAT          8
+lhasil2m        DFLOAT          8
+lhasil3m        DFLOAT          8
+lbatas1 	DFLOAT  	8
+lbatas2	        DFLOAT  	8
+lsvidf8dev	DFLOAT		8
+lNol1           DFLOAT                  8
+lhasiltxt1              STRING          31
+lhasiltxt2              STRING          31
+lktppasangan	STRING		21
+lktppenjamin	STRING		21
+lslikpasangan	DFLOAT		8
+lslikpenjamin	DFLOAT		8
+lUPLPDFF	STRING		11
+lADH		STRING		21
+ltgl		STRING		21
+lDT668		STRING		11
+
+DBCALCS(djoinrmdslik2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lSLIK5  lrmdgabslik
+
+DBCALCS(djoinrmdslik2umr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lSLIK5  lrmdgabslikumr
+
+DBCALCS(djoinrmdslik2kol)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lSLIK5  lrmdgabslikkol
+
+
+CALCS()
+cslik1		tlddata == "SLIK" && tldsts == "INPG"
+
+DBCALCS(djoininputslik)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cslik1
+	DBC_TARGET	tldbukurtidx btmplg
+
+
+MAP(mjoinsvipaspen)
+svistr5		lktppasangan	REPLACE
+svistr4		lktppenjamin	REPLACE
+
+DBCALCS(djoinsvipaspen)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      svidatkodtyp lSLIK btmplg ldtpaspen gv_INPG
+	DBC_MAP		mjoinsvipaspen
+
+MAP(mjoinreqq)
+svistr2		lnipreq		REPLACE
+
+DBCALCS(djoinreqq)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp lSLIK btmnobuk lreq
+	DBC_MAP		mjoinreqq
+
+DBCALCS(djoinscorumr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp lDT668 btmnobuk lSCORING l1
+
+CALCS()
+cslikpasangan		tldkat == "PASANGAN" && tldsts == "INPG"
+cslikpenjamin		tldkat == "PENJAMIN" && tldsts == "INPG"
+cadapasangan		djoinsvipaspen == 1 && lktppasangan != BLANKS
+cadapenjamin		djoinsvipaspen == 1 && lktppenjamin != BLANKS
+ctgl			THBLS(g_tgltrn)
+
+MAP(mscaninputslik)
+l1	lslikpasangan		REPLACE_IF cslikpasangan
+l1	lslikpenjamin		REPLACE_IF cslikpenjamin
+
+DBCALCS(dscaninputslik)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tldbukurtidx btmplg
+	DBC_SUM_MAP	mscaninputslik
+
+DBCALCS(djointlmupload)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmstsplgbuk gv_CLSD lUPLPDFF  btmplg
+
+DBCALCS(djointlmuploadpasangan)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmstsplgbuk gv_CLSD lUPLPDFF  lktppasangan
+	DBC_COND	cadapasangan
+
+DBCALCS(djointlmuploadpenjamin)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmstsplgbuk gv_CLSD lUPLPDFF  lktppenjamin
+	DBC_COND	cadapenjamin
+
+DBCALCS(djoinsvidev)
+DBC_COMMAND	JOIN
+DBC_TARGET	svidatbuktyp gt_deviasibr11 btmnobuk lPOSDEV
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------\
+ /----------------------------------------------------------------------------------------------\
+  t.Ktp         ______________                                                              
+  t.AdaData     _____________________
+  t.YgTdkAda    _____________________
+  t.SelesaiTdk  ______________
+  t.Ket         ___________________________________
+  spasi
+   t.Bank     t.BPRKS    t.Lempin        t.Lainnya    t.MaksKol  t.MaksOd
+  ________   _________    __________    ___________    ______     _______ 
+  spasi
+  t.JenisKredit               : ____________________.__                        spasi
+                                t.Unitt  t.Rupiah      t.Runit  t.Rrupiah
+  t.TotalKreditAktif0         : ____ ____________.__  ____.__ ____________.__  spasi
+  t.TotalKreditAktif115       : ____ ____________.__  ____.__ ____________.__  spasi
+  t.TotalKreditAktif130       : ____ ____________.__  ____.__ ____________.__  spasi
+  t.TotalKreditAktif3160      : ____ ____________.__  ____.__ ____________.__  spasi
+  t.TotalKreditAktif6190      : ____ ____________.__  ____.__ ____________.__  spasi
+  t.TotalKreditAktif>90       : ____ ____________.__  ____.__ ____________.__  spasi
+  t.TotalKreditAktif          : ____ ____________.__
+   _____
+ \----------------------------------------------------------------------------------------------/
+\------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldplg		PROTECT		INPUTRI 1
+tldsat		ALLCAPS SCROLL	INPUTRI 2
+tldlok2		ALLCAPS SCROLL	INPUTRI 3
+tldgrup		ALLCAPS SCROLL	INPUTRI 4
+tldket		TEXTAREA	INPUTRI 5
+tldjml          NOCHANGE        INPUTRI 6
+tldjml2         PROTECT         INPUTRI 7
+tldjml3         PROTECT         INPUTRI 8
+tldhrg          PROTECT         INPUTRI 9
+tldtmp1		PROTECT		INPUTRI 9
+tldtmp2		PROTECT		INPUTRI 9
+tldket2         PROTECT         INPUTRI 10
+
+tldsubtot       PROTECT         INPUTRI 5 /*0*/
+tldsatbsr       PROTECT         INPUTRI 5
+lrunit0         PROTECT         INPUTRI 5
+lrrupiah0       PROTECT         INPUTRI 5
+
+tldperdis7      PROTECT         INPUTRI 5 /*1-15*/
+tldperdis1      PROTECT         INPUTRI 6
+lrunit115       PROTECT         INPUTRI 6
+lrrupiah115     PROTECT         INPUTRI 6
+
+tldperdis       PROTECT         INPUTRI 6 /*1-30*/
+tldperdis2      PROTECT         INPUTRI 7
+lrunit130       PROTECT         INPUTRI 7
+lrrupiah130     PROTECT         INPUTRI 7
+
+tldtotdis       PROTECT         INPUTRI 7 /*31-60*/
+tldperdis3      PROTECT         INPUTRI 8
+lunit3160       PROTECT         INPUTRI 8
+lrupiah3160     PROTECT         INPUTRI 8
+
+tldjmlren       PROTECT         INPUTRI 8 /*61-90*/
+tldperdis4      PROTECT         INPUTRI 9
+lrunit6190      PROTECT         INPUTRI 9
+lrupiah6190     PROTECT         INPUTRI 9
+
+tldjmlpos       PROTECT         INPUTRI 9  /*>90*/
+tldperdis5      PROTECT         INPUTRI 10
+lrunit90        PROTECT         INPUTRI 10
+lrupiah90       PROTECT         INPUTRI 10
+
+tldperdism      PROTECT         INPUTRI 10
+tldtotdism      PROTECT         INPUTRI 10
+
+tlddata	PROTECT QPROTECT	INPUTRI 30
+
+DEFAULTS(tmptranst)
+tldsat          DFALT_SCAN      BLANKS 
+                                DATA_TDK_ADA "DATA TIDAK DITEMUKAN"
+tldlok2         DFALT_SCAN      BLANKS
+                                DEBITUR "DEBITUR"
+                                PASANGAN "PASANGAN"
+                                PENJAMIN "PENJAMIN"
+                                DEBPAS "DEBITUR DAN PASANGAN"
+                                DEBPEN "DEBITUR DAN PENJAMIN"
+                                PASPEN "PASANGAN DAN PENJAMIN"
+                                SEMUA "DEBITUR,PASANGAN DAN PENJAMIN"
+tldgrup		DFALT_SCAN	BLANKS
+				SELESAI
+ltgl		INIT		{ctgl}
+lADH		INIT		"ADH"
+lSLIK5		INIT		SLIK
+lUPLPDFF	INIT		UPLPDF
+l643		INIT		642
+lkunciabsen	INIT		KUNCIABSEN
+l1522430	INIT		1522430
+l1600		INIT		1500
+lsystime	INIT		SYSTIME
+lsystimedf	INIT		{lsystime}
+lPOSDEV		INIT		POSDEV
+lDT668		INIT		DT668
+
+EDITS(tmptranst)
+e.Validate	tldplg		VALIDATE psmktpidx mmapratio
+e.Mandatory	tldket		MANDATORY
+
+CALCS()
+cHSLSLIK	tlddata ==  "HASILSLIK" && tldsts == "INPG"
+/*======================== MAP RATIO UNIT ======================== */
+cratio0			((tldsubtot / tldperdism)*100)
+cratio115		((tldperdis7 / tldperdism)*100)
+cratio1630		((tldperdis / tldperdism)*100)
+cratio3160		((tldtotdis / tldperdism)*100)
+cratio6190		((tldjmlren / tldperdism)*100)
+cratio90		((tldjmlpos / tldperdism)*100)
+
+/*======================= MAP RATIO RUPIAH ======================= */
+crupiah0		((tldsatbsr / tldtotdism)*100)
+crupiah115		((tldperdis1 / tldtotdism)*100)
+crupiah1630		((tldperdis2 / tldtotdism)*100)
+crupiah3160		((tldperdis3 / tldtotdism)*100)
+crupiah6190		((tldperdis4 / tldtotdism)*100)
+crupiah90		((tldperdis5 / tldtotdism)*100)
+crupiahtot0		tldtotdism > 0
+
+MAP(mmapratio)
+ltgl		ltgl		REPLACE
+btmplg		tldplg		REPLACE
+cratio0		lrunit0		DO_CALC_IF crupiahtot0
+cratio115	lrunit115	DO_CALC_IF crupiahtot0
+cratio1630	lrunit130	DO_CALC_IF crupiahtot0
+cratio3160	lunit3160	DO_CALC_IF crupiahtot0
+cratio6190	lrunit6190	DO_CALC_IF crupiahtot0
+cratio90	lrunit90	DO_CALC_IF crupiahtot0
+crupiah0	lrrupiah0	DO_CALC_IF crupiahtot0
+crupiah115	lrrupiah115	DO_CALC_IF crupiahtot0
+crupiah1630	lrrupiah130	DO_CALC_IF crupiahtot0
+crupiah3160	lrupiah3160	DO_CALC_IF crupiahtot0
+crupiah6190	lrupiah6190	DO_CALC_IF crupiahtot0
+crupiah90	lrupiah90	DO_CALC_IF crupiahtot0
+crupiah0	lrasio0		DO_CALC_IF crupiahtot0
+crupiah115	lrasio115	DO_CALC_IF crupiahtot0
+crupiah1630	lrasio1630	DO_CALC_IF crupiahtot0
+crupiah3160	lrasio3160	DO_CALC_IF crupiahtot0
+crupiah6190	lrasio6190	DO_CALC_IF crupiahtot0
+crupiah90	lrasio90	DO_CALC_IF crupiahtot0
+
+CALCS()
+cinputslik	djoininputslik == 1 || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "COO" || g_grpnam == "DCOOOPR" || g_grpnam == "RAS" || g_grpnam == "B.M4WMHEAD" || g_grpnam == "B.M4WDVH" || 
+		g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WCOO" || g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WADH" || g_grpnam == "B.M4WCRO" || g_grpnam == "B.M4WSPV"
+cbeluminput	(djoinsviposslik == 1 && lsvistr1debitur == "TUNGGAL") ||
+		(djoinsviposslik == 1 && lsvistr1debitur == "NONTUNGGAL" && djoinsvipaspen == 1 && 
+		lktppasangan != BLANKS && lktppenjamin != BLANKS && lslikpasangan >= 1 && lslikpenjamin >= 1) ||
+		((djoinsviposslik == 1 && lsvistr1debitur == "NONTUNGGAL" && djoinsvipaspen == 1 && 
+		lktppasangan != BLANKS && lktppenjamin == BLANKS && lslikpasangan >= 1) || 
+		(tldsat == "DATA_TDK_ADA" && (tldlok2 == "PASANGAN" || tldlok2 == "DEBPAS"))) || 
+
+		((djoinsviposslik == 1 && lsvistr1debitur == "NONTUNGGAL" && djoinsvipaspen == 1 && 
+		lktppasangan == BLANKS && lktppenjamin != BLANKS && lslikpenjamin >= 1 ) ||
+		(tldsat == "DATA_TDK_ADA" && (tldlok2 == "PENJAMIN" || tldlok2 == "DEBPEN"))) ||
+		
+		(tldsat == "DATA_TDK_ADA" && (tldlok2 == "SEMUA" || tldlok2 == "PASPEN"))  
+		
+cbelumuploadslik	 djointlmupload == 1 
+cbelumuploadslikpasangan djointlmuploadpasangan == 1 || (djoinsvipaspen == 1 && lktppasangan == BLANKS) || djoinsvipaspen == 0 ||
+			 (djointlmuploadpasangan == 0 && (tldlok2 =="PASANGAN" || tldlok2 == "DEBPAS" || tldlok2 == "PASPEN" 
+			 || tldlok2 == "SEMUA")) 
+
+cbelumuploadslikpenjamin djointlmuploadpenjamin == 1 || 
+			 (djointlmuploadpenjamin == 0 && (tldlok2 =="PENJAMIN" || tldlok2 == "DEBPEN" || 
+			 tldlok2 == "PASPEN" || tldlok2 == "SEMUA")) || (djoinsvipaspen == 1 && lktppenjamin == BLANKS) || djoinsvipaspen == 0
+
+
+chanyaHO2		 (g_grpnam == "B.M4WMHEAD" || g_grpnam == "IT" || g_grpnam == "RI") && (btmsts == "642" || btmsts=="668") && djointldtotalro == 0
+cjoinsvidev1		djoinsvidev == 1
+cjoinsvidev0		djoinsvidev == 0
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SELECT      cHSLSLIK
+SFL_TITLE(tmptranst)
+/*SFL_SHOW_NEXT*/
+SFL_COND	cinputslik
+SFL_TARGET
+tldbukurtidx    btmnobuk
+
+SFL_MAP
+btmplg		tldnobuk		REPLACE
+lHASILSLIK	tlddata			REPLACE
+gv_INPG		tldsts			REPLACE
+lTOTALHASIL	tldbrg			REPLACE
+lHASILSLIK      tldlok          REPLACE
+btmplg   	tldnoll        REPLACE
+btmplg          tldplg          REPLACE
+l1		tldnourt	REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldsat	DO_MAP SHOW mmapratio
+BEFORE_INPUT	cur_field=tldsat	DO_SCAN dscaninputslik
+AFTER_INPUT     cur_field=tldlok2       DO_MAP SHOW
+                IF cbeluminput   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Debitur / Pasangan / Penjamin Belum Diisi CRO di Detail Input Slik
+AFTER_INPUT     cur_field=tldlok2      DO_MAP SHOW
+                IF cbelumuploadslik  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Belum Upload Slik Debitur di 641 Sampai CLSD
+AFTER_INPUT     cur_field=tldlok2      DO_MAP SHOW
+                IF cbelumuploadslikpasangan  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Belum Upload Slik Pasangan Debitur di 641 Sampai CLSD
+AFTER_INPUT     cur_field=tldlok2       DO_MAP SHOW
+                IF cbelumuploadslikpenjamin  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Belum Upload Slik Penjamin di 641 Sampai CLSD
+
+CALCS()
+chanyaditotal	(tldbrg == "TOTAL" || tldbrg == "KOL")  && (btmsts == "642" || btmsts == "701" || btmsts == "706" || btmsts=="667" || btmsts=="668") && (g_grpnam == "B.M4WCRO" || g_grpnam == "B.M4WSPV" || g_grpnam == "B.M4WMHEAD" || g_grpnam == "IT" || g_grpnam == "RI")
+csudahselesai	"INPUT SELESAI"
+cjoinsviposslik	djoinsviposslik == 1 
+cjoinreq	djoinreqq == 1
+cjoinscorumr	djoinscorumr == 1
+crmdgabslik	"DEVSLIK"+STRIP(btmlokjual)+FLD_TO_STRING(lsvistr1) /*SLIKALL*/
+crmdgabslikkol	"DEVSLIKKOL4W"+STRIP(btmlokjual)+FLD_TO_STRING(lsvistr1) /*SLIK KOLATERAL M4W*/
+crmdgabslikumr	"DEVSLIKUMROH"+STRIP(btmlokjual)+FLD_TO_STRING(lsvistr1) /*UMROH*/
+
+cRM2         "B.M4WRM"
+cCA	     "B.M4WCA"
+/*cMHEAD     "B.M4WMHEAD"*/
+/* cDCOO        "B.M4WCOO"*/
+cDCOO        "COO"
+cDEVIASI     "DEVIASI"
+cLANJUT	     "LANJUT"
+cBM          "B.M4WBM"
+cTACC        "TACC"
+
+cslhasil32               lhasil1m == 3  && btmdvs == "M4W" && tldbrg == "TOTAL"
+cslhasil62               lhasil1m == 5  && btmdvs == "M4W" && tldbrg == "TOTAL"
+cslhasil92               lhasil1m == 7  && btmdvs == "M4W" && tldbrg == "TOTAL"
+cslhasil99		 lhasil1m == 99 && btmdvs == "M4W" && tldbrg == "TOTAL"
+cslhasilDO               btmdvs == "M4W" && tldbrg == "TOTAL"
+
+cslhasil32kol            lhasil1m == 3  && btmdvs == "M4W" && tldbrg == "KOL"
+cslhasil62kol            lhasil1m == 5  && btmdvs == "M4W" && tldbrg == "KOL"
+cslhasil92kol            lhasil1m == 7  && btmdvs == "M4W" && tldbrg == "KOL"
+cslhasil99kol            lhasil1m == 99 && btmdvs == "M4W" && tldbrg == "KOL"
+cslhasilDOkol            btmdvs == "M4W" && tldbrg == "KOL"
+
+cslhasil99umr            lhasil1m == 99 && btmdvs == "UMROH"
+cslhasil32umr            lhasil1m == 3  && btmdvs == "UMROH"
+cslhasil62umr            lhasil1m == 5  && btmdvs == "UMROH"
+cslhasil92umr            lhasil1m == 7  && btmdvs == "UMROH"
+ckenadev		 (lhasil1m == 3 || lhasil1m == 5 || lhasil1m == 7) && btmdvs == "M4W" && tldbrg == "TOTAL"
+ckenadevkol		 (lhasil1m == 3 || lhasil1m == 5 || lhasil1m == 7) && btmdvs == "M4W" && tldbrg == "KOL"
+ckenataccumr		 (lhasil1m == 3 || lhasil1m == 5 || lhasil1m == 7) && btmdvs == "UMROH"
+
+crmddevltv2w              (btmdvs == "M4W" && djoinrmdslik2 == 1 &&
+                          (lsvistr1 == "1" || lsvistr1 == "16" || lsvistr1 == "30" || lsvistr1 == "31" || lsvistr1 == "58" || lsvistr1 == "59"
+                       || lsvistr1 == "60" || lsvistr1 == "61" || lsvistr1 == "62" || lsvistr1 == "63" || lsvistr1 == "2" || lsvistr1 == "3"
+                       || lsvistr1 == "4" || lsvistr1 == "5" || lsvistr1 == "6" || lsvistr1 == "7" || lsvistr1 == "8"
+                         ))
+crmddevltv2w2            (btmdvs == "M4W" && djoinrmdslik2 == 1 &&
+                         (lsvistr1 == "17" || lsvistr1 == "18" || lsvistr1 == "19" || lsvistr1 == "20" || lsvistr1 == "21" || lsvistr1 == "22"
+                       || lsvistr1 == "29" || lsvistr1 == "32" || lsvistr1 == "33" || lsvistr1 == "34" || lsvistr1 == "29" || lsvistr1 == "32"
+                       || lsvistr1 == "33" || lsvistr1 == "34" || lsvistr1 == "35" || lsvistr1 == "36" || lsvistr1 == "37" || lsvistr1 == "15"
+                         ))
+
+crmddevltv2wkol          (btmdvs == "M4W" && tldbrg == "KOL"  && djoinrmdslik2kol == 1 &&
+                          (lsvistr1 == "1" || lsvistr1 == "16" || lsvistr1 == "30" || lsvistr1 == "31" || lsvistr1 == "58" || lsvistr1 == "59"
+                       || lsvistr1 == "60" || lsvistr1 == "61" || lsvistr1 == "62" || lsvistr1 == "63" || lsvistr1 == "2" || lsvistr1 == "3"
+                       || lsvistr1 == "4" || lsvistr1 == "5" || lsvistr1 == "6" || lsvistr1 == "7" || lsvistr1 == "8"
+                         ))
+crmddevltv2w2kol         (btmdvs == "M4W" && tldbrg == "KOL"  && djoinrmdslik2kol == 1 &&
+                         (lsvistr1 == "17" || lsvistr1 == "18" || lsvistr1 == "19" || lsvistr1 == "20" || lsvistr1 == "21" || lsvistr1 == "22"
+                       || lsvistr1 == "29" || lsvistr1 == "32" || lsvistr1 == "33" || lsvistr1 == "34" || lsvistr1 == "29" || lsvistr1 == "32"
+                       || lsvistr1 == "33" || lsvistr1 == "34" || lsvistr1 == "35" || lsvistr1 == "36" || lsvistr1 == "37" || lsvistr1 == "15"
+                         ))
+
+
+crmddevltv2wumr          (btmdvs == "UMROH" && djoinrmdslik2umr == 1 &&
+                          (lsvistr1 == "1" || lsvistr1 == "16" || lsvistr1 == "30" || lsvistr1 == "31" || lsvistr1 == "58" || lsvistr1 == "59"
+                       || lsvistr1 == "60" || lsvistr1 == "61" || lsvistr1 == "62" || lsvistr1 == "63" || lsvistr1 == "2" || lsvistr1 == "3"
+                       || lsvistr1 == "4" || lsvistr1 == "5" || lsvistr1 == "6" || lsvistr1 == "7" || lsvistr1 == "8"
+                         ))
+crmddevltv2w2umr          (btmdvs == "UMROH" && djoinrmdslik2umr == 1 &&
+                         (lsvistr1 == "17" || lsvistr1 == "18" || lsvistr1 == "19" || lsvistr1 == "20" || lsvistr1 == "21" || lsvistr1 == "22"
+                       || lsvistr1 == "29" || lsvistr1 == "32" || lsvistr1 == "33" || lsvistr1 == "34" || lsvistr1 == "29" || lsvistr1 == "32"
+                       || lsvistr1 == "33" || lsvistr1 == "34" || lsvistr1 == "35" || lsvistr1 == "36" || lsvistr1 == "37" || lsvistr1 == "15"
+                         ))
+
+cond0                    (lrasio0 > 0 && lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0) ||
+                         (lrasio0 == 0 && lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0)
+
+cond1                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0) ||
+                         (lrasio115 ==  0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0)
+
+cond16                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0)
+
+cond30                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0)
+
+cond31                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 == 0)
+
+cond58                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 > 0)
+
+cond59                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 > 0)
+
+cond60                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 ==  0 )
+
+cond61                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 >  0 )
+
+cond62                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 == 0 )
+
+cond63                   (lrasio115 == 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 >  0 )
+
+cond2                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 >  0 )
+
+cond3                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 ==  0 )
+
+cond4                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 >  0 )
+
+cond5                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 >  0 )
+
+cond6                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 ==  0 )
+
+cond7                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 >  0 )
+cond8                    (lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 == 0 )
+
+cond15                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 == 0 )
+
+cond17                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 >  0 )
+
+cond18                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio90 == 0 && lrasio3160 > 0 && lrasio6190 >  0 )
+
+cond19                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 >  0 )
+
+cond20                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 >  0 )
+
+cond21                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 ==  0 )
+
+cond22                   (lrasio115 == 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 >  0 )
+
+cond29                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 ==  0 )
+
+cond32                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 >  0 )
+
+cond33                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 > 0 && lrasio90 ==  0 )
+
+cond34                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 > 0 && lrasio6190 == 0 && lrasio90 >  0 )
+
+cond35                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 >  0 )
+cond36                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 > 0 && lrasio90 == 0 )
+cond37                   (lrasio115 > 0 && lrasio1630 > 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 >  0 )
+
+c1x                     "1"
+c16s                    "16"
+c30s                    "30"
+c31s                    "31"
+c58s                    "58"
+c59s                    "59"
+c60s                    "60"
+c61s                    "60"
+c62s                    "62"
+c63s                    "63"
+c200                    "2"
+c300                    "3"
+c400                    "4"
+c500                    "5"
+c600                    "6"
+c700                    "7"
+c800                    "8"
+c15s                    "15"
+c17s                    "17"
+c18s                    "18"
+c19s                    "19"
+c20s                    "20"
+c21s                    "21"
+c22s                    "22"
+c29s                    "29"
+c32s                    "32"
+c33s                    "33"
+c34s                    "34"
+c35s                    "35"
+c36s                    "36"
+c37s                    "37"
+
+/*cbm                     1*/
+cjml130                 lrasio115 + lrasio1630
+cjml60                  lrasio6190 + lrasio90
+cjmlup30                lrasio3160 + lrasio6190 + lrasio90
+cjml62                  lrasio3160 + lrasio6190
+cjml63                  lrasio3160 + lrasio90
+
+/*ckebm			(lrasio0 >= 0 && lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0) ||
+			(lrasio0 >= 0 && lrasio115== 0 && lrasio1630 >  0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0) ||
+			(lrasio0 >= 0 && lrasio115 > 0 && lrasio1630 >  0 && lrasio3160 == 0 && lrasio6190 == 0 && lrasio90 == 0) 
+||
+	(lrasio0 >= 0 && lrasio115== 0 && lrasio1630==  0 && lrasio3160 >  0 && lrasio6190 == 0 && lrasio90 == 0) ||
+			(lrasio0 >= 0 && lrasio115 > 0 && lrasio1630 == 0 && lrasio3160 >  0 && lrasio6190 == 0 && lrasio90 == 0) ||
+			(lrasio0 >= 0 && lrasio115 > 0 && lrasio1630 >  0 && lrasio3160 >  0 && lrasio6190 == 0 && lrasio90 == 0) ||
+			(lrasio0 >= 0 && lrasio115== 0 && lrasio1630==  0 && lrasio3160 >  0 && lrasio6190 == 0 && lrasio90 == 0) */
+
+MAP(mrmd)
+/*c1x			 lsvistr1	     DO_CALC_IF ckebm*/
+c1x                      lsvistr1            DO_CALC_IF cond1
+c16s                     lsvistr1            DO_CALC_IF cond16
+c30s                     lsvistr1            DO_CALC_IF cond30
+c31s                     lsvistr1            DO_CALC_IF cond31
+c58s                     lsvistr1            DO_CALC_IF cond58
+c59s                     lsvistr1            DO_CALC_IF cond59
+c60s                     lsvistr1            DO_CALC_IF cond60
+c61s                     lsvistr1            DO_CALC_IF cond61
+c62s                     lsvistr1            DO_CALC_IF cond62
+c63s                     lsvistr1            DO_CALC_IF cond63
+c200                     lsvistr1            DO_CALC_IF cond2
+c300                     lsvistr1            DO_CALC_IF cond3
+c400                     lsvistr1            DO_CALC_IF cond4
+c500                     lsvistr1            DO_CALC_IF cond5
+c600                     lsvistr1            DO_CALC_IF cond6
+c700                     lsvistr1            DO_CALC_IF cond7
+c800                     lsvistr1            DO_CALC_IF cond8
+c15s                     lsvistr1            DO_CALC_IF cond15
+c17s                     lsvistr1            DO_CALC_IF cond17
+c18s                     lsvistr1            DO_CALC_IF cond18
+c19s                     lsvistr1            DO_CALC_IF cond19
+c20s                     lsvistr1            DO_CALC_IF cond20
+c21s                     lsvistr1            DO_CALC_IF cond21
+c22s                     lsvistr1            DO_CALC_IF cond22
+c29s                     lsvistr1            DO_CALC_IF cond29
+c32s                     lsvistr1            DO_CALC_IF cond32
+c33s                     lsvistr1            DO_CALC_IF cond33
+c34s                     lsvistr1            DO_CALC_IF cond34
+c35s                     lsvistr1            DO_CALC_IF cond35
+c36s                     lsvistr1            DO_CALC_IF cond36
+c37s                     lsvistr1            DO_CALC_IF cond37
+lrasio0     	         lsvidf8dev          REPLACE_IF cond0
+lrasio115                lsvidf8dev          REPLACE_IF cond1
+lrasio1630               lsvidf8dev          REPLACE_IF cond16
+lrasio3160               lsvidf8dev          REPLACE_IF cond31
+lrasio90                 lsvidf8dev          REPLACE_IF cond59
+lrasio6190               lsvidf8dev          REPLACE_IF cond60
+cjml130                  lsvidf8dev          DO_CALC_IF cond30
+cjml60                   lsvidf8dev          DO_CALC_IF cond58
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond61
+cjml62                   lsvidf8dev          DO_CALC_IF cond62
+cjml63                   lsvidf8dev          DO_CALC_IF cond63
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond6
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond2
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond3
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond4
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond5
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond7
+cjmlup30                 lsvidf8dev          DO_CALC_IF cond8
+lrasio1630              lbatas1              REPLACE_IF cond17
+cjmlup30                lbatas2              DO_CALC_IF cond17
+
+lrasio1630              lbatas1              REPLACE_IF cond18
+cjml62                  lbatas2              DO_CALC_IF cond18
+
+lrasio1630              lbatas1              REPLACE_IF cond19
+cjml63                  lbatas2              DO_CALC_IF cond19
+
+lrasio1630              lbatas1              REPLACE_IF cond20
+cjml60                  lbatas2              DO_CALC_IF cond20
+
+lrasio1630              lbatas1              REPLACE_IF cond21
+lrasio6190              lbatas2              REPLACE_IF cond21
+
+lrasio1630              lbatas1              REPLACE_IF cond22
+lrasio90                lbatas2              REPLACE_IF cond22
+
+cjml130                 lbatas1              DO_CALC_IF cond29
+lrasio1630              lbatas2              REPLACE_IF cond29
+
+cjml130                 lbatas1              DO_CALC_IF cond32
+cjmlup30                lbatas2              DO_CALC_IF cond32
+
+cjml130                 lbatas1              DO_CALC_IF cond33
+cjml62                  lbatas2              DO_CALC_IF cond33
+
+cjml130                 lbatas1              DO_CALC_IF cond34
+cjml63                  lbatas2              DO_CALC_IF cond34
+
+cjml130                 lbatas1              DO_CALC_IF cond35
+cjml60                  lbatas2              DO_CALC_IF cond35
+
+cjml130                 lbatas1              DO_CALC_IF cond36
+lrasio6190              lbatas2              REPLACE_IF cond36
+
+cjml130                 lbatas1              DO_CALC_IF cond37
+lrasio90                lbatas2              REPLACE_IF cond37
+
+lrasio1630              lbatas1              REPLACE_IF cond15
+lrasio3160              lbatas2              REPLACE_IF cond15
+/*cbm                      lsvidf8dev          DO_CALC_IF ckebm*/
+
+crmdgabslik             lrmdgabslik	     	DO_CALC
+crmdgabslikkol          lrmdgabslikkol   	DO_CALC
+
+crmdgabslikumr          lrmdgabslikumr	     	DO_CALC
+
+
+cbesok			ltglbesok		DO_CALC
+DEBUG			ldum		ldum		REPLACE
+
+
+/*================== UPDATE POSISI SLIK ========================== */
+MAP(mupdposslikstatus)
+csudahselesai	svistr2	  DO_CALC /*_IF cselesai*/
+cRM2        	svistr4   DO_CALC_IF cslhasil32
+cCA	        svistr4   DO_CALC_IF cslhasil62
+cDCOO        	svistr4   DO_CALC_IF cslhasil92
+cDEVIASI	svistr3	  DO_CALC_IF ckenadev
+cLANJUT		svistr4	 DO_CALC_IF cslhasil99
+cLANJUT		svistr3	 DO_CALC_IF cslhasil99
+cBLANKS		svistr5	 DO_CALC
+cLANJUT		svistr5	 DO_CALC_IF cslhasil99
+cDCOO           svistr7    DO_CALC_IF cslhasil92
+cCA	        svistr7    DO_CALC_IF cslhasil62
+cRM2            svistr7    DO_CALC_IF cslhasil32
+cLANJUT		svistr7	  DO_CALC_IF cslhasil99
+
+
+cRM2        	svistr9   DO_CALC_IF cslhasil32kol
+cCA	        svistr9   DO_CALC_IF cslhasil62kol
+cDCOO        	svistr9   DO_CALC_IF cslhasil92kol
+cDEVIASI	svistr8	  DO_CALC_IF ckenadevkol
+cLANJUT		svistr9	 DO_CALC_IF cslhasil99kol
+cLANJUT		svistr8	 DO_CALC_IF cslhasil99kol
+cDCOO           svistr10   DO_CALC_IF cslhasil92kol
+cCA	        svistr10   DO_CALC_IF cslhasil62kol
+cRM2            svistr10   DO_CALC_IF cslhasil32kol
+cLANJUT	svistr10   DO_CALC_IF cslhasil99kol
+
+cTACC        		svistr4   DO_CALC_IF cslhasil32umr
+cTACC        		svistr4   DO_CALC_IF cslhasil62umr
+cTACC        		svistr4   DO_CALC_IF cslhasil92umr
+cTACC	     		svistr3	 DO_CALC_IF ckenataccumr
+cLANJUT	/*UMROH BM*/	 svistr4	 DO_CALC_IF cslhasil99umr
+cLANJUT	/*UMROH BM*/     svistr3	 DO_CALC_IF cslhasil99umr
+cBLANKS	/*UMROH BM*/     svistr5	 DO_CALC_IF cslhasil99umr
+cDCOO                  svistr7    DO_CALC_IF cslhasil92umr
+cCA	               svistr7    DO_CALC_IF cslhasil62umr
+cRM2                   svistr7    DO_CALC_IF cslhasil32umr
+cBM    /*UMROH BM*/    svistr7	  DO_CALC_IF cslhasil99umr
+
+tldtmp2       svidf3    REPLACE_IF cslhasilDO
+tldtmp2       svidf2   REPLACE_IF cslhasilDOkol
+
+DEBUG ldum ldum REPLACE
+
+
+MAP(mupdposslikstatus2)
+cLANJUT			 svistr4	 DO_CALC
+cLANJUT			 svistr3	 DO_CALC
+cLANJUT			 svistr5	 DO_CALC
+cLANJUT			 svistr7	 DO_CALC
+cLANJUT			 svistr8	 DO_CALC
+cLANJUT			 svistr9	 DO_CALC
+cLANJUT			 svistr10	 DO_CALC
+DEBUG   ldum    ldum                     REPLACE
+
+MAP(madddevslik)
+btmnobuk		svinobuk	REPLACE
+cRM2                    svistr1         DO_CALC_IF cslhasil32
+cCA                 	svistr1         DO_CALC_IF cslhasil62
+cDCOO                   svistr1         DO_CALC_IF cslhasil92
+gt_deviasibr11		svidata		REPLACE
+lPOSDEV                 svitype         REPLACE
+l1                      svinourt        REPLACE
+
+MAP(mupddevslik)
+cDCOO                   svistr1         DO_CALC_IF cslhasil92
+cBLANKS			svistr2		DO_CALC
+
+MAP(mupdsviscoringumr)
+cTACC       svistr10     DO_CALC_IF ckenataccumr
+cLANJUT     svistr10     DO_CALC_IF cslhasil99umr
+
+
+/*================== UPDATE REQUEST SLIK ========================= */
+MAP(mupdrequestslik)
+g_usrkode	svistr3		REPLACE /*_IF cselesai*/
+g_tgltrn	svistr4		REPLACE /*_IF cselesai*/
+lsystimedf	svidf3		REPLACE /*_IF cselesai*/
+
+/*MAP(mupdmaster)
+l643		btmsts		REPLACE*/
+
+MAP(mupdmaster1)
+cBLANKS		btmstsdata	DO_CALC
+
+SPCALCS(sptranshasil)
+DO_LIB_IF cjoinreq ap_dbclc(DNAME dupdreqslik,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp lSLIK btmnobuk lreq,DMAP mupdrequestslik);
+DO_LIB ap_dbclc(DNAME dmapmap22,DCOMMAND MAPMAP,DMAP mrmd);
+
+DO_LIB_IF crmddevltv2w  ap_ambts(lSLIK5,lrmdgabslik,lsvidf8dev,lNol1,lNol1,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+DO_LIB_IF crmddevltv2w2 ap_ambts(lSLIK5,lrmdgabslik,lbatas1,lbatas2,lNol1,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+
+DO_LIB_IF crmddevltv2wumr  ap_ambts(lSLIK5,lrmdgabslikumr,lsvidf8dev,lNol1,lNol1,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+DO_LIB_IF crmddevltv2w2umr ap_ambts(lSLIK5,lrmdgabslikumr,lbatas1,lbatas2,lNol1,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+
+DO_LIB_IF crmddevltv2wkol  ap_ambts(lSLIK5,lrmdgabslikkol,lsvidf8dev,lNol1,lNol1,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+DO_LIB_IF crmddevltv2w2kol ap_ambts(lSLIK5,lrmdgabslikkol,lbatas1,lbatas2,lNol1,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+
+DO_LIB_IF cjoinsvidev0 ap_dbclc(DNAME daddsvidev,DCOMMAND ADD,DFILE svi,DMAP madddevslik);
+DO_LIB_IF cjoinsvidev1 ap_dbclc(DNAME dupdsvidev,DCOMMAND UPDATE,DTARGET svidatbuktyp gt_deviasibr11 btmnobuk lPOSDEV l1,DMAP mupddevslik);
+DO_LIB_IF cjoinsviposslik ap_dbclc(DNAME dupdposslik,DCOMMAND UPDATE,DTARGET svidatbuktyp lSLIK nhmfinco_2 lPOSSLIK l1,DMAP mupdposslikstatus);
+DO_LIB_IF cjoinscorumr ap_dbclc(DNAME dupdscorumr,DCOMMAND UPDATE, DTARGET svidatbuktyp lDT668 btmnobuk lSCORING l1,DMAP mupdsviscoringumr);
+DO_LIB ap_dbclc(DNAME dupdmaster1,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdmaster1); 
+
+SPCALCS(sptranshasil2)
+DO_LIB_IF cjoinsviposslik ap_dbclc(DNAME dupdposslik2,DCOMMAND UPDATE,DTARGET svidatbuktyp lSLIK nhmfinco_2 lPOSSLIK l1,DMAP mupdposslikstatus2);
+DO_LIB_IF cjoinreq ap_dbclc(DNAME dupdreqslik2,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp lSLIK btmnobuk lreq,DMAP mupdrequestslik);
+DO_LIB ap_dbclc(DNAME dupdmaster,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdmaster1); 
+
+
+POSTING(tmptrans)
+PST_UPDCMD	sptranshasil
+PST_ADDCMD	sptranshasil2
+
+PERMIT(tmptrans)
+        PMT_UPDALL_COND         chanyaditotal
+        PMT_ADD_COND            chanyaHO2
+        PMT_DEL_COND            c0

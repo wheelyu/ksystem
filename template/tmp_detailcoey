@@ -1,0 +1,126 @@
+LOCAL
+PGM_FIELDS
+lnourty			INT2	3
+
+
+MAP(mambilnourtY)
+ketnourt	lnourty		REPLACE
+DBCALCS(dnourtY)
+	DBC_COMMAND             JOIN_LAST_SFL
+	DBC_TARGET              ketbukurtidx tlmdata tlmnobuk
+        DBC_SELECT              cselectY
+	DBC_MAP	                mambilnourtY
+
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/----------------------------------------------\|
+||  spasi                                       ||_
+||  t.NoUrut    : ___                           ||
+||  t.DetailCOE : _____________________________ ||
+||  t.TipeAct   : ___  ________________________ ||
+||  t.Buk909    : _____________________________ ||
+||				       ________ ||
+|| spasi                                        ||
+|\----------------------------------------------/|
+\------------------------------------------------/
+ /----------------------------------------------\
+ | t.StsUpl ____                                | 
+ \----------------------------------------------/
+ /----------------DOCUPLOAD---------------------\
+ |                                              |
+ |                                              |
+ |                                              |
+ |                                              |
+ \----------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketnobuk        UNSEEN PROTECT          INPUTRI 1
+ketnourt	DIGITS PROTECT		INPUTRI	2       /*No Urut*/
+ketisi          TEXTAREA        	INPUTRI 3       /*Keterangan Detail COE*/
+ketyt1          NOCHANGE                INPUTRI 4       /*Tipe Activity*/
+lketactivity    PROTECT                 INPUTRI 5       /*Ket Aktivity*/
+ketkode         ALLCAPS                 INPUTRI 6       /*Nobuk 909*/
+lenter		NOCHANGE		INPUTRI	7       /*Enter Disini*/     
+ketyt2          PROTECT                 INPUTRI 8       /*tanda sudah Upload*/
+
+CALCS()
+cnourty		lnourty + 1
+cy              tlmytppn == "Y"
+cnol		lnourty == 0
+cambilnourt	dnourtY == 1
+cdatay		ketnama == lSESUAITGT && ((tlmsts == "OPEN" && ketstr2 == BLANKS) || (tlmsts == "TACC" && ketstr2 == "TACC") || (tlmsts == "INPG") || tlmsts == "CLSD")
+csdhubah	ketstr2 == "TACC" && ~ketisi != ketisi && g_curcmd == 2
+cstringy         "NOURT" + FLD_TO_STRING(ketnourt)
+
+DEFAULTS(tmptranst)
+lenter		INIT_LABEL		"Enter Disini"
+ketyt1          DFALT_SCAN_BLANKS       1 "ANALISA/PENGAJUAN SISTEM"
+                                        2 "NON ANALISA/PENGAJUAN SISTEM"                                 
+
+EDITS(tmptranst)
+e.Wajib isi Keterangan	        ketisi		MANDATORY
+e.Wajib isi Nobuk 909   	ketkode		MANDATORY_IF ctipe1
+
+e.Validate Nobuk 986            ketnobuk        VALIDATE_IF ccur0 tlmbukidx mnobuk986Y 0
+
+MAP(mnobuk986Y)
+tlmnobuk        ketnobuk        REPLACE
+cblank          lketactivity    DO_CALC
+ltipe1          lketactivity    REPLACE_IF ctipe1
+ltipe2          lketactivity    REPLACE_IF ctipe2
+
+MAP(muruty)
+cnourty		lnourty		DO_CALC_IF cambilnourt
+l1		lnourty		REPLACE_IF cnol
+lnourty		ketnourt	REPLACE
+cstringy        ketstr1         DO_CALC
+
+MAP(misiactY)
+ltipe1          lketactivity    REPLACE_IF ctipe1
+ltipe2          lketactivity    REPLACE_IF ctipe2
+
+MAP(mtandaubah)
+ly		ketyt3			REPLACE_IF csdhubah
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ketyt1        DO_SKIP_IF cnonactivity
+BEFORE_INPUT    cur_field=ketkode       DO_SKIP_IF cnonactivity
+
+AFTER_INPUT     cur_field=ketyt1        DO_MAP SHOW misiactY
+AFTER_INPUT	cur_field=ketnourt	DO_MAP SHOW muruty
+AFTER_INPUT	cur_field=ketisi	DO_MAP SHOW mtandaubah
+
+AFTER_INPUT     cur_field=ketkode       DO_MAP SHOW
+                IF cbenarbuk909         mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bukan Nobuk 909
+
+
+MAP(mupdbukticoey)
+cOK                   ketyt2        DO_CALC
+DBCALCS(dupdbukticoey)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      ketprmidx       ketprm
+        DBC_MAP         mupdbukticoey
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD  ketnobuk ketstr1
+SFL_DOCUPLFLD_DBCALCS dupdbukticoey
+SFL_DOCUPL_DELCOND ctldjml0
+SFL_COND cy
+SFL_SELECT	cdatay
+SFL_TARGET
+ketdatbuktgl    tlmdata tlmnobuk
+
+SFL_MAP
+tlmnobuk	ketnobuk
+lSESUAITGT	ketnama
+tlmdata		ketdata
+tlmtgl		kettgl1

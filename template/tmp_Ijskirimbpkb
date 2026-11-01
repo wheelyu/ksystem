@@ -1,0 +1,63 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.UplKrm                                                                 |
+|       /----------------------------------------------------\                   |
+|       |________________ _____________________              !                   |
+|	|/-s.UPLOAD---------------------\/------------------\!                   | 
+|	||                              ||t.Tgl : _________ |!                   |
+|	||                              ||t.Nip : _________ |!                   |
+|	||                              ||t.Acc : _________ |!                   |
+|	||                              ||t.OkUp: ____      |!                   |
+|	||                              ||t.Acc : _________ |!                   |
+|	||                              ||_______ _______   |!                   |
+|	||                              ||                  |!                   |
+|	|\------------------------------/\------------------/!                   |
+|	\----------------------------------------------------/                   |      
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL          INPUTRI 1
+psdket		PROTECT SCROLL		INPUTRI 2
+psdtgl1          PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 3
+psdstr1         PROTECT SCROLL         INPUTRI 4
+psdstr2		PROTECT SCROLL		INPUTRI 5
+psdtype2        PROTECT SCROLL          INPUTRI 6
+psdtype3	PROTECT SCROLL		INPUTRI 7
+luploadtacc2	TOMBOL			INPUTRI 8
+luploadacc2	TOMBOL			INPUTRI 9
+
+DEFAULTS(tmptranst)
+luploadtacc2	INIT		TACC
+luploadacc2	INIT		ACC
+
+CALCS()
+cada_terima2	(UPLEXIST(l_count8) == 1  || UPLEXIST(l_count8) == 0) && hrmcab2=="KIRIM_SMG" && hrmstsapr=="OK"
+caccblanksx	psdtype3==""
+csudah_acc2      djoinpsd_pinjam2==1 && laccmktg=="Y" && laccadh=="Y"
+
+SPCALCS(supdpsdtrmtacc2)
+        DO_LIB_IF cada_terima2 ap_dbclc(DNAME dupdpsdtrmtacc2,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdtrmtacc);
+
+SPCALCS(supdpsdtrmacc2)
+        DO_LIB_IF cada_terima2 ap_dbclc(DNAME dupdpsdtrmacc2,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdtrmacc);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadtacc2   DO_SPCALCS supdpsdtrmtacc2
+CLICKED         cur_field=luploadacc2    DO_SPCALCS supdpsdtrmacc2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_COND csudah_acc2	
+SFL_LINES(1)
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  psdkode                              
+SFL_UPLFLD_DBCALCS dupdterimaupl
+SFL_UPL_DELCOND caccblanksx
+SFL_TARGET
+psddatpsmkod    gv_krmbks11 hrmnobuk                      
+
+SFL_MAP
+gv_krmbks11	psddata		REPLACE
+hrmnobuk	psdpsmkode	REPLACE

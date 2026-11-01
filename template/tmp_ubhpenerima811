@@ -1,0 +1,41 @@
+IMAGE(tmptrans)
+|t.NipBaru  ___________ | ____ |
+
+FIELD(tmptrans)
+lnipganti       ALLCAPS         INPUTRI         1
+lenter2         NOCHANGE        INPUTRI         2
+
+DEFAULTS(tmptrans)
+lenter2         INIT            ENTER
+
+EDITS(tmptrans)
+e.Validate lnipganti VALIDATE psikodidx mpsiterima spsiINPG
+
+MAP(mpsiterima)
+psikode         lnipganti       REPLACE
+
+CALCS()
+caccblh      (g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHDVH" || g_grpnam == "ADHSPV" || g_grpnam == "RI" || g_grpnam == "ANSYSUAT")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_APP_TYPE
+SFL_COND caccblh
+SFL_SHOW_NEXT
+SFL_TARGET tlmbukidx tlmnobuk
+
+
+CALCS()
+cisinipganti    lnipganti != BLANKS
+
+MAP(mupdtlmpenerima)
+lnipganti       tlmplg       REPLACE
+
+
+SPCALCS(spubhpenerima)
+DO_LIB  ap_dbclc(DNAME dmapmapvoid2,DCOMMAND MAPMAP,DMAP mmapmapvoid);
+DO_LIB_IF cisinipganti ap_dbclc(DNAME dupdtlmpenerima,DCOMMAND UPDATE, DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmpenerima);
+
+
+POSTING(tmptrans)
+   PST_COMMAND spubhpenerima

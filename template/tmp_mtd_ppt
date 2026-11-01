@@ -1,0 +1,400 @@
+LOCAL
+PGM_FIELDS
+lCABAPIX        STRING          21
+ltbddf4x        DFLOAT          8
+ltes		STRING		21
+lpptrangka3_tmp	STRING		4
+
+CALCS()
+cdtbrmthnlalu	pptdata == gv_dtbrm && ppttahun < ltahunini
+
+DBCALCS(dscanpptthnlalu)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	pptbukotodat	pptnobuk
+	DBC_SELECT	cdtbrmthnlalu
+	DBC_SUM_FIELD	pptjml
+
+MAP(mjoinpptu)
+pptnourt     lurutppt  	REPLACE
+
+DBCALCS(djoinpptu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	pptbukotodat   mtdnobuk mtdoto gv_dtbrm
+        DBC_MAP         mjoinpptu
+
+CALCS()
+cpptnonVOID	pptsts != "VOID"
+
+DBCALCS(djoinppt1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	pptmridx   pptmesin pptrangka 
+	DBC_SELECT	cpptnonVOID
+
+DBCALCS(djoinftm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	ftmotoidx  pptbrdoto 
+
+DBCALCS(djoinftm1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	ftmotoidx  ~pptbrdoto 
+
+DBCALCS(djoinssu)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	ssumridx   pptrangka pptmesin 
+
+MAP(mjointbdcabapix)
+tbddf4          ltbddf4x         REPLACE
+DBCALCS(djointbdcabapix)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_infoumum lCABAPIX mtscab
+        DBC_MAP         mjointbdcabapix
+
+/*DBCALCS(djointbdMPM)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx    gv_dttabel gv_infoumum lCAB504MPM mtsplg*/
+
+IMAGE(tmptranst) 
+/---------------------------------------------------------------------------------------------------------------------------\
+|i.Brg: _______________________________ i.Lok:__________ i.Jml:_________  i.Sts: __________                                 |
+|===t======t===========t=====t==========t============t===============t=====t====t==========t========t=========t==========t==|
+|Urt|i.Data|i.Brg      |i.Jml|t.NoDo    | i.Mesin    |   i.Rangka    |i.Wrn|i.Th|t.Kondisi |i.NoBpkb|t.Barcode|t.LinkBrcd|t.|
+\===.======.===========.=====.==========.============.===============.=====.====.==========.========.=========.==========.==/
+
+FIELD(tmptranst)
+   mtdbrg        PROTECT        	INPUTRI     1 
+   mtdlok        PROTECT SCROLL 	INPUTRI     2 
+   mtdjml        PROTECT SCROLL 	INPUTRI     2 
+   pptsts        PROTECT SCROLL 	INPUTRI     2 
+
+IMAGE(tmptrans) 
+|___|______|___________|_____|__________|____________|_______________|_____|____|__________|________|_________|__________|__|
+    
+FIELD(tmptrans)
+   pptnourt      NOCHANGE       	INPUTRI     1 
+   pptdata       PROTECT SCROLL 	INPUTRI     2 
+   pptbrg        PROTECT SCROLL 	INPUTRI     3 
+   pptjml        NUMERIC          	INPUTRI     4 
+   pptsup        ALLCAPS SCROLL         INPUTRI     5 
+   pptmesin      ALLCAPS SCROLL NOSPACE INPUTRI     5 
+   pptrangka     ALLCAPS SCROLL NOSPACE	INPUTRI     6 
+   pptwarna      ALLCAPS SCROLL NOSPACE INPUTRI     7 
+   ppttahun      ALLCAPS SCROLL NOSPACE INPUTRI     8 
+   pptnopol      PROTECT SCROLL         INPUTRI     9 
+   pptbpkb       ALLCAPS SCROLL         INPUTRI     10 
+   pptket	 QRCODE			INPUTRI	    11
+   lLinkBarcode	 ALLCAPS SCROLL		INPUTRI	    12
+   lenter	 NOCHANGE		INPUTRI	    13
+
+DEFAULTS(tmptrans)
+pptsts	INIT	OPEN
+pptjml	INIT	1
+pptdata INIT	{gv_dtbrm}
+pptnopol	INIT	{mtdgrup}
+lCABAPIX	INIT	CABAPI
+ltes		INIT	20220929
+
+CALCS()
+cjoinppt1_0 	(djoinssu == 0 && djoinppt1 == 0) || (g_curcmd == 2 && pptrangka == ~pptrangka && pptmesin == ~pptmesin)
+cDTBRM		pptdata != gv_dtplengkap
+cDTPLENGKAP	pptdata == gv_dtplengkap
+cplk_ok		pptdata == gv_dtplengkap && pptjml <= mtdjml || pptdata != gv_dtplengkap
+cplk_ok2	pptdata == gv_dtplengkap && pptjml >= mtdjml || pptdata != gv_dtplengkap
+cjoinpptu0      djoinpptu == 0 && g_curcmd == 1  
+cjoinpptu1      djoinpptu  == 1 && g_curcmd == 1 
+curutppt       	lurutppt + 1
+cytseriYSlY     brgytseri == "Y" && cmpyt1 =="Y" && ((djointbdcabapix == 1 && ltbddf4x == BLANKS) || djointbdcabapix == 0)
+cRCLS           "RCLS"
+cftm1           pptsup    != BLANKS && djoinftm == 1
+cftm11          pptsup    != BLANKS && djoinftm1 == 1
+crangka3_ok	((pptdata == gv_dtbrm && (lpptrangka3_tmp == "MH1" || lpptrangka3_tmp == "MLH")) || pptdata != gv_dtbrm)
+
+EDITS(tmptrans)
+e.Mandatory pptrangka MANDATORY_IF cDTBRM
+e.Mandatory pptmesin MANDATORY_IF cDTBRM
+e.Mandatory pptwarna MANDATORY_IF cDTBRM
+e.Mandatory ppttahun MANDATORY_IF cDTBRM
+e.Mandatory pptjml MANDATORY
+e.Validate pptmesin  VALIDATE_DUP_IF cytseriYSlY ftmstsfakidx mftm2 sftm5 {Pgv_INPG} {Pmtdnoll}
+e.Validate8205d pptwarna VALIDATE_IF cDTBRM ubrbrgdatkod mubrWR subr {Ppptbrg} {Pgv_dtbarang}
+e.Validate8107 ppttahun VALIDATE_IF cDTBRM tbddatkodidx mtbdTHN stbdTHN {Pgv_dttabel} {Pgv_barang} {Pgv_tahun}
+
+MAP(mftm2)
+ftmnofak        pptsup       REPLACE
+ftmno1          pptmesin     REPLACE
+ftmno2          pptrangka    REPLACE
+ftmwarna        pptwarna     REPLACE
+ftmtahun        ppttahun     REPLACE
+ftmoto          pptbrdoto    REPLACE
+
+MAP(mubrWR)
+ubrkode		pptwarna	REPLACE
+
+MAP(murutppt)
+mtdbrg		pptbrg		REPLACE_IF cDTBRM
+csatu       	pptnourt   	DO_CALC_IF cjoinpptu0
+curutppt      	pptnourt   	DO_CALC_IF cjoinpptu1
+
+MAP(mtbdTHN)
+tbdkode       ppttahun       REPLACE
+
+MAP(mwarna)
+mtdukrwrn	pptwarna	REPLACE_IF cDTBRM
+mtdhrg		ppthrg		REPLACE_IF cDTBRM
+
+CALCS()
+cpptrangka3_tmp	DO_LIB ap_amstr(pptrangka,l1_int,l3_int,&lpptrangka3_tmp);
+cmpmbarcode     (mtsuntuk != "MOTOR") || (pptmesin == BLANKS) || (mtsuntuk == "MOTOR" && (djointbdCABMPM == 0 || (djointbdCABMPM == 1 && ltbddf1MPM == 1)))
+cmpmlink        (g_curcmd == 1) || (mtsuntuk != "MOTOR") || (pptmesin == BLANKS) || (mtsuntuk == "MOTOR" && (djointbdCABMPM == 0 || (djointbdCABMPM == 1 && ltbddf1MPM != 1)))
+
+MAP(mrangka3)
+cpptrangka3_tmp	lpptrangka3_tmp	DO_CALC
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=pptnourt	DO_MAP SHOW murutppt
+BEFORE_INPUT	cur_field=pptjml  	DO_SKIP_IF cDTBRM
+
+BEFORE_INPUT    cur_field=pptwarna      DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=pptbpkb       DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=pptnopol      DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=pptrangka     DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=pptmesin      DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=pptmesin      DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=ppttahun      DO_SKIP_IF cDTPLENGKAP
+BEFORE_INPUT    cur_field=pptsup        DO_SKIP_IF cDTPLENGKAP
+
+BEFORE_INPUT    cur_field=pptket        DO_SKIP_IF cmpmbarcode
+BEFORE_INPUT    cur_field=lLinkBarcode  DO_SKIP_IF cmpmlink
+
+AFTER_INPUT	cur_field=pptrangka	DO_MAP SHOW mrangka3
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mrangka3
+
+AFTER_INPUT	cur_field=pptrangka	DO_MAP SHOW 
+		IF cjoinppt1_0 mwarna
+		ELSE HKCURSOR pptmesin
+		     HKMSG h.RangkaAda
+AFTER_INPUT	cur_field=pptmesin 	DO_MAP SHOW 
+		IF cjoinppt1_0 mdum
+		ELSE HKCURSOR pptrangka
+		     HKMSG h.MesinAda
+AFTER_INPUT	cur_field=pptjml 	DO_MAP SHOW 
+		IF cplk_ok mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Jumlah terima melebihi Pelengkapan yang ditentukan
+AFTER_INPUT	cur_field=pptjml 	DO_MAP SHOW 
+		IF cplk_ok2 mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Jumlah terima kurang dari Pelengkapan yang ditentukan
+AFTER_INPUT	cur_field=pptrangka	DO_MAP SHOW
+		IF crangka3_ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG 3 Karakter Nomor Rangka Awal Harus MH1 atau MLH
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF crangka3_ok mdum
+		ELSE HKCURSOR STAY
+		HKMSG 3 Karakter Nomor Rangka Awal Harus MH1 atau MLH
+
+CALCS()
+cMT_S    brgytseri == "Y" && (dbscanppt < mtdjml || (dbscanppt == mtdjml && djoinpptPlk == 1))
+
+SUBFILE(tmptrans)
+SFL_LINES(10)       
+SFL_TITLE(tmptranst)
+SFL_COND cMT_S
+
+SFL_TARGET
+pptbukotodat    mtdnobuk mtdoto 
+
+SFL_MAP
+    mtdnobuk            pptnobuk           
+    mtdoto              pptppdoto           
+
+CALCS()
+cftmket1auto	ftmket1 == "AUTO"
+
+MAP(mupdftma)
+cRCLS        ftmsts     DO_CALC
+
+MAP(mupdftmu)
+gv_INPG       ftmsts     REPLACE
+
+MAP(mupdftmd)
+gv_INPG       ftmsts     REPLACE
+g_strksg      ftmlok     REPLACE_IF  cftmket1auto
+c0            ftmhrg1    DO_CALC_IF  cftmket1auto
+
+CALCS()
+caprmtrthnlaluD2	"APR_MTRTHNLALU"
+caprtrmbrgD2		"APR_TRMBRG"
+cblanksD2		BLANKS
+cdtbrmD2		pptdata == gv_dtbrm
+cmtrthnlaluD2A1		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && dscanpptthnlalu == 0
+cmtrthnlaluD2A2		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && dscanpptthnlalu > 0
+cmtrthniniD2A1		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && dscanpptthnlalu == 0
+cmtrthniniD2A2		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && dscanpptthnlalu > 0
+
+cmtrthnlaluD2UA1	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun < ppttahun && dscanpptthnlalu == 0
+cmtrthnlaluD2UA2	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun == ppttahun && dscanpptthnlalu == 0
+cmtrthnlaluD2UA3	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun > ppttahun && dscanpptthnlalu == 0
+cmtrthnlaluD2UA4	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun < ppttahun && dscanpptthnlalu == 1
+cmtrthnlaluD2UA5	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun == ppttahun && dscanpptthnlalu == 1
+cmtrthnlaluD2UA6	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun > ppttahun && dscanpptthnlalu == 1
+cmtrthnlaluD2UA7	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun < ppttahun && dscanpptthnlalu > 1
+cmtrthnlaluD2UA8	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun == ppttahun && dscanpptthnlalu > 1
+cmtrthnlaluD2UA9	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun < ltahunini && ~ppttahun > ppttahun && dscanpptthnlalu > 1
+cmtrthniniD2UA1		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun < ppttahun && dscanpptthnlalu == 0
+cmtrthniniD2UA2		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun == ppttahun && dscanpptthnlalu == 0
+cmtrthniniD2UA3		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun > ppttahun && dscanpptthnlalu == 0
+cmtrthniniD2UA4		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun < ppttahun && dscanpptthnlalu == 1
+cmtrthniniD2UA5a	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun == ppttahun && ppttahun < ltahunini && dscanpptthnlalu == 1
+cmtrthniniD2UA5b	djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun == ppttahun && ppttahun >= ltahunini && dscanpptthnlalu == 1
+cmtrthniniD2UA6		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun > ppttahun && dscanpptthnlalu == 1
+cmtrthniniD2UA7		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun < ppttahun && dscanpptthnlalu > 1
+cmtrthniniD2UA8		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun == ppttahun && dscanpptthnlalu > 1
+cmtrthniniD2UA9		djoinpmb == 1 && lpmbgrup == "SPM" && ~ppttahun >= ltahunini && ~ppttahun > ppttahun && dscanpptthnlalu > 1
+cmtrthnlaluD2UB1	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun < ~ppttahun && dscanpptthnlalu == 0
+cmtrthnlaluD2UB2	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun == ~ppttahun && dscanpptthnlalu == 0
+cmtrthnlaluD2UB3	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun > ~ppttahun && dscanpptthnlalu == 0
+cmtrthnlaluD2UB4	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun < ~ppttahun && dscanpptthnlalu == 1
+cmtrthnlaluD2UB5	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun == ~ppttahun && dscanpptthnlalu == 1
+cmtrthnlaluD2UB6	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun > ~ppttahun && dscanpptthnlalu == 1
+cmtrthnlaluD2UB7	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun < ~ppttahun && dscanpptthnlalu > 1
+cmtrthnlaluD2UB8	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun == ~ppttahun && dscanpptthnlalu > 1
+cmtrthnlaluD2UB9	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && ppttahun > ~ppttahun && dscanpptthnlalu > 1
+cmtrthniniD2UB1		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun < ~ppttahun && dscanpptthnlalu == 0
+cmtrthniniD2UB2		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun == ~ppttahun && dscanpptthnlalu == 0
+cmtrthniniD2UB3		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun > ~ppttahun && dscanpptthnlalu == 0
+cmtrthniniD2UB4		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun < ~ppttahun && dscanpptthnlalu == 1
+cmtrthniniD2UB5a	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun == ~ppttahun && ~ppttahun < ltahunini && dscanpptthnlalu == 1
+cmtrthniniD2UB5b	djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun == ~ppttahun && ~ppttahun >= ltahunini && dscanpptthnlalu == 1
+cmtrthniniD2UB6		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun > ~ppttahun && dscanpptthnlalu == 1
+cmtrthniniD2UB7		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun < ~ppttahun && dscanpptthnlalu > 1
+cmtrthniniD2UB8		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun == ~ppttahun && dscanpptthnlalu > 1
+cmtrthniniD2UB9		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && ppttahun > ~ppttahun && dscanpptthnlalu > 1
+
+cmtrthnlaluD2D1		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && dscanpptthnlalu == 0 && dbscanppt2 <= 0
+cmtrthnlaluD2D2		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && dscanpptthnlalu > 0 && dbscanppt2 <= 0
+cmtrthnlaluD2D3		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && dscanpptthnlalu == 0 && dbscanppt2 > 0
+cmtrthnlaluD2D4		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun < ltahunini && dscanpptthnlalu > 0 && dbscanppt2 > 0
+cmtrthniniD2D1		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && dscanpptthnlalu == 0 && dbscanppt2 <= 0
+cmtrthniniD2D2		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && dscanpptthnlalu > 0 && dbscanppt2 <= 0
+cmtrthniniD2D3		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && dscanpptthnlalu == 0 && dbscanppt2 > 0
+cmtrthniniD2D4		djoinpmb == 1 && lpmbgrup == "SPM" && ppttahun >= ltahunini && dscanpptthnlalu > 0 && dbscanppt2 > 0
+
+MAP(mupdmtsaprA)
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2A1
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2A2
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2A1
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2A2
+
+MAP(mupdmtsaprU)
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA1
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA2
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA3
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA4
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA5
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA6
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA7
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA8
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UA9
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UA1
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UA2
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UA3
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UA4
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UA5a
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UA5b
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UA6
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UA7
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UA8
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UA9
+
+MAP(mupdmtsaprU2)
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB1
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB2
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB3
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB4
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB5
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB6
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB7
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB8
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2UB9
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UB1
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UB2
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UB3
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UB4
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UB5a
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UB5b
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2UB6
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UB7
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UB8
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2UB9
+
+MAP(mupdmtsaprD)
+cblanksD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2D1
+cblanksD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2D2
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthnlaluD2D3
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthnlaluD2D4
+cblanksD2		mtskodeapr	DO_CALC_IF cmtrthniniD2D1
+cblanksD2		mtskodeapr	DO_CALC_IF cmtrthniniD2D2
+caprtrmbrgD2		mtskodeapr	DO_CALC_IF cmtrthniniD2D3
+caprmtrthnlaluD2	mtskodeapr	DO_CALC_IF cmtrthniniD2D4
+
+CALCS()
+caddbarcode		mtssts == "OPEN" && mtsstsapr == BLANKS && lLinkBarcode != BLANKS
+
+MAP(mupdpptlinkbarcode)
+lLinkBarcode    pptket          REPLACE
+cblanksD2	lLinkBarcode	DO_CALC
+DEBUG   ldumm   ldumm           REPLACE
+
+SPCALCS(spcaladd)
+DO_LIB_IF cftm1 ap_dbclc(DNAME dupdftm,DCOMMAND UPDATE,DTARGET ftmotoidx pptbrdoto,DMAP mupdftma);
+DO_LIB_IF cdtbrmD2 ap_dbclc(DNAME dupdmtsaprA,DCOMMAND UPDATE,DTARGET mtsbukidx pptnobuk,DMAP mupdmtsaprA);
+
+SPCALCS(spcalupd)
+DO_LIB_IF cftm1 ap_dbclc(DNAME dupdftma2,DCOMMAND UPDATE,DTARGET ftmotoidx pptbrdoto,DMAP mupdftma);
+DO_LIB_IF cftm11 ap_dbclc(DNAME dupdftmu,DCOMMAND UPDATE,DTARGET ftmotoidx ~pptbrdoto,DMAP mupdftmu);
+DO_LIB_IF cdtbrmD2 ap_dbclc(DNAME dupdmtsaprU,DCOMMAND UPDATE,DTARGET mtsbukidx pptnobuk,DMAP mupdmtsaprU);
+DO_LIB_IF cdtbrmD2 ap_dbclc(DNAME dupdmtsaprU2,DCOMMAND UPDATE,DTARGET mtsbukidx pptnobuk,DMAP mupdmtsaprU2);
+DO_LIB_IF caddbarcode ap_dbclc(DNAME dupdpptlinkbarcode2,DCOMMAND UPDATE,DTARGET pptprmidx pptprm, DMAP mupdpptlinkbarcode);
+
+SPCALCS(spcaldel)
+DO_LIB_IF cftm1  ap_dbclc(DNAME dupdftmd,DCOMMAND UPDATE,DTARGET ftmotoidx pptbrdoto,DMAP mupdftmd);
+DO_LIB_IF cdtbrmD2 ap_dbclc(DNAME dupdmtsaprD,DCOMMAND UPDATE,DTARGET mtsbukidx pptnobuk,DMAP mupdmtsaprD);
+
+POSTING(tmptrans)
+ 	PST_ADDCMD 	spcaladd
+	PST_UPDCMD 	spcalupd
+	PST_DELCMD 	spcaldel
+
+CALCS()
+ctdksama	mtssts == "OPEN" && (cmpyt1 != "Y" || (cmpyt1 == "Y" && djointbdcabapix == 1 && ltbddf4x != 0)) && dbscanppt != mtdjml && (mtskodeapr == BLANKS || (mtskodeapr != BLANKS && mtsstsapr == BLANKS))
+cpesanT01	mtssts != "OPEN"
+cpesanT02	cmpyt1 == "Y" || (cmpyt1 == "Y" && djointbdcabapix == 1 && ltbddf4x == 0) 
+cpesanT03	dbscanppt == mtdjml
+cpesanT04	mtskodeapr != BLANKS && mtsstsapr != BLANKS
+cstsOPEN_T	mtssts == "OPEN" && (cmpyt1 != "Y" || (cmpyt1 == "Y" && djointbdcabapix == 1 && ltbddf4x != 0) || pptdata =="DTPLENGKAP" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHSPV" || g_grpnam == "ADHHO") && (mtskodeapr == BLANKS || (mtskodeapr != BLANKS && mtsstsapr == BLANKS))
+cpesanD01	mtssts != "OPEN"
+cpesanD02	cmpyt1 == "Y" || (cmpyt1 == "Y" && djointbdcabapix == 1 && ltbddf4x == 0)
+cpesanD03	mtskodeapr != BLANKS && mtsstsapr != BLANKS
+cstsOPEN_TU	mtssts == "OPEN" && (cmpyt1 != "Y" || (cmpyt1 == "Y" && djointbdcabapix == 1 && ltbddf4x != 0) || pptdata =="DTPLENGKAP") && (mtskodeapr == BLANKS || (mtskodeapr != BLANKS && mtsstsapr == BLANKS)) && (djointbdCABMPM == 0 || (djointbdCABMPM == 1 && pptdata != "DTBRM") || (djointbdCABMPM == 1 && pptdata == "DTBRM" && pptnopol != "MD"))
+cpesanU01	mtssts != "OPEN"
+cpesanU02	cmpyt1 == "Y" || (cmpyt1 == "Y" && djointbdcabapix == 1 && ltbddf4x == 0)
+cpesanU03	pptdata != "DTPLENGKAP"
+cpesanU04	mtskodeapr != BLANKS && mtsstsapr != BLANKS
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND	ctdksama
+PMT_ADD_MSG	IF cpesanT01 t.StsNoOpen
+		IF cpesanT02 t.MainDlrPakaiUplShipListNoAdd
+		IF cpesanT03 t.JmlInputSdhSamaDgnJmlMtr
+		IF cpesanT04 t.StsAprNotNull
+PMT_UPDALL_COND	cstsOPEN_TU
+PMT_UPD_MSG	IF cpesanU01 t.StsNoOpen
+		IF cpesanU02 t.MainDlrPakaiUplShipListNoUpd
+		IF cpesanU03 t.DtMtrUplShipListNoUpd
+		IF cpesanU04 t.StsAprNotNull
+PMT_DEL_COND	cstsOPEN_T
+PMT_DEL_MSG	IF cpesanD01 t.StsNoOpen
+		IF cpesanD02 t.MainDlrPakaiUplShipListNoDel
+		IF cpesanD03 t.StsAprNotNull

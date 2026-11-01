@@ -1,0 +1,108 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.No        _____  t.Status _____||
+||t.Jenjang   _____________________||
+||t.Jtp1      _____________________||
+||t.Tglakh    _____________________||
+||t.HutPen    _____________________||
+||t.Agsuran   _____________________||
+||t.Tenor     _____________________||
+||t.Total     _____________________||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdnourt    	NOCHANGE      	 	INPUTRI 1
+mtdsts      	PROTECT       	 	INPUTRI 2
+mtdsat     	ALLCAPS       	 	INPUTRI 3
+
+mtdtglfak	NONE {DD-MM-YYYY} NOLIMIT	INPUTRI	4
+mtdtgl2  	PROTECT {DD-MM-YYYY} NOLIMIT	INPUTRI	4
+mtdnoll      	ALLCAPS       	 	INPUTRI 5
+mtdjml     	NUMERIC       	 	INPUTRI 5
+mtdjml2    	NUMERIC       	 	INPUTRI 6
+mtdhrg       	NUMERIC       	 	INPUTRI 7
+
+
+DEFAULTS(tmptranst)
+mtdsts		INIT		INPG
+mtdsts		INIT_UPDATE		INPG
+ltomsubmit	INIT		SUBMIT
+
+
+
+EDITS(tmptranst)
+e.Validate3106 mtdsat   VALIDATE_IF ctypebiayatbh tbddatkodidx mtbdtbh stbd   {Pgv_dttabel} {PlHRD} {PlPROGKRY2} 
+e.ValidatePmb  mtdnoll	VALIDATE pmbsupstsbuk mpmbtbh spmb {PlPENSIUN} {Pgv_INPG} {PlBIAYA23} {Ptkmcab}
+
+
+MAP(mpmbtbh)
+pmbnobuk	mtdnoll 	REPLACE
+
+MAP(mtbdtbh)
+tbdkode		mtdsat  		REPLACE
+
+MAP(murut2)
+cisimtd1        mtdnourt        DO_CALC_IF cdjoinmtd0
+ctammtd1        mtdnourt        DO_CALC_IF cdjoinmtd1
+
+
+tkmdata		mtddata		REPLACE
+tkmbuk2		mtdbrg		REPLACE
+tkmtype		mtdukrwrn	REPLACE
+
+MAP(mtotal1)
+clmtdjml2		lmtdjml2	DO_CALC
+cmtdhrg   	mtdhrg   	DO_CALC
+ctambl1		mtdtgl2		DO_CALC
+
+MAP(mcaritgl1)
+c0		mtdtglfak	DO_CALC_IF clmtdnourt0
+lmtdtgl2	lmtdtgl2	REPLACE_IF cdjoinmtd1
+ctambl3		mtdtglfak	DO_CALC
+
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=mtdnourt	DO_MAP SHOW murut2
+AFTER_INPUT	cur_field=mtdnourt	DO_MAP SHOW mcaritgl1
+
+AFTER_INPUT	cur_field=mtdjml2  	DO_MAP SHOW mtotal1
+AFTER_INPUT	cur_field=mtdhrg	DO_MAP SHOW mtotal1
+AFTER_INPUT	cur_keybd=EN       	DO_MAP SHOW mtotal1
+
+AFTER_INPUT	cur_field=mtdsat	DO_MAP SHOW
+		IF csudahinput mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Jenjang Pendidikan ini sudah pernah diinput di No.Id yang sama
+
+AFTER_INPUT	cur_keybd=EN    	DO_MAP SHOW
+		IF csudahinput mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Jenjang Pendidikan ini sudah pernah diinput di No.Id yang sama
+
+AFTER_INPUT	cur_field=mtdhrg    	DO_MAP SHOW
+		IF chlkurang mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Cadangan Pensiun Tidak Cukup
+
+AFTER_INPUT	cur_keybd=EN        	DO_MAP SHOW
+		IF chlkurang mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Cadangan Pensiun Tidak Cukup
+
+SUBFILE(tmptrans)
+SFL_LINES(1)      
+SFL_TITLE(tmptranst)
+SFL_TARGET	
+mtdbukurtidx   tkmnobuk
+
+SFL_MAP	
+tkmdata		mtddata		REPLACE
+tkmnobuk	mtdnobuk 	REPLACE
+tkmtype		mtdplg		REPLACE
+tkmcab		mtdcab		REPLACE
+
+

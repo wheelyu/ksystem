@@ -1,0 +1,410 @@
+SCREEN  3002  QUERY_TYPE  s.PemakaiKomputer
+SCR_TGLTRN_PASS_OK
+SCR_FILE usr
+SCR_LOGFLD usrkode 
+SCR_TO_FLY 3001  3003
+
+LOCAL
+PGM_FIELDS
+   lS                 STRING                    2
+   lBR                STRING                    3
+   ltglawl            DATE                      4
+   ltglakh            DATE                      4
+   lpil               INT2                      2
+   lDtype                   STRING           2
+   ltomdet_d    	    STRING	30
+   ltomdet_2d    	    STRING	30
+   lxls		      STRING		21
+
+/*------------------djoingdf--------------*/
+DBCALCS(djoingdf)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	gdftpgpbmidx            lDtype ~usrkode  
+
+IMAGE(master) 
+/------------------------------------------------\
+|   /----i.User-------------------------------\ 
+|   |	i.Type         : ___                  | 
+|   |	i.Kode         : ____________________ | 
+|   |	i.Nama         : ____________________ | 
+|   |   i.Typ          : ______________       | 
+|   |	i.Grup         : ______________       | 
+|   |	i.Cab          : ____________________ | 
+|   |	i.SDep         : ____________________ | 
+|   |	i.Jabatan      : ____________________ | 
+|   |	i.str2         : ____________________ | 
+|   \-----------------------------------------/ 
+|   /-----------------------------------------\ 
+|   |	i.WewenangData : __________           |
+|   |	i.DirLap       : ____________________ |
+|   \-----------------------------------------/
+|   /-----------------------------------------\   
+|   |	i.LayarAwal    : _____                
+|   |   i.SimpanLap    : ___                    
+|   |	i.JmlPwgj      : ____                 | 
+|   |	i.YtVer        : ____                 | 
+|   |	i.Oto          : ____________________ | 
+|   |	i.Tanggal      : ____________________ | 
+|   |	t.Cookie       : ____________________ | 
+|   |	t.Font         : ____________________ | 
+|   |	t.DafIp        : ____________________ | 
+|   |	t.YtHp         : ____________________ | 
+|   |	t.TglLogin     : ____________________ | 
+|   |	t.TglExpPwd    : ____________________ | 
+|   |	               : ____________________ | 
+|   |	               : ____________________ | 
+|   \-----------------------------------------/   
+spasi
+    __________________  ___________________
+\------------------------------------------------/
+
+FIELD(master)
+   usrstr            NOCHANGE         INPUTRI             1 /* Type      */
+   usrkode           NONE             INPUTRI             2 /* Kode      */
+   usrnam            ALLCAPS          INPUTRI             3 /* user name */
+   usrtype           NOCHANGE         INPUTRI             4 /* user group */
+   usrgrp            ALLCAPS          INPUTRI             5 /* user group */
+   psicabskr         PROTECT          INPUTRI             5 /* user group */
+   psisdep           PROTECT          INPUTRI             5 /* user group */
+   psijabatan        PROTECT          INPUTRI             5 /* user group */
+   usrstr2           ALLCAPS          INPUTRI             5 /* user group */
+
+   usrpos            NOCHANGE         INPUTRI             6
+   usrrptdir         NONE             INPUTRI             7 /* user group */
+
+   usrstartscr       NUMERIC          INPUTRI             8 /* starting scr */
+   usrytsimfile      ALLCAPS          INPUTRI             9 /* simpan file*/
+   usrjmlpwgj        NUMERIC          INPUTRI             10 /* simpan file*/
+   usrytver          ALLCAPS          INPUTRI             11 /* simpan file*/
+   usroto            PROTECT          INPUTRI             12 /* simpan file*/
+   usrcrttgl         NONE {DD-MM-YYYY} NOLIMIT NO_CALENDAR INPUTRI             11 /* simpan file*/
+   usrcookie         ALLCAPS SCROLL   INPUTRI             13 /* simpan file*/
+   usrfont           ALLCAPS SCROLL   INPUTRI             13 /* simpan file*/
+   usrdafip          PROTECT SCROLL   INPUTRI             13 /* simpan file*/
+   usrythp           PROTECT SCROLL   INPUTRI             13 /* simpan file*/
+   usrtgllogin       NONE {DD-MM-YYYY} NOLIMIT NO_CALENDAR INPUTRI             14 /* simpan file*/
+   usrtglexp         NONE {DD-MM-YYYY} NOLIMIT NO_CALENDAR INPUTRI             14 /* simpan file*/
+   usremail          NONE SCROLL      INPUTRI             13 /* simpan file*/
+   usrpwdgaji        NONE SCROLL      INPUTRI             13 /* simpan file*/
+
+   ltomdet_d  	     TOMBOL	      INPUTRI	          27 /* Tombol Detil d*/
+   ltomdet_2d  	     TOMBOL	      INPUTRI	          28
+
+   /* Tombol Detil d*/
+
+MAP(mgrp)
+grpnam	usrgrp   REPLACE
+
+DEFAULTS(master)
+lDtype  INIT D
+lDtype  INIT_QUERY D
+lDtype  INIT_UPDATE D
+ltomdet_d    	INIT   "1d.Cabang Divisi"
+ltomdet_2d    	INIT   "2d.Aktivitas User"
+usrgrp  DUP_INIT
+lS	INIT		S
+lS	INIT_UPDATE	S
+lBR     INIT		BR
+lBR	INIT_UPDATE	BR
+usrtype DFALT_SCAN      USER
+			ADMIN   
+                        PENGGANTI
+                        BUYER    
+usrpos  DFALT_SCAN      asisten 
+                        supervisor 
+		        manager 
+		        stock_ctrl
+usrstr DFALT_SCAN     	P "User = File psi= Pegawai"
+		      	C "User = File cmp= Company"
+			U "User = File usr"
+
+HELP(master)
+Gunakan ? untuk melihat daftar grup usrgrp
+
+CALCS()
+cok   		usrnam != "ROOT  " || usrgrp == "ROOT "
+cok2		((usrgrp == "ROOT" || usrgrp == "RI") && djoingdf == 0) || (usrgrp != "ROOT" && usrgrp != "RI")
+cmanager	"manager"
+crootri		usrnam == "ROOT " || usrnam == "RI "
+cbknGanti	usrtype != "PENGGANTI"
+cGanti		usrtype == "PENGGANTI"
+cpsiP		usrstr == "P" && usrtype != "PENGGANTI" 
+cpsiC		usrstr == "C" 
+
+EDITS(master)
+Tombol d tidak ltomdet_d SHOW_SFL trans
+/*Tombol 2d tidak ltomdet_2d SHOW_SFL transa*/
+Harus Masukkan Kode usrkode MANDATORY
+Harus Masukkan Nama usrnam MANDATORY
+Harus Masukkan Grup usrgrp MANDATORY
+Kode ini sudah ada usrkode DUPKEY usrkodidx
+Grup ini tidak ada usrgrp VALIDATE grpnamidx mgrp sgrpUSR
+User Ini tidak ada di master Karyawan usrkode VALIDATE_IF cpsiP psikodidx mpsi spsi
+/*User Ini tidak ada di master Karyawan usrkode VALIDATE_IF cpsiP psmkodidx mpsm */
+User Ini tidak ada di master Karyawan usrkode VALIDATE_IF cpsiC cmpkodidx mcmp scmp
+
+MAP(mcmp)
+cmpkode		usrkode		REPLACE
+
+MAP(mpsi)
+psikode		usrkode		REPLACE
+psinama		usrnam		REPLACE
+
+/*
+MAP(mpsm)
+psmnama		usrnam		REPLACE*/
+
+MAP(mposisi)
+cmanager	usrpos		DO_CALC_IF crootri 
+
+MAP(mnama)
+usrkode		usrnam		NO_REPLACE
+
+HOOKS(master)
+AFTER_INPUT   cur_field=usrtype 	DO_IMAGE_IF cGanti img_ganti
+AFTER_INPUT   cur_field=usrkode DO_MAP SHOW mnama
+AFTER_INPUT   cur_field=usrgrp  DO_MAP SHOW
+		IF cok  mposisi
+		ELSE HKCURSOR STAY
+	     	HKMSG Grup dari root juga harus root
+AFTER_INPUT   cur_field=usrgrp  DO_MAP SHOW
+		IF cok2  mposisi
+		ELSE HKCURSOR NOSTAY
+	     	HKMSG harap detil dihapus dulu
+IMAGE(img_ganti)
+/------------------------------------------\
+   /-----------i.Pengganti---------------\   
+   | i.UserAsli :__________________      |   
+   | i.Pengganti:__________________      |   
+   | i.Exp      :__________________      |   
+   \-------------------------------------/   
+\------------------------------------------/
+
+FIELD(img_ganti)
+   usrlama           ALLCAPS          INPUTRI                  8 /* user Lama */
+   usrpsikode        ALLCAPS          INPUTRI                  9 /* user Pengganti */
+   usrtglexp         NONE NOLIMIT {DD-MM-YY}  INPUTRI          10 /* Tgl Exp    */
+
+EDITS(img_ganti)
+User Ini tidak ada usrlama VALIDATE_BUF3 usrkodidx musrLM susr
+e.MandatoryUsrLama usrlama MANDATORY_IF cGanti
+User Ini tidak ada usrpsikode VALIDATE_BUF3 usrkodidx musr susr
+e.MandatoryKodLama usrpsikode    MANDATORY_IF  cGanti
+e.MandatoryTglExp usrtglexp    MANDATORY_IF  cGanti
+
+MAP(musr)
+#usrkode	usrpsikode	REPLACE
+
+MAP(musrLM)
+#usrkode	usrlama		REPLACE
+#usrgrp 	usrgrp		REPLACE
+
+HOOKS(img_ganti)
+BEFORE_INPUT   cur_field=usrlama    DO_SKIP_IF cbknGanti
+BEFORE_INPUT   cur_field=usrpsikode DO_SKIP_IF cbknGanti
+BEFORE_INPUT   cur_field=usrtglexp  DO_SKIP_IF cbknGanti
+
+
+CALCS()
+cubah		usrkode != ~usrkode
+
+POSTING(master)
+   PST_UPD_DET_COND  cubah
+				
+CALCS()
+  croot   g_grpnam == "ROOT                "
+
+PERMIT(master)
+   PMT_DEL_COND croot
+   PMT_UPDALL_COND croot
+   PMT_ADD_COND croot
+   PMT_IGNDET_COND crootri
+
+PERMIT(trans)
+   PMT_ADD_COND croot
+   PMT_UPDALL_COND croot
+   PMT_DEL_COND croot
+
+IMAGE(transt) 
+/-------------------t-------------------t-------------t-----------------\
+|i.CabYgDiIjinkan   | i.NamaCab         | i.Dvs       | i.Keterangan    |
+\-------------------.-------------------.-------------.-----------------/
+
+IMAGE(trans) 
+| _________________ | _________________ |_____________|_________________|
+
+FIELD(trans)
+   gdfcab      ALLCAPS      INPUTRI     1
+   cabnama     PROTECT      INPUTRI     2
+   gdfbbm      ALLCAPS      INPUTRI     3
+   dtmket      PROTECT      INPUTRI     5
+
+DEFAULTS(trans)
+   gdftype    INIT   D   
+
+EDITS(trans)
+e.ValidateCab gdfcab VALIDATE cabstskodidx mcab scab {Pgv_INPG}
+e.ValidateDvs gdfbbm VALIDATE cadcabdtidx mcadDV scad {Pgdfcab} {Pgv_cabbis} {Pgdfcab}
+e.ValidateDvs gdfbbm VALIDATE dtmkodidx 0 0
+
+MAP(mcab)
+cabkode		gdfcab		REPLACE
+
+MAP(mcadDV)
+cadkode		gdfbbm		REPLACE
+
+DBCALCS(djoingdfD)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	gdftygrpcab lDtype usrkode gdfcab gdfbbm
+
+CALCS()
+cjoingdfD0	djoingdfD == 0
+
+MAP(mdum)
+lDtype		lDtype		REPLACE
+
+HOOKS(trans)
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW
+			IF cjoingdfD0 mdum
+			ELSE HKCURSOR STAY
+			HKMSG Cabang & Divisi ini sdh ada  
+
+CALCS()
+cusr_bknroot	usrgrp != "ROOT"
+
+SUBFILE(trans)
+SFL_TITLE(transt)
+SFL_LINES(6)    
+SFL_COND cusr_bknroot
+
+SFL_TARGET
+gdftygrpcab   lDtype usrkode 
+
+SFL_MAP
+   usrkode             gdfgrp           REPLACE
+   gdfbbm              gdffld           REPLACE
+
+
+/*IMAGE(transat) 
+/-----------t--------t-----------t--------t----------t---------------------------\
+|i.TglMsk   |i.JamMsk|i.TglKlr   |i.JamKlr| i.Sts    |  i.Terminal               |
+\-----------.-------.------------.--------.----------.---------------------------/
+
+IMAGE(transa) 
+|___________| _____ |___________ | ______ |   _____  |   _______________________ |
+
+FIELD(transa)
+    usdtglin            NONE  {DD-MM-YY} INPUTRI         1
+    usdjamin            PROTECT  {99:99}    NONE         2
+    usdtglout           PROTECT {DD-MM-YY}  NONE         3
+    usdjamout           PROTECT  {99:99}    NONE         4
+    usdsts              PROTECT             NONE         5
+    usdtty		PROTECT		NONE		6
+
+SUBFILE(transa)
+SFL_LINES(6)    
+SFL_TITLE(transat)
+SFL_TARGET
+    usdnamtgljam                usrnam*/
+
+/* -------------------- Report -------------------- */
+IMAGE(report) 
+/-----------------------------------------------------\
+             Pilihan: __  
+	     Tanggal: __________ s/d __________
+	     t.Xls:   ______
+\-----------------------------------------------------/
+			     
+
+FIELD(report)
+/* Symbol Name   Input Atribute  Output Atribute  Input Order  Special */
+   lpil             NOCHANGE                INPUTRI              1
+   ltglawl          NONE NOLIMIT {DD-MM-YY} INPUTRI              2
+   ltglakh          NONE NOLIMIT {DD-MM-YY} INPUTRI              3
+   lxls		    NONE		    INPUTRI		 4
+
+CALCS()
+ctglawal	ststglprjgl + 1
+
+DEFAULTS(report)
+lpil	DFALT_SCAN  	1 "Daftar Pemakai"
+			2 "Aktivitas User"
+			3 "Laporan Status Batal atau Selain Batal"
+			4 "Laporan RINCIAN Status Batal atau Selain Batal"
+			5 "Rekap usrgrup selain batal"
+ltglawl	INIT	{ctglawal}
+ltglakh	INIT	{g_tgltrn}
+lxls	DFALT_LIST	TIDAK YA
+
+CALCS()
+cpil1		lpil == 1
+cpil2   	lpil == 2
+cpil3		lpil == 3 && lxls == "TIDAK"
+cpil3y		lpil == 3 && lxls == "YA"
+cpil4		lpil == 4 && lxls == "TIDAK"
+cpil4y		lpil == 4 && lxls == "YA"
+cpil5		lpil == 5 && lxls == "TIDAK"
+cpil5y		lpil == 5 && lxls == "YA"
+
+/*DEFAULTS(qrts)
+usdtglin	INIT_QUERY     {ltglawl} : {ltglakh}*/
+
+MAP(mparam)
+ltglawl		ltglawl		REPLACE
+ltglakh		ltglakh		REPLACE
+
+HOOKS(report)
+BEFORE_INPUT	cur_field=ltglawl	DO_SKIP_IF cpil5
+BEFORE_INPUT	cur_field=ltglakh	DO_SKIP_IF cpil5
+
+RTREE(report)
+RT_COND cpil1
+USES_SCRIPT(scr3002a.rptdesign)
+
+RTREE(report2)
+RT_COND cpil2
+USES_SCRIPT(scr3002.rptdesign)
+/*RT_DEFAULT qrts*/
+
+RTREE(report3)
+RT_COND cpil3
+USES_SCRIPT(scr30022-p3.rptdesign)
+RT_MAP mparam
+RT_HTML
+RT_PRINT_BACKUP
+
+RTREE(report3y)
+RT_COND cpil3y
+USES_SCRIPT(scr30022-p3.rptdesign)
+RT_MAP mparam
+RT_XLS
+RT_PRINT_BACKUP
+
+RTREE(report4)
+RT_COND cpil4
+USES_SCRIPT(scr30022-p4.rptdesign)
+RT_MAP mparam
+RT_HTML
+RT_PRINT_BACKUP
+
+RTREE(report4y)
+RT_COND cpil4y
+USES_SCRIPT(scr30022-p4.rptdesign)
+RT_MAP mparam
+RT_XLS
+RT_PRINT_BACKUP
+
+RTREE(report5)
+RT_COND cpil5
+USES_SCRIPT(scr30021-p5.rptdesign)
+RT_HTML
+RT_PRINT_BACKUP
+
+RTREE(report5y)
+RT_COND cpil5y
+USES_SCRIPT(scr30021-p5.rptdesign)
+RT_MAP mparam
+RT_XLS
+RT_PRINT_BACKUP
+
+END_SCREEN

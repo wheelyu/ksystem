@@ -1,0 +1,181 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+||t.Userinput :____________________||
+||t.Nama      :____________________||
+||t.GrpLog    :____________________||
+||t.TglInput  :____________________||
+||i.Pekerjaan :____________________||
+||            t.Valid __           ||
+||i.TypMtr    :____________________||
+||            t.Valid __           ||
+||i.Alamat    :____________________||
+||            t.Valid __           ||
+||t.ValidKunj :____________________||
+||t.ValidFKunj:____________________||
+||t.UnitLihat :____________________||
+||t.HasilReviewNSOMSO : ______     ||
+||t.HasilReviewAM                  ||
+||:                                ||
+||:                                ||
+||: _______________________________||
+||:                                ||
+||:                                ||
+||: _______________________________||
+||t.Kasus    :______              _||
+||t.Int/Ext  :______               ||
+||            _____________________||
+||t.JnsKasus :______               ||
+||            _____________________||
+||                                 ||
+||                  _________      ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode			PROTECT		INPUTRI	1
+lnamarevkwl             PROTECT         INPUTRI 2
+lgruprevkwl             PROTECT         INPUTRI 3
+svitgl2                 PROTECT {DD-MM-YYYY} NOLIMIT    INPUTRI 4
+
+lpekerjaan              PROTECT         INPUTRI 11
+svistr32                NOCHANGE        INPUTRI 12
+ltypemotor              PROTECT         INPUTRI 13
+svistr33                NOCHANGE        INPUTRI 14
+lalamat                 PROTECT         INPUTRI 15
+svistr36                NOCHANGE        INPUTRI 16
+svistr37                NOCHANGE        INPUTRI 17
+svistr38                NOCHANGE        INPUTRI 18
+svistr39                NOCHANGE        INPUTRI 19
+svistr2                 NOCHANGE        INPUTRI 20
+
+sviket			TEXTAREA	INPUTRI	21
+sviket2                 TEXTAREA        INPUTRI 22
+svistr35                NOCHANGE        INPUTRI 23
+lENTER                  NOCHANGE        INPUTRI 24
+svistr9                 NOCHANGE        INPUTRI 25
+lketjenis               PROTECT         INPUTRI 26
+svistr10                NOCHANGE        INPUTRI 27
+ljnskasus               PROTECT         INPUTRI 28
+lENTER                  NOCHANGE        INPUTRI 29
+
+CALCS()
+cjkksusb                svistr35=="Y"
+cjkksusb2               svistr35=="T"
+
+DEFAULT(tmptranst)
+IF ccobait svikode			INIT		{g_usrkode}
+IF ccobait svikode			INIT_UPDATE	{g_usrkode}
+svitgl2                 INIT            {g_tgltrn}
+svinourt		INIT		1
+svinourt		INIT_UPDATE	1
+svistr32                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr33                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr36                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr37                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr38                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr39                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr35                DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr2                 DFALT_SCAN      BLANKS
+                                        BENAR "BENAR"
+                                        SALAH "SALAH"
+
+EDITS(tmptranst)
+e.Validate		svikode         VALIDATE        psikodidx mpsipic7 0
+e.Validate		svikode         VALIDATE        usrkodidx musrpic7 0
+e.Validate              svistr9         VALIDATE tbddatkodidx mtbd7_2 stbd  {Pgv_dttabel} {Pgv_survey21} {Pljenissvy}
+e.Validate              svistr10        VALIDATE tbtdattypkod mtbt7_3 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {Pljenissvy} {Psvistr9}
+e.Mandatory		sviket		MANDATORY
+e.Mandatory             svistr2         MANDATORY
+e.Mandatory             svistr32        MANDATORY
+e.Mandatory             svistr33        MANDATORY
+e.Mandatory             svistr35        MANDATORY
+e.Mandatory             svistr36        MANDATORY
+e.Mandatory             svistr37        MANDATORY
+e.Mandatory             svistr38        MANDATORY
+e.Mandatory             svistr39        MANDATORY
+e.Mandatory             svistr9         MANDATORY_IF cjkksusb
+e.Mandatory             svistr10        MANDATORY_IF cjkksusb
+
+MAP(musrpic7)
+usrgrp                  lgruprevkwl     REPLACE
+
+MAP(mpsipic7)
+psinama                 lnamarevkwl     REPLACE
+
+MAP(mtbd7_2)
+tbdkode         svistr9         REPLACE
+cblanks         lketjenis       DO_CALC
+tbdket          lketjenis       REPLACE
+
+MAP(mtbt7_3)
+tbtkode         svistr10        REPLACE
+cblanks         ljnskasus       DO_CALC
+tbtket          ljnskasus       REPLACE
+
+MAP(mksngkwl)
+cblanks         svistr9         DO_CALC
+cblanks         svistr10        DO_CALC
+cblanks         lketjenis       DO_CALC
+cblanks         ljnskasus       DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW mpanjangh
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW
+                        IF cpjgrvwh mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin20
+AFTER_INPUT             cur_field=svistr35      DO_MAP SHOW mksngkwl
+BEFORE_INPUT            cur_field=svistr9       DO_SKIP_IF cjkksusb2
+BEFORE_INPUT            cur_field=svistr10      DO_SKIP_IF cjkksusb2
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF cisirvwam mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.IsiReviewKwl
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF chmcm2wam726 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiSesuaiKwl
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csdhambil2
+SFL_TARGET
+        svidatbuktyp    gv_datasurvey mtsnobuk lkunjrvwhmcm2wam l1
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svidtmkode      REPLACE
+gv_datasurvey   svidata         REPLACE
+lkunjrvwhmcm2wam     svitype         REPLACE
+l1		svinourt	REPLACE
+g_usrkode       svikode         REPLACE
+g_tgltrn        svitgl2         REPLACE
+
+SPCALCS(sptrans2g16)
+DO_LIB ap_dbclc(DNAME dmaptrans2g15,DCOMMAND MAPMAP,DMAP mmaptrans2hmcm2wam);
+DO_LIB_IF cdjoinabkkwl ap_dbclc(DNAME dupdabkkwl2, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnobukabkkwl, DMAP mupdabkhmcm2wam);
+DO_LIB_IF ctambah ap_dbclc(DNAME dupdftmkwl2, DCOMMAND UPDATE, DTARGET ftmdatbukidx gv_datasurvey mtsnoasal, DMAP mupdftmhmcm2wam);
+DO_LIB ap_dbclc(DNAME dupdmtskwl2,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmtshmcm2wam);
+
+POSTING(tmptrans)
+PST_ADDCMD	sptrans2g16
+PST_UPDCMD	sptrans2g16

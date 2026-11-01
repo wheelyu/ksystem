@@ -1,0 +1,383 @@
+LOCAL
+PGM_FIELDS
+lnamamitra	STRING	61
+lnohp           STRING  21
+ltompjtlp       STRING  21
+ltomdvhtlp      STRING  21
+ltombupltlp     STRING  11
+lrevhotlp       STRING  11
+lrevdvhtlp      STRING  11
+lvertlp		STRING	11
+lpsmsts3        STRING   5
+ljamtlpmtr	TIME	 4
+ljmltlpmitra	INT2	 2
+
+/*========== join ambil no telp ==========*/
+CALCS()
+cnotelp		condata == gv_TELP11
+csdmadhsama	tkdstr1 == tkmplg && tkdnourt == svinourt
+
+MAP(mjoinnohp)
+conhp		lnohp		REPLACE
+DBCALCS(djoinnohp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx svikode
+	DBC_SELECT	cnotelp
+	DBC_MAP		mjoinnohp
+
+/*========== join ambil tkd ==========*/
+MAP(mjointelp)
+tkdjml2		ljamtlpmtr	REPLACE
+DBCALCS(djointkdtelp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll lSPKADH11 tkmnobuk lTELPMITRA21 
+	DBC_SELECT	csdmadhsama
+	DBC_MAP		mjointelp
+
+CALCS()
+csdhtlpmitra	#svikode == svikode
+ctkdtlpmitra	tkdnoll == "TELPMITRA"
+
+/*============ cek data svi ============*/
+MAP(mscantlpmitra)
+l1		ljmltlpmitra	REPLACE_IF csdhtlpmitra
+DBCALCS(dscantlpmitra)
+	DBC_COMMAND	SCANSCAN_BUF3	
+	DBC_TARGET	svidatbuktyp  lSPKADH11 tkmnobuk lTELPMITRA
+	DBC_SELECT	csdhtlpmitra
+	DBC_SUM_MAP	mscantlpmitra
+
+/*============ cek data tkd ============*/
+DBCALCS(djointkdtlpmitra)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkdbukidx svinobuk gv_OPEN svinourt
+	DBC_SELECT	ctkdtlpmitra
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.TELPONMITRA		 	        ||
+|\--------------------------------------/|
+|/--------------------------------------\|
+|	       ___	  	         |
+| t.Idmitra    _____________  ___________|
+| t.Telp       ______________            |
+| t.KetCall    _____________		 |
+| t.hasilcall  _________________________ |
+| t.Kendala    _________________________ |
+| t.Jamkerja   __________________________|
+|                                 _______|
+|\--------------------------------------/|
+
+|/--------------------------------------\|
+| t.BuktiCall   		      ___|
+|\--------------------------------------/|
+|/---------------UPLOAD-----------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+			        _________
+|/--------------------------------------\|
+| t.RevHO      __________ __ _______     |
+|              _________________________ |
+| t.RevDVH     __ __________________     |
+|              _________________________ |
+| ________________      ________________ |
+|       __                    __         |
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	PROTECT			INPUTRI  1
+svikode         ALLCAPS                 INPUTRI  2  /*ID Mitra*/
+lnamamitra      PROTECT ALLCAPS         INPUTRI  3  /*Nama Mitra*/
+svistr5         ALLCAPS                 INPUTRI  4  /*No. Telpon Mitra*/
+svistr1         NOCHANGE                INPUTRI  5  /*Ket. Call*/
+svinama		TEXTAREA		INPUTRI  6  /*Ket Hasil Call*/
+sviket		TEXTAREA         	INPUTRI  7  /*Ket Kendala*/
+ljamtlpmtr      PROTECT                 INPUTRI  8  /*Jam mulai spk*/
+lenter          ALLCAPS                 INPUTRI  9  /*Tombol enter*/
+svistr3         PROTECT                 INPUTRI 10  /*Status Sudah Upload*/
+ltombupltlp	TOMBOL			INPUTRI	11  /*Tombol Upload OK*/
+
+svitype2        PROTECT                 INPUTRI 12 /*NIP Rev HO*/
+svistr34        NOCHANGE                INPUTRI 13 /*ket Rev SPV*/
+lrevhotlp       PROTECT                 INPUTRI 14
+sviket2         TEXTAREA                INPUTRI 15 /*isi ket review HO*/
+svistr35        NOCHANGE                INPUTRI 16 /*ket Rev DVH*/
+lrevdvhtlp      PROTECT                 INPUTRI 17
+sviket3         TEXTAREA                INPUTRI 18 /*isi ket review DVH*/
+
+ltompjtlp       TOMBOL          	INPUTRI 19
+ltomdvhtlp      TOMBOL          	INPUTRI 21
+svistr36        PROTECT         	INPUTRI 20
+svistr37        PROTECT         	INPUTRI 22
+
+DEFAULTS(tmptranst)
+lvertlp			INIT			2606.18v1
+svistr1			DFALT_SCAN_BLANKS	DIANGKAT
+						TIDAK
+svistr34        	DFALT_SCAN_BLANKS   	1 "ACC"
+                	                    	2 "TACC"
+svistr35        	DFALT_SCAN_BLANKS   	1 "ACC"
+                	                    	2 "TACC"
+lenter			INIT			"ENTER"
+ltombupltlp		INIT			"UPLOAD OK"
+ltompjtlp               INIT                    "SELESAI REV PJ HO"
+ltomdvhtlp              INIT                    "SELESAI REV DVH"
+IF chnypjho svitype2	INIT_UPDATE			{g_usrkode}
+
+CALCS()
+cjawabcall3		svistr1=="DIANGKAT" && (g_curcmd == 1 || g_curcmd == 2)
+ctdkcall3		svistr1=="TIDAK" && (g_curcmd == 1 || g_curcmd == 2)
+cdtmitra3       	lpsmsts3 == "INPG"
+cbtstlpmtr      	svidf1 < 1
+ctdtlpmtr       	svidf1 + 1
+csdhupltelp		svidf1 == 1
+cjointkdtelp		djointkdtelp == 1
+ctelpcek		(g_curcmd==1 && (dscantlpmitra==0 || dscantlpmitra!=0) && ljmltlpmitra < 1) || g_curcmd == 2
+cangkattlp		tkdnourt == svinourt && djointkdtlpmitra==1 && svidf1 != 0 && svistr3 != "OK" && svistr1=="DIANGKAT"
+ctdktlp			tkdnourt == svinourt && djointkdtlpmitra==1 && svidf1 != 0 && svistr3 != "OK" && svistr1=="TIDAK"
+curttlpmtr0  		djoinuruttlpmtr==0 && g_curcmd==1
+curttlpmtr1     	djoinuruttlpmtr==1 && g_curcmd==1
+curttlpmtr      	FLD_TO_STRING(svinourt) + "TLPMITRA"
+cjoinnohp		djoinnohp == 1
+crev1tlp        	svistr34 == "1" && svitype == "TELPMITRA"
+crev1atlp       	svistr35 == "1" && svitype == "TELPMITRA"
+crev2tlp        	svistr34 == "2" && svitype == "TELPMITRA"
+crev2atlp     		svistr35 == "2" && svitype == "TELPMITRA"
+cpjhosdhrevtlp          svistr34 != BLANKS
+cdvhsdhrevtlp           svistr35 != BLANKS
+ctambahdata2 		(g_curcmd == 1 || g_curcmd == 2) && (g_usrkode == tkmplg || g_grpnam == "IT")
+
+EDITS(tmptranst)
+e.Nomor Telepon Tidak Boleh Kosong	svistr5		MANDATORY
+e.Kode Mitra Harus Diisi		svikode		MANDATORY
+e.Keterangan Call Harus Diisi		svistr1		MANDATORY
+e.Ket. Hasil Call Harus Diisi		svinama		MANDATORY_IF cjawabcall3
+e.Ket. Kendala Harus Diisi		sviket		MANDATORY_IF ctdkcall3
+
+e.Validate Master Call Mitra	 	svikode         VALIDATE_IF ctambahdata2 tbtdattypkod mdtmitra3 stbtcallmit {Pgv_dttabel} {Pgv_dttabel21} {PlMASTERTARGET} {PlM4W21} {PlMASTERTLPMITRA}
+/*e.Bukan Mitra Upline 		 	svikode         VALIDATE psddatpsmkod mdtmitra3 spsd {PlKETMITRA11} {Ptkmplg} {Slm4w}*/
+e.Validate KTP 3201			svikode		VALIDATE psmktpidx mktpmit 0
+
+
+/*===== Data Mitra 3201 =====*/
+MAP(mdtmitra3)
+tbtkode		svikode		REPLACE
+cBLANKS		ljamtlpmtr	DO_CALC
+cwib            ljamtlpmtr      DO_CALC_IF ckdwib
+cwita           ljamtlpmtr      DO_CALC_IF ckdwita
+cwit            ljamtlpmtr      DO_CALC_IF ckdwit
+ljamtlpmtr	ljamtlpmtr	REPLACE_IF cjointkdtelp
+lnohp		svistr5		REPLACE_IF cjoinnohp
+cBLANKS         lrevhotlp       DO_CALC
+cBLANKS         lrevdvhtlp      DO_CALC
+cACC            lrevhotlp       DO_CALC_IF crev1tlp
+cTACC           lrevhotlp       DO_CALC_IF crev2tlp
+cACC            lrevdvhtlp      DO_CALC_IF crev1atlp
+cTACC           lrevdvhtlp      DO_CALC_IF crev2atlp
+
+MAP(mktpmit)
+psmktp		svikode		REPLACE
+psmnama		lnamamitra	REPLACE
+psmstssup	lpsmsts3	REPLACE
+
+MAP(murttelpmtr)
+l1		svinourt	REPLACE_IF curttlpmtr0
+curut		svinourt	DO_CALC_IF curttlpmtr1
+curttlpmtr	svistr4		DO_CALC
+
+MAP(mhslrevtlp)
+cACC            lrevhotlp       DO_CALC_IF crev1tlp
+cTACC           lrevhotlp       DO_CALC_IF crev2tlp
+cACC            lrevdvhtlp      DO_CALC_IF crev1atlp
+cTACC           lrevdvhtlp      DO_CALC_IF crev2atlp
+
+/*========== Jika ubah ket. call == DIANGKAT or TIDAK ==========*/
+MAP(mupdtdkcall)
+cBLANKS         svinama          DO_CALC_IF ctdkcall3
+
+MAP(mupdangkat)
+cBLANKS		sviket		DO_CALC_IF cjawabcall3
+
+MAP(mupdtandaoktlp)
+cOK             svistr3         DO_CALC_IF csdhupltelp
+
+MAP(mupdtlpmitra)
+l28             tkdjml3         REPLACE_IF cangkattlp
+l8		tkdjml3		REPLACE_IF ctdktlp
+DEBUG		ldum	ldum	REPLACE
+DBCALCS(dupdtlpmitra)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_TARGET	tkddatbukll svidata svinobuk lTELPMITRA21
+	DBC_MAP		mupdtlpmitra
+
+/*===== upd tkd review =====*/
+MAP(mmaptlp)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+
+MAP(mupdrevpjhotlp)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum       REPLACE
+DBCALCS(dupdrevpjhotlp)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhotlp
+
+MAP(mupdrevdvhtlp)
+ctam1           tkdjml          DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhtlp)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhtlp
+
+MAP(muprevdpjhotlp1)
+lOK             svistr36        REPLACE_IF cpjhosdhrevtlp
+
+MAP(mupdrevdvhtlp1)
+lOK             svistr37        REPLACE_IF cdvhsdhrevtlp
+
+MAP(mupdrevabkpjhotlp2)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhtlp2)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spaddtkdtelp)
+dupdtlpmitra
+DO_LIB		ap_dbclc(DNAME dupdtandaoktlp,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdtandaoktlp);
+
+SPCALCS(spupdrevpjhotlp)
+DO_LIB          		ap_dbclc(DNAME dmaptlp1,DCOMMAND MAPMAP,DMAP mmaptlp);
+DO_LIB         			ap_dbclc(DNAME dupdoktlp1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhotlp1);
+dupdrevpjhotlp
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjtlp2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhotlp2);
+
+SPCALCS(spupdrevdvhtlp)
+DO_LIB          		ap_dbclc(DNAME dmaptlp2,DCOMMAND MAPMAP,DMAP mmaptlp);
+DO_LIB          		ap_dbclc(DNAME dupdoktlp2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhtlp1);
+dupdrevdvhtlp
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhtlp2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhtlp2);
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF ctelpcek      mdum
+                ELSE
+                HKCURSOR STAY
+                HKMSG    ID Mitra Sudah Ditambahkan
+
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF cdtmitra3    mdum
+                ELSE
+                HKCURSOR        STAY
+                HKMSG Status Mitra Harus INPG
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW murttelpmtr
+
+CLICKED		cur_field=ltombupltlp	DO_SPCALCS spaddtkdtelp 
+
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW mupdangkat
+AFTER_INPUT     cur_field=svistr1       DO_MAP SHOW mupdtdkcall
+
+BEFORE_INPUT	cur_field=svinama	DO_SKIP_IF ctdkcall3
+
+BEFORE_INPUT	cur_field=svikode	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svinama       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltombupltlp   DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      DO_SKIP_IF cpjho
+BEFORE_INPUT 	cur_field=lrevhotlp	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35      DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=lrevdvhtlp    DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cdvh
+
+AFTER_INPUT	cur_field=svistr34	DO_MAP SHOW mhslrevtlp
+AFTER_INPUT	cur_field=svistr35	DO_MAP SHOW mhslrevtlp
+
+CLICKED         cur_field=ltompjtlp     DO_SPCALCS spupdrevpjhotlp
+CLICKED         cur_field=ltomdvhtlp    DO_SPCALCS spupdrevdvhtlp
+
+/*tanda sudah upload*/
+MAP(mupdsvitlpmtr)
+ctdtlpmtr       svidf1             DO_CALC_IF cbtstlpmtr
+DBCALCS(dupdsvitlpmtr)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvitlpmtr
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD 	    svinobuk svistr4 	/*Nama File Upload*/
+SFL_UPLFLD_DBCALCS  dupdsvitlpmtr	/*Bukti Tanda Uplad*/
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lTELPMITRA
+SFL_MAP
+tkmnobuk        svinobuk
+lSPKADH11       svidata
+lTELPMITRA      svitype
+
+/*===== add menit di data tkd ======*/
+MAP(maddtkdtelp)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+svitype         tkdnoll         REPLACE
+ljamtlpmtr      tkdjml2         REPLACE
+gv_OPEN         tkdsts          REPLACE
+tkmplg          tkdstr1         REPLACE
+tkmtgl          tkdtgl          REPLACE
+svinourt        tkdnourt        REPLACE
+
+MAP(maddtkdrevtlp)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mupdtbtcallmit)
+l1		tbtdf1		REPLACE
+g_tgltrn	tbttglcrt	REPLACE
+
+MAP(mupdtbtcallmitx2)
+cBLANKS		tbtdf1		DO_CALC
+cBLANKS		tbttglcrt	DO_CALC
+
+SPCALCS(sptranstlpmitra)
+DO_LIB          ap_dbclc(DNAME daddtkdtelp,DCOMMAND ADD,DFILE tkd,DMAP maddtkdtelp);
+DO_LIB		ap_dbclc(DNAME dupdtbtcallmit,DCOMMAND UPDATE,DTARGET tbtdattypkod gv_dttabel gv_dttabel21 lMASTERTARGET lM4W21 lMASTERTLPMITRA svikode,DMAP mupdtbtcallmit); /*tandai jika kode sudah diinput*/
+
+SPCALCS(spupdtkdtlp1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdtlp1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevtlp);
+DO_LIB_IF ctambahdata2	    ap_dbclc(DNAME dupdtbtcallmitx,DCOMMAND UPDATE,DTARGET tbtdattypkod gv_dttabel gv_dttabel21 lMASTERTARGET lM4W21 lMASTERTLPMITRA svikode,DMAP mupdtbtcallmit);	  /*update tanda jika revisi kode*/
+DO_LIB_IF ctambahdata2	    ap_dbclc(DNAME dupdtbtcallmitx2,DCOMMAND UPDATE,DTARGET tbtdattypkod gv_dttabel gv_dttabel21 lMASTERTARGET lM4W21 lMASTERTLPMITRA ~svikode,DMAP mupdtbtcallmitx2);	  /*reset tanda jika revisi kode*/
+
+
+POSTING(tmptrans)
+PST_ADDCMD      sptranstlpmitra
+PST_UPDCMD	spupdtkdtlp1

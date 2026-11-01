@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+ldocdata	STRING	11
+lnhdnobbmEst	STRING	21
+
+MAP(mjoinnhdEst)
+nhdnobbm	lnhdnobbmEst	REPLACE
+
+DBCALCS(djoinnhdEst)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	nhddatbukidx lESTIMASI tlmnobuk gv_INPG doclok
+	DBC_MAP		mjoinnhdEst
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/--------s.UPLOAD------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+|| t.Berkas  ___  __________________||
+||           _______________________||
+||           _______________________||
+||           _______________        ||
+||           _______                ||
+|\----------------------------------/|
+\------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+docnourt	NOCHANGE		INPUTRI	1
+docnobuk	NOCHANGE		INPUTRI	1
+doctype		NOCHANGE		INPUTRI	1
+doclok		NOCHANGE		INPUTRI	1
+doctgljadi	PROTECT {DD-MM-YYYY}	INPUTRI	1
+docsts		PROTECT			INPUTRI	1
+
+DEFAULTS(tmptranst)
+ldocdata	INIT		UPLPARTEST
+
+CALCS()
+cY		"Y"
+csdhY		docsts != "Y"
+
+MAP(mupddoc)
+cY		docsts		DO_CALC
+g_tgltrn	doctgljadi	REPLACE
+
+DBCALCS(dupddoc)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	docprmidx docprm
+	DBC_MAP		mupddoc
+
+SUBFILE(tmptrans)
+SFL_LINES(1) 
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND csdhY
+SFL_UPLFLD_DBCALCS dupddoc
+SFL_UPLFLD docnobuk doclok       
+SFL_UPL_DIRFLD tlmtgljtp
+SFL_UPL_CAMERAONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+        docdatbukidx	ldocdata tlmnobuk
+
+SFL_MAP
+ldocdata	docdata		REPLACE
+tlmnobuk	docnobuk	REPLACE
+
+CALCS()
+cBolehHapus		tlmsts=="OPEN" && djoinnhdEst==1 && lnhdnobbmEst=="TIDAKGANTI"
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND		c0
+PMT_UPDALL_COND		c0
+PMT_DEL_COND		cBolehHapus

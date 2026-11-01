@@ -1,0 +1,200 @@
+LOCAL
+PGM_FIELDS
+ljabatanuser1     STRING  21
+lgruploguser1     STRING  21
+ljabatanuser2     STRING  21
+lgruploguser2     STRING  21
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------\
+|/--------------------------------------------------------------------\|
+  t.WawancaraUser                
+  t.Jenis        : _____________
+  t.Hasil        : _____                                                                        
+  t.Kat          : __ _______________                                                   
+  t.Als1         : __________________                                                   
+  t.PenTacc      : __________________                                                   
+  t.TypCalon     : ____________
+  t.Keterangan   : _______________                                                   
+  t.Tgl          : _________                                                         
+  t.NipInterUser1: _________ ________________________________________                                                        
+                   _______________  _______________
+  t.Ket          : __________________________________________________
+  t.NipInterUser2: _________ ________________________________________                
+                   _______________  _______________
+  t.Ket          : __________________________________________________
+|\--------------------------------------------------------------------/|
+\----------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr3			NOCHANGE		INPUTRI 1
+psdtype 		NOCHANGE               	INPUTRI 2
+amtstr2_3     NOCHANGE    INPUTRI 3
+lkattaccitv PROTECT     INPUTRI 3
+lalstaccitv PROTECT     INPUTRI 3
+lkettaccitv TEXTAREA PROTECT     INPUTRI 3
+psdstr4			NOCHANGE		INPUTRI 4
+psdstr5  		PROTECT       	 	INPUTRI 4
+psdtgl1 		PROTECT {DD-MM-YY} NOLIMIT INPUTRI 5
+psdstr1 		ALLCAPS       	 	INPUTRI 6
+lnamaitvuser1		PROTECT			INPUTRI	7
+ljabatanuser1           PROTECT                 INPUTRI 7
+lgruploguser1           PROTECT                 INPUTRI 7
+psdket			TEXTAREA		INPUTRI 8
+psdstr2 		ALLCAPS       	 	INPUTRI 9 
+lnamaitvuser2		PROTECT			INPUTRI	10
+ljabatanuser2           PROTECT                 INPUTRI 12
+lgruploguser2           PROTECT                 INPUTRI 13
+psdket2			TEXTAREA		INPUTRI 11
+
+CALCS()
+c3		3
+cberkas_aktif	psdstr4=="BERKAS_AKTIF"
+cberkas_aktifgajadi	psdstr4=="OPEN_SDM" && btmsurveyor=="INTV_USER"
+cberkasaktif	btmsurveyor=="BRKS_AKTIF"
+cnoberkasaktif	btmsurveyor!="BRKS_AKTIF"
+cintvusrbeda	psdstr1!=psdstr2 || btmsurveyor=="BRKS_AKTIF"
+
+DEFAULTS(tmptranst)
+psdstr3		DFALT_SCAN_BLANKS DATANG_LANGSUNG
+				  TELEPHONE
+				  VIDEO_CALL
+
+psdtype 	DFALT_SCAN_BLANKS ACC                        
+                                  TACC             
+
+IF cnoberkasaktif psdstr4 DFALT_SCAN_BLANKS	OPEN_SDM
+						BERKAS_AKTIF
+IF cberkasaktif psdstr4 DFALT_SCAN_BLANKS	OPEN_SDM
+psdtgl1		INIT		{g_tgltrn}
+
+EDITS(tmptranst)
+t.Mandatory psdstr3	MANDATORY_IF cnoberkasaktif
+t.Mandatory psdtype	MANDATORY_IF cnoberkasaktif
+t.Mandatory psdstr4	MANDATORY_IF cacc
+t.Mandatory psdket	MANDATORY_IF cnoberkasaktif
+t.Mandatory psdket2   	MANDATORY_IF cnoberkasaktif
+t.Mandatory psdtgl1  	MANDATORY_IF cnoberkasaktif
+t.Mandatory psdstr1 	MANDATORY_IF cnoberkasaktif
+t.Mandatory psdstr2 	MANDATORY_IF cnoberkasaktif
+t.Mandatory amtstr2_3 	MANDATORY_IF ctacc
+
+t.Validate psdstr1 VALIDATE  psikodidx mbtm_interviewb
+t.Validate psdstr2 VALIDATE  psikodidx mbtm_interviewc
+t.Validate psdstr1 VALIDATE  usrkodidx musr1
+t.Validate psdstr2 VALIDATE  usrkodidx musr2
+e.ValidateTbdTacc amtstr2_3 VALIDATE_IF ctacc  tbddatkodidx mtbdtacc2 stbdtaccitv {Pgv_dttabel} {Pgv_personal} {PlTACCITV136a}
+t.ValidateKet amtstr2_3 VALIDATE_IF ctacc ketdatbukkod mkettacc2 sket {PlTACCITV136}
+
+MAP(musr1)
+usrkode         psdstr1         REPLACE
+usrgrp          lgruploguser1   REPLACE
+
+MAP(musr2)
+usrkode         psdstr2         REPLACE
+usrgrp          lgruploguser2   REPLACE
+
+MAP(mbtm_interviewb)
+psikode		psdstr1		REPLACE
+psinama		lnamaitvuser1	REPLACE
+psijabatan      ljabatanuser1   REPLACE
+
+MAP(mbtm_interviewc)
+psikode		psdstr2		REPLACE
+psinama		lnamaitvuser2	REPLACE
+psijabatan      ljabatanuser2   REPLACE
+
+MAP(mket2)
+clolos		psdstr5		DO_CALC_IF cacc
+ctdk  		psdstr5		DO_CALC_IF ctacc
+c3		psdtot3		DO_CALC_IF cberkas_aktif
+c0		psdtot3		DO_CALC_IF cberkas_aktifgajadi
+cblanks   amtstr2_3 DO_CALC_IF cacc
+
+MAP(mtbdtacc2)
+tbdkode       amtstr2_3       REPLACE
+tbdkettype    lkattaccitv   REPLACE
+tbdtblket     lalstaccitv   REPLACE
+
+MAP(mkettacc2)
+ketnobuk      amtstr2_3       REPLACE
+ketisi        lkettaccitv   REPLACE
+  
+
+CALCS()
+cFu2_done        ((djoinpsduser_FU1==1 && lpiluser_FU1=="LANJUT_INTERVIEW") || (djoinpsduser_FU2==1 && lpiluser_FU2=="LANJUT_INTERVIEW") || (djoinpsduser_FU3==1 && lpiluser_FU3=="LANJUT_INTERVIEW"))
+/*
+clvjab1		 djointbdjabintv==1 && djoinpsijabusrintv==1 && djointbdlvusrintv==1 && djointbdlvblhintv==1 && ( (ltbddf1<3 && ltbdkode=="SUPERVISOR") || (ltbddf1==3 && ltbdkode=="SRSUPERVISOR") ||
+		(ltbddf1==4 && ltbdkode=="JRMANAGER") || (ltbddf1==5 && ltbdkode=="MANAGER") || (ltbddf1==6 && ltbdkode=="SRMANAGER") || (ltbddf1==7 && ltbdkode=="JRGM") || (ltbddf1==8 && ltbdkode=="GM") 		   || (ltbddf1==9 && ltbdkode=="SRGM") || (ltbddf1==10 && ltbdkode=="JREXECUTIVE") || (ltbddf1==11 && ltbdkode=="EXECUTIVE") )
+
+clvjab2          djointbdjabintv==1 && djoinpsijabusrintv==1 && djointbdlvusrintv==1 && djointbdlvblhintv==1 && djoinpsijabusrintv2 && djointbdlvusrintv2 && djointbtlvusr2intv==1
+*/
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr3	DO_SKIP_IF cberkasaktif
+BEFORE_INPUT	cur_field=psdtype	DO_SKIP_IF cberkasaktif
+BEFORE_INPUT	cur_field=psdstr4	DO_SKIP_IF ctacc
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF cberkasaktif
+BEFORE_INPUT	cur_field=psdtgl1	DO_SKIP_IF cberkasaktif
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cberkasaktif
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cberkasaktif
+BEFORE_INPUT cur_field=amtstr2_3 DO_SKIP_IF cacc
+
+
+AFTER_INPUT	cur_field=psdtype	DO_MAP SHOW mket2
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW mket2
+AFTER_INPUT     cur_field=psdstr3       DO_MAP SHOW
+                IF cFu2_done mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.FuHarusSelesai
+
+AFTER_INPUT     cur_field=psdtgl1  DO_MAP SHOW
+                IF ctglinterview mdum
+                ELSE HKCURSOR STAY
+                HKMSG i.TglTdkBlhLebihHariIni
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF cintvusrbeda mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipIntvUsr1BedaUsr2
+
+/*
+AFTER_INPUT     cur_field=psdstr1       DO_MAP SHOW
+                IF clvjab1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.LvlJabUserTdkSesuai
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF clvjab2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.LvlJabUser2TdkSesuai
+*/
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cFu2_done mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.FuHarusSelesai
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ctglinterview mdum
+                ELSE HKCURSOR STAY
+                HKMSG i.TglTdkBlhLebihHariIni
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cintvusrbeda mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipIntvUsr1BedaUsr2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod gv_clnkry11 btmnobuk gv_interviewuser21 
+
+SFL_MAP
+gv_clnkry11   	psddata		REPLACE
+btmnobuk	psdpsmkode	REPLACE
+gv_interviewuser21	psdkode		REPLACE
+

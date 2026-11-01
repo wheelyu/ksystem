@@ -1,0 +1,90 @@
+LOCAL
+PGM_FIELDS
+lfakprio3          STRING      21
+/* ltglawlbln         DATE        4 */
+lmtsnobuk735       STRING      21
+lttlkunjungan735   INT2        2
+ltglkebbayar       DATE        4
+
+
+MAP(mjoinfakprio3)
+aktket      lfakprio3   REPLACE
+
+DBCALCS(djoinfakprio3)
+   DBC_COMMAND JOIN
+   DBC_TARGET  aktkodtypidx piknobuk gv_kunjungan11 lFAKPRIO21
+   DBC_MAP     mjoinfakprio3
+
+MAP(mjoinmtskunjungan)
+mtsnobuk lmtsnobuk735   REPLACE
+
+DBCALCS(djoinmtskunjungan)
+   DBC_COMMAND JOIN
+   DBC_TARGET  mtsdatstsasl   lKUNJUNGAN gv_CLSD piknobuk
+   DBC_MAP     mjoinmtskunjungan
+
+CALCS()
+cdikunjungi       svistr31 == "1"
+
+MAP(mscansvikunjungan)
+c1    lttlkunjungan735     DO_CALC_IF cdikunjungi
+
+DBCALCS(dscansvikunjungan)
+   DBC_COMMAND SCANSCAN
+   DBC_TARGET  svidatbuktyp   lKUNJUNGAN lmtsnobuk735 lKUNJKOL1
+   DBC_SUM_MAP mscansvikunjungan
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.KebByrKons                     ||
+||                                 ||
+||t.Pre             ____________ _ ||
+||t.KunjOp          ______________ ||
+||t.KunjMax         ______________ ||
+||t.KunjAct         ______________ ||
+||t.TglTgtSls       ______________ ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)  
+lfakprio3            ALLCAPS     INPUTRI 1 /* Prediksi                          */
+aktkode              ALLCAPS     INPUTRI 1
+aktdf1               ALLCAPS     INPUTRI 2 /* Kunjungan Optimal  (DARI PRN RAS) */
+aktdf2               ALLCAPS     INPUTRI 3 /* Kunjungan Maksimal (DARI PRN RAS) */
+lttlkunjungan735     ALLCAPS     INPUTRI 4 /* Kunjungan Actual   (DARI KUNJ 735)*/
+akttgl               ALLCAPS     INPUTRI 5 /* Kebiasan bayar                   */
+
+CALCS()
+cusiaz1              pikstspiubli=="Z1" && akttgl == 0
+cusiaz2z4z6          (pikstspiubli=="Z2" || pikstspiubli=="Z4" || pikstspiubli=="Z6") && akttgl == 0
+cjtpusiaz1           piktgljtp + 2
+cjtpusiaz2z4z6       piktgljtp + 1
+chitungkumj735       djoinmtskunjungan == 1 && dscansvikunjungan == 1
+cjoinfakprio1        djoinfakprio3==1
+
+/* DEFAULT(tmptranst)
+ aktdata      INIT     KEBBAYAR 
+akttype         INIT     KEBBAYAR  
+ltglawlbln      INIT     {cststglprjgl}
+cststglprjgl         ststglprjgl + 1 */
+
+EDITS(tmptranst)
+e.Validatenobuk aktkode      VALIDATE pikdatbukidx mmap25      0       {Pgv_dtpiu} 
+
+MAP(mmap25)
+lfakprio3            lfakprio3          REPLACE_IF cjoinfakprio1
+aktkode              aktkode            REPLACE
+cjtpusiaz1           ltglkebbayar       DO_CALC_IF cusiaz1
+cjtpusiaz2z4z6       ltglkebbayar       DO_CALC_IF cusiaz2z4z6
+lttlkunjungan735     lttlkunjungan735   REPLACE_IF chitungkumj735
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+   aktkodtypidx   piknobuk lDTBIABYR11 lDTBIABYR21
+

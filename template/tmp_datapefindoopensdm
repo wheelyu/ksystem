@@ -1,0 +1,93 @@
+DBCALCS(djointbdpefindo137)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal lBOLEHPEF137 g_usrkode
+
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/----------------------------------------------\|
+||t.buk       : ________________                ||
+||i.Tgl       : ___________                     ||
+||t.AdaData   : ______                          ||
+||t.ScorePS   : _______                         ||
+|\----------------------------------------------/|
+|/----------------------------------------------\|
+||t.PrmIsian                                    ||
+||t.Resiko 		      : _______________ ||
+||t.JumlahNomTunggakan        : ____________    ||
+||t.MaksUsiaTunggakan         : ____________    ||
+||t.MaksUsiaTunggakan12Bulan  : ____________    ||
+||t.JumlahKreditur            : ____________    ||
+||t.JumlahPlafon              : ____________    ||
+||t.JumlahBakiDebet           : ____________    ||
+|\----------------------------------------------/|
+|/----------------------------------------------\|
+||t.AccPefindo : _____                          ||
+||t.Nipacc     : ________                       ||
+||i.Keterangan : _______________________________||
+|\----------------------------------------------/|
+\------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnobuk        PROTECT         INPUTRI         1
+tldtglfak	PROTECT {YYYY-MM-DD}	INPUTRI	2
+tlddvs		PROTECT 	INPUTRI		3
+tldjml		PROTECT		INPUTRI		4
+
+lresikopef	PROTECT		INPUTRI		5
+
+tldjml2		PROTECT		INPUTRI		6  /* JumlahNomTunggakan */
+
+tldtmp1		PROTECT        INPUTRI          7  /* MaksUsiaTunggakan */
+
+tldtmp2		PROTECT         INPUTRI         8  /* MaksUsiaTunggakan12Bulan */
+
+tldjml3		PROTECT         INPUTRI         9  /* JumlahKreditur */
+
+
+tldtotdism      PROTECT         INPUTRI         10 /* JumlahPlafon */
+tldperdism      PROTECT         INPUTRI         11 /* JumlahBakiDebet */
+
+tldtydis        NOCHANGE        INPUTRI         12 /* Kondisi Acc Untuk Lanjut */
+tldgrup2        PROTECT         INPUTRI         13 /* Nip Acc Untuk Lanjut */
+tldket		TEXTAREA ALLCAPS INPUTRI        14 /* Keterangan */
+
+CALCS()
+cbolehcek	djointbdpefindo137==1
+cResikoSangatRendah     "Sangat Rendah"
+cResikoRendah           "Rendah"
+cResikoSedang           "Sedang"
+cResikoTinggi           "Tinggi"
+cResikoSangatTinggi     "Sangat Tinggi"
+cNEW                    "New"
+csrendah                tldjml>=690 && tldjml<=900
+crendah                 tldjml>=660 && tldjml<=689
+csedang                 tldjml>=630 && tldjml<=659
+ctinggi                 tldjml>=570 && tldjml<=629
+cstinggi                tldjml>=250 && tldjml<=569
+cnew                    tlddvs=="TIDAK" || tldjml>900
+
+DEFAULTS(tmptranst)
+tldtydis		DFALT_SCAN_BLANKS ACC TACC
+tldgrup2		INIT_UPDATE 	{g_usrkode}
+
+EDITS(tmptranst)
+t.Validate tldnobuk	VALIDATE_BUF3 btmbukidx mbtmpef 0
+e.Mandatory		tldket	MANDATORY
+
+MAP(mbtmpef)
+#btmnobuk		tldnobuk	REPLACE
+cResikoSangatRendah     lresikopef	DO_CALC_IF csrendah
+cResikoRendah           lresikopef	DO_CALC_IF crendah
+cResikoSedang           lresikopef	DO_CALC_IF csedang
+cResikoTinggi           lresikopef	DO_CALC_IF ctinggi
+cResikoSangatTinggi     lresikopef	DO_CALC_IF cstinggi
+cNEW                    lresikopef	DO_CALC_IF cnew
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cbolehcek
+SFL_TARGET
+	tldbukbrgoto	btmnobuk gv_INPG lDTPEFINDO21

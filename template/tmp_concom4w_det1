@@ -1,0 +1,167 @@
+LOCAL
+PGM_FIELDS
+lnmsales	STRING		61
+lenter		STRING		21
+
+IMAGE(tmptranst)
+
+/-----------------------------------\
+|/---------------------------------\|
+||t.Nobukti : ____________________ ||
+||t.JmlPoin : __________ _____     ||
+||t.NipSales: ____________________ ||
+||t.NamaSales:____________________ ||
+||spasi                            ||
+||t.KetSales                       ||
+|| _______________________________ ||
+||t.HasilConcoBm                   ||
+|| _______________________________ ||
+||t.HasilConcoRm                   ||
+|| _______________________________ ||
+||t.HasilConcoSpv                  ||
+|| _______________________________ ||
+|| _______________________________ ||
+||t.HasilConcoDh                   ||
+|| _______________________________ ||
+||t.JawabSales                     ||
+|| _______                         ||
+||t.Enter                          ||
+||________                         ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk                PROTECT                 INPUTRI         1       /*nobuk co n co */
+svidf1                  PROTECT                 INPUTRI         2       /*jumlah poin*/
+svitype2                PROTECT                 INPUTRI         2       /*jumlah poin*/
+svikode                 NOCHANGE                INPUTRI         3       /*nip sales*/        
+lnmsales                PROTECT                 INPUTRI         4       /*nama sales*/
+
+sviket                 TEXTAREA                INPUTRI         5	/*keterangan sales*/
+sviket3                 TEXTAREA                INPUTRI         8       /*hasil co n co bm*/     
+sviket2                 TEXTAREA                INPUTRI         8       /*hasil co n co bm*/     
+lketspv			TEXTAREA		INPUTRI		9
+/*svistr1                 TEXTAREA                INPUTRI         10*/       /*hasil co n co spv*/     
+svistr2                 TEXTAREA                INPUTRI         11       /*hasil co n co spv*/     
+lketdvh			TEXTAREA		INPUTRI		12	 
+/*svinama                 TEXTAREA                INPUTRI         12   */    /*hasil co n co dvh*/     
+sviyt1                 ALLCAPS                INPUTRI         13       /*hasil co n co dvh*/     
+lenter			ALLCAPS			INPUTRI 	14
+
+DEFAULTS(tmptranst)
+svitype2		INIT		OPEN
+sviyt1			DFALT_SCAN	BLANKS
+					Y "Y"
+lenter			INIT		ENTER
+
+EDIT(tmptranst)
+e.mandatorysls  sviket         MANDATORY_IF csls
+e.mandatorybm   sviket3         MANDATORY_IF cbm
+e.validatenip	svikode		VALIDATE	psmkodidx msls 0
+
+MAP(msls)
+psmnama		lnmsales	REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET      svidatbuktyp   lCONCOMKT tlmnobuk lSALES
+
+MAP(mdetil)
+lCONCOMKT	svidata		REPLACE
+lSALES  	svitype		REPLACE
+tlmnobuk	svinobuk	REPLACE
+tlmjml  	svidf1		REPLACE
+tlmplg		svikode		REPLACE
+
+CALCS()
+cbeda		tlmkodeapr != tlmusrapr
+csama		tlmkodeapr == tlmusrapr
+
+HOOKS(tmptranst)
+BEFORE_INPUT	 cur_field=svikode	 DO_MAP SHOW mdetil
+BEFORE_INPUT     cur_field=sviket3       DO_SKIP_IF csls
+BEFORE_INPUT     cur_field=sviket2       DO_SKIP_IF csls
+BEFORE_INPUT     cur_field=lketspv       DO_SKIP_IF csls
+BEFORE_INPUT     cur_field=svistr2       DO_SKIP_IF csls
+BEFORE_INPUT     cur_field=lketdvh       DO_SKIP_IF csls
+
+BEFORE_INPUT     cur_field=sviket       DO_SKIP_IF cbm
+BEFORE_INPUT     cur_field=sviket2       DO_SKIP_IF cbm
+BEFORE_INPUT     cur_field=lketspv       DO_SKIP_IF cbm
+BEFORE_INPUT     cur_field=svistr2       DO_SKIP_IF cbm
+BEFORE_INPUT     cur_field=lketdvh       DO_SKIP_IF cbm
+
+BEFORE_INPUT     cur_field=sviket       DO_SKIP_IF crm
+BEFORE_INPUT     cur_field=sviket3       DO_SKIP_IF crm
+BEFORE_INPUT     cur_field=lketspv       DO_SKIP_IF crm
+BEFORE_INPUT     cur_field=svistr2       DO_SKIP_IF crm
+BEFORE_INPUT     cur_field=lketdvh       DO_SKIP_IF crm
+
+BEFORE_INPUT     cur_field=sviket        DO_SKIP_IF cspv
+BEFORE_INPUT     cur_field=sviket3       DO_SKIP_IF cspv
+BEFORE_INPUT     cur_field=sviket2       DO_SKIP_IF cspv
+BEFORE_INPUT     cur_field=lketdvh       DO_SKIP_IF cspv
+
+BEFORE_INPUT     cur_field=sviket        DO_SKIP_IF cdh
+BEFORE_INPUT     cur_field=sviket3       DO_SKIP_IF cdh
+BEFORE_INPUT     cur_field=sviket2       DO_SKIP_IF cdh
+BEFORE_INPUT     cur_field=lketspv       DO_SKIP_IF cdh
+BEFORE_INPUT     cur_field=svistr2       DO_SKIP_IF cdh
+BEFORE_INPUT     cur_field=sviyt1       DO_SKIP_IF cbeda
+
+BEFORE_INPUT     cur_field=sviket       DO_SKIP_IF csama
+BEFORE_INPUT     cur_field=sviket3       DO_SKIP_IF csama
+BEFORE_INPUT     cur_field=sviket2       DO_SKIP_IF csama
+BEFORE_INPUT     cur_field=lketspv       DO_SKIP_IF csama
+BEFORE_INPUT     cur_field=svistr2       DO_SKIP_IF csama
+BEFORE_INPUT     cur_field=lketdvh       DO_SKIP_IF csama
+
+CALCS()
+cbolehubah	(tlmtype1!="SPKADH" && ((g_usrkode == tlmplg && tlmusrapr == BLANKS) ||
+		((tlmusrapr == "B.M4WSALES" || tlmusrapr == "B.M4WCMO" || tlmusrapr == "B.M4WMO" || tlmusrapr == "B.M4W" || tlmusrapr =="B.M4WCRO") && (g_grpnam == "B.M4WADH" || g_grpnam == "B.M4WBM")) ||
+		((tlmusrapr == "B.M4WADH" || tlmusrapr == "B.M4WBM") && g_grpnam == "B.M4WRM") ||
+		(tlmusrapr == "B.M4WRM"  && g_grpnam == "B.M4WMSPV") || 
+		(tlmusrapr == "B.M4WMSPV" && g_grpnam == "B.M4WDVH") || (tlmkodeapr == "PICMKT" && g_grpnam == "PICMKT") ||
+		(g_usrkode == tlmplg && tlmusrapr == tlmkodeapr))) ||
+	
+		(tlmtype1=="SPKADH" && ((g_usrkode == tlmplg && tlmusrapr == BLANKS) ||
+			(tlmusrapr != BLANKS && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WRM" || g_grpnam == "B.M4WADHSPV" || g_grpnam == "B.M4WADHDVH")) ||
+			(g_usrkode == tlmplg && tlmusrapr == tlmkodeapr)
+					))
+		
+MAP(mupd964)
+g_grpnam 	tlmusrapr 	REPLACE_IF cbeda
+DEBUG		ldum	ldum	REPLACE
+
+MAP(maddket964)
+lCONCOSLS11	ketdata		REPLACE
+tlmnobuk	ketnobuk	REPLACE
+tlmkode		ketkode		REPLACE
+tlmtgl		kettgl1		REPLACE
+lketspv		ketisi		REPLACE
+lketdvh		ketisi2		REPLACE
+
+MAP(mupdket964)
+lketspv         ketisi          REPLACE
+lketdvh         ketisi2         REPLACE
+
+
+SPCALCS(stmptrans)
+DO_LIB  	ap_dbclc(DNAME dupd964,DCOMMAND UPDATE,DTARGET tlmbukidx svinobuk,DMAP mupd964);
+DO_LIB_IF cjoinket0 ap_dbclc(DNAME daddket,DCOMMAND ADD,DFILE ket,DMAP maddket964);
+DO_LIB_IF cjoinket1 ap_dbclc(DNAME dupdket,DCOMMAND UPDATE,DTARGET ketdatbukkod lCONCOSLS11 tlmnobuk tlmkode,DMAP mupdket964);
+
+
+POSTING(tmptrans)
+	PST_ADDCMD stmptrans
+	PST_UPDCMD stmptrans
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    csls
+	PMT_UPDALL_COND cbolehubah
+	PMT_DEL_COND	c0
+

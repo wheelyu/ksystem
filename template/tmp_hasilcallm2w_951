@@ -1,0 +1,179 @@
+LOCAL
+PGM_FIELDS
+lketjdpkm2w	STRING	51
+lketbutuhdana	STRING	51
+lkettdkjdpkm2w	STRING	51
+lketrencbthdana	STRING	51
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.fuM2W  _____  _________                         ||
+|\--------------------------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.jdpk	   || _____	                    ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.alasanminat    || ___ __________________        ||
+||t.kebutuhandana  || ___ __________________        ||
+||t.Lain	   || _____________________         ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.alasantdkjdpk  || ___ __________________        ||
+||t.Lain	   || _____________________         ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.rencanabthdana || ___ __________________        ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.Referensi      || _____		            ||
+||t.Nama	   || _____________________         ||
+||t.NoTelp	   || _____________________         ||
+||t.Hubungan	   || _____________________         ||
+|\-----------------/\-------------------------------/|
+|/--------------------------------------------------\|
+||                                            _____ ||
+|\--------------------------------------------------/|
+|spasi                                               |
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdsts		PROTECT				INPUTRI	1
+tkdtgl		PROTECT	{DD-MM-YYYY}		INPUTRI	2
+tkdjenis	ALLCAPS NOCHANGE		INPUTRI	3
+tkdjwbstr1	ALLCAPS NOCHANGE		INPUTRI	4
+lketjdpkm2w	PROTECT SCROLL			INPUTRI	5
+tkdstr1		ALLCAPS NOCHANGE		INPUTRI	6
+lketbutuhdana	PROTECT SCROLL			INPUTRI	7
+tkdstr2		ALLCAPS 			INPUTRI	8
+tkdstr3		ALLCAPS NOCHANGE		INPUTRI	9
+lkettdkjdpkm2w	PROTECT SCROLL			INPUTRI	10
+tkdstr4		ALLCAPS				INPUTRI	12
+tkdsisstr	ALLCAPS NOCHANGE		INPUTRI	13
+lketrencbthdana	PROTECT	SCROLL			INPUTRI 14
+tkdjwbstr2	ALLCAPS NOCHANGE		INPUTRI	15
+tkdket		ALLCAPS				INPUTRI	16
+tkdrek		ALLCAPS				INPUTRI	17
+tkdtmp1		ALLCAPS	NOCHANGE		INPUTRI 18
+lenter		NOCHANGE			INPUTRI 50
+
+CALCS()
+caktifm2w	tkmnil2 == 1 && (djointkdcallhmc == 0 || (djointkdcallhmc == 1 && lalasantdkjdpk != "1")) && tkmdf5 == 0
+calsminatm2w	tkmnil2 == 1 && djointkdcallhmc == 1 && lalasantdkjdpk == "1" && tkmdf5 == 0
+cdanalain	tkdstr1 == "8"
+ctdkdanalain	tkdstr1 != "8"
+calasanlain2	tkdstr3 == "7"
+ctdkalasanlain2	tkdstr3 != "7"
+
+DEFAULTS(tmptranst)
+tkdtgl		INIT_ADD                	{g_tgltrn}
+
+IF caktifm2w tkdjenis	DFALT_SCAN_BLANKS	Y
+                                       		T
+
+IF calsminatm2w tkdjenis DFALT_SCAN_BLANKS	Y
+
+IF cbknotomatis tkdjenis DFALT_SCAN_BLANKS	Y
+
+IF ctdkaktif tkdjenis	DFALT_SCAN_BLANKS	T
+
+tkdjwbstr2	DFALT_SCAN_BLANKS		Y
+						T
+
+tkdtmp1		DFALT_SCAN_BLANKS		KELUARGA
+						TEMAN_KERJA
+						TETANGGA
+
+EDITS(tmptranst)
+e.Mandatory	tkdjenis	MANDATORY
+e.Mandatory	tkdjwbstr1	MANDATORY_IF cjdpk
+e.Mandatory	tkdstr1		MANDATORY_IF cjdpk
+e.Mandatory	tkdstr2		MANDATORY_IF cdanalain
+e.Mandatory	tkdstr3		MANDATORY_IF ctdkjdpk
+e.Mandatory	tkdstr4		MANDATORY_IF calasanlain2
+e.Mandatory	tkdsisstr	MANDATORY
+e.Mandatory	tkdjwbstr2	MANDATORY
+e.Mandatory	tkdket		MANDATORY_IF cadareff
+e.Mandatory	tkdrek		MANDATORY_IF cadareff
+e.Mandatory	tkdtmp1		MANDATORY_IF cadareff
+
+e.Validate	tkdjwbstr1	VALIDATE_IF cjdpk tbtdattypkod mtbtm2w stbtpros {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {PlKLIKNSS} {PlJDPKM2W}
+e.Validate	tkdstr1		VALIDATE_IF cjdpk tbtdattypkod mtbtm2w2 stbtpros {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {PlKLIKNSS} {PlKEBUTUHANDANA}
+e.Validate	tkdstr3		VALIDATE_IF ctdkjdpk tbtdattypkod mtbtm2w3 stbtpros {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {PlKLIKNSS} {PlTDKJDPKM2W}
+e.Validate	tkdsisstr	VALIDATE tbtdattypkod mtbtm2w4 stbtpros {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {PlKLIKNSS} {PlRENCBELIMTR}
+
+MAP(mtbtm2w)
+tbtkode		tkdjwbstr1	REPLACE
+tbtket		lketjdpkm2w	REPLACE
+
+MAP(mtbtm2w2)
+tbtkode		tkdstr1		REPLACE
+tbtket		lketbutuhdana	REPLACE
+
+MAP(mtbtm2w3)
+tbtkode		tkdstr3		REPLACE
+tbtket		lkettdkjdpkm2w	REPLACE
+
+MAP(mtbtm2w4)
+tbtkode		tkdsisstr	REPLACE
+tbtket		lketrencbthdana	REPLACE
+
+CALCS()
+cstsm2wOPEN		djointkdcallm2w==1 && g_curcmd==1 && tkmsts=="OPEN"
+cstsm2wINP1		djointkdcallm2w==1 && g_curcmd==1 && tkmsts=="INP1"
+cstsm2wINP2		djointkdcallm2w==1 && g_curcmd==1 && tkmsts=="INP2"
+cblmjdpkm2w		g_curcmd==2 || (djointkdcallm2w==0 || (djointkdcallm2w==1 && ljdpk=="T") || ljdpk==BLANKS || ljdpk=="FU")
+csdhisim2w		djointkdcallm2w==0 || g_curcmd==2
+
+MAP(murutm2w)
+c1		tkdnourt	DO_CALC_IF cstsm2wOPEN
+c2		tkdnourt	DO_CALC_IF cstsm2wINP1
+c3		tkdnourt	DO_CALC_IF cstsm2wINP2
+tkmsts		tkdsts		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjenis	DO_MAP SHOW murutm2w
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW mblanks
+AFTER_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW IF cjdpk misirencbeli
+BEFORE_INPUT	cur_field=tkdsisstr	DO_SKIP_IF cjdpk
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_SKIP_IF ctdkjdpk
+BEFORE_INPUT	cur_field=tkdstr1	DO_SKIP_IF ctdkjdpk
+BEFORE_INPUT	cur_field=tkdstr2	DO_SKIP_IF ctdkjdpk
+BEFORE_INPUT	cur_field=tkdstr3	DO_SKIP_IF cjdpk
+BEFORE_INPUT	cur_field=tkdstr4	DO_SKIP_IF cjdpk
+BEFORE_INPUT	cur_field=tkdstr2	DO_SKIP_IF ctdkdanalain
+BEFORE_INPUT	cur_field=tkdstr4	DO_SKIP_IF ctdkalasanlain2
+BEFORE_INPUT	cur_field=tkdket	DO_SKIP_IF ctdkadareff
+BEFORE_INPUT	cur_field=tkdrek	DO_SKIP_IF ctdkadareff
+BEFORE_INPUT	cur_field=tkdtmp1	DO_SKIP_IF ctdkadareff
+
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+		IF csdhinp2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG WAJIB PILIH T ATAU Y
+AFTER_INPUT	cur_field=tkdsts	DO_MAP SHOW
+		IF cblmjdpkm2w mdum
+		ELSE HKCURSOR STAY
+		HKMSG TIDAK BOLEH TAMBAH DATA LAGI SUDAH JADI PK
+AFTER_INPUT	cur_field=tkdsts	DO_MAP SHOW
+		IF csdhisim2w mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TidakBolehTambahLg
+AFTER_INPUT	cur_field=tkdsisstr	DO_MAP SHOW
+		IF cTbknhariini mdum
+		ELSE HKCURSOR STAY
+		HKMSG TIDAK BOLEH PILIH HARI INI
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkddatbukll tkmdata tkmnobuk lFUCALLM2W
+
+SFL_MAP
+tkmdata		tkddata		REPLACE
+tkmnobuk	tkdnobuk	REPLACE
+lFUCALLM2W	tkdnoll		REPLACE
+

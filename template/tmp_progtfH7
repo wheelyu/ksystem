@@ -1,0 +1,225 @@
+LOCAL
+PGM_FIELDS
+lssunopol		STRING		21
+lssurangka		STRING		21	
+lssumesin		STRING		21
+lssubrg			STRING		21
+ltldtydis1		STRING		21
+
+MAP(mjoinssu)
+ssunopol	lssunopol	REPLACE
+ssurangka	lssurangka	REPLACE
+ssumesin	lssumesin	REPLACE
+ssubrg		lssubrg		REPLACE
+
+DBCALCS(djoinssu)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ssubuk2idx tlmnoasal
+	DBC_MAP		mjoinssu
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.TipeSelesai  :_________________||
+||t.NoBuk        :_________________||
+||t.NmPol        :_________________||
+||t.NamaTsk      :_________________||
+||t.PslPidana    :_________________||
+||t.JnsRecAsset  :_________________||
+||t.KdNoPol      :_________________||
+||t.JnsMtrMerk   :_________________||
+||t.Noka         :_________________||
+||t.Nosin        :_________________||
+||t.StnkView     :_________________||
+||t.Nominal      :_________________||
+||t.NoBukHLKwit  :_________________||
+|\---------------------------------/|
+|/-------UPLOAD--------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+||                                 ||
+||t.ftbktipenyelesaian             ||
+||t.StsUpl   ________________      ||
+||t.TglFt    ________________      ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldkat          NOCHANGE                INPUTRI         1
+tldbrdoto	ALLCAPS			INPUTRI		2
+tldcab		ALLCAPS			INPUTRI		3
+tldplg		ALLCAPS			INPUTRI		4
+tlddvs		ALLCAPS			INPUTRI		5
+tldukrwrn	NOCHANGE		INPUTRI		6
+tldppdoto	PROTECT			INPUTRI		7
+tldgrup         PROTECT	                INPUTRI         8
+tldgrup2	PROTECT			INPUTRI		9
+tldlok2		PROTECT			INPUTRI		10
+ltldtydis1	NOCHANGE		INPUTRI		11
+tldjml		NUMERIC			INPUTRI		12
+tldsat		ALLCAPS			INPUTRI		13
+tldsisbrg	PROTECT			INPUTRI		14
+tldtgl2		PROTECT			INPUTRI		15
+
+
+DEFAULT(tmptranst)
+l7			INIT			7
+tlddata			INIT			TASKFORCE
+tldnourt		INIT			7
+lTASKFORCE		INIT			TASKFORCE
+lPENYELESAIANKASUS	INIT			PENYELESAIANKASUS
+lJENISRECOVERYASSET	INIT			JENISRECOVERYASSET
+tldlok			INIT			PRG3			
+
+CALCS()
+cpenyelesaian0          tldkat=="SPRITKAP" || tldkat=="SPRITHAN" || tldkat=="DPO" || tldkat=="SANKSI ADMIN"
+cpenyelesaian1		tldkat=="SPRITKAP" || tldkat=="SPRITHAN" || tldkat=="DPO"
+cpenyelesaian2		tldkat=="RECOVERY ASSET"
+cpenyelesaian3          tldkat=="RECOVERY ASSET" && tldukrwrn=="UNIT"
+cpenyelesaian4		tldkat=="RECOVERY ASSET" && tldukrwrn=="UANG"
+
+EDITS(tmptranst)
+e.Mandatory     tldkat          MANDATORY
+e.Mandatory     tldbrdoto       MANDATORY_IF cpenyelesaian0
+e.Mandatory     tldcab          MANDATORY_IF cpenyelesaian1
+e.Mandatory     tldplg          MANDATORY_IF cpenyelesaian1
+e.Mandatory     tlddvs          MANDATORY_IF cpenyelesaian1
+e.Mandatory     tldukrwrn       MANDATORY_IF cpenyelesaian2 
+e.Mandatory     tldgrup         MANDATORY_IF cpenyelesaian3 
+e.Mandatory     tldppdoto       MANDATORY_IF cpenyelesaian3
+e.Mandatory     tldgrup2        MANDATORY_IF cpenyelesaian3
+e.Mandatory     tldlok2         MANDATORY_IF cpenyelesaian3
+e.Mandatory     ltldtydis1      MANDATORY_IF cpenyelesaian3
+e.Mandatory     tldjml          MANDATORY_IF cpenyelesaian4
+e.Mandatory     tldsat          MANDATORY_IF cpenyelesaian4
+
+e.Validate      tldkat          VALIDATE tbddatkodidx mtbd7_0 stbd {Pgv_dttabel} {PlTASKFORCE} {PlPENYELESAIANKASUS}
+e.Validate      tldukrwrn       VALIDATE tbddatkodidx mtbd7_1 stbd {Pgv_dttabel} {PlTASKFORCE} {PlJENISRECOVERYASSET}
+e.Validate      ltldtydis1      VALIDATE tbddatkodidx mtbd7_2 stbd {Pgv_dttabel} {PlTASKFORCE} {PlYT}
+
+
+MAP(mtbd7_2)
+tbdkode		ltldtydis1	REPLACE
+tbdkode         tldtydis        REPLACE
+ltldtydis1	tldtydis	REPLACE
+tldtydis	ltldtydis1	REPLACE
+
+MAP(mtbd7_1)
+tbdkode         tldukrwrn       REPLACE
+
+MAP(mtbd7_0)
+tbdkode         tldkat          REPLACE
+
+CALCS()
+clewat1		tldkat=="RECOVERY ASSET"
+clewat2		tldkat=="RECOVERY ASSET" || tldkat=="SANKSI ADMIN"
+clewat3		tldkat=="SPRITKAP" || tldkat=="SPRITHAN" || tldkat=="DPO" || tldkat=="SANKSI ADMIN"
+clewat4         tldkat=="SPRITKAP" || tldkat=="SPRITHAN" || tldkat=="DPO" || tldkat=="SANKSI ADMIN" || 
+		(tldkat=="RECOVERY ASSET" && tldukrwrn=="UANG")
+
+clewat5         tldkat=="SPRITKAP" || tldkat=="SPRITHAN" || tldkat=="DPO" || tldkat=="SANKSI ADMIN" ||
+		(tldkat=="RECOVERY ASSET" && tldukrwrn=="UNIT")
+cjoinssu	djoinssu==1 && tldukrwrn=="UNIT"
+
+MAP(mmap3)
+cblanks         tldbrdoto       DO_CALC_IF clewat1
+cblanks         tldcab          DO_CALC_IF clewat2
+cblanks         tldplg          DO_CALC_IF clewat2
+cblanks         tlddvs          DO_CALC_IF clewat2
+
+cblanks		tldukrwrn	DO_CALC_IF clewat3
+cblanks         tldgrup         DO_CALC_IF clewat3
+cblanks         tldppdoto       DO_CALC_IF clewat4
+cblanks		tldgrup2	DO_CALC_IF clewat4
+cblanks		tldlok2		DO_CALC_IF clewat4
+cblanks		tldtydis	DO_CALC_IF clewat4 
+cblanks		ltldtydis1	DO_CALC_IF clewat4
+cblanks		tldjml		DO_CALC_IF clewat5
+cblanks		tldsat		DO_CALC_IF clewat5
+
+MAP(mmap4)
+cblanks         tldgrup         DO_CALC_IF clewat4
+cblanks         tldppdoto       DO_CALC_IF clewat4
+cblanks         tldgrup2        DO_CALC_IF clewat4
+cblanks         tldlok2         DO_CALC_IF clewat4
+cblanks         tldtydis        DO_CALC_IF clewat4 
+cblanks		ltldtydis1	DO_CALC_IF clewat4
+cblanks         tldjml          DO_CALC_IF clewat5
+cblanks         tldsat          DO_CALC_IF clewat5
+
+lssunopol	tldppdoto	REPLACE_IF cjoinssu
+lssubrg         tldgrup         REPLACE_IF cjoinssu
+lssurangka      tldgrup2        REPLACE_IF cjoinssu  /* rangka */
+lssumesin       tldlok2         REPLACE_IF cjoinssu  /* mesin */
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldbrdoto       DO_SKIP_IF clewat1
+BEFORE_INPUT    cur_field=tldcab          DO_SKIP_IF clewat2
+BEFORE_INPUT    cur_field=tldplg          DO_SKIP_IF clewat2
+BEFORE_INPUT    cur_field=tlddvs          DO_SKIP_IF clewat2
+BEFORE_INPUT    cur_field=tldukrwrn       DO_SKIP_IF clewat3
+BEFORE_INPUT    cur_field=tldgrup         DO_SKIP_IF clewat4
+BEFORE_INPUT    cur_field=tldgrup2        DO_SKIP_IF clewat4
+BEFORE_INPUT    cur_field=tldppdoto       DO_SKIP_IF clewat4
+BEFORE_INPUT    cur_field=tldlok2         DO_SKIP_IF clewat4
+BEFORE_INPUT    cur_field=ltldtydis1      DO_SKIP_IF clewat4
+BEFORE_INPUT    cur_field=tldjml          DO_SKIP_IF clewat5
+BEFORE_INPUT    cur_field=tldsat          DO_SKIP_IF clewat5
+AFTER_INPUT     cur_field=tldkat          DO_MAP SHOW mmap3
+AFTER_INPUT	cur_field=tldukrwrn 	  DO_MAP SHOW mmap4
+
+CALCS()
+chapusfoto1     g_usrkode==BLANKS || g_grpnam=="RI" || g_grpnam=="IT"
+cOKx		"OK"
+
+MAP(mupduplfttmptrans)
+cOKx                    tldsisbrg       DO_CALC
+g_fotodate1             tldtgl2         REPLACE
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx tldprm
+        DBC_MAP         mupduplfttmptrans
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD tldnobuk tldlok
+SFL_UPL_DELCOND chapusfoto1
+SFL_UPLFLD_DBCALCS dupduplfttmptrans
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmnoasal       tldnoll         REPLACE
+tlmnobuk        tldbrg          REPLACE
+lPRG3           tldlok          REPLACE
+
+
+SFL_TARGET
+	tldbukurtidx tlmnobuk l7
+
+DBCALCS(djointld7)	
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukurtidx tlmnobuk l7
+
+CALCS()
+
+caddtrans       (tlmsts=="762" && djointld7==0 && (tlmplg ==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT") && tlmsts2=="PRG3")
+cupdtrans       (tlmsts=="762" && djointld7==1 && (tlmplg ==g_usrkode || tlmuntuk ==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT") && tlmsts2=="PRG3")
+
+PERMIT(tmptrans)
+PMT_ADD_COND    caddtrans
+PMT_UPDALL_COND cupdtrans
+PMT_DEL_COND    c0
+

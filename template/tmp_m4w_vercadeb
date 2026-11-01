@@ -1,0 +1,80 @@
+DBCALCS(djoinsvivercadeb) 
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   ldt703 btmnobuk gv_vercadeb 
+
+IMAGE(tmptranst) 
+ /------------------------------------------------------------------------------------------------\
+ |i.Notelpdihub       				    : ____________________                        |
+ |i.Bisadihubungi     				    : ____                                        |
+ |i.Benarcadebmengajukankredit                      : ____                                        |
+ |i.Apakahbpkban                                    : ____ _____________________________________  |
+ |i.Kepemilikankendaraan                            : ____                                        |
+ |i.Penggunaandana                                  : _____________________                       |
+ |i.Tenor                                           : ____                                        |
+ |i.Namaibukandung                                  : _____________________                       |
+ |i.Nomortelprumah                                  : _____________________                       |
+ |i.Nomorhplainnya                                  : _____________________                       |
+ |i.Tanggallahir 				    : ________                                    |
+ |t.Enter                                           : ________                                    |
+ \------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+sviyt1			NOCHANGE			INPUTRI 3
+sviyt2			NOCHANGE			INPUTRI 4
+svitype2		NOCHANGE			INPUTRI 5
+svinama			ALLCAPS SCROLL			INPUTRI 6
+svitype3		NOCHANGE			INPUTRI 7
+svistr3			ALLCAPS SCROLL			INPUTRI 8
+svidf1			NUMERIC				INPUTRI 9
+svistr4			ALLCAPS SCROLL			INPUTRI 10
+svistr5			ALLCAPS SCROLL			INPUTRI 11
+svistr6			ALLCAPS SCROLL			INPUTRI 12
+svitgl1			NONE NOLIMIT {DD-MM-YY}		INPUTRI 14
+lenter			ALLCAPS				INPUTRI 15
+
+DEFAULTS(tmptranst)
+sviyt1			DFALT_SCAN 		BLANKS
+						YA
+						TDK
+sviyt2			DFALT_SCAN		BLANKS
+						YA
+						TDK  
+svitype2		DFALT_SCAN		BLANKS
+						YA
+						TDK
+svitype3		DFALT_SCAN		BLANKS
+						YA
+						TDK
+
+CALCS()
+canbeda			svitype2  == "Y"
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svinama	DO_SKIP_IF canbeda
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   ldt703 btmnobuk gv_vercadeb
+
+SFL_MAP
+ldt703			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_vercadeb		svitype			REPLACE
+
+
+
+CALCS()
+cadd_vcadeb		djoinsvivercadeb == 0 && (btmsts == "705" || btmsts == "703") && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD")
+cupd_vcadeb		(btmsts == "705" || btmsts == "703") && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD")
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_vcadeb	
+  	PMT_UPDALL_COND cupd_vcadeb
+  	PMT_DEL_COND  	cupd_vcadeb

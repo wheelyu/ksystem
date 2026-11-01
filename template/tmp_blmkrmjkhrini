@@ -1,0 +1,68 @@
+LOCAL
+PGM_FIELDS
+lnamapk12       STRING          61
+lbtptgltrn12    DATE            4
+lstskrm12	STRING		5
+
+MAP(mjoinbtp12)
+btptgltrn       lbtptgltrn12    REPLACE
+DBCALCS(djoinbtp12)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btpdatbuktgl    gv_historisdm btmnobuk lJANJIKIRIM
+        DBC_MAP         mjoinbtp12
+
+MAP(mjoinppm12)
+ppmstskrm	lstskrm12	REPLACE
+DBCALCS(djoinppm12)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppmnollidx      btmnobuk
+	DBC_MAP		mjoinppm12
+
+MAP(mjoinpsm12)
+psmnama		lnamapk12	REPLACE
+DBCALCS(djoinpsm12)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	btmplg
+	DBC_MAP		mjoinpsm12
+
+IMAGE(tmptranst)
+/---------------t----------t-------t------t---------------t----------------t------t--------\
+|t.Nobuk        |t.DvsJual |t.Sts  |t.Acc |t.NoPK         |t.NamaPK        |t.Tipe|t.Tgl   |
+\---------------.----------.-------.------.---------------.----------------.------.--------/
+
+IMAGE(tmptrans)
+|_______________|__________|_______|______|_______________|________________|______|________|
+
+FIELD(tmptrans)
+btmnobuk        PROTECT         INPUTRI         1
+btmdvsjl        PROTECT         INPUTRI         2
+btmsts          PROTECT         INPUTRI         3
+btmflag1        PROTECT         INPUTRI         4
+btmplg          PROTECT         INPUTRI         5
+lnamapk12       PROTECT         INPUTRI         6
+btmtypjl        PROTECT         INPUTRI         7
+btmtgl          PROTECT         INPUTRI         8
+
+EDITS(tmptrans)
+e.ValidateBuk12	btmnobuk VALIDATE btmbukidx mbtm12 sbtm
+
+CALCS()
+cjoinpsm1_12	djoinpsm12 == 1
+cjoinpsm0_12	djoinpsm12 == 0
+ccond12		( cabusaha == "DEALER")
+
+MAP(mbtm12)
+lnamapk12	lnamapk12	REPLACE_IF cjoinpsm1_12
+cBLANKS		lnamapk12	DO_CALC_IF cjoinpsm0_12
+
+
+CALCS()
+cselect12      ((btmsts == "CLSD" || btmsts == "INPG" || btmsts == "724" || btmsts == "721" || btmsts == "720" || btmsts == "716" || btmsts == "631" ||                btmsts == "611" || btmsts == "727" || btmsts == "3502" || btmsts == "714" || btmsts == "712" ||  btmsts == "713" || btmsts == "719" ||                btmsts == "711" || btmsts == "TACC" || btmsts == "715") && (btmdvsjl == "H1") && ((btmflag1 == "ACC" && btmtypjl == "K") || (btmtypjl == "T")) && djoinbtp12 == 1 && lbtptgltrn12 == ltgl2 && djoinppm12 == 1 && lstskrm12 != "KR")
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND	ccond12
+SFL_SELECT      cselect12
+SFL_TARGET_GTE  btmdatjltgl     lBUKUTAMU cabkode ltgl1 {lBUKUTAMU} {cabkode} {ltgl2}
+

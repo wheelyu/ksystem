@@ -1,0 +1,71 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk:____________________    ||
+||i.Ket  :________________________||
+||i.GPS  :__._______ ___._______ _||
+||t.Tgl  :__________              ||
+||t.Jam  :__________              ||
+||  ____________________________  ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode         PROTECT                 INPUTRI         1
+aktket          NOCHANGE                INPUTRI         2
+llat                    PROTECT QPROTECT                INPUTRI         6
+llon                    PROTECT QPROTECT                INPUTRI         7
+
+lgps                    GPSINFO {llat,llon}             NONE            9
+
+akttgl2			PROTECT		{DD-MM-YYYY}	INPUTRI		10
+aktjam			PROTECT		INPUTRI			11
+ltombolnscok		TOMBOL		INPUTRI		1
+
+DEFAULTS(tmptranst)
+lnobukttddnsc	INIT	{cnobuknsc}
+ltanggal	INIT	01042022
+
+MAP(mupdttdnsc728)
+g_tgltrn        akttgl2         REPLACE
+cSYSTIME        aktjam          DO_CALC
+llon            akttotal        REPLACE
+llat            aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+caktbrgnsc	aktbrg		DO_CALC
+
+DBCALCS(dmapnhmttdnsc728)
+DBC_COMMAND     MAPMAP
+DBC_MAP         mnhm
+
+DBCALCS(dupdttdnsc728)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx  aktprm
+        DBC_MAP         mupdttdnsc728
+
+CALCS()
+ctanggalkosong	aktcab==BLANKS && ((lkondisictk=="OK" && lbtmdvs=="M4W") || (lbtmdvs!="M4W"))
+
+SPCALCS(spsncok)
+dmapnhmttdnsc728
+IF ctanggalkosong dupdttdnsc728
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolnscok       DO_SPCALCS IF ctanggalkosong spsncok
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cbolehbukattdnsc
+SFL_TARGET
+        aktkodtypidx    lnobukttddnsc gv_datasurvey   lttdnsc
+SFL_MAP
+gv_datasurvey   aktdata         REPLACE
+lttdnsc       akttype         REPLACE
+lnobukttddnsc aktkode         REPLACE
+g_usrkode     aktkode2        REPLACE
+ltanggal      akttgl          REPLACE
+cketttdnsc    aktket          DO_CALC
+

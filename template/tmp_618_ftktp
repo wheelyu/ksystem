@@ -1,0 +1,102 @@
+LOCAL
+PGM_FIELDS
+lversi2g4			STRING			11
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+|/-------s.UPLOAD-----------\!
+||                          !!__
+||                          !!
+||                          !!
+||                          !!
+||                          !!
+||                          |!
+|\--------------------------/|
+|/--------------------------\|
+||t.UploadOk : __           ||
+|\--------------------------/|
+|t.FotoJlsTdkBlur	     |
+|/--------------------------\|
+|i.Ket  _________________   ||
+!!t.Lat : ___.______________||
+!!t.Lon : ___.______________||
+|\--------------------------/|
+|/--------------------------\|
+||t.HslCek		    ||
+||t.Np	: __________	    ||
+||t.Nama: __________________||
+||t.Jabatan: _______________||
+||t.Approval: ______	    ||
+||t.Ket	: 		    ||
+||____________________ _____||
+|\--------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg			PROTECT 		INPUTRI		1
+tldperdis		PROTECT			INPUTRI		2
+lFTDGNKTP               NOCHANGE                INPUTRI         3
+g_fotolat1		ALLCAPS {99,999999999}  INPUTRI		4
+g_fotolon1              ALLCAPS {99,999999999}  INPUTRI		5
+tldstr1 			NOCHANGE		INPUTRI		6
+lnama			PROTECT			INPUTRI		7
+ljabatan		PROTECT			INPUTRI		8
+tldstr2		NOCHANGE		INPUTRI		9
+tldket		TEXTAREA		INPUTRI		10
+lENTER			NOCHANGE		INPUTRI		11
+
+DEFAULTS(tmptranst)
+lversi2g4			INIT			2602-10v1
+lFTDGNKTP       	INIT                	FTDGNKTP        
+tldstr2			DFALT_SCAN_BLANKS	ACC TACC
+tldstr1				INIT_UPDATE		{g_usrkode}
+
+EDITS(tmptranst)
+e.Validate		tldbrg			VALIDATE	ppmbukidx mppm_ftktp 0 
+e.Validate		tldstr1			VALIDATE	psikodidx mpsi 0
+e.Mandatory		tldstr2		MANDATORY_IF cnipadh
+e.Mandatory		tldket		MANDATORY_IF ctacc_tld
+
+MAP(mppm_ftktp)
+ppmnobuk		ppmnobuk		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldstr1	DO_SKIP_IF cnipdrv
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF cnipdrv
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF cnipdrv
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW
+						IF csdhftktp mdum
+						ELSE HKCURSOR STAY
+						HKMSG	UPLOAD FOTO TERLEBIH DAHULU
+
+MAP(mupdtldftktp)
+chitung1		tldperdis		DO_CALC
+DEBUG			ldum ldum		REPLACE
+
+DBCALCS(dupdtldftktp)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tldprmidx   tldprm
+	DBC_MAP		mupdtldftktp
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND charusupload
+SFL_UPL_DIRFLD mtdtglfak
+SFL_UPLFLD tldlok mtdgrup
+SFL_UPLFLD_DBCALCS dupdtldftktp
+SFL_UPL_CAMERAONLY
+
+SFL_TARGET
+tldbukbrglok   mtdnobuk mtdplg lFTDGNKTP
+SFL_MAP
+mtdnobuk        tldnobuk    REPLACE
+mtdplg          tldbrg      REPLACE
+lFTDGNKTP       tldlok      REPLACE
+gv_krmhutbrg	tlddata		REPLACE
+gv_INPG			tldsts		REPLACE
+l618			tldscr		REPLACE
+lFTDOKUM		tldkat		REPLACE

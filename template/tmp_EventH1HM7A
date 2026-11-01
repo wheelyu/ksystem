@@ -1,0 +1,213 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------------------------------\
+ t.Penugasan SDM
+/--------------------t--------t-------------t-------------t-------------t--------t--------t--------t--------t----------\
+|t.Nama              |t.NIP   |t.Subdept    |t.Tugas      |t.Posisi     |t.TgtJl |t.ActJl |t.TgtPk |t.info  | __ __ __
+\--------------------.--------.-------------.-------------.-------------.--------.--------.--------.--------.----------/
+\----------------------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|____________________|________|_____________|_____________|_____________|________|________|________|___________________|
+
+FIELD(tmptranst)
+ltombol2acc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombol1tacc    TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombolhm7aok   TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 2
+
+
+FIELD(tmptrans)
+lnamasdm 	PROTECT		        INPUTRI	1
+tkdrek  	ALLCAPS SCROLL          INPUTRI	1
+lsubdept        PROTECT                 INPUTRI 2
+tkdjwbstr2      ALLCAPS NOCHANGE        INPUTRI 2
+tkdjenis        ALLCAPS NOCHANGE	INPUTRI	3
+tkdjml5        PROTECT                 INPUTRI 3
+ljmljltot        PROTECT                 INPUTRI 3
+ltgtpk        PROTECT                 INPUTRI 3
+tkdtmp1       PROTECT                   INPUTRI 3
+
+
+MAP(mjoinallsdmbertugas)
+tkdnourt        ltkdnourt       REPLACE
+
+DBCALCS(djoinallsdmbertugas)
+	DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tkddatbukll lEVNH1AHM7 tlmnobuk
+        DBC_MAP         mjoinallsdmbertugas
+
+MAP(mjoinpsdusiasales)
+psdtot ltgtjl   REPLACE
+
+DBCALCS(djoinpsdusiasales)
+        DBC_COMMAND JOIN
+        DBC_TARGET psddatpsmkod lUSIASALES tkdrek lthbl21 lUSIA
+        DBC_MAP mjoinpsdusiasales
+CALCS()
+ckunci7a       abkkym2 == lketreviewhm7a
+ctkdreksama	        tkdprm != ltkdprm && tkdrek == ltkdrek
+cdetailhm7aok         tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdrek != "" && 
+                        djoindetailhm8 == 1 && (ltkdjenis == "TIDAK" || ltkdjenis == "YA" && djoindetailahm7ahass == 1) && djoindetailahm7pj == 1
+
+DBCALCS(djoinsdmbertugas)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      tkddatbukll lEVNH1AHM7 tlmnobuk
+        DBC_SELECT      ctkdreksama
+
+CALCS()
+cjoinpsdusiasales djoinpsdusiasales == 1
+cjualK		djoinppmpik==1 && ltglkirim<=tlmtgl2 && lppmstskrm=="KR" && pikca=="KR"
+cjual		djoinppmpik==1 && ltglkirim<=tlmtgl2 && lppmstskrm=="KR" && pikca=="KR" 
+cjltot		ljmljltot + ljmljlK + ljmljlT
+cjltotK		ljmljlK + ljlK
+cjltotT		ljmljlT + ljlT
+cnourt                  ltkdnourt + gv_int1
+csdmbertugasbaru        ltkdnourt == 0
+ctkdnollkosong          tkdnoll == ""
+cadasdmbertugas         djoinallsdmbertugas == 1 
+csdmbelumdiinput        djoinsdmbertugas == 0
+cahassok                djoindetailhm8 == 1 && ((ltkdjenis == "TIDAK" && tkdsisstr != "H2") || (ltkdjenis == "YA" ))
+ctkdnoll                lEVNH1AHM1 + "SDM" + FLD_TO_STRING(tkdnourt)
+cbelumadapj             djoindetailahm7pj == 0
+cbelumadaahass          djoindetailhm8 == 1 && ltkdjenis == "YA" && djoindetailahm7ahass == 0
+csudahadaahass          (djoindetailhm8 == 1 && ltkdjenis == "YA" && djoindetailahm7ahass == 1) || (djoindetailhm8 == 1 && ltkdjenis == "TIDAK")
+DEFAULTS(tmptrans)
+ltgtpk          INIT                    {tlmjml}
+lnamasdm        INIT                    ""
+lsubdept        INIT                    ""
+tkdjwbstr2      DFALT_LIST              SDM_BERTUGAS PJ
+tkdjenis        DFALT_LIST              CHECKPOINT TENDA
+tkdsts INIT            {gv_OPEN}
+
+MAP(mmaphitjualK)
+cjltotK		ljmljlK		DO_CALC
+
+MAP(mmaphitjualT)
+cjltotT		ljmljlT		DO_CALC
+
+MAP(mmaphitjual)
+cjltot		ljmljltot	DO_CALC
+
+MAP(mtkdrek)
+tkdprm          ltkdprm                 REPLACE
+tkdrek          ltkdrek                 REPLACE
+ltgtjl          tkdjml5                  REPLACE_IF cjoinpsdusiasales
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tkdrek        DO_MAP SHOW mtkdrek
+AFTER_INPUT	cur_field=tkdrek        DO_MAP
+                IF csdmbelumdiinput mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SDM Sudah Di Input
+AFTER_INPUT	cur_field=tkdrek        DO_MAP
+                IF cahassok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TIDAK BOLEH INPUT AHASS
+
+                
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol1tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol2acc    DO_SKIP_IF camkawil
+
+AFTER_INPUT	cur_field=ltombolhm7aok    DO_MAP
+                IF csudahadaahass mdum
+                ELSE HKCURSOR STAY
+                HKMSG t. Input ahass dulu
+CLICKED         cur_field=ltombolhm7aok DO_SPCALCS spdetailokhm7a
+
+CLICKED         cur_field=ltombol1tacc   DO_SPCALCS IF camkawilin staccdetailrinci7a
+CLICKED         cur_field=ltombol2acc	DO_SPCALCS IF camkawilin saccdetailrinci7a      
+
+MAP(msdmbertugas)
+psinama         lnamasdm                REPLACE
+psikode         tkdrek                  REPLACE
+psijabatan      tkdjwbstr1              REPLACE
+psisdep         lsubdept                REPLACE
+psidvs          tkdsisstr               REPLACE
+
+EDITS(tmptrans)
+e.Mandatory             tkdrek          MANDATORY
+t.KryNull               tkdrek          VALIDATE psikodidx msdmbertugas spsiinpgcab
+e.Mandatory             tkdjwbstr2      MANDATORY
+e.Mandatory             tkdjenis        MANDATORY
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNH1AHM7 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1AHM7 tkddata
+
+MAP(mupddetailtrinci7)
+lMENUNGGUREVISI tkdtmp1					REPLACE
+gv_TACC         tkdsts                  REPLACE
+
+MAP(mtldceksdmbertugas)
+lEVNH1AHM1      tlddata         REPLACE
+gv_INPG         tldsts          REPLACE
+gv_OPEN         tldtydis        REPLACE
+tlmnobuk        tldplg          REPLACE
+cBLANKS         ltkdnourt       DO_CALC
+cnourt          ltkdnourt       DO_CALC_IF cadasdmbertugas   
+gv_int1         ltkdnourt       REPLACE_IF csdmbertugasbaru
+ltkdnourt       tkdnourt        REPLACE_IF ctidakadafoto
+ctkdnoll        tkdnoll         DO_CALC_IF ctkdnollkosong
+tkdnoll         tldbrg          REPLACE
+tkdjwbstr1      tldkat          REPLACE
+tkdjwbstr2      tldlok2          REPLACE
+tkdsisstr       tldukrwrn       REPLACE
+tkdjenis        tldsat          REPLACE
+tkdrek          tldlok         REPLACE
+tkdtmp1         tldstr1         REPLACE    
+g_tgltrn        tldtglfak       REPLACE
+
+MAP(mupddetailok7)
+lSUDAHACC       tkdtmp1		        REPLACE
+gv_ok         	tkdsts                  REPLACE
+
+
+MAP(mscanpiktld)
+gv_int1		ljlK		REPLACE_IF cjualK
+
+MAP(mscanpiktldT)
+gv_int1		ljlT		REPLACE_IF cjual
+
+MAP(mupdinfodetailhm7a)
+lTAMBAHPJDULU           tkdtmp1          REPLACE_IF cbelumadapj
+lTAMBAHAHASSDULU        tkdtmp1          REPLACE_IF cbelumadaahass
+lDALAMPROSESREVIEW      tkdtmp1          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm7a)
+        DO_LIB_IF cdetailhm7aok   ap_dbclc(DNAME dupddetailreqhm7a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailreq);
+        DO_LIB                          ap_dbclc(DNAME dupddetailreqhm7aok,DCOMMAND MAPMAP, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm7a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm7a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam); /*
+        DO_LIB_IF cadaahass             ap_dbclc(DNAME daddabkreviewahasshm7a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewahass); */
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm7a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupdinfodetailhm7a);
+
+SPCALCS(saccdetailrinci7a)
+        DO_LIB_IF cadakawil             ap_dbclc(DNAME dupdabkclsdkawilaccdetail7a,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci7a, DMAP mupdabkclsdkawil);
+        DO_LIB_IF cadaam                ap_dbclc(DNAME dupdabkclsdamaccdetail7a,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci7a,DMAP mupdabkclsdam);
+        DO_LIB                          ap_dbclc(DNAME dupddetailokaccdetail7a, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailok7);
+        DO_LIB                          ap_dbclc(DNAME dupddetailreqhm7aoks,DCOMMAND MAPMAP, DMAP mupddetailreq);
+
+SPCALCS(staccdetailrinci7a)
+        DO_LIB                          ap_dbclc(DNAME dupddetailtacchm7a, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailtrinci7);
+
+SPCALCS(sptambahhm7a)
+        DO_LIB                  ap_dbclc(DNAME daddtldceksdmbertugashm7a,DCOMMAND ADD,DFILE tld,DMAP mtldceksdmbertugas);
+        DO_LIB		ap_dbclc(DNAME dscanpikg23a, DCOMMAND SCANSCAN, DTARGET pikdatslmidx gv_dtpiu ltkdrek lK ltglawlbln, DLTARGET pikdatslmidx gv_dtpiu ltkdrek lK ltglakhbln,DBC_SUM_MAP mscanpiktld, DMAP mmaphitjualK);
+	DO_LIB		ap_dbclc(DNAME dscanpikg23aT, DCOMMAND SCANSCAN, DTARGET pikdatslmidx gv_dtpiu ltkdrek lT ltglawlbln, DLTARGET pikdatslmidx gv_dtpiu ltkdrek lT ltglakhbln,DBC_SUM_MAP mscanpiktldT, DMAP mmaphitjualT);
+        DO_LIB		ap_dbclc(DNAME dmmaphitjual, DCOMMAND MAPMAP, DMAP mmaphitjual);
+SPCALCS(spubahhm7a)
+        DO_LIB                  ap_dbclc(DNAME dupdtkdceksdmbertugashm7a,DCOMMAND UPDATE_RANGE,DTARGET tldplgbrgidx lEVNH1AHM1 gv_INPG tlmnobuk tkdnoll,DMAP mtldceksdmbertugas);
+        DO_LIB		ap_dbclc(DNAME dscanpikg24a, DCOMMAND SCANSCAN, DTARGET pikdatslmidx gv_dtpiu ltkdrek lK ltglawlbln, DLTARGET pikdatslmidx gv_dtpiu ltkdrek lK ltglakhbln,DBC_SUM_MAP mscanpiktld, DMAP mmaphitjualK);
+	DO_LIB		ap_dbclc(DNAME dscanpikg24aT, DCOMMAND SCANSCAN, DTARGET pikdatslmidx gv_dtpiu ltkdrek lT ltglawlbln, DLTARGET pikdatslmidx gv_dtpiu ltkdrek lT ltglakhbln,DBC_SUM_MAP mscanpiktldT, DMAP mmaphitjualT);
+        DO_LIB		ap_dbclc(DNAME dmmaphitjual2, DCOMMAND MAPMAP, DMAP mmaphitjual);
+SPCALCS(sphapushm7a)
+        DO_LIB                  ap_dbclc(DNAME ddeltldceksdmbertugashm7a,DCOMMAND DELETE_RANGE,DTARGET tldplgbrgidx lEVNH1AHM1 gv_INPG tlmnobuk tkdnoll);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptambahhm7a
+        PST_UPDCMD spubahhm7a
+        PST_DELCMD sphapushm7a

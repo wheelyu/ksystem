@@ -1,0 +1,83 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket : _______________________ ||
+||        _____                   ||
+||t.Bank      : _________________ ||
+||t.nmbank    : _________________ ||
+||t.NoRekBank : _________________ ||
+||t.AtasNamRek: _________________ ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			PROTECT 		INPUTRI		2 
+svistr1   		NOCHANGE		INPUTRI		3 
+sviket    		PROTECT 		INPUTRI		4 
+svistr2			DIGITS			INPUTRI		5 
+sviket2 		ALLCAPS 		INPUTRI		6 
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+
+EDITS(tmptranst)
+e.Validate svistr1 VALIDATE tbddatkodidx  mtbdbank stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_bank21}
+e.Mandatory svistr1 MANDATORY
+e.Mandatory sviket MANDATORY
+e.Mandatory svistr2 MANDATORY
+e.Mandatory sviket2 MANDATORY
+
+MAP(mtbdbank)
+tbdkode		svistr1		REPLACE
+tbdket		sviket		REPLACE
+
+MAP(mupdsvinorek)
+cY              sviyt1          DO_CALC
+
+DBCALCS(dupdsvinorek)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvinorek
+
+CALCS()
+cnorek		tmpkode == "BKTNOREK" && btmstr2=="TRANSFER"
+cnorek1		sviyt1 != "Y"
+cisinorek	btmstr2=="TRANSFER" && btmdvsjl=="M2W" && g_scrnumstr=="713" && btmsts=="713"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cnorek
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPLFLD_DBCALCS dupdsvinorek
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND cnorek1
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk lcount
+
+SPCALCS(spnorek)
+DO_LIB ap_nxpst(l4461,lm4461det2);
+
+POSTING(tmptrans)
+        PST_ADDCMD spnorek
+        PST_UPDCMD spnorek
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cisinorek
+  PMT_DEL_COND  c0
+

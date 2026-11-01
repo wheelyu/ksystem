@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+lnourtchat     	INT2    2
+/*lstsfu		STRING	11
+*/
+MAP(mjointkduchat)
+tkdnourt        lnourtchat    REPLACE
+
+DBCALCS(djointkduchat)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tkddatbukll tkmdata tkmnobuk lNOLL1
+        DBC_MAP         mjointkduchat
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.rekapchat  __                       ||
+|\--------------------------------------/|
+|/--------------\/----------------------\|
+||t.fu          || ______               ||
+||t.Tanggal     || __________           ||
+|\--------------/\----------------------/|
+|/--------------\/----------------------\|
+||t.Terkirim    || __________           ||
+||t.dibaca      || __________           ||
+||t.dibalas     || __________           ||
+||t.hasilblast  || ___________________  ||
+|\--------------/\----------------------/|
+||spasi					||
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnourt	PROTECT				INPUTRI 1		
+tkdsts		PROTECT				INPUTRI 1
+tkdtgl		PROTECT {DD-MM-YY} NOLIMIT	INPUTRI 2
+tkdjwbstr1      PROTECT 	        	INPUTRI 3
+tkdstr1		PROTECT				INPUTRI	4
+tkdket	 	ALLCAPS NOCHANGE  		INPUTRI 4
+tkdsisstr	PROTECT				INPUTRI 5
+
+DEFAULTS(tmptranst)
+tkdjwbstr1      INIT_ADD	        Y
+                                        
+tkdtgl          INIT                    {g_tgltrn}
+
+/*IF cinp1fu	tkdket          DFALT_SCAN              BLANKS
+                                        ALASAN_MENDESAK
+					JAWABAN_ABUABU*/
+
+
+
+CALCS()
+cjointkduchat0  djointkduchat==0 && g_curcmd==1
+cjointkduchat1  djointkduchat==1 && g_curcmd==1
+curutchat       lnourtchat + 1
+/*ctdkbalaspesan tkdjwbstr2=="T"*/
+
+MAP(murutchat)
+csatu        	tkdnourt        DO_CALC_IF cjointkduchat0
+curutchat       tkdnourt        DO_CALC_IF cjointkduchat1
+csatu           tkdnil          DO_CALC_IF cjointkduchat0
+curutchat       tkdnil          DO_CALC_IF cjointkduchat1
+tkmsts		tkdsts		REPLACE
+ 
+
+HOOKS(tmptranst)
+        BEFORE_INPUT  cur_field=tkdket	        DO_MAP SHOW murutchat
+/*	BEFORE_INPUT  cur_field=tkdjenis	DO_SKIP_IF ctdkbalaspesan
+	AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW
+                        IF cudhinp2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.WajibPilihYT*/
+	AFTER_INPUT   cur_field=tkdjwbstr1      DO_MAP SHOW
+                      IF cisichat mdum
+                      ELSE HKCURSOR STAY
+                      HKMSG t.tidakBlhtmbhlg	
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+           tkddatbukll tkmdata tkmnobuk lNOLL1 
+SFL_MAP
+tkmdata                  tkddata         REPLACE
+tkmnobuk                 tkdnobuk        REPLACE
+lNOLL1                   tkdnoll         REPLACE
+tkmnobuk2			 tkdrek		 REPLACE
+tkmplg			 tkdstr3	 REPLACE
+
+
+CALCS()
+/*cblmkirim2d	djoinchdkirim==0 || tkmdf1==0*/ 
+cudhisichat1		djoincekchatsts==1
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	   c0
+	PMT_UPDALL_COND    c0
+	PMT_DEL_COND       c0
+	PMT_ADD_MSG 	  /*IF cblmkirim2d t.KirimChatdi2d.Dulu */
+			   IF cudhisichat1 t.SudahisiFuChat
+			   IF chrsblnini t.KerjakanSPKBulanIni

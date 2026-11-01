@@ -1,0 +1,77 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.UpdStsClnKry ________________________             !                   |
+|       !t.TglInp     : ___________                          !                   |
+|       !t.User       : ___________ __________________       !                   |
+|       !t.Status     : ___________                          !                   |
+|       !t.Ket        : ___________________________________  !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnobuk        PROTECT                 INPUTRI 1
+tldtglfak       PROTECT {DD-MM-YY}      INPUTRI 2
+tldkat          PROTECT SCROLL          INPUTRI 3
+lnama_user2      PROTECT SCROLL          INPUTRI 4
+tldgrup         NOCHANGE SCROLL         INPUTRI 5
+tldket          TEXTAREA ALLCAPS         INPUTRI 6
+
+CALCS()
+cbknpartnerxy   btmnorangka!="PARTNERSHIP" && btmsts!="139" && btmsts!="140"
+cbknpartnerxy2  btmnorangka!="PARTNERSHIP" && (btmsts=="139" || btmsts=="140") && (btmsurveyor=="VOID" || btmsurveyor=="NO_RESPON" || btmsurveyor=="MD") && (g_grpnam=="HRDHEAD" || g_grpnam=="RI"
+                || g_grpnam=="IT")
+
+DEFAULTS(tmptranst)
+tldkat          INIT_ADD        {g_usrkode}
+tldtglfak       INIT_ADD        {g_tgltrn}
+
+IF cbknpartnerxy        tldgrup         DFALT_SCAN_BLANKS       OPEN TES
+IF cbknpartnerxy2       tldgrup         DFALT_SCAN_BLANKS       OPEN TES
+
+IF cpartnerxy           tldgrup         DFALT_SCAN_BLANKS       TESP
+
+EDITS(tmptranst)
+t.Validate tldkat VALIDATE psikodidx mbtmg
+t.Mandatory tldgrup MANDATORY
+t.Mandatory tldket MANDATORY
+
+MAP(mbtmg)
+psikode         tldkat  REPLACE
+psinama         lnama_user2     REPLACE
+
+CALCS()
+chanyahrd       (g_grpnam=="HRDHEAD" || djointbdakshrdheada==1 || djointbdakshrdheadb==1 || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA"|| g_grpnam=="SPVMPP" || g_grpnam=="HRDSPV" ||
+                g_grpnam=="B.IVAROHRD" || g_grpnam=="B.PARTHRD" || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="RAS") && (btmsts=="136" || btmsts=="135" || btmsts=="134" || btmsts=="137" ||
+                btmsts =="138" || btmsts =="139" || btmsts =="140")  && btmstsbrg!="PROMOSI"
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldgrup       DO_MAP SHOW
+                IF cbukanjurnalis mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JurTBHTdkBoleh
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbukanjurnalis mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JurTBHTdkBoleh
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND chanyahrd
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tldoto
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+        tldbukbrgoto   btmnobuk gv_CLSD lUBHSTS134
+        
+SFL_MAP
+btmnobuk        tldnobuk        REPLACE
+btmplg          tldlok2         REPLACE
+gv_CLSD         tldsts          REPLACE
+lUBHSTS134      tldbrg          REPLACE        

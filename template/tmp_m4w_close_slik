@@ -1,0 +1,83 @@
+LOCAL
+PGM_FIELDS
+lCROCLSD	STRING		11
+lnamainputclsd	STRING		21
+lHSLLAMA	STRING		11
+lSLIKLAMA	STRING		11
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoBuk _______________________  ||
+||t.IdDeb _______________________  ||
+||t.User  ________ ______________  ||
+||t.Enter ________                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	NOCHANGE	INPUTRI 1
+tldplg		NOCHANGE	INPUTRI 2
+tldnoll		PROTECT		INPUTRI 3
+lnamainputclsd	PROTECT		INPUTRI 4
+lenter		ALLCAPS		INPUTRI 5
+
+DEFAULTS(tmptranst)
+lCROCLSD	INIT		CROCLSD
+lHSLLAMA		INIT		DTLAMA
+lSLIKLAMA	INIT		SLIKLAMA
+
+EDITS(tmptranst)
+e.Validate	tldnoll	VALIDATE psmkodidx mpsmclsd
+
+MAP(mpsmclsd)
+psmnama		lnamainputclsd		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	c642
+SFL_TARGET
+tldstskodbrg lCROCLSD gv_CLSD btmplg
+
+SFL_MAP
+lCROCLSD	tlddata		REPLACE
+gv_CLSD		tldsts		REPLACE
+btmnobuk	tldnobuk	REPLACE
+btmplg		tldplg		REPLACE
+g_usrkode	tldnoll		REPLACE
+
+MAP(mupdtldro)
+gv_CLSD                 tldsts          REPLACE
+lSLIKLAMA		tlddata		REPLACE
+MAP(mupdtldro2)
+gv_CLSD                 tldsts          REPLACE
+lHSLLAMA		tlddata		REPLACE
+
+MAP(mapakhirclsd)
+lCROCLSD        tlddata         REPLACE
+gv_CLSD         tldsts          REPLACE
+btmnobuk        tldnobuk        REPLACE
+btmplg          tldplg          REPLACE
+g_usrkode	tldnoll		REPLACE
+
+CALCS()
+cktpini		btmplg == "3674032903850002"
+
+SPCALCS(saddclsd)
+        DO_LIB_IF cdjoinsviposro        ap_dbclc(DNAME dupdposro,DCOMMAND UPDATE,DTARGET svidatkodtyp lSLIK btmplg lPOSSLIK gv_INPG,DMAP mupdposslikro);
+        DO_LIB_IF cdjoinsvipsngnro ap_dbclc(DNAME dupdpsngro,DCOMMAND UPDATE,DTARGET svidatkodtyp lSLIK btmplg ldtpaspen  gv_INPG,DMAP mupdposslikro);
+        DO_LIB_IF cdjoinsvireqro ap_dbclc(DNAME dupdreqro,DCOMMAND UPDATE,DTARGET svidatkodtyp lSLIK btmplg lreq gv_INPG,DMAP mupdposslikro);
+        DO_LIB_IF cdjointldinputslikro ap_dbclc(DNAME dupdinputslikro,DCOMMAND UPDATE_RANGE,DTARGET tldstskodbrg lSLIK gv_INPG btmplg,DMAP mupdtldro);
+        DO_LIB_IF cdjointldhasilro ap_dbclc(DNAME dupdhasilslikro,DCOMMAND UPDATE_RANGE,DTARGET tldstskodbrg lHASILSLIK11 gv_INPG btmplg,DMAP mupdtldro2);
+	DO_LIB_IF cktpini ap_dbclc(DNAME dupdinputslikro2,DCOMMAND UPDATE_RANGE,DTARGET tldstskodbrg lSLIK gv_CLSD btmplg,DMAP mupdtldro2);
+        DO_LIB_IF cktpini ap_dbclc(DNAME dupdhasilslikro2,DCOMMAND UPDATE_RANGE,DTARGET tldstskodbrg lHASILSLIK11 gv_CLSD btmplg,DMAP mupdtldro2);
+	DO_LIB ap_dbclc(DNAME dmapakhirclsd,DCOMMNAD MAPMAP,DMAP mapakhirclsd);
+POSTING(tmptrans)
+	PST_ADDCMD	saddclsd
+
+
+

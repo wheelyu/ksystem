@@ -1,0 +1,190 @@
+LOCAL
+PGM_FIELDS
+lssubrg		STRING		21
+lssurangka	STRING		21
+lssumesin 	STRING		21
+lssuwarna 	STRING		21
+lssutahun 	STRING		21
+lkonsmtr	STRING		21
+ltahunmtr	STRING		5
+
+MAP(mjoinssubaru)
+ssubrg		lssubrg		REPLACE
+ssurangka	lssurangka	REPLACE
+ssuwarna        lssuwarna       REPLACE
+ssutahun        lssutahun       REPLACE
+DBCALCS(djoinssubaru)
+	DBC_COMMAND 	JOIN
+	DBC_TARGET	ssumridx tldnobbm
+	DBC_MAP 	mjoinssubaru
+
+MAP(mjoinssubarux)
+ssubrg          lssubrg         REPLACE
+ssumesin        lssumesin       REPLACE
+ssuwarna        lssuwarna       REPLACE
+ssutahun        lssutahun       REPLACE
+DBCALCS(djoinssubarux)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ssurmidx tldnobbm
+        DBC_MAP         mjoinssubarux
+
+MAP(mjoinssubaru2)
+ssubrg          lssubrg         REPLACE
+ssumesin        lssumesin       REPLACE
+ssuwarna        lssuwarna       REPLACE
+ssutahun        lssutahun       REPLACE
+DBCALCS(djoinssubaru2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ssurmidx tldbrdoto
+        DBC_MAP         mjoinssubaru2
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/----s.UPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| t.Lok       :_________________  ||
+|| t.Urt       :__________________ ||
+|| t.NoMesin   :__________________ ||
+|| t.NoRangka  :__________________ ||
+|| t.Kondisimtr:____   ___________ ||
+|| t.ThnMotor  :_____ t.StsUpl ___ ||	
+|| t.Latitude  :_________.__       ||
+|| t.Longitude :_________.__       ||
+||              ____________       ||    
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldukrwrn	ALLCAPS SCROLL		INPUTRI		2
+tldjml   	NUMERIC       		INPUTRI		2
+tldnobbm	QRCODE        		INPUTRI		3
+tldbrdoto 	PROTECT			INPUTRI		4
+tldperdis3 	NOCHANGE		INPUTRI		5
+lkonsmtr 	PROTECT			INPUTRI		5
+ltahunmtr	PROTECT			INPUTRI		6
+tldsisbrg	PROTECT			INPUTRI		6
+tldperdis4	PROTECT			INPUTRI		7
+tldperdis5	PROTECT			INPUTRI		8
+ltombolgmaps    TOMBOL			INPUTRI		9
+
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg   	INIT_ADD	{g_usrkode}
+tldukrwrn	DUP_INIT
+tldperdis3	DFALT_SCAN_BLANKS	1 "BAIK"	
+					2 "RUSAK"			
+tldsisbrg	INIT_ADD	OK
+tldsisbrg	INIT_UPDATE	OK
+
+EDITS(tmptranst)
+e.Mandatory     tldukrwrn       MANDATORY
+e.Mandatory     tldjml          MANDATORY
+e.Mandatory     tldnobbm        MANDATORY
+e.Mandatory     tldperdis3      MANDATORY
+e.Validate      tldukrwrn       VALIDATE 	tbddtmstidx mtbd stbd1 {Pgv_dttabel} {Pgv_barang} {Pgv_lokmotor} {Pgv_BR} {Ptlmcab}
+e.Dupkey	tldnobbm	DUPKEY		tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}
+
+CALCS()
+cbaik		"BAIK"
+crusak		"RUSAK"
+cbaik1		tldperdis3 == 1
+crusak1		tldperdis3 == 2
+cbknSISTEMa     tldsat != "SISTEM"
+cmampata        MAMPAT(tldnobbm)
+cjoinssubaru1   djoinssubaru == 1
+cjoinssubarux1  tlmtype2 == "ZOOM" && djoinssubarux == 1
+cjoinssubarux2  tlmtype2 == "ZOOM" && djoinssubaru2 == 1
+cadakoordinat   tldperdis4 != BLANKS && tldperdis5 != BLANKS
+cjoinssubaru2   djoinssubaru2 == 1
+
+MAP(mtbd)
+tbdkode         tldukrwrn       REPLACE
+cbaik		lkonsmtr	DO_CALC_IF cbaik1	
+crusak		lkonsmtr	DO_CALC_IF crusak1
+lssutahun	lssutahun	REPLACE_IF cjoinssubaru1
+lssutahun	lssutahun	REPLACE_IF cjoinssubaru2	
+lssutahun     	ltahunmtr       REPLACE_IF cjoinssubaru1
+lssutahun       ltahunmtr       REPLACE_IF cjoinssubaru2
+
+
+SPCALCS(spgmaps)
+DO_LIB_IF cadakoordinat ap_shmap(tldperdis4,tldperdis5);
+
+
+
+MAP(mampata)
+cmampata 	tldnobbm	DO_CALC
+lssubrg		tldbrg		REPLACE_IF cjoinssubaru1
+lssurangka	tldbrdoto	REPLACE_IF cjoinssubaru1
+lssumesin 	tldbrdoto	REPLACE_IF cjoinssubarux1
+lssumesin 	tldnobbm 	REPLACE_IF cjoinssubarux2
+
+
+MAP(mupdfotospm)
+g_fotolat1      tldperdis1      REPLACE
+g_fotolon1      tldperdis2      REPLACE
+g_tgltrn        tldtgl2         REPLACE
+cOK             tldsisbrg       DO_CALC
+DBCALCS(dupdfotospm)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tldprmidx	tldprm
+	DBC_MAP		mupdfotospm
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldnobbm      DO_MAP SHOW mampata
+CLICKED         cur_field=ltombolgmaps          DO_SPCALCS spgmaps
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SELECT	cbknSISTEMa
+SFL_COND	cunitbaru
+/*SFL_AUTO_ADD*/
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tldnobuk tldoto
+SFL_UPLFLD_DBCALCS dupdfotospm
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND c0
+SFL_TARGET
+tldbukbrglok    tlmnobuk   
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat		tldperdis4	REPLACE
+g_lon		tldperdis5	REPLACE
+
+CALCS()
+cplus1a		tlmtotal + 1
+cmins1a		tlmtotal - 1
+
+
+MAP(mupdtlmadda)
+cplus1a		tlmtotal	DO_CALC
+
+MAP(mupdtlmupda)
+cmins1a		tlmtotal	DO_CALC
+
+
+SPCALCS(sptrans2adda)
+DO_LIB		ap_dbclc(DNAME dupdtlmadda, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmadda);
+
+SPCALCS(sptrans2upda)
+DO_LIB		ap_dbclc(DNAME dupdtlmupda, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupda);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2adda
+	PST_DELCMD	sptrans2upda
+

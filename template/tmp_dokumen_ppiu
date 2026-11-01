@@ -1,0 +1,65 @@
+
+LOCAL
+PGM_FIELDS
+        lPPIU              STRING  11
+        l4980		       INT2	    2
+        lm4980		       STRING	15
+        ldum3                    STRING 21
+        lDOKPPIU2                STRING 11
+ 
+   
+
+DBCALCS(djoinsvicekqa)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp  lFOTOPPIU cmpkode  lDOKPPIU2
+
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||t.EnterRekam     : ________________ ||
+||                   ________________ ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+cmpkode                ALLCAPS  NOCHANGE               INPUTRI 1
+cmpscr                 ALLCAPS  NOCHANGE               INPUTRI 2
+
+DEFAULTS(tmptranst)
+lPPIU		INIT		PPIU
+l4980		INIT		4980
+lm4980		INIT		"m4980"
+lDOKPPIU2       INIT            DOKPPIU
+
+CALCS()
+cbtdcekqa0		djoinsvicekqa == 0
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND	cbtdcekqa0
+SFL_TARGET
+        cmpkodidx   cmpkode
+SFL_MAP
+cmpkode    cmdcmpkode 	   REPLACE
+lFOTOPPIU       svidata         REPLACE
+lDOKPPIU2        svitype         REPLACE
+
+MAP(m4980)
+cmdcmpkode         r_string1       REPLACE
+cmpscr             r_string2       REPLACE
+
+MAP(mmapmap)
+DEBUG   ldum3    ldum3    REPLACE
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapmap1,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB ap_nxpst(l4980,lm4980);
+
+POSTING(tmptrans)
+PST_COMMAND	sptmptrans
+

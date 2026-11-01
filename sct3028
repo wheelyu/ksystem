@@ -1,0 +1,179 @@
+SCREEN 3028 QUERY_TYPE t.DukcapilFR
+SCR_FILE tlm
+SCR_LOGFLD tlmnobuk
+SCR_UPLFLD tlmnobuk
+SCR_UPL_DIRFLD tlmnobuk
+SCR_UPL_DELCOND cbknCLSD
+SCR_UPLFLD_DBCALCS dupdtlmfoto
+/*SCR_UPL_CAMERAONLY*/
+
+LOCAL
+PGM_FIELDS
+ltombol_1d	STRING	21
+lenter          STRING	11
+lurl		STRING	101
+luser		STRING	51
+lpasswd		STRING	51
+lfoto		STRING	51
+lpubkey		STRING	51
+lmatchscore	DFLOAT	8
+lpanjang        INT2    2
+ld1             STRING  21
+ln1             INT2    2
+ldum            STRING  5 
+
+CALCS()
+c1		1
+cbknCLSD	tlmsts != gv_CLSD
+
+MAP(mupdtlmfoto)
+c1		tlmjml		DO_CALC
+
+DBCALCS(dupdtlmfoto)
+        DCOMMAND        UPDATE
+        DTARGET         tlmprmidx       tlmprm
+        DMAP            mupdtlmfoto
+
+IMAGE(master)
+/--------------------------------\
+|/------------------------------\|
+|| t.NoBuk : __________________ ||
+|| i.Ktp   : __________________ ||__
+|| i.Sts   : _____		||
+|| i.Tgl   : __________		||
+|| t.Ket   : __________________ ||
+|| t.Score : ___._______        ||
+|\------------------------------/|
+|/-----UPLOAD-------------------\|
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+|\------------------------------/|
+| __________			 |
+\--------------------------------/
+
+FIELD(master)
+tlmnobuk        PROTECT         	INPUTRI         1
+tlmnoasal       DIGITS SCROLL   	INPUTRI         2
+tlmdata		PROTECT	UNSEEN		INPUTRI		3
+tlmsts		PROTECT			INPUTRI		4
+tlmtgl		PROTECT	{DD-MM-YYYY}	INPUTRI		5
+tlmdari		PROTECT			INPUTRI		6
+tlmtotal	PROTECT			INPUTRI		6
+ltombol_1d	TOMBOL			INPUTRI		7
+
+DEFAULTS(master)
+tlmdata		INIT_ADD	DUKCAPILFR
+tlmdata		INIT_QUERY	DUKCAPILFR
+tlmtgl		INIT_ADD	{g_tgltrn}
+tlmsts		INIT_ADD	OPEN
+lenter          INIT		ENTER
+ltombol_1d	INIT		"1d. FR Dukcapil"
+lurl        	INIT		"http://172.16.160.176:8000/api/gpuv11/face-recognition/990040921020987/CALL_FR"
+luser       	INIT		"040920231450379900409210209873131"
+lpasswd     	INIT		"BT56KX"
+lpubkey     	INIT		"public.pub"
+ln1             INIT            1
+
+EDITS(master)
+IsiKTP		tlmnoasal	MANDATORY
+
+CALCS()
+cnomer          "FR" + THBLS(tlmtgl)
+cpanjang        DO_LIB ap_strln(tlmnoasal,&lpanjang);
+cpjgktp  	lpanjang == 16
+cktpawal        DO_LIB ap_amstr(tlmnoasal,ln1,ln1,&ld1);
+cktp0		ld1 != "0"
+
+MAP(mnomer)
+cnomer          tlmnobuk        DO_CALC
+
+MAP(mpanjangktp)
+cpanjang	lpanjang	DO_CALC
+cktpawal	ld1		DO_CALC
+
+MAP(mnobuk)
+tlmnobuk        tlmnobuk        REPLACE
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+HOOKS(master)
+AFTER_INPUT     cur_field=tlmnobuk	DO_MAP SHOW mnomer
+AFTER_INPUT     cur_field=tlmnoasal	DO_MAP SHOW mpanjangktp  
+AFTER_INPUT             cur_field=tlmnoasal     DO_MAP SHOW
+                        IF cktp0 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KtpTidakBolehDepanNol
+AFTER_INPUT             cur_field=tlmnoasal     DO_MAP SHOW
+                        IF cpjgktp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KtpLimit16Digits
+
+IMAGE(transt)
+/--------------------------------\
+|/------------------------------\|
+|| i.Ktp  : ___________________ ||
+|| t.Ket  : __________	        ||
+||			 ______ ||
+|\------------------------------/|
+\--------------------------------/
+
+IMAGE(trans)
+
+FIELD(transt)
+tlmnoasal	NOCHANGE	INPUTRI		1
+tlmdari		PROTECT		INPUTRI		1
+lenter		NOCHANGE	INPUTRI		2
+
+CALCS()
+cadafoto	tlmjml > 0 && tlmsts != gv_CLSD
+cnamafile	"upload/" + STRIP(tlmnobuk) + "/" + STRIP(tlmnobuk) + ".jpg"
+cSESUAI		"SESUAI"
+cTIDAKSESUAI	"TIDAK SESUAI"
+cscore1		lmatchscore > 0
+cscore0		lmatchscore == 0
+
+MAP(mnamafile)
+cnamafile	lfoto		DO_CALC
+
+MAP(mupdtlm)
+lmatchscore	tlmtotal	REPLACE
+cSESUAI		tlmdari		DO_CALC_IF cscore1
+cTIDAKSESUAI	tlmdari		DO_CALC_IF cscore0
+gv_CLSD		tlmsts		REPLACE
+
+HOOKS(transt)
+AFTER_INPUT	cur_field=tlmnoasal	DO_MAP SHOW mnamafile
+
+SUBFILE(trans)
+SFL_APP_TYPE
+SFL_LINES(1)
+SFL_TITLE(transt)
+SFL_COND  cadafoto
+SFL_TARGET
+tlmbukidx tlmnobuk
+
+SPCALCS(sadd)
+DO_LIB  ap_dbclc(DNAME daddnobuk,DCOMMAND ADD_SUB,DFILE tlm,DLTARGET tlmbukidx tlmnobuk,DLLEN {stspjbuk},DMAP mnobuk);
+
+SPCALCS(sptrans)
+DO_LIB	ap_dfoto(lurl,tlmnoasal,luser,lpasswd,lfoto,lpubkey,&lmatchscore);
+DO_LIB	ap_dbclc(DNAME dupdtlm,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlm);
+
+POSTING(master)
+PST_SUB_ADDCMD  sadd
+
+POSTING(trans)
+PST_COMMAND	sptrans
+
+PERMIT(master)
+  PMT_UPDALL_COND	cbknCLSD
+  PMT_DEL_COND		cbknCLSD
+
+END_SCREEN
+

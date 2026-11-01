@@ -1,0 +1,100 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|t.picaJdinasPBS					|
+|/---------------------------------\|
+||t.TypeJd   :_____________________||
+||            _____________________||
+||t.NamaCab2 :_____________________||
+||t.Jabatan  :_____________________||
+||t.Propinsi :_____________________||
+||t.Activity :_____________________||
+||t.Target   :_____________________||
+||_________________________________||
+||t.Upload   :_____________________||
+|\---------------------------------/|
+|/--------s.UPLOAD-----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr2  		PROTECT               	INPUTRI 1
+ltypejd  		PROTECT                	INPUTRI 1
+svikode  		ALLCAPS                	INPUTRI 2
+svistr3  		PROTECT               	INPUTRI 3
+svistr1  		ALLCAPS                	INPUTRI 4
+sviket   		TEXTAREA ALLCAPS       	INPUTRI 5
+sviket2   		TEXTAREA ALLCAPS       	INPUTRI 6
+lenter  		NOCHANGE SCROLL        	INPUTRI 7
+sviyt1			PROTECT			INPUTRI	8
+
+
+EDITS(tmptranst)
+t.ValidateCab  svikode  VALIDATE cabstskodidx mcabuPBS scab {Pgv_INPG}
+e.Mandatory svistr1  	MANDATORY_IF cnon5PBS
+e.Mandatory svikode 	MANDATORY_IF cinternalPBS
+e.Mandatory sviket  	MANDATORY
+e.Mandatory sviket2  	MANDATORY
+e.ValidateJab   svistr3 VALIDATE tbddatkodidx mtbd3PBS stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+e.ValidateProp  svistr1 VALIDATE dtmdtkodidx  mdtmPropPBS sdtmProp {Pgv_dtkota}
+/*e.ValidateTbd2 svistr2 VALIDATE tbddatkodidx mtbd4PBS stbd  {Pgv_dttabel} {Pgv_personal} {PlJLNDINAS}*/
+t.ValidateTbt2 svistr2 VALIDATE tbtdattypkod mtbtt2 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlTYPEJLNDINAS} {Pbkmnobuk2}
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr2	DO_MAP SHOW mjabPBS
+BEFORE_INPUT	cur_field=svistr2	DO_MAP SHOW mtypePBS
+
+
+AFTER_INPUT     cur_field=svistr2       DO_MAP SHOW
+                IF cLNPBS     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ExternalLn
+
+BEFORE_INPUT     cur_field=svikode       DO_SKIP_IF cnoninternalPBS
+BEFORE_INPUT     cur_field=svistr1       DO_SKIP_IF cnonpropPBS 
+
+DEFAULTS(tmptranst)
+/* 
+svistr2         DFALT_SCAN      BLANKS
+                                1 "Dinas Internal [Wajib Absen]"
+                                2 "Dinas External [Tidak Absen]"
+                                3 "PMT Ahass      [Tidak Absen]"
+                                4 "Training External [Tidak Absen]"
+                                5 "Luar Negeri    [Tidak Absen]"
+*/
+lm4540          INIT            m4540PBS
+lsvitgl1	INIT_UPDATE	{svitgl1}
+lsvitgl2	INIT_UPDATE	{svitgl2}
+lJLNDINAS	INIT		JLNDINAS
+lTGL		INIT		TGL
+lenter      INIT        "Sebelum UPLOAD, tekan ENTER disini dulu!"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_UPL_DELCOND cOPEN_SAJA
+SFL_UPL_DIRFLD  bkmtgl
+SFL_UPLFLD_DBCALCS dupdsvifotoPBS   
+SFL_UPLFLD bkmnobuk tmpkode 
+SFL_COND	cPICAPBS
+SFL_LINES(1)
+
+SFL_TARGET
+	svidatbuktyp  bkmdata    bkmnobuk     
+
+SFL_MAP
+bkmdata         svidata         REPLACE
+bkmdata         svitype         REPLACE
+bkmnobuk        svinobuk        REPLACE
+gv_INPG		svists		REPLACE
+l1		svinourt	REPLACE
+bkmbkjln        svistr2         REPLACE
+psijabatan	svistr3		REPLACE
+
+

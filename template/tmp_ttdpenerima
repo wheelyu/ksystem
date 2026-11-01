@@ -1,0 +1,137 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+||_________________________________||
+|/--------SIGNATURE----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+| _________________________________ |
+| _______ __                        |
+|t.tekantombolTTDOK		    |
+\-----------------------------------/
+IMAGE(tmptrans)
+
+DEFAULT(tmptranst)
+lttdOK		INIT	"TTD OK"
+
+FIELD(tmptranst)
+bkmnobuk                  PROTECT                 INPUTRI         1
+tmpket                    PROTECT                 INPUTRI         2
+lttdOK			  TOMBOL		  INPUTRI	  3
+akthrg			  PROTECT		  INPUTRI	  4
+
+DBCALCS(djoinabkadm)
+DBC_COMMAND     JOIN_LAST_SFL
+DBC_TARGET      abkdatbukidx   lkunciabsen lkodettdadm
+
+
+DBCALCS(djoinabkmgr)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx   lkunciabsen lkodettdmgr
+
+DBCALCS(djoinabktrm)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx   lkunciabsen lkodettdtrm
+
+DBCALCS(djoinabktrm2)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx   lkunciabsen bkmnobuk
+
+CALCS()
+cSYSTIME	SYSTIME
+cBLANKS		BLANKS
+cboleh		(
+		(
+		(bkmscr == "303" && bkmsts == "CLSD" && (bkmjns == "MKL" || bkmjns == "KMS" || bkmjns == "HSF" || bkmjns == "HL" || bkmjns == "BSN") && bkmstsapr != "OK") || 
+		(bkmscr == "303" && bkmsts == "CLSD" && bkmstsapr == "OK" && bkmjns != "MKS" && bkmjns != "KMS" && bkmjns != "HSF") || 
+		(bkmscr == "301" && (bkmsts == "CLSD" || bkmsts == "OPEN")) || 
+		bkmscr == "309"
+		) && tmpkode == "TTDTRM") || 
+		
+		(((bkmscr == "301" || bkmscr == "303") && (g_usrkode == bkmkode2 || g_grpnam == "IT" || g_grpnam == "RI") && bkmsts != "VOID") || 
+		  (bkmscr == "309" && (g_usrkode == bkmpst || g_grpnam == "IT" || g_grpnam == "RI"))
+		   && tmpkode == "TTDADM") ||
+
+		(tmpkode == "TTDMGR" && djoinabkmgr == 1 && bkmsts == "CLSD")
+/*ccekttdtrm              djoinakttrm == 1*/
+cpenerima       abknoll == "PENERIMA"
+
+
+MAP(mupdttdadh)
+g_tgltrn        akttgl2         REPLACE
+cSYSTIME        aktjam          DO_CALC
+llon            akttotal        REPLACE
+llat            aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+
+DBCALCS(dupdttdadh)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+	DBC_MAP         mupdttdadh
+
+MAP(mupdttdadhok)
+gv_int1		akthrg		REPLACE
+
+DBCALCS(dupdttdadhok)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdadhok
+
+MAP(mupdttdadhhps)
+cBLANKS         akttgl2         DO_CALC
+cBLANKS         aktjam          DO_CALC
+cBLANKS         akttotal        DO_CALC
+cBLANKS         aktjml          DO_CALC
+cBLANKS         aktcab          DO_CALC
+lversi		lversi		REPLACE
+DBCALCS(dupdttdadhhps)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+	DBC_MAP		mupdttdadhhps
+
+MAP(mupdabkpenerima)
+gv_CLSD                 abksts          REPLACE_IF cpenerima
+
+MAP(mupdabkadm)
+gv_CLSD         abksts          REPLACE
+
+MAP(mupdabkmgr)
+gv_CLSD         abksts          REPLACE
+
+CALCS()
+cttdadmOK	tmpkode == "TTDADM" && djoinabkadm == 1
+cttdmgrOK	tmpkode == "TTDMGR" && djoinabkmgr == 1
+cttdtrmOK	tmpkode == "TTDTRM" && djoinabktrm == 1 
+cttdtrmOK2	tmpkode == "TTDTRM" && djoinabktrm2 == 1 && bkmscr != "309"
+
+
+SPCALCS(spcalOK)
+DO_LIB_IF cttdadmOK     ap_dbclc(DNAME dupdabkadm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lkodettdadm,DMAP mupdabkadm);
+DO_LIB_IF cttdmgrOK     ap_dbclc(DNAME dupdabkmgr,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lkodettdmgr,DMAP mupdabkmgr);
+DO_LIB_IF cttdtrmOK    ap_dbclc(DNAME dupdabkpenerima301,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lkodettdtrm,DMAP mupdabkpenerima);
+DO_LIB_IF cttdtrmOK2   ap_dbclc(DNAME dupdabkpenerima303,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen bkmnobuk,DMAP mupdabkpenerima);
+dupdttdadhok
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lttdOK DO_SPCALCS spcalOK
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SGNFLD      aktbrg
+SFL_UPL_DIRFLD  bkmtgl
+SFL_SGNFLD_DBCALCS dupdttdadh
+SFL_SGNFLD_DELDBCALCS dupdttdadhhps
+SFL_UPLFLD aktbrg              
+SFL_UPLREADONLY
+SFL_COND	cboleh
+SFL_TARGET
+aktkodtypidx   bkmnobuk ldataadh tmpkode
+

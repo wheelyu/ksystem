@@ -1,0 +1,71 @@
+MAP(mheadisibljr)
+svitgl1     ltglmulai       REPLACE
+svitgl2     ltglselesai     REPLACE
+
+DBCALCS(djoinsviheadisibljr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp  tlmdata tlmnobuk lINFODATA
+        DBC_MAP         mheadisibljr
+
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|t.PembuatanData                                             |
+|/----------------------------------------------------------\|
+|| t.TglMulai       :_____________                          ||
+|| t.TglSelesai     :_____________                          ||
+|| t.Output         :_________________                      ||
+|| t.SmbrData       :_________________                      ||
+||                      ___                                 ||
+|\----------------------------------------------------------/|
+||spasi                                                     ||
+|/--------------------------DOCUPLOAD-----------------------\|
+||                                                          ||
+||                                                          ||
+||                                                          ||
+|\----------------------------------------------------------/|
+\------------------------------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+kettgl1         PROTECT {DD-MM-YYYY}    INPUTRI 1
+kettgl2         PROTECT {DD-MM-YYYY}    INPUTRI 2
+ketstr1         TEXTAREA                INPUTRI 3
+ketstr2         TEXTAREA                INPUTRI 4
+lenter          NOCHANGE                INPUTRI 5
+
+EDITS(tmptranst)
+i.Mandatory     ketstr1         MANDATORY
+i.Mandatory     ketstr2         MANDATORY
+i.Mandatory     kettgl1         MANDATORY
+i.Mandatory     kettgl2         MANDATORY
+
+CALCS()
+cdetINPG13       ((tlmbrdoto == "HEAD_ISI_DETAIL" || tlmbrdoto == "DEV_TERIMA_KERJA" || tlmbrdoto == "HEAD_PENILAIAN" || tlmbrdoto == "OPR_PENILAIAN") && ketjoin == "INPG")|| (tlmbrdoto != "DEV_TERIMA_KERJA" && (tlmbrdoto == "CLSD" || tlmtotal >= 1))
+cdjoinsvibljr   djoinsviheadisibljr == 1
+
+MAP(mtglawlsls)
+ltglmulai       kettgl1     REPLACE_IF cdjoinsvibljr
+ltglselesai     kettgl2     REPLACE_IF cdjoinsvibljr
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ketstr1        DO_MAP SHOW mtglawlsls
+BEFORE_INPUT    cur_field=ketstr1        DO_MAP SHOW murut3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD ketoto
+SFL_SORT_BY_FIELD ketnourt
+SFL_DOCUPLFLD_DBCALCS dupdketfoto
+SFL_SHOW_NEXT
+SFL_SELECT cdetINPG13
+SFL_TARGET
+ketdatbuktgl    tlmdata tlmnobuk lHSLANLS
+SFL_MAP
+tlmdata   ketdata     REPLACE
+tlmnobuk    ketnobuk    REPLACE  
+lHSLANLS   kettype     REPLACE  
+gv_INPG     ketjoin      REPLACE

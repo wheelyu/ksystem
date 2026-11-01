@@ -1,0 +1,89 @@
+LOCAL
+PGM_FIELDS
+lENTER		STRING	11
+lnamausrdet	STRING	31
+lversi3		STRING	11
+
+CALCS()
+cri0	g_grpnam!="RI" && g_grpnam!="IT"
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||                                      t.Approval                           ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.No             : ___  ______  _____________________  ___________    ____ ||
+||t.Ket                                                                      ||
+|| _________________________________________________________________________ ||
+||spasi                                                                      ||
+||t.Approval       : _________ ______                                        ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnourt	PROTECT         		INPUTRI		1
+tkdsisstr 	ALLCAPS				INPUTRI		2
+lnamausrdet	PROTECT				INPUTRI		3 
+tkdtgl 		PROTECT {DD-MM-YY}     		INPUTRI		4 
+tkdsts     	PROTECT				INPUTRI		5 
+tkdket 		TEXTAREA ALLCAPS		INPUTRI		6
+tkdjwbstr1 	NOCHANGE 			INPUTRI		7 
+lENTER		ALLCAPS				INPUTRI		8
+
+
+DEFAULTS(tmptranst)
+tkdjwbstr1	DFALT_SCAN_BLANKS ACC TACC
+IF cri0 tkdtgl		INIT_UPDATE	{g_tgltrn}
+IF cri0 tkdsisstr	INIT_UPDATE	{g_usrkode}
+lENTER		INIT		ENTER
+lversi3		INIT		110222v1
+
+EDITS(tmptranst)
+Nama User Tdk Ada       tkdsisstr       VALIDATE psmkodidx mpsmuser
+e.Mandatory		tkdjwbstr1	MANDATORY_IF cri0
+
+MAP(mpsmuser)
+psmnama		lnamausrdet		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdsisstr	DO_SKIP_IF cri0
+
+CALCS()
+cseltmptrans	tkdjenis!="DTRM" && tkdjenis!="DTSPVAREA"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cseltmptrans
+SFL_TARGET
+tkdbukidx   tlmnobuk gv_INPG                  
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+tlmdata		tkddata		REPLACE
+lUBAHFEE   	tkdnoll		REPLACE
+
+CALCS()
+cupdtmptrans	((tlmsts=="INPG" && tlmdvs=="M4W" && tlmsts2=="BM" && tkdnourt==1 && (g_usrkode==tkdsisstr || g_grpnam=="BM" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WCSPV" || g_grpnam=="B.M4WDPH")) || 
+		 (tlmsts=="INPG" && tlmdvs=="M4W" && tlmsts2=="RM" && tkdnourt==2 && g_usrkode==tkdsisstr) ||
+		 (tlmsts=="INPG" && tlmdvs=="M4W" && tlmsts2=="CAM" && tkdnourt==3 && (((tlmgrup=="Z0" || tlmgrup=="Z1" || tlmgrup=="Z2" || 
+		 tlmgrup=="Z4" || tlmgrup=="Z6") && (g_grpnam=="B.M4WDVH" || g_grpnam=="B.M4WADHDVH")) || ((tlmgrup!="Z0" && 
+		 tlmgrup!="Z1" && tlmgrup!="Z2") && g_grpnam=="B.M4WDPH") || g_grpnam=="B.M4WDVH" || g_usrkode==tkdsisstr)) || 
+		 (tlmsts=="INPG" && tlmdvs=="M4W" && tlmsts2=="DCOO" && tkdnourt==4 && (g_usrkode==tkdsisstr || g_grpnam=="B.M4WCOO" || g_grpnam=="COO" ||
+		  g_usrkode=="1108406" || g_usrkode=="1127081" || g_usrkode=="1000459")) ||
+		 (tlmsts=="INPG" && tlmdvs=="M4W" && tlmsts2=="DHAC" && tkdnourt==5 && g_usrkode==tkdsisstr) ||
+		 (tlmsts=="INPG" && tlmdvs!="M4W" && tlmsts2=="BM" && tkdnourt==1 && g_usrkode==tkdsisstr) ||
+		/* (tlmsts=="INPG" && tlmdvs!="M4W" && tlmsts2=="BUH" && tkdnourt==2 && g_usrkode==tkdsisstr) || */
+		 (tlmsts=="INPG" && tlmdvs!="M4W" && tlmsts2=="HREM" && tkdnourt==3 && g_usrkode==tkdsisstr) || 
+		 (tlmsts=="INPG" && tlmdvs!="M4W" && tlmsts2=="PJHO" && tkdnourt==3 && g_usrkode==tkdsisstr) ||
+		 (tlmsts=="INPG" && tlmdvs!="M4W" && (tlmsts2=="KWIL" || tlmsts2=="AM") && tkdnourt==3 && g_usrkode==tkdsisstr) ||
+		 (tlmsts=="INPG" && tlmdvs!="M4W" && tlmsts2=="DHAC" && tkdnourt==5 && g_usrkode==tkdsisstr)) || 
+		(g_grpnam=="RI" || g_grpnam=="IT")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND 	c0
+	PMT_UPDALL_COND cupdtmptrans
+	PMT_DEL_COND	c0

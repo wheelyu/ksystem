@@ -1,0 +1,163 @@
+DBCALCS(djoinabk)
+       DBC_COMMAND      JOIN
+       DBC_TARGET       abkdatstsky2 lkunciabsen gv_INPG lkunci l643                                
+       DBC_SELECT       cnipsama 
+
+DBCALCS(djoinabk2)
+       DBC_COMMAND      JOIN
+       DBC_TARGET       abkdatstsky2 lkunciabsen gv_INPG lkunci l643
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |                               ||_ _
+| |            _________ _________||
+| |             __________________||
+| |t.rateskrng  _______________.__||
+| |t.turunrate  _______________.__||
+| |t.hasilrate  _______________.__||
+| |t.Tahun      __________________||
+| |t.Tenor      __________________||
+| |t.NTF        __________________||
+| |t.UplodOk    _____  ___________||_
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.divheadmkt _____             ||
+| |_______________________________||
+| |______  ___________  __________||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svinobuk        PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svikode         PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svists          PROTECT                   INPUTRI 1
+        svistr5         PROTECT                   INPUTRI 1
+        svidtmkode      NOCHANGE QPROTECT UNSEEN  INPUTRI 1
+        svidf1          PROTECT                   INPUTRI 2
+        svidf2          PROTECT                   INPUTRI 2
+        svidf6          PROTECT                   INPUTRI 2
+        svidf3          PROTECT                   INPUTRI 2
+        svidf5          PROTECT                   INPUTRI 2
+        svidf4          PROTECT                   INPUTRI 2
+        svistr1         PROTECT                   INPUTRI 3
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 4
+        svinobuk        PROTECT QPROTECT UNSEEN   INPUTRI 5
+        sviyt1          ALLCAPS                   INPUTRI 5
+        sviket          TEXTAREA 2 ALLCAPS          INPUTRI 6
+        lok             NOCHANGE                  INPUTRI 7
+        ltgldvh1        PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamdvh1        PROTECT                   INPUTRI 7
+CALCS()
+ckoderate          svitype == "DEVRATE"
+cbkunci            djoinabk == 1                              
+cbkunci2           djoinabk2 == 1  && (svists == "CLSD"   || svists == "TACC")                     
+cjikaT             sviyt1 == "T"
+ 
+DEFAULTS(tmptranst)
+sviyt1             DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.isiyt           sviyt1         MANDATORY
+e.isiket          sviket         MANDATORY_IF cjikaT       
+e.stsbukan707     svikode        VALIDATE ftmdatbukidx mftm2a sftm6 {PlMULTI4W}
+
+MAP(mftm2a)
+ftmsubtot2        svidf1          REPLACE
+ftmtahun          svidf3          REPLACE
+ftmjml2           svidf5          REPLACE
+svidf5            ltenor          REPLACE
+ftmsubtot3        svidf4          REPLACE
+svitype           lsvitype        REPLACE
+crate             svidf6          DO_CALC
+ltgldvh1          ltgldvh1        REPLACE_IF cjoinaktdvh1   
+ljamdvh1          ljamdvh1        REPLACE_IF cjoinaktdvh1   
+
+MAP(mapra)
+g_grpnam        svistr5           REPLACE               
+gv_CLSD         svists            REPLACE_IF ctlk00   
+gv_TACC         svists            REPLACE_IF ctlk11 
+
+MAP(mmapmap)
+ldum            ldum              REPLACE
+svinourt        lurut             REPLACE
+cnobukabk       lkunci            DO_CALC
+
+MAP(mkunci)
+gv_CLSD         abksts            REPLACE
+
+MAP(maddakt)
+svidata         aktdata         REPLACE
+svitype         akttype        REPLACE
+svinobuk        aktkode         REPLACE
+svinobuk        aktnobuk        REPLACE
+g_usrkode       aktkode2        REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_grpnam        aktlok          REPLACE
+
+SPCALCS(supdabk)
+DO_LIB                 ap_dbclc(DNAME dmapmap2,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB                 ap_dbclc(DNAME dakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cbkunci      ap_dbclc(DNAME dupdkunc2,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci);
+DO_LIB_IF cbkunci2     ap_dbclc(DNAME dupdkunc2a,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci);
+
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapra 
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdabk 
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknCR
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknCR
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket        DO_MAP
+                IF cisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+
+MAP(mupdsviftmandxa)
+cOK             svistr1         DO_CALC
+g_tgltrn        svitgl1         REPLACE
+
+DBCALCS(dbftupla)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandxa
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupla
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT  ckoderate
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+SFL_MAP
+tlmnobuk        svinobuk        REPLACE
+tlmuntuk        svidtmkode      REPLACE
+tlmnoasal       svikode         REPLACE
+tlmdata         svidata         REPLACE
+tmpkode         svitype         REPLACE
+tmpnourt        svinourt        REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c02            
+  PMT_UPDALL_COND  cdevinpg
+  PMT_DEL_COND  c02      
+
+
+
+

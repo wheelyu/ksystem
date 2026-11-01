@@ -1,0 +1,221 @@
+
+LOCAL
+PGM_FIELDS
+laprusrnew			STRING	21
+lALASAN150_MD			STRING	21
+lALASAN150_TL			STRING	21
+lALASAN150_PHK			STRING	21
+lketalasan1			STRING	21
+lketalasan2			STRING	21
+lketalasan3			STRING	21
+
+MAP(mjoinaprMDnew)
+aprusr                laprusr1         REPLACE
+
+DBCALCS(djoinaprMDnew)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aprbukkeurt   hrmnobuk
+        DBC_MAP         mjoinaprMDnew
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.DetailAlasan                        ||
+||spasi                                 ||
+||t.Nip    ______________               ||
+||t.Alasan ________                     ||
+||t.KLKarena? __________                ||
+||t.Pil1   ___________________          ||
+||t.Ket    ___________________________  ||
+||t.Pil2   ___________________          ||
+||t.Ket    ___________________________  ||
+||t.Pil3   ___________________          ||
+||t.Ket    ___________________________  ||
+||t.Ket    ___________________          ||
+|\--------------------------------------/|
+|/--------------------------------------\|
+||t.Atasan1SudahMembacaAlasan     ____  ||
+||t.Atasan2SudahMembacaAlasan     ____  ||
+|\--------------------------------------/|
+|/--------------------------------------\|
+||t.UplSurat                      ____  ||
+|\--------------------------------------/|
+|/-------------s.UPLOAD-----------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+hrmnip1         	NOCHANGE                	INPUTRI 1
+psdtype3        	PROTECT                 	INPUTRI 2
+psdstr5         	NOCHANGE                	INPUTRI 2
+psdstr1  		ALLCAPS SCROLL	               	INPUTRI 3
+lketalasan1		PROTECT SCROLL	               	INPUTRI 4
+psdstr2  		ALLCAPS SCROLL	               	INPUTRI 5
+lketalasan2		PROTECT SCROLL	               	INPUTRI 6
+psdstr3  		ALLCAPS SCROLL	               	INPUTRI 7
+lketalasan3		PROTECT SCROLL	               	INPUTRI 8
+psdket    		TEXTAREA ALLCAPS               	INPUTRI 9
+psdstr4   		NOCHANGE SCROLL                	INPUTRI 10
+psdsts    		NOCHANGE SCROLL                	INPUTRI 11
+psdtype2        	PROTECT                 	INPUTRI 12
+
+DEFAULTS(tmptranst)
+psdtype		INIT_ADD	ALASAN
+lALASAN150_MD	INIT		ALASAN150_MD
+lALASAN150_TL	INIT		ALASAN150_TL
+lALASAN150_PHK	INIT		ALASAN150_PHK
+psdstr4		DFALT_SCAN	BLANKS		
+				Y 
+				T 
+psdsts 		DFALT_SCAN	BLANKS		
+				Y 
+				T 
+psdstr5		DFALT_SCAN	BLANKS 
+				TL "TL sdm "
+                                TK "Tdk Lanjut Kontrak"
+                                MD "Mengundurkan Diri"
+                                KL "Sdm Keluar "
+                                UP "Un Paid"
+                                PHK "P H K "
+				HM "Habis Magang"
+                                LM "Lulus Magang"
+                                MNGL "Meninggal"
+
+CALCS()
+cYnew		"OK"
+cMD		hrmkep == "MD" || hrmkep =="MKR" || hrmkep =="KL" || hrmkep=="MNGL"
+cketTL		hrmkep == "TL"
+cketPHK		hrmkep == "PHK"
+cAdaIsi		tbdkettype == "Y" || tbtkode2 == "Y" || tbekettype == "Y"
+cbukansdm	(hrmkep =="MD" && ( g_usrkode != hrmnip1 && g_grpnam != "HRDSPV" && g_grpnam != "IRLEGALHD" && g_grpnam != "RI"))  
+cbukansdmx	(hrmkep =="MD" && ( g_usrkode != hrmnip1 && g_grpnam != "HRDSPV" && g_grpnam != "IRLEGALHD" && g_grpnam != "RI")) || ltbdlv2=="1TURUNAN"
+cbukansdmy	(hrmkep =="MD" && ( g_usrkode != hrmnip1 && g_grpnam != "HRDSPV" && g_grpnam != "IRLEGALHD" && g_grpnam != "RI")) || ltbtkode2=="2TURUNAN" || ltbdlv2=="1TURUNAN"
+csdmsendiri	(g_usrkode == hrmnip1 || (djoinpsdatasanmd==1 && (g_usrkode ==latasan1 || g_usrkode==latasan2)) || g_grpnam=="HRDSPV" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="RAS") || hrmkep!="MD"
+c2atasannya     (( dbscanapm ==1 || dbscanapm==0) && latasan=="Y") || psdstr4== BLANKS || (djoinpsdatasanmd==1 && (g_usrkode==latasan1 || g_usrkode==latasan2)) || g_usrkode == hrmnip1 || g_grpnam=="IT" || g_grpnam=="RAS" || g_grpnam=="RI" || g_grpnam=="HRDSPV"
+cjikaKL		hrmkep=="KL"
+cbukanKL	hrmkep!="KL"
+cbukan1turunan	ltbdlv2!="1TURUNAN"
+cbukan2turunan	ltbtkode2!="2TURUNAN" && ltbdlv2!="1TURUNAN"
+
+cpilksus        (hrmkep == "MD" && (psdstr1=="KSUS" && (g_grpnam=="HRDSPV" || g_grpnam=="IRLEGALHD" || g_grpnam=="RI"))) || psdstr1!="KSUS" || hrmkep != "MD"    
+
+EDITS(tmptranst)
+e.MandatoryTipe1 psdstr1  	MANDATORY
+e.MandatoryTipe1 psdstr5  	MANDATORY_IF cjikaKL
+e.MandatoryTipe2 psdstr2  	MANDATORY_IF cbukan1turunan
+e.MandatoryTipe3 psdstr3  	MANDATORY_IF cbukan2turunan
+e.MandatoryKet psdket    	MANDATORY_IF cAdaIsi
+t.IsiAtasan1 psdstr4    	MANDATORY_IF clayer1
+t.IsiAtasan2 psdsts	    	MANDATORY_IF clayer2
+t.ValidateTipe1 psdstr1 VALIDATE_IF cMD tbddatkodidx mtbdt1 stbd {Pgv_dttabel} {Pgv_personal} {PlALASAN150_MD}
+t.ValidateTipe2 psdstr2 VALIDATE_IF cMD tbtdattypkod mtbtt1 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlALASAN150_MD} {Ppsdstr1} 
+t.ValidateTipe3 psdstr3 VALIDATE_IF cMD tbedattypkod mtbet1 stbe {Pgv_dttabel} {Pgv_dttabel21} {PlALASAN150_MD} {Ppsdstr1} {Ppsdstr2} 
+
+t.ValidateTipe1 psdstr1 VALIDATE_IF cketTL tbddatkodidx mtbdt1 stbd {Pgv_dttabel} {Pgv_personal} {PlALASAN150_TL}
+t.ValidateTipe2 psdstr2 VALIDATE_IF cketTL tbtdattypkod mtbtt1 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlALASAN150_TL} {Ppsdstr1} 
+t.ValidateTipe3 psdstr3 VALIDATE_IF cketTL tbedattypkod mtbet1 stbe {Pgv_dttabel} {Pgv_dttabel21} {PlALASAN150_TL} {Ppsdstr1} {Ppsdstr2} 
+
+t.ValidateTipe1 psdstr1 VALIDATE_IF cketPHK tbddatkodidx mtbdt1 stbd {Pgv_dttabel} {Pgv_personal} {PlALASAN150_PHK}
+t.ValidateTipe2 psdstr2 VALIDATE_IF cketPHK tbtdattypkod mtbtt1 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlALASAN150_PHK} {Ppsdstr1} 
+t.ValidateTipe3 psdstr3 VALIDATE_IF cketPHK tbedattypkod mtbet1 stbe {Pgv_dttabel} {Pgv_dttabel21} {PlALASAN150_PHK} {Ppsdstr1} {Ppsdstr2} 
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=psdtype3     DO_SKIP_IF  cbukansdm
+BEFORE_INPUT     cur_field=psdstr5      DO_SKIP_IF  cbukanKL 
+BEFORE_INPUT     cur_field=psdstr1      DO_SKIP_IF  cbukansdm
+BEFORE_INPUT     cur_field=psdstr2      DO_SKIP_IF  cbukansdmx
+BEFORE_INPUT     cur_field=psdstr3      DO_SKIP_IF  cbukansdmy
+BEFORE_INPUT     cur_field=psdket       DO_SKIP_IF  cbukansdm
+BEFORE_INPUT	 cur_field=psdsts	DO_SKIP_IF cbukanlayer2
+BEFORE_INPUT     cur_field=psdstr4      DO_SKIP_IF  cbukanlayer1 
+
+AFTER_INPUT     cur_field=hrmnip1       DO_MAP SHOW
+                IF csdmsendiri  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.YangBolehHanyaSdmAtasanUbahAcc
+
+AFTER_INPUT     cur_field=psdstr1       DO_MAP SHOW
+                IF cpilksus  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBolehInputKsus
+
+AFTER_INPUT     cur_field=psdstr4       DO_MAP SHOW
+                IF c2atasannya  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.YangBolehHanyaAtasan
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF c2atasannya  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.YangBolehHanyaAtasan
+
+
+
+MAP(mtbdt1)
+tbdkode		psdstr1		REPLACE
+tbdket		lketalasan1	REPLACE
+cBLANKS		ltbdlv2  	DO_CALC
+tbdlv2		ltbdlv2		REPLACE
+
+MAP(mtbtt1)
+tbtkode		psdstr2		REPLACE
+tbtket	 	lketalasan2	REPLACE
+cBLANKS		ltbtkode2	DO_CALC
+tbtkode2	ltbtkode2	REPLACE
+
+MAP(mtbet1)
+tbekode		psdstr3		REPLACE
+tbeket	 	lketalasan3	REPLACE
+
+MAP(mupdpsdfoton)
+cYnew           psdtype2        DO_CALC
+
+DBCALCS(dupdpsdfoton)
+        DBC_COMMAND     UPDATE
+        DTARGET         psdprmidx psdprm 
+        DMAP            mupdpsdfoton
+
+CALCS()
+cutk_OPENn 	hrmsts=="OPEN"
+calasanMDn	((tmpkode=="ALASANMD" || tmpkode=="ALASANKL" || tmpkode=="ALASANTL" || tmpkode =="ALASANMKR" || tmpkode=="ALASANMNGL") && ((djoinaprMDnew == 1 && laprusrnew == g_usrkode) || hrmnip2 == g_usrkode || hrmnip1 == g_usrkode || hrmusrapr == g_usrkode || (djoinpsdatasanmd==1 && (g_usrkode == latasan1 || g_usrkode==latasan2)) ||g_grpnam=="CMBNHEAD" || g_grpnam=="RI" || g_grpnam =="KAWIL" || g_grpnam=="IT" || g_grpnam=="CMBNSPV" || g_grpnam=="RASDVH" || g_grpnam=="HRDDVH" || g_grpnam=="HRDSPV" || g_grpnam=="HRD" || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT" || g_grpnam=="RAS" || g_grpnam=="RASMGR" || g_grpnam=="B.IVAROHRD" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD" || g_grpnam=="IRLEGALHD" || g_grpnam=="IRLEGAL" || g_grpnam=="LEGALSPV" || g_grpnam=="HRDER"  || ((djoinpsi ==1 && djointbduser==1 && djointbd2 ==1  && djointbtlevelatasan ==1))))&& hrmtgl >= 20220325
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND calasanMDn
+SFL_UPL_DELCOND cutk_OPENn 
+SFL_UPLFLD_DBCALCS  dupdpsdfoton
+SFL_UPL_DIRFLD hrmdata
+SFL_UPLFLD hrmdata hrmnobuk 
+SFL_LINES(1)
+
+SFL_TARGET
+	psddattypidx hrmdata lALASAN hrmnobuk
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+hrmdata         psddata         REPLACE
+hrmnip1		psdkode		REPLACE
+hrmkep		psdtype3	REPLACE
+
+CALCS()
+cOPEN_SAJAn		(hrmsts=="OPEN" && hrmkep!="TLTRN" && (g_usrkode==hrmnip1 || g_usrkode==hrmnip2|| g_grpnam=="RI" || g_grpnam=="HRDSPV")) || 
+			(hrmsts=="RIN1" && djoinpsdatasanmd==1 && g_usrkode==latasan1) || 
+			(hrmsts=="RINP" && djoinpsdatasanmd==1 && g_usrkode==latasan2) || g_grpnam=="RI"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cOPEN_SAJAn
+        PMT_UPDALL_COND cOPEN_SAJAn
+        PMT_DEL_COND    cno
+
+

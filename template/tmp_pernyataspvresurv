@@ -1,0 +1,251 @@
+LOCAL
+PGM_FIELDS
+
+lenter2		STRING		11
+lttotalspv	DFLOAT		8
+
+CALCS()
+cabkspv		abktype=="SPV"
+
+DBCALCS(djoinabkspv)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx   lkunciabsen mtsnobuk
+	DBC_SELECT      cabkspv
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-------------------------------------------------\
+| t.FotoSurvey 		  t.FotoResurvey	  |
+|/---s.UPLOAD1----------\/---s.UPLOAD2-----------\|
+||			||			 ||
+||			||			 ||
+||			||			 ||
+||			||			 ||
+||			||			 ||
+|\----------------------/\-----------------------/|
+||     ____________             ____________     ||
+| t.FotoTmptKrjaSurvey	  t.FotoTmptKerjaResrv	  |
+|/---s.UPLOAD3----------\/---s.UPLOAD4-----------\|
+||			||			 ||
+||			||			 ||
+||			||			 ||
+||			||			 ||
+||			||			 ||	
+|\----------------------/\-----------------------/|
+||     ____________             ____________     ||
+|/--------------------------------\		  |
+||t.PERNYATAAN: __________________|		  |
+||              __________________|		  |
+||t.Saya      : __________________|		  |
+||t.Nip       : __________________|		  |
+||t.SDept     : __________________|		  |
+||t.PERNYATAAN1                   |		  |
+||t.PERNYATAAN2                   |		  |
+||t.PERNYATAAN3                   |		  |
+||t.PERNYATAAN4                   |	  	  |
+||________________                |		  |
+||                                |		  |
+||t.nama _________________________|		  |
+||t.PERNYATAAN5                   |		  |
+||t.PERNYATAAN6                   |		  |
+||t.PERNYATAAN7                   |		  |
+||t.PERNYATAAN8                   |		  |
+||t.PERNYATAAN9                   |		  |
+||t.PERNYATAAN10                  |		  |
+||t.PERNYATAAN11                  |		  |
+||t.PERNYATAAN12                  |		  |
+||t.PERNYATAAN13                  |		  |
+||t.PERNYATAAN14                  |		  |
+||t.PERNYATAAN15                  |		  |
+||t.PERNYATAAN16                  |		  |
+||t.PERNYATAAN17                  |		  |
+||t.PERNYATAAN18                  |		  |
+||t.PERNYATAAN19                  |		  |
+||            t.MENYATAKAN  ____  |		  |
+||                          _____ |		  |
+||				  |		  |
+||t.ACCBM        ___              |		  |
+|\--------------------------------/		  |
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        lGMAPS2                 TOMBOL                  INPUTRI         1      /*Tombol Gmaps          */
+        lGMAPS3                 TOMBOL                  INPUTRI         1      /*Tombol Gmaps          */
+        lGMAPS4                 TOMBOL                  INPUTRI         1      /*Tombol Gmaps          */
+        lGMAPS5                 TOMBOL                  INPUTRI         1      /*Tombol Gmaps          */
+        spknobuk                PROTECT                 INPUTRI         1
+        spknoasal               PROTECT                 INPUTRI         1
+        lnamaspvkol             PROTECT                 INPUTRI         1
+        spktgg                  PROTECT                 INPUTRI         1
+        lsdepspvkol             PROTECT                 INPUTRI         1
+        spknoasal               PROTECT                 INPUTRI         1
+        lnamadeb                PROTECT                 INPUTRI         1
+        spkhasil                NOCHANGE                INPUTRI         1
+	lenter2			NOCHANGE		INPUTRI		1
+
+        lceklisbm4               CHECKBOX                INPUTRI         2 /*ceklis bm */
+
+DEFAULTS(tmptranst)
+spktype         INIT            RESURVEY4
+spkdata         INIT            RESURVEY
+spktgg          INIT            {g_usrkode}
+spktgg          INIT_UPDATE     {g_usrkode}
+spkhasil        DFALT_SCAN_BLANKS
+                                Y "YA"
+svinourt        INIT            1
+svinourt        INIT_UPDATE     1
+lenter2		INIT		ENTER
+lkunciabsen     INIT            KUNCIABSEN
+lINPG           INIT            INPG
+l736x           INIT            736
+
+CALCS()
+cjoinceklisbm4_1a	 djoinceklisbm4==1
+cjoinceklisbm4_0         djoinceklisbm4==0 && mtshcin==g_usrkode
+cjoinceklisbm4_1         djoinceklisbm4==1 && mtshcin==g_usrkode
+
+EDITS(tmptranst)
+e.MANDATORY     spkhasil          MANDATORY
+t.ValidatePsmSpvKol        spktgg         VALIDATE psmkodidx mpsmspvkol 0 
+t.ValidatePsiSpvKol        spktgg         VALIDATE psikodidx mpsispvkol 0
+
+t.Validate      spknobuk        VALIDATE_IF cjoinceklisbm4_1a psddattypidx mceklisbm4 0 {Pmtsdata} {Plcekprytspv} {SlCHECKBOX2}
+
+
+MAP(mceklisbm4)
+cYe             lceklisbm4      DO_CALC
+
+MAP(maddceklisbm4)
+mtsdata         psddata REPLACE
+lcekprytspv     psdtype REPLACE
+spknobuk        psdpsmkode      REPLACE
+lCHECKBOX2      psdkode         REPLACE
+
+MAP(mpsmspvkol)
+psmnama         lnamaspvkol      REPLACE
+
+MAP(mpsispvkol)
+psisdep         lsdepspvkol      REPLACE
+
+CALCS()
+/*
+csdmspv		sviyt1!="" && g_grpnam != "RI" && g_grpnam != "IT"
+*/
+cjoinabkspv	djoinabkspv==1
+
+MAP(mpernyataspv)
+g_usrkode		spktgg		REPLACE
+
+MAP(mgmaprumah1)
+cBLANKS          llat736srv         DO_CALC
+cBLANKS          llong736rsrv       DO_CALC
+llat736srv       llat736srv         REPLACE_IF cdjoinsvi736srvy
+llong736srv      llong736srv        REPLACE_IF cdjoinsvi736srvy
+
+SPCALCS(spgmaps1)
+        DO_LIB ap_dbclc(DNAME dgmaprumah1,DCOMMAND MAPMAP,DMAP mgmaprumah1);
+        DO_LIB_IF cadakoordinat2 ap_shmap(llat736srv,llong736srv);
+
+MAP(mgmaprumah2)
+cBLANKS          llat736rsrv         DO_CALC
+cBLANKS          llong736rsrv        DO_CALC
+llat736rsrv      llat736rsrv         REPLACE_IF cdjoinsvi736rsrv
+llong736rsrv     llong736rsrv        REPLACE_IF cdjoinsvi736rsrv
+
+SPCALCS(spgmaps2)
+        DO_LIB ap_dbclc(DNAME dgmaprumah2,DCOMMAND MAPMAP,DMAP mgmaprumah2);
+        DO_LIB_IF cadakoordinat3 ap_shmap(llat736rsrv,llong736rsrv);
+
+MAP(mgmaprumah3)
+cBLANKS          llat736tksrv         DO_CALC
+cBLANKS          llong736tksrv        DO_CALC
+llat736tksrv     llat736tksrv         REPLACE_IF cdjoinsvi736tksrv
+llong736tksrv    llong736tksrv        REPLACE_IF cdjoinsvi736tksrv
+
+SPCALCS(spgmaps3)
+        DO_LIB ap_dbclc(DNAME dgmaprumah3,DCOMMAND MAPMAP,DMAP mgmaprumah3);
+        DO_LIB_IF cadakoordinat4 ap_shmap(llat736tksrv,llong736tksrv);
+
+MAP(mgmaprumah4)
+cBLANKS          llat736tkrsrv         DO_CALC
+cBLANKS          llong736tkrsrv        DO_CALC
+llat736tkrsrv    llat736tkrsrv         REPLACE_IF cdjoinsvi713tkrsrv
+llong736tkrsrv   llong736tkrsrv        REPLACE_IF cdjoinsvi713tkrsrv
+
+SPCALCS(spgmaps4)
+        DO_LIB ap_dbclc(DNAME dgmaprumah4,DCOMMAND MAPMAP,DMAP mgmaprumah4);
+        DO_LIB_IF cadakoordinat5 ap_shmap(llat736tkrsrv,llong736tkrsrv);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkhasil	DO_MAP SHOW mpernyataspv
+/*
+AFTER_INPUT     cur_keybd=EN            DO_LIB_IF csdmspv ap_ceksj(g_usrkode);
+*/
+BOXCHECKED      cur_field=lceklisbm4       DO_SPCALCS spcal_ceklisbm4
+BOXUNCHECKED    cur_field=lceklisbm4       DO_SPCALCS spcal_delceklisbm4
+CLICKED         cur_field=lGMAPS2          DO_SPCALCS spgmaps1
+CLICKED         cur_field=lGMAPS3          DO_SPCALCS spgmaps2
+CLICKED         cur_field=lGMAPS4          DO_SPCALCS spgmaps3
+CLICKED         cur_field=lGMAPS5          DO_SPCALCS spgmaps4
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD  spktglft
+SFL_UPL_DIRFLD  spktglft2
+SFL_UPL_DIRFLD  spktglft3
+SFL_UPL_DIRFLD  spktglft4
+
+SFL_UPLFLD      spkkode  lRMHDPN                /* piknobtm svitype */
+SFL_UPLFLD2     spkkode2                        /* svinobuk         */
+SFL_UPLFLD3     spkkode3 lcekkerja              /* piknobtm svitype */
+SFL_UPLFLD4     spkkode4 spknohp4               /* svinobuk svitblkode */
+
+SFL_UPLREADONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+        spkdatbuktyp   mtsdata mtsnobuk lFT736GAB
+SFL_MAP
+mtsnobuk        spknobuk        REPLACE
+mtsdata         spkdata         REPLACE
+mtsnoasal       spknoasal       REPLACE
+g_usrkode	spktgg          REPLACE
+lRMHDPN         spknohp		REPLACE
+lcekkerja       spknohp3	REPLACE
+
+
+CALCS()
+ckondisispv     abktype=="SPV" && abkkym2=="736"
+charus3spv      lttotalspv >=3
+
+
+MAP(mupdabkspv)
+gv_CLSD         abksts          REPLACE_IF cabkspv
+DEBUG           ldumx           ldumx           REPLACE
+
+MAP(mscanabkspv)
+c1              lttotalspv              DO_CALC_IF ckondisispv
+DEBUG           ldumx           ldumx           REPLACE
+
+MAP(mupdabkspvbesok)
+gt_RINP         abksts          REPLACE_IF ckondisispv
+cabkbesok       abktgl          DO_CALC_IF ckondisispv
+DEBUG           ldumx           ldumx           REPLACE
+
+
+SPCALCS(spaddtmptrans)
+DO_LIB_IF cjoinabkspv ap_dbclc(DNAME dupdabkspv,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkspv);
+DO_LIB_IF cjoinabkspv ap_dbclc(DNAME dbscanabkspv,DCOMMAND SCANSCAN,DTARGET abkdatstskym lkunciabsen gv_CLSD mtspst l736x g_tgltrn,DBC_SUM_MAP mscanabkspv);
+DO_LIB_IF charus3spv ap_dbclc(DNAME dupdabkspvbesok,DCOMMAND UPDATE_RANGE,DTARGET abkdatstskym lkunciabsen gv_INPG mtspst l736x,DMAP mupdabkspvbesok);
+
+SPCALCS(spcal_ceklisbm4)
+DO_LIB_IF cjoinceklisbm4_0 ap_dbclc(DNAME daddceklisbm4,DCOMMAND ADD,DFILE psd,DMAP maddceklisbm4);
+
+SPCALCS(spcal_delceklisbm4)
+DO_LIB_IF cjoinceklisbm4_1 ap_dbclc(DNAME ddelceklisbm4,DCOMMAND DELETE,DTARGET psddattypidx mtsdata lcekprytspv mtsnobuk lCHECKBOX2);
+
+POSTING(tmptrans)
+PST_ADDCMD spaddtmptrans
+
+

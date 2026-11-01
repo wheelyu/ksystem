@@ -1,0 +1,122 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|       t.PlafonBpjsKes                                                             |
+|       /-------------------------------------------------------\                   |
+|       !_____________________                                  |                   |
+|       !t.Nip        	 : __________                           !                   |
+|       !t.CbgAsl     	 : __________ _________________________ !                   |
+|       !t.UmrCabAs   	 : ______________                       !                   |
+|       !t.KodePT     	 : __________                           !                   |
+|       !t.NamaPT     	 : ____________________________________ !                   |
+|       !t.TglDafBpjsKes : _____________                        !                   |
+|       !t.KdPTBpjs   	 : __________                           !                   |
+|       !t.NamaPTBPJS 	 : ____________________________________ !                   |
+|       !t.CabBPJS    	 : ____________________________________ !                   |
+|       !t.Tgl        	 : _____________                        !                   |
+|       !t.PlfUpah    	 : ______________                       !                   |
+|       !t.KelasBPJS     : __________                           !                   |
+|       !t.1persen    	 : ____________.__                      !                   |
+|       !t.4persen    	 : ____________.__                      !                   |
+|       !t.Total      	 : ______________                       !                   |
+|       !t.Potongyt   	 : ______________                       !                   |
+|       !t.Ket        	 : ______________                       !                   |
+|       \-------------------------------------------------------/                   |
+\-----------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode              PROTECT SCROLL          INPUTRI 1
+
+psdkode                 PROTECT SCROLL          INPUTRI 2
+psdstr2                 PROTECT SCROLL          INPUTRI 3
+lcbgasal                PROTECT SCROLL          INPUTRI 4
+
+psdtot                  PROTECT SCROLL          INPUTRI 5
+lpt                	PROTECT SCROLL          INPUTRI 6
+lnamapt                	PROTECT SCROLL          INPUTRI 6
+psdtgl2                 PROTECT NOLIMIT {DD-MM-YY} INPUTRI 6
+psdtype3                ALLCAPS SCROLL          INPUTRI 6
+lcbgptbpjs              PROTECT SCROLL          INPUTRI 7
+psdstr5                 ALLCAPS SCROLL          INPUTRI 8
+
+
+psdtgl1                 PROTECT NOLIMIT {DD-MM-YY} INPUTRI 9
+
+
+psdtot2                 NUMERIC                 INPUTRI 10
+lkelasbpjs             	PROTECT SCROLL          INPUTRI 10
+psdtot3                 NUMERIC PROTECT                 INPUTRI 11
+psdtot4                 NUMERIC PROTECT                 INPUTRI 11
+psdtot5                 PROTECT                 INPUTRI 11
+psdtype2                NOCHANGE                INPUTRI 12
+psdstr3                 NOCHANGE                INPUTRI 13
+
+CALCS()
+cpotong		psdtype2 == "POTONG"
+ctdkpotong	psdtype2 == "TIDAK"
+cblanks		BLANKS
+
+
+DEFAULTS(tmptranst)
+psdtype2	DFALT_SCAN_BLANKS POTONG TIDAK
+IF cpotong	psdstr3 DFALT_SCAN_BLANKS TERDAFTAR INPROGRES
+IF ctdkpotong	psdstr3 DFALT_SCAN_BLANKS KELUAR TERDAFTAR
+psdtgl1		INIT   {g_tgltrn}
+psdtype3	DFALT_SCAN_BLANKS PT01 PT02 PT03 PT04 PT05 PT06 PT07 PT08 PT09 PT10 PT11 PT12 PT13
+
+EDITS(tmptranst)
+t.Validate              psdstr2 VALIDATE cabkodidx mcaba
+t.Validate              psdpsmkode VALIDATE psikodidx mpsi2g3
+t.Validate		psdstr2 VALIDATE caddatkodcab mcad2g3 {Pgt_DTGAJI} {PlUMR} {Ppsicabasal}
+t.Mandatory		psdtot2		MANDATORY
+t.Mandatory		psdtype2	MANDATORY
+t.Mandatory		psdtype3	MANDATORY
+t.Mandatory		psdstr3 	MANDATORY
+
+
+MAP(mcad2g3)
+cadtot1		psdtot		REPLACE
+
+MAP(mpsi2g3)
+psicabasal	psdstr2		REPLACE
+psdtype3	lptx21		REPLACE
+lcbgptbpjs	lcbgptbpjs	REPLACE_IF cjointbdpt2
+
+MAP(mcaba)
+cabkode                 psdstr2 REPLACE
+cabnama                 lcbgasal REPLACE
+cBLANKS         lkelasbpjs      DO_CALC
+cKELAS1         lkelasbpjs      DO_CALC_IF cjikakelas1
+cKELAS2         lkelasbpjs      DO_CALC_IF cjikakelas2
+
+CALCS()
+cpsdtot3	psdtot2 * 0.01
+cpsdtot4	psdtot2 * 0.04
+cpsdtot5	psdtot3 + psdtot4
+
+MAP(mpersen)
+cpsdtot3	psdtot3		DO_CALC
+cpsdtot4	psdtot4		DO_CALC
+cpsdtot5	psdtot5		DO_CALC
+
+MAP(mtipe)
+cblanks		psdstr3		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=psdtot2	DO_MAP SHOW mpersen
+AFTER_INPUT cur_keybd=EN    	DO_MAP SHOW mpersen
+AFTER_INPUT cur_field=psdtype2	DO_MAP SHOW mtipe
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        ctransa
+SFL_TARGET
+psddattypidx   lPLFBPJSKES  lPLFBPJSKES  hrmnip1 hrmnip1
+
+SFL_MAP
+lPLFBPJSKES  	psddata		REPLACE
+lPLFBPJSKES  	psdtype 	REPLACE
+hrmnip1		psdpsmkode	REPLACE
+hrmnip1		psdkode   	REPLACE

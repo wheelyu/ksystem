@@ -1,0 +1,235 @@
+CALCS()
+ckolz1		pikstspiubli=="Z1"
+
+MAP(mjoinpikfid)
+piksts          lpiksts         REPLACE
+pikke           lpikke          REPLACE
+piklama         lpiklama        REPLACE
+piktgljtp       lpiktgljtp      REPLACE
+piktglbyrakh    lpiktglbyrakh   REPLACE
+pikkolek        lpikkolek       REPLACE
+pikstspiubli    lpikstspiubli   REPLACE
+pikdvs          lpikdvs         REPLACE
+DBCALCS(djoinpikfid)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      pikdatbukidx    gv_dtpiu rtmnobuk
+        DBC_MAP         mjoinpikfid
+
+MAP(mjoinkatcab)
+tbddf1          lkatcab         REPLACE
+DBCALCS(djoinkatcab)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel lKOMISIKOL21 lKATCBG lcab
+        DBC_MAP         mjoinkatcab
+
+DBCALCS(djoinrmdgabkomkol)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx gv_INPG lrmdgab
+
+DBCALCS(djoinpikfakz1)
+	DBC_COMMAND     JOIN
+	DBC_TARGET	pikkolstsidx lnip gv_INPG
+	DBC_SELECT	ckolz1
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------------------------------\
+ /------------------------------------------------------------------\
+ | t.type  _______ t.jmlpcp _____ t.Enter ____   t.NipUser  _______ |
+ | t.z1r                                                            |
+ \------------------------------------------------------------------/
+ /-------------------------------------------------------------------------------------------------------------------------\
+  /-----------------------------------------------\/-----------------------------------------\/---------------------------\
+   t.SpINPG    __________________.__		    t.CABANG			      
+  	        t.Unit	    t.Sispok                       t.Sispok                 t.FID       t.Pengali  __________.__
+   t.Awal      ________	   __________________.__     t.Awal  __________________.__  ____        t.Bns	   __________.__
+   t.Act       ________	   __________________.__     t.Act   __________________.__  ____	t.Kom      __________.__
+   t.Persen    _____.__	   _____.__                  t.Alir  __________________.__  _____.__
+  \-----------------------------------------------/\-----------------------------------------/\---------------------------/
+ \-------------------------------------------------------------------------------------------------------------------------/
+\---------------------------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ltype			NOCHANGE		INPUTRI	1
+ljmlpcp			ALLCAPS			INPUTRI	1
+lenter                  NOCHANGE                INPUTRI 1
+lnip                    NOCHANGE                INPUTRI 1
+
+lspokinpg		PROTECT		INPUTRI	1
+lpengali		PROTECT         INPUTRI 1
+lawlunit		PROTECT         INPUTRI 1	
+lawlspok		PROTECT         INPUTRI 1
+lawkspokcab		PROTECT         INPUTRI 1
+linpgfid		PROTECT         INPUTRI 1
+lbonus			PROTECT         INPUTRI 1
+lactunit		PROTECT         INPUTRI 1
+lactspok		PROTECT         INPUTRI 1
+lactspokcab		PROTECT         INPUTRI 1
+lfid			PROTECT		INPUTRI	1
+lkomisi			PROTECT         INPUTRI 1
+lperunitsls		PROTECT         INPUTRI 1
+lperspoksls		PROTECT         INPUTRI 1
+lspokalircab		PROTECT         INPUTRI 1
+lperalircab		PROTECT         INPUTRI 1
+
+CALCS()
+ctype1		ltype=="HITUNG"
+csim		ltype=="SIMULASI"
+
+cjoinkatcaba    djoinkatcab==1 && lkatcab==1
+cjoinkatcabb    djoinkatcab==1 && lkatcab==2
+
+cjoinrmdgab	djoinrmdgabkomkol==1
+
+cdjoinfakz1	djoinpikfakz1==1
+
+crmdgabz1r	"KOMISIKOLZ1" + STRIP(lketcab)
+
+cawlunitz1r	pikstspiubli == "Z1" && piktglriil >= ltglawl && piktglriil <= g_tgltrn && pikkolek == lnip && (pikdvs=="HMC" || pikdvs=="M2W")
+
+cactunitz1r	pikstspiubli == "Z1" && piktglriil >= ltglawl && piktglriil <= g_tgltrn && pikkolek == lnip && (pikdvs=="HMC" || pikdvs=="M2W") && 
+		piktglbyrakh >= ltglawl && piktglbyrakh <= g_tgltrn
+
+cactunitz1r1	ltype=="HITUNG" && pikstspiubli == "Z1" && piktglriil >= ltglawl && piktglriil <= g_tgltrn && pikkolek == lnip && 
+		(pikdvs=="HMC" || pikdvs=="M2W") && piktglbyrakh >= ltglawl && piktglbyrakh <= g_tgltrn
+
+cawlcabz1r	pikstspiubli == "Z1" && piktglriil >= ltglawl && piktglriil <= g_tgltrn && (pikdvs=="HMC" || pikdvs=="M2W")
+cactcabz1r	pikstspiubli == "Z1" && piktglriil >= ltglawl && piktglriil <= g_tgltrn && piktglbyrakh >= ltglawl && piktglbyrakh <= g_tgltrn &&
+		(pikdvs=="HMC" || pikdvs=="M2W")
+
+cpiut		(pikdvs=="HMC" || pikdvs=="M2W") && (pikstspiubli >= "Z0" && pikstspiubli <= "Z6")
+
+cinpgfid	rtmtype=="FLAGFID" && rtmtype2=="INPGFID30" && djoinpikfid==1 && (lpiksts=="INPG" || lpiksts=="CLSD" || lpiksts=="TRK1" || lpiksts=="PLNS")
+cactfid         rtmtype=="FLAGFID" && rtmtype2=="INPGFID30" && djoinpikfid==1 && (lpiksts=="INPG" && (100-((lpikke-lpiklama)*100)) > 0 && (g_tgltrn-lpiktgljtp) > 30) || lpiksts=="TRK1"
+
+cpfid		linpgfid>0 && (lfid / linpgfid * 100) < 3
+
+cperslsunit	lactunit/lawlunit*100
+cperslsspok	lactspok/lawlspok*100
+calircab	lawkspokcab-lactspokcab
+cperalir	lspokalircab/lspokinpg*100
+
+cpengali	(lhasil1kom * lhasil2kom / 100)
+cbnsfid		lfid * 10000
+ckomisi		lpengali * lactunit
+
+DEFAULTS(tmptranst)
+ltype		DFALT_SCAN_BLANKS	HITUNG
+					SIMULASI
+
+lnip            INIT            {psikode}
+lcab		INIT		{psicabskr}
+lenter          INIT            TAB
+
+ltglawl         INIT            {cawlbln}
+ltglskrg        INIT            {g_tgltrn}
+
+lspokinpg	INIT		BLANKS
+lawkspokcab	INIT            BLANKS
+lactspokcab	INIT            BLANKS
+lawlunit	INIT            BLANKS
+lawlspok	INIT            BLANKS
+lactunit	INIT            BLANKS
+lactspok	INIT            BLANKS
+linpgfid	INIT            BLANKS
+lfid		INIT            BLANKS
+lketcab		INIT            BLANKS
+lperunitsls	INIT            BLANKS
+lperspoksls	INIT            BLANKS
+lspokalircab	INIT            BLANKS
+lperalircab	INIT            BLANKS
+lbts1		INIT            BLANKS
+lbts2		INIT            BLANKS
+lrmdgab		INIT            BLANKS
+lpengali	INIT            BLANKS
+lbonus		INIT            BLANKS
+lkomisi		INIT            BLANKS
+
+MAP(mscanpikz1r)
+piksispokabl	lspokinpg	REPLACE_IF cpiut
+
+piksispokabl	lawkspokcab	REPLACE_IF cawlcabz1r
+piksispokabl	lactspokcab	REPLACE_IF cactcabz1r
+
+gv_int1		lawlunit	REPLACE_IF cawlunitz1r
+piksispokabl	lawlspok	REPLACE_IF cawlunitz1r
+
+gv_int1		lactunit	REPLACE_IF cactunitz1r1
+piksispokabl	lactspok	REPLACE_IF cactunitz1r
+
+DBCALCS(dbscanpikz1r)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      pikcabpiusts	lcab lZ0
+        DBC_LAST_TARGET pikcabpiusts    lcab lZS
+        DBC_SUM_MAP     mscanpikz1r
+
+MAP(mscanfid)
+gv_int1		linpgfid	REPLACE_IF cinpgfid
+gv_int1		lfid		REPLACE_IF cactfid
+
+DBCALCS(dbscanfidz1r)
+        DBC_COMMAND     SCANSCAN
+	DBC_TARGET	rtmdattgltyp ldtthbl lcab
+	DBC_LAST_TARGET	rtmdattgltyp ldtthbl lcab
+	DBC_SUM_MAP	mscanfid
+
+MAP(mhitungz1r)
+ljmlpcp         lactunit        REPLACE_IF csim
+
+cA		lketcab		DO_CALC_IF cjoinkatcaba
+cB		lketcab		DO_CALC_IF cjoinkatcabb
+
+cperslsunit	lperunitsls	DO_CALC
+cperslsspok	lperspoksls	DO_CALC
+
+calircab	lspokalircab	DO_CALC
+cperalir	lperalircab	DO_CALC
+
+lperspoksls	lbts2		REPLACE
+lperalircab	lbts1		REPLACE
+
+crmdgabz1r	lrmdgab		DO_CALC
+DEBUG	ldum	ldum	REPLACE
+
+MAP(mhasil)
+cpengali	lpengali	DO_CALC
+
+cbnsfid		lbonus		DO_CALC_IF cpfid
+
+ckomisi		lkomisi		DO_CALC
+
+lspokinpg	lspokinpg	REPLACE
+lawkspokcab	lawkspokcab	REPLACE
+lactspokcab	lactspokcab	REPLACE
+lawlunit	lawlunit	REPLACE
+lawlspok	lawlspok	REPLACE
+lactunit	lactunit	REPLACE
+lactspok	lactspok	REPLACE
+linpgfid	linpgfid	REPLACE
+lfid		lfid		REPLACE
+lperalircab	lperalircab	REPLACE
+
+
+DEBUG	ldum	ldum	REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=ltype   DO_MAP SHOW
+                IF cdjoinfakz1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Kolektor Tidak Memiliki Faktur Z1
+
+BEFORE_INPUT	cur_field=ljmlpcp	DO_SKIP_IF ctype1
+AFTER_INPUT	cur_field=lenter	DO_SCAN dbscanpikz1r
+AFTER_INPUT	cur_field=lenter	DO_SCAN dbscanfidz1r
+AFTER_INPUT     cur_field=lenter	DO_MAP SHOW mhitungz1r
+AFTER_INPUT	cur_field=lenter	DO_LIB_IF cjoinrmdgab ap_ambts(gv_INPG,lrmdgab,lbts1,lbts2,lNol,&lhasil1kom,&lhasil2kom,&lhasil3kom,lhasilstr1kom,lhasilstr2kom); 
+AFTER_INPUT	cur_field=lenter	DO_MAP SHOW mhasil
+
+SUBFILE(tmptrans)
+SFL_APP_TYPE
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psmkodidx   psikode
+

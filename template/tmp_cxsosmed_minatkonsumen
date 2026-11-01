@@ -1,0 +1,71 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------\
+|_                                                    |
+|_/------------------------------------------------\__| 
+| | t.Namakons      : __________________           |  |
+| | t.Notelp        : __________________           |  |
+| |                                                |  |
+| \------------------------------------------------/  |
+| /------------------------------------------------\  |
+|   t.UploadBuktiMinat                                |
+| \------------------------------------------------/  |
+| /------------------------------------------------\  |
+|   t.StsUpl : _____          t.TglUpl : ________     |
+| \------------------------------------------------/  |
+| /------------s.UPLOAD----------------------------\  |
+| |                                                |  |
+| |                                                |  |
+| |                                                |  |
+| \------------------------------------------------/  |
+\-----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkddata         PROTECT QPROTECT UNSEEN   NONE
+tkdnobuk        PROTECT QPROTECT UNSEEN   NONE
+tkdnourt        PROTECT QPROTECT UNSEEN   NONE 
+tkdket          NONE             INPUTRI 1       /* NamaKonsumen */
+tkdjenis        DIGITS           INPUTRI 2       /* No Telepon */
+tkdjwbstr1      PROTECT         
+tkdtgl          PROTECT NOCHANGE {DD-MM-YY}             
+
+EDITS(tmptranst)
+e.Mandatory     tkdket          MANDATORY
+e.Mandatory     tkdjenis        MANDATORY
+
+MAP(mjoinnouruta)
+csatua		tkdnourt	DO_CALC_IF cjoinurut0a
+ctam1a		tkdnourt	DO_CALC_IF cjoinurut1a
+
+CALCS()
+cceknotelp      DO_LIB  ap_strln(tkdjenis, &lpanjangnotelp);
+cceknohpvalid   lpanjangnotelp >=11 && lpanjangnotelp <= 13
+
+MAP(mnohp)
+cBLANKS         lpanjangnotelp  DO_CALC
+cceknotelp      lpanjangnotelp  DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdnourt	DO_MAP SHOW mjoinnouruta
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP      SHOW mnohp
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP      SHOW
+                                        IF cceknohpvalid    mdum
+                                        ELSE    HKCURSOR    STAY
+                                        HKMSG   t.notelpharus1013
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND    cjklive
+SFL_UPL_COND chrsisitkd
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD  tkdnobuk tkdoto
+SFL_UPLFLD_DBCALCS dUpdateStsUpl3
+SFL_UPL_DELCOND	ctdkclsd
+/*SFL_UPL_DELCOND c0  */
+SFL_TARGET
+        tkddatbukll   tlmdata tlmnobuk 
+SFL_MAP
+tlmdata         tkddata  REPLACE
+tlmnobuk        tkdnobuk REPLACE

@@ -1,0 +1,233 @@
+LOCAL
+PGM_FIELDS
+lSPKCNTR	STRING		11
+lnipsrvy	STRING		21
+lbtmflag1	STRING		21
+lbtmsts		STRING		5
+lnobuktos	STRING		21
+ltgljanjisrvy	DATE		8
+ltglpros1	DATE		4
+ludahy		STRING		3
+l701SDVY	STRING		21
+ljaminputsrvy	TIME		4
+ljampstsrvy	TIME		4
+ljampstkesrvy	TIME		4
+lspksrvy	STRING		11
+ljampst706	TIME		4
+lMULTI4W	STRING		11
+
+CALCS()
+c701add		aktkode2 == "701ADD"
+
+MAP(mjoinsvisrvy)
+sviyt1		ludahy		REPLACE
+DBCALCS(djoinsvisrvy)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatkodtyp lspksrvy svikode lPKSURVEY
+	DBC_MAP		mjoinsvisrvy
+
+MAP(mbtmsrvy)
+btmlok		lnipsrvy	REPLACE
+btmflag1	lbtmflag1	REPLACE
+btmtglpros1	ltglpros1	REPLACE
+btmsts		lbtmsts		REPLACE
+DBCALCS(djoinbtmsrvy)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btmbukidx svistr1
+	DBC_MAP		mbtmsrvy
+
+MAP(mjoinnhm)
+nhmfinco	lnobuktos	REPLACE
+DBCALCS(djoinnhm)
+	DBC_COMMAND	JOIN	
+	DBC_TARGET	nhmdatbukidx gv_bukutamu svistr1
+	DBC_MAP		mjoinnhm
+
+MAP(mjoin707)
+ftmtgl4		ltgljanjisrvy	REPLACE
+DBCALCS(djoin707)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ftmdatbukidx lMULTI4W lnobuktos
+	DBC_MAP		mjoin707
+
+
+MAP(minputsrvy)
+aktjam		ljaminputsrvy	REPLACE
+DBCALCS(djoininputsrvy)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx    svistr1 lSLA lSLA21
+	DBC_SELECT	c701add
+	DBC_MAP		minputsrvy
+
+MAP(mpstsrvy)
+aktjam		ljampstsrvy	REPLACE	
+DBCALCS(djoinpstsrvy)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx    svistr1 lSLA l701SDVY
+	DBC_MAP		mpstsrvy
+
+MAP(mpstkesrvy)
+aktjam		ljampstkesrvy	REPLACE	
+DBCALCS(djoinpstkesrvy)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx    svistr1 lSLA l706SRVY
+	DBC_MAP		mpstkesrvy
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||       t.SurveyPk               ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| ___ ______________ __________  ||
+||t.Nobuk701                      ||
+|| _________________ _____ _____  ||
+||t.Tglpk   ____________________  ||
+||t.Debitur ____________________  ||
+||t.NamaDeb ____________________  ||
+||t.srvyskr _______	          ||
+||t.User                          ||
+|| _______  ____________________  ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt		PROTECT			INPUTRI 1
+svinobuk		PROTECT			INPUTRI 1
+ljampst706		NOCHANGE		INPUTRI 2
+svistr1			ALLCAPS			INPUTRI 3
+svistr4			ALLCAPS			INPUTRI 4
+btmflag1		NOCHANGE		INPUTRI 5
+svitgl2			NOCHANGE		INPUTRI	6
+svistr3			NOCHANGE		INPUTRI 6
+svinama			NOCHANGE		INPUTRI 7
+sviyt1			ALLCAPS			INPUTRI 8
+svikode			PROTECT			INPUTRI 9
+svistr2			PROTECT			INPUTRI 10
+
+DEFAULTS(tmptranst)
+lSPKCNTR	INIT		SPKCNTR
+sviyt1	        DFALT_SCAN      BLANKS Y T
+l701SDVY	INIT		701SDVY
+lspksrvy	INIT		SPKM4W
+lMULTI4W	INIT		MULTI4W
+
+EDITS(tmptranst)
+/*e.Mandatory	svistr1		MANDATORY*/
+e.Validate	svistr1		VALIDATE btmbukidx mbtm2 
+e.Validate2	svistr3		VALIDATE psmktpidx mpsm3
+e.validate	svikode		VALIDATE psmkodidx mpsmin2
+
+MAP(mbtm2)
+btmnobuk	svistr1		REPLACE 
+svidf2		ljampst706	REPLACE
+btmsts		svistr4		REPLACE
+btmflag1	svistr5		REPLACE
+btmplg		svistr3		REPLACE
+btmlok		svikode		REPLACE
+l1              svinourt        REPLACE_IF cjoinsvy_0urt
+curut		svinourt	DO_CALC_IF cjoinsvy_1urt	
+
+MAP(mpsmin2)
+psmnama		svistr2		REPLACE
+
+MAP(mpsm3)
+psmnama		svinama		REPLACE
+
+CALCS()
+cjoinsvisrvy		djoinbtmsrvy == 1 && lnipsrvy == tkmplg && ltglpros1 <= g_tgltrn && (lbtmflag1 == "SRVY" || lbtmflag1 == "SDVY") && djoinpstkesrvy == 1 && ljampstkesrvy <= l1400   
+cudahdiinputni		ludahy != "Y"  
+/*cblmjwb			(svinobuk==tkmnobuk)  && (svitgl2 == 0 && (btmsts=="701" || svistr4=="703" || svistr4=="704" || svistr5=="705"))
+*/
+
+cblmjwb			svinobuk==tkmnobuk && djoinbtmsrvy==1 && djoinnhm==1 && djoin707==1 && ltgljanjisrvy == tkmtgl && (lbtmsts!="VOID")
+
+/*cskipsrvy1		g_usrkode != tkmplg
+*/
+cskipsrvy2		g_usrkode == tkmplg
+/*csrvyskr1		(((~sviyt1 == BLANKS && sviyt1=="Y") || (~sviyt1=="T" && sviyt1=="Y" )) && (ljampstsrvy - ljaminputsrvy) <= 321)
+csrvyskr2		(((~sviyt1 == BLANKS && sviyt1=="Y") || (~sviyt1=="T" && sviyt1=="Y" )) && (ljampstsrvy - ljaminputsrvy) > 321)
+csrvybsk		(~sviyt1 == "Y" && sviyt1=="T")
+*/
+cjoinjamsrvy		djoininputsrvy == 1 && djoinpstsrvy ==1 
+cseljamsrvy1		ljampstsrvy - ljaminputsrvy
+
+MAP(mmapsrvy)
+tkmnobuk        svinobuk        REPLACE
+lspksrvy        svidata         REPLACE
+lPKSURVEY	svitype		REPLACE
+g_tgltrn        svitgl1         REPLACE
+cseljamsrvy1	svidf1		DO_CALC_IF cjoinjamsrvy
+DEBUG		ldum 	ldum	REPLACE
+
+/*CALCS()
+cjamsrvy1	tkmtotal + svidf1	
+cjamsrvy2	tkmtotal + 267
+
+MAP(mupdtkmsrvy)
+cjamsrvy1	tkmtotal	DO_CALC_IF csrvyskr1
+cjamsrvy2	tkmtotal	DO_CALC_IF csrvyskr2
+cmenitdel267	tkmtotal	DO_CALC_IF csrvybsk
+DEBUG		ldum	ldum	REPLACE
+*/
+
+HOOKS(tmptranst)
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF cjamtarget mdum
+		ELSE HKCURSOR STAY
+		HKMSG JAM SUDAH LEWAT DARI JAM TARGET
+
+AFTER_INPUT     cur_field=svikode    DO_MAP SHOW
+                IF cjoinsvisrvy mdum
+                ELSE HKCURSOR STAY
+                HKMSG Belum Isi Detail Pekerjaan 701 / Bukan PK Survey Anda / Survey Bukan Tanggal Hari Ini / Status bukan SRVY atau SDVY
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF cudahdiinputni mdum
+		ELSE HKCURSOR STAY
+		HKMSG Nobukutamu Ini Sudah Pernah Diinput
+
+BEFORE_INPUT 	cur_field=sviyt1	DO_SKIP_IF cskipsrvy2
+AFTER_INPUT	cur_field=svikode	DO_SCAN djoinsvisrvy
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/*SFL_UPL_DELCOND c0*/
+SFL_SELECT cblmjwb
+SFL_TARGET
+	svidatkodtyp 	lspksrvy tkmplg lPKSURVEY
+/*
+        svidatbuktyp    tkmtype tkmnobuk lPKSURVEY
+*/
+SFL_MAP
+tkmnobuk         svinobuk        REPLACE
+lspksrvy         svidata         REPLACE
+lPKSURVEY        svitype         REPLACE
+
+MAP(maddtkdsrvy)
+svinobuk	tkdnobuk	REPLACE
+tkmtype		tkddata		REPLACE
+svitype		tkdnoll		REPLACE
+svinourt        tkdnourt        REPLACE
+gv_OPEN		tkdsts		REPLACE
+ljaminputsrvy	tkdjml		REPLACE
+ljampstsrvy	tkdjml2		REPLACE
+DEBUG		ldum	ldum	REPLACE
+
+SPCALCS(spsurvey)
+DO_LIB          ap_dbclc(DNAME dmapsrvy,DCOMMAND MAPMAP,DMAP mmapsrvy);
+/*DO_LIB          ap_dbclc(DNAME dupdtkmsrvy,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP mupdtkmsrvy);*/
+DO_LIB_IF cjoinpksvy  ap_dbclc(DNAME daddtkdsvy,DCOMMAND ADD,DFILE tkd, DMAP maddtkdsrvy);
+
+POSTING(tmptrans)
+PST_UPDCMD      spsurvey
+
+
+
+
+

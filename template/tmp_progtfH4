@@ -1,0 +1,74 @@
+LOCAL
+PGM_FIELDS
+lnamasdm		STRING		61
+lgrplogin		STRING		61
+lENTER2			STRING		21
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.KronologisKasus               ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.TglInp     : _________________||
+||t.Userinput  : _________________||
+||t.Nama       : _________________||
+||t.GrpLog     : _________________||
+||                         _______||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdket			TEXTAREA	INPUTRI	1
+tkdtgl2			PROTECT		INPUTRI 2
+tkdrek			PROTECT		INPUTRI 3
+lnamasdm		PROTECT		INPUTRI 4
+lgrplogin		PROTECT		INPUTRI 5
+lENTER2                 ALLCAPS         INPUTRI 2
+
+DEFAULT(tmptranst)
+l4		INIT		4
+tkdtgl2		INIT		{g_tgltrn}
+tkdtgl2		INIT_UPDATE	{g_tgltrn}
+tkdrek		INIT		{g_usrkode}
+tkdrek		INIT_UPDATE	{g_usrkode}
+tkddata		INIT		TASKFORCE
+tkdnourt	INIT		4
+tkdsts		INIT		INPG
+lENTER2         INIT            ENTER
+
+EDITS(tmptranst)
+e.Mandatory		tkdket		MANDATORY
+Nama tidak ada          tkdrek          VALIDATE        psikodidx mpsirev 0
+Jabatan tidak ada       tkdrek          VALIDATE        usrkodidx musrrev 0
+
+MAP(musrrev)
+usrgrp                  lgrplogin    REPLACE
+
+MAP(mpsirev)
+psinama                 lnamasdm     REPLACE
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkdbukidx   tlmnobuk lINPG l4          
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+tlmdata         tkddata         REPLACE
+tlmnoasal       tkdnoll         REPLACE
+
+CALCS()
+caddtransacc	   (tlmsts=="762" && (tlmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="1706116") && tlmsts2=="PRG1" && djointkd4==0)
+cupdtransacc       (tlmsts=="762" && (tlmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="1706116") && tlmsts2=="PRG1" && djointkd4==1)
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddtransacc
+        PMT_UPDALL_COND cupdtransacc
+        PMT_DEL_COND    c0
+

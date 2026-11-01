@@ -1,0 +1,215 @@
+
+IMAGE(tmptranst)
+/-----------------------------------\
+| t.FotoSDM			    |
+|/------------s.UPLOAD-------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+| t.FotoKtp 			    |
+|/-------------s.UPLOAD2-----------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| t.Nip        : ________________ ||
+|| t.Nama       : ________________ ||
+|| t.TanggalMsk : ________________ ||
+|| t.TglAbsen   : ________________ ||
+|| t.Jabatan    : ________________ ||
+|| t.Divisi     : ________________ ||
+|| t.SDM	: _______	   ||
+|| t.IDCard	: _______	   ||
+|| t.Seragam    : _______   	   ||
+|| t.FisikKTP	: _______    	   ||
+|| t.Pengenal	: _______ ________ ||
+|| t.NoKK	: ________________ ||
+|| t.Nik        : ________________ ||
+|| t.NIKbanding : ____ ___________ ||
+|| t.NamaAct    : ________________ ||
+|| t.HasilObv   : ________________ ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldplg          PROTECT                 INPUTRI 1       /*NIP*/
+tldlok          PROTECT                 INPUTRI 2       /*Nama*/
+tldtgl2         PROTECT                 INPUTRI 3       /*Tgl Masuk*/ 
+tldsat 		PROTECT			INPUTRI 4	/*Tgl absen terakhir*/
+tldgrup         PROTECT                 INPUTRI 5       /*Jabatan*/
+tldbisnis       PROTECT                 INPUTRI 6       /*Divisi*/
+
+tldgrup2        ALLCAPS                 INPUTRI 7       /*SDM*/
+tldstr1		ALLCAPS			INPUTRI 8	/*ID CARD*/
+tldstr3	        ALLCAPS                 INPUTRI 8       /*SERAGAM*/
+tldket2         ALLCAPS                 INPUTRI 9       /*Fisik KTP*/
+tldbrdoto	ALLCAPS			INPUTRI 11	/*Pengenal Lain*/
+tldbrg		ALLCAPS			INPUTRI	12	/*Mandatory isi pengenal lain*/
+tldstr2		ALLCAPS			INPUTRI 13	/*NO KK */
+tldnoll         PROTECT         	INPUTRI 14      /*NIK Otomatis*/
+tlddk		ALLCAPS                 INPUTRI 15	/*NIK Banding*/
+tldlok2         DIGITS                  INPUTRI 16	/*Mandatory NIK Banding*/
+
+/*tldtydis        ALLCAPS                 INPUTRI 16	
+tlddvs          ALLCAPS 	        INPUTRI 17*/	
+tldukrwrn	ALLCAPS			INPUTRI 18	/*SDM ACt*/
+tldkat          ALLCAPS                 INPUTRI 19      /*Hasil Observasi*/
+
+
+DEFAULTS(tmptranst)
+
+tldgrup2	DFALT_SCAN	BLANKS
+				ADA
+				TIDAK
+
+tldstr1		DFALT_SCAN      BLANKS
+                                ADA
+                                TIDAK
+
+
+tldstr3		DFALT_SCAN	BLANKS
+				ADA 
+				TIDAK
+
+tldket2		DFALT_SCAN	BLANKS
+				ADA
+				TIDAK
+
+tldbrdoto	DFALT_SCAN	BLANKS
+				SIM
+				PASPORT
+				LAIN-LAIN
+
+/*tldtydis        DFALT_SCAN      BLANKS
+                                OK "Y"
+                                T "T"
+
+tlddvs          DFALT_SCAN      BLANKS
+                                SDM_FIKTIF
+                                SIDIKJARI_RUSAK*/
+
+tldkat          DFALT_SCAN      BLANKS
+                                ADM
+                                VALID
+                                FRAUD
+                                TIDAK_TERVERIFIKASI
+
+tlddk           DFALT_SCAN      BLANKS
+                                Y "Y"
+                                T "T"
+
+
+tldperdis1	INIT		0
+
+
+CALCS()
+cisi                    tldperdis1 + 1
+cbanding		tlddk == "Y"
+ctdkbanding		(tlddk == "T" || (tldbrdoto == "SIM" && tlddk == "T"))
+/*csidikOK		tldtydis == "OK"*/
+cadaktp			tldket2	 == "ADA"
+cadasim                 tldbrdoto  == "SIM" || tldket2 == "ADA" 
+csdmada			tldgrup2   == "ADA"
+chasilobv		tldgrup2 == "TIDAK" 
+cpilihpengenal		tldket2  == "TIDAK"
+cpasport		tldbrdoto == "PASPORT"
+clain2			tldbrdoto == "LAIN-LAIN"
+cnamaact		tlddk == "T" && tlddvs == "SDM_FIKTIF" || (tlddk == "T" || tlddvs == "SDM_FIKTIF")
+/*csidikacc		tldtydis == "OK"
+csidikjarit		tldtydis == "T"*/
+ctdkadasdm		tldgrup2 == "TIDAK"
+ctdkverifikasi		"TIDAK VERIFIKASI"
+cadanokk		tldstr2 != BLANKS
+
+EDITS(tmptranst)
+e.Mandatory		tldplg		MANDATORY
+e.Validate		tldplg		VALIDATE psmkodidx maddpsm	
+/*e.Mandatory     	tlddvs          MANDATORY_IF csidikjarit*/
+e.MandatoryIsiNIKAct	tldlok2		MANDATORY_IF ctdkbanding
+e.MandatoryPengenal	tldbrdoto	MANDATORY_IF cpilihpengenal
+e.MandatoryLain2	tldbrg		MANDATORY_IF clain2
+e.MandatoryNamaAct	tldukrwrn	MANDATORY_IF cnamaact
+e.MandatoryFisik	tldket2		MANDATORY_IF csdmada
+e.MandatorySeragam      tldstr3         MANDATORY_IF csdmada
+e.Mandatory 		tlddk		MANDATORY_IF cadasim
+e.Mandatory             tlddk           MANDATORY_IF cadaktp
+
+MAP(mupdfotosdm)
+cisi            	tldperdis1	DO_CALC
+
+MAP(maddpsm)
+psmktp			tldnoll		REPLACE
+psmnama			tldlok		REPLACE
+
+MAP(mtdkverifikasi)
+ctdkverifikasi		tldkat		DO_CALC_IF ctdkadasdm	
+
+DBCALCS(dupdfotosdm)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx       tldprm
+        DBC_MAP         mupdfotosdm
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=tldlok2	DO_SKIP_IF cbanding
+/*BEFORE_INPUT    cur_field=tlddvs        DO_SKIP_IF csidikOK*/
+BEFORE_INPUT	cur_field=tldbrdoto	DO_SKIP_IF cadaktp
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF cadaktp
+BEFORE_INPUT 	cur_field=tldbrg	DO_SKIP_IF cadasim
+BEFORE_INPUT	cur_field=tldkat	DO_SKIP_IF chasilobv 
+BEFORE_INPUT	cur_field=tldbrg	DO_SKIP_IF cpasport
+BEFORE_INPUT	cur_field=tlddk		DO_SKIP_IF clain2
+BEFORE_INPUT 	cur_field=tldlok2	DO_SKIP_IF clain2
+BEFORE_INPUT    cur_field=tlddk         DO_SKIP_IF cpasport
+BEFORE_INPUT    cur_field=tldlok2       DO_SKIP_IF cpasport
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF cadanokk
+AFTER_INPUT     cur_field=tldgrup2      DO_MAP SHOW mtdkverifikasi
+
+
+/*AFTER_INPUT     cur_keybd=EN            DO_LIB_IF csidikacc ap_ceksj(tldplg);*/
+
+CALCS()
+c1		1		
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPL_DIRFLD2	tlmtgl
+SFL_UPLFLD tldplg tldoto 
+SFL_UPLFLD2 tldoto  
+SFL_UPLFLD_DBCALCS dupdfotosdm
+/*SFL_UPL_CAMERAONLY*/
+SFL_SORT_BY_FIELD tldgrup2
+SFL_TARGET
+	tldbukbbmidx 	tlmnobuk  lsensus
+
+SFL_MAP
+tlmnobuk        tldnobuk
+lsensus		tldnobbm
+
+PERMIT(tmptrans)
+PMT_DEL_COND    c0
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    c0
+
+
+MAP(mupdtlmmaster1)
+c1		tlmperdis	DO_CALC
+
+SPCALCS(supdtrans)
+        DO_LIB ap_dbclc(DNAME dupdtlm,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmmaster1);
+
+POSTING(trans)
+  PST_UPDCMD    supdtrans
+

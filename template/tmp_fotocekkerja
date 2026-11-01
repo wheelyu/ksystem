@@ -1,0 +1,97 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+  i.Ket  t.CekTmptKerja
+  ______________   ________
+  t.TglCekin : _________
+  t.JamCekin : ______
+  t.TglCekout: ________
+  t.JamCekout: ______
+            ___  ____
+  t.TglFt : _________ t.Jam ______
+  t.Jar   : ____.__ t.M
+  _________________________________
+  spasi
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lcekinkerja                  TOMBOL                          INPUTRI 1 
+svitype2                NOCHANGE                        INPUTRI 2
+ltglcekinkerja             PROTECT {DD-MM-YYYY}            INPUTRI 2
+ljamcekinkerja             PROTECT                         INPUTRI 2
+ltglcekoutkerja            PROTECT {DD-MM-YYYY}            INPUTRI 2
+ljamcekoutkerja            PROTECT                         INPUTRI 2
+sviyt1                  PROTECT                         INPUTRI 13
+sviyt2                  PROTECT                         INPUTRI 22
+svitgl2                 PROTECT {DD-MM-YYYY}            INPUTRI 23
+ljamftrt                PROTECT                         INPUTRI 24
+svidf5                  PROTECT                         INPUTRI 25
+lcekinkerjaok              TOMBOL                          INPUTRI 26
+
+MAP(mupdsvicekinkerja)
+cCEKIN          svitype2        DO_CALC
+
+DBCALCS(dupdsvicekinkerja)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviotoidx svioto
+        DBC_MAP         mupdsvicekinkerja
+
+
+MAP(mupdsviftkerjaoklg)
+g_fotolat1      svidf6          REPLACE_IF csdhuploadok
+g_fotolon1      svidf7          REPLACE_IF csdhuploadok
+ljarakftrt      svidf5          REPLACE_IF csdhuploadok
+cokok           sviyt2          DO_CALC_IF cadalonlatok
+g_tgltrn	svitgl2		REPLACE_IF csdhuploadok
+
+DBCALCS(dupdsviftkerjaoklg)
+        DCOMMAND        UPDATE
+        DTARGET         sviotoidx svioto
+        DMAP            mupdsviftkerjaoklg
+
+SPCALCS(spcaluplftkerjacek)
+dmapisidetailfoto
+DO_LIB_IF chitjrkftok ap_dsGPS(llatselfie,llonselfie,g_fotolat1,g_fotolon1,&ljarakftrt);
+dupdsviftkerjaoklg
+IF cdjoinaktcekinkerja1 dupdaktcekoutkerja
+
+SPCALCS(spcekinkerja)
+dmapisidetailfotoin
+dupdsvicekinkerja
+IF cdjoinaktcekinkerja0 daddaktcekin
+
+HOOKS(tmptranst)
+CLICKED                 cur_field=lcekinkerja DO_SPCALCS IF cblmcekinfoto spcekinkerja
+CLICKED                 cur_field=lcekinkerjaok DO_SPCALCS IF csdhuploadok spcaluplftkerjacek
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_COND        cbolehmasukdetailkerja
+SFL_UPL_COND    csudahcekin
+SFL_UPL_DELCOND cfototacc
+SFL_UPL_COND_MSG IF cblmcekinfoto t.CekinDulu
+SFL_UPLFLD_DBCALCS dupdfotokerja
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svitype
+SFL_SHOW_NEXT
+SFL_UPL_CAMERAONLY
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk lcekkerja
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND c0
+        PMT_DEL_COND    c0

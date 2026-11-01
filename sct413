@@ -1,0 +1,688 @@
+SCREEN 413 QUERY_TYPE t.AjuUbahCabFifo
+SCR_FILE tkm
+SCR_LOGFLD tkmnobuk
+SCR_UPL_DIRFLD tkmtgl
+SCR_QRYCMD_IGNORE_CABDVS
+SCR_APR capprove
+SCR_APRFLD tkmnobuk
+SCR_APR_COND capr_ok
+SCR_APR_MSG	IF capr_01	t.StsNotOpen
+		IF capr_02	t.TdkPerluApproval
+		IF capr_04	t.TbhDuluCabPriorKe1
+		IF capr_03	t.StsAprNotNull
+SCR_NXT_POSTING 4918
+SCR_NXT_MAP mnext
+SCR_NXT_COND cpst_ok
+SCR_NXT_MSG	IF cpst_01	t.StsNotOpen
+		IF cpst_03	t.TbhDuluCabPriorKe1
+		IF cpst_02	t.StsAprNotOk
+
+LOCAL
+PGM_FIELDS
+	ldum		STRING		2
+	
+	lcabnama	STRING		61
+	lcabpst2	STRING		21
+	lcabpos		STRING		21
+	lcabkdfak	STRING		21
+	lcabnamatujuan	STRING		61
+	lcabpst2tujuan	STRING		21
+	lcabpostujuan	STRING		21
+	/*lcabnama_fifo1	STRING		61*/
+	lcabnama_fifo2	STRING		61
+	lcabstok	STRING		21
+	lusrgrp		STRING		21
+	lcabnama_prior	STRING		61
+	lcabpst2_prior	STRING		21
+	lcabpos_prior	STRING		21
+	
+	lbutton1	STRING		51
+	lbutton2	STRING		51
+	lbutton2d	STRING		51
+	lbutton3	STRING		51
+	lbutton3d	STRING		51
+	lbutton4	STRING		51
+	
+	lenter3a	STRING		61
+	lenter3b	STRING		61
+	
+	lCABSTOK	STRING		11
+	lSTOK		STRING		21
+	lSPM		STRING		21
+	l413koreksi	STRING		21
+	
+	lsatu		DFLOAT		8
+	lnamafldsts	STRING		31
+	lnamafldfak	STRING		31
+	lnamaidxfak	STRING		31
+	lyturutapr	STRING		3
+	
+	ltkdjenis	STRING		21
+	lPRIORITAS01	STRING		21
+	ltkdjml		DFLOAT		8
+
+CALCS()
+c0		0
+cblanks		BLANKS
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+MAP(mjoincadstok)
+cadarea		lcabstok	REPLACE
+
+DBCALCS(djoincadstok)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	tkmlok1 lCABSTOK lSTOK lSTOK
+	DBC_MAP		mjoincadstok
+
+MAP(mjoinusr)
+usrgrp		lusrgrp		REPLACE
+
+DBCALCS(djoinusr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	usrkodidx	tkmplg
+	DBC_MAP		mjoinusr
+
+DBCALCS(djoinapr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aprbukkeurt	tkmnobuk
+
+DBCALCS(djointbdlokmotor)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddtmstidx	gv_dttabel gv_barang gv_lokmotor gv_BR tkmlok2
+
+DBCALCS(djointkd01)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll	tkmdata tkmnobuk tkdnoll
+
+CALCS()
+ctkdjenis00	tkdjenis == ltkdjenis
+
+DBCALCS(djointkd02)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll	tkmdata tkmnobuk
+	DBC_SELECT	ctkdjenis00
+
+DBCALCS(djointkd03)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll	tkmdata tkmnobuk lPRIORITAS01
+
+MAP(mjointkd04)
+tkdjml		ltkdjml		REPLACE
+
+DBCALCS(djointkd04)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tkddatbukll	tkmdata tkmnobuk
+	DBC_MAP		mjointkd04
+
+DBCALCS(djoincadstok01)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	caddatkodidx	lCABSTOK tkdjenis lSTOK tkdjenis
+
+CALCS()
+capprove	DO_LIB ap_aprmt(tkmnobuk,gv_aprumum,tkmlok1,tkmbuk2,lsatu,lnamafldsts,lnamafldfak,lnamaidxfak,tkmjmltlk,lyturutapr,g_strksg,g_strksg);
+capr_ok		tkmsts == "OPEN" && djoinusr == 1 && (lusrgrp != "RI" && lusrgrp != "IT" && lusrgrp != "ADHDVH") && djointkd03 == 1 && tkmstsapr == BLANKS
+capr_01		tkmsts != "OPEN"
+capr_02		djoinusr == 1 && (lusrgrp == "RI" || lusrgrp == "IT" || lusrgrp == "ADHDVH")
+capr_03		tkmstsapr != BLANKS
+capr_04		djointkd03 != 1
+cpst_ok		tkmsts == "OPEN" && djointkd03 == 1 && tkmstsapr == "OK"
+cpst_01		tkmsts != "OPEN"
+cpst_02		tkmstsapr != "OK"
+cpst_03		djointkd03 != 1
+
+MAP(mnext)
+tkmnobuk	r_string1	REPLACE
+tkmlok1		r_string2	REPLACE
+tkmkode		r_string3	REPLACE
+tkmlok2		r_string4	REPLACE
+
+/********** View **********/
+
+IMAGE(master)
+/--------------------------------------\
+ /------------------------------------\
+  i.Tgl  __________  i.Sts  __________
+  i.NoBuk____________________________
+  i.Pil  ____________________________
+  i.Cab  __________  _________________
+  i.Dlr  __________  t.Fifo __________
+  t.UbhKe__________  _________________
+  i.Usr  __________  _________________
+  i.Apr  _________________  __________
+ \------------------------------------/
+ ____________ ____________ ____________
+ ____________ 
+\--------------------------------------/
+________________________________________
+
+FIELD(master)
+tkmtgl		PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI		1
+tkmsts		ALLCAPS PROTECT			INPUTRI		2
+tkmnobuk	ALLCAPS PROTECT			INPUTRI		3
+tkmtype		ALLCAPS PROTECT			INPUTRI		4
+tkmlok1		ALLCAPS				INPUTRI		5
+lcabnama	ALLCAPS PROTECT QPROTECT	INPUTRI		6
+tkmcab		ALLCAPS PROTECT			INPUTRI		7
+tkmkode		ALLCAPS NOCHANGE 		INPUTRI		8
+tkmlok2		ALLCAPS				INPUTRI		9
+lcabnamatujuan	ALLCAPS PROTECT QPROTECT	INPUTRI		10
+tkmplg		ALLCAPS PROTECT			INPUTRI		11
+psinama		ALLCAPS PROTECT QPROTECT	INPUTRI		12
+tkmbuk2		ALLCAPS PROTECT			INPUTRI		13
+tkmstsapr	ALLCAPS PROTECT			INPUTRI		14
+
+lbutton1	TOMBOL				INPUTRI		51
+lbutton2	TOMBOL				INPUTRI		52
+lbutton3	TOMBOL				INPUTRI		53
+lbutton4	TOMBOL				INPUTRI		54
+
+tkmdata		ALLCAPS PROTECT QPROTECT	INPUTRI		101
+
+IMAGE(master2)
+/--------------------------------------\
+ /------------------------------------\
+  i.Tgl  __________  i.Sts  __________
+  i.NoBuk____________________________
+  i.Pil  ____________________________
+  i.Cab  __________  _________________
+  i.Dlr  __________  t.Fifo __________
+  t.UbhKe__________  _________________
+ \------------------------------------/
+\--------------------------------------/
+
+FIELD(master2)
+tkmtgl		PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI		1
+tkmsts		ALLCAPS PROTECT			INPUTRI		2
+tkmnobuk	ALLCAPS PROTECT			INPUTRI		3
+tkmtype		ALLCAPS PROTECT			INPUTRI		4
+tkmlok1		ALLCAPS				INPUTRI		5
+lcabnama	ALLCAPS PROTECT QPROTECT	INPUTRI		6
+tkmcab		ALLCAPS PROTECT	QPROTECT	INPUTRI		7
+tkmkode		ALLCAPS PROTECT 		INPUTRI		8
+tkmlok2		ALLCAPS				INPUTRI		9
+lcabnamatujuan	ALLCAPS PROTECT QPROTECT	INPUTRI		10
+
+CALCS()
+clgsg_ok	g_curcmd == 1 && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH")
+
+DEFAULTS(master)
+tkmdata		INIT		UBHCABFIFO
+tkmdata		INIT_QUERY	UBHCABFIFO
+tkmtgl		INIT		{g_tgltrn}
+tkmsts		INIT		OPEN
+tkmplg		INIT		{g_usrkode}
+tkmtype		INIT		UBHCABFIFO
+tkmbuk2		INIT		APR_UBHCABFIFO
+IF clgsg_ok tkmstsapr	INIT	OK
+
+lbutton1	INIT		1d.Info Cabang FIFO
+lbutton2	INIT		2d.Info Lokasi Gudang Motor Cabang
+lbutton3	INIT		3d.Koreksi
+lbutton4	INIT		4d.Isi Cab Prioritas
+
+lCABSTOK	INIT		CABSTOK
+lSTOK		INIT		STOK
+lSPM		INIT		SPM
+l413koreksi	INIT		413KOREKSI
+lPRIORITAS01	INIT		PRIORITAS01
+lsatu		INIT		1
+
+lnamafldsts	INIT		"tkmstsapr"
+lnamafldfak	INIT		"tkmnobuk"
+lnamaidxfak	INIT		"tkmbukidx"
+
+EDITS(master)
+/*e.MandatoryPil	tkmtype		MANDATORY*/
+e.MandatoryCab		tkmlok1		MANDATORY
+t.MandatoryTujuan	tkmlok2		MANDATORY
+
+e.ValidateCab		tkmlok1		VALIDATE cabstsushkod mcab1 scab {Pgv_INPG} {Pgv_dealer}
+/*e.ValidateDlr		tkmcab		VALIDATE cabstsushkod mcab1b 0 {Pgv_INPG} {Pgv_dealer}
+t.ValidateCabStok	tkmkode		VALIDATE cabstsushkod mcab1a 0 {Pgv_INPG} {Pgv_dealer}*/
+t.ValidateTujuan	tkmlok2		VALIDATE cabstspst2id mcab2 scab610 {Pgv_INPG} {Ptkmcab}
+e.ValidatePsi		tkmplg		VALIDATE psikodidx mpsi 0
+
+CALCS()
+cadd		g_curcmd == 1
+cnobuk		"FIFO" + STRIP(lcabkdfak) + THBLS(g_tgltrn)
+cjoincadstok	djoincadstok == 1
+
+MAP(mcab1)
+cabkode		tkmlok1		REPLACE
+cabnama		lcabnama	REPLACE
+cabpst2		lcabpst2	REPLACE
+cabpst2		tkmcab		REPLACE
+cabpos		lcabpos		REPLACE
+cabkdfak	lcabkdfak	REPLACE
+/*lcabstok	tkmkode		REPLACE_IF cjoincadstok*/
+cnobuk		tkmnobuk	DO_CALC_IF cadd
+
+/*MAP(mcab1a)
+cabkode		tkmkode		REPLACE
+cabnama		lcabnama_fifo1	REPLACE
+
+MAP(mcab1b)
+cabkode		tkmcab		REPLACE
+cabnama		lcabnama_dlr	REPLACE*/
+
+MAP(mcab2)
+cabkode		tkmlok2		REPLACE
+cabnama		lcabnamatujuan	REPLACE
+cabpst2		lcabpst2tujuan	REPLACE
+cabpos		lcabpostujuan	REPLACE
+
+MAP(mpsi)
+psikode		tkmplg		REPLACE
+psinama		psinama		REPLACE
+
+CALCS() 
+cbknPST		lcabpos != "PST"
+cbknDLR		lcabpst2 != tkmlok1
+cbknPST2	lcabpostujuan != "PST"
+cDLRsama	lcabpst2tujuan == lcabpst2
+cjointbdlokmtr	djointbdlokmotor == 1
+
+MAP(misicabfifo)
+lcabstok	tkmkode		REPLACE_IF cjoincadstok
+
+HOOKS(master)
+AFTER_INPUT	cur_field=tkmlok1	DO_MAP misicabfifo
+AFTER_INPUT	cur_keybd=EN		DO_MAP misicabfifo
+
+AFTER_INPUT	cur_field=tkmlok1	DO_MAP SHOW
+		IF cbknPST mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Awal Harus CAB / SCAB
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cbknPST mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Awal Harus CAB / SCAB
+
+AFTER_INPUT	cur_field=tkmlok1	DO_MAP SHOW
+		IF cbknDLR mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Awal Tidak Boleh Cabang Dealer
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cbknDLR mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Awal Tidak Boleh Cabang Dealer
+		
+AFTER_INPUT	cur_field=tkmlok2	DO_MAP SHOW
+		IF cbknPST2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Tujuan Harus CAB / SCAB
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cbknPST2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Tujuan Harus CAB / SCAB
+
+AFTER_INPUT	cur_field=tkmlok2	DO_MAP SHOW
+		IF cDLRsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Area Dealer Cabang Tujuan Harus Sama Dengan Area Dealer Cabang Awalnya
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cDLRsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Area Dealer Cabang Tujuan Harus Sama Dengan Area Dealer Cabang Awalnya
+		
+AFTER_INPUT	cur_field=tkmlok2	DO_MAP SHOW
+		IF cjointbdlokmtr mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Tujuan Tidak Punya Gudang Sendiri. Tidak bisa pindah ke Cabang ini
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cjointbdlokmtr mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Tujuan Tidak Punya Gudang Sendiri. Tidak bisa pindah ke Cabang ini
+
+IMAGE(transt)
+/--------------------------------------\
+ /------------------------------------\
+  t.CabStok    _____  ________________
+ \------------------------------------/
+\--------------------------------------/
+
+IMAGE(trans)
+
+FIELD(transt)
+cadarea		NOCHANGE		INPUTRI		1
+lcabnama_fifo2	PROTECT			INPUTRI		2
+
+EDITS(transt)
+t.ValidateCabStok	cadarea		VALIDATE cabstsushkod mcab3 0 {Pgv_INPG} {Pgv_dealer}
+
+MAP(mcab3)
+cabkode		cadarea		REPLACE
+cabnama		lcabnama_fifo2	REPLACE
+
+SUBFILE(trans)
+SFL_LINES(1)
+SFL_TITLE(transt)
+SFL_TARGET
+	cadcabdtidx	tkmlok1 lCABSTOK lSTOK lSTOK
+
+IMAGE(transat)
+/--------------------------------------\
+|______________________________________|
+|/----------------t---------t---------\|
+||i.Kode          |i.Cab    |t.CabFifo||
+
+|\----------------.---------.---------/|
+\--------------------------------------/
+
+IMAGE(transa)
+||________________|_________|_________||
+
+FIELD(transat)
+lbutton2d	TOMBOL		INPUTRI		1
+
+FIELD(transa)
+tbdkode		NOCHANGE	INPUTRI		1
+tbdlv2		PROTECT		INPUTRI		2
+tbdlv4		PROTECT		INPUTRI		3  
+
+DEFAULTS(transat)
+lbutton2d	INIT		"d.Lihat Stok Motor dr Kode Gudang"
+
+SUBFILE(transa)
+SFL_LINES(5)
+SFL_TITLE(transat)
+SFL_TARGET
+	tbddtmstidx	gv_dttabel gv_barang gv_lokmotor gv_BR tkmlok1
+
+IMAGE(transa2t)
+/--------------------------------------\
+|/------------------------------------\|
+||i.Oto   ____________________________||
+||i.Sts   ____________________________||
+||i.Cab   ____________________________||
+||i.Lok   ____________________________||
+||i.Norang____________________________||
+||i.Nosin ____________________________||
+||i.Hrg   ____________________________||
+||i.Sisa  __________ i.SisPrc ________||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(transa2)
+
+FIELD(transa2t)
+brdoto		PROTECT		INPUTRI		1
+brdsts		PROTECT		INPUTRI		2
+brdcab		PROTECT		INPUTRI		3
+brdlok		PROTECT		INPUTRI		4
+brdnorangka	PROTECT		INPUTRI		5
+brdnomesin	PROTECT		INPUTRI		6
+brdhrg		PROTECT		INPUTRI		7
+brdsisa		PROTECT		INPUTRI		8
+brdsisprc	PROTECT		INPUTRI		9
+
+SUBFILE(transa2)
+SFL_LINES(2)
+SFL_TITLE(transa2t)
+SFL_SORT_BY_FIELD brdoto
+SFL_SORT_UPDOWN UP
+SFL_TARGET
+	brdstslokkat	gv_INPG tbdkode lSPM
+
+IMAGE(transbt)
+/------------------------------------\
+|____________________________________|
+|/-----------------------------t----\|
+
+|\-----------------------------.----/|
+\------------------------------------/
+
+IMAGE(transb)
+||_____________________________|    ||
+
+FIELD(transbt)
+lbutton3d	TOMBOL		INPUTRI		1
+
+FIELD(transb)
+tmpket		NOCHANGE	INPUTRI		1
+
+DEFAULTS(transbt)
+lbutton3d	INIT		"d.Buka Detail"
+
+SUBFILE(transb)
+SFL_LINES(5)
+SFL_TITLE(transbt)
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+SFL_TARGET
+	tmpdatkodurt   gv_dttemplate l413koreksi
+	
+IMAGE(transb2)
+|______________________________________|
+
+FIELD(transb2)
+lenter3a	NOCHANGE	INPUTRI		1
+
+DEFAULTS(transb2)
+lenter3a	INIT		"Tekan ENTER untuk menghapus approval"
+
+CALCS()
+chpsapr		tkmsts == "OPEN" && djoinusr == 1 && (lusrgrp != "RI" && lusrgrp != "IT" && lusrgrp != "ADHDVH") && (tkmstsapr == "TL" || (tkmstsapr == BLANKS && djoinapr == 1) || ((tkmstsapr == "IN" || tkmstsapr == "OK") && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH"))) 
+
+SUBFILE(transb2)
+SFL_LINES(1)
+SFL_APP_TYPE
+SFL_COND chpsapr
+SFL_TARGET
+	tkmbukidx	tkmnobuk
+
+IMAGE(transb2g1)
+|______________________________________|
+
+FIELD(transb2g1)
+lenter3b	NOCHANGE	INPUTRI		1
+
+DEFAULTS(transb2g1)
+lenter3b	INIT		"Tekan ENTER untuk VOID Status"
+
+CALCS()
+cvoid		tkmsts == "OPEN" && (djoinusr == 1 && ((lusrgrp == "RI" || lusrgrp == "IT" || lusrgrp == "ADHDVH") || ((lusrgrp != "RI" && lusrgrp != "IT" && lusrgrp != "ADHDVH") && tkmstsapr == BLANKS)))
+
+SUBFILE(transb2g1)
+SFL_LINES(1)
+SFL_APP_TYPE
+SFL_COND cvoid
+SFL_TARGET
+	tkmbukidx	tkmnobuk
+
+IMAGE(transct)
+/-------t-------------t-------------\
+|i.Urt  |i.Type       |t.CabPrior   |
+\-------.-------------.-------------/
+
+IMAGE(transc)
+|_______|_____________|_____________|
+
+FIELD(transc)
+tkdjml			NOCHANGE		INPUTRI		1
+tkdnoll			PROTECT			INPUTRI		2
+tkdjenis		ALLCAPS			INPUTRI		3
+
+EDITS(transc)
+e.MandatoryUrt		tkdjml		MAND_PLUS
+t.MandatoryPrior	tkdjenis	MANDATORY
+t.ValidatePrior		tkdjenis	VALIDATE cabstspst2id mcab_prior scab610 {Pgv_INPG} {Ptkmcab}
+
+MAP(mcab_prior)
+cabkode		tkdjenis	REPLACE
+cabkode		ltkdjenis	REPLACE
+cabnama		lcabnama_prior	REPLACE
+cabpst2		lcabpst2_prior	REPLACE
+cabpos		lcabpos_prior	REPLACE
+
+CALCS()
+cgrupdlrsama	((tkdjenis != BLANKS && lcabpst2_prior == lcabpst2) || tkdjenis == BLANKS)
+cjointkd04	djointkd04 == 1
+cpriorv1	"PRIORITAS0" + FLD_TO_STRING(tkdnourt)
+cpriorv2	"PRIORITAS" + FLD_TO_STRING(tkdnourt)
+curutv1		tkdjml >= 1 && tkdjml <= 9
+curutv2		tkdjml >= 10 && tkdjml <= 99
+cpriordup01	(((g_curcmd == 1 || (g_curcmd == 2 && ~tkdnoll != tkdnoll)) && djointkd01 == 0) || (g_curcmd == 2 && ~tkdnoll == tkdnoll))
+cpriordup02	(((g_curcmd == 1 || (g_curcmd == 2 && ~tkdjenis != tkdjenis)) && djointkd02 == 0) || (g_curcmd == 2 && ~tkdjenis == tkdjenis))
+cpriordup03	((g_curcmd == 1 && djointkd03 == 0 && tkdjml == 1) || (g_curcmd == 1 && djointkd03 == 1) || (g_curcmd != 1))
+cpriordup04	(((g_curcmd == 1 || (g_curcmd == 2 && ~tkdjml != tkdjml)) && tkdjml == ltkdjml + 1) || (g_curcmd == 2 && ~tkdjml == tkdjml))
+ccabstok01	(
+		 ((g_curcmd == 1 || (g_curcmd == 2 && ~tkdjenis != tkdjenis)) && tkdjenis != tkmlok2 && djoincadstok01 == 1) || 
+		 ((g_curcmd == 1 || (g_curcmd == 2 && ~tkdjenis != tkdjenis)) && tkdjenis == tkmlok2) || 
+		 (g_curcmd == 2 && ~tkdjenis == tkdjenis)
+		)
+ctkdjml		ltkdjml + 1
+curutprior01	g_curcmd == 1 && djointkd04 == 0
+curutprior02	g_curcmd == 1 && djointkd04 == 1
+cnominal0	0
+cnominal1	1
+
+MAP(misiprior)
+tkdjml		tkdnourt	REPLACE
+cpriorv1	tkdnoll		DO_CALC_IF curutv1
+cpriorv2	tkdnoll		DO_CALC_IF curutv2
+
+MAP(murutprior)
+cnominal0	ltkdjml		DO_CALC
+ltkdjml		ltkdjml		REPLACE_IF cjointkd04
+cnominal1	tkdjml		DO_CALC_IF curutprior01
+ctkdjml		tkdjml		DO_CALC_IF curutprior02
+
+MAP(mtkdjenis)
+tkdjenis	ltkdjenis	REPLACE
+
+HOOKS(transc)
+BEFORE_INPUT	cur_field=tkdjml	DO_MAP murutprior
+AFTER_INPUT	cur_field=tkdjml	DO_MAP misiprior
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP mtkdjenis
+AFTER_INPUT	cur_keybd=EN		DO_MAP misiprior
+AFTER_INPUT	cur_keybd=EN		DO_MAP mtkdjenis
+AFTER_INPUT	cur_field=tkdjml	DO_MAP SHOW
+		IF cpriordup01 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Nomor Urut Prioritas ini Sudah terisi
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup01 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Nomor Urut Prioritas ini Sudah terisi
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+		IF cgrupdlrsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Dealer Harus sama dengan Cabang Awalnya
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cgrupdlrsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Dealer Harus sama dengan Cabang Awalnya
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+		IF cpriordup02 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Prioritas ini Sudah Pernah Diinput
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup02 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang Prioritas ini Sudah Pernah Diinput
+AFTER_INPUT	cur_field=tkdjml	DO_MAP SHOW
+		IF cpriordup03 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Isi Dulu Urutan Pertama Cabang Prioritas
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup03 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Isi Dulu Urutan Pertama Cabang Prioritas
+AFTER_INPUT	cur_field=tkdjml	DO_MAP SHOW
+		IF cpriordup04 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Isi Nomor Urut secara berurutan dari nomor terakhir ditambah satu
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpriordup04 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Isi Nomor Urut secara berurutan dari nomor terakhir ditambah satu
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+		IF ccabstok01 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang ini tidak menjadi cabang stok sendiri
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ccabstok01 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Cabang ini tidak menjadi cabang stok sendiri
+		
+SUBFILE(transc)
+SFL_LINES(10)
+SFL_TITLE(transct)
+SFL_TARGET
+	tkddatbukll	tkmdata tkmnobuk
+SFL_MAP
+tkmdata		tkddata		REPLACE
+tkmnobuk	tkdnobuk	REPLACE
+
+/********** Calculation **********/
+MAP(maddsub)
+tkmnobuk	tkmnobuk	REPLACE
+
+MAP(mupdtkmhpsapr)
+cblanks		tkmstsapr	DO_CALC
+
+MAP(mupdtkmvoid)
+gv_VOID		tkmsts		REPLACE
+
+CALCS()
+cjoinapr	djoinapr == 1
+
+SPCALCS(spaddsub)
+DO_LIB ap_dbclc(DNAME daddsub,DCOMMAND ADD_SUB,DFILE tkm,DLTARGET tkmbukidx tkmnobuk,DLLEN {stspjbuk},DMAP maddsub);
+
+SPCALCS(sphpsapr)
+DO_LIB ap_dbclc(DNAME dupdtkmhpsapr,DCOMMAND UPDATE,DTARGET tkmbukidx tkmnobuk,DMAP mupdtkmhpsapr);
+DO_LIB_IF cjoinapr ap_dbclc(DNAME ddelapr,DCOMMAND DELETE_RANGE,DTARGET aprbukkeurt tkmnobuk);
+
+SPCALCS(spvoid)
+DO_LIB ap_dbclc(DNAME dupdtkmvoid,DCOMMAND UPDATE,DTARGET tkmbukidx tkmnobuk,DMAP mupdtkmvoid);
+
+POSTING(master)
+PST_SUB_ADDCMD spaddsub
+
+POSTING(transb2)
+PST_COMMAND sphpsapr
+
+POSTING(transb2g1)
+PST_COMMAND spvoid
+
+CALCS()
+chanya_adhho	(g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHSPV" || g_grpnam == "ADHHO")
+copenonly	tkmsts == "OPEN"
+
+PERMIT(master)
+PMT_ADD_COND	chanya_adhho
+PMT_ADD_MSG	Yang Boleh Tambah adalah Divisi ADH HO
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(trans)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(transa)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(transa2)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(transb)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(transc)
+PMT_ADD_COND	copenonly
+PMT_UPDALL_COND	copenonly
+PMT_DEL_COND	copenonly
+
+END_SCREEN

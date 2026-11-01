@@ -1,0 +1,82 @@
+
+IMAGE(tmptranst)
+/----------------------------------\
+|   t.uploadfotoprosesjualmokas    |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|t.NoBukx   ________________  ___  |
+|t.TglFt    _____________________  |
+|t.AccAM    _______                |
+|                          ______  |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk	PROTECT				INPUTRI		1
+tkdrek		PROTECT				INPUTRI		2
+tkdtgl		PROTECT NOLIMIT {DD-MM-YY}	INPUTRI		3
+tkdjwbstr1      NOCHANGE                        INPUTRI         4
+lenter		NOCHANGE			INPUTRI		5
+
+DEFAULTS(tmptranst)
+
+tkddata		INIT		UPLFTMOKAS
+tkdnoll		INIT		UPLJUALMKS 
+tkdnourt	INIT		1
+lenter		INIT		ENTER
+lUPLFTMOKAS	INIT		UPLFTMOKAS
+lUPLJUALMKS    	INIT		UPLJUALMKS 
+
+tkdjwbstr1      DFALT_SCAN_BLANKS       ACC  ""
+                                        TACC ""
+
+EDITS(tmptranst)
+t.Mandatory tkdjwbstr1  MANDATORY_IF cstsbum
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF cbknstsbum
+
+CALCS()
+chapustmptrans  g_usrkode==BLANKS || g_grpnam=="RI"
+cftjualmksOPEN  tlmsts == "OPEN" && djointkdftjualmks==0 && tlmdvs != "M4W"
+cftjualmksINPG  tlmsts == "INPG" && (tlmsts2=="AM" || tlmsts2=="CLHD") && djointkdftjualmks==1 && tlmdvs != "M4W" && (g_grpnam=="ARAM" || g_grpnam=="ARAMZ1Z2" || g_grpnam=="ARAMZ4Z6" || g_grpnam=="REMAM" || g_grpnam=="ARAM" || g_grpnam=="COLLHEAD" )
+MAP(mupdtkduplfttmptrans)
+cOK		tkdrek		DO_CALC
+g_tgltrn	tkdtgl		REPLACE
+DBCALCS(dupdtkduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx tkdprm
+        DBC_MAP         mupdtkduplfttmptrans
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     tkdnobuk tkdnoll
+SFL_UPL_DELCOND chapustmptrans
+SFL_UPLFLD_DBCALCS dupdtkduplfttmptrans
+SFL_UPL_DIRFLD tlmtgl
+SFL_SHOW_NEXT
+SFL_TARGET
+tkddatbukll   lUPLFTMOKAS tlmnobuk lUPLJUALMKS    
+
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+lUPLFTMOKAS	tkddata		REPLACE
+lUPLJUALMKS	tkdnoll		REPLACE
+
+PERMIT(tmptrans)
+  PMT_ADD_COND    cftjualmksOPEN
+  PMT_UPDALL_COND cftjualmksINPG
+  PMT_DEL_COND    c0
+
+

@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+ltombolacc	STRING  21
+ltombolcek	STRING  21
+lpsmibu		STRING  21
+lpsmnamaibu	STRING  21
+lLIHATIBU	STRING  11
+lstslihat	STRING  11
+
+MAP(mdjoinsvilihatnama)
+svists	lstslihat	REPLACE
+
+DBCALCS(djoinsvilihatnama)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatkodtyp    lLIHATIBU ftmtype2 lLIHATIBU
+	DBC_MAP		mdjoinsvilihatnama
+MAP(mdjoinpsmlihatnama)
+psmibu  lpsmnamaibu     REPLACE
+
+DBCALCS(djoinpsmlihatnama)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx   ftmtype2 
+        DBC_MAP         mdjoinpsmlihatnama
+
+CALCS()
+cbolehacc       djoinsvilihatnama==0 && g_grpnam=="B.M4WADHDVH" || g_grpnam=="RI" 
+csudahacc       djoinsvilihatnama==1
+cbisacek	djoinsvilihatnama==1 && lstslihat=="OPEN"
+cpsmibukosong	djoinpsmlihatnama==1 && lpsmnamaibu==BLANKS &&  (g_grpnam=="B.M4WADHDVH" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD")
+chanyaadh	ftmtype2!=BLANKS && (g_grpnam=="B.M4WADHDVH" || g_grpnam=="B.M4WADH" || g_grpnam=="RI" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="IT")
+ckosong		djoinpsmlihatnama==1 && lpsmnamaibu!=BLANKS && g_curcmd==0
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|              __________    ________ |
+|t.NamaIbu   : ______________________ |
+|				      |
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ltombolacc      TOMBOL          INPUTRI 2  /* KTP */
+ltombolcek      TOMBOL          INPUTRI 3  /* Nama */
+lpsmibu         ALLCAPS         INPUTRI 1  /* NO HP */
+
+DEFAULT(tmptranst)
+ltombolacc      INIT            ACCCEK
+ltombolcek      INIT            CEK
+IF ckosong	lpsmibu		INIT		 "********"
+lLIHATIBU	INIT		LIHATIBU
+
+MAP(maddlihatnamaibu)
+lLIHATIBU       svidata         REPLACE
+ftmtype2     	svikode         REPLACE
+lLIHATIBU     	svitype         REPLACE
+gv_OPEN	        svists          REPLACE
+
+MAP(maupdlihatnamaibu)
+gv_INPG		svists          REPLACE 
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mnamatampil)
+psmibu	        lpsmibu		REPLACE
+DEBUG	        ldum    ldum    REPLACE
+
+MAP(maupdpsmibu)
+lpsmibu         psmibu          REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+SPCALCS(sacclihatnamaibu1)
+DO_LIB_IF  csudahacc   	    ap_dbclc(DNAME ddellihatnamaibu, DCOMMAND DELETE_RANGE, DTARGET svidatkodtyp lLIHATIBU ftmtype2 lLIHATIBU gv_INPG);
+DO_LIB_IF  cbolehacc        ap_dbclc(DNAME daddlihatnamaibu,DCOMMAND ADD,DFILE svi,DMAP maddlihatnamaibu);
+
+SPCALCS(sacclihatnamaibu2)
+DO_LIB_IF  csudahacc        ap_dbclc(DNAME dupdlihatnamaibu,DCOMMAND UPDATE,DTARGET svidatkodtyp lLIHATIBU ftmtype2 lLIHATIBU gv_OPEN,DMAP maupdlihatnamaibu);
+DO_LIB			    ap_dbclc(DNAME dmapnamatampil, DCOMMAND MAPMAP, DMAP mnamatampil);
+
+SPCALCS(supdnamaibu)
+DO_LIB_IF  cpsmibukosong    ap_dbclc(DNAME dupdpsmibu,DCOMMAND UPDATE,DTARGET psmktpidx ftmtype2,DMAP maupdpsmibu);
+
+HOOKS(tmptranst)
+CLICKED                 cur_field=ltombolacc      DO_SPCALCS sacclihatnamaibu1
+CLICKED                 cur_field=ltombolcek      DO_SPCALCS  
+			IF cbisacek sacclihatnamaibu2
+CLICKED			DO_MAP SHOW
+                        IF cbisacek mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.ACCDULUOLEHB.M4WADHDVH
+AFTER_INPUT             cur_keybd=EN		DO_SPCALCS supdnamaibu
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND chanyaadh
+SFL_TARGET
+psmktpidx ftmtype2
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cpsmibukosong
+PMT_DEL_COND    c0
+

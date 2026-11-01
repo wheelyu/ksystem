@@ -1,0 +1,69 @@
+LOCAL
+PGM_FIELDS
+lsisatgtspkrkp		DFLOAT	8
+lsisatgtcallrkp		DFLOAT	8
+lpersencallrkp		DFLOAT	8
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------------------------\
+|t.Namactrho         	 	        t.Spk                   t.CallTerhubung        				   |
+|----------------------------t-------t--------t-----------t-------t--------t-----------t---------t--------t--------|
+|t.Namactrho	             | t.Tgt | t.Akum | t.SisaTgt | t.Tgt | t.Akum | t.SisaTgt | t.PCall | t.Pkms | t.Jual |
+\----------------------------.-------.--------.-----------.-------.--------.-----------.---------.--------.--------/
+
+IMAGE(tmptrans)
+|____________________________|_______|________|___________|_______|________|___________|_________|________|________|__|
+
+FIELD(tmptrans)
+psinama			PROTECT QPROTECT	INPUTRI		1
+aktjml			PROTECT QPROTECT	INPUTRI		2
+akttotal		PROTECT QPROTECT	INPUTRI		3
+lsisatgtspkrkp		PROTECT QPROTECT	INPUTRI		4
+aktjml2			PROTECT QPROTECT	INPUTRI		5
+akthrg			PROTECT QPROTECT	INPUTRI		6
+lsisatgtcallrkp		PROTECT QPROTECT	INPUTRI		7
+lpersencallrkp		PROTECT QPROTECT	INPUTRI		8
+aktdf1			PROTECT	QPROTECT	INPUTRI		9
+aktdf2			PROTECT	QPROTECT	INPUTRI		10
+aktlok			PROTECT	QPROTECT UNSEEN	INPUTRI		11
+
+EDITS(tmptrans)
+e.Validate	aktlok		VALIDATE psikodidx mpsirekap 0
+
+CALCS()
+csisatgtspkrkp		aktjml - akttotal
+csisatgtspkrkp_ok	akttotal < aktjml
+csisatgtcallrkp		aktjml2	- akthrg
+csisatgtcallrkp_ok	akthrg < aktjml2
+cpersencallrkp		akthrg / akttotal * 100
+cjkactspkrkplbh0	akttotal > 0
+
+MAP(mpsirekap)
+psikode		aktlok		REPLACE
+c0		lsisatgtspkrkp	DO_CALC
+csisatgtspkrkp	lsisatgtspkrkp	DO_CALC_IF csisatgtspkrkp_ok
+c0		lsisatgtcallrkp	DO_CALC
+csisatgtcallrkp	lsisatgtcallrkp	DO_CALC_IF csisatgtcallrkp_ok
+c0		lpersencallrkp	DO_CALC
+cpersencallrkp	lpersencallrkp	DO_CALC_IF cjkactspkrkplbh0
+
+CALCS()
+crevakt		(tkmkode != "SDM" && tkmkode != BLANKS)
+cselrev1	(
+                (tkmkode == "ALL" && aktkode2 != "SUBHEAD1" && aktkode2 != "SUBHEAD2" && 
+                 aktkode2 != "SPV1" && aktkode2 != "SPV2" && aktkode2 != "SPV3" && aktkode2 != "SPV4" && aktkode2 != "SPV5" && aktkode2 != "SPV6" && aktkode2 != "SPV7" && aktkode2 != "SPV8") ||
+                (tkmkode == "NAS" && (aktkode2 == "SUBHEAD1" || aktkode2 == "SUBHEAD2")) ||
+                ((tkmkode == "SUBHEAD1" || tkmkode == "SUBHEAD2") && aktbrg == tkmplg && 
+                 (aktkode2 == "SPV1" || aktkode2 == "SPV2" || aktkode2 == "SPV3" || aktkode2 == "SPV4" || aktkode2 == "SPV5" || aktkode2 == "SPV6" || aktkode2 == "SPV7" || aktkode2 == "SPV8")) ||
+                ((tkmkode == "SPV1" || tkmkode == "SPV2" || tkmkode == "SPV3" || tkmkode == "SPV4" || tkmkode == "SPV5" || tkmkode == "SPV6" || tkmkode == "SPV7" || tkmkode == "SPV8") && 
+                 aktkode2 == tkmplg)
+                ) && akttype2 == "1"
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT cselrev1
+SFL_COND crevakt
+SFL_TARGET
+	akttgltypidx	tkmtgl tkmdata lRVWKLIKM2W21
+

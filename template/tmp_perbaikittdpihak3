@@ -1,0 +1,88 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk:____________________    ||
+||t.Nama :____________________    ||
+||i.Ket  :________________________||
+||i.GPS  :__._______ ___._______ _||
+||        ________________        ||
+|\--------------------------------/|
+|/--SIGNATURE---------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode		PROTECT                 INPUTRI         1
+aktlok		ALLCAPS			INPUTRI		2
+aktket 		PROTECT                 INPUTRI         2
+llat                    PROTECT QPROTECT                INPUTRI         6
+llon                    PROTECT QPROTECT                INPUTRI         7
+
+lgps                    GPSINFO {llat,llon}             NONE            9
+luplokokttd             TOMBOL                  INPUTRI         14
+
+
+MAP(mupdttdpihak3)
+g_tgltrn        akttgl2         REPLACE
+cSYSTIME        aktjam          DO_CALC
+llon            akttotal        REPLACE
+llat            aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+cBLANKS		aktbukoto	DO_CALC
+
+DBCALCS(dupdttdpihak3)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdpihak3
+
+MAP(mupdttdpihak3hps)
+cBLANKS         akttgl2         DO_CALC
+cBLANKS         aktjam          DO_CALC
+cBLANKS         akttotal        DO_CALC
+cBLANKS         aktjml          DO_CALC
+cBLANKS         aktcab          DO_CALC
+
+DBCALCS(dupdttdpihak3hps)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdpihak3hps
+
+CALCS()
+csudahttdulang		aktbukoto==BLANKS
+
+MAP(mupdabktgjawabttd)
+gv_CLSD         abksts          REPLACE_IF cperbaikanttd
+
+DBCALCS(dupdabktgjawabttd)
+        DBC_COMMAND     UPDATE_RANGE
+        DBC_TARGET      abkdatbukidx   lKUNCIABSEN btmnobuk
+        DBC_MAP         mupdabktgjawabttd
+
+SPCALCS(spcalttdok)
+dupdabktgjawabttd
+daddabkamttd
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luplokokttd       DO_SPCALCS IF csudahttdulang spcalttdok 
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND   chanyaliat3
+SFL_SGNFLD      aktbrg
+SFL_UPL_DIRFLD btmtgl
+SFL_SGNFLD_DBCALCS dupdttdpihak3
+SFL_SGNFLD_DELDBCALCS dupdttdpihak3hps
+SFL_TARGET
+	aktkodtypidx	btmnobuk gv_datasurvey   lttdpihak3
+

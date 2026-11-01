@@ -1,0 +1,82 @@
+LOCAL
+PGM_FIELDS
+lVOIDSTS	STRING	21
+
+
+IMAGE(tmptranst)
+/---------------------------------\
+|/-------------------------------\|
+||t.NipInp  :____________________||
+||t.NoBuk   :____________________||
+||t.Sts     :____________________||
+||t.BtlY    :____________________||
+||t.Ket                          ||
+||:                              ||
+||:                              ||
+||:______________________________||
+||                         ______||
+|\-------------------------------/|
+\---------------------------------/
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+tldplg          PROTECT         INPUTRI 1
+tldnobuk        PROTECT         INPUTRI 2
+tldtydis	PROTECT		INPUTRI 3
+tlddk           NOCHANGE        INPUTRI 5 
+
+tldket          TEXTAREA        INPUTRI 6
+lenter          NOCHANGE        INPUTRI 7
+
+
+DEFAULTS(tmptranst)
+tldplg		INIT		{g_usrkode}
+tldlok2         INIT            {g_grpnam}
+lenter          INIT            ENTER
+tldtydis        INIT            OPEN
+tlddata         INIT            FRFKTPIU
+lVOIDSTS	INIT		VOIDSTS
+tlddk           DFALT_SCAN      Y
+
+EDITS(tmptranst)
+e.Mandatory     tlddk       MANDATORY
+e.Mandatory     tldket      MANDATORY
+
+CALCS()
+cusr2a2         tlddk=="Y"
+
+MAP(mbuktmptrans)
+tlmnobuk        tldnobuk        REPLACE
+
+MAP(misitmptranst)
+gv_CLSD         tldtydis        REPLACE_IF cusr2a2
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldtydis    DO_MAP SHOW mbuktmptrans
+AFTER_INPUT     cur_field=tldtydis    DO_MAP SHOW misitmptranst
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldbukbrglok   tlmnobuk lVOIDSTS 
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+lVOIDSTS	tldbrg		REPLACE
+
+CALCS()
+ctmptrans       tldtydis==gv_CLSD
+
+MAP(mupdtlmtransa2g1)
+gv_VOID	        tlmsts          REPLACE
+
+SPCALCS(spaddtmptrans)
+DO_LIB_IF ctmptrans      ap_dbclc(DNAME dupdtlmtmptrans,DCOMMAND UPDATE,DTARGET tlmbukidx tldnobuk,DMAP mupdtlmtransa2g1);
+
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtmptrans
+

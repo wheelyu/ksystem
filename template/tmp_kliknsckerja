@@ -1,0 +1,161 @@
+LOCAL
+PGM_FIELDS
+linds		STRING		21
+lketinds	STRING		41
+lsubinds	STRING		21
+lsektor		STRING		21
+lpsdkec		STRING		21
+lpsdkel		STRING		21
+lketkerja	STRING		61
+lDTLEASING	STRING		11
+lDTLEASING21	STRING		21
+lSPK21		STRING		21
+lJABAGEN	STRING		11
+lenter		STRING		61
+lcab		STRING		11
+ljabagen	STRING		21
+
+MAP(mjoinaktkeckel)
+aktlok		lpsdkec		REPLACE
+aktcab		lpsdkel		REPLACE
+
+DBCALCS(djoinaktkeckel)
+	DBC_COMMAND    	JOIN
+	DBC_TARGET     	aktkodtypidx psdstr1 lDTLEASING lDTLEASING21
+	DBC_MAP        	mjoinaktkeckel
+
+DBCALCS(djoinpsdjabagn)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmkod  lJABAGEN psmkode psmkode2
+
+IMAGE(tmptranst)
+/------------------------------------\
+|t.Kota	             _______________ |
+|t.Industri          _____ _________ |
+|t.SubIndustri       _____ _________ |
+|t.Sektor   	     _____ _________ |
+|t.NamaPerusahaan    _______________ |
+|t.CabangPerusahaan  _______________ |
+|t.Kecamatan         _______________ |
+|t.Kelurahan         _______________ |
+|t.JabatanAgen       ____ __________ |
+|t.enter             ____	     |
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr2         ALLCAPS		INPUTRI 1
+linds		ALLCAPS		INPUTRI 2
+lketinds	PROTECT		INPUTRI 3
+psdstr5		ALLCAPS		INPUTRI 4
+lsubinds	PROTECT		INPUTRI 5
+psdstr4		ALLCAPS		INPUTRI 6
+lsektor		PROTECT		INPUTRI 7
+psdstr3		ALLCAPS		INPUTRI 8
+psdstr1		ALLCAPS		INPUTRI 9
+
+lpsdkec		PROTECT         INPUTRI 10
+lpsdkel         PROTECT		INPUTRI 11
+
+ljabagen	ALLCAPS		INPUTRI 12
+lketkerja	PROTECT SCROLL	INPUTRI 18
+lenter		NOCHANGE	INPUTRI 20
+
+DEFAULT(tmptranst)
+lDTLEASING	INIT		DTLEASING
+lDTLEASING21	INIT		DTLEASING
+lSPK21		INIT		SPK
+lKLIKNSC	INIT		KLIKNSC
+lJABAGEN	INIT		JABAGEN
+
+CALCS()
+cdjoinaktkeckel1	djoinaktkeckel == 1
+
+MAP(mkota)
+lJABAGEN	psddata		REPLACE
+tblkode         psdstr2         REPLACE
+psmkode2        psdkode		REPLACE
+psmkode		psdpsmkode	REPLACE
+psmnama		psdket		REPLACE
+
+MAP(midstr)
+dtmkode         linds		REPLACE
+linds		psdket2		REPLACE
+dtmket          lketinds        REPLACE
+
+MAP(msubinds)
+tblkode		psdstr5		REPLACE
+tblket		lsubinds	REPLACE
+
+MAP(msektor)
+tbdkode		psdstr4         REPLACE
+tbdket		lsektor         REPLACE
+
+MAP(mkodeperusahaan)
+tbtkode         psdstr3         REPLACE
+
+MAP(mtbe)
+tbekode		psdstr1		REPLACE
+lpsdkec		lpsdkec		REPLACE_IF cdjoinaktkeckel1
+lpsdkel		lpsdkel		REPLACE_IF cdjoinaktkeckel1
+psmcab		lcab		REPLACE
+lcab		psdtype		REPLACE
+psdtype2	ljabagen	REPLACE
+psdket2		linds		REPLACE
+
+MAP(mtbdjab)
+tbdkode		ljabagen	REPLACE
+ljabagen	psdtype2	REPLACE
+tbdket		lketkerja	REPLACE
+
+EDITS(tmptranst)
+e.Mandatory			linds		MANDATORY
+t.KotaWajibDiisi		psdstr2	        MANDATORY
+t.SubIndustriWajibDiisi   	psdstr5         MANDATORY
+t.SektorWajibDiisi        	psdstr4         MANDATORY
+t.NamaPerusahaanWajibDiisi 	psdstr3         MANDATORY
+e.Mandatory			psdstr1		MANDATORY
+e.Mandatory			ljabagen	MANDATORY
+
+/* t.JabatanWajibDiisi	ljabagen        MANDATORY
+t.KodeKerjaWajibDiisi  	lkodekerja      MANDATORY
+t.PekerjaanWajibDiisi  	lkerja          MANDATORY
+t.KetKerjaWajibDiisi   	lketkerja       MANDATORY
+t.SubKerjaWajibDiisi   	lsubkerja       MANDATORY
+t.KetSubKerjaWajibDiisi	lketsubkerja    MANDATORY
+t.ValidasiWajibDiisi   	psdtot7         MANDATORY
+t.YTWajibDiisi         	lYT             MANDATORY */
+
+t.ValidateKota		psdstr2		VALIDATE tbldtkodidx mkota stblKota {Pgv_dtkota}
+t.ValidateCabPer	psdstr1		VALIDATE tbedattypkod mtbe stbe {PlDTLEASING} {Ppsdstr2} {Ppsdstr5} {Ppsdstr4} {Ppsdstr3}
+t.ValidateIds    	linds		VALIDATE dtmdtkodidx midstr sdtm {PlDTLEASING}
+t.ValidateSub    	psdstr5   	VALIDATE tbldtdtmkod msubinds stbl {PlDTLEASING} {Plinds}
+t.ValidateSek    	psdstr4 	VALIDATE tbddatkodidx msektor stbd {PlDTLEASING} {Plinds} {Ppsdstr5}
+t.ValidateKodePer	psdstr3		VALIDATE tbtdattypkod mkodeperusahaan stbt {PlDTLEASING} {Ppsdstr2} {Plinds} {Ppsdstr5} {Ppsdstr4}
+
+e.ValidateJabatan    	ljabagen      	VALIDATE tbddatkodidx mtbdjab stbdapk {Pgv_dttabel} {PlSPK21} {Ppsdstr5}
+
+CALCS()
+csyaratadd      djoinpsdjabagn != 1 && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam=="KLIKNSCM2WHEAD" || g_grpnam == "SPVKLIKNSC")
+csyaratupd      djoinpsdjabagn == 1 && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam=="KLIKNSCM2WHEAD" || g_grpnam == "SPVKLIKNSC")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET	psddatpsmkod	lJABAGEN psmkode psmkode2
+
+/* MAP(mupdabkmitra)
+gv_CLSD         abksts          REPLACE */
+
+/* SPCALCS(spupd)
+        DO_LIB_IF       cjoinabkmitra   ap_dbclc(DNAME dupdabkmitra,DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN psmkode2,DMAP mupdabkmitra, DBC_COND ckerjamitra);
+	DO_LIB_IF 	cjoinabksubkerja ap_dbclc(DNAME dupdabksubkerja, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN psmkode2, DMAP mupdabkmitra, DBC_COND csubkerja);
+
+POSTING(tmptrans)
+        PST_UPDCMD      spupd */
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	csyaratadd
+	PMT_UPDALL_COND	csyaratupd
+	PMT_DEL_COND	c0

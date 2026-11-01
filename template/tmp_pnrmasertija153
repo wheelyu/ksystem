@@ -1,0 +1,87 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+| t.PenerimaSertiKerja                   |
+|/--------------------------------------\|
+||                     t.TglMengerjakan ||
+||                          ___________ ||
+|| spasi                                ||
+|| t.NipPenerima _____________          ||
+|| t.NmaPenerima __________________     ||
+||                             _____    ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1             PROTECT {DD-MM-YY}              INPUTRI 1
+psdstr1             ALLCAPS                         INPUTRI 2
+lnmapnrma           PROTECT                         INPUTRI 3
+lenter     			NOCHANGE SCROLL	               	INPUTRI 4
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+psdtgl1     INIT_ADD	{g_tgltrn}
+
+CALCS()
+cnoER       g_grpnam!="HRDSPV" && g_usrkode!="2130879" && g_usrkode!="1604848" && g_usrkode!="2492032"
+chrdER      g_grpnam=="HRDSPV" || g_usrkode=="2130879" || g_usrkode=="2492032" || g_usrkode=="1604848"
+
+EDITS(tmptranst)
+e.Mandatory   psdstr1   MANDATORY
+e.ValidatePsi psdstr1   VALIDATE_IF chrdER psikodidx mpsi153  0
+t.Validatepsisrtj    psdstr1   VALIDATE_IF cnoER psistsdepkod mpsi153 spsiCab153 {Pgv_INPG} {Pmtsnobbm}
+
+/*SCAN PSI 153*/
+MAP(mpsi153)
+psikode         psdstr1         REPLACE
+psicabskr	    lcabawlsertija	REPLACE
+psinama         lnmapnrma       REPLACE
+psijabatan      ljabsertija     REPLACE
+/*-------*/
+
+HOOKS(tmptranst)
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW misitype
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW misipsd
+
+/*AFTER_INPUT	        cur_field=psdstr1	DO_MAP SHOW
+		            IF cnipsama mdum
+		            ELSE HKCURSOR STAY
+		            HKMSG t.TdkBlhInptNipSama
+
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW
+                    IF cnipsama mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG t.TdkBlhInptNipSama*/
+
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW     
+                    IF clevelSertija	mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Level Jabatan Terlalu Kecil
+
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW
+                    IF clevelSertija    mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Level Jabatan Terlalu Kecil
+
+/*AFTER_INPUT         cur_field=psdstr1       DO_MAP SHOW
+                    IF cniptdksamaform  mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG t.NipHrsSamaDgnFormSrtj*/
+
+CALCS()
+cPenSert            tmpkode == "PENSERTIJA"
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD psdnourt
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cPenSert
+SFL_TARGET_IF   cMTSKRY    psddatpsmkod   lPENSRTJ    mtsnobuk                    
+SFL_TARGET_IF   cPRMSIKRY  psddatpsmkod   lPENSRTJ    hrmnobuk
+SFL_TARGET_IF   cRSGNKRY   psddatpsmkod   lPENSRTJ    hrmnobuk                    
+
+SFL_MAP	
+lPENSRTJ        psddata        REPLACE
+lnobuksertija   psdpsmkode     REPLACE
+lnipsertija     psdkode        REPLACE

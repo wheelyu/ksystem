@@ -1,0 +1,139 @@
+IMAGE(tmptranst)
+/------t-----------t-----------------------t-----t-----t-----t-----t----------------------------\
+| t.No | t.Gedung  | t.NamaGedung          |t.xxx|t.xxx|t.xxx|t.xxx| t.IpAddress                |
+\------.-----------.-----------------------.-----.-----.-----.-----.----------------------------/
+
+IMAGE(tmptrans)
+|______|___________|_______________________| ___ | ___ | ___ | ___ |____________________________|
+
+FIELD(tmptrans)
+  tbtnourt          NOCHANGE             INPUTRI            1
+  tbtcab            PROTECT              INPUTRI            1
+  tbtket            PROTECT              INPUTRI            2
+  tbtkat            ALLCAPS              INPUTRI            3
+  tbtusrcrt         ALLCAPS              INPUTRI            4
+  tbtkolek          ALLCAPS              INPUTRI            4
+  tbtscr            ALLCAPS              INPUTRI            4
+  tbtkode2          PROTECT              INPUTRI            4
+
+DEFAULTS(tmptrans)
+tbttype		INIT		IPGEDUNG
+
+EDITS(tmptrans)
+e.Mandatory	tbtkat		MANDATORY
+e.Mandatory	tbtusrcrt	MANDATORY
+e.Mandatory	tbtkolek	MANDATORY
+
+MAP(mjointbtip)
+tbtnourt	ltbtnourt	REPLACE
+DBCALCS(djointbtip)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tbtdaturtidx tbddata tbddtmkode tbdtblkode tbdkode lIPGEDUNG
+	DBC_MAP		mjointbtip
+
+CALCS()
+/*cdetip		tmpkode=="TMPIP"*/
+cdjointbtip0	djointbtip==0
+cdjointbtip1	djointbtip==1
+csatu		ltbtnourt + 1
+cpanjangip1     DO_LIB ap_strln(tbtkat,&lpanjangip1);
+cpanjangip2     DO_LIB ap_strln(tbtusrcrt,&lpanjangip2);
+cpanjangip3     DO_LIB ap_strln(tbtkolek,&lpanjangip3);
+cpanjangip4     DO_LIB ap_strln(tbtscr,&lpanjangip4);
+cpanjangip1x	lpanjangip1 >= 1 && lpanjangip1<=3
+cpanjangip2x	lpanjangip2 >= 1 && lpanjangip2<=3
+cpanjangip3x	lpanjangip3 >= 1 && lpanjangip3<=3
+cpanjangip4x	(lpanjangip4 >= 1 && lpanjangip4<=3) || lpanjangip4==0 
+cipadress       STRIP(tbtkat) + "." + STRIP(tbtusrcrt) + "." + STRIP(tbtkolek) + "." + STRIP(tbtscr)
+
+MAP(mpanjangip1)
+cpanjangip1	lpanjangip1	DO_CALC
+cipadress	tbtkode2	DO_CALC
+cipadress	tbtkode		DO_CALC
+
+MAP(mpanjangip2)
+cpanjangip2	lpanjangip2	DO_CALC
+cipadress	tbtkode2	DO_CALC
+cipadress	tbtkode		DO_CALC
+
+MAP(mpanjangip3)
+cpanjangip3	lpanjangip3	DO_CALC
+cipadress	tbtkode2	DO_CALC
+cipadress	tbtkode		DO_CALC
+
+MAP(mpanjangip4)
+cpanjangip4	lpanjangip4	DO_CALC
+cipadress	tbtkode2	DO_CALC
+cipadress	tbtkode		DO_CALC
+
+MAP(murut)
+c1		tbtnourt	DO_CALC_IF cdjointbtip0
+csatu		tbtnourt	DO_CALC_IF cdjointbtip1
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tbtnourt	DO_MAP SHOW murut
+AFTER_INPUT     cur_field=tbtkat	DO_MAP SHOW mpanjangip1
+AFTER_INPUT     cur_field=tbtkat	DO_MAP
+                IF cpanjangip1x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Pertama Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_keybd=EN    	DO_MAP
+                IF cpanjangip1x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Pertama Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_field=tbtusrcrt	DO_MAP SHOW mpanjangip2
+AFTER_INPUT     cur_field=tbtusrcrt	DO_MAP
+                IF cpanjangip2x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Kedua Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_keybd=EN       	DO_MAP
+                IF cpanjangip2x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Kedua Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_field=tbtkolek	DO_MAP SHOW mpanjangip3
+AFTER_INPUT     cur_field=tbtkolek	DO_MAP
+                IF cpanjangip3x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Ketiga Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_keybd=EN      	DO_MAP
+                IF cpanjangip3x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Ketiga Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_field=tbtscr  	DO_MAP SHOW mpanjangip4
+AFTER_INPUT     cur_field=tbtscr  	DO_MAP
+                IF cpanjangip4x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Ketiga Minimal 1 / Maximal 3 digit
+AFTER_INPUT     cur_keybd=EN      	DO_MAP
+                IF cpanjangip4x mdum
+                ELSE HKCURSOR STAY
+                HKMSG Panjang IP Ketiga Minimal 1 / Maximal 3 digit
+
+
+CALCS()
+csgedung	tbtcab == tbdkode
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT	csgedung
+/*SFL_COND cdetip*/
+SFL_TARGET
+        tbtdattypkod tbddata lIPGEDUNG tbddtmkode  
+/*                   DTTABEL IPGEDUNG  INFOUMUM    GEDUNG     GEDUNG
+                     tbtdata tbttype   tbtdtmkode tbttblkode tbttbdkode  
+*/
+
+SFL_MAP
+	tbdkode   	tbtcab    	REPLACE
+	tbdket    	tbtket   	REPLACE
+	tbddata		tbtdata		REPLACE
+	tbddtmkode	tbtdtmkode	REPLACE
+	tbdtblkode	tbttblkode	REPLACE
+	tbdtblkode	tbttbdkode	REPLACE
+
+CALCS()
+cteknisi   g_grpnam =="TECHNICAL" || g_grpnam =="RI"
+
+PERMIT(tmptrans)
+PMT_DEL_COND	cteknisi

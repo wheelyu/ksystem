@@ -1,0 +1,185 @@
+SCREEN 4452 APP_TYPE Posting Restruktur
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+lnobuk		STRING		21
+lfaktur		STRING		21
+ltypebunga	INT2		2
+lfieldfak	STRING		21
+lfieldtglang    STRING      21
+lfieldke        STRING      21
+lfieldFM        STRING      21
+lfieldANG        STRING      21
+lfieldpokok     STRING      21
+lfieldbg        STRING      21
+lnamaidx        STRING      20
+lfieldsispokakh STRING          20
+lfieldakumbgakh STRING          20
+lfieldthbl      STRING          20
+lhapusflg       INT2            2
+lbulanke	INT2		2
+lakumpokke	DFLOAT		8
+lnamamapA	STRING		21
+lRES		STRING		5
+lRES11		STRING		11
+llama		INT2		2
+ldum		STRING		21
+lversi		STRING		21
+
+CALCS()
+clama		piklama-pikke
+cBLANKS		BLANKS
+
+IMAGE(master)
+/---------------------------------------------\
+ ___________________  __________________     
+\---------------------------------------------/
+
+FIELDS(master)
+lnobuk		NOCHANGE	INPUTRI		1
+lfaktur		PROTECT		INPUTRI		2
+
+DEFAULTS(master)
+lnobuk		INIT		{r_string1}
+lfaktur		INIT		{r_string2}
+ltypebunga	INIT		6
+lnamamapA	INIT		maddang
+lRES11		INIT		RES
+lversi		INIT		070421v1
+
+EDITS(master)
+e.Validate	lfaktur		VALIDATE pikdatbukidx mpik {Pgv_dtpiu}
+
+MAP(mpik)
+piknobuk	piknobuk	REPLACE
+piksispok	piksispok	REPLACE
+pikangbl	pikangbl	REPLACE
+piktgljtp	piktgljtp	REPLACE
+pikperbgm	pikperbgm	REPLACE
+clama		llama		DO_CALC
+
+MAP(maddang)
+gv_INPG         angsts          REPLACE
+angpokok        angsispok       REPLACE
+angbunga        angsisbg        REPLACE
+angum           angsisum        REPLACE
+lRES            angtype         REPLACE
+pikangbl        angbsr          REPLACE
+
+/*
+DBCALCS(djoinangres)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      angdatbukidx    lRES11 piknobuk
+*/
+
+CALCS()
+cnol            0
+cnamaidx        "angdatbukidx"
+cfieldfak       "angnobuk"
+cfieldtglang    "angtgljtp"
+cfieldke        "angke"
+cfieldFM        "angnofm"
+cfieldANG       "angdata"
+cfieldpokok     "angpokok"
+cfieldbg        "angbunga"
+cfieldthbl      "angthbl"
+cfieldsispokah  "angum"
+cfieldsisbgakh  "angbyrum"
+cRES		"RES"
+/*cblmada		djoinangres==0 */
+
+/*
+MAP(mapawal)
+cnamaidx        lnamaidx        DO_CALC
+cfieldfak       lfieldfak       DO_CALC
+cfieldtglang    lfieldtglang    DO_CALC
+cfieldke        lfieldke        DO_CALC
+cfieldFM        lfieldFM        DO_CALC
+cfieldANG       lfieldANG       DO_CALC
+cfieldpokok     lfieldpokok     DO_CALC
+cfieldbg        lfieldbg        DO_CALC
+cfieldthbl      lfieldthbl      DO_CALC
+*/
+
+MAP(mmapmap)
+cRES            lRES         DO_CALC
+cnamaidx        lnamaidx      DO_CALC
+cfieldfak       lfieldfak     DO_CALC
+cfieldtglang    lfieldtglang  DO_CALC
+cfieldke        lfieldke      DO_CALC
+cfieldFM        lfieldFM      DO_CALC
+cfieldANG       lfieldANG      DO_CALC
+cfieldpokok     lfieldpokok   DO_CALC
+cfieldbg        lfieldbg      DO_CALC
+cfieldthbl      lfieldthbl      DO_CALC
+cfieldsispokah  lfieldsispokakh DO_CALC
+cfieldsisbgakh  lfieldakumbgakh DO_CALC
+cnol            lhapusflg       DO_CALC
+DEBUG	ldum		ldum	REPLACE
+
+SPCALCS(smaster)
+	DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+	DO_LIB/*_IF cblmada*/ ap_htrbg(ltypebunga,lfieldFM,piknobuk,lfieldfak,piktgljtp,lfieldtglang,lRES,lfieldANG,pikperbgm,llama,piksispok,lnamaidx,lfieldpokok,lfieldbg,lfieldke,lfieldthbl,lbulanke,&lakumpokke,lnamamapA,lhapusflg,lfieldsispokakh,lfieldakumbgakh);
+
+	
+POSTING(master)
+	PST_COMMAND	smaster
+
+/*ap_htbrg blm terbentuk jika tidak pakai trans (jeda)*/
+
+IMAGE(trans)
+________________
+
+FIELDS(trans)
+tlmnobuk	NOCHANGE	INPUTRI		1
+
+MAP(mmaptrans)
+ldum	ldum	REPLACE
+
+SPCALCS(sptrans)
+	DO_LIB ap_dbclc(DNAME dmaptrans,DCOMMAND MAPMAP,DMAP mmaptrans);
+
+POSTING(trans)
+	PST_COMMAND sptrans
+
+SUBFILE(trans)
+SFL_LINES(1)
+SFL_TARGET
+tlmbukidx lnobuk
+
+IMAGE(trans2)
+________________
+
+FIELDS(trans2)
+angnobuk	NOCHANGE	INPUTRI		1
+
+MAP(mmap2)
+angnobuk	angnobuk	REPLACE
+
+CALCS()
+cangke          angke + pikke
+
+MAP(mupdangP)
+cangke          angke           DO_CALC
+gv_ANG		angdata         REPLACE
+gv_ANG          angtype         REPLACE
+gv_INPG         angsts          REPLACE
+DEBUG		ldum	ldum	REPLACE
+cBLANKS		angum		DO_CALC
+cBLANKS		angsisum	DO_CALC
+cBLANKS		angbyrum	DO_CALC
+
+SPCALCS(sptrans2)
+	DO_LIB ap_dbclc(DNAME dmap2,DCOMMAND MAPMAP,DMAP mmap2);
+	DO_LIB ap_dbclc(DNAME dupdangP,DCOMMAND UPDATE,DBC_TARGET angprmidx angprm, DMAP mupdangP);
+
+POSTING(trans2)
+	PST_COMMAND	sptrans2
+
+SUBFILE(trans2)
+SFL_LINES(15)
+SFL_TARGET
+angdatbukidx    lRES11 tlmnoasal
+
+END_SCREEN

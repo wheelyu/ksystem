@@ -1,0 +1,130 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /-s.UPLOAD-----------------------\
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ \--------------------------------/
+ /--------------------------------\
+ | t.NoBuk      : _______________ |
+ | t.StsPL      : ______          |
+ |                ____ _______ ___|
+ | t.HasilClaim : ____________    |
+ | t.UplNosin   : _____           |
+ | t.AprAdhAm   : ______ ______   |
+ | t.Ket        : _______________ |
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnobbm	PROTECT SCROLL		INPUTRI 1
+tldstr4		PROTECT SCROLL		INPUTRI 1
+laprrvs		TOMBOL			INPUTRI 1
+lresetpro	TOMBOL			INPUTRI 1
+tldjasbrg	PROTECT	SCROLL		INPUTRI 2
+tldkat		NOCHANGE SCROLL		INPUTRI 2
+tldstr1		PROTECT SCROLL		INPUTRI 3
+lprogres	PROTECT SCROLL		INPUTRI 4
+tldtmp1		NOCHANGE SCROLL		INPUTRI 4
+tldcab		ALLCAPS	SCROLL		INPUTRI 5
+
+DEFAULTS(tmptranst)
+tldkat		DFALT_SCAN	BLANKS	APPROVE	REJECT
+tldtglfak	INIT		{g_tgltrn}
+tldtmp1		DFALT_SCAN_BLANKS	1 "ACC" 
+					2 "TACC"
+lresetpro	INIT		"RESET"
+laprrvs		INIT		"APR"
+
+CALCS()
+cselopenrvs	tldbrg == tkmkode && tldstr2 == "RVSCLAIM" && (tldkat == "REVISI" || (tldkat != "REVISI" && tldtmp1 != 1))
+crvsacc		tldtmp1 == 1
+ctmp1		tldtmp1	== 1
+ctmp2		tldtmp1 == 2
+cACC		"ACC"
+cTACC		"TACC"
+caprrvs		"APR REVISI 624"
+crvs624		"RVS624"
+ckonawlrvs	tldjasbrg == BLANKS
+crvsisi		tldtmp1 != 0 || tldtmp1 != BLANKS
+ckonclsdam      abknoll == "RVS624" || abktype == "RVS624"
+
+MAP(mprogres)
+cACC	lprogres	DO_CALC_IF ctmp1
+cTACC	lprogres	DO_CALC_IF ctmp2
+
+MAP(mresetx)
+cBLANKS		tldkat		DO_CALC
+cBLANKS		tldstr1		DO_CALC
+cBLANKS		lprogres	DO_CALC
+cBLANKS		tldtmp1		DO_CALC
+cBLANKS		tldcab		DO_CALC
+cBLANKS		tldjasbrg	DO_CALC
+
+MAP(maddabkaprrvs)
+lkunciabsen	abkdata		REPLACE
+tkmnobuk	abknobuk	REPLACE
+gv_INPG		abksts		REPLACE
+g_tgltrn	abktgl		REPLACE
+lsgmstr5	abkkym		REPLACE_IF cdjoinsgm
+c624		abkscr		DO_CALC
+caprrvs		abkkym2		DO_CALC	
+crvs624		abktype		DO_CALC
+crvs624		abknoll		DO_CALC
+
+MAP(mupdtldrvs)
+cIN		tldjasbrg	DO_CALC
+
+SPCALCS(spprogress)
+DO_LIB ap_dbclc(DNAME dresetpro,DCOMMAND UPDATE_RANGE,DTARGET tldprmidx tldprm,DMAP mresetx);
+
+SPCALCS(spaprrvs)
+DO_LIB_IF ckonawlrvs ap_dbclc(DNAME dupdrvsprm,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mupdtldrvs);
+DO_LIB ap_dbclc(DNAME daprrvs,DCOMMAND ADD,DFILE abk,DMAP maddabkaprrvs);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=laprrvs	DO_SPCALCS spaprrvs
+CLICKED		cur_field=lresetpro	DO_SPCALCS spprogress
+AFTER_INPUT	cur_field=tldtmp1	DO_MAP SHOW mprogres
+BEFORE_INPUT	cur_field=tldcab	DO_SKIP_IF crvsacc
+
+MAP(mjoinrpt6244)
+cOK		tldstr1		DO_CALC
+DBCALCS(djoinrpt6244)
+DBC_COMMAND	UPDATE
+DBC_TARGET	tldprmidx tldprm
+DBC_MAP		mjoinrpt6244
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ckonrptz
+SFL_SELECT cselopenrvs
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tldnobbm tldoto
+SFL_UPL_DIRFLD tldtglfak
+SFL_UPLFLD_DBCALCS djoinrpt6244
+SFL_TARGET
+tldbukurtidx tkmnobuk
+
+MAP(mupdaccabkrvs)
+gv_CLSD		abksts	REPLACE_IF ckonclsdam
+
+MAP(mrvsok)
+cOK		tldjasbrg	DO_CALC
+
+SPCALCS(sprvs)
+DO_LIB_IF ctmp1 ap_dbclc(DNAME drvsok,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mrvsok);
+DO_LIB_IF crvsisi ap_dbclc(DNAME drvsupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tkmnobuk,DMAP mupdaccabkrvs);
+
+POSTING(tmptranst)
+PST_UPDCMD sprvs

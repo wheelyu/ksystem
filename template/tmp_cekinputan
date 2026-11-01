@@ -1,0 +1,81 @@
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket   : ______________________||
+||          ____  ____            ||
+!!t.TglFt : ______________________||
+!!t.Jam   : ______________________||
+!!t.HslVer: ______________________||
+!!t.NipVer : _____________________||
+!!t.JamVer: ____________________ _||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1                  PROTECT                 INPUTRI         2
+sviyt2                  PROTECT                INPUTRI         3
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+ljamfoto714             PROTECT                 INPUTRI         5
+svistr39                ALLCAPS                         INPUTRI 5
+svistr9                 PROTECT                         INPUTRI 6
+svitype3                 PROTECT                         INPUTRI 7
+svinobuk                PROTECT UNSEEN          INPUTRI         10
+
+
+CALCS()
+cjika 		btmdvsjl=="M2W4W" && btmsts=="714" && btmflag1=="CEK" && ((djoinpsim2w4w==1 && ljabatan=="SALES&MKTGHEAD") || (djoinpsim2w4w2==1 && ljabatan2=="PLTCRDTREFISPVM2W4W") || (djoinpsim2w4w3==1 && ljabatan3=="CREDITREFIHEAD") || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="CREDITHEAD")  
+ctampil 	svikode =="KTPPMH" ||  svikode=="KTPPJM" || svikode=="FOTOMILIKRMH" || svikode=="STNKMTR" || svikode=="SLIPGAJI" || svikode=="TTDFDSPMH" || svikode=="TTDFDSPJM"
+
+DEFAULTS(tmptranst)
+lklikft		        INIT    	"UPLOAD OK"
+lnipvfks                 INIT            {g_usrkode}
+ljamvfks                 INIT            SYSTIME
+svistr39                 DFALT_SCAN      BLANKS
+                                         Y
+					 T
+MAP(misinip)
+lnipvfks        svistr9     	REPLACE
+ljamvfks        svitype3	REPLACE
+                                        
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=svistr39         DO_MAP SHOW misinip
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msvift714f
+
+MAP(msvift714f)
+cblanks         ljamfoto714     DO_CALC
+svidf8          ljamfoto714     REPLACE
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT ctampil
+SFL_UPL_DELCOND c0
+/*SFL_UPLFLD_DBCALCS dupdsvift714*/
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svikode
+
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cjika
+  PMT_DEL_COND  c0
+

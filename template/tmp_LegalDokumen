@@ -1,0 +1,66 @@
+LOCAL
+PGM_FIELDS
+ltkdnourt	INT2		2
+
+MAP(mjointkd)
+tkdnourt	ltkdnourt	REPLACE
+DBCALCS(djointkd)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tkdbukidx tlmnobuk 
+	DBC_MAP		mjointkd
+
+
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||t.No     : _____                    ||
+||t.Jenis  : ______________           ||
+|\------------------------------------/|
+|/---------DOCUPLOAD------------------\|
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnourt	PROTECT		INPUTRI		1
+tkdnoll		ALLCAPS		INPUTRI		2
+
+EDIT(tmptranst)
+e.Mandatory	tkdnoll		MANDATORY
+e.Dupkey	tkdnoll		DUPKEY tkdbukllsts {Ptlmnobuk} {Stkdsts}
+e.Validate	tkdnoll		VALIDATE tbtdattypkod mtbt stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_infoumum} {Pllegalinstansi} {Ptlmkode}
+
+MAP(mtbt)
+tbtkode		tkdnoll		REPLACE
+
+CALCS()
+cplus1		ltkdnourt + 1
+cjointkd0	djointkd == 0
+cjointkd1	djointkd == 1
+
+MAP(misiuruta2)
+gv_int1		tkdnourt	REPLACE_IF cjointkd0
+cplus1		tkdnourt	DO_CALC_IF cjointkd1
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdnoll	DO_MAP SHOW misiuruta2
+
+MAP(mupdtkdupl)
+gv_ok		tkdrek		REPLACE
+DBCALCS(dupdtkdupl)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx tkdprm
+	DBC_MAP		mupdtkdupl
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD tlmnobuk tkdnoll
+SFL_DOCUPLFLD_DBCALCS dupdtkdupl   
+SFL_LINES(1)
+SFL_TARGET
+tkdbukidx tlmnobuk
+
+SFL_MAP
+tlmnobuk 	tkdnobuk	REPLACE

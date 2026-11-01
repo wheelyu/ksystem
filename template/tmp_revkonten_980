@@ -1,0 +1,115 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------\
+|t.REVISIKONTENADS                     |
+|t.tambahsblmupload                    |
+|/--------s.UPLOAD--------------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+|/------------------------------------\|
+||                                    ||
+||t.UserUpl                           ||
+!!t.Nip       : __________            ||
+!!t.Nama      : _____________________ ||
+!!t.Tanggal   : __________            ||
+!!spasi                               ||
+||t.UserApr                            ||
+!!t.Nip       : __________            ||
+!!t.Nama      : ______________________||
+||t.Jabatan   : ______________________||
+!!t.Tanggal   : __________            ||
+||t.Hasil     : __________            ||
+||t.Keterangan: _____________________ ||
+||			       ______ ||
+||                                 __ ||_
+|\------------------------------------/|
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldplg        		ALLCAPS NOCHANGE        INPUTRI 1 /* nip usr*/
+lnamausrrev     	PROTECT                 INPUTRI 2
+tldtglfak          	PROTECT                 INPUTRI 3
+tldsat     		ALLCAPS NOCHANGE        INPUTRI 4 /*nip apr*/
+lnamarev   	  	PROTECT                 INPUTRI 5
+ljabatan		PROTECT			INPUTRI 6
+tldtgl2         	PROTECT                 INPUTRI 6
+tldkat 		     	ALLCAPS                 INPUTRI 7 /* hasil*/
+tldket			TEXTAREA ALLCAPS	INPUTRI 8
+lenter			NOCHANGE		INPUTRI	15
+tldnoll         	PROTECT UNSEEN          INPUTRI 16
+tldnourt        	PROTECT                 INPUTRI 16
+
+
+DEFAULTS(tmptranst)
+tldplg          	INIT_ADD        {g_usrkode}
+tldtglfak          	INIT_ADD        {g_tgltrn}
+
+IF cupd      tldsat      	INIT_UPDATE {g_usrkode}
+IF cupd      tldtgl2         	INIT_UPDATE {g_tgltrn}
+IF cupd      tldkat      	DFALT_SCAN_BLANKS
+                                Y
+                                T
+
+CALCS()
+cdig2    	tldsat!=""
+cmax3   	llast2<1 && tkdjwbstr2=="T" && tkmplg==g_usrkode && tldplg=="" 
+crevsetuju	tldkat == "Y"
+
+EDITS(tmptranst)
+e.Validate      tldplg        	VALIDATE psikodidx mpsiusr2 0
+e.Validate      tldsat      	VALIDATE_IF cdig2 psikodidx mpsidig2 0
+
+MAP(mpsiusr2)
+psinama 	 lnamausrrev    REPLACE
+llast2           llast2         REPLACE_IF cdjointldkontenrev
+
+
+MAP(mpsidig2)
+psinama 	lnamarev     REPLACE
+psijabatan      ljabatan       REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldplg      DO_SKIP_IF cupd
+
+
+BEFORE_INPUT    cur_field=tldkat    DO_SKIP_IF cadd
+BEFORE_INPUT	cur_field=tldket    DO_SKIP_IF cadd
+BEFORE_INPUT    cur_field=tldket    DO_SKIP_IF crevsetuju
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD tkdnobuk tldbrg
+SFL_UPL_DIRFLD tkmtgl
+SFL_SELECT ctldrev
+SFL_TARGET_IF cnoawalkosong
+        tldbukurtidx   tkmnobuk 
+SFL_TARGET_IF cnoawalisi
+        tldbukurtidx   tkmnobuk2
+
+
+
+SFL_MAP
+tkmnobuk        tldnobuk        REPLACE
+lADSKONTEN      tlddata         REPLACE
+tkdkodejsa      tldnoll         REPLACE
+cnourut2        tldnourt        DO_CALC
+ctldbrg         tldbrg     	DO_CALC
+
+
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND cmax3
+PMT_UPDALL_COND	cupdrev 
+PMT_DEL_COND cinp1a

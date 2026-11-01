@@ -1,0 +1,96 @@
+LOCAL
+PGM_FIELDS
+lKREDITPASAR2	STRING	21
+lDAGANG		STRING	21
+
+ljmlnik		INT2	2
+
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+  i.NoBuk     __________________   
+  t.Pasar     __________________
+  t.Nik	      __________________
+  t.Nama      __________________
+  t.NamaLpk   __________________
+  t.KatLpk    __________________
+  t.PemKios   __________________
+  t.Dagang    __________________
+  t.LantaiT   __________________
+  t.LamaJl    ____t.Thn ___t.Bln
+  t.JadiPk    ____
+ \--------------------------------/
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	PROTECT		INPUTRI	1
+tldlok		PROTECT		INPUTRI	2  /* Pasar */
+tldplg		DIGITS 		INPUTRI	3  /* NIK */
+tldket		ALLCAPS		INPUTRI	4  /* Nama */
+tldket2		ALLCAPS		INPUTRI	5  /* Pasar */
+tldkat		ALLCAPS		INPUTRI	6  /* Kat Lapak */
+tldsat		ALLCAPS		INPUTRI	7  /* Pemilik Kios */
+tldgrup		ALLCAPS		INPUTRI	8  /* Dagang */
+tldsisbrg	DIGITS		INPUTRI	9  /* Lantai */
+tldtmp1		DIGITS		INPUTRI	10 /* Tahun */
+tldtmp2		DIGITS		INPUTRI	11 /* Bulan */
+tldnoll		ALLCAPS		INPUTRI	12 /* Jadi PK */
+
+DEFAULTS(tmptranst)
+lKREDITPASAR2	INIT		KREDITPASAR2
+lDAGANG		INIT		DAGANG
+
+tldkat		DFALT_SCAN_BLANKS	KIOS
+					LAPAK
+tldsat		DFALT_SCAN_BLANKS	SEWA
+					MILIKSENDIRI
+tldnoll		DFALT_SCAN_BLANKS	YA TIDAK
+
+EDITS(tmptranst)
+t.Validate	tldgrup		VALIDATE	tbddatkodidx mtbd stbd {Pgv_dttabel} {PlKREDITPASAR2} {PlDAGANG}
+
+t.Mandatory	tldplg		MANDATORY
+t.Mandatory	tldket		MANDATORY
+t.Mandatory	tldket2		MANDATORY
+t.Mandatory	tldkat		MANDATORY
+t.Mandatory	tldsat		MANDATORY
+t.Mandatory	tldgrup		MANDATORY
+t.Mandatory	tldsisbrg	MANDATORY
+t.Mandatory	tldtmp1		MANDATORY
+t.Mandatory	tldtmp2		MANDATORY
+t.Mandatory	tldnoll		MANDATORY
+
+MAP(mtbd)
+tbdkode		tldgrup		REPLACE
+
+CALCS()
+cpjgnmrnik	DO_LIB ap_strln(tldplg,&ljmlnik);
+cbukan16	ljmlnik == 16
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+MAP(mmap)
+cpjgnmrnik	ljmlnik		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW mmap
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW
+                IF cbukan16     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.InputNIKYangBenar
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldstsbrgukr	tkmdata gv_OPEN tkmnobuk lINFOSPK
+
+SFL_MAP
+tkmnobuk	tldnobuk	REPLACE
+tkmnobuk	tldbrg		REPLACE
+gv_OPEN		tldsts		REPLACE
+lINFOSPK	tldukrwrn	REPLACE
+tkmdata		tlddata		REPLACE
+tkmlok1		tldlok		REPLACE

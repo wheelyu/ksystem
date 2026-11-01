@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+lbukabkftomga20		STRING		21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		NOCHANGE		INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+ltombol			TOMBOL			INPUTRI		99
+
+CALCS()
+ctgluplisi20	doctgljadi!=BLANKS
+cstsuplisi20	doclok=="OK"
+cbukabkftomga20	STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddocktp20)
+/*cY              doclok          DO_CALC*/
+/*g_fotodate1   doctgljadi      REPLACE*/
+g_tgltrn        doctgljadi      REPLACE
+
+MAP(mupddocktp_20)
+cY		doclok		DO_CALC_IF ctgluplisi20
+cbukabkftomga20	lbukabkftomga20	DO_CALC
+
+DBCALCS(dupddocktp20)
+        DCOMMAND UPDATE
+        DTARGET docprmidx docprm
+        DMAP mupddocktp20
+
+CALCS()
+cUplBBMga	tmpkode == "UPLSPEDBBM"
+
+MAP(mupdabkftomga20)
+gv_CLSD		abksts		REPLACE
+
+SPCALCS(spuplftomga20)
+DO_LIB	ap_dbclc(DNAME dupddocktp_20,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocktp_20);
+DO_LIB_IF cstsuplisi20	ap_dbclc(DNAME dupdabkftomga20,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga20,DMAP mupdabkftomga20);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombol		DO_SPCALCS spuplftomga20
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cUplBBMga
+SFL_UPLFLD_DBCALCS dupddocktp20 
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+	docdatbukidx lUPGAD  btmnobuk lUPLBBMSPEDO l20 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

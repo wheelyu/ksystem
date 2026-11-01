@@ -1,0 +1,127 @@
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |            _________ _________||
+| |             _________________ ||
+| |t.LTV        ______________ ___||
+| |t.UplodOk    _______  _________||_
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.divheadmkt _____             ||
+| |_______________________________||
+| |______  ___________  __________||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svists          PROTECT                   INPUTRI 1
+        svistr5         PROTECT                   INPUTRI 1
+        svikode         PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svidf1          PROTECT                   INPUTRI 2
+        svistr31        PROTECT                   INPUTRI 2
+        svistr1         PROTECT                   INPUTRI 3
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 4
+        svinobuk        PROTECT UNSEEN            INPUTRI 5
+        sviyt1          ALLCAPS                   INPUTRI 5
+        sviket          TEXTAREA ALLCAPS          INPUTRI 6
+        lok             NOCHANGE                  INPUTRI 7
+        ltglcm          PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamcm          PROTECT                   INPUTRI 7
+
+CALCS()
+ckodeltv     svitype =="DEVLTV"
+
+DEFAULTS(tmptranst)
+sviyt1             DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.isiyt           sviyt1         MANDATORY
+e.isiket          sviket         MANDATORY_IF cT
+e.stsbukan707     svikode        VALIDATE ftmdatbukidx mftm3a sftm6 {PlMULTI4W}
+
+MAP(mftm3a)
+ftmhrg2         svidf1          REPLACE
+ftmkode7        svistr31        REPLACE
+ltglcm          ltglcm          REPLACE_IF cjoinaktcm
+ljamcm          ljamcm          REPLACE_IF cjoinaktcm
+
+
+MAP(mapra2)
+g_grpnam        svistr5           REPLACE
+gv_CLSD         svists            REPLACE_IF ctlk00
+gv_TACC         svists            REPLACE_IF ctlk11
+
+
+MAP(mmapmap2)
+ldum            ldum              REPLACE
+svinourt        lurut             REPLACE
+cnobukabk       lkunci            DO_CALC
+
+MAP(mkunci2)
+gv_CLSD         abksts            REPLACE
+
+
+SPCALCS(supdabk2)
+DO_LIB                 ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap2);
+DO_LIB                 ap_dbclc(DNAME dakt2,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cbkunci      ap_dbclc(DNAME dupdkunc,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci2);
+DO_LIB_IF cbkunci2     ap_dbclc(DNAME dupdkunc3a,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci2);
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapra2
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdabk2
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknCR
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknCR
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket        DO_MAP
+                IF cisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+
+MAP(mupdsviftmandx2a)
+cOK             svistr1         DO_CALC
+g_tgltrn        svitgl1         REPLACE
+
+DBCALCS(dbftupl2a)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx2a
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl2a
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT   ckodeltv
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+SFL_MAP
+tlmnobuk        svinobuk        REPLACE
+tlmuntuk        svidtmkode      REPLACE
+tlmnoasal       svikode         REPLACE
+tlmdata         svidata         REPLACE
+tmpkode         svitype         REPLACE
+tmpnourt        svinourt        REPLACE
+
+
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c02             
+  PMT_UPDALL_COND  cdevinpg
+  PMT_DEL_COND  c02
+
+
+
+

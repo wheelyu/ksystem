@@ -1,0 +1,756 @@
+SCREEN 414 QUERY_TYPE   VERIFIKASI_BISNIS
+SCR_FILE    tlm
+SCR_LOGFLD  tlmnobuk
+
+SCR_NXT_POSTING_IF cpos_ok  4630
+SCR_NXT_MAP    mnext
+SCR_NXT_MSG IF ckon1      "Status sudah CLSD"
+            IF ckon2      "Data pada detail 1 belum lengkap"
+            IF ckon3      "Data pada detail 1 sudah lengkap akan tetapi detail 2 belum lengkap"
+	IF ckon4	"Isian detail belum lengkap"
+	IF ckon5	"User belum upload"
+
+LOCAL
+PGM_FIELDS
+    lmktdetail          STRING          22
+    ladhdetail          STRING          22
+    lcabkd              STRING          4
+    lnamakons           STRING          100
+    lalamatkons         STRING          251
+    l1                  INT2            2
+    l2                  INT2            2
+    l3                  INT2            2
+    lhp1                STRING          2
+    lhp2                STRING          2
+    lhpsc1              STRING          2
+    lhpsc2              STRING          2
+    lCALLKONS           STRING          21
+    lMKT414             STRING          21
+    lADH414             STRING          21
+    lPSMTINGAL          STRING          11
+    ldum                STRING          11
+    lpanjangnotelp      INT2            21
+    lpanjangnotelpsc    INT2            21
+    lversi              STRING          11
+
+    ltomMAS		STRING		35
+    ltomDET		STRING		35
+    ltmpverifADH	STRING		21
+    ltldbrg		STRING		21
+    lenter		STRING		11
+	ltldjml		INT2		2
+	lCKOL		STRING		21
+	ltldsts		STRING		5
+	lusr           	STRING		21
+	lnama           STRING		61
+	ltgl            DATE		4
+	lurl		STRING		100
+	lnamaSDM	STRING		61
+        lalmjalan       STRING		251
+        lalmkec         STRING		21
+        lalmkel         STRING		21
+        lalmkota        STRING		21
+        lalmprop        STRING		21
+        lalmkdpos       STRING		21
+        lalmrt          STRING		21
+        lalmrw          STRING		21
+	lALMTAGIH	STRING		11
+
+IMAGE(master)
+/---------------------------------------------------\
+|   /-------------------------------------------\   |
+|   | i.No.Bukti          : _____________ _____ |   | ____
+|   | i.NoPK              : ___________________ |   | 
+|   | i.NoFak             : ___________________ |   | 
+|   | i.Type              : ________________    |   |
+|   | i.Bisnis            : ________________    |   |
+|   | i.Cab               : ________________    |   |
+|   | i.Tanggal           : ________________    |   |   
+|   | i.Ktp               : ___________________ |   |
+|   | i.NamaKons          : ___________________ |   |
+|   | i.Alamat            : ___________________ |   |
+|   | i.NoAsal	          : ___________________ |   | 
+|   | i.NIPSDMVerif       : ________________    |   | 
+|   | i.NamaSDM           : ___________________ |   | 
+|   | i.TglKunj           : ________________    |   | 
+|   \-------------------------------------------/   |
+|   ______________________		            |
+\---------------------------------------------------/ 
+
+FIELD(master)
+    tlmnobuk        PROTECT                                          INPUTRI        1
+    tlmsts          PROTECT                                          INPUTRI        2
+    tlmdata         PROTECT         UNSEEN                           INPUTRI        3
+
+    tlmnoasal       PROTECT                                          INPUTRI        4
+    tlmnobbm	    PROTECT					     INPUTRI	    5
+    tlmtype1	    NOCHANGE					     INPUTRI	    6
+    tlmbisnis       NOCHANGE		                             INPUTRI        7
+    tlmcab          PROTECT                                          INPUTRI        8
+    tlmtgl          ALLCAPS         NOLIMIT     {DD-MM-YYYY}         INPUTRI        9
+    tlmplg          PROTECT                                          INPUTRI        10
+    lnamakons       PROTECT                                          INPUTRI        11
+    lalamatkons     TEXTAREA PROTECT                                 INPUTRI        12
+
+    tlmdari	    PROTECT					     INPUTRI	    13
+    tlmkode	    PROTECT					     INPUTRI	    98
+    lnamaSDM	    PROTECT					     INPUTRI	    97
+    tlmtgl2	    ALLCAPS NOLIMIT {DD-MM-YYYY}     		     INPUTRI	    96	
+    ltomMAS	    TOMBOL                                           INPUTRI        99
+
+DEFAULT(master)
+    tlmbisnis           DFALT_LIST      HMC     M2W
+    tlmdata             INIT            VERADHALL
+    tlmdata             INIT_QUERY      VERADHALL
+    tlmsts              INIT            OPEN
+
+    lmktdetail          INIT            "1d.MKT Detail"
+    ladhdetail          INIT            "2d.ADH Detail"
+    lCALLKONS           INIT            CALLKONS 
+
+    l1                  INIT            1
+    l2                  INIT            2
+    l3                  INIT            3
+    lMKT414             INIT            MKT414
+    lADH414             INIT            ADH414
+    lPSMTINGAL          INIT            PSMTINGAL
+    lversi              INIT            1.01
+    ltomMAS		INIT		"1d.Pilihan Verifikasi"
+    tlmtype1		DFALT_SCAN	787CKOL "787 VERIFIKASI KOLEKTOR"
+    ltmpverifADH	INIT		414VERADH
+    ltldbrg		INIT		787CKOL2
+    lCKOL		INIT		787CKOL
+    lenter		INIT		ENTER
+    lALMTAGIH		INIT		ALMTAGIH
+    lalamatkons		INIT		""
+    lnamakons		INIT		""
+
+MAP(mnext)
+    tlmnobuk    r_string1       REPLACE
+
+MAP(mjoinalm)
+    almnama     lalamatkons     REPLACE
+
+DBCALCS(dsrchalm)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      almdatotobuk    lPSMTINGAL     tlmplg
+    DBC_MAP         mjoinalm
+
+MAP(mjoinalm787)
+almjalan	lalmjalan	REPLACE
+almkec		lalmkec		REPLACE
+almkel		lalmkel		REPLACE
+almkota		lalmkota	REPLACE
+almprop		lalmprop	REPLACE
+almkdpos	lalmkdpos	REPLACE
+almrt		lalmrt		REPLACE
+almrw		lalmrw		REPLACE
+
+DBCALCS(djoinalm787)
+DBC_COMMAND	JOIN
+DBC_TARGET	almdatotobuk	lALMTAGIH tlmplg
+DBC_MAP		mjoinalm787
+
+DBCALCS(djointldmkt)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      tldbukbrglok    tlmnobuk lCALLKONS    lMKT414
+
+DBCALCS(djointldadh)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      tldbukbrglok    tlmnobuk lCALLKONS    lADH414
+
+MAP(mmaptld787)
+tldjml		ltldjml		REPLACE
+tldsts		ltldsts		REPLACE
+DEBUG ldum	ldum		REPLACE
+
+DBCALCS(djointld787)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrglok	tlmnobuk  ltldbrg
+	DBC_MAP		mmaptld787
+
+CALCS()
+    c0              0
+    c1              1
+    cnobuk          "CALL" + lcabkd + THBLS(g_tgltrn)
+    cdjoinalm       tlmtype1 != "787CKOL" && dsrchalm == 1
+    cdjoinalm787    tlmtype1 == "787CKOL" && djoinalm787 == 1
+    ccekbrks        tldstr5 == "Y"
+
+    cpos_ok         	(tlmtype1 != "787CKOL" && ((tlmsts == "OPEN" && djointldmkt == 1) || (tlmsts == "INPG" && djointldmkt == 1 && djointldadh == 1))) ||
+			((tlmtype1 == "787CKOL" && tlmsts == "OPEN") && (djointld787 == 1 && ltldjml == 1 && ltldsts != BLANKS))
+
+    ckon1           tlmsts == "CLSD"
+    ckon2           tlmtype1 != "787CKOL" && tlmsts == "OPEN" && djointldmkt == 0
+    ckon3           tlmtype1 != "787CKOL" && tlmsts == "INPG" && djointldmkt == 1 && djointldadh == 0
+
+    cupdok          tlmscr != "414" && tlmscr != "2936"
+    cBLANKS         BLANKS
+    cnot787		tlmtype1 != "787CKOL"
+    c787		tlmtype1 == "787CKOL"
+	ckon4		tlmtype1 == "787CKOL" && tlmsts == "OPEN" && ltldjml == 1 && ltldsts == BLANKS
+	ckon5		tlmtype1 == "787CKOL" && tlmsts == "OPEN" && ltldjml != 1
+	calamatkons	"Jl."+" "+lalmjalan+" "+"RT"+lalmrt+"/RW"+lalmrw+", Kel."+" "++lalmkel+", Kec."+" "+lalmkec+", Kab/Kota."+" "+lalmkota+", Prov."+" "+lalmprop+","+" "++lalmkdpos
+
+MAP(mnobuk)
+    cnobuk      tlmnobuk    DO_CALC
+
+MAP(mnobuknobuk)
+    tlmnobuk    tlmnobuk    REPLACE
+
+MAP(mcab)
+    cabkode     tlmcab      REPLACE
+
+MAP(mcad)
+    cadkode     tlmbisnis   REPLACE
+    
+MAP(mpsm)
+    psmnama     lnamakons   REPLACE
+    lalamatkons lalamatkons REPLACE_IF cdjoinalm
+    calamatkons	lalamatkons DO_CALC_IF cdjoinalm787
+
+MAP(mpsi)
+    psinama     lnamaSDM    REPLACE
+
+EDITS(master)
+    e.Mandatory         tlmnoasal   MANDATORY
+    e.Mandatory         tlmcab      MANDATORY
+
+    e.ValidateCab       tlmcab      VALIDATE    cabstskodidx    mcab    scab    {Pgv_INPG}
+    e.ValidateCad       tlmbisnis   VALIDATE    cadcabdtidx     mcad    scad    {Ptlmcab}   {Pgv_cabbis}    {Ptlmcab}
+    e.ValidatePsm       tlmplg      VALIDATE_IF cnot787 psmdtkodidx     mpsm    {Pgv_dtkonsumen}    {Pgv_INPG}
+    e.ValidatePsm       tlmplg      VALIDATE_IF c787    psmplgstsktp    mpsm    {Pgv_dtkonsumen}    {Pgv_INPG}
+    e.ValidatePsi       tlmkode     VALIDATE_IF c787    psikodidx     	mpsi
+    
+    /* e.ValidateAlm       tlmplg      VALIDATE    almdatotobuk    mjoinalm    {PlPSMTINGAL} */
+
+HOOKS(master)
+    AFTER_INPUT cur_field=tlmbisnis   DO_LIB ap_amstr(tlmbisnis, l1, l3, &lcabkd);
+    AFTER_INPUT cur_field=tlmbisnis   DO_MAP  SHOW    mnobuk
+
+PERMIT(master)
+    PMT_ADD_COND    c0
+    /* PMT_DEL_COND    c0 */
+    PMT_UPDALL_COND     cupdok
+
+/*
+SPCALCS(spre)
+    DO_LIB  ap_dbclc(DNAME  dmapnobuk, DCOMMAND MAPMAP, DMAP mnobuk);
+*/
+
+SPCALCS(sadd)
+    DO_LIB  ap_dbclc(DNAME dtlmaddsub, DCOMMAND ADD_SUB, DFILE tlm, DLTARGET tlmbukidx tlmnobuk, DLLEN {stspjbuk}, DMAP mnobuknobuk);
+
+POSTING(master)
+    /* PST_COMMAND spre */
+    PST_SUB_ADDCMD  sadd
+
+IMAGE(transt)
+/------------t-----------\
+| ______________________ |
+\------------------------/
+
+IMAGE(trans)
+|____________________________________________|
+
+FIELDS(transt)
+        ltomDET        TOMBOL                  INPUTRI 1
+
+DEFAULT(transt)
+ltomDET         INIT            d.UntukMelihatDetil
+
+FIELD(trans)
+        tmpket          PROTECT SCROLL          INPUTRI 1
+
+PERMIT(trans)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+SUBFILE(trans)
+SFL_LINES(3)
+SFL_TITLE(transt)
+SFL_TRANS2_FIELD        tmpisistr1
+SFL_TRANS2_FIELD2        tmpisistr2
+SFL_TARGET
+        tmpdatkodurt    gv_dttemplate   ltmpverifADH
+
+IMAGE(trans2t)
+/----------------------------------------------\
+| /------------------------------------------\ |
+| |  i.detail    MKT                         | |
+| |                                          | |
+| |  i.No.Bukti          : _______________   | |
+| |  i.verifTelp         : _______________   | |
+| |  i.verifTelpKrj      : _______________   | |
+| |  i.Telp              : _______________   | |
+| |  i.noTelpBaru        : _______________   | |
+| |  i.panggilan         : _______________   | |
+| |  i.Status            : _______________   | |
+| |  i.Pemilik           : _______________   | | 
+| |  i.Ibu               : _______________   | |
+| |  i.Kelengkapan       : _______________   | |
+| |  i.Alasan            : _______________   | |
+| \------------------------------------------/ |
+\----------------------------------------------/
+
+IMAGE(trans2)
+
+
+FIELD(trans2t)
+    tldnobuk            PROTECT         INPUTRI        1
+    tldstr1             ALLCAPS         INPUTRI        2
+    tldstr2             ALLCAPS         INPUTRI        3
+    tldnoll             ALLCAPS         INPUTRI        4
+    tldnobbm            ALLCAPS         INPUTRI        5
+    tldgrup             ALLCAPS         INPUTRI        6
+    tldstr3             ALLCAPS         INPUTRI        7
+    tldstr4             ALLCAPS         INPUTRI        8
+    tldket2             ALLCAPS         INPUTRI        9
+    tldstr5             ALLCAPS         INPUTRI        10
+    tldket              ALLCAPS         INPUTRI        11
+
+CALCS()
+    cveriftelp          tldstr1 == "Y"
+    cceknohp            lhp1 == "0" && lhp2 == "8"
+    cceknohpsc          lhpsc1 == "0" && lhpsc2 == "8"
+    cceknotelp          DO_LIB  ap_strln(tldnoll, &lpanjangnotelp);
+    cceknotelpsc        DO_LIB  ap_strln(tldnobbm, &lpanjangnotelpsc);
+    cceknohpvalid       lpanjangnotelp >=10 && lpanjangnotelp <= 13
+    cceknohpvalidsc     lpanjangnotelpsc >=10 && lpanjangnotelpsc <= 13
+
+EDITS(trans2t)
+    e.Mandatory         tldstr1       MANDATORY
+    e.Mandatory         tldnoll       MANDATORY 
+    e.Mandatory         tldgrup       MANDATORY_IF  cveriftelp
+    e.Mandatory         tldstr3       MANDATORY
+    e.Mandatory         tldstr4       MANDATORY
+    e.Mandatory         tldstr5       MANDATORY
+
+
+DEFAULT(trans2t)
+    tldstr1             DFALT_SCAN              BLANKS Y "Diangkat"    T "Tidak diangkat"
+    tldstr2             DFALT_SCAN              BLANKS Y "Diangkat"    T "Tidak diangkat"
+    tldstr3             DFALT_SCAN_BLANK        PEMOHON PENJAMIN
+    tldstr4             DFALT_SCAN_BLANK        SENDIRI "SENDIRI" KELUARGA "KELUARGA" ORANGLAIN "ORANG LAIN"
+    tldstr5             DFALT_LIST              BLANKS Y   T
+    tldgrup             DFALT_SCAN_BLANK        BAPAK IBU
+
+MAP(mmapnotelp)
+    cBLANKS     lpanjangnotelp  DO_CALC
+    cceknotelp  lpanjangnotelp  DO_CALC
+
+MAP(mmapnotelpsc)
+    cBLANKS       lpanjangnotelpsc  DO_CALC
+    cceknotelpsc  lpanjangnotelpsc  DO_CALC
+
+HOOKS(trans2t)
+    AFTER_INPUT     cur_field=tldnoll   DO_LIB      ap_amstr(tldnoll, l1, l1, &lhp1);
+    AFTER_INPUT     cur_field=tldnoll   DO_LIB      ap_amstr(tldnoll, l2, l2, &lhp2);
+    AFTER_INPUT     cur_field=tldnoll   DO_MAP      SHOW    
+        IF  cceknohp    mdum
+            ELSE    HKCURSOR    STAY 
+        HKMSG   t.harusDiawali08
+
+    AFTER_INPUT     cur_field=tldnoll   DO_MAP      SHOW   mmapnotelp 
+    AFTER_INPUT     cur_field=tldnoll   DO_MAP      SHOW
+        IF cceknohpvalid    mdum
+            ELSE    HKCURSOR    STAY
+        HKMSG   t.notelpharus1013
+
+    AFTER_INPUT     cur_field=tldnobbm  DO_LIB      ap_amstr(tldnobbm, l1, l1, &lhpsc1);
+    AFTER_INPUT     cur_field=tldnobbm  DO_LIB      ap_amstr(tldnobbm, l2, l2, &lhpsc2);
+    AFTER_INPUT     cur_field=tldnobbm  DO_MAP      SHOW
+        IF cceknohpsc   mdum
+            ELSE HKCURSOR   STAY
+        HKMSG   t.harusDiawali08
+
+    AFTER_INPUT     cur_field=tldnobbm  DO_MAP SHOW mmapnotelpsc
+    AFTER_INPUT     cur_field=tldnobbm  DO_MAP SHOW
+        IF  cceknohpvalidsc mdum
+            ELSE    HKCURSOR    STAY
+        HKMSG   t.notelpscharus1013
+
+    BEFORE_INPUT    cur_field=tldket  DO_SKIP_IF ccekbrks
+
+MAP(mdum)
+    ldum    ldum    REPLACE
+
+SUBFILE(trans2)
+SFL_TITLE(trans2t)
+SFL_LINES(1)
+SFL_TARGET
+    tldbukbrglok    tlmnobuk  lCALLKONS  lMKT414
+
+/* TODO: pake tlmdata, pake local ngk bisa jadi blank pas nambah detail */
+SFL_MAP
+    tlmnobuk    tldnobuk        REPLACE
+    tlmdata     tldbrg          REPLACE 
+    lMKT414     tldlok          REPLACE
+
+IMAGE(trans2g1t)
+/----------------------------------------------\
+| /------------------------------------------\ |
+| |  i.detail   ADH                          | |
+| |                                          | |
+| |  i.No.Bukti          : _______________   | |
+| |  i.verifTelp         : _______________   | |
+| |  i.verifTelpKrj      : _______________   | |
+| |  i.Telp              : _______________   | |
+| |  i.noTelpBaru        : _______________   | |
+| |  i.panggilan         : _______________   | |
+| |  i.Status            : _______________   | |
+| |  i.Pemilik           : _______________   | | 
+| |  i.Ibu               : _______________   | |
+| |  i.Kelengkapan       : _______________   | |
+| |  i.Alasan            : _______________   | |
+| \------------------------------------------/ |
+\----------------------------------------------/
+
+IMAGE(trans2g1)
+
+
+FIELD(trans2g1t)
+    tldnobuk            PROTECT         INPUTRI        1
+    tldstr1             ALLCAPS         INPUTRI        2
+    tldstr2             ALLCAPS         INPUTRI        3
+    tldnoll             ALLCAPS         INPUTRI        4
+    tldnobbm            ALLCAPS         INPUTRI        5
+    tldgrup             ALLCAPS         INPUTRI        6
+    tldstr3             ALLCAPS         INPUTRI        7
+    tldstr4             ALLCAPS         INPUTRI        8
+    tldket2             ALLCAPS         INPUTRI        9
+    tldstr5             ALLCAPS         INPUTRI        10
+    tldket              ALLCAPS         INPUTRI        11
+
+
+EDITS(trans2g1t)
+    e.Mandatory         tldstr1       MANDATORY
+    e.Mandatory         tldnoll       MANDATORY 
+    e.Mandatory         tldgrup       MANDATORY_IF  cveriftelp
+    e.Mandatory         tldstr3       MANDATORY
+    e.Mandatory         tldstr4       MANDATORY
+    e.Mandatory         tldstr5       MANDATORY
+
+DEFAULT(trans2g1t)
+    tldstr1             DFALT_SCAN      BLANKS Y "Diangkat"    T "Tidak diangkat"
+    tldstr2             DFALT_SCAN      BLANKS Y "Diangkat"    T "Tidak diangkat"
+    tldstr3             DFALT_SCAN_BLANK      PEMOHON PENJAMIN
+    tldstr4             DFALT_SCAN_BLANK      SENDIRI "SENDIRI" KELUARGA "KELUARGA" ORANGLAIN "ORANG LAIN"
+    tldstr5             DFALT_LIST      BLANKS Y   T
+    tldgrup             DFALT_SCAN_BLANK        BAPAK IBU
+
+HOOKS(trans2g1t)
+    AFTER_INPUT     cur_field=tldnoll   DO_LIB      ap_amstr(tldnoll, l1, l1, &lhp1);
+    AFTER_INPUT     cur_field=tldnoll   DO_LIB      ap_amstr(tldnoll, l2, l2, &lhp2);
+    AFTER_INPUT     cur_field=tldnoll   DO_MAP      SHOW    
+        IF  cceknohp    mdum
+            ELSE    HKCURSOR    STAY 
+        HKMSG   t.harusDiawali08
+
+    AFTER_INPUT     cur_field=tldnoll   DO_MAP  SHOW    mmapnotelp
+    AFTER_INPUT     cur_field=tldnoll   DO_MAP SHOW
+            IF cceknohpvalid     mdum
+            ELSE    HKCURSOR    STAY
+        HKMSG   t.notelpharus1013
+
+    AFTER_INPUT     cur_field=tldnobbm  DO_LIB      ap_amstr(tldnobbm, l1, l1, &lhpsc1);
+    AFTER_INPUT     cur_field=tldnobbm  DO_LIB      ap_amstr(tldnobbm, l2, l2, &lhpsc2);
+    AFTER_INPUT     cur_field=tldnobbm  DO_MAP      SHOW
+        IF cceknohpsc   mdum
+            ELSE HKCURSOR   STAY
+        HKMSG   t.harusDiawali08
+
+    AFTER_INPUT     cur_field=tldnobbm  DO_MAP SHOW mmapnotelpsc
+    AFTER_INPUT     cur_field=tldnobbm  DO_MAP SHOW
+        IF  cceknohpvalidsc mdum
+            ELSE    HKCURSOR    STAY
+        HKMSG   t.notelpscharus1013
+    
+
+    BEFORE_INPUT    cur_field=tldket  DO_SKIP_IF ccekbrks
+
+SUBFILE(trans2g1)
+SFL_TITLE(trans2g1t)
+SFL_LINES(1)
+SFL_TARGET
+    tldbukbrglok    tlmnobuk  lCALLKONS  lADH414
+
+/* TODO: pake tlmdata, pake local ngk bisa jadi blank pas nambah detail */
+SFL_MAP
+    tlmnobuk    tldnobuk        REPLACE
+    tlmdata     tldbrg          REPLACE
+    lADH414     tldlok          REPLACE
+/*
+IMAGE(trans2g2t)
+/----------------------------------\__
+|/--------------------------------\|
+||t.NoHPPel     :_________________||
+||t.StsTlp414	:_________________||
+||t.ThbDgn	:_________________||
+||t.HubPmhn414	:_________________||
+||t.StsKunKol	:_________________||
+||t.KnsmnTdkByr	:_________________||
+|\--------------------------------/|
+|/--t.BelumBayar------------------\|
+||spasi                           ||
+||t.AlsTdkByr414:_________________||
+||t.TglAkanByr  :_________________||
+|\--------------------------------/|
+|/--t.SudahBayar------------------\|
+||spasi                           ||
+||t.JmlByrKons	:_________________||
+||t.PnrmUangKons:_________________||
+||t.TunTrf	:_________________||
+||t.TunStsKwit  :_________________||
+||t.TrfNmPmlkRek:_________________||
+|\--------------------------------/|
+\----------------------------------/
+/--------s.UPLOAD------------------\
+|                                  |
+|                                  |
+|                                  |
+|                                  |
+|                                  |
+\----------------------------------/
+/----------------------------------\
+|  __________  ||t.Upload	:__|
+\----------------------------------/
+*/
+IMAGE(trans2g2t)
+/--------------------------------------------------------\__
+|/------------------------------------------------------\|
+||No HP Konsumen		      :_________________||
+||No Telepon bisa dihubungi/Tidak     :_________________||
+||Terhubung dengan		      :_________________||
+||Hubungan dengan Pemohon	      :_________________||
+||Apakah kemarin ada kunjungan  			||
+||dari Kolektor NSC?		      :_________________||
+||Apakah Benar Konsumen 				||
+||Tidak melakukan Pembayaran	      :_________________||
+|\------------------------------------------------------/|
+|/--t.BelumBayar----------------------------------------\|
+||spasi                                  		||
+||Alasan Konsumen Tidak Bayar? 	      :_________________||
+||Kapan Konsumen akan 					||
+||melakukan pembayaran?		      :_________________||
+|\------------------------------------------------------/|
+|/--t.SudahBayar----------------------------------------\|
+||spasi                                  		||
+||Berapa Rupiah yang dibayar konsumen?:_________________||
+||Siapakah yang menerima uang 				||
+||dari konsumen?		      :_________________||
+||Pembayaran Tunai/Transfer?	      :_________________||
+||Jika Tunai, apakah ada Kwitansi 			||
+||dari Penerima Uang?		      :_________________||
+||Jika transfer, siapa nama pemilik 			||
+||rekening tujuan nya?		      :_________________||
+|\------------------------------------------------------/|
+\--------------------------------------------------------/
+/--------s.UPLOAD-----------------------\
+|                               	|
+|                                       |
+|                                       |
+|                                       |
+|                                       |
+\---------------------------------------/
+/---------------------------------------\
+|   ____________   ||t.Upload	:_______|
+\---------------------------------------/
+
+IMAGE(trans2g2)
+
+FIELDS(trans2g2t)
+tlddata         PROTECT UNSEEN  INPUTRI         3       /* NAMA DATA*/
+
+tldplg          PROTECT         INPUTRI         2       /* NOMOR TELEPON PELANGGAN (ini di protect apa diisi manual?)*/
+tldsts          ALLCAPS         INPUTRI         3       /* STATUS BISA DIHUBUNGI */
+tldkat          ALLCAPS         INPUTRI         4       /* NAMA PENERIMA TELEPON */
+tldsat 	        NOCHANGE        INPUTRI         5       /* HUBUNGAN KELUARGA */
+tldsisbrg       ALLCAPS         INPUTRI         6       /* STATUS KUNJUNGAN KOLEKTOR */
+tldjasbrg       ALLCAPS         INPUTRI         7      /* STATUS PEMBAYARAN */
+tldnoll         TEXTAREA        INPUTRI         8      /* ALASAN TIDAK BAYAR */
+tldtgl2         NOLIMIT {DD-MM-YYYY}	INPUTRI         9      /* TANGGAL BAYAR */
+tldhrg          DIGITS          INPUTRI         10      /* TOTAL NOMINAL BAYAR */
+tldgrup         ALLCAPS         INPUTRI         11      /* PENERIMA UANG DARI KONSUMEN */
+tldgrup2        ALLCAPS         INPUTRI         12      /* TIPE PEMBAYARAN */
+
+tldstr1         ALLCAPS         INPUTRI         13      /* STATUS KWITANSI */
+tldstr2         ALLCAPS         INPUTRI         14      /* NAMA PEMILIK REKENING */
+
+lenter		NOCHANGE	INPUTRI		99	/* BUTTON ENTER */
+tldjml          PROTECT         INPUTRI         15      /* STATUS UPLOAD */
+
+DEFAULT(trans2g2t)
+tlddata		INIT		787CKOL
+tlddata		INIT_QUERY	787CKOL
+
+tldsts          DFALT_SCAN_BLANKS	Y "Bisa dihubungi"
+                                	T "Tidak bisa dihubungi"
+
+tldsat          DFALT_SCAN_BLANKS	PEMOHON
+                                	PENJAMIN
+                                	ANAK
+                                	SAUDARA
+                                	KELUARGA
+                                	LAIN-LAIN
+
+tldsisbrg       DFALT_SCAN_BLANKS       Y "Ada Kunjungan kolektor"
+                                	T "Tidak ada kunjungan kolektor"
+
+tldjasbrg       DFALT_SCAN_BLANKS	Y "Tidak melakukan pembayaran"
+         				T "Sudah melakukan pembayaran"
+
+tldgrup2        DFALT_SCAN_BLANKS	TUNAI
+                                	TRANSFER
+
+tldstr1         DFALT_SCAN_BLANKS	ADA
+                                	TIDAK_ADA
+
+CALCS()
+cgrpOK          tlmsts != "CLSD" && (g_grpnam == "ADM01" || g_grpnam == "ADM02" || g_grpnam == "ADM03" || g_grpnam == "ADM04" || g_grpnam == "ADM05" || g_grpnam == "ADH"
+                || g_grpnam == "ROOT" || g_grpnam == "RI" || g_grpnam == "IT")
+
+cbisadihubungi  tldsts == "Y"
+ctdkbsdihbngi   tldsts == "T"
+
+ctdkadaknjngn   (tldsts == "Y" && tldsisbrg == "T")
+cadakunjungan   (tldsts == "Y" && tldsisbrg == "Y")
+
+ctidakbayar     (tldsts == "Y" && tldsisbrg == "Y" && tldjasbrg == "Y")
+cbayar          (tldsts == "Y" && tldsisbrg == "Y" && tldjasbrg == "T")
+
+ctunai          (tldsts == "Y" && tldsisbrg == "Y" && tldjasbrg == "T" && tldgrup2 == "TUNAI")
+ctransfer       (tldsts == "Y" && tldsisbrg == "Y" && tldjasbrg == "T" && tldgrup2 == "TRANSFER")
+
+cupldnull	tldjml == BLANKS || tldjml == 0
+EDITS(trans2g2t)
+Status harus diisi	tldsts		MANDATORY	
+
+/*JIKA BISA DIHUBUNGI*/
+Harus diisi	tldkat		MANDATORY_IF	cbisadihubungi
+Harus diisiB	tldsat		MANDATORY_IF	cbisadihubungi
+Harus diisiC    tldsisbrg       MANDATORY_IF    cbisadihubungi
+
+/*JIKA ADA KUNJUNGAN KOLEKTOR*/
+Harus diisiD	tldjasbrg		MANDATORY_IF	cadakunjungan
+
+/*JIKA BENAR TIDAK LAKUKAN PEMBAYARAN*/
+Harus diisiE	tldnoll		MANDATORY_IF	ctidakbayar
+Harus diisiF	tldtgl2		MANDATORY_IF	ctidakbayar
+
+/*JIKA SUDAH BAYAR*/
+Harus diisiG	tldhrg		MANDATORY_IF	cbayar
+Harus diisiH	tldgrup		MANDATORY_IF	cbayar
+Harus diisiI	tldgrup2	MANDATORY_IF	cbayar
+
+Harus diisiJ	tldstr1		MANDATORY_IF	ctunai
+Harus diisiK	tldstr2		MANDATORY_IF	ctransfer
+
+HOOKS(trans2g2t)
+BEFORE_INPUT	cur_field=tldkat	DO_SKIP_IF ctdkbsdihbngi
+BEFORE_INPUT	cur_field=tldsat	DO_SKIP_IF ctdkbsdihbngi
+BEFORE_INPUT	cur_field=tldsisbrg	DO_SKIP_IF ctdkbsdihbngi
+
+BEFORE_INPUT	cur_field=tldjasbrg	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldjasbrg	DO_SKIP_IF ctdkbsdihbngi
+
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF cbayar
+BEFORE_INPUT	cur_field=tldtgl2	DO_SKIP_IF cbayar
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF ctdkbsdihbngi
+BEFORE_INPUT	cur_field=tldtgl2	DO_SKIP_IF ctdkbsdihbngi
+
+BEFORE_INPUT	cur_field=tldhrg	DO_SKIP_IF ctidakbayar
+BEFORE_INPUT	cur_field=tldgrup	DO_SKIP_IF ctidakbayar
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF ctidakbayar
+BEFORE_INPUT	cur_field=tldhrg	DO_SKIP_IF ctdkbsdihbngi
+BEFORE_INPUT	cur_field=tldgrup	DO_SKIP_IF ctdkbsdihbngi
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF ctdkbsdihbngi
+
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldtgl2	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldhrg	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldgrup	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldstr1	DO_SKIP_IF ctdkadaknjngn
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF ctdkadaknjngn
+
+BEFORE_INPUT	cur_field=tldstr1	DO_SKIP_IF ctransfer
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF ctunai
+BEFORE_INPUT	cur_field=tldstr1	DO_SKIP_IF ctdkbsdihbngi
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF ctdkbsdihbngi
+
+BEFORE_INPUT	cur_field=tldstr1	DO_SKIP_IF ctidakbayar
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF ctidakbayar
+
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF ctunai
+
+PERMIT(trans2g2)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	cgrpOK
+PMT_DEL_COND	c0
+
+MAP(mupd787upld)
+        c1              tldjml         DO_CALC_IF cupldnull
+        DEBUG ldum      ldum           REPLACE
+
+DBCALCS(dupd787upld)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldotoidx tldoto
+        DBC_MAP         mupd787upld
+
+SUBFILE(trans2g2)
+SFL_TITLE(trans2g2t)
+SFL_LINES(1)
+SFL_UPLFLD tldnobuk
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD_DBCALCS dupd787upld
+SFL_TARGET
+tldbukbrglok	tlmnobuk ltldbrg tmpkode
+
+IMAGE(report)
+/-----------------------\
+|t.Nobuk:______________ |
+|t.Cab	:________	|
+|t.NIP	:______________ |
+|t.Nama	:______________ |
+|t.Tgl	:______________	|
+|t.URL	:______________	|
+\-----------------------/
+
+FIELD(report)
+    tlmnobuk        PROTECT            NONE             2
+    tlmcab          ALLCAPS            INPUTRI          3
+    lusr            PROTECT QPROTECT UNSEEN INPUTRI     4  /* NIP */
+    lnama           PROTECT QPROTECT UNSEEN INPUTRI     5  /* Nama Karyawan */
+    ltgl            NOLIMIT {DD-MM-YY}    INPUTRI       6
+    lurl            NONE               INPUTRI          7
+
+DEFAULTS(report)
+lurl            INIT            nusantara-sakti.co.id
+lusr            INIT            {g_usrkode}
+
+CALCS()
+c1x             tlmtype1 == "787CKOL"
+cint1           1
+
+MAP(mparam)
+tlmnobuk        tlmnobuk        REPLACE
+
+MAP(mupdlap)
+cint1           tlmjmlctk       DO_CALC
+
+DBCALCS(dupdlap)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tlmbukidx tlmnobuk
+        DBC_MAP         mupdlap
+
+RTREE(report1)
+RT_COND c1x
+USES_SCRIPT(scr414x1.rptdesign)
+RT_DBCALCS      dupdlap
+RT_MAP mparam
+/*RT_PRINT_BACKUP*/
+RT_HTML
+
+END_SCREEN 

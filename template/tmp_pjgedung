@@ -1,0 +1,98 @@
+IMAGE(tmptranst)
+/-----t--------t----------t---------------------t---------------------t-----------t----------\
+|i.Urt|t.Cab   |t.Kode    | i.Nama              | t.Jabatan           |i.Login    | t.Status |
+\-----.--------.----------.---------------------.---------------------.-----------.----------/
+
+IMAGE(tmptrans)
+|_____|________|__________|_____________________|_____________________|___________|__________|
+
+FIELD(tmptrans)
+   sgmurt            NUMERIC            INPUTRI     1
+   sgmstr3           ALLCAPS SCROLL     INPUTRI     3
+   sgmstr5           ALLCAPS SCROLL     INPUTRI     4
+   psinama           PROTECT SCROLL     INPUTRI     5
+   psijabatan        PROTECT SCROLL     INPUTRI     6
+   usrgrp            PROTECT SCROLL     INPUTRI     7
+   lpsists	     PROTECT		INPUTRI	    8
+
+CALCS()
+cbelumada	djoinsgmged==0
+carea		djoingdf==1 
+cnotjabatan	djoinusr==1 && (usrgrp=="BUM" || lusrgrp=="BUMM2W" || lusrgrp=="BM" || lusrgrp=="B.M4WADH" || lusrgrp=="PICMKT" || lusrgrp=="SODP" || lusrgrp=="ADH" || lusrgrp=="KAPOSHMC" || lusrgrp=="KAPOSM2W" || lusrgrp=="B.M4WBM" || lusrgrp=="PICMKTM2W")
+
+DEFAULTS(tmptrans)
+sgmdata         INIT    DTPICCAB
+sgmtgl          INIT    {g_tgltrn}
+sgmtgl          INIT_UPDATE {g_tgltrn}
+sgmstr1		INIT	{cpjthbl}
+
+EDITS(tmptrans)
+e.Mandatory sgmstr3 MANDATORY
+e.Validate      sgmstr3   VALIDATE cabstskodidx mcab scabged2 {Pgv_INPG}
+e.Validate      sgmstr5   VALIDATE psikodidx mpsi 0 
+e.Validate      sgmstr5   VALIDATE usrkodidx    musr 0 
+
+MAP(mcab)
+cabkode		sgmstr3		REPLACE
+
+MAP(mpsi)
+psikode         sgmstr5         REPLACE
+psinama		psinama		REPLACE
+sgmthbl		sgmstr2		REPLACE
+psists		lpsists		REPLACE
+
+MAP(musr)
+usrkode         sgmstr5         REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=sgmstr5        DO_MAP SHOW
+                IF cnotjabatan mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipJabatanTidakSesuai       
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cnotjabatan mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipJabatanTidakSesuai        
+AFTER_INPUT     cur_field=sgmstr5        DO_MAP SHOW
+                IF carea     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipBukanAreaGedung       
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF carea     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipBukanAreaGedung         
+AFTER_INPUT     cur_field=sgmstr5        DO_MAP SHOW
+                IF cbelumada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipSudahMenjadiPjGedung
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cbelumada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipSudahMenjadiPjGedung
+
+
+SUBFILE(tmptrans)
+SFL_LINES(8)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD sgmstr2
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+sgmdatplgurt   gt_dtpiccab11 tbdkode tbdkode
+
+SFL_MAP
+tbdkode    sgmplg          REPLACE
+tbdkode    sgmbrg          REPLACE
+
+CALCS()
+csamaarea	sgmbrg==brgkat6
+
+MAP(mupdpjarea)
+sgmstr5		brgfrefik2	REPLACE_IF csamaarea
+
+SPCALCS(tmptrans)
+	DO_LIB ap_dbclc(DNAME dupdpjarea, DCOMMAND UPDATE_RANGE, DTARGET brgstsdatbrg gv_INPG gv_dtaktiva, DMAP mupdpjarea);
+
+POSTING(tmptrans)
+	PST_ADDCMD tmptrans
+	PST_UPDCMD tmptrans
+

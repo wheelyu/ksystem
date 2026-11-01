@@ -1,0 +1,111 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+| t.PenerimaSertiKerja                   |
+|/--------------------------------------\|
+||                     t.TglMengerjakan ||
+||                          ___________ ||
+|| spasi                                ||
+|| t.NipPenerima _____________          ||
+|| t.NmaPenerima __________________     ||
+|| t.Atasan1SudahMembacaAlasan ____     ||
+|| t.Atasan2SudahMembacaAlasan ____     ||
+||                             _____    ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1             PROTECT {DD-MM-YY}              INPUTRI 1
+psdstr1             ALLCAPS                         INPUTRI 2
+lnmapnrma           PROTECT                         INPUTRI 3
+psdstr2   		    NOCHANGE SCROLL                	INPUTRI 5
+psdstr3    		    NOCHANGE SCROLL                	INPUTRI 6
+lenter     			NOCHANGE SCROLL	               	INPUTRI 7
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+psdtgl1     INIT_ADD	{g_tgltrn}
+psdstr2		DFALT_SCAN	BLANKS		
+				        Y 
+				        T 
+psdstr3 	DFALT_SCAN	BLANKS		
+				        Y 
+				        T 
+
+
+CALCS()
+cbknatasan	hrmsts=="SRTJ" && djoinamtatasanmd==1 && psdstr1!=l131atasan1 && psdstr1!=l131atasan2 && g_grpnam!="HRDSPV" && g_usrkode!="2130879" && g_usrkode!="1604848" && g_usrkode!="2492032"
+chrdER      g_grpnam=="HRDSPV" || g_usrkode=="2130879" || g_usrkode=="2492032" || g_usrkode=="1604848" || hrmsts!="SRTJ"
+
+EDITS(tmptranst)
+e.Mandatory   psdstr1   MANDATORY
+e.ValidatePsi psdstr1   VALIDATE psikodidx mpsisertija  0
+e.ValidatePsi psdstr1   VALIDATE_IF chrdER psikodidx mpsi150  0
+
+t.PenerimaHrs1Divisi    psdstr1   VALIDATE_IF cbknatasan psistscabkod mpsi150 spsiCab150 {Pgv_INPG} {Phrmcab}
+t.IsiAtasan1  psdstr2   MANDATORY_IF clayer1srtj
+t.IsiAtasan2  psdstr3	MANDATORY_IF clayer2srtj
+
+/*SCAN PSI 150*/
+MAP(mpsi150)
+psikode         psdstr1         REPLACE
+psicabskr	    lcabawlsertija	REPLACE
+psinama         lnmapnrma       REPLACE
+psijabatan      ljabsertija     REPLACE
+/*-------*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT        cur_field=psdstr2   DO_SKIP_IF  cbknlyr1pensrtj
+BEFORE_INPUT	    cur_field=psdstr3	DO_SKIP_IF  cbknlyr2pensrtj
+BEFORE_INPUT        cur_field=psdstr1   DO_SKIP_IF  clayer1pensertija
+BEFORE_INPUT        cur_field=psdstr1   DO_SKIP_IF  clayer2pensertija
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW misitype
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW misipsd
+
+AFTER_INPUT	        cur_field=psdstr1	DO_MAP SHOW
+		            IF cnipsama mdum
+		            ELSE HKCURSOR STAY
+		            HKMSG t.TdkBlhInptNipSama
+
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW
+                    IF cnipsama mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG t.TdkBlhInptNipSama
+
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW     
+                    IF clevelSertija	mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Level Jabatan Terlalu Kecil
+
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW
+                    IF clevelSertija    mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Level Jabatan Terlalu Kecil
+
+AFTER_INPUT         cur_field=psdstr2       DO_MAP SHOW
+                    IF c2atasannyapensrtj  mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Hanya Atasan yang boleh Input
+
+/*AFTER_INPUT         cur_field=psdstr1       DO_MAP SHOW
+                    IF cniptdksamaform  mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG t.NipHrsSamaDgnFormSrtj*/
+
+CALCS()
+cPenSert            tmpkode == "PENSERTIJA"
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD psdnourt
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cPenSert
+SFL_TARGET_IF   cMTSKRY    psddatpsmkod   lPENSRTJ    mtsnobuk                    
+SFL_TARGET_IF   cPRMSIKRY  psddatpsmkod   lPENSRTJ    hrmnobuk
+SFL_TARGET_IF   cRSGNKRY   psddatpsmkod   lPENSRTJ    hrmnobuk                    
+
+SFL_MAP	
+lPENSRTJ        psddata        REPLACE
+lnobuksertija   psdpsmkode     REPLACE
+lnipsertija     psdkode        REPLACE

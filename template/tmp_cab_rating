@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+lRATINGMGA      STRING  11
+lRATING         STRING  21
+lBUKUTAMU       STRING  11
+lawalbln        DATE    4
+
+
+DBCALCS(djoincadratemga)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cadcabdtidx	cabkode lRATINGMGA lRATING cadkode
+
+IMAGE(tmptranst)
+/----------t------t---------------t-----------t-------------t---------------t---------------\
+|t.Cabang  |t.ThBl|t.Kategori     |t.Target   |t.Actual     |t.Average      |t.%Actual      |
+\----------.------.---------------.-----------.-------------.---------------.---------------/
+
+IMAGE(tmptrans)
+|__________|______|_______________|___________|_____________|_____________._|_____________._|
+
+FIELD(tmptrans)
+cadkdcab        ALLCAPS         INPUTRI     1
+cadkode         ALLCAPS         INPUTRI     2
+cadkolek        NOCHANGE        INPUTRI     3
+cadtot3         NUMERIC         INPUTRI     4
+cadtot1         NUMERIC         INPUTRI     5
+cadtot2         NUMERIC         INPUTRI     6
+cadtot4         NUMERIC         INPUTRI     7
+
+DEFAULTS(tmptrans)
+lRATINGMGA      INIT    RATINGMGA
+lRATING         INIT    RATING
+lBUKUTAMU       INIT    BUKUTAMU
+caddata         INIT    RATINGMGA
+cadtype         INIT    RATING
+lawalbln        INIT    {ctglawlbln}
+
+CALCS()
+cjoincadratemga 	(djoincadratemga == 0 && g_curcmd == 1) || g_curcmd!=1
+cratingmga              cabpst == "PST40" && tmpkode == "RATINGMGA"
+cpersenact              (cadtot1 / cadtot3) * 100
+cbulatbawah             DO_LIB ap_bulat(cadtot3,l1,&cadtot3,lN)
+
+MAP(mdumrate)
+ldum	ldum	REPLACE
+
+EDITS(tmptrans)
+e.ValidateCab   cadkdcab VALIDATE cabkodidx mcabrating scabSV1
+
+MAP(mcabrating)
+cabkode         cadkdcab        REPLACE
+cbulatbawah     cadtot3         DO_CALC
+cpersenact      cadtot4         DO_CALC
+
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF cjoincadratemga  mdumrate
+                ELSE HKCURSOR STAY
+                HKMSG Tahun Bulan ini sdh ada
+BEFORE_INPUT    cur_field=cadkode       DO_SKIP_IF cadd
+
+
+SUBFILE(tmptrans)
+SFL_LINES(5)   
+SFL_TITLE(tmptranst)
+SFL_COND	cratingmga
+SFL_TARGET
+cadcabdtidx     cabkode lRATINGMGA lRATING
+SFL_MAP
+cabkode          cadkdcab  REPLACE
+
+CALCS()
+cratinggadai		g_grpnam == "RI" || g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RAS" || g_grpnam == "RASMGR" || g_grpnam=="BMMGADAI"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cratinggadai
+        PMT_UPDALL_COND cratinggadai
+        PMT_DEL_COND    cratinggadai 
+

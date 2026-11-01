@@ -1,0 +1,157 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|/----------------------------------------------------------\|
+||t.AccHslKonfirm : _____                                   ||
+||t.Keterangan    : __________________________              ||
+|\----------------------------------------------------------/|
+|/----------------------------------------------------------\|
+|| t.NoUrt         : ___                                    ||
+|| t.TglKonfirm    : ___________                            ||
+|| t.Nip           : ________ _________________________     ||
+|| t.TipeSDM       : ____________                           ||
+|| t.KetSdm        : _____________________                  ||
+|| t.Punishment    : _____________________                  ||
+|| t.Punishment2   : ___ ______________________		    ||
+|| t.DetVerif      : __________________________________     ||
+||                              _____                       ||
+|\----------------------------------------------------------/|
+\------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktdk                   ALLCAPS SCROLL                  INPUTRI 1
+aktcab                  ALLCAPS                         INPUTRI 2
+akturt                  PROTECT NOLIMIT                 INPUTRI 3
+akttgl                  NONE    NOLIMIT {DD-MM-YY}      INPUTRI 4
+aktkode2                ALLCAPS                         INPUTRI 5
+lnamasdm                PROTECT SCROLL                  INPUTRI 5
+aktbrg                  PROTECT SCROLL                  INPUTRI 6
+aktlok                  ALLCAPS SCROLL                  INPUTRI 7
+aktcrtusr               ALLCAPS SCROLL                  INPUTRI 8
+aktdf1			ALLCAPS SCROLL			INPUTRI 9
+laktpunish2             PROTECT	SCROLL                  INPUTRI 9
+aktket                  TEXTAREA                        INPUTRI 10
+lOK                     ALLCAPS SCROLL                  INPUTRI 11
+
+DEFAULTS(tmptranst)
+aktdf1			DFALT_SCAN_BLANKS	1 "GANTI_RUGI"
+						2 "PELAPORAN_POLISI"
+lOK                     INIT                    OK
+aktdk                   DFALT_SCAN_BLANKS       Y "ACC"
+                                                T "TACC"
+aktlok                  DFALT_SCAN_BLANKS       PELAKU_PELAKSANA "Pelaku Utama"
+                                                PELAKU_CONTROL "Control"
+                                                TAU_TIDAK_MELAPOR "Mengetahui Tidak Malapor"
+                                                PELAKU_TURUT_SERTA
+                                                SDM_HANYA_KONFIRMASI
+
+CALCS()
+cnoacc		aktdk == "T"
+cbagpart        aktbrg == "PARTNERSHIP"
+cnopart         aktbrg != "PARTNERSHIP" 
+csdhy           aktdk == "Y" 
+cjika1		aktdf1 == 1
+cjika2		aktdf1 == 2
+cGANTI_RUGI	"GANTI RUGI"
+cSTP		"PELAPORAN POLISI"
+
+
+EDITS(tmptranst) 
+e.Mandatory	 aktcab	       MANDATORY_IF cnoacc
+e.Mandatory	 aktlok		MANDATORY_IF ccek1d2
+e.Mandatory	 aktcrtusr	MANDATORY_IF ccek1d2
+e.Mandatory	 aktdf1		MANDATORY_IF ccek1d2
+t.Validate1      aktcrtusr     VALIDATE tbtdattypkod mtbdpunis1d4 stbt {Pgv_dttabel} {Pgv_dttabel21} {Plaudit} {Plpunish1} {Plsubpnh}
+/*t.Validate       laktpunish2   VALIDATE tbddatkodidx mtbdpunis2d4 stbd1 {Pgv_dttabel} {Plaudit} {PlPUNISH2}*/
+t.Validatepsi    aktkode2      VALIDATE psikodidx mpsireg 0
+t.ValidatePart   aktkode2      VALIDATE psikodidx mpsipart 0
+
+MAP(mpsireg)
+psikode         aktkode2        REPLACE
+psinama         lnamasdm        REPLACE
+psinpwp         ljnsdm          REPLACE
+ckdpun          lpunish1        DO_CALC
+clatihan        lsubpnh         DO_CALC_IF clatihan1
+creguler        lsubpnh         DO_CALC_IF creguler1
+cGANTI_RUGI	laktpunish2	DO_CALC_IF cjika1
+cSTP		laktpunish2	DO_CALC_IF cjika2
+
+MAP(mpsipart)
+psikode         aktkode2        REPLACE
+psinama         lnamasdm        REPLACE
+psinpwp         lpsinpwp        REPLACE
+ckdpun          lpunish1        DO_CALC
+cpartner0       lsubpnh         DO_CALC_IF cpartner1
+
+MAP(mtbdpunis1d4)
+tbtkode         aktcrtusr       REPLACE
+
+/*MAP(mtbdpunis2d4)
+tbdket		laktpunish2	REPLACE
+*/
+
+MAP(maddtld)
+aktkode2	tldplg		REPLACE_IF cnopart
+gv_OPEN		tldsts		REPLACE
+aktkode2	tldbisnis	REPLACE_IF cbagpart 
+aktlok		tldnoll		REPLACE
+aktcrtusr	tldppdoto	REPLACE
+laktpunish2	tldkat		REPLACE
+aktkode		tldnobuk	REPLACE
+tlmdata		tlddata		REPLACE
+aktkode		tldbrg		REPLACE
+aktket		tldket2		REPLACE
+akturt		tldnourt	REPLACE
+aktbukoto	tldoto		REPLACE
+akttgl		tldtglfak	REPLACE
+DEBUG ldum ldum		REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=akturt        DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=akttgl        DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=aktbrg        DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=aktkode2      DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=lnamasdm      DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=aktlok        DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=aktcrtusr     DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=aktket        DO_SKIP_IF ccek1d3
+BEFORE_INPUT	cur_field=aktdf1	DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=lOK           DO_SKIP_IF ccek1d
+BEFORE_INPUT    cur_field=aktdk         DO_SKIP_IF ccek1d2
+BEFORE_INPUT    cur_field=aktcab        DO_SKIP_IF ccek1d2
+BEFORE_INPUT    cur_field=akttgl        DO_SKIP_IF ccek1d2
+BEFORE_INPUT    cur_field=aktbrg        DO_SKIP_IF ccek1d2
+BEFORE_INPUT    cur_field=lnamasdm      DO_SKIP_IF ccek1d2
+BEFORE_INPUT    cur_field=aktkode2      DO_SKIP_IF ccek1d2
+BEFORE_INPUT	cur_field=aktcab	DO_SKIP_IF csdhy
+AFTER_INPUT     cur_field=aktket        DO_MAP  SHOW    mcekpjg20
+AFTER_INPUT     cur_field=aktket        DO_MAP  SHOW
+                                        IF cpjgket mdumakt
+                                        ELSE HKCURSOR STAY
+                                        HKMSG t.Minimal20Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD akturt
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+        aktkodtypidx   tlmnobuk lHSLVERIF11 lHSLVERIF
+SFL_MAP
+tlmnobuk        aktkode                 REPLACE
+lHSLVERIF       aktdata                REPLACE
+lHSLVERIF       akttype                 REPLACE
+
+
+SPCALCS(spd4to2)
+  DO_LIB_IF csdhkonfir          ap_dbclc(DNAME daddtld2,DCOMMAND ADD,DFILE tld,DMAP maddtld);
+
+POSTING(tmptrans)
+  PST_UPDCMD    spd4to2
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cubahspv2
+PMT_DEL_COND    c0
+                      

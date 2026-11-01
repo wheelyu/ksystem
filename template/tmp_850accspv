@@ -1,0 +1,109 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|/------------------------------------------\/--------------------------------\|
+||t.AccTemuan  : _____          	    ||  t.AccFRAUD : _____            ||
+||t.Ket        : __________________________ ||  t.Spvfraud : __________       ||
+|\------------------------------------------/\--------------------------------/|
+|/----------------------------------------------------------------------------\|
+||t.NoUrt        : ___                                                        ||    
+||t.Tanggal      : ________                                                   ||       
+||t.Nip          : __________  ________________________________ ___________   ||
+||t.DetTemu      : ________________________________________________________   ||
+||t.DetTemu1     : ________________________________________________________   ||        
+||t.DetTemu2     : ________________________________________________________   ||      
+|\----------------------------------------------------------------------------/|
+\------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svitype2                NOCHANGE SCROLL                 INPUTRI 1  /*Revisi */
+svistr3                 NOCHANGE SCROLL                 INPUTRI 2  /*ACC*/
+svinama                 ALLCAPS                         INPUTRI 3  /*Ket Fraud */
+svistr5                 NOCHANGE SCROLL                 INPUTRI 4  /*SPV FRAUD*/
+svinourt                PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 5
+svitgl1                 PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 5
+svistr2                 PROTECT SCROLL                  INPUTRI 6
+lnama4                  PROTECT SCROLL                  INPUTRI 6
+svistr4                 PROTECT SCROLL                  INPUTRI 7
+sviket                  TEXTAREA PROTECT                INPUTRI 8
+sviket2                 TEXTAREA PROTECT 	        INPUTRI 9
+sviket3                 TEXTAREA PROTECT 	        INPUTRI 10
+
+DEFAULTS(tmptranst)
+svitype2		DFALT_SCAN	 	Y
+					 	T
+svistr3                 DFALT_LIST		ACC	        
+						
+svistr5 		DFALT_SCAN_BLANKS	NON_FRAUD
+                                         	ADM
+                                         	FRAUD
+
+EDITS(tmptranst)
+e.MandatoryTemuan	svinama		MANDATORY_IF cspvT
+e.Validatesdm           svistr2         VALIDATE psmkodidx mpsmauditjr 0
+
+
+CALCS()
+cY              "Y"
+cT              "T"
+cACC            svistr3 == "ACC"  
+cTACC           svistr3 == "TACC" 
+cfraud          svistr5 == "FRAUD"
+csvistr5	svistr5 == "FRAUD" || svistr5 == "NON_FRAUD"
+ctacchead	djoinakthead == 1 && lkethead == "REVISI_INDIKASI" && lheadT == "T"
+cdjoinacc       svistr3 == "ACC" && ~svistr3 != "ACC" && djoinsvi2 == 0
+cdjoinacc1      (svistr3 == "ACC" || svistr3 == "TACC") && ~svistr3 != "ACC" && djoinsvi2 == 1
+
+MAP(mpsmauditjr)
+psmkode                 svistr2         REPLACE
+psmnama                 lnama4          REPLACE
+curtod2                 lurtype         DO_CALC
+
+MAP(mupdsvi)
+g_tgltrn                svitgl1         REPLACE_IF cdjoinacc
+g_tgltrn                svitgl1         REPLACE_IF cdjoinacc1
+
+MAP(mupdtlmmstr2)
+cY              tlmytppn        DO_CALC_IF cACC
+cT              tlmytppn        DO_CALC_IF cTACC
+svistr5         tlmtype1        REPLACE_IF cfraud
+cBLANKS         lsvistr5        DO_CALC
+svistr5         lsvistr5        REPLACE
+svistr5		lsvistr5	REPLACE_IF csvistr5
+cBLANKS		tlmstsapr	DO_CALC_IF ctacchead 
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=svistr3	DO_SKIP_IF ccek1d 
+BEFORE_INPUT	cur_field=svistr5	DO_SKIP_IF ccek1d 
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF ccek1d2
+BEFORE_INPUT    cur_field=svinama       DO_SKIP_IF ccek1d2
+AFTER_INPUT     cur_field=svistr3       DO_MAP SHOW mupdsvi
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cnotvalid
+SFL_SORT_BY_FIELD svinourt
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+        svidatbuktyp   tlmdata tlmnobuk
+
+SFL_MAP
+tlmdata         svidata                 REPLACE
+tlmnobuk        svinobuk                REPLACE
+laudit11        svitype                 REPLACE
+
+SPCALCS(spupd2)
+        DO_LIB                   ap_dbclc(DNAME dupdtlmmaster3,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmstr2);
+	
+POSTING(tmptrans)
+  PST_UPDCMD      spupd2
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND cdetspv
+/*PMT_UPDALL_COND cisid4dulu
+PMT_UPD_MSG IF  cbelum4d  t.KerjakanHasilVerifDulu*/
+PMT_DEL_COND	c0

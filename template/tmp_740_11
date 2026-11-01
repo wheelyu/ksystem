@@ -1,0 +1,118 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+| /-------------------------------------------\/-------------------------------------------------\ |
+| | i.Data           : _____________________     spasi                                           | |
+| | i.Pekerjaan      : ______  _____________     i.Jabatan        : ___  ________________        | |
+| | t.StatusKaryawan : _____________________     t.Fi/Nfi         : __________                   | |
+| | i.LamaKerja      : ____ i.Th  ____ i.Bln     i.Jamkerja       : _____________________        | |
+| \-------------------------------------------/\-------------------------------------------------/ |
+| /----------------------------------------------------------------------------------------------\ |
+| | i.NamaPT         : ______________________________________ _ _                                | |
+| | i.Alamat         : _________________________________________________________________________ | |
+| | i.Prop           : ____ ___________________  i.Kota           : _____ ______________________ | |
+| | i.Kec            : _______ ________________  i.Kel            : ________ ___________________ | |
+| | i.Telp           : ______________                                                            | |
+| \----------------------------------------------------------------------------------------------/ |
+| /----------------------------------------------------------------------------------------------\ |
+| |i.Jmltanggung    : ___                                                                        | |
+| |i.Penghasilanbln : _______________           i.Penghasilantmbh: ______________                | |
+| |i.Pengeluaranbln : _______________           t.Khl            : ______________                | |
+| |i.Sisapenghasilan: _______________                                                            | |
+| \----------------------------------------------------------------------------------------------/ |
+| /----------------------------------------------------------------------------------------------\ |
+| |i.Keterangan     : ___________________________________________________________________________| |
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1                 ALLCAPS SCROLL                  INPUTRI 1
+svistr2                 ALLCAPS SCROLL                  INPUTRI 3
+lketpekerjaan           PROTECT SCROLL                  INPUTRI 3
+svitblkode              ALLCAPS SCROLL                  INPUTRI 4
+lsvitblkode             PROTECT SCROLL                  INPUTRI 4
+svistr9                 NOCHANGE SCROLL                 INPUTRI 4
+svitype2                NOCHANGE                        INPUTRI 4
+svidf1                  NUMERIC                         INPUTRI 5
+svidf2                  NUMERIC SCROLL                  INPUTRI 6
+svistr10                NOCHANGE SCROLL                 INPUTRI 7
+
+svinama                 ALLCAPS SCROLL                  INPUTRI 8
+lalmprop                PROTECT UNSEEN                  INPUTRI 8
+lalmkota                PROTECT UNSEEN                  INPUTRI 8
+sviket                  ALLCAPS SCROLL                  INPUTRI 9
+svistr4                 ALLCAPS SCROLL                  INPUTRI 10
+lpropinsi               PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr5                 ALLCAPS SCROLL                  INPUTRI 10
+lkota                   PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr6                 ALLCAPS SCROLL                  INPUTRI 11
+lkec                    PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr7                 ALLCAPS SCROLL                  INPUTRI 12
+lkel                    PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr8                 ALLCAPS SCROLL                  INPUTRI 13
+
+svidf4                  NUMERIC SCROLL                  INPUTRI 14
+svidf5                  NUMERIC SCROLL                  INPUTRI 15
+svidf6                  NUMERIC SCROLL                  INPUTRI 16
+svidf7                  NUMERIC SCROLL                  INPUTRI 17
+svidf3                  PROTECT  NUMERIC SCROLL         INPUTRI 18
+svidf8                  PROTECT SCROLL                  INPUTRI 18
+sviket2                 ALLCAPS SCROLL                  INPUTRI 19
+
+IMAGE(tmptrans)
+
+CALCS()
+cNFI                    "NON FI"
+cFI                     "FI"
+cnfi                    svistr2!="PN" && svistr2!="SW"
+cfi                     svistr2=="PN" || svistr2=="SW"
+clsubpekerjaan          "SUBPEKERJAAN"+STRIP(svistr2)
+cvalidasipekerjaan      svistr2!="MF" && svistr2!="PE" && svistr2!="NB"
+cdjoinalmsurvey1        djoinalmsurvey==1
+
+EDITS(tmptranst)
+e.validate          svistr2       VALIDATE tbldtdtmkod mtbd2_1  stbl {Pgv_dttabel} {Pgv_pekerjaan21}
+e.validate          svitblkode    VALIDATE_IF cvalidasipekerjaan tbddatkodidx mtbd2_2 stbd {Pgv_dttabel} {Pgv_personal} {Plsubpekerjaan}
+e.validateKHL       lalmkota      VALIDATE_IF cdjoinalmsurvey1 tbldtdtmkod mtbl_khl stbl {Pgv_dtkota} {Plalmprop}
+e.validatePropinsi1 svistr4       VALIDATE dtmdtkodidx  mdtm_tmp sdtm {Pgv_dtkota}
+e.validateKota1     svistr5       VALIDATE tbldtdtmkod mtbl_tmp stbl {Pgv_dtkota} {Psvistr4}
+e.validateKec1      svistr6       VALIDATE tbddatkodidx mtbd_tmp stbd {Pgv_dtkota} {Psvistr4} {Psvistr5}
+e.validateKel1      svistr7       VALIDATE tbtdattypkod mtbt_tmp stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr4} {Psvistr5} {Psvistr6}
+
+MAP(mtbd2_1)
+tblkode         svistr2         REPLACE
+tblket          lketpekerjaan   REPLACE
+clsubpekerjaan  lsubpekerjaan   DO_CALC
+cNFI            svitype2        DO_CALC_IF cnfi
+cFI             svitype2        DO_CALC_IF cfi
+
+MAP(mtbd2_2)
+tbdkode         svitblkode      REPLACE
+tbdket          lsvitblkode     REPLACE
+
+MAP(mdtm_tmp)
+dtmkode         svistr4         REPLACE
+dtmket          lpropinsi       REPLACE
+
+MAP(mtbl_tmp)
+tblkode         svistr5         REPLACE
+tblket          lkota           REPLACE
+
+MAP(mtbd_tmp)
+tbdkode         svistr6         REPLACE
+tbdket          lkec            REPLACE
+
+MAP(mtbt_tmp)
+tbtkode         svistr7         REPLACE
+tbtket          lkel            REPLACE
+
+MAP(mtbl_khl)
+tbljml4         svidf3          REPLACE
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey piknobtm gv_capacityH1
+
+

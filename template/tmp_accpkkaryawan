@@ -1,0 +1,135 @@
+LOCAL
+PGM_FIELDS
+lnamaplg   		STRING	21
+lnamakry    		STRING	21
+lPLFKRY			STRING	21
+lrmdgabplafonkry1	STRING	61
+lMASTERBGKRY		STRING	21
+lrmdgabbungakry1	STRING	61
+
+DBCALCS(djoinrmdmasterplafonkry)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx gv_INPG lrmdgabplafonkry1
+DBCALCS(djoinrmdmasterbungakry)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx gv_INPG lrmdgabbungakry1
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.NoBuk    : ____________________||
+||i.Ktp      : ____________________||
+||i.Nama     : ____________________||
+||i.Soa      : ____________________||
+||i.Nip      : ____________________||
+||i.Nama     : ____________________||
+||t.PerCair  : ____________________||
+||i.BungaStd : ____________________||
+||t.Acc1     : ____________________||
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnobuk	PROTECT                 INPUTRI 1			
+btdukrwrn	PROTECT                	INPUTRI 1
+lnamaplg	PROTECT			INPUTRI 3	
+btdkat   	PROTECT  SCROLL		INPUTRI	4
+btmnokk		PROTECT SCROLL		INPUTRI	4
+lnamakry	PROTECT SCROLL		INPUTRI	5
+btdhrg  	NUMERIC       		INPUTRI	6
+btdjml  	NUMERIC       		INPUTRI	7
+btdjaba		PROTECT SCROLL		INPUTRI	8
+
+CALCS()
+cacc		"ACC_OK"
+cfototacc	0
+
+DEFAULTS(tmptranst)
+lPLFKRY			INIT		PLFKRY
+lMASTERBGKRY		INIT		MASTERBGKRY
+
+
+EDITS(tmptranst)
+e.Mandatory             btdhrg          MANDATORY
+e.Mandatory             btdjml          MANDATORY
+
+t.ValidateID            btdukrwrn       VALIDATE psmplgstsktp   mpsmdeb5d 0 {Pgv_dtkonsumen} {Pgv_INPG}
+t.ValidateID            btmnokk         VALIDATE psmkodidx      mpsmkry5d 0
+
+MAP(mpsmdeb5d)
+psmnama		lnamaplg	REPLACE
+
+MAP(mpsmkry5d)
+psmnama		lnamakry	REPLACE
+
+MAP(mupdaccpk)
+cacc            btdjaba         DO_CALC
+DBCALCS(dupdaccpk)
+        DCOMMAND        UPDATE
+        DTARGET         btdprmidx btdprm
+        DMAP            mupdaccpk
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	ckaryawanx
+SFL_UPL_DELCOND cfototacc
+SFL_UPLFLD_DBCALCS dupdaccpk
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk btdukrwrn
+
+SFL_TARGET
+	btdbukurtidx btmnobuk
+
+SFL_MAP
+btmnobuk	btdnobuk	REPLACE
+g_tgltrn	btdtgl1  	REPLACE
+gv_INPG		btdsts		REPLACE
+gv_bukutamu  	btddata		REPLACE
+btmnobuk	btdbrg		REPLACE
+btmplg     	btdsat		REPLACE
+btmplg     	btdlok		REPLACE
+btmplg		btdukrwrn	REPLACE
+btmsoa		btdkat		REPLACE
+/***********************************************************************/
+/***********************************************************************/
+CALCS()
+ctmpkry     		(btmsts=="611" || btmsts=="631") && (g_grpnam=="DCOOOPR" || g_grpnam=="MKTM2WDVH" || g_grpnam=="CREDITHMCDVH" || g_grpnam=="CREDITM2WDVH" || g_grpnam=="B.M4WDVH" || g_grpnam=="DCOOHMC" || g_grpnam=="M2WSRGM" || g_grpnam=="COO" || g_grpnam=="DCOOM2W")
+chanyam2w		btmdvsjl=="M2W" || btmdvsjl=="M2W4W"
+cdjoinrmdplafonkry	lrmdgabplafonkry1!=" " && djoinrmdmasterplafonkry==1
+cdjoinrmdbungakry 	lrmdgabbungakry1!=" " && djoinrmdmasterbungakry==1
+crmdgabplafonkryx	"PLFKRY" + STRIP(btmdvsjl)
+crmdgabbungakry		"MASTERBGKRY" + STRIP(btmdvsjl)
+
+MAP(mapmaprmdD)
+crmdgabplafonkryx	lrmdgabplafonkry1	DO_CALC_IF chanyam2w
+crmdgabbungakry  	lrmdgabbungakry1 	DO_CALC
+
+MAP(mupdrmdplafon)
+btdhrg		rmdtotal1		REPLACE
+
+MAP(mupdrmdbunga)
+btdjml		rmdtotal1		REPLACE
+
+SPCALCS(sptransaddtmp)
+	DO_LIB	ap_dbclc(DNAME dmapmaprmd, DCOMMAND MAPMAP, DMAP mapmaprmdD);
+	DO_LIB_IF cdjoinrmdplafonkry	ap_dbclc(DNAME dupdrmdplfkary, DCOMMAND UPDATE_RANGE, DTARGET rmdstskodgab gv_INPG lPLFKRY btmdvsjl lrmdgabplafonkry1, DMAP mupdrmdplafon);
+	DO_LIB_IF cdjoinrmdbungakry	ap_dbclc(DNAME dupdrmdbungkary, DCOMMAND UPDATE_RANGE, DTARGET rmdstskodgab gv_INPG lMASTERBGKRY btmdvsjl lrmdgabbungakry1, DMAP mupdrmdbunga);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransaddtmp
+
+PERMIT(tmptrans)
+PMT_ADD_COND	ctmpkry
+PMT_UPDALL_COND	c0          
+PMT_DEL_COND	c0

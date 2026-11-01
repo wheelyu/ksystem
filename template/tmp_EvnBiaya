@@ -1,0 +1,73 @@
+LOCAL
+PGM_FIELDS
+ljumlahbiaya	DFLOAT	8
+
+IMAGE(tmptranst)
+/--------------------------------\
+  t.Ket	  	: ______________
+  t.BiSewa	: ______________
+  t.BiLck       : ______________
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdket		TEXTAREA ALLCAPS	INPUTRI	1
+tkdjml		NUMERIC			INPUTRI	2
+tkdjml2         NUMERIC	        	INPUTRI 3
+
+DEFAULTS(tmptranst)
+tkddata 	INIT		"EVENT"
+tkdsts		INIT		"lBIA"
+tkdnourt	INIT		5
+
+CALCS()
+ctotalbiaya	tkdjml + tkdjml2
+cm2wbtl		(tlmdvs == "M2W" && tlmgrup == "BTL" && tlmdari != "PAP") || 
+                (tlmdvs == "M2W" && tlmdari == "PAP" && (tlmtgljtp - tlmtgl <= 30)) ||
+                (tlmdvs == "M2W" && tlmdari == "PAP" && (tlmtgljtp - tlmtgl > 30) && djointlmtld == 1 && ltlddk != "Y") ||
+                (tlmdvs != "M2W" && tlmgrup != "BTL") ||
+                (tlmdari == "TAG" || tlmdari == "MTR" || tlmdvs != "M2W")
+clebih500	(tkdjml >= 500000 && tlmdari == "PAP" && tlmdvs == "M2W") || (tlmdari != "PAP" && tlmdvs == "M2W") || (tlmdvs != "M2W")
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tkdjml    	DO_MAP SHOW
+                IF clebih500  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BiayaPAPMinimal500Ribu
+AFTER_INPUT     cur_keybd=EN    	DO_MAP SHOW
+                IF clebih500  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BiayaPAPMinimal500Ribu
+
+
+MAP(mmapmapbia)
+ctotalbiaya	ljumlahbiaya	DO_CALC	
+DEBUG	ldum	ldum		REPLACE
+
+MAP(mupdtlmbia)
+ljumlahbiaya	tlmtotal	REPLACE
+l5		tlmperdisd	REPLACE
+
+MAP(mupdtlmpk)
+gv_int1         tlmjml          REPLACE_IF ckrg50
+ctgtpk          tlmjml          DO_CALC_IF clbh50
+ctgtpkbulat     tlmjml          DO_CALC
+tlmjml          ltgtpkx         REPLACE
+ctgtjual	tlmjml2		DO_CALC
+ctgtjlbulat	tlmjml2		DO_CALC
+
+SPCALCS(sptranstmp)
+	DO_LIB	ap_dbclc(DNAME dmapmapbia, DCOMMAND MAPMAP, DMAP mmapmapbia);
+        DO_LIB  ap_dbclc(DNAME dupdtlmbia, DCOMMAND UPDATE, DTARGET tlmbukidx tkdnobuk, DMAP mupdtlmbia);
+	DO_LIB	ap_dbclc(DNAME dupdtlmpk, DCOMMAND UPDATE, DTARGET tlmbukidx tkdnobuk, DMAP mupdtlmpk);	
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cm2wbtl
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        tkdbukidx	tlmnobuk lbia l5
+
+POSTING(tmptrans)
+	PST_UPDCMD	sptranstmp

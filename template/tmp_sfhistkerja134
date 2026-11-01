@@ -1,0 +1,132 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------\|
+  i.No              :  ___    __
+  t.SdhPengalaman   :  ___________
+  i.NmPt            :  ________________________________                                                  
+  i.BidPt           :  ________________________________                                                  
+  t.MshBkrjTdk         ____   _________________________
+  i.LmKrj           :  ___________  t.sd   ___________
+  i.Jabatan         :  ________________________________                                                       
+  t.LevelJabatan    :  ____   _________________________ 
+|\---------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt		PROTECT           	INPUTRI 1
+g_usrkode		PROTECT	UNSEEN		INPUTRI	2
+psdtype3		NOCHANGE        		INPUTRI 2
+psdket2 		ALLCAPS           	INPUTRI 3
+psdstr1 		ALLCAPS                	INPUTRI 4
+psdtot3			NOCHANGE		INPUTRI	5
+lpsdtot3		PROTECT			INPUTRI	6
+psdtgl1			NONE {DD-MM-YY} NOLIMIT	INPUTRI	8
+psdtgl2			NONE {DD-MM-YY} NOLIMIT INPUTRI 8
+psdkode   		ALLCAPS                	INPUTRI 8
+psdtot2			NOCHANGE		INPUTRI	9
+lpsdtot2		NOCHANGE		INPUTRI	10
+
+
+DEFAULTS(tmptranst)
+psdtot3			DFALT_SCAN BLANKS       1 "Ya"
+                                                2 "Tidak"
+
+psdtype3		DFALT_SCAN BLANKS ADA TIDAK
+psdtot2			DFALT_SCAN BLANKS 1 "STAFF"
+					  2 "OFFICER"
+					  3 "SUPERVISOR"
+					  4 "MANAGER"
+					  5 "GENERAL MANAGER"
+CALCS()
+cjoinpsd22u0     djoinpsd22 == 0 && g_curcmd == 1
+cjoinpsd22u1     djoinpsd22 == 1 && g_curcmd == 1
+cadapengalaman	 (psdtype3=="TIDAK" && djoinpsd22==0) || psdtype3!="TIDAK"
+cblmpengalaman	 (psdtype3=="ADA" && djoinpsd22==1 && lpengalaman!="TIDAK") || psdtype3!="ADA" || djoinpsd22==0
+cada		 psdtype3=="ADA"
+ctidak		 psdtype3=="TIDAK"
+
+cSTAFF		"STAFF"
+cOFFICER	"OFFICER"
+cSUPERVISOR	"SUPERVISOR"
+cMANAGER	"MANAGER"
+cGENERALMANAGER	"GENERAL MANAGER"
+clevel1		psdtot2==1
+clevel2		psdtot2==2
+clevel3		psdtot2==3
+clevel4		psdtot2==4
+clevel5		psdtot2==5
+cmasihkerja	psdtot3==1
+cmasihkerjatidak	psdtot3==1 || psdtype3=="TIDAK"
+ctdkkerja	psdtot3==2
+cya		"Ya"
+ctdkxy		"Tidak"
+cmasihkosong	psdtot3==0
+cbelang		BLANKS
+ctanggallebih	(psdtot3==2 && psdtgl2>=psdtgl1) || psdtot3==1 || psdtype3=="TIDAK"
+
+EDITS(tmptranst)
+
+e.Mandatory psdtype3	MANDATORY
+e.Mandatory psdstr1 	MANDATORY_IF cada
+e.Mandatory psdkode 	MANDATORY_IF cada
+e.Mandatory psdket2 	MANDATORY_IF cada
+e.Mandatory psdtot2	MANDATORY_IF cada
+e.Mandatory psdtgl1	MANDATORY_IF cada
+e.Mandatory psdtot3	MANDATORY_IF cada
+e.Mandatory psdtgl2	MANDATORY_IF ctdkkerja
+
+e.validate	g_usrkode	VALIDATE	psikodidx mpsihis
+
+MAP(mpsihis)
+cSTAFF		lpsdtot2	DO_CALC_IF clevel1
+cOFFICER	lpsdtot2        DO_CALC_IF clevel2
+cSUPERVISOR	lpsdtot2        DO_CALC_IF clevel3
+cMANAGER	lpsdtot2        DO_CALC_IF clevel4
+cGENERALMANAGER	lpsdtot2        DO_CALC_IF clevel5
+cya		lpsdtot3	DO_CALC_IF cmasihkerja
+ctdkxy		lpsdtot3	DO_CALC_IF ctdkkerja
+cbelang		lpsdtot3	DO_CALC_IF cmasihkosong
+
+MAP(murutHistKerja)
+csatu           psdnourt      DO_CALC_IF cjoinpsd22u0
+curut_psd       psdnourt      DO_CALC_IF cjoinpsd22u1
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdnourt         DO_MAP SHOW murutHistKerja
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdstr1	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdkode	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtot2	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtgl1	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtot3	  DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=psdtgl2	  DO_SKIP_IF cmasihkerjatidak
+
+AFTER_INPUT     cur_field=psdtgl2       DO_MAP SHOW
+                IF ctanggallebih mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tglbesar
+
+AFTER_INPUT     cur_field=psdtype3       DO_MAP SHOW
+                IF cadapengalaman mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SudahInputTidaka
+
+AFTER_INPUT     cur_field=psdtype3       DO_MAP SHOW
+                IF cblmpengalaman mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SudahInputTidakb
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_histkerja  btmplg    
+
+SFL_MAP
+gv_histkerja    psddata         REPLACE
+btmplg          psdpsmkode      REPLACE
+

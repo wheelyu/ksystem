@@ -1,0 +1,67 @@
+MAP(mcaritkd)
+tkdnourt	lnourt	REPLACE
+
+DBCALCS(djointkd)
+	DBC_COMMAND JOIN_LAST_SFL
+	DBC_TARGET tkddatbukll ltkddata tkmnobuk ltkdnoll 
+	DBC_MAP mcaritkd
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+| t.NoUrt	: _________________ |
+| t.Tanggal	: _________________ |
+| t.JnsEvent	: _________________ |
+| t.Trgt	: _________________ |
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnourt	PROTECT			INPUTRI 1
+tkdtgl		ALLCAPS {DD-MM-YYYY}	INPUTRI	1
+tkdnoll		PROTECT			INPUTRI	2
+tkdjml		ALLCAPS			INPUTRI	3	
+
+EDIT(tmptranst)
+e.Mandatory	tkdtgl	MANDATORY
+e.Mandatory	tkdjml	MANDATORY
+
+CALCS()
+ctkd0   djointkd==0 && g_curcmd==1
+ctkd1   djointkd==1 && g_curcmd==1
+cisi    1
+ctam    lnourt+1
+
+MAP(murut)
+cisi tkdnourt	DO_CALC_IF ctkd0
+ctam tkdnourt	DO_CALC_IF ctkd1
+
+CALCS()
+cpameran	"PAMERAN"
+ctpameran	tmpkode == "TARGETPAMERAN"
+ctroadshow	tmpkode == "TARGETROADSHOW"
+croadshow	"ROADSHOW"
+cshowroom	"SHOWROOM"
+ctshowroom	tmpkode == "TARGETSHOWROOMEVENT"
+
+MAP(mtype)
+cpameran	ltkdnoll	DO_CALC_IF ctpameran
+croadshow	ltkdnoll	DO_CALC_IF ctroadshow
+cshowroom	ltkdnoll	DO_CALC_IF ctshowroom
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdtgl	DO_MAP SHOW mtype
+AFTER_INPUT	cur_field=tkdjml 	DO_MAP SHOW murut
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET tkddatbukll	ltkddata tkmnobuk lpameran
+SFL_MAP 
+	tkmnobuk        tkdnobuk        REPLACE
+	ltkddata	tkddata		REPLACE
+	tkmsts		tkdsts		REPLACE
+	ltkdnoll	tkdnoll		REPLACE
+	

@@ -1,0 +1,172 @@
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |            _____ _____________||
+| |             _________________ ||
+| |t.ANrmh      __________________||
+| |t.Hub        __________________||
+| |t.rmhdinas   _________________ ||
+| |t.UplodOk    ____ _____________||_
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.divheadmkt _____             ||
+| |_______________________________||
+| |         ________  _________   ||
+| |t.divheadpiu _____             ||
+| |_______________________________||
+| |         ________  _________   ||
+| |t.DCOO       _____             ||
+| |_______________________________||
+| |_____    ________  _________   ||
+| \-------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svists          PROTECT                   INPUTRI 1
+        svistr5         PROTECT                   INPUTRI 1
+        svikode         PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svistr2         PROTECT                   INPUTRI 2
+        svistr3         PROTECT                   INPUTRI 2
+        svistr4         PROTECT                   INPUTRI 2
+        svistr1         PROTECT                   INPUTRI 3
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 4
+        svinobuk        PROTECT QPROTECT UNSEEN   INPUTRI 5
+        sviyt1          ALLCAPS                   INPUTRI 5
+        sviket          TEXTAREA ALLCAPS          INPUTRI 6
+        ltgldvh1        PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamdvh1        PROTECT                   INPUTRI 7
+        svistr31        ALLCAPS                   INPUTRI 5
+        sviket3         TEXTAREA ALLCAPS          INPUTRI 6
+        ltgldvh2        PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamdvh2        PROTECT                   INPUTRI 7
+        svistr32        ALLCAPS                   INPUTRI 5
+        svinama         TEXTAREA ALLCAPS          INPUTRI 6
+        lok             NOCHANGE                  INPUTRI 7
+        ltglcoo         PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamcoo         PROTECT                   INPUTRI 7
+
+
+CALCS()
+ckodebkr           svitype == "DEVBKR"
+
+DEFAULTS(tmptranst)
+svistr4            DFALT_SCAN BLANKS YA TIDAK
+sviyt1             DFALT_SCAN_BLANKS Y T
+svistr31           DFALT_SCAN_BLANKS Y T
+svistr32           DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.isiyt           sviyt1         MANDATORY_IF cbknCL1
+e.isiket          sviket         MANDATORY_IF cT            
+e.isiyt           svistr31       MANDATORY_IF cbknCL2   
+e.isiket          sviket3        MANDATORY_IF cT3           
+e.isiyt           svistr32       MANDATORY_IF cbknDCOO1
+e.isiket          svinama        MANDATORY_IF cT4           
+e.stsbukan707     svikode        VALIDATE ftmdatbukidx mftm10 sftm6 {PlMULTI4W}
+
+MAP(mftm10)
+ftmnofak        svikode           REPLACE
+ltgldvh1        ltgldvh1          REPLACE_IF cjoinaktdvh1
+ljamdvh1        ljamdvh1          REPLACE_IF cjoinaktdvh1
+ltglcm          ltglcm            REPLACE_IF cjoinaktcm
+ljamcm          ljamcm            REPLACE_IF cjoinaktcm
+ltgldvh2        ltgldvh2          REPLACE_IF cjoinaktdvh2
+ljamdvh2        ljamdvh2          REPLACE_IF cjoinaktdvh2
+ltglcoo         ltglcoo           REPLACE_IF cjoinaktcoo
+ljamcoo         ljamcoo           REPLACE_IF cjoinaktcoo
+
+MAP(mapra10)
+g_grpnam        svistr5           REPLACE_IF cbknCL   
+cDVHM4WCOLL     svistr5           DO_CALC_IF cbknCL2
+gv_CLSD         svists            REPLACE_IF ctlk0cc
+gv_TACC         svists            REPLACE_IF ctlk1cc
+gv_TACC         svists            REPLACE_IF ctlk1c2
+gv_RCLS         svists            REPLACE_IF ctolak3bb
+DEBUG       ldum   ldum           REPLACE             
+
+
+MAP(mmapmap10)
+ldum            ldum              REPLACE
+svinourt        lurut             REPLACE
+cnobukabk       lkunci            DO_CALC
+
+MAP(mkunci10a)
+gv_CLSD         abksts            REPLACE_IF cnipsama
+
+MAP(mkunci10)
+gv_CLSD         abksts            REPLACE
+
+
+SPCALCS(supdabk10)
+DO_LIB                 ap_dbclc(DNAME dmapmap10,DCOMMAND MAPMAP,DMAP mmapmap10);
+DO_LIB                 ap_dbclc(DNAME dakt10,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cbkunci      ap_dbclc(DNAME daddkunc10,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci10a);
+DO_LIB_IF cbkunci2     ap_dbclc(DNAME dupdkunc10b,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci10);
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapra10
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdabk10
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknCLa
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknCLa
+BEFORE_INPUT    cur_field=svistr31      DO_SKIP_IF cbknCLb
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cbknCLb
+BEFORE_INPUT    cur_field=svistr32      DO_SKIP_IF cbknDCOO
+BEFORE_INPUT    cur_field=svinama       DO_SKIP_IF cbknDCOO
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket   
+AFTER_INPUT     cur_field=sviket        DO_MAP
+                IF cisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+AFTER_INPUT     cur_field=sviket3       DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket3       DO_MAP
+                IF cisiket3 mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+AFTER_INPUT     cur_field=svinama       DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=svinama       DO_MAP
+                IF cisiket4 mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+
+
+MAP(mupdsviftmandx10a)
+cOK             svistr1         DO_CALC
+g_tgltrn        svitgl1         REPLACE
+
+DBCALCS(dbftupl10a)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx10a
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl10a
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT   ckodebkr
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c02                
+  PMT_UPDALL_COND  cdevinpg      
+  PMT_DEL_COND  c02       
+
+
+
+

@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+linpgfpd        STRING          21
+lfpd30          STRING          21
+linpgfid        STRING          21
+lfid30          STRING          21
+lFLAGFID4W6     STRING          11
+lFLAGFID4W7     STRING          11
+lFLAGFPDM4W     STRING          11
+linpgfid6       STRING          21
+linpgfid7       STRING          21
+lfid            STRING          21
+lfpd            STRING          21
+
+MAP(mjoinrtm6)
+rtmkode         linpgfid6      REPLACE
+
+DBCALCS(djoinrtm6)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rtmdatbuktgl    lFLAGFID4W6 lthbl  piknobuk
+        DBC_MAP         mjoinrtm6
+
+MAP(mjoinrtm7)
+rtmkode         linpgfid7      REPLACE
+
+DBCALCS(djoinrtm7)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rtmdatbuktgl    lFLAGFID4W7 lthbl  piknobuk
+        DBC_MAP         mjoinrtm7
+
+MAP(mjoinfpd)
+rtmkode         linpgfpd       REPLACE
+
+DBCALCS(djoinfpd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rtmdatbuktgl    lFLAGFPDM4W lthbl  piknobuk
+        DBC_MAP         mjoinfpd
+
+IMAGE(tmptranst)
+/---------------------------\
+|t.INPGFPD?     ________    |
+|t.FPD?         ________    |
+|t.INPGFID?     ________    |
+|t.FID?         ________ __ |
+\---------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+linpgfpd        PROTECT                 INPUTRI 1
+lfpd30          PROTECT                 INPUTRI 2
+linpgfid        PROTECT                 INPUTRI 3
+lfid30          PROTECT                 INPUTRI 4
+piknobtm        PROTECT UNSEEN          INPUTRI 5
+
+DEFAULTS(tmptranst)
+lFLAGFID4W6     INIT            FLAGFID4W6
+lFLAGFID4W7     INIT            FLAGFID4W7
+lFLAGFPDM4W     INIT            FLAGFPDM4W
+
+CALCS()
+cfid0                  BLANKS
+cfpd0                  BLANKS
+cfid30                 g_tgltrn - piktgljtp > 30 && (djoinrtm6 == 1 || djoinrtm7 == 1 )
+cfpd7                  g_tgltrn - piktgljtp > 7 && djoinfpd == 1 
+cfid                   "FID30"
+cfpd                   "FPD"
+cjoinrtm6              djoinrtm6 == 1
+cjoinrtm7              djoinrtm7 == 1
+cjoinfpd               djoinfpd  == 1 
+cBLANKS                BLANKS 
+call                   g_grpnam == BLANKS
+
+EDITS(tmptranst)
+e.ValidateKTP piknobtm  VALIDATE btmbukidx mbtmdeb 0
+
+MAP(mbtmdeb)
+cfid0           lfid            DO_CALC
+cfid            lfid            DO_CALC_IF cfid30
+cfpd0           lfpd            DO_CALC
+cfpd            lfpd            DO_CALC_IF cfpd7  
+cBLANKS         linpgfpd        DO_CALC
+cfpd            linpgfpd        DO_CALC_IF cjoinfpd 
+cBLANKS         linpgfid        DO_CALC
+linpgfid6       linpgfid        REPLACE_IF cjoinrtm6
+linpgfid7       linpgfid        REPLACE_IF cjoinrtm7
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+pikdatbukidx gv_dtpiu piknobuk 
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    call
+PMT_UPDALL_COND call
+PMT_DEL_COND    call
+

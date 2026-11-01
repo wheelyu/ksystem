@@ -1,0 +1,224 @@
+IMAGE(tmptranst)
+/----------------------------------------------------\
+ /--------------------------------------------------\
+  t.Pilihan   	    : _____________
+  t.Tanggal   	    : _____________
+  t.NipPengoreksi   : _______ ____________________
+  t.UbhNipKe  	    : _______ ____________________
+  t.Alasan    	    : _____________________
+  t.TglAwl    	    : _____________
+  t.KeTgl     	    : _____________
+                      ______            
+ \--------------------------------------------------/
+\----------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akttype         NOCHANGE        INPUTRI 			1
+aktcrttgl       PROTECT NOLIMIT {DD-MM-YY}      INPUTRI         2
+aktkode2        NOCHANGE        INPUTRI 			3
+lnamauser       PROTECT        	INPUTRI 			4
+aktcab          ALLCAPS         INPUTRI 			5
+lnamatgt        PROTECT        	INPUTRI 			6
+aktket          TEXTAREA        INPUTRI 			7
+akttgl          ALLCAPS NOLIMIT {DD-MM-YY}      INPUTRI         8
+akttgl2         ALLCAPS NOLIMIT {DD-MM-YY}      INPUTRI         9
+lenterkrs       NOCHANGE        INPUTRI 			10
+
+DEFAULT(tmptranst)
+akttype         DFALT_SCAN      BLANKS
+                                UBAH_PENERIMA
+                                UBAH_USER_MINTA
+                                UBAH_USER
+                                UBAH_PROGRAMMER
+                                MUNDUR_USER_UAT
+
+aktcrttgl       INIT_ADD        {g_tgltrn}
+aktkode2        INIT_ADD        {g_usrkode}
+lenterkrs       INIT_LABEL      Enter
+
+CALCS()
+cvoid           akttype =="UBAH_PENERIMA" || akttype == "MUNDUR_USER_UAT" || akttype=="UBAH_USER_MINTA" || akttype=="UBAH_USER" || akttype=="UBAH_PROGRAMMER"
+crex            akttype =="RESCHEDULE" || akttype =="MUNDUR_PENUGASAN" || akttype == "PRIORITAS" || akttype == "MUNDUR_USER_UAT"
+cubahpenerima   akttype == "UBAH_PENERIMA"
+cubahuminta   	akttype == "UBAH_USER_MINTA"
+cubahuser   	akttype == "UBAH_USER"
+cubahprog	akttype == "UBAH_PROGRAMMER"
+cubahnip      	akttype == "UBAH_PENERIMA" || akttype=="UBAH_USER_MINTA" || akttype=="UBAH_USER" || akttype=="UBAH_PROGRAMMER"
+cnonubhtgl      akttype != "UBAH_PENERIMA" && akttype!="UBAH_USER_MINTA" && akttype!="UBAH_USER" && akttype!="UBAH_PROGRAMMER"
+cmundursls      akttype == "MUNDUR_PENYELESAIAN"
+cprior          akttype == "PRIORITAS"
+cmunduruat	akttype == "MUNDUR_USER_UAT"
+cjoinabkuseruat djoinabkuseruat==1 && akttype=="MUNDUR_USER_UAT"
+
+cmax1hari       (akttype == "MUNDUR_PENUGASAN" && (akttgl == g_tgltrn || akttgl == g_tgltrn +1)) || akttype != "MUNDUR_PENUGASAN"
+cmax3hari	(akttype == "MUNDUR_USER_UAT" && akttgl2 > akttgl && akttgl2 <= g_tgltrn + 3) || akttype != "MUNDUR_USER_UAT"
+ctgl1x          g_tgltrn + 1
+ctglakhprior    akttgl + ltotalinpg - 1
+ctglakhpriorp1  ltglakhprior + 1
+cjointgmprior   djointgmprior==1 && (ltgmtypepr=="HL" || (ltgmtypepr=="HK" && ltgmkepr>=6))
+cbisaprior      (akttype=="PRIORITAS" && (g_usrkode==tlmuntuk || g_usrkode==tlmplg)) || akttype!="PRIORITAS"
+cblmadatgs      (akttype=="PRIORITAS" && (dscantkd!=0 || dscantkd==0) && ltotalinpg>=1) || akttype!="PRIORITAS"
+cmunduruat2     (akttype =="MUNDUR_USER_UAT" && tlmbrdoto=="USER_UAT") || akttype != "MUNDUR_USER_UAT"
+ctutupdulu	g_usrkode=="TUTUPDULU"
+
+EDITS(tmptranst)
+e.Mandatory akttype MANDATORY
+e.Mandatory aktket MANDATORY
+e.Mandatory akttgl MANDATORY_IF crex
+e.Mandatory akttgl2 MANDATORY_IF crex
+e.Mandatory aktcab MANDATORY_IF cubahnip
+t.ValidateNip           aktcab          VALIDATE_IF cubahnip psikodidx mpsic 0
+t.ValidateNip2          aktkode2        VALIDATE  psikodidx mpsic2 0
+
+MAP(mpsic)
+psikode         aktcab          REPLACE
+psinama		lnamatgt	REPLACE
+
+MAP(mpsic2)
+psikode         aktkode2        REPLACE
+psinama         lnamauser       REPLACE
+
+MAP(mtgl1)
+ctgl1x          akttgl          DO_CALC_IF cnonubhtgl
+lkunciuseruat	akttgl		REPLACE_IF cjoinabkuseruat
+
+MAP(mtgl2)
+ltotalinpg      ltotalinpg      REPLACE_IF cscantkd
+ctglakhprior    ltglakhprior    DO_CALC
+ctglakhpriorp1  ltglakhprior    DO_CALC_IF cjointgmprior
+ctglakhpriorp1  ltglakhprior    DO_CALC_IF cjointgmprior
+ctglakhpriorp1  ltglakhprior    DO_CALC_IF cjointgmprior
+ctglakhpriorp1  ltglakhprior    DO_CALC_IF cjointgmprior
+ltglakhprior    akttgl2         REPLACE_IF ctutupdulu
+
+CALCS()
+ckonduserminta	(akttype=="UBAH_USER_MINTA" && (g_grpnam=="RASMGR" || g_grpnam=="RASDVH" || g_usrkode==tlmplg)) || akttype!="UBAH_USER_MINTA"
+ckondubhprog	(akttype=="UBAH_PROGRAMMER" && (g_grpnam=="IT" || g_grpnam=="RI")) || akttype!="UBAH_USER_MINTA"
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=akttgl                DO_SKIP_IF cvoid
+BEFORE_INPUT    cur_field=akttgl2               DO_SKIP_IF cvoid
+BEFORE_INPUT    cur_field=aktcab                DO_SKIP_IF cnonubhtgl
+AFTER_INPUT     cur_field=aktket                DO_MAP SHOW mtgl1
+AFTER_INPUT     cur_field=akttgl                DO_MAP SHOW mtgl2
+AFTER_INPUT     cur_field=akttype               DO_MAP SHOW
+                IF cbisaprior mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.PriorHanyaPenerimaPengaju
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF cbisaprior mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.PriorHanyaPenerimaPengaju
+
+AFTER_INPUT     cur_field=akttype               DO_MAP SHOW
+                IF ckonduserminta mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.UbhUserMintaHanyaRasUsr
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF ckonduserminta mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.UbhUserMintaHanyaRasUsr
+
+AFTER_INPUT     cur_field=akttype               DO_MAP SHOW
+                IF ckondubhprog mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.UbhProgrammerHanyaIT
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF ckondubhprog mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.UbhProgrammerHanyaIT
+
+AFTER_INPUT     cur_field=akttype               DO_MAP SHOW
+                IF cblmadatgs mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkAdaPenugasanAktif
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF cblmadatgs mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkAdaPenugasanAktif
+
+AFTER_INPUT     cur_field=akttype               DO_MAP SHOW
+                IF cmunduruat2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.MundurUatHanyaUserUat
+
+AFTER_INPUT     cur_keybd=EN               	DO_MAP SHOW
+                IF cmunduruat2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.MundurUatHanyaUserUat
+
+AFTER_INPUT     cur_field=akttgl                DO_MAP SHOW
+                IF cmax1hari mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.Max1hari
+
+AFTER_INPUT     cur_field=akttgl2               DO_MAP SHOW
+                IF cmax3hari mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.Max3hariNoKrgDari
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF cmax1hari mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.Max1hari
+
+AFTER_INPUT     cur_keybd=EN               	DO_MAP SHOW
+                IF cmax3hari mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.Max3hariNoKrgDari
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD aktprm
+SFL_LINES(1)
+SFL_TARGET
+        aktkodtypidx    tlmnobuk tlmdata
+
+SFL_MAP
+tlmnobuk        aktkode         REPLACE
+tlmdata         aktdata         REPLACE
+tlmnobuk        aktnobuk        REPLACE
+tlmnobuk        aktbrg          REPLACE
+
+CALCS()
+cabkpenerima    akttype =="UBAH_PENERIMA" && (abksts=="RINP" || abksts =="INPG") && 
+		(abkkym2 == "PENGAJUAN BARU" || abkkym2=="FU USER CEKLIST 196" || abkkym2=="ISI PENUGASAN 196" || abkkym2=="Selesaikan UAT 196" || abkkym2=="PENERIMA_ISI_TUGAS")
+
+cabkuser    	akttype =="UBAH_USER" && (abksts=="RINP" || abksts =="INPG") && 
+		(abkkym2 == "APPROVE CEKLIST 196" || abkkym2=="USER UAT PENGAJUAN" || abkkym2=="USER_UAT")
+
+
+MAP(mupdtlmb)
+aktcab          tlmuntuk        REPLACE_IF cubahpenerima
+aktcab		tlmgrup		REPLACE_IF cubahuminta
+aktcab          tlmplg        	REPLACE_IF cubahuser
+aktcab		tlmnobbm	REPLACE_IF cubahprog
+gt_RINP         tlmsts          REPLACE_IF cprior
+
+MAP(mupdabk2)
+aktcab        	abkkym          REPLACE_IF cabkpenerima
+
+MAP(mupdabk3)
+aktcab        	abkkym          REPLACE_IF cabkuser
+
+
+SPCALCS(saddtransa)
+DO_LIB                  ap_dbclc(DNAME dupdbukb,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmb);
+DO_LIB_IF cjoinabk      ap_dbclc(DNAME dupdbukb1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk);
+DO_LIB_IF cubahpenerima ap_dbclc(DNAME dupdbukb2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk2);
+DO_LIB_IF cubahuser 	ap_dbclc(DNAME dupdbukb3,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk3);
+DO_LIB_IF cmundursls    ap_dbclc(DNAME dupdbukb4,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk4);
+DO_LIB_IF cmunduruat    ap_dbclc(DNAME dupdbukb5,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk5);
+DO_LIB_IF cprior ap_nxpst(l4831,lm4831);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD saddtransa
+
+

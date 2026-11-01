@@ -1,0 +1,117 @@
+CALCS()
+cmesinsama1              doclok==nhdkode
+ctotalmesin     ltotalmesin + ltotalmesin2
+ctdkisi2                (lsegmen=="CUB" && (nhdkode!="OLI" && nhdkode!="KOPLINGSET")) ||
+                        (lsegmen=="MATIC" && (nhdkode!="OLI" && nhdkode!="OLIGARDAN" && nhdkode!="FUELPUMP" && nhdkode!="GIGITRANSMISIRODABLK"
+                        && nhdkode!="KOPLINGSET")) ||
+                        (lsegmen=="SPORT1" && (nhdkode!="PISTONSET" && nhdkode!="KLEPIN" && nhdkode!="KLEPEX" && nhdkode!="NOKENASIN" &&
+                        nhdkode!="NOKENASEX" && nhdkode!="CYLINDERCOMP" && nhdkode!="CYLINDERHEAD" && nhdkode!="KRUKASASSY" && 
+			nhdkode!="LIFTERASSY" && nhdkode!="RANTAIMESIN" && nhdkode!="THROTTLEBODY" && nhdkode!="FUELPUMP" && nhdkode!="OLI"))
+
+cadaisi2                (lsegmen=="CUB" && (nhdkode=="OLI" || nhdkode=="KOPLINGSET")) ||
+                        (lsegmen=="MATIC" && (nhdkode=="OLI" || nhdkode=="OLIGARDAN" || nhdkode=="FUELPUMP" || nhdkode=="GIGITRANSMISIRODABLK"
+                        || nhdkode=="KOPLINGSET")) ||
+                        (lsegmen=="SPORT1" && (nhdkode=="PISTONSET" || nhdkode=="KLEPIN" || nhdkode=="KLEPEX" || nhdkode=="NOKENASIN" ||
+                        nhdkode=="NOKENASEX" || nhdkode=="CYLINDERCOMP" || nhdkode=="CYLINDERHEAD" || nhdkode=="KRUKASASSY" || 
+                        nhdkode=="LIFTERASSY" || nhdkode=="RANTAIMESIN" || nhdkode=="THROTTLEBODY" || nhdkode=="FUELPUMP" || nhdkode=="OLI"))
+
+DBCALCS(djoindocmesin)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      docdatbukidx lUPLPARTEST tlmnobuk lpartmesin
+        DBC_SELECT      cmesinsama1
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||i.Kode   : _______________________||
+||t.Pil    : _______________________||
+||t.Imts   : _______________________||
+||t.Ket    : _______________________||
+||t.Pot    : __________             ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+nhdkode                 PROTECT SCROLL                  INPUTRI 1
+nhdkode2                ALLCAPS SCROLL                  INPUTRI 2
+nhdkodeapr              ALLCAPS SCROLL                  INPUTRI 3
+nhdnobbm                PROTECT SCROLL                  INPUTRI 4
+nhdhrg1                 PROTECT SCROLL                  INPUTRI 5
+
+EDITS(tmptranst)
+e.Validate nhdkode      VALIDATE tbtdattypkod  mtbt4 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Plmesin}  {Slsegmen}
+e.validate nhdkode2     VALIDATE tbtdattypkod mtbt8 stbt1 {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Plsegmen} {Pnhdkode}
+e.validate nhdkodeapr   VALIDATE_IF ctdkisi2 tbddatkodidx mtbd8 stbd {Pgv_dttabel} {Pgv_estimasi21} {PlIMITASI}
+e.validate nhdnobbm     VALIDATE tbddatkodidx mtbd5 stbd {Pgv_dttabel} {Pgv_estimasi21} {PlTARIK}
+
+e.Mandatory nhdkode2 MANDATORY
+e.Mandatory nhdkodeapr MANDATORY_IF ctdkisi2
+
+MAP(mtbd8)
+tbdkode         nhdkodeapr      REPLACE
+
+MAP(mtbt8)
+tbtkode         nhdkode2        REPLACE
+tbtkat          nhdnobbm        REPLACE
+
+MAP(mtbd5)
+tbdkode         nhdnobbm        REPLACE
+
+MAP(mtbt4)
+tbttbdkode      nhdkode         REPLACE
+tbttot          nhdhrg1         REPLACE_IF cganti1
+tbtdf1          nhdhrg1         REPLACE_IF cimitasi
+tbtdf2          nhdhrg1         REPLACE_IF cadalecet
+ckosong         nhdhrg1         DO_CALC_IF cganti4
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=nhdkodeapr      DO_SKIP_IF cadaisi2
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SELECT cbagianpart
+SFL_SHOW_NEXT
+SFL_TARGET
+nhdbukidx   tlmnobuk gv_estimasi 
+
+CALCS()
+cganti1c         (nhdnobbm=="GANTI" || nhdnobbm=="IMITASI" || nhdnobbm=="LECET") && djoindocmesin==0
+
+/*--------Update Ke Master Perhitungan-----------*/
+MAP(mmapmap3)
+nhdkode         lnhdkode        REPLACE
+nhdhrg1         ltotalestimasi2 REPLACE
+nhdhrg1         ltotalmesin2    REPLACE
+ltotalestimasi  ltotalestimasi  REPLACE_IF cscannhd
+ltotalmesin     ltotalmesin     REPLACE_IF cscannhd
+ctotalmesin     ltotalmesin     DO_CALC
+ctotalestimasi  ltotalestimasi  DO_CALC
+
+
+MAP(mupdtlm3)
+ltotalestimasi  tlmjml          REPLACE
+ltotalmesin     tlmperpph       REPLACE
+cnilaiper	tlmtotal	DO_CALC
+cpersenest      tlmperdisd      DO_CALC_IF clbrcdf2ada
+
+MAP(madddocmesin)
+lUPLPARTEST     docdata         REPLACE
+tlmnobuk        docnobuk        REPLACE
+lpartmesin      doctype         REPLACE
+c1              docnourt        DO_CALC_IF cdjoindocurt0
+cnourt          docnourt        DO_CALC_IF cdjoindocurt1
+nhdkode         doclok          REPLACE
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapmap3,DCOMMAND MAPMAP,DMAP mmapmap3);
+DO_LIB ap_dbclc(DNAME dupdtlm3,DCOMMAND UPDATE,DTARGET tlmbukidx nhdnobuk,DMAP mupdtlm3);
+DO_LIB_IF cjoinrmddisest ap_ambts(gv_INPG,ldisest,tlmjml2,tlmperdisd,lNol,&lhasil1dis,&lhasil2dis,&lhasil3dis,lhasil1strdis,lhasil2strdis);
+DO_LIB ap_dbclc(DNAME dupdtlmdis3,DCOMMAND UPDATE,DTARGET tlmbukidx nhdnobuk,DMAP mupdtlmdis);
+DO_LIB_IF cganti1c ap_dbclc(DNAME dadddocmesin,DCOMMAND ADD,DFILE doc,DMAP madddocmesin);
+
+POSTING(tmptrans)
+PST_UPDCMD sptmptrans
+

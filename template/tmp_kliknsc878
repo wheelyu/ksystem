@@ -1,0 +1,111 @@
+LOCAL
+PGM_FIELDS
+lFUAGEN11	STRING	11
+lketspk		STRING	11	
+lhasilspk	STRING	11
+
+lpsinama	STRING	61
+lSPK		STRING	11
+lFUAGEN		STRING	21
+ltelepon	STRING	21
+lwa		STRING	21
+lkunjungan	STRING	21
+l878		STRING	21
+
+MAP(mjoinspk)
+spkkat10	lkunjungan	REPLACE
+spkkode2	ltelepon	REPLACE
+spkkode3	lwa		REPLACE
+
+DBCALCS(djoinspk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	spkdatbuktyp   lFUAGEN11 tkmnobuk
+	DBC_MAP		mjoinspk
+
+IMAGE(tmptranst)
+/*tgl spk | nobuk spk | nip upline | nama upline | cara fu | ket. fu | tombol|*/
+/---------t----------t-------------t------------t---------------t-------------t--------------\
+|t.Tgl    |t.spk     |t.kode	   |t.nmupline	|t.crfu		|t.ketfu      |t.tmbl	     |
+\---------.----------.-------------.------------.---------------.-------------.--------------/
+
+IMAGE(tmptrans)
+|_________|__________|_____________|____________|_______________|_____________|______________|
+
+FIELD(tmptrans)
+	tkmtgl		PROTECT {DD-MM-YYYY}	INPUTRI	1
+	tkmnobuk	PROTECT			INPUTRI	2
+	tkmplg		PROTECT			INPUTRI	3
+	lpsinama	PROTECT			INPUTRI	4
+	lhasilspk	PROTECT			INPUTRI	5
+	lketspk		PROTECT			INPUTRI	5
+	ltombol		FLDBUTTON		INPUTRI	7	
+	
+DEFAULTS(tmptrans)
+lFUAGEN11	INIT	FU_AGEN
+lSPK		INIT	SPK
+lFUAGEN		INIT	FU_AGEN
+ltombol	INIT	878
+l878		INIT	878
+
+EDITS(tmptrans)
+t.Validate	tkmplg  VALIDATE psikodidx mpsixx 0
+
+
+CALCS()
+ckunjungan	"KUNJUNGAN"
+ctelpxx		"TELEPON"
+cwaxx		"WA"
+ckettdk		"KUNJUNG/TELP/WA"
+chslkunj	"BERTEMU"
+chsltelp	"TERHUBUNG"
+chslwa1		"DIBALAS"
+chslwa2		"TIDAK TERKIRIM"
+chslwa3		"TIDAK TERHUBUNG"
+
+cseltkm		tkmdata == "SPK" && tkmkode == "FU_AGEN"
+ckunj		djoinspk == 1 && ltelepon == BLANKS && lwa == BLANKS && lkunjungan == "BERTEMU"
+ctelp		djoinspk == 1 && lkunjungan == "TIDAK_BERTEMU" && lwa == BLANKS && ltelepon == "TERHUBUNG"
+cwa		djoinspk == 1 && lkunjungan == "TIDAK_BERTEMU" && ltelepon == "TIDAK_TERHUBUNG" && lwa == "WA1"
+cwa2		djoinspk == 1 && lkunjungan == "TIDAK_BERTEMU" && ltelepon == "TIDAK_TERHUBUNG" && lwa == "WA2"
+cwa3		djoinspk == 1 && lkunjungan == "TIDAK_BERTEMU" && ltelepon == "TIDAK_TERHUBUNG" && (lwa == "WA3" || lwa == "WA4")
+cdjoinspk	djoinspk == 1
+
+
+MAP(mpsixx)
+psikode		tkmplg		REPLACE
+psinama		lpsinama	REPLACE
+
+ckunjungan      lketspk         DO_CALC_IF      ckunj
+ctelpxx         lketspk         DO_CALC_IF      ctelp
+cwaxx           lketspk         DO_CALC_IF      cwa
+ckettdk         lketspk         DO_CALC_IF      cwa3
+
+chslkunj        lhasilspk       DO_CALC_IF      ckunj
+chsltelp        lhasilspk       DO_CALC_IF      ctelp
+chslwa1         lhasilspk       DO_CALC_IF      cwa
+chslwa2         lhasilspk       DO_CALC_IF      cwa2
+chslwa3         lhasilspk       DO_CALC_IF      cwa3
+
+lkunjungan	lkunjungan	REPLACE_IF cdjoinspk
+
+HOOKS(tmptrans)
+CLICKED	        cur_field=ltombol 	DO_FLY {l878} mmaptkm
+
+MAP(mmaptkm)
+tkmnobuk	r_string1   REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT 	cseltkm
+SFL_SORT_BY_FIELD       tkmtgl
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+	tkmbuk2stsid	psmkode2 gv_CLSD
+
+PERMIT(tmptrans)
+PMT_ADD_COND            c0
+PMT_UPDALL_COND         c0
+PMT_DEL_COND            c0
+
+

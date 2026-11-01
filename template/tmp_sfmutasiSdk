@@ -1,0 +1,51 @@
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|/----------------------------------------------------\|
+||t.NoBuk     :________________             _________ ||
+||t.NipSDM    :__________ __________________          ||
+||t.SidikJari :_________________                      ||
+|\----------------------------------------------------/|
+| t.KetMutasi                                          |
+\------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   psdpsmkode   PROTECT                 INPUTRI          1
+   psddata	PROTECT			INPUTRI		 2
+   psdstr1      NOCHANGE                INPUTRI          3
+   lnamaSDM	PROTECT 		INPUTRI		 4
+   psdstr2      NOCHANGE                INPUTRI          5
+
+CALCS()
+cSIDIKOK	"SIDIK JARI OK"
+cbkn		djointbd153sd==0
+
+MAP(msidikjari)
+cSIDIKOK	psdstr2			DO_CALC
+
+MAP(mnipp)
+mtsuntuk	psdstr1			REPLACE
+
+EDITS(tmptranst)
+t.ValidateNip psdstr1 VALIDATE psikodidx mpsixx 
+
+MAP(mpsixx)
+psikode		psdstr1		REPLACE
+psinama		lnamaSDM	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr1	DO_MAP SHOW mnipp
+AFTER_INPUT	cur_keybd=EN            DO_LIB_IF cbkn ap_ceksj(mtsuntuk);
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW msidikjari
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psddatpsmkod   lSIDIK  mtsnobuk
+
+SFL_MAP
+mtsnobuk             psdpsmkode         REPLACE
+lSIDIK               psddata            REPLACE
+mtsuntuk	     psdstr1		REPLACE
+

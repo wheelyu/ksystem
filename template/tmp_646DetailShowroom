@@ -1,0 +1,120 @@
+IMAGE(tmptranst)
+/-----------------------------------------\
+|t.DetailShowroom                     	  |
+|/--UPLOAD--------------------------\     |
+||                                  |     |
+||                                  |     |
+||                                  |     |
+||                                  |     |
+||                                  |     |
+||                                  |     |
+||                                  |     | 
+|\----------------------------------/     |
+|/---------------------------------------\|
+||t.Cctv           :____________________ ||
+||t.Off/On         :____________________ ||
+||t.wic            :____________________ ||
+||t.jmlhwic    	   :____________________ ||
+||t.notes   	   :____________________ ||
+||t.cekspv    	   :____________________ ||
+||t.hasilcek   	   :____________________ ||
+||t.accadm   	   :____________________ ||
+||                  __                   ||
+||spasi                                  ||
+||                                       ||
+||t.NoteDetailShowroom                   ||
+|\---------------------------------------/|
+\-----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldstr1         NOCHANGE        INPUTRI 1
+tldstr2         NOCHANGE        INPUTRI 2
+tldgrup         NOCHANGE        INPUTRI 3 /*WIC*/
+tldjml          NUMERIC         SCROLL        INPUTRI 4 /* JUMLAH WIC */
+tldket          TEXTAREA        INPUTRI 5 /* NOTE */
+tldgrup2        NOCHANGE        INPUTRI 6 /* CEKSPV */
+tldket2         TEXTAREA        INPUTRI 7 /* hasilcek */
+tldsisbrg       NOCHANGE        INPUTRI 8 /* ACC ADM */
+lenter		    NOCHANGE	    INPUTRI 9 /* ENTER */
+
+DEFAULT(tmptranst)
+tldstr1         DFALT_SCAN_BLANKS Ada
+                                  Tidak
+tldstr2         DFALT_SCAN_BLANKS Online
+                                  Offline  
+tldgrup         DFALT_SCAN_BLANKS Ada
+                                  Tidak
+tldgrup2         DFALT_SCAN     Belum
+                                Sudah
+tldsisbrg          DFALT_SCAN_BLANKS       Y "Ya"
+                                        T "Tidak"
+
+
+EDITS(tmptranst)
+/*t.IsiNote tldket MANDATORY*/
+t.IsiNote tldket2 MANDATORY_IF cSpvSdh 
+
+CALCS()
+cSdhUpl1    tldjasbrg != "OK"
+
+
+
+MAP(mupdtldUPL)
+cOK             tldjasbrg       DO_CALC
+cYa             tldsisbrg       DO_CALC_IF cNoteBlanks
+g_tgltrn        tlmtgl2         REPLACE
+g_usrkode       tldkirim        REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+
+MAP(mupdtldtacc)
+cblanks         tldket2         DO_CALC
+cBelum          tldgrup2        DO_CALC
+
+MAP(mupdtldspvisi)
+cblanks         tldsisbrg       DO_CALC
+
+DBCALCS(dupdtldUPL)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx tldprm
+        DBC_MAP         mupdtldUPL
+
+HOOKS(tmptranst)
+BEFORE_INPUT  cur_field=tldstr2  DO_SKIP_IF cCekcctv
+BEFORE_INPUT  cur_field=tldgrup2  DO_SKIP_IF cCekcctv1
+BEFORE_INPUT  cur_field=tldket2   DO_SKIP_IF cCekcctv1
+BEFORE_INPUT  cur_field=tldgrup   DO_SKIP_IF cCekcctv1
+BEFORE_INPUT  cur_field=tldjml    DO_SKIP_IF cCekcctv1
+BEFORE_INPUT  cur_field=tldket    DO_SKIP_IF cCekcctv1
+BEFORE_INPUT  cur_field=tldsisbrg DO_SKIP_IF cCekcctv1
+BEFORE_INPUT  cur_field=tldgrup2  DO_SKIP_IF cCekspv
+BEFORE_INPUT  cur_field=tldket2   DO_SKIP_IF cCekspv
+BEFORE_INPUT  cur_field=tldgrup   DO_SKIP_IF cSpv
+BEFORE_INPUT  cur_field=tldjml    DO_SKIP_IF cSpv
+BEFORE_INPUT  cur_field=tldket    DO_SKIP_IF cSpv
+BEFORE_INPUT  cur_field=tldsisbrg DO_SKIP_IF cSpv
+BEFORE_INPUT  cur_field=tldsisbrg DO_SKIP_IF cSpvBlm
+AFTER_INPUT   cur_field=tldsisbrg DO_MAP SHOW IF cTACC mupdtldtacc
+AFTER_INPUT   cur_field=tldket2   DO_MAP SHOW IF cSpvisi mupdtldspvisi
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD  tldnobuk tlddata
+SFL_UPLFLD_DBCALCS dupdtldUPL
+SFL_UPL_DELCOND c0
+SFL_UPL_COND    cSdhUpl1
+SFL_TARGET
+tldstsbrgukr   lDETSHOWROOM gv_INPG tlmnobuk
+
+SFL_MAP
+lDETSHOWROOM     tlddata         REPLACE
+lDETSHOWROOM     tldnoll         REPLACE
+tlmnobuk        tldnobuk        REPLACE
+tlmnobuk	tldbrg		REPLACE
+gv_INPG		tldsts		REPLACE
+
+

@@ -1,0 +1,119 @@
+LOCAL
+PGM_FIELDS
+lketbrks		STRING	21
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------------\|
+  _______________ _
+  t.TglInput    : _______________
+  t.Pil         : ______________________
+  t.Berkas      : __  ___________________
+  t.KtpSdm      : __________
+  t.KtpOrtu     : __________
+  t.KK          : __________
+  t.Ijazah      : __________
+  t.Skck        : __________
+  t.BukuTab     : __________
+  t.SertifVaks  : __________
+  t.Deadline    : ______________
+  t.Ket         : __________________________________________________________________________
+|\---------------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdtype                 PROTECT                 INPUTRI 1
+btmsales		PROTECT UNSEEN		INPUTRI	2
+psdtgl2                 PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 3
+psdstr1                 NOCHANGE                INPUTRI 4
+psdtot			NOCHANGE		INPUTRI	5
+lketbrks		PROTECT 		INPUTRI	6
+psdsts                  NOCHANGE                INPUTRI 7
+psdtype2                NOCHANGE                INPUTRI 8
+psdtype3                NOCHANGE                INPUTRI 9
+psdstr2                 NOCHANGE                INPUTRI 10
+psdstr3                 NOCHANGE                INPUTRI 11
+psdstr4                 NOCHANGE                INPUTRI 12
+psdstr5                 NOCHANGE                INPUTRI 13
+psdtgl1                 PROTECT NOLIMIT {DD-MM-YY} INPUTRI 14
+psdket                  ALLCAPS SCROLL          INPUTRI 15
+
+CALCS()
+cY                      "YA"
+cbrks1			psdtot==1
+cbrks2			psdtot==2
+clengkap		"LENGKAP"
+cblmlengkap		"BLM_LENGKAP"
+cbrkslengkap		psdtot==1
+cbrksblmlengkap		psdtot==2
+
+DEFAULTS(tmptranst)
+psdtgl2                 INIT_ADD        {g_tgltrn}
+psdstr1                 DFALT_SCAN_BLANKS BISA_DIHUB
+                                          TDK_BISA_DIHUB
+                                          MD
+psdtot          DFALT_SCAN_BLANKS       1 "LENGKAP"
+                                        2 "BLM_LENGKAP"
+psdsts          DFALT_SCAN_BLANKS       YA TDK
+psdtype2        DFALT_SCAN_BLANKS       YA TDK
+psdtype3        DFALT_SCAN_BLANKS       YA TDK
+psdstr2         DFALT_SCAN_BLANKS       YA TDK
+psdstr3         DFALT_SCAN_BLANKS       YA TDK
+psdstr4         DFALT_SCAN_BLANKS       YA TDK
+psdstr5         DFALT_SCAN_BLANKS       YA TDK
+
+EDITS(tmptranst)
+t.Mandatory             psdstr1 MANDATORY
+t.Mandatory             psdtot MANDATORY
+t.Mandatory             psdsts  MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdtype2 MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdtype3 MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdstr2 MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdstr3 MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdstr4 MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdstr5 MANDATORY_IF cbrksblmlengkap
+t.Mandatory             psdket  MANDATORY
+e.ValidatePsi btmsales VALIDATE psikodidx mpsi137 0
+
+MAP(mpsi137)
+psikode			btmsales	REPLACE
+clengkap		lketbrks	DO_CALC_IF cbrks1
+cblmlengkap		lketbrks	DO_CALC_IF cbrks2
+
+MAP(mtanggal_deadlinexz)
+cplus4          psdtgl1         DO_CALC_IF cpertama2
+cplus2          psdtgl1         DO_CALC_IF cbrkslengkap
+cplus1          psdtgl1         DO_CALC_IF ctdk_bisahub
+cY              psdsts          DO_CALC_IF cbrkslengkap
+cY              psdtype2        DO_CALC_IF cbrkslengkap
+cY     		psdtype3        DO_CALC_IF cbrkslengkap
+cY              psdstr2         DO_CALC_IF cbrkslengkap
+cY              psdstr3         DO_CALC_IF cbrkslengkap
+cY              psdstr4         DO_CALC_IF cbrkslengkap
+cY              psdstr5         DO_CALC_IF cbrkslengkap
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdtot        DO_MAP SHOW mtanggal_deadlinexz
+BEFORE_INPUT    cur_field=psdsts        DO_SKIP_IF cbrkslengkap
+BEFORE_INPUT    cur_field=psdtype2      DO_SKIP_IF cbrkslengkap
+BEFORE_INPUT    cur_field=psdtype3      DO_SKIP_IF cbrkslengkap
+BEFORE_INPUT    cur_field=psdstr2       DO_SKIP_IF cbrkslengkap
+BEFORE_INPUT    cur_field=psdstr3       DO_SKIP_IF cbrkslengkap
+BEFORE_INPUT    cur_field=psdstr4       DO_SKIP_IF cbrkslengkap
+BEFORE_INPUT    cur_field=psdstr5       DO_SKIP_IF cbrkslengkap
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD psdtype
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+        psddatpsmkod  gv_clnkry11 btmplg lJAWABBRKS
+
+SFL_MAP
+gv_clnkry11          psddata                 REPLACE
+btmplg               psdpsmkode              REPLACE
+lJAWABBRKS           psdkode                 REPLACE
+lKODEFU1             psdtype                 REPLACE
+

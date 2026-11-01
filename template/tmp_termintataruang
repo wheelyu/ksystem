@@ -1,0 +1,105 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ t.TambahDanUploadLayout
+ /---------s.DOCUPLOAD-----------\
+
+
+
+ \-------------------------------/
+ /-------------------------------\
+  ____________
+  t.NoBuk      : ________________
+  t.NoBuk2     : ________________
+  t.TypeGambar : ________________                            
+  t.Upload     : ___  
+  t.Approval   : ___
+               : ________ _______
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+luplok 		TOMBOL 		INPUTRI	1
+tkmkode 	PROTECT		INPUTRI	2
+tkmnobuk	PROTECT		INPUTRI	3
+tkmbuk1		NOCHANGE	INPUTRI	4
+tkmtype 	NOCHANGE	INPUTRI	5
+tkmstsapr	PROTECT 	INPUTRI	6
+tkmusrapr	PROTECT		INPUTRI	7
+lnamaaprdet1	PROTECT		INPUTRI	8 
+
+DEFAULTS(tmptranst)
+luplok		INIT		"UPLOAD OK"
+tkmbuk1		DFALT_SCAN	BLANKS
+				GAMBAR_LAYOUT " "
+				GAMBAR_POTONGAN " "
+
+EDITS(tmptranst)
+e.Mandatory	tkmbuk1		MANDATORY
+e.Validate	tkmkode  	VALIDATE mtsbukidx mmts  
+e.Validate	tkmnobuk 	VALIDATE tkmbukidx mtkm  
+e.Validate	tkmusrapr	VALIDATE psikodidx mpsi2 0
+
+MAP(mtkm)
+tkmnobuk	tkmnobuk	REPLACE
+mtscab		laprcab		REPLACE
+
+MAP(mmts)
+mtsnobuk	tkmkode		REPLACE
+
+MAP(mpsi2)
+psikode		tkmusrapr	REPLACE
+psinama		lnamaaprdet1	REPLACE
+
+MAP(mupdtkmlay)
+cOK   		tkmtype 	DO_CALC
+DBCALCS(dupdtkmlay)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkmotoidx tkmoto
+	DBC_MAP		mupdtkmlay
+
+SPCALCS(supddoclay)
+	dupdtkmlay
+
+CALCS()
+cblmGL		(mtspst=="GAMBAR_POTONGAN" && djointkmGL==1 && tkmbuk1=="GAMBAR_POTONGAN") || tkmbuk1!="GAMBAR_POTONGAN"
+/*
+cGL		tkmbuk1	== "GAMBAR_LAYOUT"
+cGP		tkmbuk1	== "GAMBAR_POTONGAN"
+cAPR_GBRLAYOUT	"APR_GBRLAYOUT"
+MAP(mnobuktkm)
+cnobukGL	tkmnobuk	DO_CALC_IF cGL
+cAPR_GBRLAYOUT	tkmlok1		DO_CALC_IF cGL
+cnobukGP	tkmnobuk	DO_CALC_IF cGP
+cAPRHMC_PROOFF	tkmlok1		DO_CALC_IF cGP
+*/
+HOOKS(tmptranst)
+/*
+AFTER_INPUT	cur_field=tkmbuk1	DO_MAP SHOW mnobuktkm
+*/
+AFTER_INPUT     cur_field=tkmbuk1       DO_MAP SHOW
+                IF cblmGL mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.InputDanUploadGL
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cblmGL mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.InputDanUploadGL
+CLICKED         cur_field=luplok	DO_SPCALCS supddoclay
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/*
+SFL_DOCUPL_DELCOND c0
+SFL_DOCUPLFLD_DBCALCS dupdtkmlay
+*/
+SFL_DOCUPLFLD tkmnobuk tkmdata 
+SFL_COND	csts
+SFL_TARGET
+        tkmdtkdstlok lDTLAYOUT mtsnobuk gv_OPEN                        
+SFL_MAP
+	lDTLAYOUT	tkmdata		REPLACE
+	mtsnobuk	tkmkode 	REPLACE 
+	gv_OPEN		tkmsts		REPLACE
+	mtstgl		tkmtgl		REPLACE

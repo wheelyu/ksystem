@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+lket30          STRING		51
+lpanjang        INT2            2
+
+IMAGE(tmptranst) 
+/---------------------------------\
+|/-------------------------------\|
+||i.NoFak 	    _____________||
+||t.bertemudg	    __ __________||
+||t.NomorTelpon	    _____________||
+|\-------------------------------/|
+\---------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk	PROTECT        		INPUTRI 1
+tkdjwbstr1      NOCHANGE                INPUTRI 5       /* Bertemu Dengan*/
+lket30          PROTECT                 INPUTRI 6       /* Keterangan Bertemu Dengan*/
+tkdrek          ALLCAPS                 INPUTRI 7       /* Hasil Verif*/
+
+CALCS()
+ccspk31          tkdjwbstr1=="1 "
+ccspk32          tkdjwbstr1=="2 "
+ccspk33          tkdjwbstr1=="3 "
+ccspk34          tkdjwbstr1=="4 "
+cspk31           "Konsumen"
+cspk32           "Keluarga"
+cspk33           "Tetangga"
+cspk34           "RT/RW"
+cpanjang         DO_LIB  ap_strln(tkdrek,&lpanjang);
+ctelp            lpanjang >= 10 && lpanjang <=13
+
+
+/*
+DBCALCS(djoinsvi30)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_kunjungan11 mtsnobuk lKUNJKOL30
+*/
+
+DEFAULTS(tmptranst)
+tkdjwbstr1          DFALT_SCAN_BLANKS   1 "Konsumen"
+                                        2 "Keluarga"
+                                        3 "Tetangga"
+                                        4 "RT/RW"
+tkdjwbstr2              INIT            Y
+tkdsisstr               INIT            {g_usrkode}
+
+
+EDITS(tmptranst)
+e.Validatenofaktur tkdnobuk      VALIDATE pikdatbukidx mmap30      0       {Pgv_dtpiu}
+e.Validate tkdnobuk VALIDATE pikdatbukidx   mpiksvi 0 {Pgv_dtpiu}
+e.Mandatory     tkdjwbstr1        MANDATORY
+e.Mandatory     tkdrek            MANDATORY
+
+MAP(mmap30)
+cspk31           lket30           DO_CALC_IF ccspk31
+cspk32           lket30           DO_CALC_IF ccspk32
+cspk33           lket30           DO_CALC_IF ccspk33
+cspk34           lket30           DO_CALC_IF ccspk34
+
+
+MAP(mpiksvi)
+mtsnoasal        mtsnoasal        REPLACE
+
+MAP(mpanjangnotelp)
+cpanjang        lpanjang        DO_CALC
+
+
+HOOKS(trans2g29t)
+AFTER_INPUT             cur_field=tkdrek        DO_MAP SHOW mpanjangnotelp
+AFTER_INPUT             cur_field=tkdrek        DO_MAP SHOW
+                        IF ctelp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.btsnNOHP
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll gv_kunjungan11 mtsnoasal mtsnobuk
+
+SFL_MAP
+gv_kunjungan11  tkddata         REPLACE
+mtsnoasal       tkdnobuk        REPLACE
+mtsnobuk        tkdnoll         REPLACE
+
+
+CALCS()
+cupdtransg30            mtssts=="OPEN" || mtssts=="RINP"
+caddtransg30            mtssts=="OPEN" || mtssts=="RINP"
+
+PERMIT(tmptrans)
+PMT_ADD_COND    caddtransg30
+PMT_UPDALL_COND cupdtransg30
+PMT_DEL_COND    c0
+

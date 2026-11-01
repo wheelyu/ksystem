@@ -1,0 +1,85 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+ /--------------------------------------\
+  t.NipInput    : _________
+  t.TglInput    : ___________________
+  t.Alasan      : ___________________
+                : ___
+ \--------------------------------------/
+ /----------------UPLOAD----------------\
+ |                                      |
+ |                                      |
+ |                                      |
+ |                                      |
+ \--------------------------------------/
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr1      PROTECT                    INPUTRI          1
+psdtgl1      PROTECT NOLIMIT {DD-MM-YYYY}       INPUTRI          2
+psdket       TEXTAREA ALLCAPS           INPUTRI          3
+psdstr2      NOCHANGE                   INPUTRI          4
+
+DEFAULT(tmptranst)
+psddata         INIT_ADD        MTABI
+psdtype		INIT_ADD	MTABI
+psdstr1         INIT_ADD        {g_usrkode}
+psdtgl1         INIT_ADD        {g_tgltrn}
+psdstr3         INIT_ADD        INPG
+
+EDITS(tmptranst)
+e.Mandatory psdket MANDATORY
+
+MAP(mjoinpsd_papi)
+        psdstr5         lpsdstr5        REPLACE
+
+DBCALCS(djoinpsd_papi)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddatpsmkod   gv_hslpapi11 btmplg btmnobuk
+        DBC_MAP         mjoinpsd_papi
+
+MAP(mjoinsgm)
+        sgmstr4         lsgmstr4        REPLACE
+
+DBCALCS(djoinsgm)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      sgmdatplgurt   gv_hastest11 btmplg btmplg
+        DBC_MAP         mjoinsgm
+
+CALCS()
+c134stes	btmflag1=="STES" || (djoinsgm==1 && lsgmstr4=="ACC" && djoinpsd_papi==1 && lpsdstr5=="ACC")
+c134btes	btmflag1!="STES" && (djoinsgm==0 || djoinpsd_papi==0 || (djoinpsd_papi==1 && lpsdstr5!="ACC") || (djoinsgm==1 && lsgmstr4!="ACC"))
+
+cINTV_HRD	"INTV_HRD"
+c136		"136"
+c135		"135"
+cTES		"TES"
+
+MAP(mupdbtmfototabi)
+cINTV_HRD       btmsurveyor     DO_CALC_IF c134stes
+c136		btmsts		DO_CALC_IF c134stes
+
+cTES            btmsurveyor     DO_CALC_IF c134btes
+c135		btmsts		DO_CALC_IF c134btes
+DBCALCS(dupdbtmfototabi)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      btmbukidx       btmnobuk
+        DBC_MAP         mupdbtmfototabi
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD  lMTABI  psdpsmkode
+SFL_COND        caksesslikok
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdbtmfototabi
+
+SFL_TARGET
+	psddatpsmkod   lMTABI btmnobuk
+SFL_MAP
+lMTABI          psddata         REPLACE
+btmnobuk        psdpsmkode      REPLACE
+btmnobuk        psdkode         REPLACE
+lMTABI		psdtype		REPLACE

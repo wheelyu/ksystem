@@ -1,0 +1,188 @@
+LOCAL
+PGM_FIELDS
+l4694z          INT2    2
+lm4694z         STRING  15
+
+l109		STRING	5
+lkode		STRING	21
+lsvitglfu	DATE	4
+lnamanip	STRING	31
+lsystimeR	TIME	4
+ljamkos		TIME	4
+
+
+MAP(mjoinsvifu)
+svitgl2         lsvitglfu	REPLACE
+DBCALCS(djoinsvifu)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp    tkmdata tkmnobuk lFOLLOWUP
+        DBC_MAP         mjoinsvifu
+
+DBCALCS(djoinabkrev)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN svinobuk
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------------\
+|t.NipReview     : __________                t.M    t.PnyMtr                                         |
+|t.Nama          : _______________________   t.KS   t.KonsSesuai                                     |
+|t.jabatan       : __________                t.Jd   t.BenarJdpk                                      |
+|t.TglReview     : __________                t.A    t.AlsnTdkJd                                      |
+|t.JamReview     : __________                t.H    t.Hasil                                          |
+|t.Rm	         : __________                t.L    t.LonglatSesuai                                  |
+|t.Pe   	 : __________                t.Kb   t.Kebutuhan                                      |
+|t.Us		 : __________                t.Thn  t.TahunMotor                                     |
+|-----t---t------t------t---t---t------t------t------t-----t-----t----t------t------t--------t----t--|
+|t.Kb |t.M|t.Thn |t.Foto|t.L|t.A|t.TglN|t.Telp|t.TlpV|t.Bdh|t.Mnt|t.PB|t.spkV|t.Kor |t.KorBwh|t.H |  |
+\-----.---.------.------.---.---.------.------.------.-----.-----.----.------.------.--------.----.--/
+IMAGE(tmptrans)
+|_____|___|______|______|___|___|______|______|______|_____|_____|____|______|______|________|____|__|
+
+FIELD(tmptranst)
+svistr1		PROTECT 		INPUTRI	1	/* nip */
+lnamanip	PROTECT			INPUTRI	2	/* nama */
+svistr3		PROTECT			INPUTRI	3	/* jabatan */
+svitgl1		PROTECT			INPUTRI	4	/* tgl */
+lsystimeR	PROTECT			INPUTRI	5	/* Jam Review */
+svistr2		PROTECT			INPUTRI	6	/* rumah */
+svitype2	PROTECT			INPUTRI	7	/* pekerjaan */
+svistr4		PROTECT			INPUTRI	8	/* usia */
+
+FIELD(tmptrans)
+svistr5		TEXTAREA PROTECT		INPUTRI	9	/* 10. Kebutuhan */
+svistr6		PROTECT				INPUTRI	10	/* 11. Ada Mtr */
+svistr7		PROTECT				INPUTRI	11	/* 12. Tahun Mtr */
+sviyt2		NOCHANGE			INPUTRI	12	/* 16. Foto Sesuai */
+svistr31	NOCHANGE			INPUTRI	13	/* 17. Longlat Sesuai */
+svistr9		TEXTAREA PROTECT		INPUTRI	14	/* 20. Alasan Tdk Jd Pk */
+svitgl2		PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI	15	/* 26. Tgl Minat */
+svistr10	TEXTAREA PROTECT		INPUTRI	16	/* 22. No Telp */
+svistr34	NOCHANGE			INPUTRI	17	/* 23. Telp Valid */
+svistr35	NOCHANGE			INPUTRI	18	/* 24. Bisa Hubungi */
+svistr33	NOCHANGE			INPUTRI	19	/* 19. Benar Jdpk */
+svistr8		ALLCAPS 			INPUTRI	20	/* 21. Plan Beli */
+svistr36	NOCHANGE			INPUTRI	21	/* 25. Verifikasi Konsumen */
+sviket		TEXTAREA ALLCAPS		INPUTRI	22	/* 27. Koreksi SPK */
+sviket2		TEXTAREA ALLCAPS		INPUTRI	23	/* 28. Koreksi Bawahan */
+svidtmkode	PROTECT				INPUTRI	24	/* 29. Hasil */
+svistr1		PROTECT QPROTECT		INPUTRI	24	/* 29. Hasil */
+
+/*svistr8		TEXTAREA PROTECT		INPUTRI	12	 13. BPKB Di Tgn
+sviyt1		NOCHANGE	INPUTRI	13			14. Kons Sesuai 
+svitblkode	PROTECT		INPUTRI	14			15. Trigger Foto 
+svistr32	PROTECT 	INPUTRI	17			18. JDPK */
+
+CALCS()
+cbukrev		"PICASPK" + STRIP(svistr1) + THBLS(g_tgltrn)
+csystimeR	SYSTIME
+
+DEFAULTS(tmptrans)
+lkode		INIT		{cbukrev}
+l109		INIT		109
+l4694z		INIT		4694
+lm4694z		INIT		m4694z
+ljamkos		INIT		0000
+
+sviyt2		DFALT_SCAN	BLANKS	Y T
+svistr31	DFALT_SCAN	BLANKS	Y T
+svistr33	DFALT_SCAN	BLANKS	Y T
+svistr34	DFALT_SCAN	BLANKS	Y T
+svistr35	DFALT_SCAN	BLANKS	Y T
+svistr36	DFALT_SCAN	BLANKS	Y T
+
+CALCS()
+csesuaix	sviyt2 == "Y" && svistr31 == "Y" && svistr33 == "Y" && svistr34 == "Y" && svistr35 == "Y"
+ctdksesuaix	sviyt2 == "T" || svistr31 == "T" || svistr33 == "T" || svistr34 == "T" || svistr35 == "T"
+csesuaiy	"SESUAI"
+ctdksesuaiy	"TDK_SESUAI"
+cdjoinsvifu	djoinsvifu == 1
+cH		"H"
+cHADIR		"HADIR"
+cjamlewat	lSYSTIME > ltbdjam2
+cjamblm		lSYSTIME <= ltbdjam2
+cjoinpsiusr	djoinpsiusr == 1
+
+EDITS(tmptrans)
+t.Mandatory	sviyt2		MANDATORY
+t.Mandatory	svistr8		MANDATORY
+t.Mandatory	svistr31	MANDATORY
+t.Mandatory	svistr33	MANDATORY
+t.Mandatory	svistr34	MANDATORY
+t.Mandatory	svistr35	MANDATORY
+t.Mandatory	svistr36	MANDATORY
+t.Mandatory	sviket		MANDATORY
+t.Mandatory	sviket2		MANDATORY
+
+t.Validate	svistr1		VALIDATE psikodidx mpsirev 0
+e.Validate      svistr8         VALIDATE tbddatkodidx malasanR stbd {Pgv_dttabel} {PlALASANPK} {PlALASANPK}
+
+MAP(mpsirev)
+psikode		svistr1		REPLACE
+psinama		lnamanip	REPLACE
+svidf1		lsystimeR	REPLACE
+lsvitglfu	lsvitglfu	REPLACE_IF cdjoinsvifu
+
+MAP(malasanR)
+tbdkode         svistr8         REPLACE
+
+MAP(mjam)
+csystimeR       svidf1          DO_CALC
+svidf1		lsystimeR	REPLACE
+csesuaiy	svidtmkode	DO_CALC_IF csesuaix
+ctdksesuaiy	svidtmkode	DO_CALC_IF ctdksesuaix
+
+MAP(mupdsvirev)
+g_usrkode	svistr1		REPLACE
+ljabatan	svistr3		REPLACE_IF cjoinpsiusr
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mupdsvirev
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW mjam
+
+SUBFILE(tmptrans)
+SFL_LINES(6)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svinourt
+SFL_TARGET
+        svidatbuktyp    lreviewspk tkmnobuk
+
+MAP(mupdabkmmsls)
+gv_CLSD         abksts          REPLACE
+
+MAP(m4694z)
+tkmnobuk        r_string20      REPLACE
+
+MAP(mupdtkmrev)
+svistr3         tkmscr          REPLACE
+
+MAP(mupdabdsls)
+lSYSTIME	abdjam2		REPLACE_IF cjamlewat
+DEBUG ltbdjam2	abdjam2		REPLACE_IF cjamblm
+g_ipname	abdipakh	REPLACE
+g_tgltrn	abdtgl2		REPLACE
+cHADIR		abdtype		DO_CALC
+cH		abdhari		DO_CALC
+g_scrnumstr	abdnobuk	REPLACE
+
+CALCS()
+crevgab		g_usrkode == svistr1 || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS" || g_grpnam=="TLDHMC" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" ||
+		g_grpnam == "PICMKT" || g_grpnam == "PICMKTM2W" || g_grpnam == "M2WAM"
+cpicmm		g_usrkode == BLANKS && (tkmscr == "PICM" || tkmscr == "BUM")
+cdjoinabkrev	djoinabkrev == 1
+cdjoinabdsls	g_usrkode == BLANKS && djoinabdDTG == 1 && labdsts == "INPG" && labdtype == "DATANG" && labdjam2 == ljamkos && 
+		svidtmkode == "SESUAI" && djoinabdDTG == 1 && djointbdSH == 1 && lpsijabatan=="MKTLAPANGANHMC"
+
+SPCALCS(sptmprevmm)
+        DO_LIB                  ap_dbclc(DNAME dupdtkmmm,DCOMMAND UPDATE,DTARGET tkmbukidx svinobuk,DMAP mupdtkmrev);
+        DO_LIB_IF cpicmm	ap_nxpst(l4694z,lm4694z);
+        DO_LIB_IF cdjoinabkrev	ap_dbclc(DNAME dupdabka,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN svinobuk,DMAP mupdabkmmsls);
+	DO_LIB_IF cdjoinabdsls	ap_dbclc(DNAME dupdabd,DCOMMAND UPDATE,DTARGET abdkymtglidx tkmplg g_tgltrn,DMAP mupdabdsls);
+
+POSTING(tmptrans)
+PST_UPDCMD      sptmprevmm
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	crevgab
+	PMT_DEL_COND	c0

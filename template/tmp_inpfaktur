@@ -1,0 +1,226 @@
+LOCAL
+PGM_FIELDS
+lfktrx		STRING	21
+lnourt1x	INT2	2
+langsisden_1	DFLOAT	8
+ljml		DFLOAT	8
+ljumlah		DFLOAT	8
+lnamakons	STRING	31
+lINVENTARIS	STRING	21
+lktp		STRING	21
+lpsmnama_1	STRING	61
+llegal11e	STRING	11
+lPSMKTP		STRING	11
+lalmkec_1	STRING	21
+ltlmtype2_1	STRING	21
+ltlmtotal_1	DFLOAT	8
+ldum1		INT2	2
+ltldsatbsr_1	DFLOAT	8
+ltlmtypbrg_1	STRING	21
+ltlmtype1_1	STRING	21
+
+MAP(mjoinnourt1x)
+tldnourt        lnourt1x         REPLACE
+
+DBCALCS(djointldnourt1x)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              tldstsbrgukr	llegal11e gv_OPEN tlmnobuk lfktrx
+        DBC_MAP                 mjoinnourt1x
+
+MAP(mscantldfak)
+tldsatbsr	ljumlah		REPLACE
+DEBUG	ldum1	ldum1	REPLACE
+
+DBCALCS(dbscantldfak)
+	DBC_COMMAND		SCANSCAN
+	DBC_TARGET		tldstsbrgukr    llegal11e gv_OPEN tlmnobuk lfktrx
+	DBC_SUM_MAP		mscantldfak
+
+MAP(mjoinpsm)
+psmnama		lpsmnama_1	REPLACE
+
+DBCALCS(djoinpsm)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		psmktpidx	lktp
+	DBC_MAP			mjoinpsm
+
+MAP(mjoinalm)
+almkec		lalmkec_1	REPLACE
+
+DBCALCS(djoinalm)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		almotodatidx	lktp lPSMKTP
+	DBC_MAP			mjoinalm
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  t.Layar    : ____ ______________
+  t.NoInvent : ___________________
+  t.NoFaktur : ___________________
+  t.NamaKons : ___________________
+  t.Kecamatan: ___________________
+  i.AngKe    : ___________________
+  t.BsrAngsur: ___________________
+  t.Sispok   : ___________________
+  t.Denda    : ___________________
+  t.Rugi     : ___________________
+  t.Ket      : ___________________
+ \---------------------------------/
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldtydis        NOCHANGE           INPUTRI 1
+tldlok          NOCHANGE           INPUTRI 2
+tldsat          ALLCAPS            INPUTRI 3
+tldkat          ALLCAPS	           INPUTRI 4
+lnamakons       PROTECT            INPUTRI 5
+tldgrup		PROTECT		   INPUTRI 6
+tldjml		ALLCAPS		   INPUTRI 7
+tldhrg		PROTECT		   INPUTRI 8
+tldsubtot	PROTECT		   INPUTRI 9
+tldperdis	PROTECT		   INPUTRI 10
+tldsatbsr	ALLCAPS		   INPUTRI 11
+tldket		ALLCAPS		   INPUTRI 12
+
+CALCS()
+c740		tldtydis=="740"
+c3126		tldtydis=="3126"
+cangsuran	tldlok=="ANGSURAN"
+cinventaris	tldlok=="INVENTARIS"
+cfaktur		tldlok=="SISPOK" || tldlok=="ANGSURAN"
+csispok		tldlok=="SISPOK"
+cadaisi		tldsatbsr>0
+cdjoinpsm	djoinpsm==1
+cdjoinalm	djoinalm==1
+
+DEFAULTS(tmptranst)
+lfktrx		INIT			FAKTUR
+tldtydis	DFALT_SCAN_BLANKS	740 3126
+IF c740 tldlok	DFALT_SCAN_BLANKS	SISPOK ANGSURAN
+lINVENTARIS	INIT			INVENTARIS
+lPSMKTP		INIT			PSMKTP
+llegal11e	INIT			LEGAL
+ltlmtype2_1	INIT			{tlmtype2}
+ltlmtotal_1	INIT			{tlmtotal}
+ltldsatbsr_1	INIT			{tldsatbsr}
+ltlmtypbrg_1	INIT			{tlmtypbrg}
+ltlmtype1_1	INIT			{tlmtype1}
+
+EDITS(tmptranst)
+e.Mandatory	tldtydis	MANDATORY
+e.Mandatory     tldlok          MANDATORY
+e.Mandatory     tldsat          MANDATORY_IF cinventaris
+e.Mandatory     tldkat          MANDATORY_IF cfaktur
+e.Mandatory     tldjml          MANDATORY_IF cangsuran
+
+e.Validate      tldkat   VALIDATE pikdatbukidx mpik spik {Pgv_dtpiu}
+
+MAP(mpik)
+piknobuk	tldkat		REPLACE
+piksispok	tldsubtot	REPLACE
+pikangbl	tldhrg		REPLACE
+pikplg		lktp		REPLACE
+lpsmnama_1	lnamakons	REPLACE_IF cdjoinpsm
+lalmkec_1	tldgrup		REPLACE_IF cdjoinalm
+
+CALCS()
+cjoinchdnourt1x         g_curcmd==1 && djointldnourt1x==0
+cjoinchdnourt2x         g_curcmd==1 && djointldnourt1x==1
+cnourt1x                lnourt1x + 1
+cjumlah         tldsubtot + tldperdis
+cjumlah1        (tldjml*tldhrg) + tldperdis
+cbknlap 	ltlmtype2_1!="I1-11"
+ctmbh		g_curcmd==1
+cmaxang		(tldlok=="ANGSURAN" && tldjml < 200) || tldlok != "ANGSURAN"
+
+MAP(mnourt1x)
+c1              tldnourt        DO_CALC_IF cjoinchdnourt1x
+cnourt1x        tldnourt        DO_CALC_IF cjoinchdnourt2x
+tldsatbsr       ltldsatbsr_1    REPLACE
+
+MAP(minvent)
+lINVENTARIS	tldlok		REPLACE
+
+MAP(mscanang)
+angsisden       langsisden_1    REPLACE
+
+DBCALCS(dbscanang)
+        DBC_COMMAND             SCANSCAN
+        DBC_TARGET              angbukstsidx    tldkat gv_ANG
+        DBC_SUM_MAP             mscanang
+
+MAP(mrugi)
+tldsatbsr	ltldsatbsr_1	REPLACE
+
+MAP(mjumlah)
+langsisden_1    tldperdis       REPLACE
+cjumlah         ljml            DO_CALC_IF csispok
+cjumlah         tldsatbsr       DO_CALC_IF csispok
+
+MAP(mjumlah1)
+cjumlah1	ljml		DO_CALC_IF cangsuran
+cjumlah1	tldsatbsr	DO_CALC_IF cangsuran
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldtydis      DO_MAP SHOW mnourt1x
+AFTER_INPUT	cur_field=tldtydis	DO_MAP SHOW IF c3126 minvent
+BEFORE_INPUT	cur_field=tldlok	DO_SKIP_IF c3126
+BEFORE_INPUT	cur_field=tldsat	DO_SKIP_IF c740
+BEFORE_INPUT    cur_field=tldkat        DO_SKIP_IF c3126
+BEFORE_INPUT    cur_field=tldjml        DO_SKIP_IF c3126
+BEFORE_INPUT	cur_field=tldjml	DO_SKIP_IF csispok
+BEFORE_INPUT	cur_field=tldsatbsr	DO_SKIP_IF cadaisi
+BEFORE_INPUT    cur_field=tldsatbsr     DO_MAP SHOW mrugi 
+AFTER_INPUT	cur_field=tldkat	DO_SCAN_IF cbknlap dbscanang
+AFTER_INPUT     cur_field=tldkat        DO_MAP SHOW mjumlah
+AFTER_INPUT	cur_field=tldjml	DO_MAP SHOW mjumlah1
+AFTER_INPUT     cur_field=tldjml     	DO_MAP SHOW
+                IF cmaxang mdumz
+                ELSE HKCURSOR STAY
+                     HKMSG Jmlh Angsuran Ke Melebihi Batas MAX
+
+AFTER_INPUT     cur_keybd=EN        	DO_MAP SHOW
+                IF cmaxang mdumz
+                ELSE HKCURSOR STAY
+                     HKMSG Jmlh Angsuran Ke Melebihi Batas MAX
+
+AFTER_INPUT	cur_keybd=EN    	DO_SCAN_IF ctmbh dbscantldfak
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldstsbrgukr   llegal11e gv_OPEN tlmnobuk lfktrx
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+llegal11e       tlddata         REPLACE
+gv_OPEN		tldsts		REPLACE
+tlmnobuk	tldbrg		REPLACE
+lfktrx		tldukrwrn       REPLACE
+
+CALCS()
+cE1		ltlmtypbrg_1=="E1" && ltlmtype1_1!="726_FPD"
+ctotal		ljumlah+ljml
+ctotal1		(ljml-ltldsatbsr_1)+ltlmtotal_1
+
+MAP(mupdtldjml)
+ctotal 		tlmtotal	DO_CALC
+tldkat		tlmnoasal	REPLACE_IF cE1
+tldtydis	tlmtype1	REPLACE_IF cE1
+
+MAP(mupdtldjmlA)
+ctotal1         tlmtotal        DO_CALC
+DEBUG	ldum1	ldum1	REPLACE
+
+SPCALCS(spcalupdjml)
+DO_LIB ap_dbclc(DNAME dupdtldjml,DCOMMAND UPDATE,DTARGET tlmbukidx tldnobuk,DMAP mupdtldjml);
+
+SPCALCS(spcalupdjmlA)
+DO_LIB ap_dbclc(DNAME dupdtldjmlA,DCOMMAND UPDATE,DTARGET tlmbukidx tldnobuk,DMAP mupdtldjmlA);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spcalupdjml
+	PST_UPDCMD	spcalupdjmlA

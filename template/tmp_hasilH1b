@@ -1,0 +1,216 @@
+LOCAL
+PGM_FIELDS
+lKETTOLAKSURVEY		STRING		21
+lcmsmcs		STRING	21
+lsgmstr5	STRING	21
+lbtmcab1		STRING	21
+lbtmcab2		STRING	21
+lhasil1a	STRING	21
+lhasil1b	STRING	21
+lhasil1c	STRING	61
+l4688a			INT2            2
+lm4688a			STRING          15
+lrmdgab         STRING  61
+lindukkk	STRING	11
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   i.Acctacc          : __  _________
+   i.Keterangan       : __  ________________________ _ _
+
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+lsvistr1		PROTECT				INPUTRI 2
+svistr2			NOCHANGE SCROLL			INPUTRI 3
+sviket			NOCHANGE	SCROLL			INPUTRI	4
+lbtmcab1		UNSEEN	PROTECT			INPUTRI		5
+lbtmcab2		UNSEEN	PROTECT			INPUTRI		6
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+lKETTOLAKSURVEY		INIT		KETTOLAKSURVEY
+lbtmcab1			INIT		{btmcab}
+lbtmcab2		INIT			{btmcab}
+lcmsmcs		INIT		CMS/MCS
+l4688a                  INIT            4688
+lm4688a                 INIT            m4688a
+
+DBCALCS(djoinrmd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lINPG lrmdgab
+
+DBCALCS(djoinsgmcmsmcshasil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg gv_dtpiccab lm2w lcmsmcs lthbl lbtmcab1 lbtmcab2
+
+DBCALCS(djoinsgmcmshasil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg gv_dtpiccab lm2w lcms lthbl lbtmcab1 lbtmcab2
+
+
+CALCS()
+cdiacc          svistr1=="Y"
+cditolak        svistr1=="T"
+cACC            "ACC"
+cTACC           "TACC"
+cdjoinsgmcmsmcshasil1		djoinsgmcmsmcshasil==1
+cdjoinsgmcmshasil1		djoinsgmcmshasil==1
+
+EDITS(tmptranst)
+e.Validate      svistr1        VALIDATE tbddatkodidx  mtbd5_2 stbd {Pgv_dttabel} {Pgv_kunjungan1} {Pgv_yt21}
+e.Validate	lbtmcab2	VALIDATE_IF cdjoinsgmcmsmcshasil1 sgmdatstrbrg msgmhasil {Pgv_dtpiccab} {Plm2w} {Plcmsmcs} {Plthbl} {Plbtmcab1}
+e.Validate      lbtmcab2	VALIDATE_IF cdjoinsgmcmshasil1 sgmdatstrbrg msgmhasil {Pgv_dtpiccab} {Plm2w} {Plcms} {Plthbl} {Plbtmcab1}
+
+e.Validate	svistr2        VALIDATE_IF cdiacc tbddatkodidx  mtbd5_1 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_ketsurvey}
+e.Validate      svistr2        VALIDATE_IF cditolak tbddatkodidx  mtbd5_1 stbd {Pgv_dttabel} {Pgv_survey21} {PlKETTOLAKSURVEY}
+
+e.Mandatory                     svistr1          MANDATORY
+e.Mandatory                     svistr2          MANDATORY
+e.Mandatory                     sviket          MANDATORY
+
+MAP(msgmhasil)
+sgmstr5		lsgmstr5	REPLACE
+sgmstr5		svistr3		REPLACE
+
+MAP(m4688a)
+btmnobuk        r_string20      REPLACE
+
+MAP(mtbd5_1)
+tbdkode		svistr2		REPLACE
+tbdkode		lhasil1b	REPLACE
+tbdket		sviket		REPLACE
+tbdket		lhasil1c	REPLACE
+cACC		lsvistr1	DO_CALC_IF cdiacc
+cTACC		lsvistr1	DO_CALC_IF cditolak
+
+MAP(mtbd5_2)
+tbdkode         svistr1         REPLACE
+tbdkode         lhasil1a        REPLACE
+
+MAP(mkosong)
+cBLANKS         svistr2         DO_CALC
+cBLANKS		sviket		DO_CALC
+
+CALCS()
+crmdsudahada    djoinrmd==1 || btmdvsjl == "FTE"
+crmdgabwarna    STRIP(lindukkk) + STRIP(btmcab)
+cINDUK1a	"INDUK1a"
+cINDUK2a	"INDUK2a"
+cpkhmcok	btmdvs=="HMC" || btmdvs=="H1"
+cpkm2wok	btmdvs=="M2W"
+
+
+MAP(mwarna)
+cINDUK1a	lindukkk	DO_CALC_IF cpkhmcok
+cINDUK2a	lindukkk	DO_CALC_IF cpkm2wok
+crmdgabwarna	lrmdgab		DO_CALC
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=svistr2       DO_MAP SHOW mkosong
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW mwarna
+AFTER_INPUT             cur_field=svistr1 DO_MAP SHOW
+                        IF crmdsudahada mdum714
+                        ELSE HKCURSOR STAY
+                        HKMSG t.MasterWarnaBlmAda
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc11    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714a
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.BlmVerifCekKerjaCMO
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc11    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714a
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.BlmVerifCekKerjaCMO
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+CALCS()
+cisi1hasil		1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_hasilH1
+
+SFL_MAP
+gv_datasurvey  		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_hasilH1		svitype			REPLACE
+gv_hasilH1		svikode			REPLACE
+cisi1hasil		svinourt		DO_CALC
+
+/**********************************************************************/
+SPCALCS(sphasil)
+	DO_LIB ap_nxpst(l4688a,lm4688a);   /*Btp Penyimpangan*/
+
+POSTING(tmptrans)
+        PST_ADDCMD sphasil
+        PST_UPDCMD sphasil
+
+
+CALCS()
+ctambah_hasil	(btmsts=="714" && djoinsvihasil==0 && g_scrnumstr=="714") || (btmsts=="711" && djoinsvihasil==0 && g_scrnumstr=="711")
+cubah_hasil	(btmsts=="714" && djoinsvihasil==1 && g_scrnumstr=="714" && djoinsvijanjikc==0) || (btmsts=="711" && djoinsvihasil==1 && g_scrnumstr=="711")
+chapus_hasil	(btmsts=="714" && djoinsvihasil==1 && g_scrnumstr=="714" && djoinsvijanjikc==0) || (btmsts=="711" && djoinsvihasil==1 && g_scrnumstr=="711")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	ctambah_hasil
+  	PMT_UPDALL_COND	cubah_hasil
+  	PMT_DEL_COND  	chapus_hasil

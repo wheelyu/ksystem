@@ -1,0 +1,89 @@
+LOCAL
+PGM_FIELDS
+luploadok7      STRING          11
+
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload      : _____ 
+  t.TglFt       : ______________
+  t.lat    	: _________.____    
+  t.long   	: _________.____    
+       ___________________
+  t.FotoYgUplHrsDrKmr
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans) 
+
+FIELD(tmptranst)
+tkdjwbstr1      PROTECT         INPUTRI 1
+tkdtgl2         PROTECT         INPUTRI 4
+tkdjml          PROTECT NUMERIC INPUTRI 5
+tkdjml2         PROTECT NUMERIC INPUTRI 6
+
+luploadok7      TOMBOL          INPUTRI 8
+
+DEFAULTS(tmptranst)
+tkdjwbstr2      DFALT_SCAN_BLANK ACC    " "
+				 TACC	" "
+luploadok7      INIT            UPLOAD_OK
+g_fotolat1      INIT		BLANKS
+g_fotolon1      INIT		BLANKS
+
+
+CALCS()
+cY7             "OK"
+clonglat7	tkdjml != BLANKS && tkdjml2 != BLANKS
+cm2wbtl7	tlmdvs == "M2W" && tlmgrup == "BTL" && tlmdari == "PAP" 
+
+MAP(mupdtkd7)
+g_fotodate1     tldtglfak       REPLACE
+g_usrkode       tkdsisstr       REPLACE
+g_fotolat1      tkdjml          REPLACE
+g_fotolon1      tkdjml2         REPLACE
+g_fotodate1     tkdtgl2         REPLACE
+cY7             tkdjwbstr1      DO_CALC_IF clonglat7
+lnipam          tkdnoll         REPLACE_IF cjoinsgmam1
+lnipmso         tkdnoll         REPLACE_IF cjoinmsohead1
+
+MAP(mupdtlm7)
+l7              tlmperdisd      REPLACE
+
+MAP(mmapmapacara7)
+DEBUG cnobukmso2       lnobukmso      DO_CALC
+
+
+SPCALCS(sptmptrans)
+        DO_LIB  ap_dbclc(DNAME dmapmapacara7, DCOMMAND MAPMAP, DMAP mmapmapacara7);
+        DO_LIB  ap_dbclc(DNAME dupdabkmso7, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN lnobukmso,DMAP mupdabk);
+                                                                            
+SPCALCS(supdtkd7)
+        DO_LIB  ap_dbclc(DNAME dmapmapacara7x, DCOMMAND MAPMAP, DMAP mmapmapacara7);
+        DO_LIB  ap_dbclc(DNAME dupdtkd7, DCOMMAND UPDATE, DTARGET tkdotoidx tkdoto, DMAP mupdtkd7);
+        DO_LIB  ap_dbclc(DNAME dupdtlm7, DCOMMAND UPDATE, DTARGET tlmbukidx tkdnobuk, DMAP mupdtlm7);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadok7    DO_SPCALCS supdtkd7
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tlmnobuk tkdjenis
+SFL_COND	cm2wbtl7
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        tkdbukidx       tlmnobuk lfoto l7  
+
+POSTING(tmptrans)
+PST_UPDCMD      sptmptrans

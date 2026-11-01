@@ -1,0 +1,70 @@
+LOCAL
+PGM_FIELDS
+ltipe		STRING	21
+lbtmnobuk21	STRING	21
+lbtmsoa		STRING	21
+lbtmiklan	STRING	21
+
+CALCS()
+cbtmklik	btmdata == "BUKUTAMU" && btmsts == "CLSD" && (btmiklan == "KLIKNSS_RO" || btmiklan == "KLIKNSS_HO")
+
+MAP(mjoinbtmpk)
+btmnobuk	lbtmnobuk21	REPLACE
+btmsoa		lbtmsoa		REPLACE
+btmiklan	lbtmiklan	REPLACE
+
+DBCALCS(djoinbtmklik)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cbtmklik
+	DBC_TARGET	btmplgbukidx psmktp
+	DBC_MAP		mjoinbtmpk
+
+DBCALCS(djoinbtmpk)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	btmplgbukidx psmktp
+	DBC_MAP		mjoinbtmpk
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|i.Tipe    : ______________________ |
+|t.NoPK    : ______________________ |
+|i.Soa	   : ______________________ |
+|i.Iklan   : ______________________ |
+|i.Ktp     : ______________________ |
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ltipe		PROTECT		INPUTRI 1
+lbtmnobuk21	PROTECT		INPUTRI	2
+lbtmsoa		PROTECT		INPUTRI	3
+lbtmiklan	PROTECT		INPUTRI	4
+psmktp		PROTECT UNSEEN	INPUTRI	5
+
+CALCS()
+cjoinbtmpk	(djoinbtmklik == 1 || (djoinbtmklik == 0 && djoinbtmpk == 1))
+cbukanklik	djoinbtmklik == 0
+ciniklik	djoinbtmklik == 1
+cALL		"ALL"
+cKLIK		"KLIK"
+
+EDITS(tmptranst)
+e.Validate	psmktp		VALIDATE psmktpidx mpsmklik 0
+
+MAP(mpsmklik)
+psmktp		psmktp		REPLACE
+g_strksg	lbtmnobuk21	REPLACE
+g_strksg	lbtmsoa		REPLACE
+g_strksg	lbtmiklan	REPLACE
+lbtmnobuk21	lbtmnobuk21	REPLACE_IF cjoinbtmpk
+lbtmsoa		lbtmsoa		REPLACE_IF cjoinbtmpk
+lbtmiklan	lbtmiklan	REPLACE_IF cjoinbtmpk
+cALL		ltipe		DO_CALC_IF cbukanklik
+cKLIK		ltipe		DO_CALC_IF ciniklik
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	psmktpidx psmktp

@@ -1,0 +1,601 @@
+LOCAL
+PGM_FIELDS
+lOJK            STRING          21
+lnamalembaga	STRING		31
+lsudahada	DFLOAT		8
+lsvistr2	STRING		21
+lsvistr4	STRING		21
+
+CALCS()
+c1		1
+cnourt		lsudahada+1
+cperbankan1	svistr2=="PERBANKAN" && svistr4=="LUNAS"
+cperbankan2	svistr2=="PERBANKAN" && svistr4=="AKTIF"
+cperbankan3	svistr2=="PERBANKAN" && svistr4=="DITUTUP"
+
+cnonlembagakeuagan1	svistr2=="NONLEMBAGAKEUANGAN" && svistr4=="LUNAS"
+cnonlembagakeuagan2	svistr2=="NONLEMBAGAKEUANGAN" && svistr4=="AKTIF"
+cnonlembagakeuagan3	svistr2=="NONLEMBAGAKEUANGAN" && svistr4=="DITUTUP"
+
+cmultifinence1		svistr2=="MULTIFINANCE" && svistr4=="LUNAS"
+cmultifinence2		svistr2=="MULTIFINANCE" && svistr4=="AKTIF"
+cmultifinence3		svistr2=="MULTIFINANCE" && svistr4=="DITUTUP"
+
+ckoperasiimpanppinjam1	svistr2=="KOPERASISIMPANPINJAM" && svistr4=="LUNAS"
+ckoperasiimpanppinjam2	svistr2=="KOPERASISIMPANPINJAM" && svistr4=="AKTIF"
+ckoperasiimpanppinjam3	svistr2=="KOPERASISIMPANPINJAM" && svistr4=="DITUTUP"
+
+cbpr1			svistr2=="BPR" && svistr4=="LUNAS"
+cbpr2			svistr2=="BPR" && svistr4=="AKTIF"
+cbpr3			svistr2=="BPR" && svistr4=="DITUTUP"
+
+cfintech1		svistr2=="FINTECTP2PLENDING" && svistr4=="LUNAS"
+cfintech2		svistr2=="FINTECTP2PLENDING" && svistr4=="AKTIF"
+cfintech3		svistr2=="FINTECTP2PLENDING" && svistr4=="DITUTUP"
+
+clembagalain1		svistr2=="LEMBAGAKEUANGANLAIN" && svistr4=="LUNAS"
+clembagalain2		svistr2=="LEMBAGAKEUANGANLAIN" && svistr4=="AKTIF"
+clembagalain3		svistr2=="LEMBAGAKEUANGANLAIN" && svistr4=="DITUTUP"
+
+cadapenjamin		btmstr1=="Y"
+ctdkadapenjamin		btmstr1=="T"
+
+MAP(mscansvipefindo)
+c1	lsudahada	DO_CALC
+
+c1	lperbankan1	DO_CALC_IF cperbankan1
+c1	lperbankan2	DO_CALC_IF cperbankan2
+c1	lperbankan3	DO_CALC_IF cperbankan3
+
+c1	lnonlembagakeuagan1	DO_CALC_IF cnonlembagakeuagan1
+c1      lnonlembagakeuagan2     DO_CALC_IF cnonlembagakeuagan2
+c1      lnonlembagakeuagan3     DO_CALC_IF cnonlembagakeuagan3
+
+c1	lmultifinence1		DO_CALC_IF cmultifinence1
+c1      lmultifinence2          DO_CALC_IF cmultifinence2
+c1      lmultifinence3          DO_CALC_IF cmultifinence3
+
+c1	lkoperasiimpanppinjam1	DO_CALC_IF ckoperasiimpanppinjam1
+c1      lkoperasiimpanppinjam2  DO_CALC_IF ckoperasiimpanppinjam2
+c1      lkoperasiimpanppinjam3  DO_CALC_IF ckoperasiimpanppinjam3
+
+c1	lbpr1			DO_CALC_IF cbpr1
+c1      lbpr2                   DO_CALC_IF cbpr2
+c1      lbpr3                   DO_CALC_IF cbpr3
+
+c1	lfintech1		DO_CALC_IF cfintech1
+c1      lfintech2               DO_CALC_IF cfintech2
+c1      lfintech3               DO_CALC_IF cfintech3
+
+c1	llembagalain1		 DO_CALC_IF clembagalain1
+c1      llembagalain2            DO_CALC_IF clembagalain2
+c1      llembagalain3            DO_CALC_IF clembagalain3
+
+DBCALCS(dbscansvipefindo)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	svidatbuktyp   lDTPEFINDO btmnobuk lsvitype
+	DBC_LAST_TARGET	svidatbuktyp   lDTPEFINDO btmnobuk lsvitype
+	DBC_SUM_MAP	mscansvipefindo
+
+DBCALCS(dbscansvipefindohapus)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp   lDTPEFINDO btmnobuk svitype
+        DBC_LAST_TARGET svidatbuktyp   lDTPEFINDO btmnobuk svitype
+        DBC_SUM_MAP     mscansvipefindo
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.JnsDeb        :____________         ||
+||t.JenisKreditur :_______________      ||
+||t.SumberPinjaman:________             ||
+||                 ____________________ ||
+||t.TglPembukaan  :______________       ||
+||t.Plafon        :_______________      ||
+||t.NunggakTerlama:_______________      ||
+||t.StsFasilitas  :_______________      ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svitype         NOCHANGE        INPUTRI         1
+svistr2         NOCHANGE        INPUTRI         2
+svistr3         NOCHANGE        INPUTRI         3
+lnamalembaga	PROTECT		INPUTRI		3
+svitgl2         NONE   {DD-MM-YYYY} NOLIMIT        INPUTRI         4
+svidf1          ALLCAPS         INPUTRI         5
+svidf2          ALLCAPS         INPUTRI         6
+svistr4         NOCHANGE        INPUTRI         7
+
+DEFAULT(tmptranst)
+lOJK            INIT            OJK
+
+IF cadapenjamin svitype		DFALT_SCAN	BLANKS	
+				DEBITUR
+				PENJAMIN
+
+IF ctdkadapenjamin	svitype DFALT_SCAN BLANKS
+				DEBITUR
+
+svistr2		DFALT_SCAN	BLANKS
+				PERBANKAN
+				NONLEMBAGAKEUANGAN
+				MULTIFINANCE
+				KOPERASISIMPANPINJAM		
+				BPR
+				FINTECTP2PLENDING
+				LEMBAGAKEUANGANLAIN
+
+svistr4		DFALT_SCAN	BLANKS
+				LUNAS
+				AKTIF
+				DITUTUP
+
+EDITS(tmptranst)
+e.Mandatory	svitype		MANDATORY
+e.Mandatory	svistr2		MANDATORY
+e.Mandatory	svistr3		MANDATORY
+e.Mandatory	svitgl2		MANDATORY
+e.Mandatory	svidf1		MANDATORY
+e.Mandatory	svidf2		MANDATORY
+e.Mandatory	svistr4		MANDATORY
+
+e.Validate      svistr3         VALIDATE tbtdattypkod mtbtojk stbt {Pgv_dttabel} {Pgv_m4w21} {Pgv_infoumum} {Pgv_MERK} {PlOJK}
+
+MAP(mtbtojk)
+tbtkode         svistr3         REPLACE
+tbtket          lnamalembaga    REPLACE
+
+
+MAP(misilokal)
+svitype		lsvitype		REPLACE
+svitype		lsvitype21		REPLACE
+svistr2		lsvistr2		REPLACE
+svistr4		lsvistr4		REPLACE
+
+CALCS()
+ctanggalkurang	svitgl2<=g_tgltrn
+csudahisirekap	(svitype=="DEBITUR" && djointldrekappefindopm==1 && ltlddvs!=BLANKS) || (svitype=="PENJAMIN" && djointldrekappefindoph==1 && ltlddvspj!=BLANKS)
+cdebiturtdkada	(svitype=="DEBITUR" && djointldrekappefindopm==1 && ltlddvs=="ADA") || svitype!="DEBITUR"
+cpemohontdkada	(svitype=="PENJAMIN" && djointldrekappefindoph==1 && ltlddvspj=="ADA") || svitype!="PENJAMIN"
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svitype	DO_MAP	misilokal
+AFTER_INPUT	cur_field=svitype	DO_SCAN dbscansvipefindo
+
+AFTER_INPUT     cur_field=svitype DO_MAP SHOW
+                IF csudahisirekap mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiRekpPefindoDulu
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF csudahisirekap mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiRekapPefindoDulu
+
+
+AFTER_INPUT     cur_field=svitype DO_MAP SHOW
+                IF cdebiturtdkada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DebiturTdkAdaPefino
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF cdebiturtdkada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DebiturTdkAdaPefino
+
+AFTER_INPUT     cur_field=svitype DO_MAP SHOW
+                IF cpemohontdkada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PenjaminTdkAdaPefindo
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF cpemohontdkada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PenjaminTdkAdaPefindo
+
+
+AFTER_INPUT     cur_field=svitgl2 DO_MAP SHOW
+                IF ctanggalkurang mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHrsLbhKecilHariIni
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF ctanggalkurang mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHrsLbhKecilHariIni
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	svidatbuktyp   lDTPEFINDO btmnobuk
+SFL_MAP
+lDTPEFINDO	svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+cnourt		svinourt	DO_CALC
+btmtgl		svitgl1		REPLACE
+
+CALCS()
+cpemohon	lsvitype=="DEBITUR"
+cpenjamin	lsvitype=="PENJAMIN"
+
+ctambah1        lperbankan1+1
+ctambah2        lperbankan2+1
+ctambah3        lperbankan3+1
+
+ctambah4        lnonlembagakeuagan1+1
+ctambah5        lnonlembagakeuagan2+1
+ctambah6        lnonlembagakeuagan3+1
+
+ctambah7        lmultifinence1+1
+ctambah8        lmultifinence2+1
+ctambah9        lmultifinence3+1
+
+ctambah10       lkoperasiimpanppinjam1+1
+ctambah11       lkoperasiimpanppinjam2+1
+ctambah12       lkoperasiimpanppinjam3+1
+
+ctambah13       lbpr1+1
+ctambah14       lbpr2+1
+ctambah15       lbpr3+1
+
+ctambah16       lfintech1+1
+ctambah17       lfintech2+1
+ctambah18       lfintech3+1
+
+ctambah19       llembagalain1+1
+ctambah20       llembagalain2+1
+ctambah21       llembagalain3+1
+
+
+ctambah1t	g_curcmd==1 && lsvistr2=="PERBANKAN" && lsvistr4=="LUNAS"
+ctambah2t	g_curcmd==1 && lsvistr2=="PERBANKAN" && lsvistr4=="AKTIF"
+ctambah3t	g_curcmd==1 && lsvistr2=="PERBANKAN" && lsvistr4=="DITUTUP"
+
+ctambah4t	g_curcmd==1 && lsvistr2=="NONLEMBAGAKEUANGAN" && lsvistr4=="LUNAS"
+ctambah5t	g_curcmd==1 && lsvistr2=="NONLEMBAGAKEUANGAN" && lsvistr4=="AKTIF"
+ctambah6t	g_curcmd==1 && lsvistr2=="NONLEMBAGAKEUANGAN" && lsvistr4=="DITUTUP"
+
+ctambah7t	g_curcmd==1 && lsvistr2=="MULTIFINANCE" && lsvistr4=="LUNAS"
+ctambah8t	g_curcmd==1 && lsvistr2=="MULTIFINANCE" && lsvistr4=="AKTIF"
+ctambah9t	g_curcmd==1 && lsvistr2=="MULTIFINANCE" && lsvistr4=="DITUTUP"
+
+ctambah10t	g_curcmd==1 && lsvistr2=="KOPERASISIMPANPINJAM" && lsvistr4=="LUNAS"
+ctambah11t	g_curcmd==1 && lsvistr2=="KOPERASISIMPANPINJAM" && lsvistr4=="AKTIF"
+ctambah12t	g_curcmd==1 && lsvistr2=="KOPERASISIMPANPINJAM" && lsvistr4=="DITUTUP"
+
+ctambah13t	g_curcmd==1 && lsvistr2=="BPR" && lsvistr4=="LUNAS"
+ctambah14t	g_curcmd==1 && lsvistr2=="BPR" && lsvistr4=="AKTIF"
+ctambah15t	g_curcmd==1 && lsvistr2=="BPR" && lsvistr4=="DITUTUP"
+
+ctambah16t	g_curcmd==1 && lsvistr2=="FINTECTP2PLENDING" && lsvistr4=="LUNAS"
+ctambah17t	g_curcmd==1 && lsvistr2=="FINTECTP2PLENDING" && lsvistr4=="AKTIF"
+ctambah18t	g_curcmd==1 && lsvistr2=="FINTECTP2PLENDING" && lsvistr4=="DITUTUP"
+
+ctambah19t	g_curcmd==1 && lsvistr2=="LEMBAGAKEUANGANLAIN" && lsvistr4=="LUNAS"
+ctambah20t	g_curcmd==1 && lsvistr2=="LEMBAGAKEUANGANLAIN" && lsvistr4=="AKTIF"
+ctambah21t	g_curcmd==1 && lsvistr2=="LEMBAGAKEUANGANLAIN" && lsvistr4=="DITUTUP"
+
+/***********************/
+
+chapus1        lperbankan1-1
+chapus2        lperbankan2-1
+chapus3        lperbankan3-1
+
+chapus4        lnonlembagakeuagan1-1
+chapus5        lnonlembagakeuagan2-1
+chapus6        lnonlembagakeuagan3-1
+
+chapus7        lmultifinence1-1
+chapus8        lmultifinence2-1
+chapus9        lmultifinence3-1
+
+chapus10       lkoperasiimpanppinjam1-1
+chapus11       lkoperasiimpanppinjam2-1
+chapus12       lkoperasiimpanppinjam3-1
+
+chapus13       lbpr1-1
+chapus14       lbpr2-1
+chapus15       lbpr3-1
+
+chapus16       lfintech1-1
+chapus17       lfintech2-1
+chapus18       lfintech3-1
+
+chapus19       llembagalain1-1
+chapus20       llembagalain2-1
+chapus21       llembagalain3-1
+
+chapus1t       g_curcmd==4 && lsvistr2=="PERBANKAN" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus2t       g_curcmd==4 && lsvistr2=="PERBANKAN" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus3t       g_curcmd==4 && lsvistr2=="PERBANKAN" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+chapus4t       g_curcmd==4 && lsvistr2=="NONLEMBAGAKEUANGAN" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus5t       g_curcmd==4 && lsvistr2=="NONLEMBAGAKEUANGAN" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus6t       g_curcmd==4 && lsvistr2=="NONLEMBAGAKEUANGAN" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+chapus7t       g_curcmd==4 && lsvistr2=="MULTIFINANCE" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus8t       g_curcmd==4 && lsvistr2=="MULTIFINANCE" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus9t       g_curcmd==4 && lsvistr2=="MULTIFINANCE" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+chapus10t      g_curcmd==4 && lsvistr2=="KOPERASISIMPANPINJAM" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus11t      g_curcmd==4 && lsvistr2=="KOPERASISIMPANPINJAM" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus12t      g_curcmd==4 && lsvistr2=="KOPERASISIMPANPINJAM" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+chapus13t      g_curcmd==4 && lsvistr2=="BPR" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus14t      g_curcmd==4 && lsvistr2=="BPR" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus15t      g_curcmd==4 && lsvistr2=="BPR" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+chapus16t      g_curcmd==4 && lsvistr2=="FINTECTP2PLENDING" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus17t      g_curcmd==4 && lsvistr2=="FINTECTP2PLENDING" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus18t      g_curcmd==4 && lsvistr2=="FINTECTP2PLENDING" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+chapus19t      g_curcmd==4 && lsvistr2=="LEMBAGAKEUANGANLAIN" && lsvistr4=="LUNAS" && g_grpnam=="TDK"
+chapus20t      g_curcmd==4 && lsvistr2=="LEMBAGAKEUANGANLAIN" && lsvistr4=="AKTIF" && g_grpnam=="TDK"
+chapus21t      g_curcmd==4 && lsvistr2=="LEMBAGAKEUANGANLAIN" && lsvistr4=="DITUTUP" && g_grpnam=="TDK"
+
+MAP(maddtldrekappefindo)
+btmnobuk	tldnobuk	REPLACE
+gv_INPG		tldsts		REPLACE
+lDTPEFINDO	tldbrg		REPLACE
+gv_datasurvey	tlddata		REPLACE
+lsvitype	tldukrwrn	REPLACE
+btmnobuk	tldsat		REPLACE
+btmtgl		tldtglfak	REPLACE
+btmplg		tldcab		REPLACE_IF cpemohon
+btppsm_3	tldcab		REPLACE_IF cpenjamin
+
+MAP(mmaprekap)
+ctambah1	lperbankan1t		DO_CALC_IF ctambah1t
+ctambah2	lperbankan2t            DO_CALC_IF ctambah2t
+ctambah3	lperbankan3t            DO_CALC_IF ctambah3t
+
+ctambah4	lnonlembagakeuagan1t    DO_CALC_IF ctambah4t
+ctambah5	lnonlembagakeuagan2t    DO_CALC_IF ctambah5t
+ctambah6	lnonlembagakeuagan3t    DO_CALC_IF ctambah6t
+
+ctambah7	lmultifinence1t         DO_CALC_IF ctambah7t
+ctambah8	lmultifinence2t         DO_CALC_IF ctambah8t
+ctambah9	lmultifinence3t         DO_CALC_IF ctambah9t
+
+ctambah10	lkoperasiimpanppinjam1t DO_CALC_IF ctambah10t
+ctambah11	lkoperasiimpanppinjam2t DO_CALC_IF ctambah11t
+ctambah12	lkoperasiimpanppinjam3t DO_CALC_IF ctambah12t
+
+ctambah13	lbpr1t                  DO_CALC_IF ctambah13t
+ctambah14	lbpr2t                  DO_CALC_IF ctambah14t
+ctambah15	lbpr3t                  DO_CALC_IF ctambah15t
+
+ctambah16	lfintech1t              DO_CALC_IF ctambah16t
+ctambah17	lfintech2t              DO_CALC_IF ctambah17t
+ctambah18	lfintech3t              DO_CALC_IF ctambah18t
+
+ctambah19	llembagalain1t          DO_CALC_IF ctambah19t
+ctambah20	llembagalain2t          DO_CALC_IF ctambah20t
+ctambah21	llembagalain3t          DO_CALC_IF ctambah21t
+
+DEBUG   ldum    ldum    REPLACE
+
+MAP(mupdtldrekappefindo)
+lperbankan1     	tldhrg		REPLACE
+lperbankan2     	tldsubtot	REPLACE
+lperbankan3     	tldperdis	REPLACE
+
+lnonlembagakeuagan1     tldtotdis	REPLACE
+lnonlembagakeuagan2     tldsatbsr	REPLACE
+lnonlembagakeuagan3     tldjmlren	REPLACE
+
+lmultifinence1         tldjmlpos	REPLACE
+lmultifinence2         tldhrgnet	REPLACE
+lmultifinence3         tldtmp1		REPLACE
+
+lkoperasiimpanppinjam1  tldtmp2		REPLACE
+lkoperasiimpanppinjam2  tldjml2		REPLACE
+lkoperasiimpanppinjam3  tldjml3		REPLACE
+
+lbpr1                   tldperdism	REPLACE
+lbpr2                   tldtotdism	REPLACE
+lbpr3                   tldperdis1	REPLACE
+
+lfintech1               tldperdis2	REPLACE
+lfintech2               tldperdis3	REPLACE
+lfintech3               tldperdis4	REPLACE
+
+llembagalain1           tldperdis5	REPLACE
+llembagalain2           tldperdis6	REPLACE
+llembagalain3           tldperdis7	REPLACE
+
+/*tambah*/
+
+lperbankan1t             tldhrg          REPLACE_IF ctambah1t
+lperbankan2t             tldsubtot       REPLACE_IF ctambah2t
+lperbankan3t             tldperdis       REPLACE_IF ctambah3t
+
+lnonlembagakeuagan1t     tldtotdis       REPLACE_IF ctambah4t
+lnonlembagakeuagan2t     tldsatbsr       REPLACE_IF ctambah5t
+lnonlembagakeuagan3t     tldjmlren       REPLACE_IF ctambah6t
+
+lmultifinence1t         tldjmlpos        REPLACE_IF ctambah7t
+lmultifinence2t         tldhrgnet        REPLACE_IF ctambah8t
+lmultifinence3t         tldtmp1          REPLACE_IF ctambah9t
+
+lkoperasiimpanppinjam1t  tldtmp2         REPLACE_IF ctambah10t
+lkoperasiimpanppinjam2t  tldjml2         REPLACE_IF ctambah11t
+lkoperasiimpanppinjam3t  tldjml3         REPLACE_IF ctambah12t
+
+lbpr1t                   tldperdism      REPLACE_IF ctambah13t
+lbpr2t                   tldtotdism      REPLACE_IF ctambah14t
+lbpr3t                   tldperdis1      REPLACE_IF ctambah15t
+
+lfintech1t               tldperdis2      REPLACE_IF ctambah16t
+lfintech2t               tldperdis3      REPLACE_IF ctambah17t
+lfintech3t               tldperdis4      REPLACE_IF ctambah18t
+
+llembagalain1t           tldperdis5      REPLACE_IF ctambah19t
+llembagalain2t           tldperdis6      REPLACE_IF ctambah20t
+llembagalain3t           tldperdis7      REPLACE_IF ctambah21t
+
+/* hapus */
+lperbankan1h             tldhrg          REPLACE_IF chapus1t
+lperbankan2h             tldsubtot       REPLACE_IF chapus2t
+lperbankan3h             tldperdis       REPLACE_IF chapus3t
+
+lnonlembagakeuagan1h     tldtotdis       REPLACE_IF chapus4t
+lnonlembagakeuagan2h     tldsatbsr       REPLACE_IF chapus5t
+lnonlembagakeuagan3h     tldjmlren       REPLACE_IF chapus6t
+
+lmultifinence1h         tldjmlpos        REPLACE_IF chapus7t
+lmultifinence2h         tldhrgnet        REPLACE_IF chapus8t
+lmultifinence3h         tldtmp1          REPLACE_IF chapus9t
+
+lkoperasiimpanppinjam1h  tldtmp2         REPLACE_IF chapus10
+lkoperasiimpanppinjam2h  tldjml2         REPLACE_IF chapus11
+lkoperasiimpanppinjam3h  tldjml3         REPLACE_IF chapus12
+
+lbpr1h                   tldperdism      REPLACE_IF chapus13
+lbpr2h                   tldtotdism      REPLACE_IF chapus14
+lbpr3h                   tldperdis1      REPLACE_IF chapus15
+
+lfintech1h               tldperdis2      REPLACE_IF chapus16
+lfintech2h               tldperdis3      REPLACE_IF chapus17
+lfintech3h               tldperdis4      REPLACE_IF chapus18
+
+llembagalain1h           tldperdis5      REPLACE_IF chapus19
+llembagalain2h           tldperdis6      REPLACE_IF chapus20
+llembagalain3h           tldperdis7      REPLACE_IF chapus21
+
+DEBUG   ldum    ldum    REPLACE
+
+MAP(mmaprekaphapus)
+chapus1        lperbankan1h            DO_CALC_IF chapus1t
+chapus2        lperbankan2h            DO_CALC_IF chapus2t
+chapus3        lperbankan3h            DO_CALC_IF chapus3t
+
+chapus4        lnonlembagakeuagan1h    DO_CALC_IF chapus4t
+chapus5        lnonlembagakeuagan2h    DO_CALC_IF chapus5t
+chapus6        lnonlembagakeuagan3h    DO_CALC_IF chapus6t
+
+chapus7        lmultifinence1h         DO_CALC_IF chapus7t
+chapus8        lmultifinence2h         DO_CALC_IF chapus8t
+chapus9        lmultifinence3h         DO_CALC_IF chapus9t
+
+chapus10       lkoperasiimpanppinjam1h DO_CALC_IF chapus10t
+chapus11       lkoperasiimpanppinjam2h DO_CALC_IF chapus11t
+chapus12       lkoperasiimpanppinjam3h DO_CALC_IF chapus12t
+
+chapus13       lbpr1h                  DO_CALC_IF chapus13t
+chapus14       lbpr2h                  DO_CALC_IF chapus14t
+chapus15       lbpr3h                  DO_CALC_IF chapus15t
+
+chapus16       lfintech1h              DO_CALC_IF chapus16t
+chapus17       lfintech2h              DO_CALC_IF chapus17t
+chapus18       lfintech3h              DO_CALC_IF chapus18t
+
+chapus19       llembagalain1h          DO_CALC_IF chapus19t
+chapus20       llembagalain2h          DO_CALC_IF chapus20t
+chapus21       llembagalain3h          DO_CALC_IF chapus21t
+
+DEBUG   ldum    ldum    REPLACE
+
+MAP(mkosonglokal)
+svitype         lsvitype                REPLACE
+svitype         lsvitype21              REPLACE
+svistr2         lsvistr2                REPLACE
+svistr4         lsvistr4                REPLACE
+
+c0      lsudahada       DO_CALC
+ 
+c0      lperbankan1     DO_CALC
+c0      lperbankan2     DO_CALC
+c0      lperbankan3     DO_CALC
+
+c0      lnonlembagakeuagan1     DO_CALC
+c0      lnonlembagakeuagan2     DO_CALC
+c0      lnonlembagakeuagan3     DO_CALC
+
+c0      lmultifinence1          DO_CALC
+c0      lmultifinence2          DO_CALC
+c0      lmultifinence3          DO_CALC
+
+c0      lkoperasiimpanppinjam1  DO_CALC
+c0      lkoperasiimpanppinjam2  DO_CALC
+c0      lkoperasiimpanppinjam3  DO_CALC
+
+c0      lbpr1                   DO_CALC
+c0      lbpr2                   DO_CALC
+c0      lbpr3                   DO_CALC
+
+c0      lfintech1               DO_CALC
+c0      lfintech2               DO_CALC
+c0      lfintech3               DO_CALC
+
+c0      llembagalain1            DO_CALC
+c0      llembagalain2            DO_CALC
+c0      llembagalain3            DO_CALC
+
+c0	lperbankan1t		DO_CALC
+c0	lperbankan2t		DO_CALC
+c0      lperbankan3t		DO_CALC
+c0      lnonlembagakeuagan1t	DO_CALC
+c0      lnonlembagakeuagan2t	DO_CALC
+c0      lnonlembagakeuagan3t	DO_CALC
+c0      lmultifinence1t		DO_CALC
+c0      lmultifinence2t		DO_CALC
+c0      lmultifinence3t		DO_CALC
+c0      lkoperasiimpanppinjam1t	DO_CALC
+c0      lkoperasiimpanppinjam2t	DO_CALC
+c0      lkoperasiimpanppinjam3t	DO_CALC
+c0      lbpr1t			DO_CALC
+c0      lbpr2t			DO_CALC
+c0      lbpr3t			DO_CALC
+c0      lfintech1t		DO_CALC
+c0      lfintech2t		DO_CALC
+c0      lfintech3t		DO_CALC
+c0      llembagalain1t		DO_CALC
+c0      llembagalain2t		DO_CALC
+c0      llembagalain3t		DO_CALC
+
+c0      lperbankan1h            DO_CALC
+c0      lperbankan2h            DO_CALC
+c0      lperbankan3h            DO_CALC
+c0      lnonlembagakeuagan1h    DO_CALC
+c0      lnonlembagakeuagan2h    DO_CALC
+c0      lnonlembagakeuagan3h    DO_CALC
+c0      lmultifinence1h         DO_CALC
+c0      lmultifinence2h         DO_CALC
+c0      lmultifinence3h         DO_CALC
+c0      lkoperasiimpanppinjam1h DO_CALC
+c0      lkoperasiimpanppinjam2h DO_CALC
+c0      lkoperasiimpanppinjam3h DO_CALC
+c0      lbpr1h                  DO_CALC
+c0      lbpr2h                  DO_CALC
+c0      lbpr3h                  DO_CALC
+c0      lfintech1h              DO_CALC
+c0      lfintech2h              DO_CALC
+c0      lfintech3h              DO_CALC
+c0      llembagalain1h          DO_CALC
+c0      llembagalain2h          DO_CALC
+c0      llembagalain3h          DO_CALC
+
+
+SPCALCS(sppefindo)
+DO_LIB ap_dbclc (DNAME dkosonglokal1,DCOMMAND MAPMAP,DMAP mkosonglokal);
+DO_LIB_IF cdjointldrekappefindo0 ap_dbclc (DNAME daddtldrekappefindo,DCOMMAND ADD,DFILE tld,DMAP maddtldrekappefindo);
+dbscansvipefindo
+DO_LIB ap_dbclc (DNAME dmaprekap,DCOMMAND MAPMAP,DMAP mmaprekap);
+DO_LIB_IF cdjointldrekappefindo1 ap_dbclc (DNAME dupdtldrekappefindo,DCOMMAND UPDATE,DTARGET tldotoidx   ltldoto,DMAP mupdtldrekappefindo);
+
+SPCALCS(sphpspefindo)
+DO_LIB ap_dbclc (DNAME dkosonglokal2,DCOMMAND MAPMAP,DMAP mkosonglokal);
+dbscansvipefindohapus
+DO_LIB ap_dbclc (DNAME dmaprekaphpus,DCOMMAND MAPMAP,DMAP mmaprekaphapus);
+DO_LIB_IF cdjointldrekappefindo1 ap_dbclc (DNAME dupdtldrekappefindohps,DCOMMAND UPDATE,DTARGET tldotoidx   ltldoto,DMAP mupdtldrekappefindo);
+
+POSTING(tmptrans)
+        PST_ADDCMD sppefindo
+        PST_UPDCMD sppefindo
+	PST_DELCMD sphpspefindo
+

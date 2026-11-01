@@ -1,0 +1,69 @@
+LOCAL
+PGM_FIELDS
+lpsddata	STRING	11
+
+IMAGE(tmptranst)
+/--------------------------------------------------------\
+|/------------------------------------------------------\|
+||t.Ktp           ________________________________      ||
+||t.MitraBisnis   _______                               ||
+||t.Tanggal       ____________                          ||
+||t.Approval      ____________                          ||
+||t.Enter         _______                               ||
+|\------------------------------------------------------/|
+\--------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdpsmkode		PROTECT					INPUTRI 1
+psdkode			ALLCAPS SCROLL				INPUTRI 2
+psdtgl1			PROTECT NONE NOLIMIT {DD-MM-YYYY}	INPUTRI 3
+psdstr1			NONE					INPUTRI	4
+lenter			ALLCAPS					INPUTRI 5
+
+DEFAULTS(tmptranst)
+psdkode		INIT		M4W 
+psdstr1		DFALT_SCAN	BLANKS
+				ACC
+				TACC
+psdtgl1		INIT_ADD	{g_tgltrn}
+lpsddata	INIT		MITRAM4W
+
+CALCS()
+cakses		g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WDVH" 
+cbisatambah	(g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WDVH" || g_grpnam == "IT" || g_grpnam == "RI") 
+		&& psmstssup == "CLSD" && psddata == ""
+cbisaupdate	(g_grpnam == "B.M4WDVH" || g_grpnam == "IT" || g_grpnam == "RI") && psdstr1 != "ACC"
+cskip		g_grpnam == "B.M4WMSPV"
+cupdpsm		(g_grpnam == "B.M4WDVH" || g_grpnam == "IT" || g_grpnam == "RI") && psdstr1 == "ACC"
+
+MAP(mtampilktp)
+psmktp		psdpsmkode	REPLACE
+
+MAP(mupdpsm)
+gv_OPEN		psmstssup	REPLACE
+
+SPCALCS(spupdpsm)
+DO_LIB_IF cupdpsm ap_dbclc(DNAME dupdpsm,DCOMMAND UPDATE,DTARGET psmktpidx psdpsmkode,DMAP mupdpsm); 
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdkode	DO_MAP SHOW mtampilktp
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cskip
+AFTER_INPUT	cur_keybd=EN		DO_SPCALCS spupdpsm
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cakses
+SFL_TARGET
+psddatpsmkod	lpsddata psmktp
+
+SFL_MAP
+psmktp		psdpsmkode	REPLACE
+lpsddata	psddata		REPLACE
+psdkode		psdtype		REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cbisatambah
+PMT_UPDALL_COND	cbisaupdate
+PMT_DEL_COND	c0

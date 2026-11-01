@@ -1,0 +1,101 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\ 
+  t.AdaNobuk820	: ____
+  t.Nobuk820	: _______________
+  t.Status	: _______________
+  t.Durasi	: _______________
+  t.TglMulai	: _______________
+  t.TglSelesai	: _______________
+  t.Biaya	: _______________
+  t.NoBuk301	: _______________
+                  _____
+ \--------------------------------/
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlddk           ALLCAPS                         INPUTRI 1
+tldnoll        	ALLCAPS                         INPUTRI 2
+tldtydis	PROTECT SCROLL                  INPUTRI 3
+tldjml          PROTECT SCROLL 			INPUTRI 4
+tldtglfak	PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI	5
+tldtgl2		PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI 6
+tldhrg		PROTECT				INPUTRI 7
+tldkat		PROTECT				INPUTRI 8
+lENTER          NOCHANGE                        INPUTRI 9
+
+DEFAULT(tmptranst)
+tlddk		DFALT_LIST	BLANKS Y T
+lENTER		INIT    	ENTER
+
+EDITS(tmptranst)
+e.Mandatory	tlddk		MANDATORY
+e.Mandatory	tldnoll		MANDATORY_IF cYBisnislain
+
+CALCS()
+cjointldbrg	djointlmgadai == 1 && djointlmbrg == 1 && djointlmbkm == 1 && ltlmcab == tlmcab && lbrgtgl2 >= g_tgltrn
+cupdate1	tlddk == "T"
+cadanobuk820	tldnoll != BLANKS
+cevent820	(tlddk == "Y" && djointlmgadai == 1) || tlddk == "T"
+cevent820a	(tlddk == "Y" && djointlmgadai == 1 && djointlmbrg == 1 && djointlmbkm == 1 && ltlmcab == tlmcab) || tlddk == "T"
+cevent820b	(tlddk == "Y" && djointlmgadai == 1 && djointlmbrg == 1 && djointlmbkm == 1 && lbrgtgl2 >= g_tgltrn) || tlddk == "T"
+
+MAP(mjoin820)
+ltlmsts		tldtydis	REPLACE
+lbrgjmlmax	tldjml		REPLACE
+lbrgtgl1	tldtglfak	REPLACE
+lbrgtgl2	tldtgl2		REPLACE
+lbkmtotal	tldhrg		REPLACE
+lbkmnobuk	tldkat		REPLACE
+tlmnobuk	tldnobuk	REPLACE
+
+MAP(mblanks2)
+cBLANKS         tldnoll         DO_CALC_IF cupdate1
+cBLANKS		tldtydis	DO_CALC_IF cupdate1
+cBLANKS         tldjml	        DO_CALC_IF cupdate1
+cBLANKS         tldtglfak       DO_CALC_IF cupdate1
+cBLANKS         tldtgl2	        DO_CALC_IF cupdate1
+cBLANKS         tldhrg	        DO_CALC_IF cupdate1
+cBLANKS         tldkat	        DO_CALC_IF cupdate1
+
+MAP(mupdtlmtld)
+tldtglfak       tlmtgl		REPLACE
+tldtgl2         tlmtgljtp       REPLACE
+tldhrg          tlmtothrg       REPLACE
+tldkat		tlmnoasal	REPLACE
+cBLANKS		tlmtype1	DO_CALC
+cBLANKS		tlmnobbm	DO_CALC
+
+SPCALCS(supdtlmpemadanan)
+DO_LIB_IF cadanobuk820     ap_dbclc(DNAME dupdtldtlm, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmtld);
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=tlddk		DO_MAP SHOW mblanks2
+AFTER_INPUT             cur_field=tldnoll       DO_MAP SHOW IF cjointldbrg mjoin820
+AFTER_INPUT		cur_field=tldnoll	DO_MAP SHOW
+			IF cevent820 mdum
+	                ELSE HKCURSOR STAY
+        	        HKMSG Event 820 Harus CLSD
+AFTER_INPUT             cur_field=tldnoll       DO_MAP SHOW
+                        IF cevent820a mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Event 820 Harus Cabang Yang Sama
+AFTER_INPUT             cur_field=tldnoll       DO_MAP SHOW
+                        IF cevent820b mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Event 820 Tanggal Harus Lebih Dari Tanggal Hari Ini
+BEFORE_INPUT            cur_field=tldnoll       DO_SKIP_IF cTBisnislain
+AFTER_INPUT		cur_keybd=EN		DO_SPCALCS supdtlmpemadanan
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND        clbhsebulan
+SFL_TARGET tldstsbrgukr  lBISNISPAP gv_OPEN lPAPPEMADANAN820 tlmnobuk
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+lBISNISPAP      tlddata         REPLACE
+gv_OPEN         tldsts          REPLACE
+lPAPPEMADANAN820 tldbrg         REPLACE
+tlmnobuk        tldukrwrn       REPLACE

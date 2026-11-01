@@ -1,0 +1,146 @@
+LOCAL
+PGM_FIELDS
+lMITRAKERJA11	STRING		11
+lpsdstr3	STRING		11
+lnourt		INT2		2
+lnamanya	STRING		21
+lAKTUAL		STRING		11
+
+MAP(mpsdnourt)
+psdnourt	lnourt		REPLACE
+DBCALCS(djoinpsdpotensi)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	psddatpsmurt lMITRAKERJA11 psmktp
+	DBC_MAP		mpsdnourt
+
+MAP(mjoinpsdkat)
+psdstr3		lpsdstr3	REPLACE
+
+DBCALCS(djoinpsdkat)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      psddatpsmurt lKATMITRA psmktp l1
+	DBC_MAP		mjoinpsdkat
+
+IMAGE(tmptranst)
+/--------------------------------------------------------\
+|/------------------------------------------------------\|
+||t.NoBuk        ________________________________       ||
+||t.AdaTeam       _______                               ||
+||t.JmlTeam       ________                              ||
+||t.KategoriMitra _________________________             ||
+||t.PotensiJual   ________ t.Unit                       ||
+||t.JualKemana    _____________________________________ ||
+|\------------------------------------------------------/|
+\--------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode	PROTECT SCROLL		INPUTRI 1
+psdstr1		ALLCAPS SCROLL		INPUTRI 2
+psdtot		NUMERIC			INPUTRI 2
+psdstr2		PROTECT SCROLL		INPUTRI 2
+psdtot2		NUMERIC	SCROLL		INPUTRI	3
+psdstr3		ALLCAPS			INPUTRI 4
+
+CALCS()
+cteamx                   psdstr1 == "ADA"
+ctidak			 psdstr1 == "TIDAK"
+DEFAULTS(tmptranst)
+psddata		INIT		MITRAKERJA
+psdtype		INIT		MITRAKERJA
+psdstr1		DFALT_SCAN	ADA
+				TIDAK
+lMITRAKERJA11	INIT		MITRAKERJA
+lAKTUAL		INIT		AKTUAL
+
+EDITS(tmptranst)
+e.Mandatory1	psdtot		MANDATORY_IF cteamx
+e.Mandatory2	psdstr1 	MANDATORY_IF cteamx
+e.Mandatory2	psdtot2 	MANDATORY
+e.Mandatory3	psdstr3 	MANDATORY
+
+
+
+CALCS()
+cBIG		"BIG"
+cMED		"MEDIUM"
+cSML		"SMALL"
+cIND		"INDIVIDUAL"
+curt0		1
+curt1		lnourt  + 1
+cbelumada	djoinpsdpotensi == 0
+cudahada	djoinpsdpotensi == 1
+
+cteam1		psdtot >= 5 
+cteam2		psdtot >= 3 && psdtot <= 4 
+cteam3		psdtot == 2 
+cteam4		psdtot == 1 
+
+ctarget1	0
+ctarget2	1
+ctarget3b	(30/100) * psdtot
+
+cisinya1	psdtot <= 1
+cisinya2	psdtot == 2
+cisinya3a	psdtot > 2 && (((30/100)*psdtot) > 1)
+cisinya3b	psdtot > 2 && (((30/100)*psdtot) < 1)
+cdjoinpsdkat	djoinpsdkat == 1
+
+MAP(mtarget)
+ctarget1	psdtot2	DO_CALC_IF cisinya1
+ctarget2	psdtot2	DO_CALC_IF cisinya2
+ctarget2	psdtot2	DO_CALC_IF cisinya3a
+ctarget3b	psdtot2	DO_CALC_IF cisinya3b
+
+MAP(misikat)
+cBIG    	psdstr2    	DO_CALC_IF cteam1   
+cMED    	psdstr2    	DO_CALC_IF cteam2   
+cSML    	psdstr2    	DO_CALC_IF cteam3   
+cIND    	psdstr2    	DO_CALC_IF cteam4   
+
+MAP(mjmltim)
+ctarget2	psdtot	DO_CALC_IF ctidak
+cIND    	psdstr2    	DO_CALC_IF cteam4   
+
+MAP(murt)
+curt0		psdnourt	DO_CALC_IF cbelumada
+curt1		psdnourt	DO_CALC_IF cudahada
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=psdstr2	DO_MAP	SHOW mjmltim
+BEFORE_INPUT	cur_field=psdtot	DO_MAP SHOW murt
+AFTER_INPUT	cur_field=psdtot	DO_MAP	SHOW mtarget
+AFTER_INPUT	cur_field=psdtot	DO_MAP	SHOW misikat
+BEFORE_INPUT	cur_field=psdtot	DO_SKIP_IF ctidak
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cm4w
+SFL_TARGET
+ psddatpsmurt   lMITRAKERJA11  psmktp
+
+SFL_MAP
+psmktp 		psdpsmkode      REPLACE
+psmktp 		psdkode      REPLACE
+lpsdstr3	psdstr4		REPLACE
+
+MAP(mupdpsdpotensi)
+lpsdstr3	psdstr4		REPLACE_IF cdjoinpsdkat
+
+
+CALCS()
+cCMODANBM	g_grpnam == "B.M4WCMO" || g_grpnam == "B.M4WBM" || g_grpnam == "RI" || g_grpnam == "B.M4WMSPV" || g_grpnam == "ANALYSTSPV" || g_grpnam == "RASSPV" || g_grpnam == "B.M4WSALES" || g_grpnam == "B.M4WADH" || g_grpnam == "B.M4W" || g_grpnam == "B.M4WAO" || g_grpnam == "B.M4WCRO" || g_grpnam=="B.UMROH" || g_grpnam=="B.UMROHADHSPV"
+cRI		g_grpnam == "RI" || djoinpsdpotensi == 1
+
+SPCALCS(sptmptrans2)
+        DO_LIB ap_dbclc(DNAME dupdpsdpotensi,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdpotensi);
+POSTING(tmptrans)
+PST_COMMAND sptmptrans2
+PERMIT(tmptrans)
+  PMT_ADD_COND  cCMODANBM
+  PMT_UPDALL_COND cRI
+  PMT_DEL_COND  cRI
+
+                         

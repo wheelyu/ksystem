@@ -1,0 +1,57 @@
+LOCAL
+PGM_FIELDS
+lnamaMeka	STRING		61
+lnobuk620	STRING		21
+lstatus620	STRING		6
+
+
+MAP(mjoinbtmMekanik)
+btmnobuk	lnobuk620	REPLACE
+btmsts		lstatus620	REPLACE
+
+DBCALCS(djoinbtmMekanik)
+DBC_COMMAND	JOIN
+DBC_TARGET	btmstsslmidx	lahass	gv_INPG	abdkym
+DBC_MAP		mjoinbtmMekanik
+
+IMAGE(tmptranst)
+/----------t-----------------t--------------t--------\
+|i.NIPMek  |i.NamaMekanik    |t.Nobuk620    |i.Status|
+\----------.-----------------.--------------.--------/
+
+IMAGE(tmptrans)
+|__________|_________________|______________|________|
+
+
+FIELD(tmptrans)
+abdkym			NOCHANGE	INPUTRI		1
+lnamaMeka		PROTECT		INPUTRI		2
+lnobuk620		PROTECT		INPUTRI		3
+lstatus620		PROTECT		INPUTRI		4
+
+CALCS()
+cdjoinbtmMekanik	djoinbtmMekanik == 1
+cdjoinbtmMekanik0	djoinbtmMekanik == 0
+
+EDITS(tmptrans)
+e.Validate1 abdkym VALIDATE psikodidx mpsitmp2
+
+MAP(mpsitmp2)
+psinama		lnamaMeka	REPLACE
+lnobuk620	lnobuk620	REPLACE_IF cdjoinbtmMekanik
+lstatus620	lstatus620	REPLACE_IF cdjoinbtmMekanik
+cBLANKS		lnobuk620	DO_CALC_IF cdjoinbtmMekanik0
+cBLANKS		lstatus620	DO_CALC_IF cdjoinbtmMekanik0
+
+CALCS()
+cBelumAHASS	abdtype != "WFO" && (abdjam2 == BLANKS || abdjam2 == l000000)
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cpil10a
+SFL_SELECT cBelumAHASS
+SFL_TARGET
+abdcabstsjab    lcab  gv_INPG g_tgltrn lAHASSMEKANIK
+
+

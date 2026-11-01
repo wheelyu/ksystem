@@ -1,0 +1,92 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|                                                                              |
+|        t.Tanggal    : __________                                             |
+|        t.wd         : ___  ____________________                              |
+|        t.ld         : ___  ____________________          ____                |
+|        t.Acctacc    : ________    ___________________                        |
+\------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   psdtgl1      PROTECT {DD-MM-YY}      INPUTRI          1
+   psdtype2     NOCHANGE                INPUTRI          2
+   lnormapapiwd PROTECT                 INPUTRI          3
+   psdtype3     NOCHANGE                INPUTRI          4
+   lnormapapild PROTECT                 INPUTRI          5
+   psdkode	PROTECT			INPUTRI		6
+   psdstr5      NOCHANGE                INPUTRI          16
+   psdket       PROTECT                INPUTRI          17
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD        {g_tgltrn}
+psdket          INIT_ADD        {g_usrkode}
+psdket          INIT_UPDATE     {g_usrkode}
+psdtype2        DFALT_SCAN BLANKS RS "RENDAH SEKALI"
+                                  R "RENDAH"
+                                  S "SEDANG"
+                                  T "TINGGI"
+                                  TS "TINGGI SEKALI"
+psdtype3        DFALT_SCAN BLANKS RS "RENDAH SEKALI"
+                                  R "RENDAH"
+                                  S "SEDANG"
+                                  T "TINGGI"
+                                  TS "TINGGI SEKALI"
+
+psdstr5         DFALT_SCAN BLANKS ACC
+                                  TACC
+
+EDITS(tmptranst)
+e.Mandatory     psdtype2 MANDATORY
+e.Mandatory     psdtype3 MANDATORY
+t.Validate      psdkode  VALIDATE psmktpidx mbtmct 
+
+CALCS()
+crensekp         "RENDAH SEKALI"
+crenp            "RENDAH"
+csedp            "SEDANG"
+ctinp            "TINGGI"
+ctinsekp         "TINGGI SEKALI"
+
+ckatwdrs        psdtype2=="RS"
+ckatwdr         psdtype2=="R"
+ckatwds         psdtype2=="S"
+ckatwdt         psdtype2=="T"
+ckatwdts        psdtype2=="TS"
+
+ckatldrs        psdtype3=="RS"
+ckatldr         psdtype3=="R"
+ckatlds         psdtype3=="S"
+ckatldt         psdtype3=="T"
+ckatldts        psdtype3=="TS"
+
+MAP(mbtmct)
+psmktp       psdkode         REPLACE
+
+cBLANKS         lnormapapiwd    DO_CALC
+cBLANKS         lnormapapild    DO_CALC
+
+crensekp         lnormapapiwd    DO_CALC_IF ckatwdrs
+crenp            lnormapapiwd    DO_CALC_IF ckatwdr
+csedp            lnormapapiwd    DO_CALC_IF ckatwds
+ctinp            lnormapapiwd    DO_CALC_IF ckatwdt
+ctinsekp         lnormapapiwd    DO_CALC_IF ckatwdts
+
+crensekp         lnormapapild    DO_CALC_IF ckatldrs
+crenp            lnormapapild    DO_CALC_IF ckatldr
+csedp            lnormapapild    DO_CALC_IF ckatlds
+ctinp            lnormapapild    DO_CALC_IF ckatldt
+ctinsekp         lnormapapild    DO_CALC_IF ckatldts
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psddatpsmkod   gv_hslpapi11 btmplg
+
+SFL_MAP
+btmplg               psdpsmkode              REPLACE
+gv_hslpapi11         psddata                 REPLACE
+gv_hslpapi11         psdtype                 REPLACE
+

@@ -1,0 +1,123 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------------------------------\
+t.Cek Aparel
+    /-------------t------------t-------------t------------------t-------t-------------t-------------------t-------t---------\
+    |t.Namabarang |t.KodeBarang|t.JumlahStok |t.jumlahKebutuhan |t.sisa |t.jumlah sisa|t.jumlah distribusi|t.info | __ __ __
+    \-------------.------------.-------------.------------------.-------.-------------.-------------------.-------.---------/
+\---------------------------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|_________________|____________|_____________|__________________|_______|_____________|___________________|_________________|
+
+CALCS()
+chidetomaprovalHP1     (lnipamhmc != g_usrkode && lnipkawilhmc != g_usrkode) || ((lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tkdstr3 == gv_OPEN || tkdstr3 == gv_TACC || tkdstr3 == gv_ok))
+chidetomdetailokHP1	tlmkode != g_usrkode || ((tlmkode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tkdstr3 == gv_IN || tkdstr3 == gv_ok))
+
+FIELD(tmptranst)
+ltombol2tacc    TOMBOL UNSEEN_IF chidetomaprovalHP1        INPUTRI 1
+ltombol3acc      TOMBOL UNSEEN_IF chidetomaprovalHP1        INPUTRI 1
+ltombolhp1aok   TOMBOL UNSEEN_IF chidetomdetailokHP1       INPUTRI 2
+
+FIELD(tmptrans)
+tkdket 	        PROTECT	                INPUTRI	1
+tkdjenis	PROTECT	                INPUTRI	2
+tkdjml          PROTECT 	        INPUTRI	3
+tkdjml2         PROTECT                 INPUTRI	4
+tkdjwbstr1      ALLCAPS NOCHANGE        INPUTRI 5
+tkdjml3         NUMERIC                 INPUTRI	6
+tkdjml4         NUMERIC                 INPUTRI	7
+tkdjwbstr2          PROTECT                 INPUTRI	8
+
+DEFAULTS(tmptrans)
+tkdjwbstr1      DFALT_LIST      ADA TIDAK
+tkdstr3         INIT_UPDATE             {gv_OPEN}
+
+CALCS()
+cdetailhp1ok            tlmkode == g_usrkode && djoindetailchm3 == 1 
+ckosong                 tkdjml2 == 0
+cbandingindulu          tkdjml3 + tkdjml4 <= tkdjml2
+cstokhabis               tkdjwbstr1 == "TIDAK"
+cdetailstatusopenhp1	tkdstr3 == gv_OPEN
+cdetailstatustacchp1   	tkdstr3 == gv_TACC
+cadaaddmtshp1 ladaaddmts == 1 && tkdstr4 == ""
+cdetailbelumacchp1     tkdstr3 != gv_ok
+cdetaildalamreviewhp1  tkdstr3 == gv_IN && tlmkode == g_usrkode
+camkawilinhp1 			tkdstr3 == gv_IN && (lnipkawilhmc == g_usrkode || lnipamhmc == g_usrkode)
+MAP(m0)
+c0              tkdjml3                 DO_CALC_IF cstokhabis
+tkdjml2         tkdjml4                 REPLACE_IF cstokhabis
+c0              tkdjml3                 DO_CALC_IF ckosong
+c0              tkdjml4                 DO_CALC_IF ckosong
+HOOKS(tmptrans)
+
+AFTER_INPUT     cur_field=tkdjwbstr1        DO_MAP SHOW m0
+BEFORE_INPUT    cur_field=tkdjml3           DO_SKIP_IF cstokhabis
+AFTER_INPUT     cur_keybd=EN                DO_MAP SHOW
+               IF cbandingindulu  mdum
+               ELSE HKCURSOR STAY
+               HKMSG t.SisadanDistribusiTidakBolehLebihDariJumlahStok
+
+MAP(mupddetailtrincihp1)
+lMENUNGGUREVISI tkdjwbstr2					REPLACE
+gv_TACC         tkdstr3                  REPLACE
+
+
+MAP(mupddetailokhp1)
+lSUDAHACC       tkdjwbstr2					REPLACE
+gv_ok         	tkdstr3                  REPLACE
+DEBUG ldum ldum REPLACE
+
+SPCALCS(staccdetailrincihp1)
+        DO_LIB                          ap_dbclc(DNAME dupddetailtacccccc, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailtrincihp1);
+
+SPCALCS(saccdetailrincihp1)
+DO_LIB			        ap_dbclc(DNAME dmapmapAdd2, DCOMMAND MAPMAP, DMAP mmapmapAdd);
+        DO_LIB_IF cadaadhbelumacchp1	ap_dbclc(DNAME daddsub2,DCOMMAND ADD_SUB,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+        DO_LIB_IF cadaaddmtshp1       ap_dbclc(DNAME daddabkreviewadhp1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewadh);
+        DO_LIB_IF cadaaddmtshp1       ap_dbclc(DNAME dupddetailreqhp1mts,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdnobukmtshp1);
+        DO_LIB                          ap_dbclc(DNAME dupddetailaccccc, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailokhp1);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol2tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol3acc    DO_SKIP_IF camkawil
+CLICKED         cur_field=ltombolhp1aok DO_SPCALCS spdetailokhp1
+
+CLICKED         cur_field=ltombol2tacc   DO_SPCALCS IF camkawilinhp1 staccdetailrincihp1
+CLICKED         cur_field=ltombol3acc	DO_SPCALCS IF camkawilinhp1 saccdetailrincihp1      
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_COND        cadaaparel1
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNH1CHM3 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1CHM3 tkddata
+
+MAP(mupdtlmmasteraparelsdh)
+cBLANKS                 lselisihjumlahbiaya     DO_CALC
+tkdjml                  lselisihjumlahbiaya     REPLACE
+lselisihjumlahbiaya     tlmjml                REPLACE
+DEBUG ldum              ldum                    REPLACE
+
+
+MAP(mupdinfodetailhp1)
+lDALAMPROSESREVIEW      tkdjwbstr2          REPLACE_IF cdetaildalamreviewhp1
+
+MAP(mupddetailreqhp1)
+gv_IN         	        tkdstr3                  REPLACE_IF cdetailstatusopenhp1
+gv_IN			tkdstr3			REPLACE_IF cdetailstatustacchp1
+
+SPCALCS(spdetailokhp1)
+        
+        DO_LIB_IF cdetailhp1ok          ap_dbclc(DNAME dupddetailreqhp1,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailreqhp1);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhp1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhp1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacchp1       ap_dbclc(DNAME dupdinfodetailhp1,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupdinfodetailhp1);
+
+SPCALCS(spubahhp1)
+        DO_LIB                  ap_dbclc(DNAME dupdbiayaubahhm3c,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasteraparelsdh);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahhp1

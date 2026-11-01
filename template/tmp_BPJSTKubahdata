@@ -1,0 +1,89 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.UbhDataBpjsTK                                                          |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.User       : _________ _________________          !                   |
+|       !t.Pil        : ________________                     !                   |
+|       !t.Sblm       : _____________________                !                   |
+|       !t.PlfSblm    : _____________________                !                   |
+|       !t.Ssdh       : _____________________                !                   |
+|       !t.PlfSsdh    : _____________________                !                   |
+|       !t.Ket        : ____________________________________ !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        PROTECT SCROLL          INPUTRI 1
+tldtglfak        PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 2
+tldplg          ALLCAPS SCROLL          INPUTRI 3
+luser2           PROTECT SCROLL          INPUTRI 4
+
+tldsat          NOCHANGE SCROLL         INPUTRI 5
+tldkat          PROTECT SCROLL          INPUTRI 6
+tldjml2		PROTECT SCROLL		INPUTRI 7
+tldnoll         ALLCAPS SCROLL          INPUTRI 8
+tldjml3		ALLCAPS SCROLL		INPUTRI 9
+tldket          ALLCAPS SCROLL          INPUTRI 10
+
+DEFAULTS(tmptranst)
+tldtglfak       INIT_ADD        {g_tgltrn}
+tldplg          INIT_ADD        {g_usrkode}
+tldsat 		DFALT_SCAN_BLANKS PLAFON       
+				  NO_TELP        
+				  NPP
+				  NO_BPJS_TK
+
+CALCS()
+cbknplf		tldsat!="PLAFON"
+cplaf		tldsat=="PLAFON"
+
+EDITS(tmptranst)
+t.Validate tldplg VALIDATE psikodidx mpsiy
+t.Mandatory tldsat  MANDATORY
+t.Mandatory tldnoll MANDATORY_IF cbknplf 
+t.Mandatory tldket  MANDATORY_IF cplaf
+
+MAP(mpsiy)
+psikode         tldplg  REPLACE
+psinama         luser2  REPLACE
+
+CALCS()
+cjointld2_0        djointld2==0 && g_curcmd==1
+cjointld2_1        djointld2==1 && g_curcmd==1
+ctbh12           lurut2+1
+cjoinpsdtelp	djoinpsd==1 && tldsat =="NO_TELP"
+cjoinpsdnpp	djoinpsd2==1 && tldsat =="NPP"
+cjoinpsdplf	djoinpsd3==1 && tldsat =="PLAFON"
+cpilbpjstk	djoinpsd2==1 && tldsat=="NO_BPJS_TK"
+
+MAP(msebelum2)
+c1              tldnourt        DO_CALC_IF cjointld2_0
+ctbh12           tldnourt        DO_CALC_IF cjointld2_1
+
+MAP(mkodeurut2)
+lpsdstr1	  tldkat 	  REPLACE_IF cjoinpsdtelp
+lpsdnpp 	  tldkat    REPLACE_IF cjoinpsdnpp 
+lpsdnotk	  tldkat 	  REPLACE_IF cpilbpjstk
+lpsdtot2	  tldjml2  REPLACE_IF cjoinpsdplf
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldsat        DO_MAP SHOW msebelum2
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF cplaf  
+BEFORE_INPUT	cur_field=tldjml3	DO_SKIP_IF cbknplf
+AFTER_INPUT     cur_field=tldsat        DO_MAP SHOW mkodeurut2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldbukbrgoto    hrmnobuk gv_CLSD lBPJSSDM  
+
+SFL_MAP
+hrmnobuk        tldnobuk REPLACE
+gv_CLSD         tldsts   REPLACE         
+lBPJSSDM	tldbrg	REPLACE 
+

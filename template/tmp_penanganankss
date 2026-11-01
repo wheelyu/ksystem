@@ -1,0 +1,81 @@
+LOCAL
+PGM_FIELDS
+ltldkat		STRING		31
+lpenanganan	STRING		21
+
+DBCALCS(djointld2)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldllbrgurt    llegal tlmnobuk lpenanganan tlmnobuk
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  t.Tgl      : ___________________
+  t.UserInput: ______ ____________
+  t.Penangann: ___________________
+  t.Ket      : ___________________
+ \---------------------------------/
+ /------s.UPLOAD-------------------\
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ \---------------------------------/
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldtglfak       PROTECT {DD-MM-YY} INPUTRI 1
+tldkat          PROTECT            INPUTRI 2
+ltldkat         PROTECT            INPUTRI 3
+tldgrup		NOCHANGE	   INPUTRI 4
+tldket		ALLCAPS		   INPUTRI 5
+
+DEFAULTS(tmptranst)
+lpenanganan	INIT			PENANGANANKSS
+tldgrup		DFALT_SCAN_BLANKS	LANGSUNG TDK_LANGSUNG
+
+CALCS()
+cdjointld2	djointld2==0
+cy              "Y"
+csdhy           tlddk != "Y"
+
+EDITS(tmptranst)
+e.Mandatory	tldgrup		MANDATORY
+e.Validate	tldkat		VALIDATE psikodidx mpsi5
+
+MAP(mpsi5)
+psinama		ltldkat		REPLACE
+
+MAP(mnourut)
+c1		tldnourt	DO_CALC_IF cdjointld2
+g_tgltrn	tldtglfak	REPLACE
+g_usrkode	tldkat		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldgrup	DO_MAP SHOW mnourut
+
+MAP(mupdtldbkti)
+cy              tlddk           DO_CALC
+
+DBCALCS(dupdtldbkti)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx   tldprm
+        DBC_MAP         mupdtldbkti
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND csdhy
+SFL_UPLFLD_DBCALCS dupdtldbkti
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD tlmnobuk lpenanganan
+SFL_TARGET
+        tldllbrgurt    llegal tlmnobuk lpenanganan tlmnobuk
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+llegal          tldnoll         REPLACE
+tlmnobuk        tldbrg          REPLACE
+lpenanganan     tldlok          REPLACE

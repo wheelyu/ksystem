@@ -1,0 +1,257 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|i.uplktpsdm                                                                              |
+|t.166Keta                                                                                |
+|t.166Ketb                                                                                |
+|t.166Ketc                                                                                |
+|t.166Ketd                                                                                |
+|t.166Kete                                                                                |
+|t.166Ketfx                                                                                |
+|/--s.UPLOAD----------------------\/-----------------------------------------------------\|
+||                                ||i.Tgl        : __________  _________                 ||
+||                                ||t.Jab        : _____________________                 ||
+||                                ||t.Ktp        : _____________________                 ||
+||                                ||t.NamaDiKTP  : ____________________________________  ||
+||                                ||t.StsNikah   : ____________                          ||
+||                                ||t.JmlAnak    : ___                                   ||
+||                                ||t.Hp         : _________________                     ||
+||                                ||t.NoWa       : _________________                     ||
+||                                ||t.TglLahir   : ____________                          ||
+||                                ||t.TmptLahir  : _____________________                 ||
+||                                ||t.Jkel       : ___  _____________                    ||
+||                                ||t.Agama      : __________                            ||
+||                                ||t.AndaAnggotaParpol    : _____                       ||
+||                                ||t.NamaParpol           : __________________________  ||
+||                                ||t.OkUp       : __________                            ||
+|\--------------------------------/|                                                     ||
+|                                  |             : _____________________________         ||
+|                                  |t.KetTacc    : _____________________________         ||
+|                                  |                                           		 ||
+|                                  |               __________________                    ||
+|                                  \-----------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmtgl1         PROTECT {DD-MM-YY}      INPUTRI 1
+tkmsts          PROTECT                 INPUTRI 2
+lpsijabatan     NOCHANGE                INPUTRI 3
+tkmlok1         DIGITS                  INPUTRI 4
+tkmket          ALLCAPS                 INPUTRI 5
+tkmlok2         ALLCAPS SCROLL          INPUTRI 6
+tkmnil2         DIGITS                  INPUTRI 7
+tkmbuk2         DIGITS SCROLL           INPUTRI 8
+tkmplg          DIGITS SCROLL           INPUTRI 9
+tkmtgl2         NONE {DD-MM-YY} NOLIMIT INPUTRI 10
+tkmcab          ALLCAPS SCROLL          INPUTRI 11
+tkmdvs          ALLCAPS SCROLL          INPUTRI 12
+ltkmdvs         PROTECT SCROLL          INPUTRI 13
+tkmlokjl        ALLCAPS SCROLL          INPUTRI 14
+tkmtype         NOCHANGE SCROLL         INPUTRI 15
+tkmnama         TEXTAREA SCROLL         INPUTRI 16
+tkmnil1         NOCHANGE SCROLL         INPUTRI 17
+tkmnobuk        PROTECT SCROLL          INPUTRI 21
+lkettacc        PROTECT SCROLL          INPUTRI 22
+ltombolx        TOMBOL  SCROLL          INPUTRI 23
+
+DEFAULTS(tmptranst)
+tkmtgl1         INIT_ADD        {g_tgltrn}
+tkmtgl1         INIT_UPDATE     {g_tgltrn}
+l_count1        INIT            1
+ltombolx        INIT            HAPUS APPROVAL TL
+tkmlok2         DFALT_SCAN_BLANKS       BELUMKAWIN "Belum Kawin"
+                                        KAWIN    "Kawin"
+                                        DUDA     "Duda"
+                                        JANDA    "Janda"
+
+tkmdvs          DFALT_SCAN_BLANKS       L "LAKI-LAKI"
+                                        P "Perempuan"
+
+tkmtype         DFALT_SCAN_BLANKS       YA
+                                        TIDAK
+
+CALCS()
+cparpolya       tkmtype=="YA"
+cparpoltdk      tkmtype=="TIDAK"
+cL              tkmdvs == "L"
+cP              tkmdvs == "P"
+cLaki           "LAKI-LAKI"
+cPerempuan      "PEREMPUAN"
+cblmkawin       tkmlok2=="BELUMKAWIN"
+cjoinaprktp	djoinaprktp==1
+
+EDITS(tmptranst)
+t.Mandatory     tkmlok1         MANDATORY
+t.Mandatory     tkmket          MANDATORY
+t.Mandatory     tkmlok2         MANDATORY
+t.Mandatory     tkmbuk2         MANDATORY
+t.Mandatory     tkmplg          MANDATORY
+t.Mandatory     tkmtgl2         MANDATORY
+t.Mandatory     tkmcab          MANDATORY
+t.Mandatory     tkmdvs          MANDATORY
+t.Mandatory     tkmlokjl        MANDATORY
+t.Mandatory     tkmtype         MANDATORY
+t.Mandatory     tkmnama         MANDATORY_IF cparpolya
+
+e.ValidateTbd2  lpsijabatan VALIDATE tbddatkodidx mtbd2x  {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+e.ValidateKota  tkmcab VALIDATE tbddatkodidx mtbdKota4 stbd {Pgv_dttabel} {Pgv_infoumum} {Pgt_kotalahir}
+e.Validate      tkmlokjl VALIDATE tbddatkodidx mtbdAgm stbd {Pgv_dttabel} {Pgv_personal} {Pgv_agama}
+
+MAP(mtbdKota4)
+tbdkode         tkmcab          REPLACE
+
+MAP(mtbdAgm)
+tbdkode         tkmlokjl        REPLACE
+cLaki                   ltkmdvs              DO_CALC_IF cL
+cPerempuan              ltkmdvs              DO_CALC_IF cP
+
+MAP(mgender)
+cLaki                   ltkmdvs              DO_CALC_IF cL
+cPerempuan              ltkmdvs              DO_CALC_IF cP
+
+MAP(mtbd2x)
+lkettacc		lkettacc     REPLACE_IF cjoinaprktp
+tbdrekbrg               lhrmkodeapr  REPLACE
+
+cAPRHMC_SPVCRM          lhrmkodeapr   DO_CALC_IF caprhmcspvcrm
+cAPRM4W_4CMOBM          lhrmkodeapr   DO_CALC_IF caprm4w4cmobm
+capr_beda               lhrmkodeapr   DO_CALC_IF cgruplogin_beda
+
+MAP(mupdtkmktpsdm21)
+g_tgltrn        tkmtgl1         REPLACE
+c1x             tkmnil1         DO_CALC
+
+DBCALCS(dupdtkmktpsdm21)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkmprmidx       tkmprm
+        DBC_MAP         mupdtkmktpsdm21
+
+CALCS()
+cktp            lpanjangktp == 16
+cktp2           tkmlok1 == psmktp_1
+cpjgktp         DO_LIB ap_strln(tkmlok1,&lpanjangktp);
+cnobuktmptrans  STRIP(hrmnobuk) 
+ctahun_skrg     DO_LIB ap_thbln(g_tgltrn,&ltahun_skrg,l6);
+ctahun_lahir    DO_LIB ap_thbln(ltkmtgllahir,&ltahun_lahir,l6);
+cbulan_skrg     DO_LIB ap_thbln(g_tgltrn,&lbulan_skrg,l2);
+cbulan_lahir    DO_LIB ap_thbln(ltkmtgllahir,&lbulan_lahir,l2);
+cmasatahun      ltahun_angka_skrg - ltahun_angka_lahir
+cseltahun2      ltahun_angka_skrg - ltahun_angka_lahir - 1
+cbulan_besar    lbulan_angka_skrg >= lbulan_angka_lahir
+cbulan_kecil    lbulan_angka_skrg < lbulan_angka_lahir
+ctgllahir	    lusia >= 17
+cpjgnom     	DO_LIB ap_strln(tkmbuk2,&ljmlnom);
+cpjgnomx    	DO_LIB ap_strln(tkmplg,&ljmlnomx);
+cbkn08        	ldigits1=="0" && ldigits2=="8" && ljmlnom>=10 && ljmlnom<=13
+cbkn08x       	ldigits1x=="0" && ldigits2x=="8" && ljmlnomx>=10 && ljmlnomx<=13
+
+MAP(mnobuktmptrans)
+cnobuktmptrans    tkmnobuk                DO_CALC_IF cotY
+
+MAP(mcaripjgktp)
+cpjgktp           lpanjangktp             DO_CALC
+
+MAP(mjmlanak)
+cblanks		tkmnil2		DO_CALC_IF cblmkawin
+
+MAP(musia)
+tkmtgl2      	ltkmtgllahir    REPLACE
+ctahun_skrg     ltahun_skrg     DO_CALC
+ctahun_lahir    ltahun_lahir    DO_CALC
+cbulan_skrg     lbulan_skrg     DO_CALC
+cbulan_lahir    lbulan_lahir    DO_CALC
+ltahun_skrg     ltahun_angka_skrg       REPLACE
+ltahun_lahir    ltahun_angka_lahir      REPLACE
+lbulan_skrg     lbulan_angka_skrg       REPLACE
+lbulan_lahir    lbulan_angka_lahir      REPLACE
+cmasatahun      lusia           DO_CALC_IF cbulan_besar
+cseltahun2      lseltahun2      DO_CALC_IF cbulan_kecil
+lseltahun2      lusia           REPLACE_IF cbulan_kecil
+
+MAP(mpjgnom)
+cpjgnom             	ljmlnom            	DO_CALC
+
+MAP(mpjgnomx)
+cpjgnomx            	ljmlnomx           	DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkmnil2        DO_SKIP_IF cblmkawin
+BEFORE_INPUT    cur_field=tkmnama        DO_SKIP_IF cparpoltdk
+CLICKED         cur_field=ltombolx       DO_SPCALCS supddelapr
+AFTER_INPUT     cur_field=tkmlok1        DO_MAP SHOW mcaripjgktp
+AFTER_INPUT     cur_field=tkmlok1        DO_MAP SHOW mnobuktmptrans
+AFTER_INPUT     cur_field=tkmlok2        DO_MAP SHOW mjmlanak
+
+AFTER_INPUT     cur_field=tkmbuk2        DO_LIB ap_amstr(tkmbuk2,ln1ix,ln1x,&ldigits1);
+AFTER_INPUT     cur_field=tkmbuk2        DO_LIB ap_amstr(tkmbuk2,ln2ix,ln1x,&ldigits2);
+AFTER_INPUT     cur_field=tkmbuk2        DO_MAP SHOW mpjgnom
+
+AFTER_INPUT     cur_field=tkmplg         DO_LIB ap_amstr(tkmplg,ln1ix,ln1x,&ldigits1x);
+AFTER_INPUT     cur_field=tkmplg         DO_LIB ap_amstr(tkmplg,ln2ix,ln1x,&ldigits2x);
+AFTER_INPUT     cur_field=tkmplg         DO_MAP SHOW mpjgnomx
+
+AFTER_INPUT     cur_field=tkmtgl2  	 DO_MAP SHOW musia
+
+AFTER_INPUT     cur_field=tkmdvs         DO_MAP SHOW mgender
+AFTER_INPUT     cur_field=tkmlok1        DO_MAP SHOW
+                IF cktp mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKTP16
+
+AFTER_INPUT     cur_field=tkmlok1        DO_MAP SHOW
+                IF cktp2 mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.166KTPTdkSesuai
+
+AFTER_INPUT     cur_field=tkmbuk2  	 DO_MAP SHOW
+                IF cbkn08 mdumx
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT     cur_field=tkmplg         DO_MAP SHOW
+                IF cbkn08x mdumx
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT     cur_field=tkmtgl2        DO_MAP SHOW
+                IF ctgllahir mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.InputTglLhrYgBenar
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cktp mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKTP16
+
+AFTER_INPUT     cur_keybd=EN        	DO_MAP SHOW
+                IF cktp2 mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.166KTPTdkSesuai
+
+AFTER_INPUT     cur_keybd=EN        	DO_MAP SHOW
+                IF ctgllahir mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.InputTglLhrYgBenar
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mnobuktmptrans
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_DEL_COND caccblanks
+SFL_SORT_BY_FIELD tkmoto
+SFL_SORT_UPDOWN DOWN
+SFL_UPL_COND cbisaupl
+SFL_UPL_DIRFLD hrmdvs2
+SFL_UPLFLD  tkmoto lUPLKTP166
+SFL_UPLFLD_DBCALCS dupdtkmktpsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_COND        cpengkinianktp
+SFL_TARGET
+         tkmdtkdstlok   lUPLKTP166_11 hrmnobuk
+
+SFL_MAP
+lUPLKTP166_11           tkmdata         REPLACE
+hrmnobuk                tkmkode         REPLACE
+gv_OPEN                 tkmsts          REPLACE

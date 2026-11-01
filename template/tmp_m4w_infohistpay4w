@@ -1,0 +1,142 @@
+LOCAL
+PGM_FIELDS
+lokmitra        STRING          5
+lfotohistx      STRING          11
+lenterxy        STRING          11
+lnamauserxxy    STRING          21
+lkode2mitra     STRING          21
+lkode2mitrax    STRING          3
+lversi4w        STRING          11
+
+CALCS()
+cadauserx       svistr3!=BLANKS
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7} 
+/----------------------------------------\
+| /-------------------------------------\|
+| |  i.Ket __________________________   ||
+| \-------------------------------------/|
+| /-------------s.UPLOAD----------------\|
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| \-------------------------------------/|
+| /-------------------------------------\|
+| |  t.UplodOk    __________________    ||
+| |  t.Wajib      __________________    ||
+| \-------------------------------------/|
+| /-------------------------------------\|
+| |  t.Maxovd     ____                  ||
+| |  t.Accbm      ____                  ||
+| |  t.Accrm      ____                  ||
+| |  t.Accca      ____                  ||
+| |  t.Ket                              ||
+| |  _______________________________    ||
+| |  t.User       __________________    ||
+| |  _______________________________    ||
+| |  t.Tanggal    _________________     ||
+| |               ________              ||
+| \-------------------------------------/|
+\----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	svinama         PROTECT                 INPUTRI 1
+        svistr1         PROTECT                 INPUTRI 2
+        svists          PROTECT                 INPUTRI 3
+        svistr4         ALLCAPS                 INPUTRI 3
+        svistr5         ALLCAPS                 INPUTRI 3
+        svistr6         ALLCAPS                 INPUTRI 3
+        svistr7         ALLCAPS                 INPUTRI 3
+        sviket2         TEXTAREA ALLCAPS        INPUTRI 7
+        svistr3         PROTECT                 INPUTRI 8
+        lnamauserxxy    PROTECT                 INPUTRI 9
+        svitgl1         PROTECT                 INPUTRI 10
+        lenterxy        ALLCAPS                 INPUTRI 11
+
+DEFAULTS(tmptranst)
+lokmitra                INIT            "OK"
+lfotohistx              INIT            "FTHISTPAY"
+svistr3                 INIT_UPDATE     {g_usrkode}
+svitgl1                 INIT_UPDATE     {g_tgltrn}
+lnamauserxxy            INIT            BLANKS
+lenterxy                INIT            ENTER
+lversi4w                INIT            17102024
+
+svistr4		DFALT_SCAN_BLANKS	>=30 
+					<30
+
+svistr5		DFALT_SCAN_BLANKS	Y 
+					T
+
+svistr6		DFALT_SCAN_BLANKS	Y 
+					T
+
+svistr7		DFALT_SCAN_BLANKS	Y 
+					T
+EDITS(tmptranst)
+e.Validateuser          svistr3         VALIDATE_IF cadauserx psikodidx mpsiverx 0
+e.Mandatory             sviket2         MANDATORY
+e.Mandatory             svistr4         MANDATORY
+
+
+MAP(mpsiverx)
+psinama         lnamauserxxy    REPLACE
+svinourt        lkode2mitrax    REPLACE
+lkode2mitrax    lkode2mitra     REPLACE
+
+MAP(mupdsviftmandm)
+lokmitra    svistr1         REPLACE
+
+DBCALCS(dbftmandm)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandm
+
+
+
+CALCS()
+cboleh		btmsts == "701"    
+chanyabm	g_grpnam != "B.M4WBM"
+chanyarm	g_grpnam != "B.M4WRM"
+chanyaca	g_grpnam != "B.M4WCM"
+chanyasdm       djoinpsi==1 && ((btmcab != btmlokjual  && g_usrkode != btmsurveyor) || (btmcab == btmlokjual && g_usrkode != btmlok))
+
+MAP(misikodex)
+svinourt        lkode2mitrax         REPLACE
+lkode2mitrax    lkode2mitra          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=svistr4      DO_SKIP_IF chanyasdm
+BEFORE_INPUT            cur_field=svistr5      DO_SKIP_IF chanyabm
+BEFORE_INPUT            cur_field=svistr6      DO_SKIP_IF chanyarm
+BEFORE_INPUT            cur_field=svistr7      DO_SKIP_IF chanyaca
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW misikodex
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftmandm
+SFL_UPLFLD btmnobuk svikode
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOSVY btmnobuk lfotohistx
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0  
+  PMT_UPDALL_COND cboleh         
+  PMT_DEL_COND  c0
+
+

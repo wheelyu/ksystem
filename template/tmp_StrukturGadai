@@ -1,0 +1,466 @@
+LOCAL
+PGM_FIELDS
+lrmdgab			STRING		61
+lbts1                   DFLOAT          8
+lbts3                   DFLOAT          8
+lhasil1                 DFLOAT          8
+lhasil2                 DFLOAT          8
+lhasil3                 DFLOAT          8
+lhasil1_txt             STRING          21
+lhasil2_txt             STRING          21
+lnhdnourt		INT2		2
+lnhdhrg2		DFLOAT		8
+lnhdhrg2_1		DFLOAT		8
+lTACC			DFLOAT		8
+lTACC2			DFLOAT		8
+lACC			DFLOAT		8
+ltacctas		DFLOAT		8
+ltacckardus		DFLOAT		8
+lcekgdi1		STRING		21
+lcekgdi2		STRING		21
+lcekgdi3		DFLOAT		8
+lmga_SG			STRING		21
+lestgdi_SG		STRING		21
+
+DBCALCS(djoinnhda)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbukidx   btmnobuk  lnhddata1 
+
+
+DBCALCS(djoinrmd1)
+	DBC_COMMAND     JOIN
+	DBC_TARGET      rmdstsgabidx   gv_INPG   lrmdgab
+
+IMAGE(tmptranst)
+/----t--------------------t--------------t---------t------------t---------------t-------\
+|t.No|   t.ItemBrg        | t.Kelengkapan|t.Kondisi|t.KetKondisi|  t.Estimasi   | t.Hsl |
+\----.--------------------.--------------.---------.------------.---------------.-------/
+
+IMAGE(tmptrans)
+|____|____________________|______________|_________|____________|____________.__|_______|
+
+FIELD(tmptrans)
+nhdnourt      PROTECT                INPUTRI 	1 /* No Urt */
+nhdkode	      PROTECT                INPUTRI	2 /* Item Brg */
+nhdnobbm      NOCHANGE               INPUTRI	3 /* Kelengkapan */
+nhdhrg1       NOCHANGE               INPUTRI	4 /* Kondisi */
+nhdtype	      PROTECT		     INPUTRI	5 /* Ket Kondisi*/
+nhdhrg2       NOCHANGE               INPUTRI	5 /* Estimasi */
+nhdstsapr     PROTECT		     INPUTRI	6 
+
+
+CALCS()
+chpok		((btmnorangka == "HP" && nhdkode != "GARANSI" && btmnomesin != "APPLE" && nhdkode != "CHARGER" && nhdkode != "FINGERPRINT") || 
+		 (btmnorangka == "LAPTOP" && nhdkode != "WIFI") || 
+		 (btmnorangka == "TV_FLAT" && nhdkode != "UKURAN" && nhdkode != "KARTU_GARANSI" && nhdkode != "KAKI") || 
+		 ((btmnorangka == "SPEAKER_AKTIF" || btmnorangka == "SUBWOOFER") && (nhdkode=="KARDUS" || nhdkode=="BLUETOOTH" || nhdkode=="USB" || nhdkode=="REMOTE")) ||
+		 (btmnorangka != "LAPTOP" && btmnorangka != "HP" && btmnorangka != "TV_FLAT" && btmnorangka != "PROYEKTOR" && btmnorangka != "HOME_THEATER" && btmnorangka != "DRONE" && btmnorangka != "SPEAKER_AKTIF" && btmnorangka != "SUBWOOFER" && (btmnorangka == "KAMERA" && nhdkode != "WIFI") && (btmnorangka == "KAMERA" && nhdkode != "SPEAKER")) || 
+		 (btmnorangka == "HP" && btmnomesin == "APPLE" && nhdkode != "BATTERYHEALTH" && nhdkode != "CHARGER" && nhdkode != "FINGERPRINT")
+		 )
+
+cdroneok	btmnorangka == "DRONE" && nhdkode != "TERBANG" && nhdkode != "SINYALWIFI" && nhdkode != "AKUNPEMILIK"
+
+chpokx		(
+			(btmnorangka == "HP" && btmnomesin != "APPLE" && nhdkode != "GARANSI" && nhdnobbm != "TDK_ADA") || 
+		 	(btmnorangka == "PROYEKTOR" && nhdkode != "WARNA") || 
+		 	(btmnorangka == "HOME_THEATER" && (nhdkode == "KBLAUX" || nhdkode == "KBLPOWER" || nhdkode == "REMOTE")) || 
+			(btmnorangka == "HP" && btmnomesin == "APPLE" && nhdkode != "BATTERYHEALTH" && nhdnobbm != "TDK_ADA") ||
+			(btmnorangka == "SPEAKER_AKTIF" && (nhdnobbm == "BARETHALUS" || nhdnobbm == "BARETKASAR" || nhdnobbm == "ADA_ORI" || nhdnobbm == "ADA_TDKORI")) ||
+			(nhdkode != "WIFI" && nhdkode != "SPEAKER" && btmnorangka == "KAMERA") ||
+		 	btmnorangka == "MOTOR" || btmnorangka == "TV_FLAT" || btmnorangka == "LAPTOP"
+			) 
+		 
+	
+cdrone		btmnorangka == "DRONE" && nhdkode != "TERBANG" && nhdkode != "SINYALWIFI" && nhdnobbm != "RUSAK/TDK"  && nhdkode != "AKUNPEMILIK"
+cdronex		btmnorangka == "DRONE" && nhdkode != "TERBANG" && nhdkode != "SINYALWIFI" && nhdnobbm == "RUSAK/TDK"
+cdroneA		btmnorangka == "DRONE" && nhdkode == "TERBANG" 
+cdroneA1	btmnorangka == "DRONE" && nhdkode == "TERBANG" && nhdnobbm == "BISA"
+cdroneA2	btmnorangka == "DRONE" && (nhdkode == "TERBANG" || nhdkode == "SINYALWIFI") && nhdnobbm == "TDK_BISA"
+cdroneB		btmnorangka == "DRONE" && nhdkode == "SINYALWIFI"
+cdroneB1	btmnorangka == "DRONE" && nhdkode == "SINYALWIFI" && nhdnobbm == "KUAT" && nhdkode != "AKUNPEMILIK"
+cdroneB2	btmnorangka == "DRONE" && nhdkode == "SINYALWIFI" && nhdnobbm == "LEMAH" && nhdkode != "AKUNPEMILIK"
+cdroneacc	btmnorangka == "DRONE" && nhdkode == "AKUNPEMILIK"
+cdroneacca	btmnorangka == "DRONE" && nhdkode == "AKUNPEMILIK" && nhdnobbm == "AKUN_ADA"
+cdroneaccb	btmnorangka == "DRONE" && nhdkode == "AKUNPEMILIK" && nhdnobbm == "AKUN_TDK"
+
+
+cgaransihp	(btmnorangka == "HP" && nhdkode == "GARANSI") || (btmnorangka == "TV_FLAT" && nhdkode == "UKURAN") ||
+		(btmnorangka == "LAPTOP" && nhdkode == "RAM")
+cRam            btmnorangka == "LAPTOP" && nhdkode == "RAM"
+cbkngrsnrsk	(btmnorangka != "HOME_THEATER" && btmnorangka != "SPEAKER_AKTIF" && btmnorangka != "SUBWOOFER" && nhdkode !="GARANSI" && nhdkode != "UKURAN" && nhdnobbm !="RUSAK/TDK" && nhdnobbm != "SESUAI" && nhdnobbm != "CERAH" && nhdnobbm != "KUSAM" && nhdnobbm != "TDK" && nhdnobbm != "TDK_ADA"  && nhdnobbm != "STD_TDK_ADA" && nhdkode != "FINGERPRINT") || 
+		(btmnorangka == "DRONE") ||
+		(btmnorangka == "HOME_THEATER" && nhdkode != "BODY" && nhdkode != "POWER" && nhdkode != "SPEAKER" && nhdkode != "USB" && nhdkode != "BLUETOOTH" && nhdkode != "TAPE" && nhdnobbm != "RUSAK/TDK") ||
+		((btmnorangka == "SPEAKER_AKTIF" || btmnorangka == "SUBWOOFER") && nhdnobbm != "RUSAK/TDK" && nhdnobbm != "BAGUS" && nhdnobbm != "PECAH") ||
+		(btmnorangka == "HP" && nhdkode == "CHARGER" && nhdnobbm == "TDK_ADA")
+
+cproy		((btmnorangka == "PROYEKTOR" && nhdkode != "WARNA") || (btmnorangka == "HOME_THEATER" && (nhdkode == "KBLAUX" || nhdkode == "KBLPOWER" || nhdkode == "REMOTE")) ||
+		(btmnorangka == "TV_FLAT" && (nhdkode == "KARTU_GARANSI" || nhdkode == "KAKI")))
+
+cwarna		btmnorangka == "PROYEKTOR" && nhdkode == "WARNA"
+
+chomey1		(btmnorangka == "HOME_THEATER" || btmnorangka == "SPEAKER_AKTIF") && nhdkode == "BODY"
+chomey2		btmnorangka == "HOME_THEATER" && nhdkode == "TAPE"
+chomey3		btmnorangka == "HOME_THEATER" && (nhdkode == "POWER" || nhdkode == "SPEAKER" || nhdkode == "USB" || nhdkode == "BLUETOOTH")
+
+csubwoofer	btmnorangka == "SUBWOOFER" && nhdnobbm != "RUSAK/TDK"
+csubwoofer2	(btmnorangka == "SUBWOOFER") && (nhdkode == "SUSPENSION" || nhdkode == "CONE" || nhdkode == "BODY" || nhdkode == "KONDISI SEGEL")
+csubwoofer3	(btmnorangka == "SPEAKER_AKTIF" || btmnorangka == "SUBWOOFER") && nhdkode == "SUARA"
+candroid	btmnorangka == "HP" && btmnomesin != "APPLE"
+capple		btmnorangka == "HP" && btmnomesin == "APPLE"
+
+cspeakerkbl (btmnorangka == "SPEAKER_AKTIF" && (nhdkode == "KBLAUX" || nhdkode == "KBLPOWER" || nhdkode == "POWERONOFF"))
+cappleBH	(btmnorangka == "HP" && btmnomesin == "APPLE" && nhdkode == "BATTERYHEALTH")
+cappleBHa	(btmnorangka == "HP" && btmnomesin == "APPLE" && nhdkode == "BATTERYHEALTH" && nhdnobbm == ">80%")
+cappleBHb	(btmnorangka == "HP" && btmnomesin == "APPLE" && nhdkode == "BATTERYHEALTH" && nhdnobbm == "<=80%")
+
+cspeaker	((btmnorangka == "SPEAKER_AKTIF" || btmnorangka == "KAMERA") && (nhdkode == "POWER" || nhdkode == "SPEAKER"))
+cspeakera	((btmnorangka == "SPEAKER_AKTIF" || btmnorangka == "KAMERA") && (nhdkode == "POWER" || nhdkode == "SPEAKER") && nhdnobbm == "BERFUNGSI")
+cspeakerb	((btmnorangka == "SPEAKER_AKTIF" || btmnorangka == "KAMERA") && (nhdkode == "POWER" || nhdkode == "SPEAKER") && nhdnobbm == "TDK_BERFUNGSI")
+
+charger		btmnorangka == "HP" && nhdkode == "CHARGER"
+chargera	btmnorangka == "HP" && nhdkode == "CHARGER" && nhdnobbm == "TDK_ADA"
+cwifia		(btmnorangka == "LAPTOP" || btmnorangka == "KAMERA") && nhdkode == "WIFI"
+cwifisub	(btmnorangka == "LAPTOP" || btmnorangka == "KAMERA") && nhdkode == "WIFI"&& nhdnobbm == "ADA"
+
+ckamtdkada	btmnorangka == "KAMERA" && nhdkode == "SPEAKER"
+claptopspeaker btmnorangka == "LAPTOP" && (nhdkode == "SPEAKER" || nhdkode == "BODY" || nhdkode == "ENGSEL" || nhdkode == "KAMERA") && nhdnobbm == "ADA_ORI"
+
+chpfinger	btmnorangka == "HP" && nhdkode == "FINGERPRINT"
+
+DEFAULT(tmptrans)
+IF chpok	nhdnobbm      		DFALT_SCAN              BLANKS
+                                        			ADA_ORI    "ADA ORIGINAL"
+                                        			ADA_TDKORI "ADA TDK ORI"
+								RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF chpfinger nhdnobbm			DFALT_SCAN			NORMAL
+													MINUS
+													STANDAR_TDK_ADA
+													MATI
+
+IF cdroneok	nhdnobbm      		DFALT_SCAN              BLANKS
+                                        			ADA_ORI    "ADA ORIGINAL"
+								RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF cgaransihp	nhdnobbm        	DFALT_SCAN              BLANKS
+                                        			SESUAI
+								TDK_SESUAI
+
+IF chpokx	nhdhrg1	        	DFALT_SCAN              BLANKS
+                                			        1 "BAGUS"
+                                        			2 "KURANG BAGUS"
+
+IF cRam		nhdhrg1                DFALT_SCAN              BLANKS
+                                                                1 "SESUAI"
+                                                                3 "TDK_SESUAI"
+                                                                
+IF cdrone 	nhdhrg1                DFALT_SCAN              BLANKS
+                                                                1 "BAGUS"
+                                                                2 "KURANG BAGUS"
+
+IF cdronex      nhdhrg1                DFALT_SCAN              BLANKS
+								3 "TIDAK ADA"
+
+IF cdroneA	nhdnobbm		DFALT_SCAN		BLANKS
+								BISA "BISA"
+								TDK_BISA "TDK_BISA"
+
+IF cdroneA1      nhdhrg1                DFALT_SCAN              BLANKS
+								1 "BAGUS"
+
+IF cdroneA2      nhdhrg1                DFALT_SCAN              BLANKS
+								2 "TDK_ADA"
+
+IF cdroneB	nhdnobbm		DFALT_SCAN		BLANKS
+								KUAT "KUAT"
+								LEMAH "LEMAH"
+								TDK_BISA "TDK_BISA"
+
+IF cdroneB1      nhdhrg1                DFALT_SCAN              BLANKS
+								1 "BAGUS"  
+
+IF cdroneB2      nhdhrg1                DFALT_SCAN              BLANKS
+								2 "KRG_BGS"
+
+IF cproy	nhdnobbm      		DFALT_SCAN              BLANKS
+                                        			ADA_ORI    "ADA ORIGINAL"
+								RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF cwarna 	nhdnobbm		DFALT_SCAN		BLANKS
+								CERAH "CERAH"
+								KUSAM "KUSAM"       
+
+IF chomey1	nhdnobbm		DFALT_SCAN		BLANKS
+								BAGUS      "BAGUS"
+								BARETHALUS "BARET LUAR"
+								BARETKASAR "BARET DALAM"
+								RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF chomey2	nhdnobbm		DFALT_SCAN		BLANKS
+								BAGUS	   "BAGUS"
+								BARET	   "BARET"
+								RUSAK/TDK  "RUSAK/TDK_ADA"
+
+IF chomey3	nhdnobbm		DFALT_SCAN		BLANKS
+								BERFUNGSI  "BERFUNGSI"
+								TDK_FUNGSI "TIDAK BERFUNGSI"
+								
+IF csubwoofer	nhdhrg1			DFALT_SCAN_BLANKS	1 "BAGUS"
+								2 "RUSAK"
+
+IF csubwoofer2	nhdnobbm		DFALT_SCAN_BLANKS	BAGUS "BAGUS"
+								RUSAK/TDK "RUSAK/TDK_ADA"
+
+IF csubwoofer3	nhdnobbm		DFALT_SCAN_BLANKS	BAGUS "BAGUS"
+								PECAH "PECAH"
+
+IF cspeakerkbl	nhdnobbm		DFALT_SCAN_BLANKS	ADA_ORI "ADA"
+													RUSAK/TDK "RUSAK/TDK ADA"
+
+IF cdroneacc	nhdnobbm		DFALT_SCAN_BLANKS	AKUN_ADA "AKUN ADA"
+													AKUN_TDK "AKUN TIDAK ADA"
+
+IF cdroneacca	nhdhrg1			DFALT_SCAN_BLANKS	3 "ADA"
+IF cdroneaccb	nhdhrg1			DFALT_SCAN_BLANKS	3 "TDK_ADA"
+IF cappleBH		nhdnobbm		DFALT_SCAN_BLANKS	>80% "DIATAS 80%"
+													<=80% "DIBAWAH ATAU SAMA DENGAN 80%"
+IF cappleBHa	nhdhrg1			DFALT_SCAN_BLANKS	3 "BAGUS >80%"
+IF cappleBHb	nhdhrg1			DFALT_SCAN_BLANKS	3 "KURANG BAGUS <=80%"
+
+IF cspeaker		nhdnobbm		DFALT_SCAN_BLANKS	BERFUNGSI "BERFUNGSI"
+													TDK_BERFUNGSI "TDK BERFUNGSI"
+
+IF cspeakera	nhdhrg1			DFALT_SCAN_BLANKS	3 "BERFUNGSI"
+IF cspeakerb 	nhdhrg1			DFALT_SCAN_BLANKS	3 "TDK_BERFUNGSI"
+IF charger		nhdnobbm		DFALT_SCAN_BLANKS	ADA_ORI "ADA_ORI"
+													ADA_TDKORI "ADA TDK ORI"
+													TDK_ADA "TDK_ADA"
+													STD_TDK_ADA "STANDAR TDK ADA"
+
+IF cwifia		nhdnobbm		DFALT_SCAN_BLANKS	ADA "ADA"
+													TDK "TDK"
+IF cwifisub		nhdhrg1			DFALT_SCAN_BLANKS	1 "BERFUNGSI"
+													2 "TDK BERFUNGSI"
+
+IF ckamtdkada	nhdnobbm		DFALT_SCAN_BLANKS	TDK_ADA "TDK_ADA"
+IF claptopspeaker nhdhrg1		DFALT_SCAN_BLANKS	1 "BAGUS"
+													2 "KURANG BAGUS"
+IF chargera		nhdhrg1			DFALT_SCAN_BLANKS	3 "TDK_ADA"
+
+lbts1		INIT			0
+lbts3		INIT			0
+lmga_SG		INIT			MGA
+lestgdi_SG	INIT			ESTGADAI
+
+EDITS(tmptrans)
+e.Mandatory	nhdnobbm	MANDATORY      
+e.Mandatory	nhdhrg1		MANDATORY_IF cbkngrsnrsk
+
+t.ValidateKode	nhdkode		VALIDATE tbtdattypkod mtbtgdbr 0 {Pgv_dttemplate} {Plmga_SG} {Plestgdi_SG} {Pbtmkdkms} {Pbtmkdkms}
+
+CALCS()
+crmdgab1         djoinrmd1 == 1
+crmdgab0         djoinrmd1 == 0
+cgab             "ESTGDI"+STRIP(btmnorangka)+STRIP(nhdkode)+STRIP(nhdnobbm)
+crskngrn	((btmnorangka == "HOME_THEATER" && (nhdkode == "BODY" || nhdkode == "POWER" || nhdkode == "SPEAKER" || nhdkode == "USB" || nhdkode == "BLUETOOTH")) || 
+		 (btmnorangka == "PROYEKTOR" && (nhdkode == "WARNA" || nhdkode == "GARANSI")) || 
+		 (nhdnobbm =="RUSAK/TDK" && btmnorangka != "DRONE") || 
+		 (btmnorangka == "TV_FLAT" && nhdkode == "UKURAN") ||
+		 ((btmnorangka=="SUBWOOFER" || btmnorangka=="SPEAKER_AKTIF") && (nhdnobbm=="BAGUS" || nhdnobbm=="PECAH")) ||
+		 ((btmnorangka == "LAPTOP" || btmnorangka == "KAMERA") && (nhdkode == "WIFI" || nhdkode == "SPEAKER") && nhdnobbm == "TDK") ||
+		 (btmnorangka == "KAMERA" && nhdkode == "SPEAKER" && nhdnobbm == "TDK_ADA") || 
+		 (btmnorangka == "HP" && nhdkode == "CHARGER" && nhdnobbm == "STD_TDK_ADA"))
+chpokisi1	btmnorangka == "HP" && nhdkode != "GARANSI" && nhdhrg1 == 1
+chpokisi2       btmnorangka == "HP" && nhdkode != "GARANSI" && nhdhrg1 == 2
+ckameraisi1	(btmnorangka == "KAMERA" || btmnorangka == "LAPTOP" || btmnorangka == "TV_FLAT") && nhdkode != "RAM" && nhdhrg1 == 1
+ckameraisi2     (btmnorangka == "KAMERA" || btmnorangka == "LAPTOP" || btmnorangka == "TV_FLAT") && nhdkode != "RAM" && nhdhrg1 == 2
+ckameraisi3     (btmnorangka == "KAMERA" || btmnorangka == "LAPTOP" || btmnorangka == "TV_FLAT") && nhdkode != "RAM" && nhdhrg1 == 3
+cRamisi1	btmnorangka == "LAPTOP" && nhdkode == "RAM" && nhdhrg1 == 1
+cRamisi3        btmnorangka == "LAPTOP" && nhdkode == "RAM" && nhdhrg1 == 3
+cdroneisi1	btmnorangka == "DRONE" && nhdhrg1 == 1
+cdroneisi2	btmnorangka == "DRONE" && nhdhrg1 == 2
+cdroneisi3	btmnorangka == "DRONE" && nhdhrg1 == 3
+
+cproyektor1	((btmnorangka == "HOME_THEATER" && (nhdkode == "KBLAUX" || nhdkode == "KBLPOWER" || nhdkode == "REMOTE")) || (btmnorangka == "PROYEKTOR" && nhdkode != "WARNA")) && nhdhrg1 == 1 
+cproyektor2	((btmnorangka == "HOME_THEATER" && (nhdkode == "KBLAUX" || nhdkode == "KBLPOWER" || nhdkode == "REMOTE")) || (btmnorangka == "PROYEKTOR" && nhdkode != "WARNA")) && nhdhrg1 == 2 
+cproyektor3	((btmnorangka == "HOME_THEATER" && (nhdkode == "KBLAUX" || nhdkode == "KBLPOWER" || nhdkode == "REMOTE")) || (btmnorangka == "PROYEKTOR" && nhdkode != "WARNA")) && nhdhrg1 == 3 
+
+cproy1		btmnorangka == "PROYEKTOR" && nhdkode == "WARNA" && nhdhrg1 == 1
+cproy2		btmnorangka == "PROYEKTOR" && nhdkode == "WARNA" && nhdhrg1 == 2
+		
+csubwof1	(btmnorangka == "SUBWOOFER" || btmnorangka == "SPEAKER_AKTIF") && nhdhrg1 == 1
+csubwof2	(btmnorangka == "SUBWOOFER" || btmnorangka == "SPEAKER_AKTIF") && nhdhrg1 == 2
+
+
+ctdkada		"TDK_ADA"
+cTCC		"T"
+cisiTACC	nhdkode == "FINGERPRINT" && nhdnobbm == "MATI"
+
+ctacctas	(nhdnobbm == "RUSAK/TDK" && nhdkode=="TAS") && (btmnorangka=="KAMERA" || btmnorangka=="LAPTOP")
+ctacckardus     (nhdnobbm == "RUSAK/TDK" && nhdkode=="KARDUS") && (btmnorangka=="KAMERA" || btmnorangka=="LAPTOP")
+
+cjkadatacc2	~nhdstsapr == BLANKS && nhdstsapr == "T"
+cjkadatacc3	(~nhdstsapr == "T" || ~nhdstsapr == BLANKS) && nhdstsapr == BLANKS
+cjkkardus	nhdkode == "KARDUS"
+cjktas		nhdkode == "TAS"
+cgab2             "ESTGDI"+STRIP(btmnorangka)+STRIP(btmnomesin)+STRIP(nhdkode)+STRIP(nhdnobbm)
+
+MAP(mtbtgdbr)
+cBLANKS         lcekgdi1   DO_CALC
+cBLANKS         lcekgdi2   DO_CALC
+cBLANKS         lcekgdi3   DO_CALC
+nhdkode         lcekgdi1   REPLACE
+nhdnobbm        lcekgdi2   REPLACE
+nhdhrg1         lcekgdi3   REPLACE
+
+MAP(mhasilrmd)
+g_strksg	lrmdgab		REPLACE
+cgab		lrmdgab		DO_CALC
+cgab		lrmdgab     DO_CALC_IF candroid
+cgab2		lrmdgab     DO_CALC_IF capple
+
+MAP(mhasil1)
+c0		nhdhrg2         DO_CALC_IF crmdgab0
+lhasil1		nhdhrg2         REPLACE_IF crmdgab1
+
+MAP(mkosong)
+cBLANKS		nhdhrg1		DO_CALC
+cBLANKS		nhdhrg2		DO_CALC
+cBLANKS		nhdtype		DO_CALC
+cBLANKS		nhdstsapr	DO_CALC
+
+MAP(mketkond)
+lbagus		nhdtype		REPLACE_IF chpokisi1
+lkrgbagus	nhdtype		REPLACE_IF chpokisi2
+lbagus		nhdtype		REPLACE_IF ckameraisi1
+lkrgbagus	nhdtype		REPLACE_IF ckameraisi2
+lrusak		nhdtype		REPLACE_IF ckameraisi3
+lsesuai		nhdtype		REPLACE_IF cRamisi1
+ltdksesuai	nhdtype		REPLACE_IF cRamisi3
+
+lbagus		nhdtype		REPLACE_IF cdroneisi1
+lkrgbagus	nhdtype		REPLACE_IF cdroneisi2
+ctdkada		nhdtype		DO_CALC_IF cdroneisi3
+lbagus		nhdtype		REPLACE_IF cproyektor1
+lkrgbagus	nhdtype		REPLACE_IF cproyektor2
+lrusak   	nhdtype		REPLACE_IF cproyektor3
+lcerah		nhdtype		REPLACE_IF cproy1
+lkusam		nhdtype		REPLACE_IF cproy2
+lbagus		nhdtype		REPLACE_IF csubwof1
+lrusak		nhdtype		REPLACE_IF csubwof2
+
+cTCC		nhdstsapr	DO_CALC_IF cisiTACC
+c0		lTACC2		DO_CALC_IF cjkadatacc3
+c0		lACC		DO_CALC_IF cjkadatacc2
+c1		lACC		DO_CALC_IF cjkadatacc3
+c1		lTACC2		DO_CALC_IF cjkadatacc2
+
+MAP(mketkond2)
+c0		ltacckardus	DO_CALC_IF cjkkardus
+c0		ltacctas	DO_CALC_IF cjktas
+c1              ltacckardus     DO_CALC_IF ctacckardus
+c1              ltacctas        DO_CALC_IF ctacctas
+
+MAP(misitanda)
+cBLANKS		lcekgdi1	DO_CALC
+cBLANKS		lcekgdi2	DO_CALC
+cBLANKS		lcekgdi3	DO_CALC
+nhdkode		lcekgdi1	REPLACE
+nhdnobbm	lcekgdi2	REPLACE
+nhdhrg1		lcekgdi3	REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=nhdhrg1	DO_SKIP_IF crskngrn
+BEFORE_INPUT	cur_field=nhdhrg1	DO_SKIP_IF chpfinger
+/*BEFORE_INPUT	cur_field=nhdnobbm	DO_SKIP_IF ckamera1 
+BEFORE_INPUT	cur_field=nhdnobbm	DO_SKIP_IF cRam */
+AFTER_INPUT	cur_field=nhdnobbm	DO_MAP SHOW mkosong
+AFTER_INPUT	cur_field=nhdhrg1	DO_MAP SHOW mhasilrmd
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mhasilrmd
+AFTER_INPUT	cur_field=nhdhrg1	DO_LIB_IF crmdgab1 ap_ambts(gv_INPG,lrmdgab,nhdhrg1,lbts1,lbts3,&lhasil1,&lhasil2,&lhasil3,lhasil1_txt,lhasil2_txt);
+AFTER_INPUT	cur_keybd=EN		DO_LIB_IF crmdgab1 ap_ambts(gv_INPG,lrmdgab,nhdhrg1,lbts1,lbts3,&lhasil1,&lhasil2,&lhasil3,lhasil1_txt,lhasil2_txt);
+AFTER_INPUT	cur_field=nhdhrg1	DO_MAP SHOW mhasil1
+AFTER_INPUT	cur_field=nhdhrg1	DO_MAP SHOW mketkond
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mhasil1
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mketkond
+AFTER_INPUT	cur_field=nhdkode	DO_MAP SHOW misitanda
+AFTER_INPUT	cur_field=nhdnobbm	DO_MAP SHOW misitanda
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW mketkond2 
+
+
+CALCS()
+cdjoinnhd1	djoinnhda==1 && (btmrekomen == "BARU" || (btmrekomen == "PINJAMAN_ULANG" && (btmtotal == 3 || btmtotal == 6 || btmtotal == 9)))
+		&& btmnorangka != "MOTOR"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(12)
+SFL_COND	cdjoinnhd1
+SFL_TARGET
+    nhdbukidx   btmnobuk  lnhddata1
+SFL_MAP
+btmnobuk	nhdnobuk	REPLACE
+lnhddata1	nhddata		REPLACE
+
+
+CALCS()
+cACC		"ACC"
+cTACC		"TACC"
+
+cok1		lTACC - lACC + lTACC2 < 1
+cnotok		lTACC + lTACC2 > 0
+ctaksasi	((nhmtothrg  *nhmperpok  )/100)
+cmax		nhmtothrg - nhmestimasi  
+cubhestimasi	lnhdhrg2 + lnhdhrg2_1
+cjkadatacc	nhdstsapr == "T"
+ctacctaskardus  ltacctas > 0 && ltacckardus > 0
+cestubh		nhdnourt != lnhdnourt
+
+MAP(mmapcoba23)
+cBLANKS		lnhdnourt	DO_CALC
+cBLANKS		lnhdhrg2	DO_CALC
+cBLANKS		lnhdhrg2_1	DO_CALC
+c0		lTACC2		DO_CALC_IF cjkadatacc3
+
+c0		ltacckardus	DO_CALC_IF cjkkardus
+c0		ltacctas	DO_CALC_IF cjktas
+c1              ltacckardus     DO_CALC_IF ctacckardus
+c1              ltacctas        DO_CALC_IF ctacctas
+
+c1		lACC		DO_CALC_IF cjkadatacc3
+c1		lTACC2		DO_CALC_IF cjkadatacc2
+
+nhdnourt	lnhdnourt	REPLACE
+nhdhrg2		lnhdhrg2_1	REPLACE
+
+DEBUG ldum	ldum		REPLACE
+
+MAP(mmapupdbtm)
+cACC		btmstr1		DO_CALC_IF cok1
+cTACC		btmstr1		DO_CALC_IF cnotok
+DEBUG ldum	ldum		REPLACE
+
+
+MAP(mscannhd1)
+#nhdhrg2	lnhdhrg2	REPLACE_IF cestubh
+c0		lTACC		DO_CALC
+
+c1              lTACC           DO_CALC_IF ctacctaskardus
+c1		lTACC		DO_CALC_IF cjkadatacc
+
+
+MAP(mmapupdnhm)
+cubhestimasi	nhmperpok  	DO_CALC
+ctaksasi	nhmestimasi  	DO_CALC
+ctaksasi	nhmbbnjl     	DO_CALC
+cmax            nhmmaxcair  	DO_CALC
+
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapcoba23,DCOMMAND MAPMAP,DMAP mmapcoba23);
+DO_LIB ap_dbclc(DNAME dscannhd,DCOMMAND SCANSCAN_BUF3,DTARGET nhdbukidx btmnobuk lnhddata1,DBC_SUM_MAP mscannhd1);
+DO_LIB ap_dbclc(DNAME dmapupdnhm,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mmapupdnhm);
+DO_LIB ap_dbclc(DNAME dmapupdbtm,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mmapupdbtm);
+
+POSTING(tmptrans)
+PST_UPDCMD sptmptrans

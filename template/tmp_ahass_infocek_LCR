@@ -1,0 +1,188 @@
+LOCAL
+PGM_FIELDS
+lbrcnamaJS_LCR		STRING		61
+
+DBCALCS(djointbt_jasacekesaf)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdattypkod gv_dttabel gv_dttabel21 gt_ahass lMASTERJASAESAF lJASACEKESAF tkdrek
+
+IMAGE(tmptranst)
+/----t.PengecekanLCR---------------\
+|/--------------------------------\|
+|| i.NoBuk 	_________________ ||
+|| t.CekLCR 	_________	  ||
+|| t.Pilihan 	_________________ ||
+|| t.Ket    	_________________ ||
+|| t.TglBooking	_________________ ||
+|| t.KodeJasa	_________________ ||
+||			   ______ ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk                PROTECT                 INPUTRI 1 /* Nobuk */
+tkdjwbstr1              NOCHANGE                INPUTRI 2 /* Y/T */
+tkdjenis                ALLCAPS   SCROLL        INPUTRI 3 /* Pilihan */
+tkdket                  TEXTAREA  PROTECT       INPUTRI 4 /* Level */
+tkdtgl2                 NONE 	  {DD-MM-YY}    INPUTRI 5 /* Tanggal Booking */
+tkdrek			ALLCAPS	  SCROLL	INPUTRI	6 /* Kode Jasa */
+lenter			NOCHANGE		INPUTRI 7
+
+CALCS()
+cCLAIM_LCR	"CLAIM_ESAF"
+cGARANSI_LCR	"GARANSI"
+cJikaYx		tkdjwbstr1 == "YA"
+cJikaTx		tkdjwbstr1 == "TIDAK"
+
+cPIL1YA		"LEVEL 1 - 4"
+cPIL2YA		"LEVEL 5"
+cPIL1TDK	"KONSUMEN TIDAK MAU CEK"
+cPIL2TDK	"SUDAH ADA TANDA MARKING PENGECEKKAN SEBELUMNYA"
+
+cPIL1YAx	tkdjwbstr1 == "YA" && tkdjenis == "PIL_1"
+cPIL2YAx	tkdjwbstr1 == "YA" && tkdjenis == "PIL_2"
+cPIL1TDKx	tkdjwbstr1 == "TIDAK" && tkdjenis == "PIL_1"
+cPIL1TDKy	(tkdjwbstr1 == "YA") || (tkdjwbstr1 == "TIDAK" && tkdjenis != "PIL_1")
+cPIL2TDKx	tkdjwbstr1 == "TIDAK" && tkdjenis == "PIL_2"
+
+cCLAIM_ESAF	"CLAIM_ESAF"
+cdjoinbrgJS	djoinbrgJS == 1 && ppdjasbrg == "JI"
+cisiY_LCR	"Y"
+cdjoinbrcU4	djoinbrcU4 == 1
+
+cTot_LCR	btmtotal + ppdtotfak
+cTot2_LCR	btmdf4 + (ppdhrg * ppdjml) - (ppdhrgbp * (ppdjml - 1))
+cJikaY_LCR	ppdtybuk2 == "Y"
+cJASA_1		tkdjenis == "PIL_1"
+cJASA_2		tkdjenis == "PIL_2"
+cTglBooking 	((tkdjwbstr1 == "YA") || (tkdjwbstr1 == "TIDAK" && tkdjenis != "PIL_1")) || (((tkdtgl2 > g_tgltrn) && (tkdtgl2 <= (g_tgltrn + 7))) || (tkdjwbstr1 == "TIDAK" && tkdjenis != "PIL_1"))
+
+ctdkblhcekesaf	((djointbd_promooli2 == 1 && djointbt_jasacekesaf == 0 && btmrekomen == "SERVICE") || (djointbd_promooli2 == 0) || (btmrekomen != "SERVICE"))
+csdhCek		( ( tkdjwbstr1 == "YA" && tkdjenis == "PIL_1" && djoinakt_sdhlcr1 == 0  ) || 
+                  ( tkdjwbstr1 == "YA" && tkdjenis == "PIL_2" && djoinakt_sdhlcr2 == 0  ) || 
+                  ( tkdjwbstr1 != "YA") 
+                )
+
+DEFAULTS(tmptranst)
+tkdjwbstr1              		DFALT_SCAN		BLANKS
+								YA
+								TIDAK
+
+IF cJikaYx	tkdjenis		DFALT_SCAN		BLANKS
+								PIL_1 "LEVEL 1 - 4"
+								PIL_2 "LEVEL 5"
+
+IF cJikaTx	tkdjenis		DFALT_SCAN		BLANKS
+								PIL_1 "KONSUMEN TIDAK MAU CEK"
+								PIL_2 "SUDAH ADA TANDA MARKING PENGECEKKAN SEBELUMNYA"
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr1      MANDATORY
+e.Mandatory     tkdjenis        MANDATORY
+e.Mandatory	tkdket		MANDATORY
+e.Mandatory 	tkdtgl2     	MANDATORY_IF cPIL1TDKx
+e.Mandatory	tkdrek		MANDATORY_IF cJikaYx
+t.ValidateBrg1	tkdrek	VALIDATE_IF cJASA_1 tbtdattypkod mtbtLCR stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgt_ahass} {PlMASTERJASAESAF} {PlKODEJASAESAF1}
+t.ValidateBrg2	tkdrek	VALIDATE_IF cJASA_2 tbtdattypkod mtbtLCR stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgt_ahass} {PlMASTERJASAESAF} {PlKODEJASAESAF2}
+t.ValidateJS  	tkdrek  VALIDATE brcdatstskod mbrcJS_LCR 0 {Pgv_jasain} {Pgv_INPG} {Pbtmcab} {PlJASAIN} {PlJASA}
+
+MAP(mdumstr2)
+DEBUG	ldumstr	ldumstr	REPLACE
+
+
+MAP(mmapLCR)
+cPIL1YA		tkdket	DO_CALC_IF cPIL1YAx
+cPIL2YA		tkdket	DO_CALC_IF cPIL2YAx
+cPIL1TDK	tkdket	DO_CALC_IF cPIL1TDKx
+cPIL2TDK	tkdket	DO_CALC_IF cPIL2TDKx
+
+MAP(mtbtLCR)
+tbtkode		tkdrek		REPLACE
+
+MAP(mbrcJS_LCR)
+brcnama		lbrcnamaJS_LCR	REPLACE
+brchrgjl	lbrchrgjlax	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdrek	DO_SKIP_IF cJikaTx
+BEFORE_INPUT	cur_field=tkdtgl2	DO_SKIP_IF cPIL1TDKy
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW mmapLCR
+
+AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+		IF csdhCek mdumstr2
+		ELSE HKCURSOR STAY
+		HKMSG t.SdhCekEsaf
+
+AFTER_INPUT	cur_field=tkdrek	DO_MAP SHOW
+		IF ctdkblhcekesaf mdumstr2
+		ELSE HKCURSOR STAY
+		HKMSG t.CekEsafTdkBlh
+
+AFTER_INPUT 	cur_field=tkdtgl2   DO_MAP SHOW
+        	IF cTglBooking  mdumstr2
+        	ELSE HKCURSOR STAY
+        	HKMSG Tanggal harus antara besok sampai h+7
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF ctdkblhcekesaf mdumstr2
+                ELSE HKCURSOR STAY
+                HKMSG t.CekEsafTdkBlh
+
+MAP(mupdbtmLCR)
+cCLAIM_LCR	btmstr2		DO_CALC
+cGARANSI_LCR	btmtypdeb	DO_CALC
+
+MAP(mupdbtmLCR2)
+cTot_LCR	btmtotal	DO_CALC_IF cJikaY_LCR
+cTot2_LCR	btmdf4		DO_CALC_IF cJikaY_LCR
+
+MAP(maddppdLCR)
+    tkdnobuk            ppdnomst2          REPLACE
+    gv_dtahass          ppddata            REPLACE
+    lJI                 ppdjasbrg          REPLACE
+    stsmua              ppdkdmua            REPLACE
+    btmtgl              ppdtglfak           REPLACE
+    gv_OPEN             ppdsts              REPLACE
+    btmscr              ppdscr              REPLACE
+    btmcab              ppdgrup             REPLACE
+    cCLAIM_ESAF         ppdsup              DO_CALC /* Kode AHM*/
+    btmcab              ppdcab              REPLACE
+    gv_dealer           ppdbisnis           REPLACE
+    btmdvs              ppddvs              REPLACE
+    gv_999              ppdnourt            REPLACE
+    c1               	ppdnourt2           DO_CALC_IF cjoinppdu0
+    curut2              ppdnourt2           DO_CALC_IF cjoinppdu1
+    tkdrek              ppdbrg              REPLACE  /* Barang plengkapan*/
+    gv_int1		ppdjml		    REPLACE
+    lbrchrgjlax         ppdhrg             REPLACE_IF cdjoinbrcU4
+    lbrgkat             ppdkat              REPLACE_IF cdjoinbrgJS
+    gv_K                ppddk               REPLACE  /*K=Keluar*/
+    gv_K                ppdkb               REPLACE /* K=Kirim*/
+    stssetsisbrg        ppdsisbrg           REPLACE
+    lbrcnamaJS_LCR      ppdket              REPLACE
+    btmwrn              ppdnopsn            REPLACE
+    ppdhrg              ppdtotfak           REPLACE
+    lbrgjmlmax          ppdperdism          REPLACE_IF cdjoinbrgJS
+    cisiY_LCR           ppdtybuk2           DO_CALC
+    DEBUG       ldumstr         ldumstr         REPLACE
+
+
+
+SPCALCS(sptmptrans)
+DO_LIB_IF cJikaYx ap_dbclc(DNAME daddppdLCR,DCOMMAND ADD,DFILE ppd,DMAP maddppdLCR);
+DO_LIB_IF cJikaYx ap_dbclc(DNAME dupdbtmLCR,DCOMMAND UPDATE, DTARGET btmbukidx tkdnobuk, DMAP mupdbtmLCR);
+DO_LIB_IF cJikaYx ap_dbclc(DNAME dupdbtmLCR2,DCOMMAND UPDATE, DTARGET btmbukidx tkdnobuk, DMAP mupdbtmLCR2);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkddatbukll     lINFOCEKLCR btmnobuk
+
+SFL_MAP
+lINFOCEKLCR	tkddata		REPLACE
+btmnobuk	tkdnobuk	REPLACE

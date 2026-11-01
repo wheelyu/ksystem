@@ -1,0 +1,162 @@
+LOCAL
+PGM_FIELDS
+lnama7		STRING	21
+lenter		STRING	21
+ljam1		TIME	11
+ljam2		TIME	11
+ldttabel1	STRING	21
+lsop		STRING	21
+la		INT2	11
+lb		INT2	11
+lket		STRING	61
+lACC		STRING	5
+ltldsat		STRING	21
+
+MAP(mtbt)
+tbtdf1		la	REPLACE
+tbtdf2		lb	REPLACE
+tbtket		lket	REPLACE
+
+DBCALCS(djointbt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdatkodtyp	ldttabel laudit1 ltgtcheck lsop ldttabel1 tldnoll 
+	DBC_MAP		mtbt
+
+/*DBCALCS(djointld)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr	lanalisa gv_OPEN tlmnobuk*/
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------\
+ /------------------------------------------------------------------\
+  t.Ac/T      : ___________			   
+  t.NipDrafter: ______  ___________	t.PaketSOP   : ____
+  t.Ket       : _____ ______________	t.Leadtime   : ___________
+  t.Target    : ___________		t.JamMulai   : ___________
+  t.Actual    : ___________		t.JamSelesai : ___________
+  t.Alasan    : ____________________	t.LamaProses : ___________
+ 		___________		
+ \------------------------------------------------------------------/
+\--------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldtydis	NOCHANGE	INPUTRI	1 /*acc*/
+tldplg		ALLCAPS 	INPUTRI	2 /*nip drifter*/
+lnama7		PROTECT		INPUTRI	3 /*nama drifter*/
+tldsat		NOCHANGE	INPUTRI 4 /*Paket SOP*/
+tldnoll		PROTECT		INPUTRI	5 /*ket*/
+lket		PROTECT		INPUTRI	6 /*detail ker*/
+tldjmlpos	PROTECT 	INPUTRI 7 /*leadtime*/
+tldtglfak	ALLCAPS	NOLIMIT {DD-MM-YYYY}	INPUTRI	8 /*tgl target*/
+ljam1		PROTECT		INPUTRI 9 /*jam mulai*/ 
+tldtgl2		ALLCAPS NOLIMIT {DD-MM-YYYY} 	INPUTRI	10/*tgl aktual*/
+ljam2		PROTECT		INPUTRI 11 /*jam selesai*/
+tldket		ALLCAPS		INPUTRI	12 /*tgl alasan*/
+tldjml 		PROTECT		INPUTRI 13 /*lamaproses*/
+lenter		NOCHANGE	INPUTRI	15
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER_DISINI
+lanalisa	INIT		ANALISA
+tldtydis	DFALT_SCAN	BLANKS
+				ACC
+				TACC
+tldsat		DFALT_SCAN	BLANKS 
+				A 
+				B
+ldttabel1	INIT		DTTABEL
+lsop		INIT		SOP
+
+CALCS()
+ctdksama	tldtgl2 > tldtglfak
+ctglsama	tldtglfak >= tldtgl2
+cbknpakbudi	g_usrkode != "1109905" && g_grpnam != "SOPHEAD" && g_grpnam != "RI" && g_grpnam != "IT"
+cisijam		tldtmp1 == BLANKS
+cjam		ljam2 - ljam1
+cnoljam2 	ljam1 != BLANKS && ljam2 != BLANKS
+ca		djointbt == 1 && tldsat == "A" && tldnoll != BLANKS
+cb		djointbt == 1 && tldsat == "B" && tldnoll != BLANKS
+cterisi		djointld == 1
+ckosong		tldtydis != BLANKS
+cSYSTIME	SYSTIME
+cno1		tldnoll	!= "LD001"
+
+EDITS(tmptranst)
+e.Mandatory 	tldsat 		MANDATORY
+e.Mandatory	tldtglfak	MANDATORY
+e.Mandatory	tldtgl2		MANDATORY
+e.Mandatory	tldket		MANDATORY_IF ctdksama
+e.Validate	tldnoll		VALIDATE tbtdatkodtyp mtlt1 stbt {Pldttabel} {Plaudit1} {Pltgtcheck} {Plsop} {Pldttabel1}
+e.Validate	tldplg		VALIDATE psikodidx mpsi5 spsiINPG
+
+MAP(mtlt1)
+tbtkode		tldnoll		REPLACE
+la		tldjmlpos	REPLACE_IF ca
+lb		tldjmlpos	REPLACE_IF cb
+tldtydis	lACC		REPLACE_IF ckosong
+tldsat		ltldsat		REPLACE
+
+MAP(mpsi5)
+psikode		tldplg		REPLACE
+psinama		lnama7		REPLACE
+tldtmp1		ljam1		REPLACE
+tldtmp2		ljam2		REPLACE
+cjam		tldjml		DO_CALC_IF cnoljam2
+
+MAP(mjam)
+cSYSTIME	tldtmp1		DO_CALC_IF cisijam
+tldtmp1		ljam1		REPLACE
+
+MAP(mjam1)
+cSYSTIME	tldtmp2		DO_CALC
+tldtmp2		ljam2		REPLACE
+cjam 		tldjml 		DO_CALC_IF cnoljam2
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldtgl2	DO_MAP SHOW mjam
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mjam1
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF ctglsama
+BEFORE_INPUT	cur_field=tldtydis	DO_SKIP_IF cbknpakbudi
+BEFORE_INPUT	cur_field=tldplg	DO_SKIP_IF cterisi
+BEFORE_INPUT	cur_field=tldsat	DO_SKIP_IF cno1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SORT_BY_FIELD tldnoll
+SFL_TITLE(tmptranst)
+SFL_COND	cdjointldtgl1
+SFL_TARGET
+	tldstsbrgukr	lanalisa gv_OPEN tlmnobuk
+SFL_MAP
+tlmnobuk	tldnobuk
+tlmnobuk	tldbrg
+lanalisa	tlddata
+gv_OPEN        	tldsts
+
+CALCS()
+cCLSDno		tlmsts != "CLSD"
+cempty		tlmuntuk == BLANKS
+
+MAP(mupdtlmc)
+tldplg		tlmuntuk	REPLACE
+tldtglfak  	tlmtgljtp2	REPLACE 
+
+MAP(mupdacc)
+lACC		tldtydis	REPLACE
+
+MAP(mupdtipe)
+ltldsat		tldsat		REPLACE
+
+SPCALCS(sptmptranst)
+        DO_LIB_IF cempty	ap_dbclc(DNAME dupdtlmc,DCOMMAND UPDATE,DTARGET tlmbukidx tldnobuk,DMAP mupdtlmc);
+        DO_LIB_IF ckosong	ap_dbclc(DNAME dupdtld,DCOMMAND UPDATE_RANGE,DTARGET tldstsbrgukr lanalisa gv_OPEN tlmnobuk,DMAP mupdacc);
+        DO_LIB			ap_dbclc(DNAME dupdtldix,DCOMMAND UPDATE_RANGE,DTARGET tldstsbrgukr lanalisa gv_OPEN tlmnobuk,DMAP mupdtipe);
+
+POSTING(tmptrans)
+PST_UPDCMD	sptmptranst
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	cCLSDno
+PMT_DEL_COND	c0

@@ -1,0 +1,111 @@
+LOCAL
+PGM_FIELDS
+lGANTIAKTIVA             STRING  21
+lDTGANRUG	STRING		11
+
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.TekanTambah                                     ||
+||                 :___________                     ||
+||t.Nobuk943       :____________________            ||
+||t.Nobuk884       :____________________            ||
+||t.GantiAkt       :___________.__                  ||
+|\--------------------------------------------------/|
+|/-------s.UPLOAD-----------------------------------\|
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldlok                  NOCHANGE           	INPUTRI 1
+tldnoll  		ALLCAPS                	INPUTRI 2
+tldplg   		NOCHANGE               	INPUTRI 2
+tldhrg                  PROTECT            	INPUTRI 6
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF caktiva0        mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SelesaikanAktiva
+
+EDITS(tmptranst)
+e.Mandatory tldhrg 	MANDATORY
+e.Mandatory tldnoll  	MANDATORY
+e.ValidateAkt           tldnoll  VALIDATE tlmdatstsbuk  mtlmgan stlm {PlDTGANRUG} {Pgv_INPG}
+
+MAP(mtlmgan)
+tlmnobuk			tldnoll		REPLACE
+tlmtotal			tldhrg		REPLACE
+tlmnoasal			tldplg  	REPLACE
+
+
+DEFAULTS(tmptranst)
+lGANTIAKTIVA	INIT		GANTIAKTIVA
+tldnobbm	INIT_ADD	GANTIAKTIVA
+tldsts		INIT_ADD	{gv_OPEN}
+lDTGANRUG	INIT		DTGANRUG
+
+MAP(mupdtldfoto)
+gv_INPG         tldsts          REPLACE
+
+DBCALCS(dupdtldfoto)
+        DBC_COMMAND     UPDATE
+        DTARGET         tldprmidx tldprm
+        DMAP            mupdtldfoto
+
+CALCS()
+cgantiaktiva	tmpkode == "GANTIAKTIVA"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND cgantiaktiva
+SFL_UPLFLD_DBCALCS dupdtldfoto
+SFL_UPL_DIRFLD hrmdata
+SFL_UPLFLD hrmnobuk tldoto 
+SFL_LINES(1)
+
+SFL_TARGET
+	tldbukbbmidx  	hrmnobuk   lGANTIAKTIVA
+
+
+SFL_MAP
+hrmnobuk        tldnobuk        REPLACE
+hrmnobuk        tldbrg          REPLACE
+hrmdata         tlddata         REPLACE
+
+CALCS()
+cdiv_GA		(g_grpnam == "GAHEAD" || g_grpnam =="RI" || g_grpnam =="CMBNHEAD" || g_grpnam =="CMBNMGR")  && hrmsts =="RCLS"
+
+
+
+MAP(mupdhrmgantiakt)
+ltotPL		ltotPL			REPLACE 
+
+SPCALCS(spcaladdganti)
+DO_LIB ap_dbclc(DNAME dupdhrmgantiakt,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrmgantiakt);
+
+SPCALCS(spcalupdganti)
+DO_LIB ap_dbclc(DNAME dupdhrmgantiakt2,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrmgantiakt);
+ 
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdganti
+        PST_UPDCMD      spcalupdganti
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cdiv_GA
+        PMT_UPDALL_COND cdiv_GA
+        PMT_DEL_COND    cdiv_GA
+
+

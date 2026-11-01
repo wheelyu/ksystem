@@ -1,0 +1,76 @@
+LOCAL
+PGM_FIELDS
+l36             INT2            2
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket : _______________________ ||
+||t.Bank      : _________________ ||
+||t.nmbank    : _________________ ||
+||t.NoRekBank : _________________ ||
+||t.AtasNamRek: _________________ ||
+||t.CMSSesuai : ___ __            ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+svistr1   		NOCHANGE		INPUTRI		2 
+sviket    		PROTECT 		INPUTRI		3 
+svistr2			DIGITS			INPUTRI		4 
+sviket2 		ALLCAPS 		INPUTRI		5 
+sviyt2			NOCHANGE		INPUTRI		6 
+lenter			NOCHANGE		INPUTRI		7 
+
+DEFAULTS(tmptranst)
+l36             INIT            36
+sviyt2          DFALT_SCAN_BLANKS       Y "Y"
+                                        T "T"
+
+EDITS(tmptranst)
+e.Validate svistr1 VALIDATE tbddatkodidx  mtbdbank stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_bank21}
+
+MAP(mtbdbank)
+tbdkode		svistr1		REPLACE
+tbdket		sviket		REPLACE
+
+MAP(mupdsvinorek)
+cY              sviyt1          DO_CALC
+
+DBCALCS(dupdsvinorek)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvinorek
+
+CALCS()
+cnorek1		sviyt1 != "Y"
+cisinorek	btmstr2=="TRANSFER" && btmdvsjl=="M2W" && g_scrnumstr=="714" && btmsts=="714"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdsvinorek
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND cnorek1
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk l36
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cisinorek
+  PMT_DEL_COND  c0
+

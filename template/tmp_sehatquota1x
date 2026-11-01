@@ -1,0 +1,63 @@
+LOCAL
+PGM_FIELDS
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /------------------------------\
+  t.QuotaTerlambat128 
+  t.Nip   	: ____________
+  t.Tanggal     : ____________   
+  t.Alasan      :    
+    __________________________ 
+  t.Quota 	: ____________
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldplg     	NOCHANGE	INPUTRI	1
+tldtglfak	PROTECT	 {DD-MM-YY}	INPUTRI	2
+tldket 		TEXTAREA    ALLCAPS 		INPUTRI	3
+tldbrg     	PROTECT 	INPUTRI	1
+
+EDITS(tmptranst)
+t.Mandatoryket  tldket         MANDATORY
+
+DEFAULTS(tmptranst)
+tldtglfak   	INIT_ADD	{g_tgltrn}
+
+CALCS()
+cOPEN_9			tlmsts =="OPEN" && tlmnobbm == BLANKS
+
+MAP(misikode)
+lquota1kali		tldbrg			REPLACE_IF cOPEN_9
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=tldket     DO_MAP SHOW  misikode
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldstskodbrg  tlmdata gv_CLSD tlmplg 
+
+SFL_MAP
+tlmnobuk		tldnobuk		REPLACE
+tlmnobuk		tldukrwrn		REPLACE
+gv_CLSD			tldsts			REPLACE
+tlmplg			tldplg			REPLACE
+tlmdata			tlddata			REPLACE
+tlmsts			tldnobbm		REPLACE
+
+
+CALCS()
+cTELAT		"TELAT"
+
+MAP(mupdtlmquota)
+cTELAT			tlmgrup2		DO_CALC
+
+SPCALCS(spcaladdquota)
+DO_LIB ap_dbclc(DNAME dupdtlmquota,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmquota);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdquota

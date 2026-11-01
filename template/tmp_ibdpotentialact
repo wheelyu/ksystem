@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/------t----t----t---------------------------t-------t---------t---------t---------t-------t---------t-----------t----\
+|t.THBL|t.wk|Kode|t.IndikatorBDPotential     | t.TGT | t.ACT   | t.%Ach  |t.%ACHmd |t.POINT|t.%BOBOT | t.Ket     | __ |
+\------.----.----.---------------------------.-------.---------.---------.---------.-------.---------.-----------.----/
+IMAGE(tmptrans)
+|______|____|____|___________________________|_______|_________|_________|_________|_______|_________|___________|____|
+
+
+FIELDS(tmptranst)
+ltomsdhact2	TOMBOL				INPUTRI	1
+
+FIELDS(tmptrans)
+tldth           PROTECT NOCHANGE                INPUTRI 1       /* THBL */
+tldsatbsr       PROTECT                         INPUTRI 2       /* WEEK */
+tldstr4         PROTECT                         INPUTRI 3       /* INDIKATOR */
+lket            PROTECT                         INPUTRI 4       /* INDIKATOR */
+tldhrg         PROTECT                         INPUTRI 5       /* TGT */
+tldukrwrn       DIGITS                        INPUTRI 6       /* ACT */
+tldsubtot       PROTECT NOCHANGE                INPUTRI 7       /* % ACH */
+tldhrgnet       PROTECT NOCHANGE                INPUTRI 8       /* % ACH MD */
+tldperdis       PROTECT NOCHANGE                INPUTRI 9       /* POINT */
+tldtotdis       PROTECT NOCHANGE                INPUTRI 10       /* BOBOT */
+tldket          NONE                            INPUTRI 11
+lenterd2        NOCHANGE                        INPUTRI 12       /* TOMBOL ENTER */
+
+CALCS()
+cselectactpotential  tldcab == tlmcab && tldbrg == lPOTENTIAL && tlddata == tlmdata && tldth == tlmtype2 && tldsatbsr == tlmjml
+
+EDITS(tmptrans)
+e.ValidateKet           tldstr4  VALIDATE        tbddatkodidx     mketactPotential                     {PlDTTABEL}        {PlCUSTOMEREXPERIENCE} {PlKODEMATRIKSIBDB}
+
+MAP(mketactPotential)
+tbdket                  lket            REPLACE
+
+MAP(mhitungactpotential)
+tldukrwrn		tldjml3			REPLACE
+cach                    tldsubtot               DO_CALC
+c0                      tldhrgnet               DO_CALC_IF cachmd1
+c50                     tldhrgnet               DO_CALC_IF cachmd2
+c75                     tldhrgnet               DO_CALC_IF cachmd3
+c90                     tldhrgnet               DO_CALC_IF cachmd4
+c100                    tldhrgnet               DO_CALC_IF cachmd5
+tldsubtot               tldhrgnet               REPLACE_IF cachmd6
+c100                    tldhrgnet               DO_CALC_IF cachmd7
+cpoint			tldperdis		DO_CALC
+MAP(mceklisact2)
+cy                      tlmdvs                DO_CALC
+
+SPCALCS(ssdhisiact2)
+DO_LIB                  ap_dbclc(DNAME dceklisact2, DCOMMAND UPDATE, DTARGET tlmprmidx tlmprm, DMAP mceklisact2);
+
+HOOKS(tmptrans)
+AFTER_INPUT		cur_field=tldukrwrn		 DO_MAP SHOW mhitungactpotential 
+
+HOOKS(tmptranst)
+CLICKED                 cur_field=ltomsdhact2            DO_SPCALCS  ssdhisiact2
+
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_SORT_BY_FIELD tldstr4
+SFL_TITLE(tmptranst)
+SFL_SELECT 	cselectactpotential
+SFL_TARGET
+tldstsbrgukr    tlmdata
+
+SFL_MAP
+tlmdata		tlddata
+tlmnobuk	tldnobuk
+lACTPOTENTIAL   tldbrg                  /*PEMBEDA ANTARA PERFORMANCE DENGAN POTENTIAL*/
+tlmcab          tldcab                  /*PEMBEDA TGT BONUS DEALER CABANG 1 DENGAN CABANG LAINNYA*/
+tlmtype2        tldthbl                 /*PEMBEDA TGT BONUS DEALER CABANG 1 DENGAN CABANG LAINNYA*/
+tlmtype2        tldth                 /*PEMBEDA TGT BONUS DEALER CABANG 1 DENGAN CABANG LAINNYA*/

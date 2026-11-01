@@ -1,0 +1,282 @@
+LOCAL
+PGM_FIELDS
+lket		STRING 61
+lket11		STRING 61
+lket21		STRING 61
+lket31		STRING 61
+lrmdtext1       STRING  21
+
+CALCS()
+cminggubrp	rmdtglawl <= g_tgltrn && g_tgltrn <= rmdtglakh
+
+MAP(mjoinbtsminggu)
+rmdtext1        lrmdtext1       REPLACE
+
+DBCALCS(djoinrmdbtsminggu)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstskodgab  gv_INPG lMINGGU
+        DBC_SELECT      cminggubrp
+        DBC_MAP         mjoinbtsminggu
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|-------------------------------------|
+|                   __                |
+| t.HslKunjungan  : ________________  |
+| t.HslTelepon    : ________________  |
+| t.HslWa         : ____ ____________ |
+| t.SdhPhmAturan  :  __               |
+| t.PhmProgramJual:  __               |
+| t.SdhJalanAktv  :  __               |
+| t.MediaPromosi  : ________________  |
+| t.Pilihan       : ________________  |
+| t.AdaPlanPK     :  __               |
+| t.Kapan         : ____ ____________ |
+| t.KonsSama	  :  __		      |
+| t.AlasanBlmPK   : ____ ____________ |
+| t.SolusiKba     : ____ ____________ |
+| t.SdhJlsApk     :  __               |
+| 				      | _
+|-------------------------------------|
+| t.Kunjungan       t.Aktivitas       |
+|/--s.UPLOAD------\ /--s.UPLOAD2-----\|
+||                | |                ||
+||                | |                ||
+||                | |                ||
+||                | |                ||
+||                | |                ||
+||                | |                ||
+|\----------------/ \----------------/|
+|t.Ket  : _________  t.Ket : _________|
+|t.Tgl  : _________  t.Tgl : _________|
+|t.Lat  : _________  t.Lat : _________|
+|t.Lon  : _________  t.Lon : _________|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spknobuk        PROTECT UNSEEN          INPUTRI 1 /*NOBUK*/
+spkkat10        ALLCAPS                 INPUTRI 2 /*BERTEMU*/
+spkkode2        ALLCAPS                 INPUTRI 3 /*HASILTLP*/
+spkkode3        ALLCAPS                 INPUTRI 4 /*HASILWA*/
+lket            PROTECT                 INPUTRI 5
+spkkode4        ALLCAPS                	INPUTRI 6 /*SDHPHM*/
+spkkode5        ALLCAPS                	INPUTRI 7 /*PHMJUAL*/
+spkkode6        ALLCAPS                	INPUTRI 8 /*JLNAKTV*/
+spkkode7        ALLCAPS                 INPUTRI 9 /*MEDIAPROMO*/
+spkkode8        ALLCAPS  SCROLL         INPUTRI 10 /*PIL*/
+spkkode         CHECKBOX                INPUTRI 11 /*PLANPK*/
+spkkode10       ALLCAPS                 INPUTRI 12 /*KAPAN*/
+lket31          PROTECT                 INPUTRI 13
+spkkat7		CHECKBOX		INPUTRI 14 /*KONSUMEN SAMA*/
+spkkat2         ALLCAPS                 INPUTRI 15 /*ALASANBLMPK*/
+lket11          PROTECT SCROLL          INPUTRI 16
+spkkat3         ALLCAPS                 INPUTRI 17 /*SOLUSIKBA*/
+lket21          PROTECT SCROLL          INPUTRI 18
+spkkat4         CHECKBOX                INPUTRI 19 /*SDHJLS*/
+spkdata         PROTECT UNSEEN          INPUTRI 20
+
+spkfoto         PROTECT                         INPUTRI         20 /*foto ktp*/
+spkfoto5        PROTECT                         INPUTRI         21 /* foto rumah */
+spktglft2       PROTECT {DD-MM-YYYY}            INPUTRI         22 /* tgl foto ktp */
+spktglft3       PROTECT {DD-MM-YYYY}            INPUTRI         23 /* tgl foto rumah */
+spklat3         PROTECT                         INPUTRI         24 /* lat foto ktp  */
+spklat4         PROTECT                         INPUTRI         25 /* lat foto rumah */
+spklon3         PROTECT                         INPUTRI         26 /* lon foto ktp */
+spklon4         PROTECT                         INPUTRI         27 /* lon foto rumah */
+
+
+DEFAULTS(tmptranst)
+lFU_AGEN        INIT    FU_AGEN
+spkdata         INIT    FU_AGEN
+
+spkkat10        DFALT_SCAN_BLANKS       BERTEMU
+                                        TIDAK_BERTEMU
+spkkode2        DFALT_SCAN_BLANKS       TERHUBUNG
+                                        TIDAK_TERHUBUNG
+spkkode4        DFALT_SCAN_BLANKS       Y               "SUDAH"
+                                        T               "BELUM"
+spkkode5        DFALT_SCAN_BLANKS       Y               "SUDAH"
+                                        T               "BELUM"
+spkkode6        DFALT_SCAN_BLANKS       Y               "SUDAH"
+                                        T               "BELUM"
+spkkode7        DFALT_SCAN_BLANKS       ONLINE
+                                        OFFLINE
+/*spkkode        DFALT_SCAN_BLANKS       Y               "ADA"
+                                        T               "TIDAK_ADA"
+spkkat4         DFALT_LIST              BLANKS Y T*/
+
+CALCS()
+ctdkbertemu     spkkat10 == "TIDAK_BERTEMU"
+ctdkterhbg      spkkode2 == "TIDAK_TERHUBUNG"
+cwa1            spkkode3 == "WA1" || spkkat10 == "BERTEMU" || spkkode2 == "TERHUBUNG"
+cBLANKS         BLANKS
+cbertemu        spkkat10 == "BERTEMU"
+cterhubung      spkkode2 == "TERHUBUNG"
+cwa             spkkode3 == "WA2" || spkkode3 == "WA3" || spkkode3 == "WA4"
+cplan           spkkode  == "Y"
+cplan1          spkkode  == "T"
+caktv           spkkode6 == "T"
+caktv1          spkkode6 == "Y"
+cFU_AGEN	tkmkode == "FU_AGEN"
+cBUKTIAKTV      "BUKTIAKTIVITAS"
+cbknminggu4	spkkode10 == "KAPAN1" || spkkode10 == "KAPAN2" || (spkkode10 == "KAPAN3" && djoinrmdbtsminggu == 1 && lrmdtext1 != "MINGGU4")
+
+EDITS(tmptranst)
+e.MandatoryHslKunjungan         spkkat10         MANDATORY
+e.MandatoryHslTelepon           spkkode2         MANDATORY_IF ctdkbertemu
+e.MandatoryHslWa                spkkode3         MANDATORY_IF ctdkterhbg
+e.MandatoryAturanKomisi         spkkode4         MANDATORY_IF cwa1
+e.MandatoryProgramJual          spkkode5         MANDATORY_IF cwa1
+e.MandatoryJlnkanAktivity       spkkode6         MANDATORY_IF cwa1
+e.MandatoryMediaPromosi         spkkode7         MANDATORY_IF caktv1
+e.MandatoryPilihan              spkkode8         MANDATORY_IF caktv1
+e.MandatoryPlanPK               spkkode          MANDATORY_IF cwa1
+e.MandatoryKapan                spkkode10        MANDATORY_IF cplan
+e.MandatoryAlasan               spkkat2          MANDATORY_IF cplan1
+e.MandatorySolusi               spkkat3          MANDATORY_IF cplan1
+e.MandatorySdhJlsApk            spkkat4          MANDATORY
+
+e.ValidateWA                    spkkode3         VALIDATE tbddatkodidx mtbd51 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlHASILWA1}
+e.ValidateSbr                   spkkode7         VALIDATE tbddatkodidx mtbd52 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlSPKAGEN}
+e.ValidatePil                   spkkode8         VALIDATE tbtdatkodtyp mtbt2  stbt {Pgv_dttabel} {PlKLIKNSC1} {PlSPKAGEN} {Pspkkode7} {Pgv_dttabel21}
+e.ValidateAlasan                spkkat2          VALIDATE tbddatkodidx mtbd53 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlALASAN}
+e.ValidateSolusi                spkkat3          VALIDATE tbddatkodidx mtbd54 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlSOLUSI}
+e.ValidateKapan                 spkkode10        VALIDATE tbddatkodidx mtbd55 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlKAPAN}
+
+MAP(mtbd51)
+tbdkode         spkkode3        REPLACE
+tbdket          lket            REPLACE
+
+MAP(mtbd52)
+tbdkode         spkkode7        REPLACE
+
+MAP(mtbt2)	
+tbtkode        spkkode8         REPLACE
+
+MAP(mtbd53)
+tbdkode         spkkat2         REPLACE
+tbdket          lket11          REPLACE
+
+MAP(mtbd54)
+tbdkode         spkkat3         REPLACE
+tbdket          lket21          REPLACE
+
+MAP(mtbd55)
+tbdkode         spkkode10       REPLACE
+tbdket          lket31          REPLACE
+
+MAP(mblanks)
+cBLANKS         spkkode2        DO_CALC_IF cbertemu
+cBLANKS         spkkode3        DO_CALC_IF cbertemu
+cBLANKS         spkkode3        DO_CALC_IF cterhubung
+cBLANKS         lket            DO_CALC_IF cbertemu
+cBLANKS         lket            DO_CALC_IF cterhubung
+cBLANKS         spkkode4        DO_CALC_IF cwa
+cBLANKS         spkkode5        DO_CALC_IF cwa
+cBLANKS         spkkode6        DO_CALC_IF cwa
+cBLANKS         spkkode7        DO_CALC_IF cwa
+cBLANKS         spkkode8        DO_CALC_IF cwa
+cBLANKS         spkkode         DO_CALC_IF cwa
+cBLANKS         spkkode10       DO_CALC_IF cwa
+cBLANKS         spkkat2         DO_CALC_IF cwa
+cBLANKS         spkkat3         DO_CALC_IF cwa
+cBLANKS         lket31          DO_CALC_IF cwa
+cBLANKS         lket11          DO_CALC_IF cwa
+cBLANKS         lket21          DO_CALC_IF cwa
+cBLANKS         spkkode7        DO_CALC_IF caktv
+cBLANKS         spkkode8        DO_CALC_IF caktv
+
+MAP(mblanks1)
+cBLANKS         spkkode10       DO_CALC_IF cplan1
+cBLANKS         spkkat2         DO_CALC_IF cplan
+cBLANKS         spkkat3         DO_CALC_IF cplan
+cBLANKS         lket21          DO_CALC_IF cplan
+cBLANKS         lket11          DO_CALC_IF cplan
+
+MAP(mupdtkm)
+tkmbuk1         tkmnobuk2       REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=spkkode2       DO_SKIP_IF cbertemu
+BEFORE_INPUT    cur_field=spkkode3       DO_SKIP_IF cbertemu
+BEFORE_INPUT    cur_field=spkkode3       DO_SKIP_IF cterhubung
+BEFORE_INPUT    cur_field=spkkode4       DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode5       DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode6       DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode7       DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode8       DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode        DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode10      DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkat2        DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkat3        DO_SKIP_IF cwa
+BEFORE_INPUT    cur_field=spkkode10      DO_SKIP_IF cplan1
+BEFORE_INPUT    cur_field=spkkat2        DO_SKIP_IF cplan
+BEFORE_INPUT    cur_field=spkkat3        DO_SKIP_IF cplan
+BEFORE_INPUT    cur_field=spkkode7       DO_SKIP_IF caktv
+BEFORE_INPUT    cur_field=spkkode8       DO_SKIP_IF caktv
+AFTER_INPUT     cur_field=spkkat10       DO_MAP SHOW mblanks
+AFTER_INPUT     cur_field=spkkode2       DO_MAP SHOW mblanks
+AFTER_INPUT     cur_field=spkkode3       DO_MAP SHOW mblanks
+AFTER_INPUT     cur_field=spkkode6       DO_MAP SHOW mblanks
+AFTER_INPUT     cur_field=spkkode        DO_MAP SHOW mblanks1
+
+AFTER_INPUT	cur_field=spkkode10	DO_MAP SHOW
+		IF cbknminggu4		mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.TidakBolehMinggu4
+
+
+MAP(mupdspka1)
+cBUKTIKUNJ         spkfoto        DO_CALC
+g_fotodate1        spktglft2      REPLACE
+g_fotolat1         spklat3        REPLACE
+g_fotolon1         spklon3        REPLACE
+
+MAP(mupdspka1x)
+cBUKTIAKTV         spkfoto5       DO_CALC
+g_fotodate1        spktglft3      REPLACE
+g_fotolat1         spklat4        REPLACE
+g_fotolon1         spklon4        REPLACE
+
+DBCALCS(dupdspka1)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx   spkprm
+        DBC_MAP         mupdspka1
+
+DBCALCS(dupdspka1x)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx   spkprm
+        DBC_MAP         mupdspka1x
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD  spknobuk spkfoto
+SFL_UPLFLD2 spknobuk spkfoto5
+SFL_UPLFLD_DBCALCS  dupdspka1
+SFL_UPLFLD2_DBCALCS  dupdspka1x
+SFL_UPL_DIRFLD	tkmcab
+SFL_COND        cFU_AGEN
+SFL_TARGET	spkdatbuktyp   lFU_AGEN tkmnobuk
+SFL_MAP
+tkmnobuk        spknobuk        REPLACE
+lFU_AGEN        spkdata         REPLACE
+
+CALCS()
+cupdtransfu	 tkmsts=="OPEN" && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS" || g_grpnam=="IT") && djoinspkFuAgen==0
+cupdtransfua	 tkmsts=="OPEN" && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS" || g_grpnam=="IT") && djoinspkFuAgen==1
+
+SPCALCS(sptmptrans)
+	DO_LIB		ap_dbclc(DNAME dupdtkm, DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkm);
+
+POSTING(tmptrans)
+	PST_ADDCMD sptmptrans
+	PST_UPDCMD sptmptrans
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cupdtransfu
+	PMT_UPDALL_COND cupdtransfua
+	PMT_DEL_COND    c0

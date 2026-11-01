@@ -1,0 +1,62 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.AccGmSupp                                                              |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               !                   |
+|       !t.TglLoc     : ___________                          !                   |
+|       !t.Ket        : ____________________________________ !                   |
+|       !t.AccGmSup   : ______ ___________ _________________ !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        NOCHANGE                INPUTRI 1
+tldtglfak        PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 2
+tldket          NOCHANGE SCROLL          INPUTRI 3
+
+tldbl           NOCHANGE                INPUTRI 4
+tldlok2         ALLCAPS SCROLL          INPUTRI 5
+laccgmsup       PROTECT SCROLL          INPUTRI 6
+
+DEFAULTS(tmptranst) 
+tldbl           DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+t.Validate tldlok2 VALIDATE psikodidx mpsie
+t.Mandatory tldket MANDATORY
+
+MAP(mpsie)
+psikode		tldlok2		REPLACE
+psinama         laccgmsup       REPLACE
+
+MAP(mnip5)
+g_usrkode	tldlok2		REPLACE
+
+CALCS()
+cgmsupp		g_grpnam=="SUPPORT" || (ldiv_sdm=="IVARO" && djointbdDiv2==1 && g_usrkode==ltbdlv2) || g_usrkode=="1802178"
+ctbh1ww		tldjml3 + 1
+
+MAP(mtanda2)
+ctbh1ww		tldjml3		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldbl  	DO_MAP SHOW mnip5
+AFTER_INPUT	cur_field=tldlok2	DO_MAP SHOW 
+		IF cgmsupp mdum
+		ELSE HKCURSOR STAY 
+		HKMSG t.AndaBknGmSupp        
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW mtanda2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldbukbrgoto    hrmnobuk gv_CLSD lDISPOSISI21
+
+SFL_MAP
+hrmnobuk        tldnobuk        REPLACE
+gv_CLSD         tldsts          REPLACE
+lDISPOSISI21    tldbrg          REPLACE
+

@@ -1,0 +1,62 @@
+LOCAL
+PGM_FIELDS
+
+lposarsip	STRING		5
+lDTARSIP	STRING		11
+
+/*----------JOIN--------*/
+
+MAP(mdocarsip)
+docsts  lposarsip    REPLACE
+
+DBCALCS(djoindocarsip)
+DBC_COMMAND     JOIN
+DBC_TARGET      docdatbukidx lDTARSIP ppmnobuk
+DBC_MAP         mdocarsip
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||i.NoFak        : _________________ ||
+||t.Tgl          : _________         ||
+||t.TglKrm       : _________         ||
+||t.Posisi       : ____              ||
+||t.LokJual      : _________         ||
+||t.CabKrm       : _________         ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ppmnobuk         NOCHANGE SCROLL            INPUTRI         1
+   ppmtglfak        PROTECT {DD-MM-YY}         INPUTRI         2
+   ppmtglbyrakh     PROTECT {DD-MM-YY}         INPUTRI         3
+   lposarsip        NOCHANGE SCROLL            INPUTRI         4
+   ppmcabpos        NOCHANGE SCROLL            INPUTRI         5
+   ppmcabinduk      NOCHANGE SCROLL            INPUTRI         6
+   
+
+DEFAULTS(tmptranst)
+lDTARSIP	INIT		DTARSIP
+
+
+CALCS()
+cdjoindocarsip0		djoindocarsip==0
+cdjoindocarsip1		djoindocarsip==1
+cblanksarsip		BLANKS
+carsip			ppmscr == "614" && ( lposarsip == BLANKS || lposarsip == "10" || lposarsip == "11" || lposarsip == "12" || lposarsip == "13" )
+
+EDITS(tmptranst)
+e.Validate ppmnobuk  VALIDATE ppmbukidx mppmarsip 0
+
+MAP(mppmarsip)
+ppmnobuk        ppmnobuk        REPLACE
+cblanksarsip	lposarsip	DO_CALC_IF cdjoindocarsip0
+lposarsip	lposarsip	REPLACE_IF cdjoindocarsip1
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT carsip
+SFL_TARGET ppmdtcpostgl gv_dtpiu cabkode
+

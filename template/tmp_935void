@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.Void                                ||
+|\--------------------------------------/|
+|/--------------------------------------\|
+||i.NipInput      ____________________  ||
+||t.Nama          ____________________  ||
+||t.Ket           ____________________  ||
+||t.DiubahTgl     ____________________  ||
+||                      ______________  ||
+||spasi                                 ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr1         PROTECT                         INPUTRI 1
+lnamainput      PROTECT                         INPUTRI 2
+sviket          TEXTAREA                        INPUTRI 3
+svitgl1         NONE {DD-MM-YYYY} NOLIMIT       INPUTRI 4
+lenter          NOCHANGE                        INPUTRI 5
+
+DEFAULTS(tmptranst)
+svistr1         INIT            {g_usrkode}
+lnamainput      INIT            BLANKS
+lenter          INIT            ENTER
+
+MAP(mpsivoid)
+psinama         lnamainput      REPLACE
+
+EDITS(tmptranst)
+e.Validate      svistr1         VALIDATE psikodidx mpsivoid 0
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET	
+svidatbuktyp    lVOID935 tlmnobuk lVOID935
+
+SFL_MAP
+lVOID935        svidata
+tlmnobuk        svinobuk
+lVOID935        svitype
+tlmnoasal       svikode
+
+MAP(mupdtlmvoid)
+gv_VOID         tlmsts          REPLACE
+
+MAP(mupdabkvoid)
+gv_CLSD         abksts          REPLACE
+
+SPCALCS(spvoid)
+DO_LIB  ap_dbclc(DNAME dupdtlmvoid,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmvoid);
+DO_LIB  ap_dbclc(DNAME dupdabkvoid,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkvoid);
+
+POSTING(tmptrans)
+PST_ADDCMD      spvoid

@@ -1,0 +1,77 @@
+LOCAL
+PGM_FIELDS
+lKATRO		STRING		11
+lnminputkatro	STRING		21
+
+IMAGE(tmptranst)
+/-----------------------------------------\
+| t.NoFaktur : ___________________        |
+| t.Ltv      : __.__                      |
+| t.Garap    : _________                  |
+| t.NipInput : _________ ________________ |
+| t.TglInput : _________                  |
+| t.Enter    : _________                  |
+\-----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode		ALLCAPS SCROLL		INPUTRI 1
+svidf1		NUMERIC			INPUTRI 2
+svistr1		ALLCAPS SCROLL		INPUTRI 3
+svistr2		PROTECT			INPUTRI 4
+lnminputkatro	PROTECT			INPUTRI 5
+svitgl1		PROTECT NOLIMIT {DD-MM-YYYY} INPUTRI 6
+lenter		ALLCAPS			INPUTRI 7
+
+DEFAULTS(tmptranst)
+svistr1		DFALT_LIST		GARAP
+svistr2		INIT			{g_usrkode}
+svitgl1		INIT			{g_tgltrn}
+lKATRO		INIT			KATRO
+
+EDITS(tmptranst)
+e.Validate	svistr2		VALIDATE psmkodidx mpsmkatro
+
+MAP(mpsmkatro)
+psmnama		lnminputkatro	REPLACE
+
+
+DBCALCS(djoinamtkatro)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	amtdatotoidx lKATRO svikode
+
+CALCS()
+cTDKGARAP	"TDKGARAP"
+cREQDIV		"REQ DIVISI"
+cjoinamtkatro	djoinamtkatro == 1
+cbolehinputkatro	g_grpnam == "B.M4WMPSV" || g_grpnam == "B.M4WDVH" || g_grpnam == "RI"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp	lKATRO	btmnobuk lKATRO
+
+SFL_MAP
+lKATRO		svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lKATRO		svitype		REPLACE
+
+
+MAP(mupdamtkatro)
+cTDKGARAP	amtket		DO_CALC
+cREQDIV		amtstr2		DO_CALC
+svidf1		amtdf1		REPLACE
+
+SPCALCS(sptranskatro)
+DO_LIB_IF cjoinamtkatro ap_dbclc(DNAME dupdamtkatro,DCOMMAND UPDATE,DTARGET amtdatotoidx lKATRO svikode,DMAP mupdamtkatro);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptranskatro
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cbolehinputkatro
+	PMT_UPDALL_COND c0
+	PMT_DEL_COND	c0
+

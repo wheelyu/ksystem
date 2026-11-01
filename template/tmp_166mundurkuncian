@@ -1,0 +1,124 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/----t.Mundurkuncian-------------------\|
+|| t.PendMaxInputKuncian2       	||
+|| spasi		       	     	||
+|| t.Jab       : _____________       	||
+|| t.Pilihan   : _____________       	||
+|| t.Tanggal   : _____________       	|| 
+|| t.Nip       : _____________       	||
+|| t.Alasan    : ___________________ 	||
+|| t.TglKunci  : _____________	     	||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+lpsijabatan     PROTECT         INPUTRI 1
+akttype         NOCHANGE        INPUTRI 2
+aktcrttgl       PROTECT NOLIMIT {DD-MM-YY}      INPUTRI         3
+aktkode2        NOCHANGE        INPUTRI 4
+aktket          TEXTAREA        INPUTRI 5
+akttgl          ALLCAPS {DD-MM-YY}      INPUTRI         6
+
+DEFAULTS(tmptranst)
+akttype         DFALT_SCAN      BLANKS
+                                MUNDUR_KUNCIAN
+
+aktcrttgl       INIT_ADD        {g_tgltrn}
+aktkode2        INIT_ADD        {g_usrkode}
+
+
+MAP(mtbdtmp)
+tbdrekbrg               lhrmkodeapr   REPLACE
+cAPRHMC_SPVCRM          lhrmkodeapr   DO_CALC_IF caprhmcspvcrm
+cAPRM4W_4CMOBM          lhrmkodeapr   DO_CALC_IF caprm4w4cmobm
+capr_beda               lhrmkodeapr   DO_CALC_IF cgruplogin_beda
+
+CALCS()
+ctgl1x          g_tgltrn + 3
+ctgl1y          g_tgltrn + 30
+ctglakhbl	DO_LIB ap_akhbl(g_tgltrn,&ltglakhbl);
+cmax3hari	((dbscanaktmundur!=0 || dbscanaktmundur==0) && ((lhismundur<2 && akttgl <= g_tgltrn +3) || lhismundur>=2) && hrmket1!="PENGKINIAN_PENDIDIKAN" && hrmket1!="PENGKINIAN_DATAKK") ||
+		(hrmket1=="PENGKINIAN_PENDIDIKAN" || hrmket1=="PENGKINIAN_DATAKK")
+cmax2hari	((dbscanaktkuncian!=0 || dbscanaktkuncian==0) && lmundurkunci<1 && hrmket1=="FOTO_SDM" && akttgl <= g_tgltrn +2) || hrmket1!="FOTO_SDM" 
+cmax30hari	((dbscanaktmundur!=0 || dbscanaktmundur==0) && ((lhismundur>=2 && akttgl <= g_tgltrn +30) || lhismundur<2) && hrmket1!="PENGKINIAN_PENDIDIKAN" && hrmket1!="PENGKINIAN_DATAKK") ||
+		(hrmket1=="PENGKINIAN_PENDIDIKAN" || hrmket1=="PENGKINIAN_DATAKK")
+/*cmax1hari	((dbscanaktkuncian!=0 || dbscanaktkuncian==0) && 
+		((lmundurkunci<1 && akttgl <= g_tgltrn +1) || 
+		 (akttgl <= g_tgltrn + 7 && (g_grpnam=="HRDSPV" || g_grpnam=="RI" || g_grpnam=="HRDER" || g_grpnam=="CMBNSPV" || g_grpnam=="CMBNHEAD"))) && hrmket1=="PENGKINIAN_PENDIDIKAN") ||
+		(hrmket1!="PENGKINIAN_PENDIDIKAN")*/
+cmaxakhbln	((dbscanaktkuncian!=0 || dbscanaktkuncian==0) && 
+		((lmundurkunci<1 && akttgl > g_tgltrn && akttgl <= g_tgltrn + 1) || 
+		 (akttgl > g_tgltrn && akttgl <= g_tgltrn + 1 && (g_grpnam=="HRDSPV" || g_grpnam=="RI" || g_grpnam=="HRDER" || g_grpnam=="CMBNSPV" || g_grpnam=="CMBNHEAD"))) && (hrmket1=="PENGKINIAN_PENDIDIKAN" || hrmket1=="PENGKINIAN_DATAKK")) ||
+		(hrmket1!="PENGKINIAN_PENDIDIKAN" && hrmket1!="PENGKINIAN_DATAKK")
+cblm2		(dbscanaktmundur!=0 || dbscanaktmundur==0) && lhismundur<2 && hrmket1!="PENGKINIAN_PENDIDIKAN" && hrmket1!="PENGKINIAN_DATAKK"
+csdh2		(dbscanaktmundur!=0 || dbscanaktmundur==0) && lhismundur>=2 && hrmket1!="PENGKINIAN_PENDIDIKAN" && hrmket1!="PENGKINIAN_DATAKK"
+
+MAP(mtgl1)
+ctgl1x          akttgl          DO_CALC_IF cblm2
+ctgl1y          akttgl          DO_CALC_IF csdh2
+ctglakhbl	ltglakhbl	DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=aktket                DO_MAP SHOW mtgl1
+AFTER_INPUT     cur_field=akttgl                DO_MAP SHOW
+                IF cmax2hari mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max2hari
+
+AFTER_INPUT     cur_field=akttgl                DO_MAP SHOW
+                IF cmax3hari mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max3hari
+
+AFTER_INPUT     cur_field=akttgl                DO_MAP SHOW
+                IF cmaxakhbln mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MaxMundur1Hari
+
+AFTER_INPUT     cur_field=akttgl                DO_MAP SHOW
+                IF cmax30hari mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max30hari
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF cmax2hari mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max2hari
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF cmax3hari mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max3hari
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF cmax30hari mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Max30hari
+
+AFTER_INPUT     cur_keybd=EN			DO_MAP SHOW
+                IF cmaxakhbln mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MaxMundur1Hari
+
+EDITS(tmptranst)
+e.Mandatory akttype MANDATORY
+e.Mandatory aktket MANDATORY
+e.Mandatory akttgl MANDATORY
+e.ValidateJab   lpsijabatan VALIDATE tbddatkodidx mtbdtmp  {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+
+        aktkodtypidx    hrmnobuk   hrmdata
+
+SFL_MAP
+hrmnobuk        aktkode         REPLACE
+hrmdata         aktdata         REPLACE
+hrmnobuk        aktnobuk        REPLACE
+hrmnobuk        aktbrg          REPLACE
+

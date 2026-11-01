@@ -1,0 +1,156 @@
+LOCAL 
+PGM_FIELDS
+lINPG                  STRING     5
+l11                    INT2       2 
+lnipadhx		STRING	21
+lnipbmx2		STRING	21
+lM4W			STRING	21
+lADH			STRING	21
+lBM 	 		STRING	21
+lthbls			STRING	21
+lftodok                 STRING  21
+l3hari			DATE	4
+
+DBCALCS(djoinsvicekqa)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   lCEKQA btmnobuk 
+
+MAP(mjoinsgmadh)
+sgmstr5         lnipadhx         REPLACE
+
+DBCALCS(djoinsgmadh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lM4W lADH lthbls btmcab btmcab
+        DBC_MAP         mjoinsgmadh
+
+MAP(mjoinsgmbm)
+sgmstr5         lnipbmx2        REPLACE
+
+DBCALCS(djoinsgmbm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lM4W lBM lthbls btmcab btmcab
+        DBC_MAP         mjoinsgmbm
+
+
+IMAGE(tmptranst) 
+/---------t----------------------------------------------------------------------t-----------------\
+| i.No    |                                                                      | i.Yt            |
+\---------.----------------------------------------------------------------------.-----------------/
+
+
+IMAGE(tmptrans)
+|_________|______________________________________________________________________| _____           |
+
+    
+FIELD(tmptrans)
+tbtnourt		PROTECT SCROLL			INPUTRI 1
+tbtket			PROTECT SCROLL			INPUTRI 2
+tbtkat			NOCHANGE			INPUTRI 3
+
+CALCS()
+ctdkksng                tbtnourt == 35 
+ctdksaja                tbtnourt == 51 || tbtnourt == 52
+cbkntdksaja             tbtnourt != 51 && tbtnourt != 52
+c3harix                 g_tgltrn + 3                        
+cisi2                   tbtnourt != 35  
+cthbls			THBLS(g_tgltrn)
+
+DEFAULT(tmptrans)
+IF cisi2 tbtkat		DFALT_LIST			OK TIDAK
+IF ctdkksng tbtkat	DFALT_LIST			TIDAK OK
+IF ctdksaja  tbtkat	DFALT_LIST			TIDAK OK
+lINPG			INIT				INPG
+lCEKBLOKIR              INIT                            CEKBLOKIR
+l11                     INIT                            11
+lM4W			INIT				M4W
+lADH			INIT				ADH
+lBM  			INIT				BM 
+lftodok                 INIT                            FOTODOKP
+lthbls			INIT				{cthbls}
+
+CALCS()
+cbtdcekqa0		djoinsvicekqa == 0
+caddpendok		(tbtnourt==8 || tbtnourt==27 || tbtnourt==29 || tbtnourt==30 || tbtnourt==34 || tbtnourt==35 || tbtnourt==49 || tbtnourt==50 || tbtnourt==51 || tbtnourt == 52) && tbtkat=="TIDAK"
+cUPLPENDOK		"UPLPENDOK"
+cketuplpendok		"UPL PENDOK " + STRIP(tbtkode)
+c7058d	                "705"
+caddabkpendok		(tbtnourt==8 || tbtnourt==27 || tbtnourt==29 || tbtnourt==30 || tbtnourt==34 || tbtnourt==35 || tbtnourt==50 || tbtnourt==51 || tbtnourt==52) && tbtkat=="TIDAK" && 
+			djoinsgmadh==1 && lnipadhx!=BLANKS
+
+caddabkpendok2		(tbtnourt==8 || tbtnourt==27 || tbtnourt==29 || tbtnourt==30 || tbtnourt==34 || tbtnourt==35 || tbtnourt==50 || tbtnourt==51 || tbtnourt==52) && tbtkat=="TIDAK" && 
+			djoinsgmbm==1 && lnipbmx2!=BLANKS
+
+SUBFILE(tmptrans)
+SFL_LINES(20)       
+SFL_APP_TYPE
+SFL_COND	cbtdcekqa0
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	tbtdaturtidx   gv_dttemplate lTMPPENCAIRAN21 lCEKLISQA21 lCEKLISQA21 btmdvs
+
+
+MAP(maddsvicekqa)
+lCEKQA		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+tbtkode			svitype			REPLACE
+tbtnourt		svinourt		REPLACE
+tbtket			sviket			REPLACE
+tbtkat			svistr1			REPLACE
+g_usrkode		svistr2			REPLACE
+
+MAP(maddpendok)
+lPDOK		tkddata		REPLACE
+lPDOK		tkdsts		REPLACE
+btmnobuk	tkdnobuk	REPLACE
+tbtnourt	tkdnourt	REPLACE
+tbtket		tkdket		REPLACE
+tbtkode		tkdjenis	REPLACE
+btmcab		tkdnoll   	REPLACE
+
+MAP(mmapmapcekqa)
+cBLANKS		l3hari		DO_CALC
+c3harix		l3hari		DO_CALC
+
+MAP(maddabkpendok)
+btmnobuk	abknobuk	REPLACE
+lkunciabsenx     abkdata         REPLACE
+lnipadhx         abkkym          REPLACE
+gt_RINP         abksts          REPLACE_IF ctdksaja 
+gv_OPEN         abksts          REPLACE_IF cbkntdksaja 
+l3hari 		abktgl		REPLACE_IF ctdksaja
+cketuplpendok   abkkym2         DO_CALC
+c7058d          abkscr          DO_CALC
+cUPLPENDOK	abktype		DO_CALC
+tbtkode		abknoll		REPLACE
+
+
+MAP(maddabkpendok2)
+btmnobuk        abknobuk        REPLACE
+lkunciabsenx    abkdata         REPLACE
+lnipbmx2        abkkym          REPLACE
+gt_RINP         abksts          REPLACE_IF ctdksaja
+gv_OPEN         abksts          REPLACE_IF cbkntdksaja
+l3hari          abktgl          REPLACE_IF ctdksaja
+cketuplpendok   abkkym2         DO_CALC
+c7058d          abkscr          DO_CALC
+cUPLPENDOK      abktype         DO_CALC
+tbtkode         abknoll         REPLACE
+
+
+SPCALCS(spdetailbtdcekqa)
+	DO_LIB		ap_dbclc(DNAME daddsvicekqa,DCOMMAND ADD,DFILE svi,DMAP maddsvicekqa);
+	DO_LIB		ap_dbclc(DNAME dmapmapcekqa,DCOMMAND MAPMAP,DMAP mmapmapcekqa);               
+	DO_LIB_IF caddpendok ap_dbclc(DNAME daddpendok,DCOMMAND ADD,DFILE tkd,DMAP maddpendok);
+	DO_LIB_IF caddabkpendok ap_dbclc(DNAME daddabkpendok,DCOMMAND ADD,DFILE abk,DMAP maddabkpendok);
+	DO_LIB_IF caddabkpendok2 ap_dbclc(DNAME daddabkpendok2,DCOMMAND ADD,DFILE abk,DMAP maddabkpendok2);
+
+POSTING(tmptrans)
+  PST_COMMAND 	spdetailbtdcekqa
+
+CALCS()
+ccekbtd11	0
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  ccekbtd11
+  PMT_DEL_COND  ccekbtd11

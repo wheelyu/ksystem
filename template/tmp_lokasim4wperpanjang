@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------\
+|/-------------------------------------------------------------------\|
+||                t.PerpanjangLokasi                                 ||
+|\-------------------------------------------------------------------/|
+|/---------------------------------------\ /-------s.UPLOAD----------\|
+||t.NoBuk          :___ _________________! !                         !|
+||t.IDLokasi       :_____________________! !                         !|
+||t.NamaLokasi     :_____________________! !                         !|
+||t.NamaPemilik    :_____________________! !                         !|
+||t.user           :________ ___________ ! !                         !|
+||t.StsCetakPKS    :____                 ! !                         !|
+||t.StsUploadPKS   :____                 ! !                         !|
+|\---------------------------------------/ \-------------------------/|
+\---------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketnourt	NOCHANGE		INPUTRI	1
+ketkode 	PROTECT			INPUTRI	1
+ketnobuk	PROTECT			INPUTRI 2
+tlmket		PROTECT			INPUTRI 3
+tlmplg		PROTECT			INPUTRI	4
+ketnama		PROTECT			INPUTRI	5
+kettgl1		PROTECT {DD-MM-YYYY}	INPUTRI	5
+ketyt1 		PROTECT 		INPUTRI	5
+ketyt2		PROTECT			INPUTRI 6
+
+DEFAULTS(tmptranst)
+ketnama		INIT       		{g_usrkode}
+ketnama		INIT_UPDATE		{g_usrkode}
+kettgl1		INIT			{g_tgltrn}
+kettgl1		INIT_UPDATE		{g_tgltrn}
+
+CALCS()
+cjoinpanjanglok0	djoinpanjanglok==0 && g_curcmd==1
+cjoinpanjanglok1	djoinpanjanglok==1 && g_curcmd==1
+cPERPANJANG		"PERPANJANG"
+ckode2			"P" + STRIP(tlmnobuk) + STRIP(lurutstr)
+cudahcetak		ketyt1=="OK"
+curut			lurut+1
+
+MAP(mpanjanglok)
+c1		ketnourt	DO_CALC_IF cjoinpanjanglok0
+curut		ketnourt	DO_CALC_IF cjoinpanjanglok1
+ketnourt        lurutstr        REPLACE_IF ctambah
+ckode2          ketkode         DO_CALC_IF ctambah
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mpanjanglok
+
+MAP(muploadperpanjang)
+cOK	ketyt2		DO_CALC_IF cudahcetak
+
+DBCALCS(duploadperpanjang)
+	DCOMMAND	UPDATE
+	DTARGET		ketprmidx ketprm
+	DMAP		muploadperpanjang 
+
+MAP(mupdmaster2)
+gv_INPG		tlmsts		REPLACE
+cPERPANJANG	tlmdvs		DO_CALC
+
+SPCALCS(spanjanglok)
+	DO_LIB ap_dbclc(DNAME dupdmaster2,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdmaster2);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spanjanglok
+	PST_UPDCMD	spanjanglok
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPL_DIRFLD	tlmdata
+SFL_UPLFLD ketkode
+SFL_UPLFLD_DBCALCS duploadperpanjang
+SFL_TARGET
+ketbukurtidx lPANJANGLOK tlmnobuk 
+SFL_MAP
+lPANJANGLOK	ketdata		REPLACE
+tlmnobuk	ketnobuk	REPLACE
+lPANJANGLOK	kettype		REPLACE
+

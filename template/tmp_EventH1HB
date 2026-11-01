@@ -1,0 +1,132 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.bukti foto sdm 
+  tanggal pameran : ______________________ 
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| i.NIP       :_______________________ ||
+|| i.NAMA      :_______________________ ||
+
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTlk : ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+CALCS()
+cdetailstatusopentld2			tldtydis == gv_OPEN
+cdetailstatustacctld2   		tldtydis == gv_TACC
+cdetaildalamreviewtld  tldtydis == gv_IN && tldlok == g_usrkode
+cisitacctld                tldbisnis != "TACC"
+cadakawilacctld            lnipkawilhmc != "" && tldbisnis == "ACC"
+cadaamacctld               lnipamhmc != "" && tldbisnis == "ACC"
+camkawilacctld		(lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode) && tldbisnis == "ACC"
+camkawiltacctld (lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode) && tldbisnis == "TACC"
+chidetomdetailokTLD	tldlok != g_usrkode || ((tldlok == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tldtydis == gv_IN || tldtydis == gv_ok))
+cinfokosongtld tldbrdoto == ""
+cdetailfotosdmok           tldlok == g_usrkode && (tldtydis == gv_OPEN || tldtydis == gv_TACC) && tldtotdism == 1 && tldnourt > 0
+FIELD(tmptranst)
+tldtglfak       PROTECT {DD-MM-YYYY}    INPUTRI	1
+tldlok             PROTECT                     INPUTRI 1
+lnamasdm            PROTECT                     INPUTRI 1
+tldbrdoto          PROTECT UNSEEN_IF cinfokosongtld  COLOR=credtld,cyellowtld,cgreentld  INPUTRI 3
+tldtydis          PROTECT                                 INPUTRI 3
+tldbisnis          ALLCAPS SCROLL                         INPUTRI 3       
+tldkirim         PROTECT                                 INPUTRI 3
+tldket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhp1sdmok   TOMBOL UNSEEN_IF chidetomdetailokTLD     INPUTRI 40
+
+DEFAULTS(tmptranst)
+lnamasdm        INIT                    ""
+ltmpisidf1      INIT                    {tmpisidf1}
+labktype	    INIT                    {ctipedetail}
+ltkdnoll 	    INIT                    {ctipedetail}
+tldtydis           INIT                    {gv_OPEN}
+tldbisnis          DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory             tldlok         MANDATORY
+t.KryNull               tldlok         VALIDATE psikodidx msdmfixbertugas spsiinpgcab
+e.Mandatory             tldket          MANDATORY_IF camkawiltacctld
+HOOKS(tmptranst)
+
+BEFORE_INPUT    cur_field=tldbisnis        DO_SKIP_IF cpicnsodansdm
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cpicnsodansdm
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cisitacctld
+
+CLICKED         cur_field=ltombolhp1sdmok  DO_SPCALCS spdetailokhp1sdm
+
+MAP(mtambahuploadfotokegiatansdm)
+ctambahuploadsdm		tldnourt	DO_CALC
+gv_int1                 tldtotdism       REPLACE
+g_tgltrn                tldtgl2          REPLACE
+
+DBCALCS(dtambahuploadfotokegiatansdm)
+	  DBC_COMMAND	UPDATE
+	  DBC_TARGET	tldprmidx	tldprm
+	  DBC_MAP       mtambahuploadfotokegiatansdm
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPLFLD tlmnobuk tldlok
+SFL_UPLFLD_DBCALCS dtambahuploadfotokegiatansdm
+SFL_UPL_COND cuploadfotosdmok
+SFL_UPL_COND_MSG       
+                    IF cuploadfotosdmok Hanya SDM yang Bisa Upload
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tldplgbrgidx lEVNH1DHM1 gv_INPG tlmnobuk
+SFL_MAP
+        lEVNH1DHM1 tlddata
+        gv_INPG tldsts
+        tlmnobuk tldplg
+
+
+MAP(mupddetailreqtld2)
+gv_IN         	tldtydis          REPLACE_IF cdetailstatusopentld2
+gv_IN			tldtydis			REPLACE_IF cdetailstatustacctld2
+
+MAP(mupddetailtld)
+gv_int1         tldtotdism       REPLACE
+
+MAP(mupdkondisiupdatetld)
+gv_int1         tldjml3       REPLACE
+
+MAP(mupdinfodetailhp1sdm)
+lDALAMPROSESREVIEW      tldbrdoto          REPLACE_IF cdetaildalamreviewtld
+
+SPCALCS(spubahdetailtld)
+        DO_LIB_IF cpicnso               ap_dbclc(DNAME dmupddetailtld, DCOMMAND MAPMAP, DMAP mupddetailtld);
+	    DO_LIB_IF cpicnso               ap_dbclc(DNAME dmupkondisiupdatedetailtld, DCOMMAND MAPMAP, DMAP mupdkondisiupdatetld);
+        DO_LIB_IF camkawiltacctld      ap_dbclc(DNAME dmhitungpanjangalasantacctaccdetailtld, DCOMMAND MAPMAP, DMAP mhitungpanjangalasantacc);
+        DO_LIB_IF camkawiltacctld      ap_dbclc(DNAME dupddetailtacchmtld, DCOMMAND MAPMAP, DMAP mupddetailtacctld);
+        DO_LIB_IF cadakawilacctld          ap_dbclc(DNAME dupdabkclsdkawilaccdetailtld,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdkawil);
+        DO_LIB_IF cadaamacctld             ap_dbclc(DNAME dupdabkclsdamaccdetailtld,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdam);
+	    DO_LIB_IF camkawilacctld       ap_dbclc(DNAME dupdabkclsdpicnsoaccdetailtld,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdpicnso);
+        DO_LIB_IF camkawilacctld       ap_dbclc(DNAME dupddetailokaccdetailtld, DCOMMAND MAPMAP, DMAP mupddetailoktld);
+        DO_LIB_IF camkawilacctld       ap_dbclc(DNAME dupdtlmmasteraccdetailtld,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmaster);
+
+SPCALCS(spdetailokhp1sdm)
+        DO_LIB_IF cdetailfotosdmok         ap_dbclc(DNAME dupddetailreqhp1sdm,DCOMMAND UPDATE,DTARGET tldprmidx tldprm, DMAP mupddetailreqtld2);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhp1sdm, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhp1sdm, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhp1sdm,DCOMMAND UPDATE,DTARGET tldprmidx tldprm, DMAP mupdinfodetailhp1sdm);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailtld

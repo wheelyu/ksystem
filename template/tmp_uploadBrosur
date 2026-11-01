@@ -1,0 +1,67 @@
+LOCAL
+PGM_FIELDS
+luploadok	STRING	31
+lKUNCIABSEN	STRING	11
+
+DBCALCS(djoinabk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lKUNCIABSEN tlmnobuk
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------\
+ /-------DOCUPLOAD-------------------------------------------------\
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ |                                                                 |
+ \-----------------------------------------------------------------/
+   ___________
+\-------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+luploadok	TOMBOL		INPUTRI	1
+
+DEFAULTS(tmptranst)
+lKUNCIABSEN	INIT		KUNCIABSEN
+luploadok	INIT		UPLOAD_OK
+
+CALCS()
+cdjoinabk	tlmtotal == 1 && djoinabk == 1
+csdhupl		tlmtotal == 1
+
+MAP(mupdtlm)
+gv_CLSD		tlmsts		REPLACE
+
+MAP(mupdabk)
+gv_CLSD		abksts		REPLACE	
+
+SPCALCS(sptmptrans)
+	DO_LIB_IF csdhupl	ap_dbclc(DNAME dupdtlm,DCOMMAND UPDATE,DTARGET tlmotoidx tlmoto,DMAP mupdtlm);
+	DO_LIB_IF cdjoinabk	ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadok	DO_SPCALCS sptmptrans
+
+MAP(mupdtlma)
+gv_int1		tlmtotal	REPLACE
+DBCALCS(dupdtlma)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tlmprmidx tlmprm
+	DBC_MAP		mupdtlma
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbrosur
+SFL_UPL_DIRFLD tlmkode
+SFL_DOCUPLFLD	tlmkode tlmthbl
+SFL_DOCUPLFLD_DBCALCS	dupdtlma
+SFL_TARGET
+tlmbukidx	tlmnobuk	

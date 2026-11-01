@@ -1,0 +1,129 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+ /-------------------------------------------\
+  t.TglInput    : ________________________
+  t.NipInput    : _________ ______________
+  t.NipAtsn1    : _________ ______________
+  t.NipAtsn2    : _________ ______________
+                : ___
+ \-------------------------------------------/
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1         PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI         1
+psdstr1      	PROTECT                    	INPUTRI         2
+lnamainp      	PROTECT                    	INPUTRI         3
+psdstr2      	ALLCAPS           		INPUTRI         3
+psdstr4     	PROTECT				INPUTRI		4
+psdstr3      	ALLCAPS                   	INPUTRI         5
+psdstr5         PROTECT                         INPUTRI         6
+ldum                    NOCHANGE                INPUTRI 20
+
+DEFAULT(tmptranst)
+psdstr1         INIT_ADD        {g_usrkode}
+psdtgl1         INIT_ADD        {g_tgltrn}
+
+MAP(mjointbdlvusr)
+tbdrekbk         lusrlv        REPLACE
+
+DBCALCS(djointbdlvusr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal gv_jabatan btmiklan
+        DBC_MAP         mjointbdlvusr
+
+MAP(mjointbdlvats1)
+tbdrekbk         lats1lv        REPLACE
+
+DBCALCS(djointbdlvats1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal gv_jabatan ljabats1
+        DBC_MAP         mjointbdlvats1
+
+MAP(mjointbdlvats2)
+tbdrekbk         lats2lv        REPLACE
+
+DBCALCS(djointbdlvats2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal gv_jabatan ljabats2
+        DBC_MAP         mjointbdlvats2
+
+MAP(mjointbdulvusr)
+tbddf1         lulvusr        REPLACE
+
+DBCALCS(djointbdulvusr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal lURUTANLVLJAB lusrlv
+        DBC_MAP         mjointbdulvusr
+
+MAP(mjointbdulvats1)
+tbddf1         lulvats1        REPLACE
+
+DBCALCS(djointbdulvats1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal lURUTANLVLJAB lats1lv
+        DBC_MAP         mjointbdulvats1
+
+MAP(mjointbdulvats2)
+tbddf1         lulvats2        REPLACE
+
+DBCALCS(djointbdulvats2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal lURUTANLVLJAB lats2lv
+        DBC_MAP         mjointbdulvats2
+
+CALCS()
+cadausrinp	djointbdlvusr==1 && djointbdulvusr==1
+cadaat1		djointbdlvats1==1 && djointbdulvats1==1
+cadaat2		djointbdlvats2==1 && djointbdulvats2==1
+clvlebihat1	lulvats1>lulvusr
+clvlebihat2	lulvats2>lulvusr
+
+EDITS(tmptranst)
+e.Mandatory     psdstr2  MANDATORY
+e.Mandatory     psdstr3  MANDATORY
+e.ValidateNip   psdstr1  VALIDATE psikodidx mpsix 0
+e.ValidateNip   psdstr2  VALIDATE psikodidx mpsix1 0
+e.ValidateNip   psdstr3  VALIDATE psikodidx mpsix2 0
+
+MAP(mpsix)
+psinama           lnamainp      REPLACE
+psijabatan        ljabusr       REPLACE
+lusrlv		  lusrlv	REPLACE_IF cadausrinp
+lulvusr		  lulvusr	REPLACE_IF cadausrinp
+
+MAP(mpsix1)
+psinama           psdstr4       REPLACE
+psijabatan	  ljabats1	REPLACE
+lats1lv           lats1lv       REPLACE_IF cadaat1
+lulvats1          lulvats1      REPLACE_IF cadaat1
+
+MAP(mpsix2)
+psinama           psdstr5       REPLACE
+psijabatan	  ljabats2	REPLACE
+lats2lv           lats2lv       REPLACE_IF cadaat2
+lulvats2	  lulvats2	REPLACE_IF cadaat2	
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+                IF clvlebihat1  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.LvAtsLbhSdm
+
+AFTER_INPUT     cur_field=psdstr3       DO_MAP SHOW
+                IF clvlebihat2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.LvAtsLbhSdm
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+psddatpsmkod   lATSN12 btmnobuk
+
+SFL_MAP
+lATSN12         psddata         REPLACE
+btmnobuk        psdpsmkode      REPLACE
+btmnobuk        psdkode         REPLACE
+

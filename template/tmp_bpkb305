@@ -1,0 +1,150 @@
+LOCAL
+PGM_FIELDS
+
+lbpkb01         STRING  2
+lbpkb02         STRING  2
+lbpkb03         STRING  11
+lb01            STRING  2
+ln1		INT2	2
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||spasi                           ||
+||i.Kat      : __________________ ||
+||i.NoPol    : __________________ ||
+||i.Rangka   : __________________ ||
+||i.Mesin    : __________________ ||
+||i.Mtr      : __________________ ||
+||i.NoBuk    : __________________ ||
+||i.Tahun    : __________________ ||
+||i.JtpStnk  : __________________ ||
+||t.JtpNotis : __________________ ||
+||t.Atsnm    : __________________ ||
+||i.Alamat   : __________________ ||
+||t.NoBPKB   : ___ _ ____________ ||
+||	       __________________ ||
+||t.LoksiBP  : _________________  ||
+||spasi                           ||
+||             __________________ ||
+||             __________________ ||
+|\--------------------------------/|
+|   t.UplBpkb                      |
+|/---UPLOAD-----------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+jmnjnsikat  PROTECT           INPUTRI       1
+jmnnopol    NOCHANGE          INPUTRI       2
+jmnspec2    PROTECT           INPUTRI       3
+jmnspec1    PROTECT           INPUTRI       4
+btmtypmtr   PROTECT           INPUTRI       5
+jmnno       NOCHANGE          INPUTRI       5
+jmnth       PROTECT           INPUTRI       7
+jmntgl      PROTECT           INPUTRI       8
+jmntglklr   PROTECT           INPUTRI       9
+jmnnama     PROTECT           INPUTRI       10
+jmnalamat   PROTECT           INPUTRI       11
+lbpkb01     ALLCAPS ALPHANUMERIC NOSPACE    INPUTRI 12
+lbpkb02     PROTECT                         INPUTRI 12
+lbpkb03     ALLCAPS ALPHANUMERIC NOSPACE    INPUTRI 12
+jmnkota     PROTECT           INPUTRI       12
+jmnlok      ALLCAPS           INPUTRI       13
+lenter      NOCHANGE          INPUTRI       14
+btmstsbrg   PROTECT	      INPUTRI	    15
+
+DEFAULTS(tmptranst)
+lenter          INIT            ENTER
+ln1		INIT		1
+lbpkb02		INIT		"-"
+lblanks		INIT		BLANKS
+
+
+CALCS()
+/*ctransbg1       btmstr2_1 == "TRANSFER" && bkmsts != "CLSD"*/
+cplus1          jmnhrg1 + 1
+cuplbpkb	tmpkode == "UPLBPKB"
+cbpkb01         DO_LIB ap_amstr(lbpkb01,ln1,ln1,&lb01);
+ckonangkabpkb   lb01 != "0" && lb01 != "1" && lb01 != "2" && lb01 != "3" && lb01 != "4" && lb01 != "5" && lb01 != "6" && lb01 != "7" && lb01 != "8" && lb01 != "9"
+cgabnobpkb      STRIP(lbpkb01) + STRIP(lbpkb03)
+cwjbisinobpkb1	((lbpkb01 != BLANKS && jmnkota == BLANKS) || jmnkota != BLANKS)
+cwjbisinobpkb2	((lbpkb03 != BLANKS && jmnkota == BLANKS) || jmnkota != BLANKS)
+
+
+EDITS(tmptranst)
+e.MandatoryNoBPKB       jmnkota MANDATORY_IF cnotgad
+e.MandatoryLokasiBPKB   jmnlok  MANDATORY_IF cnotgad
+e.ValidateLokasi        jmnlok VALIDATE_IF clokbpkbs tbddtmstidx mtbdlok stbdcab {Pgv_dttabel} {Pgv_barang} {Pgv_lokjmn} {Pljm} {Plgedung}
+e.Validatebukutamu      jmnno VALIDATE btmbukidx mbtm2 0
+
+MAP(mupdfotobpkb)
+cplus1           jmnhrg1       DO_CALC
+cOK              btmstsbrg     DO_CALC
+
+DBCALCS(dupdfotobpkb)
+DCOMMAND        UPDATE
+DTARGET         jmnnoidx bkmnobs
+DMAP            mupdfotobpkb
+
+MAP(mcekbpkb)
+cbpkb01         lb01            DO_CALC
+
+MAP(misigabnobpkb)
+cgabnobpkb      jmnkota         DO_CALC
+
+MAP(mresetnobpkb)
+lblanks         lbpkb01         REPLACE
+lblanks         lbpkb03         REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=lbpkb01     DO_SKIP_IF cloksmg
+BEFORE_INPUT    cur_field=lbpkb03     DO_SKIP_IF cloksmg
+BEFORE_INPUT    cur_field=jmnlok      DO_SKIP_IF cloksmg
+
+AFTER_INPUT     cur_field=lbpkb01    DO_MAP SHOW mcekbpkb
+
+AFTER_INPUT     cur_field=lbpkb01    DO_MAP SHOW
+                IF cwjbisinobpkb1   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Kosong
+
+AFTER_INPUT     cur_field=lbpkb01    DO_MAP SHOW
+                IF ckonangkabpkb  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Input Karakter Angka
+
+AFTER_INPUT     cur_field=lbpkb03    DO_MAP SHOW
+                IF cwjbisinobpkb2   mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Boleh Kosong
+
+AFTER_INPUT     cur_field=lbpkb03    DO_MAP SHOW misigabnobpkb
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW mresetnobpkb
+
+
+AFTER_INPUT     cur_keybd=EN          DO_MAP SHOW
+                IF ctransit mdum
+                ELSE HKCURSOR STAY
+                HKMSG Lokasi BPKB Tidak Boleh TRANSIT / DOZ ,Cek 3210
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cuplbpkb
+SFL_UPLFLD jmnno
+SFL_UPL_DIRFLD bkmtgl3
+SFL_UPLFLD_DBCALCS dupdfotobpkb
+/*SFL_UPL_COND    ctransbg1*/
+SFL_UPL_DELCOND c0a
+SFL_TARGET jmnnoidx   bkmnobs
+

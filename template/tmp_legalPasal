@@ -1,0 +1,66 @@
+IMAGE(tmptranst)
+/-------t--------------t------------------t-------------t-------------\
+|t.NoUrt|   t.typepsl  | t.modus          |  t.kodePsl  | t.isiPasal  |
+\-------.--------------.------------------.-------------.-------------/
+
+IMAGE(tmptrans)
+|______|______________|__________________|_____________|_____________|
+
+FIELDS(tmptrans)
+svinourt        NOCHANGE                INPUTRI 1
+svitype         NONE                    INPUTRI 2
+svistr1		NONE			INPUTRI	3
+svikode         NONE                    INPUTRI 4
+sviket          PROTECT                 INPUTRI 5
+
+DEFAULTS(tmptrans)
+svitype         DFALT_SCAN_BLANKS       DEBITUR "DEBITUR"
+                                        PMGUNIT "PMGUNIT"
+EDITS(tmptrans)
+e.Validate      svikode          VALIDATE_IF cInt        tbddtmstidx     mtbd stbd1  {Pgv_dttabel}  {PlLEGAL} {PlPASAL21} {Plinternal} {Plinternal}
+e.Validate      svikode          VALIDATE_IF cExt        tbddtmstidx     mtbd stbd1  {Pgv_dttabel}  {PlLEGAL} {PlPASAL21} {Plexternal} {Plexternal}
+e.Validate	svistr1		 VALIDATE tkddatbukll   mtbd4 stkd2   {PlMODUS}   {Pspknobuk} 
+
+MAP(mtbd)
+tbdkode         svikode         REPLACE
+tbdket          sviket          REPLACE
+tbdkettype      svinama         REPLACE
+
+MAP(mtbd4)
+tkdnoll		svistr1		REPLACE
+
+MAP(mlastnourt)
+svinourt        lnoakh          REPLACE
+
+DBCALCS(djoin2svi)
+        DBC_COMMAND     JOIN_LAST_SFL
+        /*DBC_TARGET      svidatbuktyp    lPASAL  spknobuk*/
+        DBC_TARGET      svidatbuktyp    lPASAL  spknobuk
+        DBC_MAP         mlastnourt
+
+CALCS()
+c1      	1
+ctoturt         lnoakh + 1
+cdjoinsvi       djoin2svi==1
+cdjoinsvi2      djoin2svi==0
+
+MAP(mnotldurt)
+c1         	svinourt        DO_CALC_IF cdjoinsvi2
+ctoturt         svinourt        DO_CALC_IF cdjoinsvi
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=svikode        DO_MAP  SHOW    mnotldurt
+
+SUBFILE(tmptrans)
+SFL_LINES(7)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD   svinourt
+SFL_SHOW_NEXT
+SFL_TARGET
+svidatbuktyp    lPASAL  spknobuk
+SFL_MAP
+lPASAL          svidata
+spknobuk        svinobuk
+tbdkode         svikode
+
+

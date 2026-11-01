@@ -1,0 +1,92 @@
+IMAGE(tmptranst)
+/-------------------t----------------t-------------t-----------------t--------------\
+|i.Kode             |i.KeteranganCms |t.Potongan   | i.KeteranganCmo |t.Potongan    |
+\-------------------.----------------.-------------.-----------------.--------------/
+
+IMAGE(tmptrans)
+|___________________|________________|_____________|_________________|______________|
+
+FIELD(tmptrans)
+nhdkode                 PROTECT SCROLL                  INPUTRI 1
+nhdnobbm                ALLCAPS SCROLL                  INPUTRI 2
+nhdhrg1                 PROTECT SCROLL                  INPUTRI 3
+nhdkode2                PROTECT SCROLL                  INPUTRI 4
+nhdhrg2                 PROTECT SCROLL                  INPUTRI 5
+
+DEFAULTS(tmptrans)
+lU                      INIT            "U"
+l1000                   INIT            1000
+
+EDITS(tmptrans)
+e.Validate nhdkode	VALIDATE tbtdattypkod  mtbt1 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Pgv_mekanik}  {Slsegmen}
+e.validate nhdnobbm     VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dttabel} {Pgv_estimasi21} {Pgv_ganti21}
+e.Mandatory     nhdnobbm  MANDATORY
+
+MAP(mtbd2)
+tbdkode		nhdnobbm	REPLACE
+
+MAP(mtbt1)
+tbttbdkode      nhdkode REPLACE
+tbttot		nhdhrg1		REPLACE_IF cganti1
+tbtdf1		nhdhrg1         REPLACE_IF cganti2
+tbtdf2		nhdhrg1         REPLACE_IF cganti3
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+CALCS()
+clewat2         nhdnobbm!="TIDAKADA" && nhdnobbm!="ADA"
+
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF clewat2 mdum
+                ELSE HKCURSOR nhdnobbm
+                HKMSG t.PilihanTdkBoleh
+
+
+SUBFILE(tmptrans)
+SFL_LINES(10)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET_GTE
+nhdbukidx   btmnobuk gv_estimasi l17	{btmnobuk} {gv_estimasi} {l33}
+
+
+/*----------------------------Perhitungan Ulang-------------------------------*/
+CALCS()
+cblmada1                /*djoinmts==0 && */ lcairbaru!=lnhmcairpinj
+cscannhd11		dbscannhdEst!=0 || dbscannhdEst==0
+ccairMtr1a              btmtdjadi - nhmpladis - ltotalestimasi
+chrgtaksir1             nhmhrgpasar - ltotalestimasi - nhmbbnhpp
+
+MAP(mmapmap1)
+nhdkode         lnhdkode                REPLACE 
+nhdhrg1         ltotalestimasi2         REPLACE
+ltotalestimasi	ltotalestimasi		REPLACE_IF cscannhd11
+ctotalestimasi  ltotalestimasi          DO_CALC
+ckosong         lnhmcairpinj            DO_CALC
+ckosong         ltotpokbaru             DO_CALC
+ckosong         langsuranbaru           DO_CALC
+ckosong         lcairbaru               DO_CALC
+nhmcairpinj              lnhmcairpinj    REPLACE
+ctotalpokok             ltotpokbaru     DO_CALC
+
+MAP(mupdnhm11)
+ckosong                 nhmestimasi     DO_CALC
+ltotalestimasi          nhmestimasi     REPLACE
+ctotalpokok            nhmtotpok       DO_CALC_IF cblmada1
+ctotalpokok            nhmtotpok       DO_CALC /*_IF cada*/
+chrgtaksir1             nhmhrgpsr       DO_CALC
+ccairMtr1a              nhmcairpinj     DO_CALC
+
+MAP(mmapdeb1)
+btmnobuk		nhdnobuk	REPLACE
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapmap1,DCOMMAND MAPMAP,DMAP mmapmap1);
+DO_LIB ap_dbclc(DNAME dupdnhm11,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mupdnhm11);
+DO_LIB  ap_bulat(nhmbsrang,l500,&lhasilbulat,lU);
+DO_LIB ap_dbclc(DNAME dmapdeb1,DCOMMAND MAPMAP,DMAP mmapdeb1);
+
+POSTING(tmptrans)
+PST_UPDCMD sptmptrans
+

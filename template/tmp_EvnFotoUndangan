@@ -1,0 +1,108 @@
+LOCAL
+PGM_FIELDS
+luploadok6      STRING          11
+
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload      : _____ ________
+  t.AlsanTlk	: ______________
+  t.TglFt       : ______________
+  t.lat    	: _________.____    
+  t.long   	: _________.____    
+       ___________________
+  t.FotoYgUplHrsDrKmr
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans) 
+
+FIELD(tmptranst)
+tkdjwbstr1      PROTECT         INPUTRI 1
+tkdjwbstr2	NOCHANGE	INPUTRI 1
+tkdrek		TEXTAREA	INPUTRI 3
+tkdtgl2         PROTECT         INPUTRI 4
+tkdjml          PROTECT NUMERIC INPUTRI 5
+tkdjml2         PROTECT NUMERIC INPUTRI 6
+
+luploadok6      TOMBOL          INPUTRI 8
+
+DEFAULTS(tmptranst)
+tkdjwbstr2      DFALT_SCAN_BLANK ACC    " "
+				 TACC	" "
+luploadok6      INIT            UPLOAD_OK
+g_fotolat1      INIT		BLANKS
+g_fotolon1      INIT		BLANKS
+
+EDITS(tmptranst)
+e.Mandatory	tkdrek		MANDATORY_IF ctacc
+
+CALCS()
+cY5             "OK"
+clonglat2	tkdjml != BLANKS && tkdjml2 != BLANKS
+cm2wbtl3	tlmdvs == "M2W" && tlmgrup == "BTL" && tlmsts != "OPEN" && tlmsts2 != BLANKS 
+cKetmso2         "APR FOTO UNDANGAN"
+cnobukmso2       tlmnobuk+ "-" + FLD_TO_STRING(l6)
+caprmso2         djoinabkmso == 1 && tkdjwbstr2 == "ACC"
+
+MAP(mupdtkd6)
+g_fotodate1     tldtglfak       REPLACE
+g_usrkode       tkdsisstr       REPLACE
+g_fotolat1      tkdjml          REPLACE
+g_fotolon1      tkdjml2         REPLACE
+g_fotodate1     tkdtgl2         REPLACE
+cY5             tkdjwbstr1      DO_CALC_IF clonglat2
+lnipam          tkdnoll         REPLACE_IF cjoinsgmam1
+lnipmso         tkdnoll         REPLACE_IF cjoinmsohead1
+
+MAP(mupdtlm6)
+l6              tlmperdisd      REPLACE
+
+MAP(mmapmapacara2)
+DEBUG cnobukmso2       lnobukmso      DO_CALC
+
+MAP(maddabkmso2)
+gv_INPG         abksts          REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lnipam          abkkym          REPLACE_IF cjoinsgmam1
+lnipmso         abkkym          REPLACE_IF cjoinmsohead1
+cnobukmso2      abknobuk        DO_CALC
+g_tgltrn        abktgl          REPLACE
+cKetmso2        abkkym2         DO_CALC
+c821            abkscr          DO_CALC
+
+SPCALCS(sptmptrans)
+        DO_LIB  ap_dbclc(DNAME dmapmapacara2, DCOMMAND MAPMAP, DMAP mmapmapacara2);
+        DO_LIB_IF caprmso2  ap_dbclc(DNAME dupdabkmso2, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN lnobukmso,DMAP mupdabk);
+                                                                            
+SPCALCS(supdtkd6)
+        DO_LIB  ap_dbclc(DNAME dmapmapacara2x, DCOMMAND MAPMAP, DMAP mmapmapacara2);
+        DO_LIB  ap_dbclc(DNAME dupdtkd6, DCOMMAND UPDATE, DTARGET tkdotoidx tkdoto, DMAP mupdtkd6);
+        DO_LIB  ap_dbclc(DNAME dupdtlm6, DCOMMAND UPDATE, DTARGET tlmbukidx tkdnobuk, DMAP mupdtlm6);
+        DO_LIB_IF cm2wbtlxabk ap_dbclc(DNAME daddabkmso2, DCOMMAND ADD, DFILE abk, DMAP maddabkmso2);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdrek     DO_SKIP_IF cacc
+CLICKED         cur_field=luploadok6    DO_SPCALCS supdtkd6
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD tlmnobuk tkdjenis
+SFL_COND	cm2wbtl3
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        tkdbukidx       tlmnobuk lfoto l6  
+
+POSTING(tmptrans)
+PST_UPDCMD      sptmptrans

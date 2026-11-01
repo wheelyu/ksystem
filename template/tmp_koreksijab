@@ -1,0 +1,79 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.Div        : ___________                          !                   |
+|       !t.Bisnis     : __________                           !                   |
+|       !t.Dep        : ______________                       !                   |
+|       !t.Jab        : __________________                   !                   |
+|       !t.Jnssdm     : ____________                         !                   |
+|       !t.AccHrd     : __________________                   !                   |
+|       !t.Ket        : _____________________________________!                   |
+|       !               ____                                 !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldtglfak       PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+tldkat          ALLCAPS                 INPUTRI 7 /*Divisi*/
+tldsat          ALLCAPS                 INPUTRI 8 /*Bisnis*/
+tldplg          ALLCAPS                 INPUTRI 9 /*Dep*/
+tldnoll         ALLCAPS                 INPUTRI 10/*Jabatan*/
+tldukrwrn       ALLCAPS SCROLL          INPUTRI 11/*Jns sdm*/
+tldsisbrg       NOCHANGE SCROLL         INPUTRI 12/*acc tacc*/
+tldket          TEXTAREA ALLCAPS           INPUTRI 13
+lenter          NOCHANGE                INPUTRI 14
+
+DEFAULTS(tmptranst)
+tldsisbrg       DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.Mandatory     tldkat   MANDATORY
+e.Mandatory     tldsat  MANDATORY
+e.Mandatory     tldplg  MANDATORY
+e.Mandatory     tldnoll    MANDATORY
+e.Mandatory     tldukrwrn  MANDATORY
+e.Mandatory     tldsisbrg      MANDATORY
+e.Mandatory     tldket      MANDATORY
+t.ValidateBis   tldsat  VALIDATE tbtdattypkod mtbtBis2x stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlBISDEPT} {Ptldkat}
+t.ValidateTbdDiv tldkat VALIDATE tbddatkodidx mtbddiv7x stbd {Pgv_dttabel} {Pgv_personal} {PlDIVISI21}
+t.ValidateTbdDep tldplg VALIDATE tbddtmstidx mtbddep7x stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_DEP} {Ptldkat} {Pgv_DEP}
+t.ValidateTbdJab tldnoll VALIDATE tbddtmstidx mtbdjab7x stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} {Ptldkat} {Ptldplg}
+t.Validate      tldukrwrn VALIDATE tbtdattypkod mtbtJns7x stbtjenis {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pgv_jabatan} {Ptldnoll}
+
+MAP(mtbddiv7x)
+tbdkode         tldkat                  REPLACE
+
+MAP(mtbddep7x)
+tbdkode         tldplg                   REPLACE
+
+MAP(mtbtBis2x)
+tbtkode         tldsat          REPLACE
+
+MAP(mtbdjab7x)
+tbdkode         tldnoll         REPLACE
+tbdrekbk        lubahjns        REPLACE
+tbdusrcrt       lgruplogin      REPLACE
+
+MAP(mtbtJns7x)
+tbtkode         tldukrwrn       REPLACE
+
+
+CALCS()
+cbolehubhjab		djoinblhubhjab==1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cbolehubhjab
+SFL_TARGET
+        tldbukbrgoto btmplg gv_CLSD lUBHJAB
+
+SFL_MAP
+lUBHJAB                 tldbrg          REPLACE
+btmplg                  tldnobuk        REPLACE
+btmnobuk                tldlok2         REPLACE
+gv_CLSD                 tldsts          REPLACE
+g_tgltrn                tldtglfak       REPLACE
+

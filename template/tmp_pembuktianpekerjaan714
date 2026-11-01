@@ -1,0 +1,177 @@
+LOCAL
+PGM_FIELDS
+lpembuktian             STRING  61
+lverifikasi             STRING  61
+ltbtdf1                 DFLOAT  8
+ltbtdf2                 DFLOAT  8
+lYpek                   STRING  3
+lTpek                   STRING  3
+lsifatbukti             STRING  61
+lkirimanCMO             STRING  61
+lsifatPengisian         STRING  61
+lisiket		        INT2	2
+lSviKodeCMS             STRING  21
+lSviKodeTbt             STRING  21
+lSviGabTbt              STRING  21
+lftmtype4pek            STRING  11
+lCMS714                 STRING  11
+l11                     INT2    2
+
+MAP(mjoinftmcapacitypek)
+ftmtype4        lftmtype4pek    REPLACE
+
+DBCALCS(djoinftmcapacitypek)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ftmstsfakidx   gv_INPG btmnobuk l2DATASURVEY l2PEMOHON
+        DBC_MAP         mjoinftmcapacitypek
+
+CALCS()
+cCMStidaksetujupkjCMO           djoinftmcapacitypek == 1 && lftmtype4pek == "T" /* pembuktian pekerjaan kondisional CMS tidak setuju CMO, maka tampilkan subfile detail CMS */
+cbukanfreetext                  ltbtdf1 == 1
+cfreetext                       ltbtdf1 == 2 && ltbtdf2 == 1
+cmandatory                      ltbtdf2 == 1
+ctbtdf2BLANKS                   ltbtdf2 == 0
+csviperlubukti                  btmsts=="714" && (lpembuktian!=BLANKS && lverifikasi!=BLANKS && ltbtdf1!=BLANKS && ltbtdf2!=BLANKS)
+csvitidakada                    lpembuktian==BLANKS && lverifikasi==BLANKS && ltbtdf1==BLANKS && ltbtdf2==BLANKS
+cadakirimanCMO                  svidf8!=BLANKS && svidf6!=BLANKS && svidf7!=BLANKS && svitgl2!=BLANKS
+cMANDATORY                      "MANDATORY"
+cTAMBAHAN                       "NON MANDATORY"
+cADAKRMAN                       "ADA UPLOAD"
+cTIDAKADAKRMAN                  "TIDAK ADA UPLOAD"
+cWAJIBVER                       "WAJIB VERIFIKASI"
+cOPSIONVER                      "PERLU MINTA TAMBAHAN?"
+cisiket                         DO_LIB ap_strln(sviket2,&lisiket);
+cminisiket	                (lkirimanCMO!="TIDAK ADA UPLOAD" && lisiket >=20 && ltbtdf1 == 2) || (ltbtdf1 == 1) || (ltbtdf1 == 2 && lkirimanCMO=="TIDAK ADA UPLOAD")
+cGabFTCMS                       STRIP(svikode) + STRIP(lCMS714)
+cY                              "Y"
+cAmStrKode                      DO_LIB ap_amstr(svikode, l11, l1, &lSviKodeTbt);
+cGabStrKode                     STRIP(lkategoribuktisvikode) + STRIP(lSviKodeTbt)
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|_ _
+||t.InfoPengerjaanPembuktian      ||
+||t.SifatBukti: __________________||
+||t.Pengisian : __________________||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.Pembuktian: __________________||
+!!t.Verifikasi: __________________||
+!!t.Keterangan: __________________||
+!!t.JawabCMS  : _________________ ||
+||spasi                           ||
+||_____                           ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+IMAGE(transheader)
+/----------------------------------------\
+|Lengkapi oleh CMS, karena CMS punya     |
+|jawaban sendiri terhadap                |
+|pekerjaan debitur                       |
+\----------------------------------------/
+
+FIELD(tmptranst)
+g_usrkode         PROTECT UNSEEN      INPUTRI   1 /* validasi user kode, trigger kosong lokal */
+svikode           PROTECT UNSEEN      INPUTRI   1 /* kode foto bukti pekerjaan */
+
+/* Informasi dari pembuktian yang dikirim */
+lsifatbukti       PROTECT             INPUTRI   2 /* sifat bukti dr cmo mandatory / tambahan */
+lsifatPengisian   PROTECT             INPUTRI   2 /* sifat pengisian harus diisi apa tidak */
+
+/* Field Konten */
+lpembuktian       TEXTAREA 3 PROTECT  INPUTRI   3 /* pembuktian pekerjaan dari masteran */
+lverifikasi       TEXTAREA 3 PROTECT  INPUTRI   4 /* verifikasi dari masteran */
+sviket2           TEXTAREA 3          INPUTRI   5 /* keterangan pembuktian pekerjaan, tergantung cbukanfreetext */
+svistr33          NOCHANGE            INPUTRI   6 /* jawaban CMS, tergantung cmandatory */
+lenter            NOCHANGE            INPUTRI   7 /* trigger enter */
+
+DEFAULTS(tmptranst)
+svistr33	DFALT_SCAN	BLANKS
+                                Y "Y"
+                                T "T"
+lYpek           INIT            Y
+lTpek           INIT            T
+lCMS714         INIT            "CMS714"
+l11             INIT            11
+
+EDITS(tmptranst)
+t.Validate        g_usrkode           VALIDATE  usrkodidx mvalusrpek /* trigger kosong lokal */
+e.ValidateBukti   svikode             VALIDATE  tbtdattypkod mtbttbdkode 0 {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {Plkategoripembuktiansvi} {PlSviGabTbt} /* get pembuktian dan verifikasi */
+e.IsiKeterangan   sviket2             MANDATORY_IF cfreetext
+e.IsiJawabCMS     svistr33            MANDATORY_IF cmandatory
+
+MAP(mvalusrpek)
+cBLANKS         lpembuktian             DO_CALC
+cBLANKS         lverifikasi             DO_CALC
+cBLANKS         ltbtdf1                 DO_CALC
+cBLANKS         ltbtdf2                 DO_CALC
+cBLANKS         lsifatbukti             DO_CALC
+cBLANKS         lkirimanCMO             DO_CALC
+cBLANKS         lsifatPengisian         DO_CALC
+cGabFTCMS       lSviKodeCMS             DO_CALC
+cAmStrKode      lSviKodeTbt             DO_CALC
+cGabStrKode     lSviGabTbt              DO_CALC
+
+MAP(mtbttbdkode)
+tbtket          lpembuktian             REPLACE
+tbttbdket       lverifikasi             REPLACE
+tbtdf1          ltbtdf1                 REPLACE
+tbtdf2          ltbtdf2                 REPLACE
+cTAMBAHAN       lsifatbukti             DO_CALC
+cMANDATORY      lsifatbukti             DO_CALC_IF cmandatory
+cBLANKS         lsifatbukti             DO_CALC_IF ctbtdf2BLANKS
+cTIDAKADAKRMAN  lkirimanCMO             DO_CALC
+cADAKRMAN       lkirimanCMO             DO_CALC_IF cadakirimanCMO
+cBLANKS         lkirimanCMO             DO_CALC_IF csvitidakada
+cOPSIONVER      lsifatPengisian         DO_CALC
+cWAJIBVER       lsifatPengisian         DO_CALC_IF cmandatory
+cBLANKS         lsifatPengisian         DO_CALC_IF csvitidakada
+
+MAP(misiket)
+cisiket         lisiket                 DO_CALC
+
+MAP(mUpdSviUploadCMS)
+cY              svistr32        DO_CALC
+
+DBCALCS(dUpdSviUploadCMS)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx sviprm
+        DBC_MAP         mUpdSviUploadCMS
+
+SUBFILE(tmptrans)
+SFL_LINES(1) /* subfile hanya 1 baris */
+SFL_HEADER(transheader)
+SFL_TITLE(tmptranst)
+SFL_COND cCMStidaksetujupkjCMO /* jika CMS tidak setuju, maka tampilkan subfile */
+SFL_SELECT cOnlyBuktiPekerjaan /* only svitblkode PKJ */
+SFL_UPL_DIRFLD btmtgl /* tanggal upload */
+SFL_UPLFLD btmnobuk lSviKodeCMS
+SFL_UPLFLD_DBCALCS dUpdSviUploadCMS
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cbukanfreetext /* bukan free text, maka skip ke svistr33 */
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW misiket
+AFTER_INPUT     cur_field=sviket2 	DO_MAP SHOW
+                IF cminisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Min20Karakter
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND csviperlubukti /* harus diisi semua field dari masteran, baru bisa diupdate */
+  PMT_DEL_COND  c0

@@ -1,0 +1,112 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+| t.Ket      _____________________ |
+| t.Nobuk    _____________________ |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|| ______________________________ ||
+|/--------------------------------\|
+||t.StsUpl   ________________     ||
+||t.tglBntk  ________________     ||
+||t.TglFt    ________________     ||
+||t.lat    _____________.______   ||
+||t.long   _____________.______   ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.LongLatDeb                    ||
+||t.lat    _____________.______   ||
+||t.long   _____________.______   ||
+||t.Jar    _____________.___ t.M  ||
+||t.Hasil  ____________________   ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldket			PROTECT                 INPUTRI         1
+tldnobuk		PROTECT			INPUTRI		2
+lUplFoto                TOMBOL                  INPUTRI         2
+tldjasbrg		PROTECT			INPUTRI		3
+tldtglfak		PROTECT			INPUTRI		4
+tldtgl2			PROTECT			INPUTRI		5
+tldtmp2			PROTECT			INPUTRI 	7
+tldtmp1			PROTECT			INPUTRI		6
+
+tldperdis1		PROTECT			INPUTRI		8
+tldperdis2		PROTECT			INPUTRI		9
+tldperdis3		PROTECT			INPUTRI		10
+tldukrwrn		PROTECT			INPUTRI		11
+
+DEFAULTS(tmptranst)
+l2			INIT		2
+
+CALCS()
+cadafoto        (g_grpnam=="RI" || g_grpnam=="IT") || (g_fotolat1!=BLANKS && g_fotolon1!=BLANKS)
+cjarak          ljarak
+cadajarak       tldtmp2!=BLANKS && tldtmp1!=BLANKS && tldperdis1!=BLANKS && tldperdis2!=BLANKS
+cSESUAI         "SESUAI"
+cTDKSESUAI      "TIDAK SESUAI"
+cjaraksesuai    ((tldperdis3 <= 50) && tldtmp1!=0 && tldtmp2!=0 && tldperdis1!=0 && tldperdis2!=0)
+cjrktdksesuai   ((tldperdis3  > 50) && tldtmp1!=0 && tldtmp2!=0 && tldperdis1!=0 && tldperdis2!=0)
+
+MAP(mmapgps)
+g_fotodate1             tldtgl2         REPLACE
+g_fotolat1              tldtmp2         REPLACE
+g_fotolon1              tldtmp1         REPLACE
+
+llatgmap                tldperdis1      REPLACE_IF cjoinalmtgh
+llongmap                tldperdis2      REPLACE_IF cjoinalmtgh
+cOK                     tldjasbrg       DO_CALC_IF cadafoto
+
+MAP(mapjarak)
+cjarak  		ljarak          DO_CALC_IF cadajarak
+
+DBCALCS(dmapmapjarak)
+        DBC_COMMAND     MAPMAP
+        DBC_MAP         mapjarak
+
+MAP(mmapgps2)
+ljarak          tldperdis3      REPLACE_IF cadajarak
+cSESUAI         tldukrwrn       DO_CALC_IF cjaraksesuai
+cTDKSESUAI      tldukrwrn       DO_CALC_IF cjrktdksesuai
+
+SPCALCS(supdgps)
+        DO_LIB ap_dbclc(DNAME dmapgps,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mmapgps);
+        DO_LIB_IF cadajarak ap_dsGPS(tldtmp2,tldtmp1,tldperdis1,tldperdis2,&ljarak);
+        dmapmapjarak
+        DO_LIB ap_dbclc(DNAME dmapgps2,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mmapgps2);
+
+HOOKS(tmptranst)
+   CLICKED      cur_field=lUplFoto      DO_SPCALCS supdgps
+
+CALCS()
+chapustmptrans	g_usrkode==BLANKS || g_grpnam=="RI"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD   tldnobuk tldgrup
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND chapustmptrans
+SFL_UPL_CAMERAONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+tldbukurtidx tlmnobuk l2
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+
+

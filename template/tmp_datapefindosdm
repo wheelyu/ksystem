@@ -1,0 +1,153 @@
+LOCAL
+PGM_FIELDS
+ltanggallahir	    DATE	4
+
+ltldlok             DFLOAT      8
+ltldperdism	    DFLOAT  	8
+ltldtotdism	    DFLOAT  	8
+
+lplafon             DFLOAT      8
+ltlddata            STRING      11
+ltldplg             STRING      21
+lresikopef          STRING  	51
+
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/----------------------------------------------\|
+||t.buk       : ________________                ||
+||i.Tgl       : ___________                     ||
+||i.Ktp       : ________________                ||
+||i.Nama      : _________________________       ||
+||i.Tgllahir  : ___________                     ||
+||t.AdaData   : ______                          ||
+||t.IsiPefindo: ___                             ||
+||t.ScorePS   : _______   ________              ||
+|\----------------------------------------------/|
+|/----------------------------------------------\|
+||t.PrmIsian                                    ||
+||i.Resiko 		      : _______________ ||
+||t.JumlahNomTunggakan        : ____________    ||
+||t.MaksUsiaTunggakan         : ____________    ||
+||t.MaksUsiaTunggakan12Bulan  : ____________    ||
+||t.JumlahKreditur            : ____________    ||
+||t.JumlahPlafon              : ____________    ||
+||t.JumlahBakiDebet           : ____________    ||
+|\----------------------------------------------/|
+\------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnoll         PROTECT         INPUTRI         1
+tldtglfak	PROTECT {YYYY-MM-DD}	INPUTRI	1
+tldcab		PROTECT		INPUTRI		1
+ltldcab		PROTECT		INPUTRI		2
+ltanggallahir	PROTECT {YYYY-MM-DD}	INPUTRI	3
+tlddvs		NOCHANGE	INPUTRI		4
+tldnobbm	NOCHANGE	INPUTRI		5
+tldjml		PROTECT		INPUTRI		6
+
+lENTAR		NOCHANGE	INPUTRI		7
+
+lresikopef	PROTECT		INPUTRI		7
+
+
+tldjml2		PROTECT		INPUTRI		8  /* JumlahNomTunggakan */
+
+tldtmp1		PROTECT        INPUTRI          9  /* MaksUsiaTunggakan */
+
+tldtmp2		PROTECT         INPUTRI         10 /* MaksUsiaTunggakan12Bulan */
+
+tldjml3		PROTECT         INPUTRI         11 /* JumlahKreditur */
+
+
+tldtotdism     NUMERIC         INPUTRI         12 /* JumlahPlafon */
+tldperdism     NUMERIC         INPUTRI         13 /* JumlahBakiDebet */
+
+DEFAULT(tmptranst)
+tlddvs		DFALT_SCAN	BLANKS
+			ADA
+			TIDAK
+tldnobbm	DFALT_SCAN	BLANKS
+                        YA
+			TIDAK
+
+ltldlok             INIT_ADD  BLANKS
+ltldtotdism         INIT_ADD  BLANKS
+ltldperdism         INIT_ADD  BLANKS
+lplafon             INIT_ADD  BLANKS
+
+MAP(mjointld)
+tlddata         ltlddata        REPLACE
+tldplg          ltldplg         REPLACE
+
+DBCALCS(djointld)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldllbrgurt   tkmnobuk
+        DBC_MAP         mjointld
+
+DBCALCS(djointbdpefindo131)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal lBOLEHPEF131 g_usrkode
+
+CALCS()
+cktpkosong                      djointld==1 && ltlddata == "DATASURVEY" && ltldplg == " "
+
+
+EDITS(tmptranst)
+e.Validatektp	tldcab	        VALIDATE	psmktpidx   mpsmrekap 0
+e.Validatenobuk      tldnoll         VALIDATE_IF cktpkosong       tkmbukidx   mpsmrekap2 0
+                                                
+CALCS()
+cResikoSangatRendah     "Sangat Rendah"
+cResikoRendah           "Rendah"
+cResikoSedang           "Sedang"
+cResikoTinggi           "Tinggi"
+cResikoSangatTinggi     "Sangat Tinggi"
+cNEW                    "New"
+
+csrendah                tldjml>=690 && tldjml<=900
+crendah                 tldjml>=660 && tldjml<=689
+csedang                 tldjml>=630 && tldjml<=659
+ctinggi                 tldjml>=570 && tldjml<=629
+cstinggi                tldjml>=250 && tldjml<=569
+cnew                    tlddvs=="TIDAK" || tldjml>900
+                                                
+MAP(mpsmrekap)
+psmktp			tldcab			REPLACE
+psmnama			ltldcab			REPLACE
+psmtgllahir		ltanggallahir	        REPLACE
+tldlok                  ltldlok                 REPLACE
+tldlok2                 ltldperdism             REPLACE
+tldgrup2                ltldtotdism             REPLACE
+tldjml2                 lplafon                 REPLACE
+
+cResikoSangatRendah     lresikopef    DO_CALC_IF csrendah
+cResikoRendah           lresikopef    DO_CALC_IF crendah
+cResikoSedang           lresikopef    DO_CALC_IF csedang
+cResikoTinggi           lresikopef    DO_CALC_IF ctinggi
+cResikoSangatTinggi     lresikopef    DO_CALC_IF cstinggi
+cNEW                    lresikopef    DO_CALC_IF cnew
+
+MAP(mpsmrekap2)
+tldlok                  ltldlok                 REPLACE
+tldlok2                 ltldperdism             REPLACE
+tldgrup2                ltldtotdism             REPLACE
+tldjml2                 lplafon                 REPLACE
+
+CALCS()
+cbolehcek	djointbdpefindo131==1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cbolehcek
+SFL_TARGET
+	tldstskodbrg   gv_datasurvey gv_INPG psinoidll
+
+SFL_MAP
+psikode		tldnobuk	REPLACE
+gv_INPG		tldsts		REPLACE
+lDTPEFINDO21	tldbrg		REPLACE
+gv_datasurvey   tlddata         REPLACE
+/* tkmplg          tldcab          REPLACE */

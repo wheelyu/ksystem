@@ -1,0 +1,111 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------\
+ /-------s.UPLOAD------------------\
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ \---------------------------------/
+ /---------------------------------\
+ | i.Ket      : ______________ ____|
+ | t.TglFoto  : ______________     |
+ | t.Latitude : ________._____     |
+ | t.Longitude: ________._____     |
+ | t.Jam      : __.__              |
+ | t.LongLatDeb                    |
+ | t.lat      : ________._____     |
+ | t.long     : ________._____     |
+ | t.Jar      : ________._____ t.KM|
+ | _______________ ___________     |
+ |                                 |
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1                  NOCHANGE                INPUTRI         2
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         3
+svidf6                  PROTECT NUMERIC         INPUTRI         3
+svidf7                  PROTECT NUMERIC         INPUTRI         3
+svidf8                  PROTECT                 INPUTRI         4
+svidf4                  NOCHANGE                INPUTRI         4
+svidf5                  NOCHANGE                INPUTRI         5
+svidf2                  PROTECT NUMERIC         INPUTRI         6
+svinobuk                PROTECT SCROLL          INPUTRI         7
+luploadOK               TOMBOL                  INPUTRI         7
+
+CALCS()
+cadagps2        g_lat != "" && g_lon != ""
+cadajarak2      svidf6!=BLANKS && svidf7!=BLANKS && svidf4!=BLANKS && svidf5!=BLANKS
+cjarak2         ljarak/1000
+cYx             "Y"
+ckkspk          tmpkode == "FOTOKKSPK"
+ckkspk2         sviyt2 == "T"
+ckbax2          tkmjmltlk == 3
+
+EDITS(tmptranst)
+e.Validate svinobuk     VALIDATE tkmbukidx mtkm6 0
+
+MAP(mtkm6)
+tkmnobuk        svinobuk        REPLACE
+svidf8          ljam2           REPLACE
+
+
+DEFAULTS(tmptranst)
+lcount          INIT    {tmpnourt}
+
+MAP(mupdsvikkspk)
+cYx             sviyt1          DO_CALC
+g_lat		svidf6          REPLACE
+g_lon		svidf7          REPLACE
+lSYSTIME	svidf8          REPLACE
+g_tgltrn	svitgl2         REPLACE
+llat            svidf4          REPLACE
+llon            svidf5          REPLACE
+
+
+MAP(mapjarak2)
+cjarak2  ljarak          DO_CALC_IF cadajarak2
+
+DBCALCS(dmapmapjarak2)
+        DBC_COMMAND     MAPMAP
+        DBC_MAP         mapjarak2
+MAP(mmap6d22)
+ljarak          svidf2          REPLACE_IF cadajarak2
+
+MAP(mupdtldinfo6)
+c1              tldperdis4      DO_CALC_IF cadagps2
+
+SPCALCS(supdkk)
+        DO_LIB_IF cadagps2      ap_dbclc(DNAME dupdkkspk,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdsvikkspk);
+        DO_LIB_IF cadajarak2    ap_dsGPS(svidf6,svidf7,svidf4,svidf5,&ljarak);
+        dmapmapjarak2
+        DO_LIB          	ap_dbclc(DNAME dmap6d22, DCOMMAND UPDATE,DTARGET sviotoidx svioto, DMAP mmap6d22);
+        DO_LIB_IF ckbax2        ap_dbclc(DNAME dupdtld6, DCOMMAND UPDATE_RANGE, DTARGET  tldbukbrgoto svinobuk gv_OPEN lINFOALAMAT, DMAP mupdtldinfo6);
+HOOKS(tmptranst)
+   CLICKED      cur_field=luploadOK     DO_SPCALCS supdkk
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ckkspk
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND ckkspk2
+SFL_UPLFLD tkmnobuk svikode
+
+SFL_TARGET
+        svidatbuktyp   ldtspk tkmnobuk lfotospk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0

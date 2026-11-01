@@ -1,0 +1,366 @@
+LOCAL
+PGM_FIELDS
+ltldjasbrg	STRING		61
+ltldsisbrg	STRING		61
+ldscahass	STRING		11
+ltldtotdis	INT2  		2
+lamtjam_time	TIME		4
+ldum		INT2		2
+ljamnya		TIME		4
+lpanjangalasan	INT2		2
+ln1		INT2		2
+ld1             STRING          2
+
+MAP(mjointld)
+tldtotdis	ltldtotdis	REPLACE
+
+
+DBCALCS(djointld)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldstsbrgukr	tlmdata    gv_OPEN tlmnobuk ldahstlp
+	DBC_MAP    	mjointld
+
+MAP(mjoinamt)
+amtjam		lamtjam_time	REPLACE
+
+DBCALCS(djoinamt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	amtdatotoidx   ldscahass tlmnobuk
+	DBC_MAP		mjoinamt
+
+IMAGE(tmptranst)
+/---------------------------------------------------------\
+ /-------------------------------------------------------\
+  t.FollowUp1	: ______________                    _____         
+  t.Hasil       : ___  _____________________________
+  t.JawabWA     : ___  _____________________________
+  t.DafBookAhass: _________________
+  t.TglBook     : _________________
+  t.Alasan      : __________________________________
+                : ___________      
+                : ___________       
+ \-------------------------------------------------------/
+\---------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldlok 		NOCHANGE			INPUTRI	1                    
+tldnobuk	PROTECT QPROTECT UNSEEN 	INPUTRI 3             
+tldjasbrg	NOCHANGE			INPUTRI	4
+ltldjasbrg	PROTECT				INPUTRI 5
+tldsisbrg	NOCHANGE			INPUTRI	6
+ltldsisbrg	PROTECT				INPUTRI 7
+tldnoll		NOCHANGE			INPUTRI 8
+tldtglfak	ALLCAPS {DD-MM-YY} NOLIMIT	INPUTRI 9
+tldket 		TEXTAREA ALLCAPS 		INPUTRI 10
+lenter 		NOCHANGE			INPUTRI 11
+lamtjam_time 	PROTECT 			INPUTRI	12                    
+
+CALCS()
+cfu1		tlmjml2 == 1
+cfu2   		tlmjml2 == 2
+clewattlp	tldlok == "DESKCALL"
+clewatwa     	tldlok == "WA"      
+cbisatanya 	(tldlok == "DESKCALL" && tldjasbrg == "1") || (tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1")
+ctdktanya 	(tldlok == "DESKCALL" && tldjasbrg != "1") || (tldlok == "WA" && tldjasbrg != "1") || (tldlok == "WA" && tldjasbrg== "1" && tldsisbrg == "2")
+
+DEFAULTS(tmptranst)
+tlddata				INIT			DCAHASS 
+tldsts				INIT_ADD		OPEN     
+tldukrwrn			INIT_ADD		DAHSTLP	
+ldscahass			INIT			DSCAHASS 
+ljam            INIT                    SYSTIME
+IF cfu1		tldlok		DFALT_SCAN 		BLANKS	DESKCALL
+IF cfu2   	tldlok		DFALT_SCAN		BLANKS	WA  DESKCALL
+IF clewattlp	tldjasbrg	DFALT_SCAN_BLANKS	1 "TELEPON AKTIF DIANGKAT"
+							2 "TELEPON AKTIF TIDAK DIANGKAT"
+							3 "TELEPON TIDAK AKTIF"           
+							4 "TELEPON SALAH SAMBUNG"       
+IF clewatwa    	tldjasbrg	DFALT_SCAN_BLANKS	1 "TERKIRIM"                  
+							2 "TIDAK TERKIRIM"                  
+IF clewatwa    	tldsisbrg	DFALT_SCAN_BLANKS	1 "DIJAWAB"                   
+							2 "TIDAK DIJAWAB"
+IF cbisatanya 	tldnoll		DFALT_SCAN_BLANKS	MAU_SERVICE
+							TDK_SERVICE
+							SERVICE_AHASS_LAIN
+IF ctdktanya 	tldnoll		DFALT_SCAN_BLANKS	TDK_SERVICE
+ln1				INIT			1
+
+CALCS()
+cks1		tldjasbrg == BLANKS
+cks2		tldsisbrg == BLANKS
+cdjoinamt1	djoinamt == 1
+cdjoinamt0	djoinamt == 0
+cbisabooking	(tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1" && djoinamt == 1 && g_curcmd == 2) || 
+            	(tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "2" && djoinamt == 1 && g_curcmd == 2) || 
+		(tldlok == "WA" && tldjasbrg == "2") ||
+		(tldlok == "DESKCALL" && tldjasbrg == "1") ||
+		(tldlok == "DESKCALL" && (tldjasbrg == "3" || tldjasbrg == "4"))
+cisialasan	(tldlok == "DESKCALL" && tldjasbrg == "1" && (tldnoll == "TDK_SERVICE" || tldnoll == "SERVICE_AHASS_LAIN")) ||
+		(tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1" && (tldnoll == "TDK_SERVICE" || tldnoll == "SERVICE_AHASS_LAIN"))
+cisitanggal	tldlok == "DESKCALL" && tldjasbrg == "1" && tldnoll == "MAU_SERVICE"
+csetengahjam	tldlok == "WA" && tldjasbrg == "1" && djoinamt == 1
+/*csetengahjam1	tldlok == "DESKCALL" && tldjasbrg == "2" && djoinamt == 1 && g_curcmd == 1*/
+
+cdsk1	 	"TELEPON AKTIF DIANGKAT"
+cdsk2		"TELEPON AKTIF TIDAK DIANGKAT"
+cdsk3	 	"TELEPON TIDAK AKTIF"           
+cdsk4		"TELEPON SALAH SAMBUNG"       
+cwax1		"TERKIRIM"
+cwax2		"TIDAK TERKIRIM"
+cjwb1		"DIJAWAB"
+cjwb2		"TIDAK DIJAWAB"
+
+cdsk1a		tldlok == "DESKCALL" && tldjasbrg == "1"         
+cdsk2a		tldlok == "DESKCALL" && tldjasbrg == "2"              
+cdsk3a 		tldlok == "DESKCALL" && tldjasbrg == "3"                
+cdsk4a		tldlok == "DESKCALL" && tldjasbrg == "4"             
+cwa1a		tldlok == "WA" && tldjasbrg == "1"         
+cwa2a		tldlok == "WA" && tldjasbrg == "2"         
+cjwb1a		tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1"
+cjwb2a		tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "2"
+cbisagak	lamtjam_time + 30    
+ 
+EDITS(tmptranst)
+e.Mandatory	tldlok		MANDATORY
+e.Mandatory	tldjasbrg	MANDATORY
+e.Mandatory	tldsisbrg	MANDATORY_IF csetengahjam
+e.Mandatory	tldnoll		MANDATORY_IF cbisabooking
+e.Mandatory	tldket 		MANDATORY_IF cisialasan  
+e.Mandatory	tldtglfak	MANDATORY_IF cisitanggal
+e.Validate	tldnobuk	VALIDATE tlmbukidx mtlm
+e.Validate	tldnobuk	VALIDATE amtdatotoidx mamt {Pldscahass}
+
+MAP(mamt)
+amtbukoto	tldnobuk	REPLACE
+amtjam		lamtjam_time	REPLACE
+cbisagak	ljamnya		DO_CALC
+
+MAP(mtlm)
+tlmnobuk	tldnobuk	REPLACE
+cblanks		ltldjasbrg	DO_CALC_IF cks1     
+cblanks		ltldsisbrg	DO_CALC_IF cks2     
+cdsk1	 	ltldjasbrg	DO_CALC_IF cdsk1a
+cdsk2		ltldjasbrg      DO_CALC_IF cdsk2a
+cdsk3	 	ltldjasbrg      DO_CALC_IF cdsk3a
+cdsk4		ltldjasbrg      DO_CALC_IF cdsk4a
+cwax1		ltldjasbrg	DO_CALC_IF cwa1a
+cwax2		ltldjasbrg	DO_CALC_IF cwa2a
+cjwb1		ltldsisbrg	DO_CALC_IF cjwb1a
+cjwb2		ltldsisbrg	DO_CALC_IF cjwb2a
+
+CALCS()
+ckosongx	g_curcmd == 2 && ((tldlok == "WA" && tldjasbrg == "2") || (tldlok == "DESKCALL" && (tldjasbrg == "2" || tldjasbrg == "3" || tldjasbrg == "4")))
+ckosongy	tldnoll == "TDK_SERVICE" || tldnoll == "SERVICE_AHASS_LAIN"
+ctidakinput1	(tldlok == "DESKCALL") || (tldlok == "WA" && djoinamt == 0 && g_curcmd == 1) || (tldlok == "WA" && tldjasbrg == "2" && djoinamt == 1 && g_curcmd == 2) ||
+		(tldlok == "DESKCALL" && djoinamt == 0 && g_curcmd == 1) || (tldlok == "DESKCALL" && tldjasbrg == "2" && djoinamt == 1 && g_curcmd == 1)
+ctidakinput2	(tldlok == "WA" && tldjasbrg == "1" && djoinamt == 0) || (tldlok == "DESKCALL" && tldjasbrg == "2" && (djoinamt == 0 || djoinamt ==1))
+ctidakinput3	((tldlok == "WA" && djoinamt == 1) || (tldlok == "DESKCALL" && djoinamt == 1)) && g_curcmd !=1
+ctidakinput4	(tldlok == "DESKCALL" && ((tldjasbrg == "1" && tldnoll == "MAU_SERVICE") || tldjasbrg == "2" || tldjasbrg == "3" || tldjasbrg == "4"))
+		|| (tldlok == "WA" && (tldjasbrg == "1" || tldjasbrg == "2") && djoinamt == 0)
+		|| (tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "2" && djoinamt == 1)
+		|| (tldlok == "WA" && tldjasbrg == "2" && djoinamt == 1)
+		|| (tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1" && tldnoll == "MAU_SERVICE" && djoinamt == 1)
+
+ctidakinput5	(tldlok == "WA" && tldjasbrg == "1" && djoinamt == 0) || 
+		(tldlok == "WA" && tldjasbrg == "2" && djoinamt == 0) || 
+		(tldlok == "WA" && tldjasbrg == "1" && djoinamt == 1 && tldsisbrg == "1" && (tldnoll == "TDK_SERVICE" || tldnoll == "SERVICE_AHASS_LAIN")) ||
+		(tldlok == "WA" && tldjasbrg == "1" && djoinamt == 1 && tldsisbrg == "2" && tldnoll == "TDK_SERVICE") ||
+		(tldlok == "WA" && tldjasbrg == "2" && djoinamt == 1) ||
+		(tldlok == "DESKCALL" && (tldjasbrg == "2" || tldjasbrg == "3" || tldjasbrg == "4") && (djoinamt == 0 || djoinamt == 1)) ||
+		(tldlok == "DESKCALL" && tldjasbrg == "1" && djoinamt == 0 && (tldnoll == "TDK_SERVICE" || tldnoll == "SERVICE_AHASS_LAIN"))
+
+cblmwaktu1      (tlmsts == "OPEN" && tldlok == "WA" && tldjasbrg == "1" && djoinamt == 1 && ((lamtjam_time + 30) < ljam) && g_curcmd == 2) || g_curcmd != 2 || tldjasbrg != "1"
+cblmwaktu2	(tlmsts == "RINP" && djoinamt == 1 && ((lamtjam_time + 30) < ljam) && g_curcmd == 1) || tlmsts == "OPEN"
+
+csdhlewat	(tldnoll == "MAU_SERVICE" && tldtglfak >= g_tgltrn) || tldnoll != "MAU_SERVICE"
+
+cpanjangalasan	DO_LIB ap_strln(tldket,&lpanjangalasan);
+
+cadaalasan_wa	(tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1" && djoinamt == 1 && (tldnoll == "SERVICE_AHASS_LAIN" || tldnoll == "TDK_SERVICE") 
+		&& lpanjangalasan >= 20) ||
+		djoinamt == 0 || tldnoll == "MAU_SERVICE" || tldsisbrg == "2" || tldlok == "DESKCALL"
+
+cdigit1_wa   	(tldlok == "WA" && tldjasbrg == "1" && tldsisbrg == "1" && djoinamt == 1 && (tldnoll == "SERVICE_AHASS_LAIN" || tldnoll == "TDK_SERVICE") 
+		&& ld1 != BLANKS) ||
+		djoinamt == 0 || tldnoll == "MAU_SERVICE" || tldsisbrg == "2" || tldlok == "DESKCALL"
+
+cadaalasan_dsk	(tldlok == "DESKCALL" && tldjasbrg == "1" && (tldnoll == "SERVICE_AHASS_LAIN" || tldnoll == "TDK_SERVICE") 
+		&& lpanjangalasan >= 20) ||
+		tldnoll == "MAU_SERVICE" || tldjasbrg == "2" || tldjasbrg == "3" || tldjasbrg == "4" || tldlok == "WA"
+		
+cdigit1_dsk     (tldlok == "DESKCALL" && tldjasbrg == "1" && (tldnoll == "SERVICE_AHASS_LAIN" || tldnoll == "TDK_SERVICE") 
+		&& ld1 != BLANKS) ||
+		tldnoll == "MAU_SERVICE" || tldjasbrg == "2" || tldjasbrg == "3" || tldjasbrg == "4" || tldlok == "WA"
+
+ctmbhdtl	ltldtotdis + 1
+ctdkangkat0	djointld == 0 && g_curcmd == 1
+ctdkangkat1	djointld == 1 && g_curcmd == 1          
+/*chnyablh2x	tlmsts == "RINP" && tldtotdis < 3 && g_curcmd == 1*/
+chnyablh2x	((tlmsts == "RINP" && tldtotdis < 3 && g_curcmd == 1) || tlmsts == "OPEN")
+
+MAP(misitipe1)
+cdsk1	 	ltldjasbrg	DO_CALC_IF cdsk1a
+cdsk2		ltldjasbrg      DO_CALC_IF cdsk2a
+cdsk3	 	ltldjasbrg      DO_CALC_IF cdsk3a
+cdsk4		ltldjasbrg      DO_CALC_IF cdsk4a
+cwax1		ltldjasbrg	DO_CALC_IF cwa1a
+cwax2		ltldjasbrg	DO_CALC_IF cwa2a
+cblanks		tldnoll   	DO_CALC_IF ckosongx    
+
+MAP(misitipe2)
+cblanks		tldtglfak	DO_CALC_IF ckosongy
+
+MAP(misitipe3)
+lamtjam_time	lamtjam_time	REPLACE_IF cdjoinamt1
+
+MAP(misialasan)
+cpanjangalasan	lpanjangalasan	DO_CALC
+
+MAP(mbatasantmbh)
+c1		tldtotdis	DO_CALC_IF ctdkangkat0
+ctmbhdtl	tldtotdis	DO_CALC_IF ctdkangkat1
+
+MAP(mdumstr)
+ldum	ldum	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT 	cur_field=tldjasbrg	DO_MAP SHOW misitipe1   
+AFTER_INPUT 	cur_field=tldnoll  	DO_MAP SHOW misitipe2   
+AFTER_INPUT 	cur_keybd=EN       	DO_MAP SHOW misitipe3   
+AFTER_INPUT 	cur_field=tldket   	DO_MAP SHOW misialasan 
+AFTER_INPUT     cur_field=tldket        DO_LIB ap_amstr(tldket,ln1,ln1,&ld1); 
+
+BEFORE_INPUT	cur_field=tldsisbrg	DO_SKIP_IF ctidakinput1
+BEFORE_INPUT	cur_field=tldnoll       DO_SKIP_IF ctidakinput2
+BEFORE_INPUT	cur_field=tldlok        DO_SKIP_IF ctidakinput3
+BEFORE_INPUT	cur_field=tldjasbrg     DO_SKIP_IF ctidakinput3
+BEFORE_INPUT	cur_field=tldket        DO_SKIP_IF ctidakinput4
+BEFORE_INPUT	cur_field=tldtglfak     DO_SKIP_IF ctidakinput5
+
+BEFORE_INPUT	cur_field=tldlok	DO_MAP SHOW mbatasantmbh
+
+AFTER_INPUT	cur_field=tldlok	DO_MAP SHOW 
+		IF chnyablh2x mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.HnyaBlhTmbh2x
+
+AFTER_INPUT     cur_field=tldsisbrg  DO_MAP SHOW
+                IF cblmwaktu1 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.WktTerkirim2
+
+AFTER_INPUT     cur_field=tldsisbrg  DO_MAP SHOW
+                IF cblmwaktu2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.WktTerkirim4
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF cblmwaktu2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.WktTerkirim4
+
+AFTER_INPUT     cur_field=tldtglfak  DO_MAP SHOW
+                IF csdhlewat mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHrsLbhBsrDrHrIni
+
+AFTER_INPUT     cur_field=tldket DO_MAP SHOW
+                IF cadaalasan_wa mdumstr
+                  ELSE HKCURSOR STAY
+                HKMSG t.btsAlasan
+
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW
+                IF cdigit1_wa  mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhAdaSpasiDiDepan
+
+AFTER_INPUT     cur_field=tldket DO_MAP SHOW
+                IF cadaalasan_dsk mdumstr
+                  ELSE HKCURSOR STAY
+                HKMSG t.btsAlasan
+
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW
+                IF cdigit1_dsk  mdumstr
+                HKMSG t.TdkBlhAdaSpasiDiDepan
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET	tldstsbrgukr	tlmdata gv_OPEN tlmnobuk ldahstlp
+SFL_MAP
+	tlmdata 	tlddata
+	gv_OPEN 	tldsts 
+	ldahstlp	tldukrwrn
+	tlmnobuk	tldnobuk 
+	tlmnobuk	tldbrg   
+
+CALCS()
+cubah		g_curcmd == 2
+ctdkvalid	"TDK VALID"
+ckondvalid1	(tldlok == "DESKCALL" && (tldjasbrg == "1" || tldjasbrg == "2")) || (tldlok == "WA" && tldjasbrg == "1") 
+		
+ckondtdkvalid	(tldlok == "DESKCALL" && (tldjasbrg == "3" || tldjasbrg == "4")) || (tldlok == "WA" && tldjasbrg == "2")
+
+MAP(maddamt)
+ldscahass       amtdata         REPLACE
+tldnobuk        amtbukoto       REPLACE
+ljam    	amtjam          REPLACE
+ltgl            amttgl1         REPLACE
+
+MAP(mupdamt1)
+ljam	amtjam		REPLACE_IF ctambah
+ltgl	amttgl1		REPLACE_IF ctambah
+
+
+MAP(maddtkm)
+tlmdata  	 tkmdata		REPLACE
+gv_INPG		 tkmsts			REPLACE
+lnobukfoto	 tkmnobuk		REPLACE
+
+CALCS()
+cdjointkm0		djointkm ==0
+cubhsts			tldlok == "DESKCALL" && tldjasbrg == "2"
+
+MAP(mupdamt)
+ljam    	amtjam2		REPLACE_IF cubah
+ltgl            amttgl2         REPLACE_IF cubah
+
+MAP(mupdtlmahs1)
+ltgl            tlmtgl          REPLACE
+ljam            tlmjam1         REPLACE
+cvalida1	tlmdari		DO_CALC_IF ckondvalid1
+ctdkvalid	tlmdari		DO_CALC_IF ckondtdkvalid
+gt_RINP		tlmsts		REPLACE_IF cubhsts    
+
+MAP(mupdtlmahs2)
+cblanks         tlmtgl          DO_CALC
+cblanks         tlmjam1         DO_CALC
+cblanks         tlmdari         DO_CALC
+
+MAP(mupdtlmahs3)
+ctdkvalid	tlmdari		DO_CALC_IF ckondtdkvalid
+cvalida1	tlmdari		DO_CALC_IF ckondvalid1
+
+
+
+SPCALCS(spdetiladd)
+DO_LIB_IF cdjoinamt0 ap_dbclc(DNAME daddamt,DCOMMAND ADD,DFILE amt,DMAP maddamt);
+DO_LIB_IF cdjointkm0 ap_dbclc(DNAME daddtkm,DCOMMAND ADD,DFILE tkm,DMAP maddtkm);
+DO_LIB ap_dbclc(DNAME dupdtlmahs1,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmahs1);
+DO_LIB_IF cdjoinamt1 ap_dbclc(DNAME dupdamt1,DCOMMAND UPDATE,DTARGET amtdatotoidx ldscahass tldnobuk,DMAP mupdamt1);
+
+SPCALCS(spdetilupd)
+DO_LIB_IF cdjoinamt1 ap_dbclc(DNAME dupdamt,DCOMMAND UPDATE,DTARGET amtdatotoidx ldscahass tldnobuk,DMAP mupdamt);
+DO_LIB ap_dbclc(DNAME dupdtlmahs3,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmahs3);
+
+SPCALCS(spdetildel)
+DO_LIB ap_dbclc(DNAME ddelamt,DCOMMAND DELETE,DTARGET amtdatotoidx ldscahass tldnobuk);
+DO_LIB ap_dbclc(DNAME dupdtlmahs2,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmahs2);
+
+POSTING(tmptrans)
+PST_ADDCMD spdetiladd
+PST_UPDCMD spdetilupd
+PST_DELCMD spdetildel 
+

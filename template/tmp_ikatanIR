@@ -1,0 +1,233 @@
+LOCAL
+PGM_FIELDS
+lsvitgl27d	DATE		4
+ltgltarget7d	DATE		4
+lsvitype_2	STRING		11
+lnourt1z	INT2		2
+ltlmplg_6	STRING		21
+lkwidata	STRING		11
+lppstotal	DFLOAT		8
+lppssisa	DFLOAT		8
+lKBS		DFLOAT		8
+lkwi		INT2		2
+linv		INT2		2
+lkrt            INT2            2
+lsvinourt7d	INT2		2
+lADA		STRING		21
+lTIDAK		STRING		21
+lfaktur		STRING		21
+lsvistr4	STRING		21
+lZKRY		STRING		11
+lentr5x         STRING          11
+lstsfak		STRING		5
+lusiafak	STRING		11
+lhrmtgl		DATE		4
+lhrmdvs2	STRING		21
+
+MAP(mjoinnourt1z)
+svinourt        lnourt1z        REPLACE
+svistr4		lsvistr4	REPLACE
+
+DBCALCS(djoinsvinourt1z)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              svidatbuktyp    tlmdata tlmnobuk lsvitype_2
+        DBC_MAP                 mjoinnourt1z
+
+MAP(mjoinsvinourt7d)
+svinourt        lsvinourt7d	REPLACE
+svitgl2		lsvitgl27d	REPLACE
+
+DBCALCS(djoinsvinourt7d)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              svidatbuktyp    tlmdata tlmnobuk lsvitype_2
+        DBC_MAP                 mjoinsvinourt7d
+
+MAP(mjoinhrm)
+hrmtgl          lhrmtgl         REPLACE
+hrmdvs2         lhrmdvs2        REPLACE
+
+DBCALCS(djoinhrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      hrmbukidx tlmnoasal
+        DBC_MAP         mjoinhrm
+
+IMAGE(tmptranst)
+/-----------------------------------------------------\
+ /---------------------------------------------------\
+ |t.TglInput : ___________________                   | __________________
+ |t.TglIRjwb : ___________________                   |
+ |t.Tgltarget: ___________________                   |
+ |t.PL       : ___________________                   |
+ |t.Kbs      : ___________________                   |
+ |t.Kwitansi : ___________________                   |
+ |t.KrdtKrywn: ___________________                   |
+ |t.TtlFktur : ___________________                   |
+ |t.Invent   : ___________________                   |
+ |t.KetProgrs: ___________________                   |
+ |t.Alasan   : _____________________________________ |
+ |t.ReviewIR : ___________________                   |
+ |t.Ket      : _____________________________________ |
+ |__________                                         |
+ \---------------------------------------------------/
+\-----------------------------------------------------/
+
+IMAGE(tmptrans)
+          
+FIELDS(tmptranst)
+svitgl2		PROTECT {DD-MM-YYYY}	INPUTRI	1
+svinobuk	PROTECT UNSEEN		INPUTRI 1
+svitgl1		PROTECT {DD-MM-YYYY}	INPUTRI	1
+ltgltarget7d	PROTECT {DD-MM-YYYY}    INPUTRI 1
+svidf1		PROTECT	NUMERIC		INPUTRI	2
+svidf2		PROTECT	NUMERIC		INPUTRI	3
+svidf3		PROTECT	NUMERIC		INPUTRI	4
+svistr1		PROTECT			INPUTRI	5
+svidf5 		PROTECT	NUMERIC		INPUTRI	6
+svidf4		PROTECT	NUMERIC		INPUTRI	7
+svistr3		NOCHANGE		INPUTRI	8
+sviket		TEXTAREA 3		INPUTRI	9
+svistr4         NOCHANGE        	INPUTRI 10
+sviket2		TEXTAREA 3		INPUTRI	11
+lentr5x         NOCHANGE        	INPUTRI 17
+
+DEFAULTS(tmptranst)
+lkwidata	INIT			DTKWI
+lsvitype_2	INIT			IKATANIR
+svistr3		DFALT_SCAN_BLANKS	SELESAI BELUM_SELESAI
+svistr4         DFALT_SCAN_BLANKS       SELESAI BELUM_SELESAI BELUM_DIKERJAKAN
+ltlmplg_6	INIT			{tlmplg}
+lADA		INIT			ADA
+lTIDAK		INIT			TIDAK
+lZKRY		INIT			ZKRY
+lentr5x         INIT                    "TABENTR"
+svitgl2		INIT_ADD		{g_tgltrn}
+
+CALCS()
+ctambah7	tlmsts == "INPG" && (tlmsts2 == "CAB7" || tlmsts2 == "C4+7") && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT"
+clompat		tlmsts == "INPG" && (tlmsts2 == "OFF7" || tlmsts2 == "O4+7") && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT"
+cubah7		g_curcmd == 2 && (tlmsts2 == "OFF7" || tlmsts2 == "O4+7") && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT"
+chitungtgt	lsvitgl27d + 30
+chitungtgt1	20230131	
+chitungtgt2	20230228
+
+csyarattgt	djoinsvinourt7d == 1 && lsvinourt7d == 1 && (djoinhrm==0 || (djoinhrm==1 && lhrmdvs2!="PICMKTG" && lhrmdvs2!="KAPOSHMC" && lhrmdvs2!="KAPOSM2W") || (djoinhrm==1 && (lhrmdvs2=="PICMKTG" || lhrmdvs2=="KAPOSHMC" || lhrmdvs2=="KAPOSM2W") && lhrmtgl < 20221101 || lhrmtgl >= 20230101))
+
+csyarattgt1     djoinsvinourt7d == 1 && lsvinourt7d == 1 && (djoinhrm==1 && (lhrmdvs2=="PICMKTG" || lhrmdvs2=="KAPOSHMC" || lhrmdvs2=="KAPOSM2W") && lhrmtgl >= 20221101 && lhrmtgl <= 20221130)
+
+csyarattgt2     djoinsvinourt7d == 1 && lsvinourt7d == 1 && (djoinhrm==1 && (lhrmdvs2=="PICMKTG" || lhrmdvs2=="KAPOSHMC" || lhrmdvs2=="KAPOSM2W") && lhrmtgl >= 20221201 && lhrmtgl <= 20221231)
+
+EDITS(tmptranst)
+e.Mandatory     svistr3         MANDATORY
+e.Mandatory     sviket          MANDATORY
+e.Mandatory     svistr4         MANDATORY_IF cubah7
+e.Mandatory     sviket2         MANDATORY_IF cubah7
+e.ValidateTlm   svinobuk        VALIDATE tlmbukidx mtlm
+
+MAP(mtlm)
+chitungtgt	ltgltarget7d	DO_CALC_IF csyarattgt
+chitungtgt1	ltgltarget7d	DO_CALC_IF csyarattgt1
+chitungtgt2	ltgltarget7d	DO_CALC_IF csyarattgt2
+
+MAP(mjoinpikfak)
+piksts		lstsfak		REPLACE
+pikstspiubli	lusiafak	REPLACE
+
+DBCALCS(djoinpikfak)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	pikdatbukidx gv_dtpiu amtbukoto
+	DBC_MAP		mjoinpikfak
+
+CALCS()
+cNIP			djoinpikfak == 1 && lstsfak ==gv_INPG && lusiafak == "ZKRY" && amtstr1 == ltlmplg_6
+cjoinchdnourt1z         djoinsvinourt1z == 0 && g_curcmd == 1
+cjoinchdnourt2z         djoinsvinourt1z == 1 && g_curcmd == 1
+c1d			1
+cnourt1z                lnourt1z + 1
+
+MAP(mscanpps1)
+ppstotal        lppstotal       REPLACE
+ppssisa		lppssisa	REPLACE
+
+DBCALCS(dscanpps1)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      ppsstsplgdat    gv_INPG ltlmplg_6 gv_dtpiu
+        DBC_SUM_MAP     mscanpps1
+
+MAP(mscankwi1)
+c1d             lkwi            DO_CALC
+
+DBCALCS(dscankwi1)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      kwistsnipidx    lkwidata gv_INPG ltlmplg_6
+        DBC_SUM_MAP     mscankwi1
+
+MAP(mscanbrg1)
+c1d             linv            DO_CALC
+
+DBCALCS(dscanbrg1)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brgstdtnip      gv_INPG gv_dtaktiva ltlmplg_6
+        DBC_SUM_MAP     mscanbrg1
+
+MAP(mscanbkm1)
+bkmtotal        lKBS            REPLACE
+
+DBCALCS(dscanbkm1)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      bkmkodstsjns    ltlmplg_6 gv_INPG    gv_BS
+        DBC_SUM_MAP     mscanbkm1
+
+MAP(mscanamt1)
+c1d		lkrt		DO_CALC_IF cNIP
+amtbukoto	lfaktur		REPLACE
+DEBUG	ldum	ldum	REPLACE
+
+DBCALCS(dscanamt1)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	amtdatotoidx	lZKRY
+	DBC_SUM_MAP	mscanamt1
+
+CALCS()
+cADA		lkrt >= 1
+cTIDAK		lkrt == ""
+cupdtgl		g_curcmd == 2 && (tlmsts2 == "OFF7" || tlmsts2 == "O4+7")
+
+MAP(mnourt1z)
+c1d             svinourt        DO_CALC_IF cjoinchdnourt1z
+cnourt1z        svinourt        DO_CALC_IF cjoinchdnourt2z
+lppssisa	svidf1		REPLACE
+lKBS		svidf2		REPLACE
+lkwi		svidf3		REPLACE
+lADA		svistr1		REPLACE_IF cADA
+lTIDAK		svistr1		REPLACE_IF cTIDAK
+lkrt    	svidf5 		REPLACE
+linv		svidf4		REPLACE
+
+MAP(mupdtgl)
+g_tgltrn	svitgl1		REPLACE_IF cupdtgl
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=svistr3       DO_SKIP_IF clompat
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF clompat
+BEFORE_INPUT    cur_field=svistr3       DO_SCAN dscanpps1   
+BEFORE_INPUT    cur_field=svistr3       DO_SCAN dscanbkm1
+BEFORE_INPUT    cur_field=svistr3       DO_SCAN dscankwi1
+BEFORE_INPUT	cur_field=svistr3	DO_SCAN dscanamt1
+BEFORE_INPUT    cur_field=svistr3       DO_SCAN dscanbrg1
+BEFORE_INPUT    cur_field=svistr3       DO_MAP SHOW mnourt1z
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF ctambah7
+BEFORE_INPUT	cur_field=sviket2	DO_SKIP_IF ctambah7
+AFTER_INPUT     cur_field=svistr4       DO_MAP SHOW mupdtgl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_UPDOWN DOWN
+SFL_SORT_BY_FIELD svinourt
+SFL_TARGET
+        svidatbuktyp    tlmdata tlmnobuk lsvitype_2
+SFL_MAP
+tlmdata		svidata		REPLACE
+lsvitype_2	svitype		REPLACE
+tlmnobuk	svinobuk	REPLACE
+        

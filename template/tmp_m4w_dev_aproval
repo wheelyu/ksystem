@@ -1,0 +1,234 @@
+LOCAL
+PGM_FIELDS
+luser3		STRING		21
+lversi3		STRING		11
+lRISK           STRING          21 
+lRATE           STRING          21
+ltipedev	STRING		11
+ltipedev1       STRING		11
+lLTV11  	STRING		11
+lsviotos	STRING		21
+lsvitype2r	STRING		11
+
+
+/*
+DBCALCS(djoindeviasi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp gt_deviasibr11 btmnobuk  ltipedev l1
+*/
+CALCS()
+cthbl11			THBLS(g_tgltrn)
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+|t.Status : __________             | 
+|i.NoBuk  : _____________________  |
+|           _____________________  |
+|t.acc    : ___________  _______   |
+|t.user   : ___________  __________|
+|           _                      |
+|t.Ket    : _______________________|
+|                                  |
+|           _______________________|
+|                                  |
+|           _______________________|
+|                   ___            |
+|                                  |
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr10                        PROTECT                 INPUTRI         1
+svinobuk                        PROTECT                         INPUTRI         1
+svikode                         PROTECT                         INPUTRI         2
+svitype2                        NOCHANGE SCROLL                 INPUTRI        2
+svistr1                        NOCHANGE SCROLL                 INPUTRI        2
+svitype3                      PROTECT                         INPUTRI         3
+lnmuser                        PROTECT                         INPUTRI         3
+luser3                        PROTECT QPROTECT UNSEEN                    INPUTRI         3
+sviket                          TEXTAREA                        INPUTRI         4
+sviket2                         TEXTAREA                        INPUTRI         5
+sviket3                         TEXTAREA                        INPUTRI         6
+lok                             ALLCAPS                         INPUTRI         7
+
+DEFAULT(tmptranst)
+svistr10                INIT                    OPEN
+svidata                 INIT                    DEVIASIBR
+lok                     INIT                    ENTER
+svitype                 INIT                    APPROVE
+svitype2                DFALT_SCAN              BLANKS
+                                                ACC
+                                                TACC
+svitype3                INIT                    {g_usrkode}
+svistr1                 DFALT_SCAN              BLANKS
+                                                LTV
+                                                BUNGA
+                                                SLIK
+                                                RO_BAD
+						TUNGGAL
+						PK   
+lversi3			INIT	170125v3
+lRISK                   INIT    LTV
+lRATE                   INIT    BUNGA
+
+lthbl11			INIT 	{cthbl11}
+lCA			INIT	CA
+lDATANG			INIT	DATANG
+lLTV11  		INIT	LTV   
+lsviotos			INIT	{svioto}
+
+
+
+EDITS(tmptranst)
+e.Mandatorykode                    svikode                 MANDATORY
+e.Mandatoryket                     sviket                  MANDATORY
+e.Mandatoryket                     svitype2                MANDATORY
+e.Mandatorykat                     svistr1                 MANDATORY
+e.Validate1                        svinobuk                VALIDATE btmbukidx mbtmapr
+e.Validate3                        luser3                   VALIDATE psmkodidx mpsmapr
+
+MAP(mpsmapr)
+psmkode		luser3	REPLACE
+luser3    svitype3	REPLACE
+psmnama         lnmuser         REPLACE
+
+MAP(mbtmapr)
+btmnobuk       svikode         REPLACE
+
+MAP(misiapr)
+btmnobuk                        svikode                 REPLACE
+btmnobuk                        svinobuk                REPLACE
+svistr1				ltipedev1		REPLACE
+
+CALCS()
+cjikariskinpg           svitype3 != "CLSD" && svitype2 == "RISK"
+cjikarateinpg           svitype3 != "CLSD" && svitype2 == "RATE"
+cjikatglinpg           svitype3 != "CLSD" && svitype2 == "TUNGGAL"
+crisk1                  lkatrisk + 1
+crate1                  lkatrate + 1
+ctunggal1                  lkattgl + 1
+
+MAP(mssvikat)
+crisk1                  lkatrisk                DO_CALC_IF cjikariskinpg
+crate1                  lkatrate                DO_CALC_IF cjikarateinpg
+ctunggal1                  lkattgl                DO_CALC_IF cjikatglinpg
+
+DBCALCS(dbscansvikat)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp   gt_deviasibr11 btmnobuk
+        DBC_SUM_MAP     mssvikat
+
+
+CALCS()
+chanyarisk              lkatrisk > 0 && lkatrate == 0
+chanyarate              lkatrate > 0 && lkatrisk == 0
+chanyatgl              lkattgl > 0 && lkatrisk == 0
+clenket1          	DO_LIB ap_strln(sviket,&llenket);
+clenket2001        	llenket >= 200 || g_grpnam == "B.M4WMHEAD" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WCOO" || g_grpnam == "COO"
+/*cmasihopen              svistr10 == "OPEN" && svitype3 == g_usrkode*/
+
+MAP(misikat)
+lRISK                   svistr1                 REPLACE_IF chanyarisk
+lRATE                   svistr1                 REPLACE_IF chanyarate
+lTUNGGAL                svistr1                 REPLACE_IF chanyatgl
+
+CALCS()
+ctambah0                g_curcmd == 1 && djoinsviapr == 0
+ctambah1                g_curcmd == 1 && djoinsviapr == 1
+curut1                  1
+curutt                  lurut + 1
+cdeviasiok		(svistr1 == "LTV" && nhmperpok_3 > nhmmaxcair_3) ||
+			(svistr1 == "BUNGA" && nhmbgstd_3 < nhmangstd_3) ||
+			(svistr1 == "TUNGGAL" && djoinsvipemohon == 1 && ljnspemohon == "TUNGGAL") ||
+			(svistr1 == "SLIK" && djoinsvipemohon == 1 && ldevslik == "DEVIASI") ||
+			(svistr1 == "PK"   && djoinsvipk == 1)
+
+
+MAP(murut)
+curut1                  svinourt                DO_CALC_IF ctambah0
+curutt                  svinourt                DO_CALC_IF ctambah1
+
+MAP(mlenket2)
+clenket1       llenket        DO_CALC
+
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=svistr1	DO_MAP
+			IF cdeviasiok mdum
+			ELSE HKCURSOR STAY
+			HKMSG Bukan Deviasi Tipe Ini
+			
+BEFORE_INPUT            cur_field=svistr1       DO_SCAN dbscansvikat
+BEFORE_INPUT            cur_field=svistr1       DO_MAP SHOW misikat
+BEFORE_INPUT            cur_field=svitype2      DO_MAP SHOW murut
+BEFORE_INPUT            cur_field=sviket        DO_MAP SHOW misiapr
+AFTER_INPUT 	        cur_keybd=EN            DO_MAP SHOW misiapr
+AFTER_INPUT 	        cur_field=sviket        DO_MAP SHOW mlenket2
+AFTER_INPUT		cur_field=sviket	DO_MAP
+			IF clenket2001 mdum
+	                ELSE HKCURSOR STAY
+        	        HKMSG Panjang Ket harus 200 Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp   gt_deviasibr11 btmnobuk gv_aprove
+
+SFL_MAP
+gt_deviasibr11          svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+btmnobuk                svikode                 REPLACE
+
+
+
+DBCALCS(djoinabkrm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsen btmnobuk
+
+CALCS()
+/* cupddeviasi	djoindeviasi==1  */
+
+cupdabkrm	djoinabkrm==1 && g_grpnam=="B.M4WRM"
+csdhaccok	lsvitype2r == "ACC"
+ctdkaccok	lsvitype2r == "TACC"
+cRMsaja		"B.M4WRM"
+cubahdoang	g_curcmd == 2
+
+MAP(mmapawal)
+svistr1		ltipedev1       REPLACE
+ltipedev1	ltipedev 	REPLACE
+svitype2	lsvitype2r	REPLACE
+
+MAP(mupddeviasi)
+cRMsaja         svistr4			DO_CALC_IF ctdkaccok
+g_grpnam        svistr4			REPLACE_IF csdhaccok
+DEBUG		ldum	ldum		REPLACE
+
+CALCS()
+cdevrm          g_grpnam=="B.M4WRM" && abkscr=="701" && btmsts!="705" && btmsts!="TACC" && abktype!="K701XBM" && abksts=="INPG"
+		&& abknoll==BLANKS
+ctglbsk		g_tgltrn+1
+
+MAP(mupdsvioto)
+lsvitype2r	svitype2	REPLACE
+
+MAP(mupdabkrm)
+gt_RINP                 abksts                  REPLACE_IF cdevrm
+ctglbsk                 abktgl                  DO_CALC_IF cdevrm
+g_grpnam		abknoll			REPLACE_IF cdevrm
+
+SPCALCS(stmptrans)
+DO_LIB ap_dbclc(DNAME dmapawal,DCOMMAND MAPMAP,DMAP mmapawal); 
+DO_LIB_IF cubahdoang ap_dbclc(DNAME dupddeviasi1,DCOMMAND UPDATE,DTARGET sviotoidx lsviotos,DMAP mupdsvioto);
+DO_LIB /* _IF cupddeviasi */ ap_dbclc(DNAME dupddeviasi,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp gt_deviasibr11 btmnobuk ltipedev l1,DMAP mupddeviasi);
+DO_LIB_IF cupdabkrm ap_dbclc(DNAME dupdabkrm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen btmnobuk,DMAP mupdabkrm);
+
+POSTING(tmptrans)
+	PST_ADDCMD stmptrans
+	PST_UPDCMD stmptrans
+
+
+
+

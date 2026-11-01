@@ -1,0 +1,281 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+ /---t.InfoDebitur----------------\
+  i.Kode    _________________
+  i.Ktp     _________________
+ \--------------------------------/
+ /---t.InfoStnk-------------------\
+  i.NoPol   _________  ______
+  t.Wilayah _________
+  t.SertYT  _________
+  i.JtpStnk _________________
+  t.JtpPajak_________________
+  i.Norang  ______________________
+  i.Nosin   ______________________
+  i.Nama    ______________________
+  i.Alamat  ______________________
+  t.LokBpkb ______________________
+  t.CabBpkb ______________________
+  t.KetBPKB ______________________
+  t.TakeOv  ______________________
+  t.LemBia  ______________________
+  t.KetLem  ______________________
+ \--------------------------------/
+ /---t.Potongan-------------------\
+  t.PotSert ___________________.__
+  t.PotStnk ___________________.__
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans) 
+    
+FIELD(tmptranst)
+jmnno			PROTECT SCROLL			INPUTRI 1
+jmnplg			PROTECT QPROTECT		INPUTRI 2
+
+jmnnopol		ALLCAPS				INPUTRI	4
+jmnurtstr		PROTECT				INPUTRI	5
+jmnasuransi		PROTECT SCROLL			INPUTRI 6
+jmnsisa			ALLCAPS				INPUTRI	7
+jmntgl			NUMERIC {DD-MM-YYYY} NOLIMIT	INPUTRI	8
+jmntglklr		NUMERIC {DD-MM-YYYY} NOLIMIT	INPUTRI 9
+jmnspec2		NOCHANGE MEDIUM SCROLL		INPUTRI 10
+jmnspec1		NOCHANGE MEDIUM SCROLL		INPUTRI	11
+jmnnama			NOCHANGE SCROLL			INPUTRI	12
+jmnalamat		NOCHANGE SCROLL			INPUTRI	13
+llokbpkb0		PROTECT SCROLL			INPUTRI	14
+lcablokbpkb0		PROTECT SCROLL			INPUTRI 14
+lketbpkb                NOCHANGE                        INPUTRI 15
+ltakeover               NOCHANGE                        INPUTRI 16
+llembia                 ALLCAPS SCROLL                  INPUTRI 17
+lketlembia              ALLCAPS SCROLL                  INPUTRI 18
+
+jmnhrg1			PROTECT NUMERIC			INPUTRI	15
+jmnhrg2			PROTECT NUMERIC			INPUTRI 16
+
+DEFAULTS(tmptranst)
+/*
+IF cpjmY	jmnjnsikat		DFALT_SCAN	BLANKS
+							PEMOHON
+							PENJAMIN
+IF cpjmT	jmnjnsikat		DFALT_SCAN	BLANKS
+							PEMOHON
+*/
+jmnsisa		DFALT_SCAN_BLANKS	1 "ADA"
+					2 "TIDAK ADA"
+jmnjnsikat		INIT_ADD	PEMOHON
+jmnnamamb		INIT_ADD	PM
+
+lkopistnk		INIT		"SDH"
+l1x			INIT		1
+l2x			INIT		2
+ldalamkota		INIT		"DK"
+lluarkota		INIT		"LK"
+lbeda                   INIT            "BD"
+lpemohon                INIT            "PM"
+lpenjamin               INIT            "PJ"
+lplatnomor		INIT		PLATNOMOR
+
+l4399_bpkb		INIT		4399
+lm4399_bpkb		INIT		m4399_bpkb
+
+lMUTASISTNK		INIT		MUTASISTNK
+
+lketbpkb                DFALT_SCAN_BLANKS       ONHAND
+                                                TAKEOVER
+
+ltakeover               DFALT_SCAN_BLANKS       LEASING
+                                                KOPERASI
+
+lLEMBIA                 INIT            LEMBIA
+
+IF cTOPUP lketbpkb	INIT_ADD        ONHAND
+IF cTOPUP lketbpkb	INIT_UPDATE     ONHAND
+
+EDITS(tmptranst)
+e.Mandatory		jmnnopol	MANDATORY
+e.Mandatory		jmntgl  	MANDATORY
+e.Mandatory		jmntglklr  	MANDATORY
+e.Mandatory		jmnspec1	MANDATORY
+e.Mandatory		jmnspec2	MANDATORY
+e.Mandatory		jmnnama		MANDATORY
+e.Mandatory		jmnalamat	MANDATORY
+e.Mandatory		jmnsisa		MANDATORY
+/*e.Mandatory		jmnjnsikat	MANDATORY*/
+e.Mandatory		lketbpkb	MANDATORY_IF cbkntopup
+t.ValidateAst		jmnnopol	VALIDATE_IF cmilikpmh astdatkodidx mastbpkbm2w sastbpkbm2w {Pgv_dtassets} {Pbtmplg} {Pgv_bpkb}
+t.ValidateAst		jmnnopol	VALIDATE_IF cmilikpjm astdatkodidx mastbpkbm2w sastbpkbm2w {Pgv_dtassets} {Pbtppsm_3} {Pgv_bpkb}
+t.Validate              jmnno           VALIDATE_IF caddupd btdbuktypidx  maddupd 0  {SlDATASSU} {Sbtmnopj} {Sl77}
+t.ValidateLemBiaya      llembia         VALIDATE_IF cleasing tbddatkodidx mtbdleasing stbd  {Pgv_dttabel} {Pgv_infoumum} {PlLEMBIA}
+e.Mandatory             ltakeover       MANDATORY_IF ctakeover
+e.Mandatory             llembia         MANDATORY_IF ctakeover
+t.TabTerlebihDahulu     lketlembia      MANDATORY_IF clainnya
+
+HOOKS(tmptranst)
+AFTER_INPUT     	cur_field=jmnnopol      DO_LIB_IF ch1 ap_amstr(jmnnopol,l1x,l1x,ldg1);
+AFTER_INPUT     	cur_field=jmnnopol      DO_LIB_IF ch2 ap_amstr(jmnnopol,l2x,l1x,ldg2);
+AFTER_INPUT     	cur_field=jmnnopol      DO_MAP SHOW mstrplat
+AFTER_INPUT             cur_field=jmnnama       DO_MAP SHOW manstnk
+AFTER_INPUT		cur_field=jmnsisa	DO_MAP SHOW mpotsert
+AFTER_INPUT     	cur_keybd=EN            DO_LIB_IF ch1 ap_amstr(jmnnopol,l1x,l1x,ldg1);
+AFTER_INPUT     	cur_keybd=EN            DO_LIB_IF ch2 ap_amstr(jmnnopol,l2x,l1x,ldg2);
+AFTER_INPUT     	cur_keybd=EN      	DO_MAP SHOW mstrplat
+AFTER_INPUT     	cur_keybd=EN      	DO_MAP SHOW manstnk
+AFTER_INPUT     	cur_keybd=EN      	DO_MAP SHOW mpotsert
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW mpjg_nokanosin
+
+AFTER_INPUT             cur_field=jmnnopol        DO_MAP SHOW IF
+                        cbrgm2w  mdumx
+                        ELSE HKCURSOR STAY
+                        HKMSG t.TypMtrBd
+/*
+AFTER_INPUT		cur_field=jmntgl	DO_MAP SHOW IF 
+			cstnkmati2thn	mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.JtpStnkM2wLimit
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW IF 
+			cstnkmati2thn	mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.JtpStnkM2wLimit
+AFTER_INPUT		cur_field=jmntglklr	DO_MAP SHOW IF 
+			cJtpPjkMatiLbhDr1Thn mpotstnk
+			ELSE HKCURSOR STAY
+			HKMSG t.JtpPjkMatiLbhDr3Thn
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW IF 
+			cJtpPjkMatiLbhDr1Thn mpotstnk
+			ELSE HKCURSOR STAY
+			HKMSG t.JtpPjkMatiLbhDr3Thn
+AFTER_INPUT		cur_field=jmntglklr	DO_MAP SHOW IF 
+			cJtpPjkLbhDr1Thn   	mpotstnk
+			ELSE HKCURSOR STAY
+			HKMSG t.JtpPjkLbhDr2Thn
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW IF 
+			cJtpPjkLbhDr1Thn    mpotstnk
+			ELSE HKCURSOR STAY
+			HKMSG t.JtpPjkLbhDr2Thn
+*/
+AFTER_INPUT		cur_field=jmnspec2	DO_MAP SHOW IF
+			cnokaoke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NoKaTdkSamaDgn3210
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW IF
+			cnokaoke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NoKaTdkSamaDgn3210
+AFTER_INPUT		cur_field=jmnspec1	DO_MAP SHOW IF
+			cnosinoke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NoSinTdkSamaDgn3210
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW IF
+			cnosinoke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NoSinTdkSamaDgn3210
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cssustsoke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.StsMtrSdhTrkDi3210
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cpikstsoke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NokaNosinIniHrsPakaiSoaTopup
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cnosin3oke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NokaIniAdaNosinYangBedaDrSsu
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cnoka3oke mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.NosinIniAdaNokaYangBedaDrSsu
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			clokbpkb_ok mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.LokBpkbTdkBlhRo
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cjmn_noexport mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.TdkBsJmnMtrGcEks
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cjointbdplatnomor mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.KdPlatBlmAda
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW IF
+			cpanjang_ok mdumx
+			ELSE HKCURSOR STAY
+			HKMSG t.PjgNoKaHrsLbhDrNoSinUbhDulu
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW IF
+                        cblokir mdumx
+                        ELSE HKCURSOR STAY
+                        HKMSG t.NoSinTerblokir                        
+
+BEFORE_INPUT    cur_field=lketbpkb     DO_SKIP_IF ctopup
+BEFORE_INPUT    cur_field=ltakeover    DO_SKIP_IF ctopup
+BEFORE_INPUT    cur_field=llembia      DO_SKIP_IF ctopup
+BEFORE_INPUT    cur_field=lketlembia   DO_SKIP_IF ctopup
+BEFORE_INPUT    cur_field=ltakeover    DO_SKIP_IF cbkntakeover
+BEFORE_INPUT    cur_field=llembia      DO_SKIP_IF cbkntakeover
+BEFORE_INPUT    cur_field=lketlembia   DO_SKIP_IF cbknlainnya
+
+AFTER_INPUT     cur_field=lketbpkb      DO_MAP SHOW mblanksbpkb
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mblanksbpkb
+AFTER_INPUT     cur_field=ltakeover     DO_MAP SHOW mblankslembia
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_COND 	cskema_syariah
+SFL_TITLE(tmptranst)
+SFL_SELECT	cnobuksama
+SFL_TARGET	jmnnoidx	btmnobuk
+SFL_MAP
+btmnobuk	jmnno		REPLACE         
+btmplg		jmnplg		REPLACE
+btmthn		jmnth		REPLACE
+
+SPCALCS(sptransaddmb)
+	IF cdi631 dbscanpikfid
+	DO_LIB_IF cdi631 ap_dbclc(DNAME dmapmaptransbbamb, DCOMMAND MAPMAP, DMAP mhitungfid);
+	DO_LIB ap_dbclc(DNAME dmapmaptransbamb, DCOMMAND MAPMAP, DMAP mrmdplacair);
+	DO_LIB ap_dbclc(DNAME dupdnhmAmb,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mupdnhm);
+	DO_LIB ap_dbclc(DNAME dupdbtmAmb,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdbtm);
+	DO_LIB_IF cmilikpmhx ap_dbclc(DNAME dupdastpmhAmb,DCOMMAND UPDATE,DTARGET astdatkodidx gv_dtassets btmplg gv_bpkb jmnnopol,DMAP mupdast);
+	DO_LIB_IF cmilikpjmx ap_dbclc(DNAME dupdastpjmAbm,DCOMMAND UPDATE,DTARGET astdatkodidx gv_dtassets btppsm_3 gv_bpkb jmnnopol,DMAP mupdast);
+	DO_LIB_IF cdi631 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+	DO_LIB_IF cjoinrmdplafcairfid631 ap_ambts(gv_INPG,lrmdgabplafcairfid,lpfidm2wm1,lpfidm2w,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+	DO_LIB_IF cdi631 ap_dbclc(DNAME dupdbtm2Amb,DCOMMAND UPDATE,DTARGET btmotoidx btmoto,DMAP mupdbtmplacair);
+	DO_LIB_IF cdi631 ap_dbclc(DNAME dmapnxpst_bpkbAmb,DCOMMAND MAPMAP,DMAP mmapnxpst_bpkb);
+	DO_LIB_IF cdi631 ap_nxpst(l4399_bpkb,lm4399_bpkb);
+	DO_LIB_IF cinfobpkb0 ap_dbclc(DNAME daddbtdbpkbmb, DCOMMAND ADD, DFILE btd, DMAP maddbtdinfobpkb);
+
+SPCALCS(sptransupdmb)
+	IF cdi631 dbscanpikfid
+	DO_LIB_IF cdi631 ap_dbclc(DNAME dmapmaptransbbbmb, DCOMMAND MAPMAP, DMAP mhitungfid);
+	DO_LIB ap_dbclc(DNAME dmapmaptransbumb, DCOMMAND MAPMAP, DMAP mrmdplacair);
+	DO_LIB ap_dbclc(DNAME dupdnhmUmb,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mupdnhm);
+	DO_LIB ap_dbclc(DNAME dupdbtmUmb,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdbtm);
+	DO_LIB_IF cmilikpmhx ap_dbclc(DNAME dupdastpmhUmb,DCOMMAND UPDATE,DTARGET astdatkodidx gv_dtassets btmplg gv_bpkb jmnnopol,DMAP mupdast);
+	DO_LIB_IF cmilikpjmx ap_dbclc(DNAME dupdastpjmUmb,DCOMMAND UPDATE,DTARGET astdatkodidx gv_dtassets btppsm_3 gv_bpkb jmnnopol,DMAP mupdast);
+	DO_LIB_IF cdi631 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+	DO_LIB_IF cjoinrmdplafcairfid631 ap_ambts(gv_INPG,lrmdgabplafcairfid,lpfidm2wm1,lpfidm2w,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+	DO_LIB_IF cdi631 ap_dbclc(DNAME dupdbtm2Umb,DCOMMAND UPDATE,DTARGET btmotoidx btmoto,DMAP mupdbtmplacair);
+	DO_LIB_IF cdi631 ap_dbclc(DNAME dmapnxpst_bpkbUmb,DCOMMAND MAPMAP,DMAP mmapnxpst_bpkb);
+	DO_LIB_IF cdi631 ap_nxpst(l4399_bpkb,lm4399_bpkb);
+	DO_LIB_IF cinfobpkb1 ap_dbclc(DNAME dupdbtdbpkbmb, DCOMMAND UPDATE_RANGE, DTARGET btdbuktypidx btmnobuk lDATASSU btmnopj l77, DMAP mupdbtdinfobpkb);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransaddmb
+        PST_UPDCMD sptransupdmb
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cast0
+	PMT_ADD_MSG 	IF castmsg01a	Status OPEN, tambah atas nama bpkb di screen 630
+			IF castmsg01b	Status 631, tambah atas nama bpkb di screen 631
+			IF castmsg02a	Sudah Ada inputan Atas Nama BPKB. Tidak bisa tambah
+			IF castmsg03	Harus isi alamat survey dahulu sebelum isi Atas Nama BPKB
+			IF castmsg04	Area Survey Tidak ada cabangnya. Ubah lagi Alamat Survey untuk mengisi cabangnya
+	PMT_UPDALL_COND cast1
+	PMT_UPD_MSG	IF castmsg01a	Status OPEN, ubah atas nama bpkb di screen 630
+			IF castmsg01b	Status 631, ubah atas nama bpkb di screen 631
+			IF castmsg02b	Tidak Ada inputan Atas Nama BPKB.
+	PMT_DEL_COND	cast1
+	PMT_DEL_MSG	IF castmsg01a	Status OPEN, hapus atas nama bpkb di screen 630
+			IF castmsg01b	Status 631, hapus atas nama bpkb di screen 631
+			IF castmsg02b	Tidak Ada inputan Atas Nama BPKB.

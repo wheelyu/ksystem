@@ -1,0 +1,311 @@
+LOCAL
+PGM_FIELDS
+
+lscr620                 STRING          5 
+lbtmass			STRING		21
+lnipADHHO	        STRING          21
+
+CALCS()
+ckondisikabeng          abkkym2 == "UPLOAD STNK 620" && abknoll == "KABENG"
+ckondisisa              abkkym2 == "UPLOAD STNK 620" && abknoll == "SA"
+ckondisifd              abkkym2 == "UPLOAD STNK 620" && abknoll == "FD"
+ckondisiadhdca          abkkym2 == "ACC STNK 620" && abknoll == "ADHDCA"
+ckondisiadhho           abkkym2 == "ACC STNK 620" && abknoll == "ADHHO"
+
+DBCALCS(djoinabkKABENG)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN btmnobuk
+        DBC_SELECT      ckondisikabeng
+
+DBCALCS(djoinabkSA)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN btmnobuk
+        DBC_SELECT      ckondisisa
+
+DBCALCS(djoinabkFD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN btmnobuk
+        DBC_SELECT      ckondisifd
+
+DBCALCS(djoinabkADHDCA)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN btmnobuk
+        DBC_SELECT      ckondisiadhdca
+
+DBCALCS(djoinabkADHHO)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN btmnobuk
+        DBC_SELECT      ckondisiadhho
+
+IMAGE(tmptranst)
+/--t.uplstnk------------------------------------\
+|/-s.UPLOAD------------------------------------\|
+||                                 	       ||
+||                                 	       ||
+||                                 	       ||
+||                                 	       ||
+||                                 	       ||
+||                                             ||
+||                                             ||
+||                                             ||
+||                                 	       ||
+||                                 	       ||
+|\---------------------------------------------/|
+|/---------------------------------------------\|
+||t.Nopol         : ___________  	       ||
+||i.Norang     	  : _________________________  ||
+||t.Nosin      	  : _________________________  ||
+||t.AtasNama      : _________________________  ||
+||t.Status        : _________		       ||
+||t.Upload	  : ___ ___		       ||
+||t.TglApproval	  : _________ 	 	____   ||
+||		    ____________________       ||
+||i.Ket : ____________________________________ ||
+||					       ||
+||t.Approval      : _________  _________       ||
+||i.NipApproval   : _________  _________       ||
+||        				   __  ||
+|\---------------------------------------------/|
+\-----------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1         PROTECT                 INPUTRI 1       /* Nopol */
+lastnorangka    PROTECT                 INPUTRI 2       /* No.Rangkka */
+lastnomesin     PROTECT                 INPUTRI 3       /* No.Mesin */
+lbtmass         PROTECT                 INPUTRI 4       /* Nama */
+svists          PROTECT                 INPUTRI 5       /* STATUS */
+sviyt1          PROTECT                 INPUTRI 6       /* Uplod */
+sviyt2          PROTECT UNSEEN 	  	INPUTRI 7       /* Uplod */
+svitgl1         PROTECT {DD-MM-YY}      INPUTRI 8       /* TANGGAL */
+svidf1       	PROTECT                 INPUTRI 9       /* No.Upload */
+lUPLOADSTNK     TOMBOL                  INPUTRI 10       /* UPLOAD OK*/
+sviket          TEXTAREA ALLCAPS        INPUTRI 11      /* Keterangan */
+luploadacc      TOMBOL                  INPUTRI 12      /* ACC */
+luploadtacc     TOMBOL                  INPUTRI 13      /* TACC */
+svidtmkode      PROTECT                 INPUTRI 14      /* Nip Apprv*/
+svinama    	PROTECT                 INPUTRI 15      /* Nama Apprv*/
+lenter          NOCHANGE                INPUTRI 16      /* Enter */
+
+
+DEFAULT(tmptranst)
+luploadacc     	INIT	ACC
+luploadtacc    	INIT	TACC
+lbtmass		INIT	{btmass}
+lscr620         INIT    "620"
+lnipADHHO	INIT	2391326
+
+CALCS()
+csvidf1         	svidf1 + 1
+ciniGC_stnk     	btmstr2 == "CLAIM" && btmtypdeb == "INSTANSI"
+cY5             	"Y"
+/*cfotostnk       	svitgl1 == g_tgltrn*/
+cACC			"ACC"		
+cTACC			"TACC"
+cKunciSTNK		"UPLOAD STNK 620"
+cKunciSTNK2		"ACC STNK 620"
+
+cKUNCI_ADHHO            djoinabkADHHO == 0 && sviyt2 != BLANKS
+cKUNCI_ADHDCA   	djoinabkADHDCA == 0 && lnipADHDCA != BLANKS && sviyt2 != BLANKS
+cKUNCI_KABENG   	djoinabkKABENG == 0 && lnipAHASSKABENG != BLANKS && svists != BLANKS
+cKUNCI_SA		djoinabkSA == 0 && lnipAHASSSA != BLANKS && svists != BLANKS
+cKUNCI_FD		djoinabkFD == 0 && lnipAHASSFD != BLANKS && svists != BLANKS
+
+cFD             	"FD"
+cSA             	"SA"
+cKABENG         	"KABENG"
+cADHDCA         	"ADHDCA"
+cADHHO			"ADHHO"
+
+cklikCc			svists == BLANKS && sviyt1 == "Y"
+cKlikTac		svists != BLANKS && sviyt1 == "Y"
+
+cCabkdjam		(lcabkdjam == "WIB" && lSYSTIME >= l1600) || (lcabkdjam == "WITA" && lSYSTIME >= l1500) || (lcabkdjam == "WIT" && lSYSTIME >= l1400)
+cTglkunci		g_tgltrn + 1 
+cKondisiUpl		svidf1 < 2 && sviyt2 != BLANKS
+
+cStsClsd		(abkkym2 == "UPLOAD STNK 620" || abkkym2 == "ACC STNK 620")
+/*cClsd			svists == BLANKS*/
+cClsd			(svists == BLANKS || svists == "TACC" || svists == "ACC")
+cY2ksng			sviyt2 != BLANKS
+cstsksng                sviyt1 != BLANKS
+
+
+cKabengSaClsd           (abkkym2 == "UPLOAD STNK 620" && (abktype == "KABENG" || abktype == "SA" || abktype == "FD"))
+cOnlyAdhHO		(g_grpnam == "ADHHO" || g_grpnam == "ADHDCA" || g_grpnam == "RI" || g_grpnam == "IT") && sviyt1 == "Y"
+cOnlyKabeng		(g_grpnam == "AHASSKABENG" || g_grpnam == "AHASSSA" || g_grpnam == "AHASSFD" || g_grpnam == "RI" || g_grpnam == "IT") && sviyt2 == "Y" && sviyt1 == BLANKS
+
+MAP(mupdabk)
+gv_CLSD         abksts          REPLACE
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(mupdsvifotostnk)
+cY5		sviyt2		DO_CALC
+csvidf1         svidf1          DO_CALC
+DEBUG           ldumstr    ldumstr    REPLACE
+
+DBCALCS(dupdsvifotostnk)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviotoidx       svioto
+        DBC_MAP         mupdsvifotostnk
+
+MAP(muplok)
+g_tgltrn        svitgl1         REPLACE
+cY5             sviyt1          DO_CALC /*_IF cfotostnk*/
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(mclearstatus)
+cBLANK          svists          DO_CALC
+DEBUG           ldumstr         ldumstr      REPLACE
+
+MAP(macc)
+cACC          	svists          DO_CALC
+g_usrkode     	svidtmkode      REPLACE
+g_usrnam	svinama		REPLACE
+g_tgltrn        svitgl1         REPLACE
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(mtacc)
+cTACC           svists          DO_CALC
+g_usrkode       svidtmkode	REPLACE
+g_usrnam	svinama		REPLACE
+g_tgltrn        svitgl1         REPLACE
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(mtacc_reset)
+cBLANK          sviyt1          DO_CALC
+cBLANK          svitgl1         DO_CALC      
+cBLANK          sviyt2          DO_CALC      
+DEBUG           ldumstr         ldumstr      REPLACE
+
+MAP(maddkuncian)
+lnipAHASSFD		lnipAHASSFD		REPLACE_IF cdjoinsgmFD
+lnipAHASSSA		lnipAHASSSA		REPLACE_IF cdjoinsgmSA
+lnipAHASSKABENG 	lnipAHASSKABENG      	REPLACE_IF cdjoinsgmKABENG
+lnipADHDCA		lnipADHDCA		REPLACE_IF cdjoinsgmADHDCA
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(maddabkFD)
+lKUNCIABSEN     abkdata         REPLACE
+lnipAHASSFD     abkkym          REPLACE
+g_tgltrn        abktgl          REPLACE
+cTglkunci       abktgl          DO_CALC_IF cCabkdjam
+lscr620         abkscr          REPLACE
+gv_INPG         abksts          REPLACE
+gt_RINP         abksts          REPLACE_IF cCabkdjam
+btmnobuk        abknobuk        REPLACE
+cKunciSTNK      abkkym2         DO_CALC
+cFD             abktype         DO_CALC
+cFD             abknoll         DO_CALC
+DEBUG           ldumstr    ldumstr    REPLACE
+
+
+MAP(maddabkSA)
+lKUNCIABSEN     abkdata         REPLACE
+lnipAHASSSA	abkkym      	REPLACE
+g_tgltrn        abktgl          REPLACE
+cTglkunci       abktgl          DO_CALC_IF cCabkdjam
+lscr620         abkscr          REPLACE
+gv_INPG         abksts          REPLACE
+gt_RINP         abksts          REPLACE_IF cCabkdjam
+btmnobuk        abknobuk        REPLACE
+cKunciSTNK	abkkym2         DO_CALC
+cSA             abktype         DO_CALC
+cSA             abknoll         DO_CALC
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(maddabkKABENG)
+lKUNCIABSEN     abkdata         REPLACE
+lnipAHASSKABENG abkkym	     	REPLACE
+g_tgltrn        abktgl          REPLACE
+cTglkunci       abktgl          DO_CALC_IF cCabkdjam
+lscr620         abkscr          REPLACE
+gv_INPG         abksts          REPLACE
+gt_RINP         abksts          REPLACE_IF cCabkdjam
+btmnobuk        abknobuk        REPLACE
+cKunciSTNK	abkkym2         DO_CALC
+cKABENG         abktype         DO_CALC
+cKABENG         abknoll         DO_CALC
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(maddabkADHDCA)
+lKUNCIABSEN     abkdata         REPLACE
+lnipADHDCA 	abkkym          REPLACE
+g_tgltrn        abktgl          REPLACE
+cTglkunci       abktgl          DO_CALC_IF cCabkdjam
+lscr620         abkscr          REPLACE
+gv_INPG         abksts          REPLACE
+gt_RINP         abksts          REPLACE_IF cCabkdjam
+btmnobuk        abknobuk        REPLACE
+cKunciSTNK2  	abkkym2         DO_CALC
+cADHDCA         abktype         DO_CALC
+cADHDCA         abknoll         DO_CALC
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(maddabkADHHO)
+lKUNCIABSEN     abkdata         REPLACE
+lnipADHHO	abkkym          REPLACE
+g_tgltrn        abktgl          REPLACE
+cTglkunci       abktgl          DO_CALC_IF cCabkdjam
+lscr620         abkscr          REPLACE
+gv_INPG         abksts          REPLACE
+gt_RINP         abksts          REPLACE_IF cCabkdjam
+btmnobuk        abknobuk        REPLACE
+cKunciSTNK2     abkkym2         DO_CALC
+cADHHO          abktype         DO_CALC
+cADHHO          abknoll         DO_CALC
+DEBUG           ldumstr    ldumstr    REPLACE
+
+MAP(maddabkadhho)
+lKUNCIABSEN     abkdata         REPLACE
+lnipADHHO       abkkym          REPLACE
+cTglkunci       abktgl          DO_CALC
+lscr620         abkscr          REPLACE
+gt_RINP         abksts          REPLACE
+btmnobuk        abknobuk        REPLACE
+cKunciSTNK2     abkkym2         DO_CALC
+cADHHO          abktype         DO_CALC
+cADHHO          abknoll         DO_CALC
+
+MAP(mdum2)
+DEBUG	ldumstr	ldumstr		REPLACE
+
+SPCALCS(supdacc)
+DO_LIB_IF cstsksng ap_dbclc(DNAME dupdabkacc,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabk,DBC_SELECT cStsClsd);
+DO_LIB_IF cklikCc ap_dbclc(DNAME dupdsviacc,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP macc);
+
+SPCALCS(supdtacc)
+DO_LIB  ap_dbclc(DNAME daddabk620,DCOMMAND MAPMAP,DMAP maddkuncian);
+DO_LIB_IF cstsksng ap_dbclc(DNAME dupdabktac,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabk,DBC_SELECT cStsClsd);
+DO_LIB_IF cklikCc ap_dbclc(DNAME dupdsvitacc,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mtacc);
+DO_LIB  ap_dbclc(DNAME dum2,DCOMMAND MAPMAP,DMAP mdum2);
+DO_LIB_IF cKUNCI_FD ap_dbclc(DNAME daddabk620ax,DCOMMAND ADD,DFILE abk,DMAP maddabkFD); /* FD */
+DO_LIB_IF cKUNCI_SA ap_dbclc(DNAME daddabk620bx,DCOMMAND ADD,DFILE abk,DMAP maddabkSA); /* SA */
+DO_LIB_IF cKUNCI_KABENG ap_dbclc(DNAME daddabk620cx,DCOMMAND ADD,DFILE abk,DMAP maddabkKABENG); /* Kabeng */
+DO_LIB_IF cKlikTac ap_dbclc(DNAME dupdsvicleartacc,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mtacc_reset);
+
+SPCALCS(supdok)
+DO_LIB  ap_dbclc(DNAME daddabkupl,DCOMMAND MAPMAP,DMAP maddkuncian);
+DO_LIB_IF cClsd ap_dbclc(DNAME dupdabkdok,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabk,DBC_SELECT cKabengSaClsd);
+DO_LIB_IF cKUNCI_ADHDCA ap_dbclc(DNAME daddabk620c,DCOMMAND ADD,DFILE abk,DMAP maddabkADHDCA); /* ADH DCA */
+DO_LIB_IF cKUNCI_ADHHO ap_dbclc(DNAME daddabk620d,DCOMMAND ADD,DFILE abk,DMAP maddabkADHHO); /* ADH HO */
+DO_LIB_IF cKondisiUpl ap_dbclc(DNAME daddadh_awal,DCOMMAND ADD,DFILE abk,DMAP maddabkadhho);
+DO_LIB_IF cY2ksng ap_dbclc(DNAME dupdsviok,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muplok);
+DO_LIB_IF cstsksng ap_dbclc(DNAME dupdsviclearsts,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mclearstatus);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadacc	DO_SPCALCS IF cOnlyAdhHO supdacc
+CLICKED		cur_field=luploadtacc	DO_SPCALCS IF cOnlyAdhHO supdtacc
+CLICKED         cur_field=lUPLOADSTNK	DO_SPCALCS IF cOnlyKabeng supdok
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ciniGC_stnk
+SFL_UPL_DELCOND c1
+SFL_UPLFLD_DBCALCS dupdsvifotostnk
+SFL_UPLFLD btmnobuk
+SFL_UPL_DIRFLD btmtgl
+SFL_TARGET
+svidatbuktyp    btmdata btmnobuk lfotostnk11

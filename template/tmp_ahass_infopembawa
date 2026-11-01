@@ -1,0 +1,164 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/-Detail Info Pembawa-------------\|
+|| t.Smh	: ___________	   ||
+|| t.Hub	: ___________	   ||
+|| t.Alamat2	: ___  ____________||
+|| t.NamaPem	: _________________||
+|| t.NoHpPem    : _________________||
+|| i.Alamat     : _________________||
+|| i.Propinsi   : _________  ______||
+|| i.Kota       : _________  ______||
+|| i.Kec        : _________  ______||
+|| i.Kel        : _________  ______||
+||                       _________ ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almutama  	ALLCAPS		INPUTRI	1
+almnama2   	ALLCAPS		INPUTRI	2
+almlat		NUMERIC 	INPUTRI	3
+lKetTinggal	PROTECT		INPUTRI	3
+almnama		ALLCAPS		INPUTRI	4
+almbukoto	DIGITS 		INPUTRI	5
+almjalan        ALLCAPS         INPUTRI 6
+almprop         ALLCAPS         INPUTRI 7
+almnamprop      PROTECT         INPUTRI 8
+almkota         ALLCAPS         INPUTRI 9
+almnamkota      PROTECT         INPUTRI 10
+almkec          ALLCAPS         INPUTRI 11
+almnamkec       PROTECT         INPUTRI 12
+almkel          ALLCAPS         INPUTRI 13
+almnamkel       PROTECT         INPUTRI 14
+lenter          NOCHANGE        INPUTRI 15
+
+DEFAULTS(tmptranst)
+almutama     DFALT_SCAN_BLANK
+                                PEMILIK
+                                BKNPEMILIK
+almnama2     DFALT_SCAN_BLANK
+                                SUAMI/ISTRI
+                                ANAK
+                                ORANG_TUA
+                                SAUDARA
+                                KERABAT/TEMAN
+                                SUPIR
+almlat	     DFALT_SCAN_BLANK
+				1 "SAMA DENGAN PEMILIK"
+				2 "TDK SAMA DENGAN PEMILIK"
+
+EDITS(tmptranst)
+e.Mandatory1	almutama MANDATORY
+e.Mandatory2	almnama2 MANDATORY_IF cBknPemilik
+e.Mandatory3	almlat	 MANDATORY_IF cBknPemilik
+e.MandatoryNama	almnama MANDATORY
+e.MandatoryTlp	almbukoto MANDATORY
+e.MandatoryJln  almjalan MANDATORY
+e.MandatoryProp almprop MANDATORY
+e.MandatoryKota almkota MANDATORY
+e.MandatoryKec  almkec MANDATORY
+e.MandatoryKel  almkel MANDATORY
+
+e.ValidateProp  almprop VALIDATE dtmdtkodidx  mdtmProp1 sdtmProp {Pgv_dtkota}
+e.ValidateKota  almkota VALIDATE tbldtdtmkod  mtblKota1 stblKota {Pgv_dtkota} {Palmprop}
+e.ValidateKec   almkec VALIDATE tbddatkodidx  mtbdKec1 stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.ValidateKel   almkel VALIDATE tbtdattypkod  mtbtKel1 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(malamat)
+lalmjalan1	almjalan	REPLACE_IF ckondalm2
+lalmprop1	almprop		REPLACE_IF ckondalm2
+lalmkota1	almkota		REPLACE_IF ckondalm2
+lalmkec1	almkec		REPLACE_IF ckondalm2
+lalmkel1	almkel		REPLACE_IF ckondalm2
+
+MAP(mpanjangnom_tmp)
+cpanjangnom_tmp          ljumlahnomor            DO_CALC
+
+MAP(mtinggal)
+cSamaTgl	lKetTinggal	DO_CALC_IF cTinggal1
+cTdkSamaTgl	lKetTinggal	DO_CALC_IF cTinggal2
+
+MAP(mbarcode)
+laktlok_barcode	almbukoto	REPLACE_IF cdjoinbarcode	/* No Telp dari Barcode / Antrian */
+laktbrg_barcode	almnama		REPLACE_IF cdjoinbarcode 	/* Nama dari Barcode /Antrian */
+
+
+MAP(mdum_tmp)
+DEBUG	ldumstr	ldumstr		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=almlat     DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almnama2   DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almjalan   DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almprop    DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almkota    DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almkec     DO_SKIP_IF cPemilik
+BEFORE_INPUT    cur_field=almkel     DO_SKIP_IF cPemilik
+AFTER_INPUT	cur_field=almutama   DO_MAP SHOW malamat
+AFTER_INPUT	cur_field=almutama   DO_MAP SHOW mbarcode
+AFTER_INPUT	cur_field=almlat     DO_MAP SHOW malamat
+AFTER_INPUT	cur_field=almlat     DO_MAP SHOW mtinggal
+
+AFTER_INPUT     cur_field=almbukoto   DO_LIB ap_amstr(almbukoto,ln1i,ln1,&ldigit1);
+AFTER_INPUT     cur_field=almbukoto   DO_LIB ap_amstr(almbukoto,ln2i,ln1,&ldigit2);
+AFTER_INPUT     cur_field=almbukoto   DO_MAP SHOW mpanjangnom_tmp
+
+
+AFTER_INPUT	cur_field=almbukoto DO_MAP SHOW
+                IF cbukan08 mdum_tmp
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+almdatbukidx    lINFOPEMBW btmnobuk
+
+SFL_MAP
+lINFOPEMBW      almdata         REPLACE
+btmnobuk        almnobuk        REPLACE
+
+MAP(mdtmProp1)
+dtmkode         almprop         REPLACE
+dtmket          almnamprop      REPLACE
+cSamaTgl	lKetTinggal	DO_CALC_IF cTinggal1
+cTdkSamaTgl	lKetTinggal	DO_CALC_IF cTinggal2
+
+MAP(mtblKota1)
+tblkode         almkota         REPLACE
+tblket          almnamkota      REPLACE
+
+MAP(mtbdKec1)
+tbdkode         almkec          REPLACE
+tbdket          almnamkec       REPLACE
+
+MAP(mtbtKel1)
+tbtkode         almkel          REPLACE
+tbtket          almnamkel       REPLACE
+
+MAP(mupdbtmPem)
+almutama	btmstsbrg	REPLACE
+almnama2	btmbisnisjl	REPLACE
+
+MAP(mdelbtmPem)
+cBLANKS		btmstsbrg	DO_CALC
+cBLANKS		btmbisnisjl	DO_CALC
+
+SPCALCS(spaddtmptrans)
+DO_LIB ap_dbclc(DNAME daddbtm,DCOMMAND UPDATE,DTARGET btmbukidx almnobuk,DMAP mupdbtmPem);
+
+SPCALCS(spupdtmptrans)
+DO_LIB ap_dbclc(DNAME dupdbtm,DCOMMAND UPDATE,DTARGET btmbukidx almnobuk,DMAP mupdbtmPem);
+
+SPCALCS(spdeltmptrans)
+DO_LIB ap_dbclc(DNAME ddelbtm,DCOMMAND UPDATE,DTARGET btmbukidx almnobuk,DMAP mdelbtmPem);
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtmptrans
+PST_UPDCMD      spupdtmptrans
+PST_DELCMD      spdeltmptrans

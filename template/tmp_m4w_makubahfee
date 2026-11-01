@@ -1,0 +1,265 @@
+LOCAL
+PGM_FIELDS
+lnamausrdet2		STRING		31
+lnamausrdet1 		STRING		31
+lnamausrdet3		STRING		31
+lnamausrdet5		STRING		31
+lnamarm			STRING		31
+lversifee		STRING		21
+
+IMAGE(tmptranst)
+/--------------------------------------------\
+|/------------------------------------------\|
+||t.PerubahanNominalFee                     ||
+|\------------------------------------------/|
+|/------------------------------------------\|
+||t.No             :___ _______ ___________ ||
+||t.NominalLama    :____________________.__ ||
+||t.NominalBaru    :____________________.__ ||
+||t.AlasanPerubahan                         ||
+||__________________________________________||
+||                                          ||
+||t.Userinput    :______  __________________||
+||t.AccRM        :______  _____________ ____||
+||t.AccCAM       :______  _____________ ____||
+||t.AccDCOO      :______  _____________ ____||
+||t.AccSdvHdRem  :______  _____________ ____||
+||t.Aproval      :______  _________         ||
+|\------------------------------------------/|
+\--------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	PROTECT         		INPUTRI		1
+svistr5		PROTECT				INPUTRI		1
+svitgl1 	PROTECT {DD-MM-YY}     		INPUTRI		1
+svidf1		PROTECT         		INPUTRI		1
+svidf2 		NUMERIC         		INPUTRI		2
+sviket 		TEXTAREA 3 ALLCAPS		INPUTRI		3
+
+svikode		PROTECT				INPUTRI		4
+lnamausrdet	PROTECT				INPUTRI		5
+
+svistr8		ALLCAPS				INPUTRI		6
+lnamarm		PROTECT				INPUTRI		6
+svistr9		NOCHANGE			INPUTRI		6
+
+svistr1		PROTECT				INPUTRI		6
+lnamausrdet2	PROTECT				INPUTRI		7
+svistr2		NOCHANGE			INPUTRI		8
+
+svistr3		ALLCAPS				INPUTRI		9
+lnamausrdet3	PROTECT				INPUTRI		10
+svistr4		NOCHANGE			INPUTRI		11
+
+svistr6		NOCHANGE			INPUTRI		12
+lnamausrdet5	PROTECT				INPUTRI		13
+svistr7		NOCHANGE			INPUTRI		14
+
+svitype2	PROTECT				INPUTRI		15
+lENTER		ALLCAPS				INPUTRI		15
+
+CALCS()
+cinimskcam	g_grpnam=="B.M4WDPH" || g_grpnam=="B.M4WDVH"
+/*cinidcoo	g_usrkode=="1108406" || g_usrkode=="1000459"*/
+
+DEFAULTS(tmptranst)
+svikode		INIT_ADD	{g_usrkode}
+svitgl1		INIT_ADD	{g_tgltrn}
+IF cinimskcam	svistr1	INIT_UPDATE {g_usrkode}
+/*IF cinidcoo	svistr3	INIT_UPDATE {g_usrkode}*/
+svistr9		DFALT_SCAN_BLANKS	ACC TACC
+svistr2		DFALT_SCAN_BLANKS	ACC TACC
+svistr4		DFALT_SCAN_BLANKS	ACC TACC
+svistr7		DFALT_SCAN_BLANKS	ACC TACC
+lversifee	INIT		010422v1
+
+CALCS()
+cnonM4W2	tlmdvs!="M4W" && svistr6 != BLANKS
+cM4W2		tlmdvs=="M4W" || tlmdvs=="M2W4W"
+
+EDITS(tmptranst)
+NAMA USER INPUT TIDAK ADA	svikode		VALIDATE psmkodidx mpsmusrdet1
+NAMA USER CAR TIDAK ADA		svistr1		VALIDATE psmkodidx mpsmusrdet2
+NAMA USER DCOO TIDAK ADA	svistr3		VALIDATE psmkodidx mpsmusrdet3
+t.NamaGmRemTdkAda		svistr6		VALIDATE psmkodidx mpsmusrdet5
+t.NamaRMTdkAda   		svistr8		VALIDATE psmkodidx mpsmusrdet6
+e.Mandatory			svistr7		MANDATORY_IF cnonM4W2
+Nominal Baru Harus Diinput	svidf2		MANDATORY
+Keterangan Harus Diinput	sviket		MANDATORY
+
+MAP(mpsmusrdet1)
+psmnama		lnamausrdet1		REPLACE
+
+MAP(mpsmusrdet2)
+psmnama		lnamausrdet2		REPLACE
+
+MAP(mpsmusrdet3)
+psmnama		lnamausrdet3		REPLACE
+
+MAP(mpsmusrdet5)
+psmnama		lnamausrdet5		REPLACE
+
+MAP(mpsmusrdet6)
+psmnama		lnamarm		REPLACE
+
+CALCS()
+cjoinurutfee0	djoinurutfee==0 && g_curcmd==1
+cjoinurutfee1	djoinurutfee==1 && g_curcmd==1
+curut		lurutfee + 1
+cubahfee	tlmdvs!="M4W" && (tlmsts=="OPEN" || tlmsts=="OPE1" || tlmsts=="INP1" || tlmsts=="INP2" || tlmsts=="INP3" || (tlmsts=="INPG" && ( /* svistr4=="ACC" || */svistr7=="ACC")))
+cubahfeem4w	(tlmdvs=="M4W" || tlmdvs=="M2W4W" ) && (tlmsts=="OPE1" || tlmsts=="INP1" || tlmsts=="INP2" || tlmsts=="INP3" || 
+		(tlmsts=="INPG" && ((svitype2=="RM" && svistr9=="ACC") || (svitype2=="CAM" && svistr2=="ACC") || (svitype2=="DCOO" && svistr4=="ACC"))  )  )
+cskipfee2	(g_curcmd==2 && svikode!=g_usrkode) || svistr9!=BLANKS || svistr2!=BLANKS
+cskipfee3	svistr1!=g_usrkode || svistr4!=BLANKS  
+cskipfee4	svistr3!=g_usrkode /*&& g_usrkode!="1108406" && g_usrkode!="1127081" && g_usrkode!="1000459"*/
+cBLANKS		BLANKS
+c1000459	"1000459"
+c1108406	"1108406"
+c1522430	"1326445"
+ctambahm4w	g_curcmd==1 && tlmdvs=="M4W"
+ctambahm4wpiu	g_curcmd==1 && tlmdvs=="M4W" && (tlmgrup=="Z0" || tlmgrup=="Z1" || tlmgrup=="Z2" || tlmgrup=="Z4" || tlmgrup=="Z6")
+ctambahm4wrem	g_curcmd==1 && tlmdvs=="M4W" && (tlmgrup!="Z0" && tlmgrup!="Z1" && tlmgrup!="Z2" && tlmgrup!="Z4" && tlmgrup!="Z6")
+ctambahrm	g_curcmd==1 && tlmdvs=="M4W" && djoinsgmrm==1
+ctambaham	g_curcmd==1 && tlmdvs=="M2W4W" && djoinsgmam==1
+/*
+cbatasbuh	g_curcmd==1 && tlmdvs!="M4W" && djoinsgmbuh2w==1 && svidf2 >0         
+cbataspjho	g_curcmd==1 && tlmdvs!="M4W" && djoinsgmpjho==1 && svidf2 >=1500000
+*/
+cbatasgmrem	g_curcmd==1 && tlmdvs!="M4W" && svidf2 >0 && 
+		((djoinsgmpjho==1 && (tlmgrup=="Z0" || tlmgrup=="Z1" || tlmgrup=="Z2")) || 
+		(djoinsgmpjho2==1 && (tlmgrup=="Z4" || tlmgrup=="Z6")) ||
+		(djoinsgmpjho3==1 && tlmgrup!="Z0" && tlmgrup!="Z1" && tlmgrup!="Z2" && tlmgrup!="Z4" && tlmgrup!="Z6"))
+
+ctambahfee	tlmdvs!="M4W" && g_curcmd==1
+cskiprm		svistr8!=g_usrkode
+cskiprmx	g_grpnam!="RI" && g_grpnam!="IT"
+
+MAP(murutfee)
+c1		svinourt	DO_CALC_IF cjoinurutfee0
+curut		svinourt	DO_CALC_IF cjoinurutfee1
+tlmtotal	svidf1		REPLACE_IF ctambah
+tlmsts		svistr5		REPLACE_IF ctambah
+lniprm		svistr8		REPLACE_IF ctambahrm
+lnipam		svistr8		REPLACE_IF ctambaham
+c1000459        svistr1         DO_CALC_IF ctambahm4wpiu
+c1108406	svistr1		DO_CALC_IF ctambahm4wrem
+
+c1522430        svistr3         DO_CALC_IF ctambahm4w
+g_grpnam        svistr10        REPLACE_IF ctambahm4w
+
+MAP(misiacc)
+cBLANK		svistr1		DO_CALC_IF ctambahfee
+cBLANK		svistr3		DO_CALC_IF ctambahfee
+cBLANK		svistr7		DO_CALC_IF ctambahfee
+/*
+lnipbuh2w	svistr1		REPLACE_IF cbatasbuh	acc buh
+lnipremhead	svistr3		REPLACE_IF cbataspjho	acc pjho
+*/
+lnippjho	svistr6		REPLACE_IF cbatasgmrem	/*accgm rem*/
+
+CALCS()
+cRMx2		"RM"
+cCAMx2		"CAM"
+cDCOOx2		"DCOO"
+cCAMx		(svistr9=="ACC" && tlmdvs!="M2W4W") || svistr10=="B.M4WCSPV" || g_grpnam=="B.M4WDVH" || g_grpnam=="B.M4WDPH"
+cDCOOx		svistr2=="TACC" || 
+		(tlmdvs == "M4W" && svidf2 > 15000000 && svistr9 == "ACC" && svistr2 == "ACC") 
+cusiabwh90br	(tlmdvs!="M4W" && svidf2<=2500000) || tlmdvs=="M4W"
+
+
+MAP(menterfee)
+cRMx2		svitype2	DO_CALC
+cCAMx2		svitype2	DO_CALC_IF cCAMx
+cDCOOx2		svitype2	DO_CALC_IF cDCOOx
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svidf2	DO_SKIP_IF cskipfee2
+BEFORE_INPUT		cur_field=sviket	DO_SKIP_IF cskipfee2
+BEFORE_INPUT		cur_field=svistr8	DO_SKIP_IF cskiprmx
+BEFORE_INPUT		cur_field=svistr3	DO_SKIP_IF cskiprmx
+BEFORE_INPUT		cur_field=svistr9	DO_SKIP_IF cskiprm
+BEFORE_INPUT		cur_field=svistr6	DO_SKIP_IF cM4W2
+BEFORE_INPUT            cur_field=svistr7       DO_SKIP_IF cM4W2
+
+BEFORE_INPUT		cur_field=svistr2	DO_SKIP_IF cskipfee3
+BEFORE_INPUT		cur_field=svistr4	DO_SKIP_IF cskipfee4
+BEFORE_INPUT		cur_field=svidf2	DO_MAP SHOW murutfee
+AFTER_INPUT		cur_field=svidf2	DO_MAP SHOW misiacc
+
+AFTER_INPUT		cur_field=svidf2	DO_MAP SHOW
+			IF cusiabwh90br mdum
+			ELSE HKCURSOR STAY
+			HKMSG UNTUK FAKTUR MOTOR BATAS MAKSIMAL PLAFON 2,5JT
+
+AFTER_INPUT		cur_keybd=EN      	DO_MAP SHOW menterfee
+
+MAP(mupdfee)
+c1		tlmperdisd	DO_CALC
+svidf2		tlmtotal	REPLACE_IF cubahfee
+cpersenfee      tlmtotppn       DO_CALC_IF cubahfee
+cBLANKS		tlmperdisd	DO_CALC_IF cubahfee
+
+svidf2		tlmtotal	REPLACE_IF cubahfeem4w
+cpersenfee      tlmtotppn       DO_CALC_IF cubahfeem4w
+cBLANKS		tlmperdisd	DO_CALC_IF cubahfeem4w
+
+CALCS()
+cppskom4        (lppstotal + svidf1) - tlmtotal
+cppskom5        (lppstotal + ~svidf2) - tlmtotal
+
+MAP(mupdppskomtrkmtr4)
+cppskom4        ppstotal        DO_CALC_IF ctambah
+cppskom5        ppstotal        DO_CALC_IF cubah
+cppskom4        ppssisa         DO_CALC_IF ctambah
+cppskom5        ppssisa         DO_CALC_IF cubah
+ppssisa         ppssisprc       REPLACE
+cppskom4        ppshrg          DO_CALC_IF ctambah
+cppskom5        ppshrg          DO_CALC_IF cubah
+tlmtotal        ppsdf1          REPLACE
+
+
+MAP(mupdrptkomtrkmtr4)
+tlmtotal        rptbl2          REPLACE
+
+
+SPCALCS(subahfee)
+	DO_LIB ap_dbclc(DNAME dupdfee,DCOMMAND UPDATE,DTARGET tlmbukidx svinobuk,DMAP mupdfee);
+	DO_LIB_IF cjoinppskomtrk2 ap_dbclc(DNAME dupdpps6,DCOMMAND UPDATE,DBC_TARGET ppsdattypbuk gv_dthut lhutkol gv_INPG lnobuk739,DMAP mupdppskomtrkmtr4);
+	DO_LIB_IF cjoinrptkomtrk2 ap_dbclc(DNAME dupdrpt6,DCOMMAND UPDATE_RANGE,DBC_TARGET rptdttypkod lKOMTRKMTR lths2 lthbl3 lKOMTRKMTR1 tlmnoasal,DMAP mupdrptkomtrkmtr4);
+
+
+POSTING(tmptrans)
+	PST_ADDCMD	subahfee
+	PST_UPDCMD	subahfee
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp   tlmdata tlmnobuk lUBAHFEE   
+SFL_MAP
+tlmnobuk	svinobuk	REPLACE
+tlmdata		svidata		REPLACE
+lUBAHFEE   	svitype		REPLACE
+
+CALCS()
+caddtmptrans	(tlmsts=="OPEN" || tlmsts=="INPG") && tlmsts2!="FINA" && 
+		(
+		((tlmdvs=="M4W" && 
+		(((g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WBM") && pikklakon!="WO") || (g_grpnam=="B.M4WCSPV" || g_grpnam=="B.M4WDVH" || g_grpnam=="B.M4WDPH" || g_grpnam=="B.M4WRM" || g_grpnam=="IT" || g_grpnam=="RI")))) || 
+		(tlmdvs!="M4W" && (g_grpnam=="KAWIL" || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam == "SYOMAHEAD" || g_grpnam == "COLLAREASP" || g_grpnam == "BOM" || g_grpnam=="ARAMZ1Z2" || g_grpnam=="ARAMZ4Z6" || g_grpnam=="REMAM" || g_grpnam=="REMDVH" || g_grpnam=="COLLHEAD" || g_grpnam=="REMHEAD" || g_grpnam=="ARAM" || g_grpnam=="M2WAM"))
+		)
+
+cupdtmptrans	(tlmsts=="OPEN" || tlmsts=="INPG") && tlmsts2!="FINA" && djoinurutfee==1 && svinourt==lurutfee && svistr4==BLANKS &&
+                ((tlmdvs!="M4W" && (svistr1==g_usrkode || svistr3==g_usrkode || svistr6==g_usrkode)) ||
+                 (tlmdvs=="M4W" && ((svitype2=="RM" && g_usrkode==svistr8) || (svitype2=="CAM" && (g_usrkode==svistr1 || g_grpnam=="B.M4WDPH" || g_grpnam=="B.M4WDVH")) ||
+		 (svitype2=="DCOO" && (g_usrkode==svistr3 || g_usrkode=="1108406" || g_usrkode=="1127081" || g_usrkode=="1000459")) || 
+		 g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="M2WAM")) || 
+		 (tlmdvs=="M2W4W" && (g_grpnam=="M2WAM" || g_grpnam=="COLLHEAD" ))) 
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	caddtmptrans
+	PMT_UPDALL_COND	cupdtmptrans
+	PMT_DEL_COND	c0

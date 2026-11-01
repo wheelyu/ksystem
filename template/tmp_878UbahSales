@@ -1,0 +1,67 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+ /---------------------------------\
+  t.NipUser   : ___________________
+  t.Nama      : ___________________
+  t.Type      : ___________________
+  t.Nip       : ___________________
+  t.Cab       : ___________________
+  t.Keterangan: ___________________
+                ________
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdsisstr         PROTECT               INPUTRI 1
+lnamabuka         PROTECT               INPUTRI 1
+tkdjenis          NOCHANGE              INPUTRI 1
+tkdjwbstr2        ALLCAPS               INPUTRI 2
+tkdjwbstr1        ALLCAPS               INPUTRI 3
+tkdket            TEXTAREA              INPUTRI 4
+tkddata           NOCHANGE              INPUTRI 5
+
+CALCS()
+cnipubah        tkdjenis=="UBAH_NIP"
+ccabubah        tkdjenis=="UBAH_CAB"
+
+DEFAULTS(tmptranst)
+tkdjenis        DFALT_SCAN_BLANKS   	UBAH_NIP "UBAH NIP"
+                                        UBAH_CAB "UBAH CABANG"
+tkdtgl            INIT_ADD              {g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjenis               MANDATORY
+e.Mandatory     tkdjwbstr2              MANDATORY_IF cnipubah
+e.Mandatory     tkdjwbstr1              MANDATORY_IF ccabubah
+e.Mandatory     tkdket                  MANDATORY
+
+CALCS()
+cubahxx		  tkmsts == "OPEN" && lpsidvs != "M2W" && lpsidvs != "M2W4W"
+cselubhxx	  tkdstr1=="NIPX"
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjwbstr2    DO_SKIP_IF ccabubah
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF cnipubah
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cubahxx
+SFL_SELECT cselubhxx
+SFL_TARGET
+tkddatbukll     lNIPX	tkmnobuk	
+
+SFL_MAP
+g_usrkode       tkdsisstr 	REPLACE
+tkmnobuk        tkdnobuk        REPLACE
+lNIPX           tkddata         REPLACE
+lNIPX21          tkdnoll         REPLACE
+gv_OPEN         tkdsts          REPLACE
+
+
+PERMIT(tmptrans)
+        PMT_UPDALL_COND    c0
+        PMT_DEL_COND    c0
+
+

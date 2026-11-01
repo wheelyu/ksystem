@@ -1,0 +1,53 @@
+IMAGE(tmptranst)
+/------------------t-----------------t-----\
+|t.NoBuk           |t.NoFak          |t.Y  |
+\------------------.-----------------.-----/
+
+IMAGE(tmptrans)
+|__________________|_________________|_____|
+
+FIELD(tmptrans)
+tldnobuk        PROTECT SCROLL          INPUTRI         1
+tldnoll         PROTECT SCROLL          INPUTRI         2
+tldstr1         NOCHANGE	        INPUTRI         3
+
+CALCS()
+ckonvoid        tlmsts == "RCLS" && g_grpnam == "RI"
+
+DEFAULTS(tmptrans)
+tldstr1         DFALT_LIST             T Y
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND ckonvoid
+SFL_TARGET  tldbukurtidx  tlmnobuk
+
+CALCS()
+ckurang1        tlmtotpph - 1
+cjkpily         ltldstr1 == "Y"
+cjkpily2        ltldstr1 == "Y" && tldstr2 != BLANKS
+cisiT           "T"
+
+MAP(mmapvoid861)
+tldstr1		ltldstr1	REPLACE
+tldstr2		ltldstr2	REPLACE
+tldoto		loto861det	REPLACE
+
+MAP(mupdtlmvoid861)
+ckurang1        tlmtotpph       DO_CALC
+DEBUG ldum	ldum		REPLACE
+
+MAP(mupdtld860voidtrm)
+cisiT           tlddk           DO_CALC
+gv_INPG         tldsts          REPLACE
+
+SPCALCS(spbatalterima861)
+DO_LIB ap_dbclc(DNAME dmapvoid861,DCOMMAND MAPMAP,DMAP mmapvoid861);
+DO_LIB_IF cjkpily  ap_dbclc(DNAME dupdtlmbtltrm861,DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk,DMAP mupdtlmvoid861);
+DO_LIB_IF cjkpily2 ap_dbclc(DNAME dupdtld860voidtrm,DCOMMAND UPDATE, DTARGET tldotoidx tldstr2,DMAP mupdtld860voidtrm);
+DO_LIB_IF cjkpily ap_dbclc(DNAME ddeltld861,DCOMMAND DELETE ,DTARGET tldotoidx loto861det);
+
+POSTING(tmptrans)
+PST_COMMAND spbatalterima861

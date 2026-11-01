@@ -1,0 +1,180 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Riding Test Unit
+|| i.RidingTestUnit: ____________________  ||
+|| i.TanggalInput  : ____________________  ||
+  t.UplRidingTestUnit
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| i.SeriesMotor   : ____________________  ||
+ t.Display Unit
+|| i.DisplayUnit   : ____________________  ||
+|| i.TanggalInput  : ____________________  ||
+  t.UplRidingTestUnit
+  /--s.UPLOAD2----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| i.SeriesMotor   : ____________________  ||
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTlk : ___________________________
+  i.Enter    : _____
+  _________________________________________s
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdtype         ALLCAPS NOCHANGE		        INPUTRI	1
+tkdtgl          PROTECT {DD-MM-YY}          INPUTRI 1
+tkdsisstr       ALLCAPS SCROLL  		        INPUTRI	2
+tkdtype2        ALLCAPS NOCHANGE		        INPUTRI	3
+tkdtgl2 	      PROTECT {DD-MM-YY}          INPUTRI	3
+tkdstr3      ALLCAPS SCROLL  		        INPUTRI	4
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts          PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 2
+tkdket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolbhm7ok    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+CALCS()
+ceventsre       tlmuntuk == lSHOWEVENT 
+cbukaneventsre  tlmuntuk != lSHOWEVENT
+ceventpprt      tlmuntuk == lPPRT
+cbukaneventpprt tlmuntuk != lPPRT
+DEFAULTS(tmptranst)
+ltmpisidf1  	  INIT            {tmpisidf1}
+labktype	      INIT            {ctipedetail}
+tkdtotsj        INIT_UPDATE     0
+IF ceventpprt tkdtype         DFALT_LIST      ADA
+IF cbukaneventpprt tkdtype         DFALT_LIST     ADA TIDAK
+IF ceventsre tkdtype2 DFALT_LIST      ADA
+IF cbukaneventsre tkdtype2 DFALT_LIST     ADA TIDAK
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+CALCS()
+ctypeada                tkdtype == "ADA"
+ctype2ada               tkdtype2 == "ADA"
+ctypetidak              tkdtype == "TIDAK"
+ctype2tidak             tkdtype2 == "TIDAK"
+cuploadridingdisplayok  tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && (tkdtype == "ADA" || tkdtype2 == "ADA") && tkdtotsj == 1
+cridingdisplayok        ((tlmuntuk == lSHOWEVENT || tlmuntuk == lPPRT || tlmuntuk == lPAMERAN) && ((tkdtype == "ADA" && tkdsisstr != "") || (tkdtype2 == "ADA" && tkdstr3 != ""))) || 
+                        (tlmuntuk != lSHOWEVENT && tlmuntuk != lPPRT && tlmuntuk != lPAMERAN)
+cdetaildisplaybelumok   tkdtype2 == "ADA" && tkdstr3 == ""
+cdisplaybelumok         tkdtype2 == "ADA" && tkdjml5 == 0
+cdetailridingbelumok    tkdtype == "ADA" && tkdsisstr == ""
+cridingbelumok          tkdtype == "ADA" && tkdjml4 == 0
+cdetailbhm7ok           tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && 
+                        djoindetailhm8 == 1 && lstatusdetail == gv_ok && (((tlmuntuk == lSHOWEVENT || tlmuntuk == lPPRT || tlmuntuk == lPAMERAN) && ((tkdtype == "ADA" && tkdjml4 > 0 && tkdsisstr != "") || (tkdtype2 == "ADA" && tkdjml5 > 0 && tkdstr3 != ""))) || 
+                        (tlmuntuk != lSHOWEVENT && tlmuntuk != lPPRT && tlmuntuk != lPAMERAN)) && tkdtotjsa == 1
+cridingdisplaybelumok   (tlmuntuk == lSHOWEVENT || tlmuntuk == lPPRT || tlmuntuk == lPAMERAN) && tkdtype != "ADA" && tkdtype2 != "ADA"
+
+EDITS(tmptranst)
+e.Mandatory             tkdtype         MANDATORY
+e.Mandatory             tkdtype2        MANDATORY
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+t.ValidateSeries        tkdsisstr       VALIDATE_IF ctypeada tbddatkodidx mseriesahassriding stbdseriesahass {PlDTTABEL} {PlINFOUMUM} {PlSERIESAHASS}
+t.ValidateSeries        tkdstr3      VALIDATE_IF ctype2ada tbddatkodidx mseriesahassdisplay stbdseriesahass {PlDTTABEL} {PlINFOUMUM} {PlSERIESAHASS}
+e.Mandatory             tkdsisstr       MANDATORY_IF ctypeada
+e.Mandatory             tkdstr3      MANDATORY_IF ctype2ada
+
+MAP(mresetseries)
+cBLANKS                 tkdsisstr       DO_CALC_IF ctypetidak
+cBLANKS                 tkdstr3      DO_CALC_IF ctype2tidak
+
+MAP(mupdinfodetailbhm7)
+lISISERIESDISPLAY       tkdrek          REPLACE_IF cdetaildisplaybelumok
+lUPLOADFOTODISPLAY      tkdrek          REPLACE_IF cdisplaybelumok
+lISISERIESRIDING        tkdrek          REPLACE_IF cdetailridingbelumok
+lUPLOADFOTORIDING       tkdrek          REPLACE_IF cridingbelumok
+lMINIMAL1RIDEDISPLAY    tkdrek          REPLACE_IF cridingdisplaybelumok
+lSELESAIKANHMIN8DULU    tkdrek          REPLACE_IF cdjoindetailhm8apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokbhm7)
+        DO_LIB_IF cdetailbhm7ok          ap_dbclc(DNAME dupddetailreqbhm7,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB          ap_dbclc(DNAME dupddetailreqbhm7OK,DCOMMAND MAPMAP, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilbhm7, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewambhm7, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailbhm7,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailbhm7);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdsisstr    DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdstr3   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdtype   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdtype2   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdtgl    DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdtgl2  DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdsisstr    DO_SKIP_IF ctypetidak
+BEFORE_INPUT    cur_field=tkdstr3   DO_SKIP_IF ctype2tidak
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW mresetseries
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+		IF cridingdisplayok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Harus Ada Minimal 1 Riding Test Unit / Display Unit Dilengkapi Series Motornya
+
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+CLICKED         cur_field=ltombolbhm7ok  DO_SPCALCS spdetailokbhm7
+ 
+MAP(mtambahuploadfotoriding)
+ctambahupload		        tkdnourt	    DO_CALC
+ctambahuploadfoto4      tkdjml4         DO_CALC
+gv_int1                 tkdtotjsa       REPLACE
+g_tgltrn                tkdtgl          REPLACE
+
+DBCALCS(dtambahuploadfotoriding)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mtambahuploadfotoriding
+
+MAP(mtambahuploadfotodisplay)
+ctambahupload		        tkdnourt	    DO_CALC
+ctambahuploadfoto5      tkdjml5         DO_CALC
+gv_int1                 tkdtotjsa       REPLACE
+g_tgltrn                tkdtgl2         REPLACE
+
+DBCALCS(dtambahuploadfotodisplay)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mtambahuploadfotodisplay
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ckhusussrepprt
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl 
+SFL_UPLFLD  tkdnobuk lRIDINGTESTUNIT
+SFL_UPLFLD2 tkdnobuk lDISPLAYUNIT
+SFL_UPLFLD_DBCALCS dtambahuploadfotoriding
+SFL_UPLFLD2_DBCALCS dtambahuploadfotodisplay
+SFL_UPL_COND cuploadridingdisplayok
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan U Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNH1BHM7 tlmnobuk
+
+        
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

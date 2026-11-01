@@ -1,0 +1,99 @@
+LOCAL
+PGM_FIELDS
+lpekerjaan	STRING		21
+lperjanjian	STRING		21
+lttdsurvey	STRING		21
+l0		INT2		 3
+
+MAP(mjoinpekerjaan)
+svistr1		lpekerjaan	REPLACE
+
+DBCALCS(djoinpekerjaan)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      svidatbuktyp   gv_dt1106 btmnobuk gv_pekerjaan
+	DBC_MAP		mjoinpekerjaan
+
+CALCS()
+cjoinpekerjaan	djoinpekerjaan==1
+
+IMAGE(tmptranst) 
+/-------------------------------------------------\
+  /----------------------------------------------\ 
+   i.NoBuk           ____________________________
+   t.NamaPelanggan   ____________________________
+   t.JenisPembiayaan ____________________________
+   i.Ltv             _________________________.__
+   t.Ttlexp          _________________________.__
+   t.Pekerjaan       ____________________________
+   t.JnsPerjanjian   ___________________ ________
+  \----------------------------------------------/ 
+\-------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btmnobuk	PROTECT		INPUTRI		1
+psmnama_1	PROTECT		INPUTRI		2
+btmtypjl	PROTECT		INPUTRI		3
+nhmperpok_3	PROTECT		INPUTRI		4
+btmjml		PROTECT		INPUTRI		5
+lpekerjaan	PROTECT		INPUTRI		6
+svistr1		NOCHANGE	INPUTRI		7
+lenter		ALLCAPS		INPUTRI		8
+
+DEFAULTS(tmptranst)
+svistr1		DFALT_SCAN_BLANKS	MODAL_KERJA NON_MODAL_KERJA
+lttdsurvey	INIT			TTDSURVEY
+l0		INIT			0
+
+EDITS(tmptranst)
+e.Mandatory	svistr1		MANDATORY
+e.Validate	btmnobuk	VALIDATE btmbukidx mbtmx1 0
+
+MAP(mbtmx1)
+cBLANKS		lpekerjaan	DO_CALC
+lpekerjaan	lpekerjaan	REPLACE_IF cjoinpekerjaan
+
+CALCS()
+cseltmptrans	svikode=="FTDOKTTD05"
+condtmptrans	(g_grpnam=="B.M4WQA"     || g_grpnam=="B.M4WDVH"    || g_grpnam=="B.M4WCSPV"   || 
+                 g_grpnam=="B.M4WMHEAD"  || g_grpnam=="RAS"         || g_grpnam=="RI"          || 
+                 g_grpnam=="IT" 	 || g_grpnam=="B.M4WCOO"    || g_grpnam=="COO"         || 
+                (g_grpnam=="RASDVH" && djoinpsiPakJanson == 1)      || g_grpnam=="B.M4WCA"     || 
+                 g_grpnam=="B.M4WCM"     || g_grpnam=="B.M4WADHDVH" || g_grpnam=="B.M4WADHSPV" || 
+                 g_grpnam=="B.M4WADHHEAD")
+cupdtmptrans	btmsts!="CLSD" && 
+      		(g_grpnam=="B.M4WQA"     || g_grpnam=="B.M4WDVH"    || g_grpnam=="RI"          || 
+                 g_grpnam=="IT"          || g_grpnam=="B.M4WCOO"    || g_grpnam=="COO"         || 
+                (g_grpnam=="RASDVH" && djoinpsiPakJanson == 1)      || g_grpnam=="B.M4WCA"     || 
+                 g_grpnam=="B.M4WCM"     || g_grpnam=="B.M4WADHDVH" || g_grpnam=="B.M4WADHSPV" || 
+                 g_grpnam=="B.M4WADHHEAD")
+
+cmodalkerja     svistr1=="MODAL_KERJA"  
+cnonmodalkerja	svistr1=="NON_MODAL_KERJA"
+cmdlkerja	"MODALKERJA"
+cnonmdlkerja	"MULTIGUNA"
+
+MAP(mupdtipe)
+cmdlkerja       lperjanjian     DO_CALC_IF cmodalkerja
+cnonmdlkerja    lperjanjian     DO_CALC_IF cnonmodalkerja
+lperjanjian	btdth		REPLACE
+
+SPCALCS(spupdbtdtipe)
+DO_LIB          ap_dbclc(DNAME dupdbtd, DCOMMAND UPDATE, DTARGET btdbuktypidx btmnobuk lttdsurvey lttdsurvey l0, DMAP mupdtipe);
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND condtmptrans
+SFL_SELECT cseltmptrans
+SFL_TARGET
+        svidatbuktyp   lFOTOSVY btmnobuk lFOTODOKTTD l1
+
+POSTING(tmptrans)
+PST_UPDCMD spupdbtdtipe
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cupdtmptrans
+  PMT_DEL_COND  c0
+

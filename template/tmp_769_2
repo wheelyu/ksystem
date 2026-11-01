@@ -1,0 +1,91 @@
+LOCAL
+PGM_FIELDS
+lnamasdm3	STRING	61
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.PERNYATAAN: __________________||
+||t.Saya      : __________________||
+||t.Nip       : __________________||
+||t.Jabatan   : __________________||
+||________________________________||
+||            t.MENYATAKAN  ____  ||
+|\--------------------------------/|
+|/--SIGNATURE---------------------\|
+||				  ||
+||				  ||
+||				  ||
+||				  ||
+||				  ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tkdnobuk                PROTECT                 INPUTRI         1
+        lnamasdm3               PROTECT                 INPUTRI         1
+        tkdnoll                 PROTECT                 INPUTRI         1
+        tkdsisstr               PROTECT                 INPUTRI         1
+		tkdket			TEXTAREA 5 ALLCAPS PROTECT	INPUTRI		1
+        tkdjwbstr1              NOCHANGE                INPUTRI         1
+
+DEFAULTS(tmptranst)
+tkdnoll		INIT		{g_usrkode}
+tkdnoll		INIT_UPDATE	{g_usrkode}
+tkdjenis	INIT		"PERNYATAANLOC"
+tkdsts		INIT		{gv_OPEN}
+tkdket		INIT		"DENGAN INI SAYA MENYATAKAN BAHWA PENCAPAIAN YANG DI SYSTEM SESUAI DAN ADALAH BENAR. 
+				 PENCAPAIAN AKAN SAYA PERBAIKI SAMPAI SESUAI TARGET.
+				 APABILA PENCAPAIAN SAYA TIDAK CAPAI TARGET SAMPAI AKHIR BULAN SAYA AKAN MENERIMA PUNISHMENT SESUAI KETENTUAN."
+
+EDITS(tmptranst)
+t.ValidatePsi	tkdnoll		VALIDATE psikodidx mpsi3 0 
+
+MAP(mpsi3)
+psikode		tkdnoll		REPLACE
+psinama		lnamasdm3	REPLACE
+psijabatan	tkdsisstr	REPLACE
+
+MAP(minfo)
+tlmnobuk	tkdnobuk	REPLACE
+tlmdata		tkddata		REPLACE
+psinama         lnamasdm3       REPLACE
+psijabatan      tkdsisstr       REPLACE
+
+CALCS()
+cOK1		"OK"
+cblanks		BLANKS
+
+/*
+cadasdm		tkdnoll!="" && g_grpnam!="RI" && g_grpnam!="IT"*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW minfo
+/*AFTER_INPUT     cur_keybd=EN            DO_LIB_IF cadasdm ap_ceksj(tkdnoll);*/
+
+MAP(mupdttdtkd)
+cOK1		tkdjwbstr1	DO_CALC
+
+DBCALCS(dupdttdtkd)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mupdttdtkd
+
+MAP(mupddelttdtkd)
+cblanks		tkdjwbstr1	DO_CALC
+
+DBCALCS(dupddelttdtkd)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm	
+	DBC_MAP		mupddelttdtkd
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SGNFLD	tkdnobuk
+SFL_SGNFLD_DBCALCS	dupdttdtkd
+SFL_SGNFLD_DELDBCALCS dupddelttdtkd
+SFL_TARGET
+tkddatbukll tlmdata tlmnobuk 

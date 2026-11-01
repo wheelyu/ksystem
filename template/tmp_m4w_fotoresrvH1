@@ -1,0 +1,87 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| ______________________________ ||
+||t.TglUpl   ____________________ ||
+||t.StsUpl   ____________________ ||
+||t.lati     _____________.______ ||
+||t.long     _____________.______ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviket			PROTECT	                INPUTRI		2
+svitgl2                 PROTECT                 INPUTRI         3
+svistr1                 PROTECT         	INPUTRI         4
+svidf2                  PROTECT                 INPUTRI         5
+svidf1                  PROTECT                 INPUTRI         6
+
+DEFAULTS(tmptranst)
+g_fotolat1              INIT            BLANKS
+g_fotolon1              INIT            BLANKS
+/*g_fotodate1             INIT            BLANKS*/
+
+CALCS()
+cOK             "OK"
+
+cUPLOADOK       "UPLOAD OK"
+cadafoto        g_fotolat1!=BLANKS && g_fotolon1!=BLANKS
+condfoto6d1     (djointransm4w==1 && lsvistr1m4w!=BLANKS) || g_grpnam=="RI" || g_grpnam=="IT"
+chapusfoto      g_usrkode==BLANKS || g_grpnam=="RI" || g_grpnam=="IT"
+
+MAP(mupdfoto6)
+g_fotolon1      svidf1          REPLACE
+g_fotolat1      svidf2          REPLACE
+g_tgltrn        svitgl2         REPLACE
+cUPLOADOK       svistr1         DO_CALC_IF cadafoto
+
+DBCALCS(dmapmap6)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviotoidx svioto
+        DBC_MAP         mupdfoto6
+
+/*
+MAP(mmap6d)
+g_fotolon1      svidf1          REPLACE
+g_fotolat1      svidf2          REPLACE
+cUPLOADOK       svistr1         DO_CALC_IF cadafoto
+
+
+
+SPCALCS(supd6d)
+        DO_LIB ap_dbclc(DNAME dmap6d,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mmap6d);
+
+
+HOOKS(tmptranst)
+   CLICKED      cur_field=lUplFoto      DO_SPCALCS supd6d
+*/
+
+
+SUBFILE(tmptrans)
+SFL_LINES(7)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      svinobuk svitblkode 
+SFL_UPLFLD_DBCALCS dmapmap6
+SFL_COND        condfoto6d1
+SFL_UPL_DELCOND chapusfoto
+SFL_UPL_CAMERAONLY
+SFL_UPL_DIRFLD mtstgl
+SFL_SHOW_NEXT
+SFL_TARGET
+svidatbuktyp    mtsdata mtsnobuk lresurvey2
+
+ 

@@ -1,0 +1,817 @@
+SCREEN 927 QUERY_TYPE t.PenilaianPendampingan
+SCR_FILE tlm
+SCR_LOGFLD tlmnobuk 
+SCR_UPL_DIRFLD tlmdata
+SCR_QRYCMD_IGNORE_CABDVS
+SCR_NXT_POSTING 4322
+SCR_NXT_MAP mnext
+SCR_NXT_COND cposting
+SCR_NXT_MSG IF cposting1 t.HanyaSaatPenilaian
+            IF cposting2 t.CeklisJadwalTrainingDulu
+            IF cposting3 t.IsiAccTaccRemedial
+	    IF cposting4b t.Ada957BelumAccTacc
+            IF cposting4 t.IsiNilaiPendampingan
+            IF cposting4a t.PenilaianHanyaDiAkhirTrn
+	    IF cposting5 t.IsiDiDetail1d
+
+SCR_AUTO_QRYFLD	tlmnobuk
+SCR_AUTO_EQLFLD r_string1
+SCR_AUTO_QRYFLD_FLYONLY 
+
+LOCAL
+PGM_FIELDS
+ljmlict		INT2	2
+lsts914		STRING	5
+ljmlalpa	INT2	2
+lstsatasan	STRING	5
+lSYSTIME	TIME	4
+ljam18		TIME	4
+lALASAN		STRING	11
+lket150		STRING	201
+lRESIGN		STRING	11
+lnobuk150	STRING	21
+lsts150		STRING	5
+ltglkeluar150	DATE	4
+lpsdtype2	STRING	11
+lKONFTL150	STRING	11
+lACC954		STRING	21
+lnipatasan	STRING	21
+lthbls		STRING	21
+ljabacc		STRING	21
+lTERLAMBAT	STRING	11
+lnipabsen	STRING	21
+lpsidvs		STRING	21
+labdjam1	TIME	4
+ljam0		TIME	4
+lKUNCIABSEN	STRING	11
+ltombolb2	STRING	21
+ltombolb2a	STRING	21
+lnipinput1	STRING	21
+lnipinput2	STRING	21
+lketict		STRING	21
+lketpndm	STRING	21
+lTESTSOP        STRING  11
+lnobuk905	STRING	21
+lsts905		STRING	5
+lnilai905	DFLOAT	8
+ljawabremed	STRING	11
+ltldblmisi	INT2	2
+ljmlcekT	INT2	2
+lJDWLTRN927	STRING 	11
+lKONFREMED	STRING	11
+lnmatasan2	STRING	61
+lmateri914	STRING	254
+ltrainer914	STRING	21
+lDTTRAINER	STRING	11
+lDTLISTRN21	STRING	21
+lDTLTRN2	STRING	21
+l927INPUTDATA	STRING	21
+l927INFORMASI	STRING	21
+l927KOREKSI	STRING	21
+lDTPENDMPNG	STRING	21
+lnamaatsn	STRING	61
+llevel		STRING	21
+ldum		STRING	2
+lnamasdm	STRING	61
+lnamainp	STRING	61
+latsn1		STRING	21
+latsn2		STRING	21
+lnmatsn1	STRING	61
+lnmatsn2	STRING	61
+lpenilai	STRING	21
+ltomdet		STRING	31
+ltombol1        STRING  21
+ltombol2        STRING  21
+ltombol3        STRING  21
+lscr		STRING	5
+lversi		STRING	21
+
+MAP(mnext)
+tlmnobuk	r_string1	REPLACE
+lscr		r_string3	REPLACE
+
+CALCS()
+cselpsiinpg	psists == "INPG"
+
+MAP(mjoinabd)
+abdjam1		labdjam1	REPLACE
+
+DBCALCS(djoinabd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abdkymtglidx lnipabsen g_tgltrn
+	DBC_MAP		mjoinabd
+
+DBCALCS(djoinhrm160)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      hrmdatniptgl   lTERLAMBAT lnipabsen g_tgltrn 
+
+MAP(mjoinsgmatasan)
+sgmstr5		lnipabsen 	REPLACE
+
+DBCALCS(djoinsgmatasan)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatstrbrg gv_dtpiccab lpsidvs ljabacc lthbls tlmcab tlmcab
+	DBC_MAP		mjoinsgmatasan
+
+MAP(mpsiatsn2)
+psikode		lnipabsen	REPLACE
+
+DBCALCS(djoinpsiatsn)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx ljabacc 
+	DBC_SELECT	cselpsiinpg
+	DBC_MAP		mpsiatsn2
+
+MAP(mjointlm914)
+tlmsts		lsts914		REPLACE
+
+DBCALCS(djointlm914)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmbukidx tldnobuk
+	DBC_MAP		mjointlm914
+
+CALCS()
+c0		0
+cselceklisT	tlddata == "JDWLTRN927" && tldsisbrg != "Y"
+ctldbl		tldbisnis == BLANKS
+cthbl		THBLS(g_tgltrn)
+cjoinabd1	(djoinabd == 1 && labdjam1 != ljam0) || djoinhrm160 == 1
+cjoinabd2	lnipatasan == BLANKS && ((djoinabd == 1 && labdjam1 != ljam0) || djoinhrm160 == 1)  
+cjoinabd3	lnipatasan == BLANKS && (djoinsgmatasan == 1 || djoinpsiatsn == 1) && ((djoinabd == 1 && labdjam1 != ljam0) || djoinhrm160 == 1) 
+catsnkosong	lnipatasan == BLANKS
+cselabk927      abksts == "INPG" || abksts == "RINP"
+cseltldalpa	tldsat != "Y" && djointlm914 == 1 && lsts914 == "CLSD"
+cseltldict	djointlm914 == 1 && lsts914 == "CLSD"
+
+MAP(mdum)
+ldum ldum REPLACE
+
+MAP(mjointbdjab)
+tbdlv3			llevel		REPLACE
+
+DBCALCS(djointbdjab)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx	gv_dttabel	gv_personal	gv_jabatan	tlmgrup
+	DBC_MAP		mjointbdjab
+
+MAP(mjoinamtatsn)
+amtstr1		latsn1		REPLACE
+amtstr2		latsn2		REPLACE
+amtstr3		lnmatsn1	REPLACE
+amtstr4		lnmatsn2	REPLACE
+amtstr1		lnipabsen	REPLACE
+amtstr1		lnipatasan	REPLACE_IF cjoinabd1
+amtstr2		lnipabsen	REPLACE
+amtstr2		lnipatasan	REPLACE_IF cjoinabd2
+
+DBCALCS(djoinamtatsn)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      amtdatotoidx    gv_dtplengkap   tlmplg
+	DBC_MAP		mjoinamtatsn
+
+MAP(mjoinpsdnil)
+psdstr1		lpenilai	REPLACE
+
+DBCALCS(djoinpsdnil)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddattypidx  tlmdata tlmtype2 tlmnobuk tlmplg
+	DBC_MAP		mjoinpsdnil
+
+MAP(mscantldceklis)
+gv_int1		ljmlcekT	REPLACE_IF cselceklisT 
+
+DBCALCS(dscantldceklis)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tldbukurtidx tlmnobuk	
+	DBC_SUM_MAP	mscantldceklis
+
+MAP(mjoinpsdremed)
+psdstr1	lnipinput1	REPLACE
+psdtype2        ljawabremed             REPLACE 
+
+DBCALCS(djoinpsdremed)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddattypidx   tlmdata lKONFREMED tlmnobuk tlmplg
+        DBC_MAP         mjoinpsdremed
+
+MAP(mjoinpsdkonftl)
+psdtype2	lpsdtype2	REPLACE
+
+DBCALCS(djoinpsdkonftl)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddattypidx   tlmdata lKONFTL150 tlmnobuk tlmplg
+	DBC_MAP		mjoinpsdkonftl
+
+MAP(mscantldpend)
+gv_int1		ltldblmisi	REPLACE_IF ctldbl
+
+DBCALCS(dscantldpend)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tldplgbrgidx tlmdata gv_INPG tlmplg tlmnobuk lDTPENDMPNG
+        DBC_SUM_MAP     mscantldpend
+
+MAP(mjointbtacc954)
+tbtket          ljabacc		REPLACE
+lnipabsen	lnipatasan	REPLACE_IF cjoinabd3
+tbtkode2        ljabacc		REPLACE
+lnipabsen	lnipatasan	REPLACE_IF cjoinabd3
+tbtkolek        ljabacc		REPLACE
+lnipabsen	lnipatasan	REPLACE_IF cjoinabd3
+tbtkat          ljabacc		REPLACE
+lnipabsen	lnipatasan	REPLACE_IF cjoinabd3
+
+DBCALCS(djointbtacc954)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdattypkod   gv_dttabel gv_dttabel21 gv_personal lACC954 tlmdvs tlmgrup
+	DBC_MAP		mjointbtacc954
+
+MAP(mscantld914)
+gv_int1		ljmlict		REPLACE_IF cseltldict
+gv_int1		ljmlalpa	REPLACE_IF cseltldalpa
+
+DBCALCS(dscantld914)	
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tldllbrgurt	tlmnobuk lDTLISTRN21
+	DBC_SUM_MAP	mscantld914
+
+CALCS()
+cposting	(tlmsts=="INPG" && tlmsts2=="IN" && tlmtype2=="DTPENDMPNG" && ljmlict >= 3 && ((djoinamtatsn == 1 && (latsn1 == g_usrkode || latsn2 == g_usrkode)) || g_grpnam == "TRAINHEAD" || g_grpnam == "TRAINDVH" || g_grpnam == "TRAINSPV" || g_grpnam == "RI" || g_usrkode=="2550257" || g_usrkode=="2221048" || (djoinpsdremed==1 && lnipinput1 == g_usrkode) || (djoinpsdnil==1 && lnipinput2 == g_usrkode) || tlmkode == g_usrkode) && ((tlmtypbrg=="ATSN_TUTUP" && dscantldceklis >= 0 && ljmlcekT == 0) || ((tlmjml < 80 || ljmlalpa > 0) && djoinpsdremed==1 && ljawabremed != BLANKS) || (tlmjml >= 80 && ljmlalpa == 0 && djoinpsdnil==1 && dscantldpend >= 0 && ltldblmisi == 0 && (tlmtgljtp2 <= g_tgltrn || g_grpnam=="RI")))) || (tlmsts == "RCLS" && djoinpsdkonftl == 1 && lpsdtype2 != BLANKS)
+cposting1	tlmsts!="INPG" && tlmsts2!="IN" && tlmtype2!="DTPENDMPNG"
+cposting2	tlmsts == "INPG" && tlmtypbrg=="ATSN_TUTUP" && dscantldceklis >= 0 && ljmlcekT > 0
+cposting3	tlmsts == "INPG" && (tlmjml < 80 || ljmlalpa > 0) && (djoinpsdremed==0 || (djoinpsdremed==1 && ljawabremed==BLANKS))
+cposting4b	tlmsts == "INPG" && tlmjml >= 80 && dscantldpend >= 0 && ltldblmisi > 0
+cposting4	tlmsts == "INPG" && tlmjml >= 80 && ljmlalpa == 0 && djoinpsdnil==0
+cposting4a	tlmsts == "INPG" && tlmjml >= 80 && (g_tgltrn < tlmtgljtp2 && g_grpnam != "RI")
+cposting5	tlmsts == "RCLS" && (djoinpsdkonftl == 0 || (djoinpsdkonftl == 1 && lpsdtype2 == BLANKS))
+cnilok		psdtot>=10 && psdtot<=100
+cjointbdjab	djointbdjab == 1
+ 
+IMAGE(master)
+/------------------------------------------------------------------\
+|/----------------------------------------------------------------\|
+||i.NoBuk            : ___________________                        ||
+||i.Tgl              : _________                                  ||
+||t.Status           : _________ _____                            ||
+||i.Nip              : _________ ___________________              ||
+||i.Div              : _____________________________              ||
+||t.Dept             : _____________________________              ||
+||t.Jabatan          : _____________________________              ||
+||t.Level            : __________                                 ||
+||t.Cab              : __________                                 ||
+||t.TglAwl           : __________                                 ||
+||t.TglAkh           : __________                                 ||
+||t.NilIct           : _______.__ __________________ t.Alpa ____  ||
+||t.NilPendampingan  : _______.__ __________________              ||
+||t.NipAtsn1	     : __________ __________________		  ||
+||t.NipAtsn2	     : __________ __________________		  ||
+||t.ket927master					          ||
+|\----------------------------------------------------------------/|
+|                                                  _______  ______ |
+|   _________________ _________________ __________________         |
+\------------------------------------------------------------------/
+
+FIELD(master)
+tlmnobuk        PROTECT                         INPUTRI         1
+tlmtgl          PROTECT  {DD-MM-YY}             INPUTRI         3
+tlmsts          PROTECT                         INPUTRI         4
+tlmsts2         PROTECT                         INPUTRI         5
+tlmplg          NOCHANGE                        INPUTRI         6
+lnamasdm        NOCHANGE                        INPUTRI         7
+tlmdvs          PROTECT                         INPUTRI         8
+tlmbisnis       PROTECT                         INPUTRI         9
+tlmgrup         PROTECT                         INPUTRI         10
+llevel		PROTECT				INPUTRI		11 
+tlmcab          PROTECT                         INPUTRI         11 
+tlmtgljtp       PROTECT {DD-MM-YY}              INPUTRI         12 
+tlmtgljtp2      PROTECT {DD-MM-YY}              INPUTRI         13 
+tlmjml          PROTECT                         INPUTRI         14 
+lketict		PROTECT                         INPUTRI         14 
+ljmlalpa	PROTECT				INPUTRI		15
+tlmtotppn       PROTECT                         INPUTRI         15 
+lketpndm	PROTECT                         INPUTRI         14 
+latsn1		PROTECT 			INPUTRI 	15
+lnmatsn1	PROTECT                       	INPUTRI 	16
+latsn2		PROTECT 			INPUTRI 	17
+lnmatsn2	PROTECT                       	INPUTRI 	18
+tlmdata		PROTECT UNSEEN			INPUTRI		11 
+tlmtype2	QPROTECT UNSEEN			INPUTRI		12
+ltombol1        TOMBOL                     	INPUTRI         24        
+ltombol2        TOMBOL                     	INPUTRI         25        
+ltombol3        TOMBOL                     	INPUTRI         25        
+
+CALCS()
+cfldbtn_ada	r_string1 != BLANKS
+cfldbtn_ksg	r_string1 == BLANKS
+cjoinamt	djoinamtatsn == 1
+cTIDAKLULUS	"TIDAK LULUS"
+cLULUS		"LULUS"
+cpndmtdklulus	tlmtotppn < 80 && djoinpsdnil == 1 && tlmsts=="CLSD"
+cpndmlulus	tlmtotppn >= 80 && tlmsts=="CLSD"
+cicttdklulus	tlmjml < 80 || ljmlalpa > 0
+cictlulus	tlmjml >= 80 && ljmlalpa == 0
+cBLANKS		BLANKS
+cscantld914	dscantld914 >= 0
+
+DEFAULTS(master)
+lSYSTIME	INIT		SYSTIME
+ljam18		INIT		163000
+lALASAN		INIT		ALASAN
+lRESIGN		INIT		RESIGN
+lKONFTL150	INIT		KONFTL150
+lACC954		INIT		ACC954
+lTERLAMBAT	INIT		TERLAMBAT
+ljam0           INIT            000000
+labdjam1        INIT            000000 
+lKUNCIABSEN	INIT		KUNCIABSEN
+lTESTSOP        INIT            TESTSOP
+lJDWLTRN927	INIT		JDWLTRN927
+lKONFREMED	INIT		KONFREMED
+lDTLTRN2	INIT		DTLTRN2
+lDTTRAINER	INIT		DTTRAINER
+lDTLISTRN21	INIT		DTLISTRN
+lDTPENDMPNG	INIT		DTPENDMPNG
+IF cfldbtn_ada	tlmnobuk	INIT_QUERY	{r_string1}
+IF cfldbtn_ksg	tlmplg		INIT_QUERY	{g_usrkode}
+tlmtype2	INIT_QUERY	DTPENDMPNG
+tlmdata		INIT_QUERY	DTCHECKSDM
+ltombol1       	INIT            "1d.Input Data"        
+ltombol2       	INIT            "2d.Informasi" 
+ltombol3       	INIT            "3d.Koreksi" 
+l927INPUTDATA	INIT		927INPUTDATA
+l927INFORMASI	INIT		927INFORMASI
+l927KOREKSI	INIT		927KOREKSI
+lscr		INIT		"927"
+lversi		INIT		20072026b
+
+EDITS(master)
+e.Validate      tlmplg		VALIDATE psikodidx  mpsi 0 
+e.Validate	tlmplg		VALIDATE_IF cjoinamt amtdatotoidx mamt {Pgv_dtplengkap}
+
+MAP(mamt)
+amtstr1		latsn1		REPLACE
+amtstr2		latsn2		REPLACE
+amtstr3		lnmatsn1	REPLACE
+amtstr4		lnmatsn2	REPLACE
+
+MAP(mpsi)
+psikode		tlmplg			REPLACE
+psinama		lnamasdm		REPLACE
+psidvs		lpsidvs			REPLACE
+cthbl		lthbls			DO_CALC
+llevel		llevel			REPLACE_IF cjointbdjab
+ljmlalpa	ljmlalpa		REPLACE_IF cscantld914
+cLULUS		lketict			DO_CALC_IF cictlulus
+cLULUS		lketpndm		DO_CALC_IF cpndmlulus
+cTIDAKLULUS	lketict			DO_CALC_IF cicttdklulus
+cTIDAKLULUS	lketpndm		DO_CALC_IF cpndmtdklulus
+cBLANKS		latsn1			DO_CALC
+cBLANKS		latsn2			DO_CALC
+cBLANKS		lnmatsn1		DO_CALC
+cBLANKS		lnmatsn2		DO_CALC
+
+IMAGE(master2) {BASE_ROW=2} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/------------------------------------------------------------------\
+|/----------------------------------------------------------------\|
+||i.NoBuk            : ___________________                        ||
+||i.Nip              : _________ ___________________              ||
+||t.Jabatan          : _____________________________              ||
+||t.NilIct           : _______.__ __________________              ||
+||t.NilPendampingan  : _______.__ __________________              ||
+|\----------------------------------------------------------------/|
+\------------------------------------------------------------------/
+
+FIELD(master2)
+tlmnobuk        PROTECT                         INPUTRI         1
+tlmplg          NOCHANGE                        INPUTRI         2
+lnamasdm        NOCHANGE                        INPUTRI         3
+tlmgrup         PROTECT                         INPUTRI         4
+tlmjml          PROTECT                         INPUTRI         5 
+lketict		PROTECT				INPUTRI		6
+tlmtotppn       PROTECT                         INPUTRI         7
+lketpndm	PROTECT				INPUTRI 	8 
+
+IMAGE(transt)
+/------------------------------------------------------------------------------------------\
+|t.ket927ceklisatasan								   	   |
+|/--------------t---------------t---------------t-----------t-------------------t---------\|
+|| t.Training	| t.Tgl 	| t.Nobuk914	| t.PIC     | t.Materi  	| t.SdhCek||
+|\--------------.---------------.---------------.-----------.-------------------.---------/|
+\------------------------------------------------------------------------------------------/
+
+IMAGE(trans)
+|____________|__________|_________________|______|_______________________________|______|
+
+FIELD(trans)
+tldstr1		PROTECT	SCROLL 		INPUTRI 2
+tldtglfak	PROTECT NOLIMIT {DD-MM-YYYY} 	INPUTRI 1
+tldbrg		PROTECT	SCROLL 			INPUTRI 2
+tldstr2		PROTECT	SCROLL 			INPUTRI 3
+tldket		PROTECT SCROLL 			INPUTRI 3
+tldsisbrg	CHECKBOX MEDIUM CENTER			INPUTRI 4
+
+CALCS()
+cinpgatsn	tlmsts=="INPG_TUTUP" && tlmtypbrg == "ATSN" 
+cseljdwl	tlddata == "JDWLTRN927"
+cpmtupd         (g_usrkode == tlmkode || (djoinamtatsn == 1 && (latsn1 == g_usrkode || latsn2 == g_usrkode)) || g_grpnam == "TRAINHEAD" || g_grpnam == "TRAINDVH" || g_grpnam == "RI" || g_usrkode=="2550257" || g_usrkode=="2221048")
+
+DEFAULTS(trans)
+tldsisbrg	INIT 	T	
+
+SUBFILE(trans)
+SFL_TITLE(transt)
+SFL_LINES(15)
+SFL_COND cinpgatsn
+SFL_SELECT cseljdwl
+SFL_SORT_BY_FIELD tldtglfak
+SFL_TARGET
+	tldbukurtidx tlmnobuk
+
+IMAGE(transg1t)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+|| spasi					    || 
+|| t.NipAtsn1       :_________ ____________________ ||
+|| t.NipAtsn2       :_________ ____________________ ||
+|| t.NipPenginput   :_________ ____________________ ||
+|| t.Keterangan	    :_____________________________  ||
+|| t.RemedialU      :________  _		    ||
+|| t.927ketinputremedial			    ||
+|| t.927ketinputremedial2			    ||
+|| spasi					    ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(transg1)
+
+FIELD(transg1t)
+latsn1		PROTECT 			INPUTRI 2
+lnmatsn1	PROTECT                       	INPUTRI 3
+latsn2		PROTECT 			INPUTRI 2
+lnmatsn2	PROTECT                       	INPUTRI 3
+psdstr1			PROTECT			INPUTRI 1
+lnmatasan2		PROTECT			INPUTRI 2
+psdket			TEXTAREA PROTECT 	INPUTRI 3
+psdtype2        	ALLCAPS			INPUTRI 4
+ldum			ALLCAPS			INPUTRI 5
+
+DEFAULTS(transg1t)
+psdtype2	DFALT_SCAN	BLANKS		
+				YA 
+				TIDAK
+psdstr1		INIT_ADD	{g_usrkode}
+psdstr1		INIT_UPDATE	{g_usrkode}
+
+CALCS()
+cTidak 		psdtype2 != "TIDAK"
+cYa 		psdtype2 != "YA"
+ccondg1		tlmsts=="INPG" && (tlmjml < 80 || ljmlalpa > 0) && (g_usrkode == tlmkode || psdstr1 == g_usrkode || (djoinamtatsn == 1 && (latsn1 == g_usrkode || latsn2 == g_usrkode)) || g_grpnam == "TRAINHEAD" || g_grpnam == "TRAINDVH" || g_usrkode=="2550257" || g_usrkode=="2221048") 
+
+EDITS(transg1t)
+e.Mandatory	psdtype2	MANDATORY
+e.Validate	psdstr1		VALIDATE psikodidx mpsiremed
+
+MAP(mpsiremed)
+psinama		lnmatasan2	REPLACE
+
+HOOKS(transg1t)
+AFTER_INPUT     cur_field=psdtype2     DO_MAP SHOW
+                IF cYa  mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG Jika Pilih Ya, Maka SDM Ini Akan Mengikuti Training Ulang Dengan Jadwal Baru 
+AFTER_INPUT     cur_field=psdtype2     DO_MAP SHOW
+                IF cTidak  mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG Jika Pilih Tidak, Maka SDM Akan Dilanjutkan TL
+
+SUBFILE(transg1)
+SFL_TITLE(transg1t)
+SFL_LINES(1)
+SFL_COND ccondg1
+SFL_TARGET
+	psddattypidx   tlmdata lKONFREMED tlmnobuk tlmplg  
+
+SFL_MAP
+tlmdata		psddata         REPLACE
+tlmnobuk        psdpsmkode      REPLACE
+tlmplg		psdkode		REPLACE
+lKONFREMED      psdtype         REPLACE
+g_usrkode	psdstr1		REPLACE
+
+IMAGE(transg2t)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||spasi						    ||
+||t.Tgl             : _________                     ||
+||t.NipAtsn1        : _________ __________________  ||
+||t.NipAtsn2        : _________ __________________  ||
+||t.NipPenginput    : _________ __________________  ||
+||t.NilaiSDM	    : _________ __                  ||
+||t.927ketinputnilai				    ||
+||t.927ketinputnilai2				    ||
+||spasi						    ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(transg2)
+
+FIELDS(transg2t)
+psdtgl1        	PROTECT NOLIMIT {DD-MM-YY}    	INPUTRI 1
+latsn1		PROTECT 			INPUTRI 2
+lnmatsn1	PROTECT                       	INPUTRI 3
+latsn2		PROTECT 			INPUTRI 2
+lnmatsn2	PROTECT                       	INPUTRI 3
+psdstr1		PROTECT				INPUTRI 4
+lnamainp        PROTECT                       	INPUTRI 3
+psdtot          DIGITS				INPUTRI 4
+ldum		ALLCAPS				INPUTRI 5
+
+DEFAULTS(transg2t)
+psdtgl1		INIT			{g_tgltrn}
+psdstr1		INIT			{g_usrkode}
+
+CALCS()
+ccondg2		tlmsts=="INPG" && tlmjml >= 80 && ljmlalpa == 0 && (g_usrkode == tlmkode || (djoinamtatsn == 1 && (latsn1 == g_usrkode || latsn2 == g_usrkode)) || g_grpnam == "TRAINHEAD" || g_grpnam == "TRAINDVH" || g_grpnam == "RI" || g_usrkode=="2550257" || g_usrkode=="2221048")
+
+EDITS(transg2t)
+e.Mandatory		psdtot		MANDATORY
+e.Validate		psdstr1		VALIDATE psikodidx mpsi3 0
+
+MAP(mpsi3)
+psinama		lnamainp 	REPLACE
+
+HOOKS(transg2t)
+AFTER_INPUT     cur_field=psdtot      DO_MAP SHOW
+                IF cnilok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Nilai10Smp100
+
+SUBFILE(transg2)
+SFL_TITLE(transg2t)
+SFL_LINES(1)
+SFL_COND ccondg2
+SFL_TARGET
+	psddattypidx  tlmdata tlmtype2 tlmnobuk tlmplg
+SFL_MAP
+tlmdata 	psddata         REPLACE
+tlmtype2	psdtype         REPLACE
+tlmnobuk        psdpsmkode      REPLACE
+tlmplg		psdkode         REPLACE
+g_usrkode	psdstr1		REPLACE
+
+IMAGE(transg3t)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+|| spasi					    || 
+|| t.NipSdm	    :_________ ____________________ ||
+|| t.NipAtsn1       :_________ ____________________ ||
+|| t.NipAtsn2       :_________ ____________________ ||
+|| t.NipPenginput   :_________ ____________________ ||
+|| t.Keterangan	    :_____________________________  ||
+|| t.Nobuk150	    :_______________ t.Sts150 _____ ||
+|| t.TglKeluar	    :_________  		    ||
+|| t.SudahInfoSDM   :________  ___ 		    ||
+|| t.927ketinputTL				    ||
+|| spasi					    ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(transg3)
+
+FIELD(transg3t)
+tlmplg		PROTECT			INPUTRI 1
+lnamasdm	PROTECT			INPUTRI 2
+latsn1		PROTECT 		INPUTRI 1
+lnmatsn1	PROTECT                 INPUTRI 2
+latsn2		PROTECT 		INPUTRI 3
+lnmatsn2	PROTECT                 INPUTRI 4
+psdstr1		PROTECT			INPUTRI 5
+lnmatasan2	PROTECT			INPUTRI 6
+psdket		TEXTAREA PROTECT 	INPUTRI 7
+lnobuk150	PROTECT			INPUTRI 8
+lsts150		PROTECT			INPUTRI 9
+ltglkeluar150	PROTECT {DD-MM-YYYY}	INPUTRI 10
+psdtype2        ALLCAPS			INPUTRI 11
+ldum		ALLCAPS			INPUTRI 12
+
+DEFAULTS(transg3t)
+psdtype2	DFALT_SCAN	BLANKS		
+				YA
+psdstr1		INIT_ADD	{g_usrkode}
+psdstr1		INIT_UPDATE	{g_usrkode}
+
+DBCALCS(djoinhrm150)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	hrmdatniptgl lRESIGN tlmplg
+
+CALCS()
+ccondg3		tlmsts=="RCLS" && tlmsts2 == "TL"
+cjoinhrm150	djoinhrm150 == 1
+
+EDITS(transg3t)
+e.Mandatory	psdtype2	MANDATORY
+e.Validate	tlmplg		VALIDATE_DUP_IF cjoinhrm150 hrmdatniptgl mhrm150 {PlRESIGN} 
+e.Validate	psdstr1		VALIDATE psikodidx mpsiremed
+
+MAP(mpsd150)
+#psdpsmkode	lnobuk150	REPLACE
+#psdket		lket150		REPLACE
+
+MAP(mhrm150)
+hrmnip1		tlmplg		REPLACE
+hrmsts		lsts150		REPLACE
+hrmnobuk	lnobuk150	REPLACE
+hrmtgl2		ltglkeluar150	REPLACE	
+
+SUBFILE(transg3)
+SFL_TITLE(transg3t)
+SFL_LINES(1)
+SFL_COND ccondg3
+SFL_TARGET
+	psddattypidx   tlmdata lKONFTL150 tlmnobuk tlmplg  
+
+SFL_MAP
+tlmdata		psddata         REPLACE
+tlmnobuk        psdpsmkode      REPLACE
+tlmplg		psdkode		REPLACE
+lKONFTL150	psdtype         REPLACE
+g_usrkode	psdstr1		REPLACE
+
+IMAGE(transat)
+/--------------------------------\
+|____________________            |
+|-t------------------------------|
+| | i.Keterangan                 |
+\-.------------------------------/
+FIELD(transat)
+ltomdet                 TOMBOL          INPUTRI 1
+
+DEFAULTS(transat)
+ltomdet                 INIT            "d.UntukMelihatDetil"
+
+IMAGE(transa)
+| |______________________________|
+
+FIELD(transa)
+tmpket          PROTECT                 INPUTRI 1
+
+SUBFILE(transa)
+SFL_LINES(6)
+SFL_TITLE(transat)
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+SFL_TARGET
+        tmpdatkodurt gv_dttemplate l927INFORMASI
+
+IMAGE(transbt)
+/--------------------------------\
+|____________________            |
+|-t------------------------------|
+| | i.Keterangan                 |
+\-.------------------------------/
+FIELD(transbt)
+ltomdet                 TOMBOL          INPUTRI 1
+
+DEFAULTS(transbt)
+ltomdet                 INIT            "d.UntukMelihatDetil"
+
+IMAGE(transb)
+| |______________________________|
+
+FIELD(transb)
+tmpket          PROTECT                 INPUTRI 1
+
+SUBFILE(transb)
+SFL_LINES(6)
+SFL_TITLE(transbt)
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+SFL_TARGET
+        tmpdatkodurt gv_dttemplate l927KOREKSI
+
+CALCS()
+cpmtadd_g1	djoinpsdremed == 0
+cpmtupd_g1	djoinpsdremed == 1
+cpmtadd_g2	djoinpsdnil == 0
+cpmtupd_g2	djoinpsdnil == 1
+cpmtadd_g3	djoinpsdkonftl == 0
+cpmtupd_g3	djoinpsdkonftl == 1
+cjointbtacc954	lnipatasan == BLANKS && djointbtacc954 == 1
+cpakredi	"2181387"
+cIT		g_usrkode == "2550257"
+clewatjam	lSYSTIME >= ljam18 && (g_grpnam == "IT" || g_grpnam == "SYOMAHCD" || g_grpnam == "TRAINHEAD" || g_grpnam == "TRAINSPV")
+cselabk927a	abksts == "INPG"
+
+SUBFILE(transa2)
+SFL_TEMPLATE(tmp_927infoict)
+
+SUBFILE(transa2g1)
+SFL_TEMPLATE(tmp_927infopendampingan)
+
+SUBFILE(transa2g2)
+SFL_TEMPLATE(tmp_927infonilict)
+
+SUBFILE(transa2g3)
+SFL_TEMPLATE(tmp_927infonilpndm)
+
+SUBFILE(transa2g4)
+SFL_TEMPLATE(tmp_927info150)
+
+SUBFILE(transb2)
+SFL_TEMPLATE(tmp_927korkuncian)
+
+MAP(mupdtlmnil)
+psdtot		tlmtotppn	REPLACE
+
+MAP(mmapatasan)
+cBLANKS                 lnipatasan	DO_CALC
+lnipatasan		lnipatasan	REPLACE_IF cjoinamt
+lnipatasan		lnipatasan	REPLACE_IF cjointbtacc954
+cpakredi		lnipatasan 	DO_CALC_IF catsnkosong
+
+MAP(mupdabk)
+lnipatasan	abkkym		REPLACE_IF cselabk927
+gv_INPG		abksts		REPLACE_IF cselabk927
+
+MAP(mupdabk2)
+g_usrkode	abkcab		REPLACE_IF cselabk927a
+gt_RINP		abksts		REPLACE_IF cselabk927a
+
+MAP(mupdtlmb2)
+lnipatasan	tlmkode		REPLACE
+
+SPCALCS(sptransg2)
+DO_LIB ap_dbclc(DNAME dupdtlmnil,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmnil);
+
+SPCALCS(sptransb2)
+DO_LIB ap_dbclc(DNAME dmapatasan,DCOMMAND MAPMAP,DMAP mmapatasan); 
+DO_LIB ap_dbclc(DNAME dupdtlmb2,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmb2);
+DO_LIB ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN abknobuk,DMAP mupdabk);
+
+SPCALCS(sptransb2a)
+DO_LIB_IF clewatjam ap_dbclc(DNAME dupdabk2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN abknobuk,DMAP mupdabk2);
+
+POSTING(transg2)
+PST_ADDCMD	sptransg2
+PST_UPDCMD	sptransg2
+
+PERMIT(master) 
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0    
+PMT_DEL_COND    c0
+
+PERMIT(trans) 
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cpmtupd    
+PMT_DEL_COND    c0
+
+PERMIT(transg1)
+PMT_ADD_COND	cpmtadd_g1
+PMT_UPDALL_COND	cpmtupd_g1
+PMT_DEL_COND	c0
+
+PERMIT(transg2)
+PMT_ADD_COND	cpmtadd_g2
+PMT_UPDALL_COND	cpmtupd_g2
+PMT_DEL_COND	c0
+
+PERMIT(transg3)
+PMT_ADD_COND	cpmtadd_g3
+PMT_UPDALL_COND	cpmtupd_g3
+PMT_DEL_COND	c0
+
+PERMIT(transa)
+PMT_UPDALL_COND c0    
+PMT_DEL_COND    c0
+PMT_ADD_COND    c0
+
+PERMIT(transa2)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+
+PERMIT(transb)
+PMT_UPDALL_COND c0    
+PMT_DEL_COND    c0
+PMT_ADD_COND    c0
+
+PERMIT(transa2g1)
+PMT_UPDALL_COND c0    
+PMT_DEL_COND    c0
+PMT_ADD_COND    c0
+
+PERMIT(transa2g2)
+PMT_UPDALL_COND c0    
+PMT_DEL_COND    c0
+PMT_ADD_COND    c0
+
+PERMIT(transa2g3)
+PMT_UPDALL_COND c0    
+PMT_DEL_COND    c0
+PMT_ADD_COND    c0
+
+PERMIT(transb2)
+PMT_UPDALL_COND cIT
+PMT_DEL_COND    c0
+PMT_ADD_COND    c0
+
+END_SCREEN

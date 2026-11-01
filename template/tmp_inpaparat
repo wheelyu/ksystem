@@ -1,0 +1,214 @@
+LOCAL
+PGM_FIELDS
+lnamacab  	STRING		31
+lsvidata	STRING		11
+lenter		STRING		7
+lsvistr9	STRING		31
+lsvitype	STRING		11
+lnourt		INT2		2
+ltkmjml		DFLOAT		8
+lKUNCIABSEN	STRING		11
+l782		STRING		5
+ltbddtmkode	STRING		21
+ltbdtblkode     STRING          21
+ltbdkode        STRING          21
+lsvitype2	STRING		21
+
+MAP(mjoinsvi)
+svinourt	lnourt		REPLACE
+
+DBCALCS(djoinsvi)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp    lsvidata tbdkode lsvitype
+	DBC_MAP		mjoinsvi
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------\/----------------------------------------------\ |
+| |i.Cabang   : ______ ____________________      ||t.IDAparat  : ___________________________     | |
+| |t.Instansi : ___________________              ||t.Jabatan   : ___________________________     | |
+| |t.Alamat   : ___________________________      ||t.Pangkat   : ___________________________     | |
+| |t.Provinsi : ___________________________      ||t.NoTelp    : ___________________________     | |
+| |t.Kota     : ___________________________      ||t.TglPenemp : ___________________________     | |
+| |t.Kecamatan: ___________________________      ||t.TglUpdate : ___________________________     | |
+| |t.Kelurahan: ___________________________      ||t.User      : ___________ _______________     | |
+| |t.NamaAprt : ___________________________      ||t.Status    : ___________________  ______     | |
+| |t.AprtRtin : ___                              ||                                              | |
+| \----------------------------------------------/\----------------------------------------------/ |
+|                                                                                                  |
+|                                                                                                  |
+\--------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+lsvitype2       PROTECT         	INPUTRI 1
+lnamacab        PROTECT         	INPUTRI 2
+svistr5         ALLCAPS         	INPUTRI 11
+
+svistr1         NOCHANGE        	INPUTRI 3
+svistr6         ALLCAPS         	INPUTRI 12
+
+sviket          ALLCAPS         	INPUTRI 4
+svistr7         ALLCAPS         	INPUTRI 13
+
+svidtmkode      PROTECT         	INPUTRI 5
+svistr8         ALLCAPS         	INPUTRI 14
+
+svitblkode      PROTECT         	INPUTRI 6 
+svitgl1         NONE {DD-MM-YY} NOLIMIT	INPUTRI 15
+
+svistr2         PROTECT         	INPUTRI 7 
+svitgl2         PROTECT {DD-MM-YY}     	INPUTRI 16
+
+svistr3		ALLCAPS			INPUTRI	8 
+svistr9         PROTECT         	INPUTRI 17
+lsvistr9        PROTECT         	INPUTRI 18
+
+svistr4		ALLCAPS			INPUTRI	9 
+svitype3        NOCHANGE        	INPUTRI 19
+lenter          NOCHANGE        	INPUTRI 20
+
+sviyt1		NOCHANGE		INPUTRI	10
+
+DEFAULTS(tmptranst)
+lsvidata	INIT			APARAT
+lsvitype	INIT			{tkmkode}
+ltkmjml		INIT			{tkmjml}
+ltbddtmkode	INIT			{tbddtmkode}
+ltbdtblkode	INIT			{tbdtblkode}
+ltbdkode	INIT			{tbdkode}
+lKUNCIABSEN	INIT			KUNCIABSEN
+l782		INIT			782
+lenter		INIT			ENTER
+svistr1		DFALT_SCAN_BLANKS	POLSEK POLRES POLRESTABES ORMAS
+sviyt1		DFALT_SCAN       	Y T
+svitype3	DFALT_SCAN_BLANKS	AKTIF "Aktif"
+					TIDAKAKTIF "Tidak Aktif"
+
+CALCS()
+cdjoinsvi0	g_curcmd==1 && djoinsvi==0
+cdjoinsvi1	g_curcmd==1 && djoinsvi==1
+cwjb		sviyt1=="Y" && svitype3=="AKTIF"
+c1		1
+cnourt		lnourt+1
+ctambah1	g_curcmd==1
+
+EDITS(tmptranst)
+e.Mandatory     svistr1         MANDATORY
+e.Mandatory     sviket          MANDATORY
+e.Mandatory     svidtmkode      MANDATORY
+e.Mandatory     svitblkode      MANDATORY
+e.Mandatory     svistr2         MANDATORY
+e.Mandatory     svistr3         MANDATORY
+e.Mandatory     svistr4         MANDATORY
+e.Mandatory     sviyt1          MANDATORY
+e.Mandatory     svistr5         MANDATORY
+e.Mandatory     svistr6         MANDATORY
+e.Mandatory     svistr7         MANDATORY
+e.Mandatory     svistr8         MANDATORY
+e.Mandatory     svitgl1         MANDATORY
+e.Mandatory     svitype3        MANDATORY
+
+e.ValidateCab   lsvitype2       VALIDATE cabstskodidx mcab_1 scab {Pgv_inpg5}
+e.Validateprop  svidtmkode 	VALIDATE dtmdtkodidx  mdtm_1 sdtm {Pgv_dtkota}
+e.ValidateKota  svitblkode 	VALIDATE tbldtdtmkod  mtbl_1 stbl {Pgv_dtkota} {Psvidtmkode}
+e.ValidateKec   svistr2    	VALIDATE tbddatkodidx mtbd_1 stbd {Pgv_dtkota} {Psvidtmkode} {Psvitblkode}
+e.ValidateKel   svistr3 	VALIDATE tbtdattypkod mtbt_1 stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvidtmkode} {Psvitblkode} {Psvistr2}
+e.ValidatePsi   svistr9         VALIDATE psikodidx    mpsi_1 0
+
+MAP(mcab_1)
+cabkode         lsvitype2       REPLACE
+cabnama         lnamacab        REPLACE
+
+MAP(mdtm_1)
+dtmkode		svidtmkode	REPLACE
+
+MAP(mtbl_1)
+tblkode		svitblkode	REPLACE
+
+MAP(mtbd_1)
+tbdkode		svistr2   	REPLACE
+
+MAP(mtbt_1)
+tbtkode         svistr3         REPLACE
+
+MAP(mpsi_1)
+psikode         svistr9         REPLACE
+psinama         lsvistr9        REPLACE
+
+MAP(mcabang)
+c1		svinourt	DO_CALC_IF cdjoinsvi0
+cnourt		svinourt	DO_CALC_IF cdjoinsvi1
+tkmkode		svitype2	REPLACE_IF ctambah1
+ltbddtmkode     svidtmkode	REPLACE_IF ctambah1
+ltbdtblkode     svitblkode	REPLACE_IF ctambah1
+ltbdkode        svistr2		REPLACE_IF ctambah1
+g_usrkode	svistr9		REPLACE
+g_tgltrn	svitgl2		REPLACE
+svitype2	lsvitype2	REPLACE
+
+MAP(misi)
+c1		svidf1  	DO_CALC_IF cwjb
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr1 	DO_MAP SHOW mcabang
+BEFORE_INPUT	cur_field=lenter	DO_MAP SHOW misi
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp    lsvidata tbdkode lsvitype
+SFL_MAP
+lsvidata  	svidata		REPLACE
+tbdkode		svinobuk	REPLACE
+lsvitype	svitype		REPLACE
+tkmkode 	svikode		REPLACE
+tkmnobuk	svistr10	REPLACE
+
+CALCS()
+cdapatsatu		svinourt==1
+ctkmjml			ltkmjml+1
+ckosong                 tkmjml2==BLANKS
+cket			"Input Aparat di 782"
+cknci			g_tgltrn + 1
+
+MAP(mupdtkmjml)
+ltkmjml2	tkmjml2		REPLACE_IF ckosong
+ctkmjml		tkmjml		DO_CALC_IF cdapatsatu
+
+MAP(mupdabk1)
+gv_CLSD		abksts		REPLACE
+
+MAP(maddabk1)
+tkmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+tkmlok1         abkkym          REPLACE
+cket            abkkym2         DO_CALC
+cknci           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+l782            abkscr          REPLACE
+
+MAP(maddabk2)
+tkmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+tkmlok2         abkkym          REPLACE
+cket            abkkym2         DO_CALC
+cknci           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+l782            abkscr          REPLACE
+
+CALCS()
+cwjb1		svidf1==1
+ctdksama	tkmjml != tkmjml2 && svidf1 ==1 
+
+SPCALCS(spcalupdjml)
+DO_LIB ap_dbclc(DNAME dupdtkmjml,DCOMMAND UPDATE,DTARGET tkmbukidx svistr10,DMAP mupdtkmjml);
+DO_LIB_IF cwjb1	   ap_dbclc(DNAME dupdabk1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN svistr10,DMAP mupdabk1);
+DO_LIB_IF ctdksama ap_dbclc(DNAME daddabk1,DCOMMAND ADD,DFILE abk,DMAP maddabk1);
+DO_LIB_IF ctdksama ap_dbclc(DNAME daddabk2,DCOMMAND ADD,DFILE abk,DMAP maddabk2);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcalupdjml
+

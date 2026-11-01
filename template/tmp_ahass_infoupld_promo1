@@ -1,0 +1,220 @@
+LOCAL
+PGM_FIELDS
+
+luplok1		STRING	11
+lenter1		STRING	21
+lPesan		STRING  11
+lpanjangnip INT2	2
+lpanjangket INT2	2
+
+
+  
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||t.Tipe3	  : _____  	    ||
+||t.Referensi	  : _____  _____    ||
+||t.NipRef	  : ____________    ||
+||i.NoBuk         : ______________  ||
+||i.Kode	  : ______________  ||
+||i.Norang	  : ______________  ||
+||t.Nobukclaim	  : ______________  ||
+||t.Nominal	  : _________	    ||
+||t.Upload	  : ___		    ||
+||i.Tgl           : _________       ||
+||t.TglExp        : _________       ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+akttype2	NOCHANGE  INPUTRI 1
+aktdf5		ALLCAPS   INPUTRI 2
+lPesan		PROTECT	  INPUTRI 2
+aktcrtusr	ALLCAPS   INPUTRI 3
+aktnobuk        PROTECT   INPUTRI 3
+aktbrg		ALLCAPS	  INPUTRI 4
+aktkode2	ALLCAPS	  INPUTRI 5
+aktket          ALLCAPS   INPUTRI 6
+akthrg		PROTECT	  INPUTRI 6
+aktdk		PROTECT	  INPUTRI 7
+akttgl          PROTECT   INPUTRI 8
+akttgl2		NOCHANGE  {DD-MM-YY} INPUTRI 9
+lenter1		NOCHANGE  INPUTRI 10
+luplok1		TOMBOL    INPUTRI 11
+
+DEFAULTS(tmptranst)
+akttype2	DFALT_SCAN	BLANKS
+				Y
+				T
+aktdf5		DFALT_SCAN_BLANKS	1 "YA"
+					2 "TIDAK"
+lenter1		INIT		ENTER
+luplok1		INIT		UPLOAD_OK
+lahass		INIT		AHASS
+
+CALCS()
+cY1             "Y"
+cfotobaru1      akttgl == g_tgltrn
+cClaimT		akttype2 == "T"
+cClaimY_LCR	akttype2 == "Y" && btmstr2 == "CLAIM_ESAF"
+c160000		160000
+cdf5		aktdf5 == 1
+cdf5t		aktdf5 == 2
+cya		"YA"
+ctdk1		"TIDAK"
+cBLANK		BLANKS
+
+cpanjangnip     DO_LIB ap_strln(aktcrtusr,&lpanjangnip);
+cpanjangket     DO_LIB ap_strln(aktket,&lpanjangket);
+cnippsi         ((aktcrtusr != BLANKS && ldigit1 == "P" && lpanjangnip >= 7 && lpanjangnip <= 8) || (aktcrtusr != BLANKS && lpanjangnip >= 7 && lpanjangnip <= 8) || (aktcrtusr == BLANKS))
+cdptref		(djointbt_cabdptref1 == 1 || djointbt_cabdptref2 == 1) && djointbt_cabtdkref == 0
+cdptref1	(djointbt_cabdptref1 == 1 || djointbt_cabdptref2 == 1) && aktdf5 == 1
+ctdkdptref	(djointbt_cabdptref1 == 0 && djointbt_cabdptref2 == 0)
+
+cwahana		(djointbt_cabtdkref == 1)
+cnotwahana	(djointbt_cabtdkref == 0 && (djointbt_cabdptref1 == 1 || djointbt_cabdptref2 == 1))
+cnotwahana1	(djointbt_cabtdkref == 0 && (djointbt_cabdptref1 == 1 || djointbt_cabdptref2 == 1) && aktdf5 == 1)
+caktketoke      lpanjangket >= 26 && lpanjangket <= 28
+cakttgl2trn     akttgl2    >= g_tgltrn 
+cdjoinastpromo  djoinast2 == 1
+
+EDITS(tmptranst)
+e.Mandatory1 	akttype2    	MANDATORY
+e.Mandatory10   aktket          MANDATORY
+e.mandatory2	aktdf5		MANDATORY_IF cnotwahana
+e.mandatory3	aktcrtusr	MANDATORY_IF cnotwahana1
+e.mandatory4	aktdf5		MANDATORY_IF cdptref
+e.mandatory5	aktcrtusr	MANDATORY_IF cdptref1
+e.Mandatory6	aktbrg		MANDATORY_IF cClaimY_LCR
+e.Mandatory7	aktkode2	MANDATORY_IF cClaimY_LCR
+e.Mandatory8	akthrg		MANDATORY_IF cClaimY_LCR
+e.Mandatory9	akttgl2		MANDATORY_IF cClaimY_LCR
+e.Niptdkada	aktcrtusr	VALIDATE	psikodidx mnip 0	
+
+MAP(mnip)
+psikode		aktcrtusr	REPLACE
+
+MAP(mupdaktpromo1)
+g_tgltrn	akttgl		REPLACE
+cY1             aktdk   	DO_CALC_IF cfotobaru1
+
+DBCALCS(dupdfoto1)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktpromo1
+
+MAP(misiNominal)
+c160000		akthrg		DO_CALC_IF cClaimY_LCR
+
+MAP(mpesan)
+cya		lPesan  	DO_CALC_IF cdf5
+ctdk1		lPesan		DO_CALC_IF cdf5t
+cBLANK		aktcrtusr 	DO_CALC_IF cdf5t
+
+MAP(mpanjangnip)
+cpanjangnip	lpanjangnip DO_CALC
+
+MAP(mpanjang)
+cpanjangket     lpanjangket     DO_CALC
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktdf5	DO_SKIP_IF cwahana
+BEFORE_INPUT	cur_field=aktcrtusr	DO_SKIP_IF cwahana
+BEFORE_INPUT	cur_field=aktdf5	DO_SKIP_IF ctdkdptref
+BEFORE_INPUT	cur_field=aktcrtusr	DO_SKIP_IF ctdkdptref
+BEFORE_INPUT	cur_field=aktbrg	DO_SKIP_IF cClaimT
+BEFORE_INPUT	cur_field=aktkode2	DO_SKIP_IF cClaimT
+BEFORE_INPUT	cur_field=akttgl2	DO_SKIP_IF cClaimT
+BEFORE_INPUT    cur_field=aktcrtusr	DO_SKIP_IF cdf5t
+
+
+AFTER_INPUT     cur_field=aktcrtusr   	DO_LIB ap_amstr(aktcrtusr,ln1i,ln1,&ldigit1);
+
+AFTER_INPUT    cur_field=aktcrtusr      DO_MAP SHOW mpanjangnip
+AFTER_INPUT	cur_field=akttype2	DO_MAP SHOW misiNominal
+AFTER_INPUT	cur_field=aktdf5	DO_MAP SHOW mpesan
+AFTER_INPUT     cur_field=aktcrtusr DO_MAP
+                IF cnippsi mdumstr
+                  ELSE HKCURSOR STAY
+                HKMSG t.NipHrsLbhdr7dankrg8
+
+AFTER_INPUT     cur_field=aktket  DO_MAP SHOW mpanjang
+AFTER_INPUT     cur_field=aktket  DO_MAP SHOW
+                IF caktketoke mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.panjangharus26digit
+
+AFTER_INPUT     cur_field=akttgl2  DO_MAP SHOW
+                IF cakttgl2trn mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.tglexpiredharushariiniataulebih
+
+CLICKED         cur_field=luplok1       DO_SPCALCS spaddtmp 
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cJikaPromo1
+SFL_UPL_DELCOND c0
+SFL_UPLFLD btmnobuk	akttype
+SFL_UPL_DIRFLD akttgl
+SFL_UPLFLD_DBCALCS dupdfoto1
+SFL_UPL_DIRFLD btmtgl
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+aktkodtypidx       btmnobuk btmdata lUPLOADPROMO1
+SFL_MAP
+btmnobuk        aktkode         REPLACE
+btmnobuk        aktnobuk        REPLACE
+btmdata         aktdata         REPLACE
+lUPLOADPROMO1   akttype         REPLACE
+btmcab          aktlok          REPLACE
+
+MAP(mmapdumakt)
+lastnorangka            lastnorangka    REPLACE_IF cdjoinastpromo 
+aktbrg                  laktbrg_620     REPLACE
+aktkode2                laktkode2_620   REPLACE
+akttgl2                 lakttgl2_620    REPLACE
+akthrg                  lakthrg_620     REPLACE
+akttype2                lakttype2_620   REPLACE
+DEBUG   ldumstr         ldumstr         REPLACE
+
+MAP(maddaktpromo)
+laktbrg_620             aktkode         REPLACE /* Kode Unik Promo LCR */
+btmnobuk                aktnobuk        REPLACE /* Nobuk 620 */
+lastnorangka            aktbrg          REPLACE /* No Rangka Sistem ast */
+laktkode2_620           aktkode2        REPLACE /* No Rangka Nulis */
+lPROMOLCR11             aktdata         REPLACE
+lPROMOLCR               akttype         REPLACE
+g_tgltrn                akttgl          REPLACE
+lakttgl2_620            akttgl2         REPLACE /* Tgl EXP */
+g_tgltrn                aktcrttgl       REPLACE
+lakthrg_620             akthrg          REPLACE /* Nominal */
+btmcab                  aktcab          REPLACE /* Cabang */
+btmkdsam                aktlok          REPLACE /* Nopol */
+        
+
+SPCALCS(spaddtmp)
+DO_LIB_IF cdjoinpromo0 ap_dbclc(DNAME dmapdumakt,DCOMMAND MAPMAP,DMAP mmapdumakt);
+DO_LIB_IF cdjoinpromo0 ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddaktpromo); 
+
+
+

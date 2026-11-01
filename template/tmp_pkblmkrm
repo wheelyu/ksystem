@@ -1,0 +1,403 @@
+LOCAL
+PGM_FIELDS
+lketpekerjaan1		STRING	61
+lketpekerjaan3		STRING	61
+ldigit                  INT2    2
+lpenghasilanpk		STRING	61
+lttotalpk		DFLOAT	8
+lsvitype3PK		STRING	21
+lpsijabatankol		STRING	21
+
+lterlibat5M3     	STRING  61
+lJenis5M3        	STRING  61
+lSubJenis5M3     	STRING  61
+
+CALCS()
+cabkkol1         abktype=="KOL"
+
+DBCALCS(djoinabkkol1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx   lkunciabsen mtsnobuk
+        DBC_SELECT      cabkkol1
+
+MAP(mjoinpsikol)
+psijabatan		lpsijabatankol		REPLACE
+
+DBCALCS(djoinpsikol)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx mtsplg	
+	DBC_MAP		mjoinpsikol
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.RekSvy       ________________  ||
+||i.PmhnTnggl    ________________  ||
+||i.NoTelpAktf   _________________ ||
+||i.DigunakanOleh________________  ||
+||i.StstPmhn     ________________  ||
+||i.StsPnjmn     ________________  ||
+||i.HubPmhn      ________________  ||
+||i.PnddknPmhn   ________________  ||
+||i.StsRmh       ________________  ||
+||i.LamaTinggal  ___i.Thn ___i.Bln ||
+||i.PkrjnPmhn    ____ ___________  ||
+||t.SubPekerjaan ____ ___________  ||
+||i.Lamakerja    ___i.Thn ___i.Bln ||
+||i.KatBPKB      ________________  ||
+||i.Penghasilan  _________________ ||
+||t.RPenghasilan ___  ____________ ||
+||t.ApaajuKredit _________________ ||
+||t.SddptMtrDana _________________ ||
+||t.DptLsDrMana  _________________ ||
+||t.ApaAdaAjuBtl _________________ ||
+||t.Kons5M       ___ _____________ ||
+||t.Jns5M        ___ _____________ ||
+||t.SubJns5M     ___ _____________ ||
+||                          ______ ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+
+svitype2		NOCHANGE		INPUTRI		1	/* Rekening Survey    */
+lsvitype3PK		ALLCAPS			INPUTRI		2	/* Pemohon Tunggal    */
+svistr2			DIGITS			INPUTRI		3	/* Nomor Telpon       */
+svistr3			ALLCAPS			INPUTRI		4	/* Digunakan Oleh     */
+svistr4			ALLCAPS			INPUTRI		5	/* Status Pemohon     */
+svistr5			ALLCAPS			INPUTRI		6	/* Status Penjamin    */
+svistr6			ALLCAPS			INPUTRI		7	/* Hub dgn Penjamin   */
+svistr7			ALLCAPS			INPUTRI		8	/* Pnddkn Pemohon     */
+svistr8			ALLCAPS			INPUTRI		9	/* Status Rumah       */
+svidf1			ALLCAPS			INPUTRI		10	/* Lm Tinggal Thn     */
+svidf2			ALLCAPS			INPUTRI		11	/* Lm Tinggal Bln     */
+svistr9			ALLCAPS			INPUTRI		12	/* Pekerjaan Pmhn     */
+lketpekerjaan1  	PROTECT         	INPUTRI         12
+svistr10  		ALLCAPS			INPUTRI		12	/* Sub Pekerjaan      */
+lketpekerjaan3		PROTECT			INPUTRI		12
+svidf3			ALLCAPS			INPUTRI		13	/* Lama Kerja Thn     */
+svidf4			ALLCAPS			INPUTRI		14	/* Lama Kerja Bln     */
+svistr1  		ALLCAPS			INPUTRI		15	/* Kat BPKB           */
+
+svidf5			NUMERIC			INPUTRI		16	/* Penghasilan        */
+svistr34		ALLCAPS			INPUTRI		17
+lpenghasilanpk		PROTECT			INPUTRI		17 
+svistr31		NOCHANGE		INPUTRI		17	/* Kons Ajukan Kredit */
+svistr32		NOCHANGE		INPUTRI		18	/* Kons Dpt Dana/Mtr  */
+svinama			ALLCAPS			INPUTRI		19	/* Dpt Dri Leasing Mn */
+svistr33		NOCHANGE		INPUTRI		20	/* Ada Pengajuan Btl  */
+
+svidf6          	NOCHANGE        	INPUTRI         21 /* Terlibat 5M */
+lterlibat5M3    	PROTECT         	INPUTRI         21
+svidf7          	NOCHANGE        	INPUTRI         22 /* Jenis 5M */
+lJenis5M3       	PROTECT         	INPUTRI         22
+svidf8          	NOCHANGE        	INPUTRI         23 /* Sub Jenis 5M */
+lSubJenis5M3    	PROTECT         	INPUTRI         23
+
+lENTER          	ALLCAPS                 INPUTRI         24
+
+DEFAULTS(tmptranst)
+lENTER		INIT			ENTER
+lkunciabsen     INIT            KUNCIABSEN
+
+svitype2        DFALT_SCAN_BLANKS       ACC ""
+                                        TACC ""
+
+svistr31	DFALT_SCAN_BLANKS	Y ""
+					T ""
+
+svistr32	DFALT_SCAN_BLANKS	Y ""
+					T ""
+
+svistr33	DFALT_SCAN_BLANKS       Y ""
+                                        T ""
+
+svistr34        DFALT_SCAN_BLANKS       R1 "< 1.500.000"
+                                        R2 "1.500.000 - 2.000.000"
+                                        R3 "2.000.000 - 2.500.000"
+                                        R4 "2.500.000 - 3.000.000"
+                                        R5 "3.000.000 - 4.000.000"
+                                        R6 "4.000.000 - 5.000.000"
+                                        R7 "> 5.000.000"
+
+svidf6          		DFALT_SCAN_BLANKS       BLANKS
+							1 "PERNAH TERLIBAT"
+                        		                2 "TIDAK PERNAH TERLIBAT"
+
+IF cTERLIBAT    svidf7          DFALT_SCAN_BLANKS       BLANKS
+							1 "MABOK"
+                                                        2 "MADAT"
+                                                        3 "MADON"
+                                                        4 "MENCURI"
+                                                        5 "MEMBUNUH"
+
+IF cMABOK       svidf8          DFALT_SCAN_BLANKS       BLANKS
+							1 "SERING MABUK MABUKAN"
+                                                        2 "JUAL MIRAS"
+
+IF cMADAT       svidf8          DFALT_SCAN_BLANKS       BLANKS
+							1 "PEMAKAI NARKOBA"
+                                                        2 "PEDAGANG NARKOBA"
+
+IF cMADON       svidf8          DFALT_SCAN_BLANKS       BLANKS
+							1 "PUNYA SELINGKUHAN"
+                                                        2 "SUKA KE LOKALISASI"
+
+IF cMENCURI     svidf8          DFALT_SCAN_BLANKS       BLANKS
+							1 "COPET"
+                                                        2 "BOBOL RUMAH"
+                                                        3 "CURANMOR"
+
+IF cMEMBUNUH    svidf8          DFALT_SCAN_BLANKS       BLANKS
+							1 "TERLIBAT PEMBUNUHAN"
+
+
+CALCS()
+cnonTUNGGAL     svitype3=="T"
+cm2w             mtsdvs!="HMC"
+cdigit          DO_LIB ap_strln(svistr2,&ldigit);
+cnohp           (ldigit >= 10) 
+chsl1x          svistr34=="R1"
+chsl2x          svistr34=="R2"
+chsl3x          svistr34=="R3"
+chsl4x          svistr34=="R4"
+chsl5x          svistr34=="R5"
+chsl6x          svistr34=="R6"
+chsl7x          svistr34=="R7"
+
+EDITS(tmptranst)
+e.Mandatory svitype2 MANDATORY
+e.Mandatory lsvitype3PK MANDATORY
+e.Mandatory svistr2 MANDATORY
+e.Mandatory svistr3 MANDATORY
+e.Mandatory svistr4 MANDATORY
+e.Mandatory svistr5 MANDATORY_IF cnonTUNGGAL
+e.Mandatory svistr6 MANDATORY_IF cnonTUNGGAL
+e.Mandatory svistr7 MANDATORY
+e.Mandatory svistr8 MANDATORY
+e.Mandatory svistr9 MANDATORY
+e.Mandatory svistr10 MANDATORY
+e.Mandatory svistr1 MANDATORY_IF cm2w
+e.Mandatory svistr31 MANDATORY
+e.Mandatory svistr32 MANDATORY
+e.Mandatory svinama MANDATORY
+e.Mandatory svistr33 MANDATORY
+e.Mandatory svidf1 MANDATORY 
+e.Mandatory svidf2 MANDATORY
+e.Mandatory svidf3 MANDATORY
+e.Mandatory svidf4 MANDATORY
+e.Mandatory svidf5 MANDATORY
+e.Mandatory svistr34 MANDATORY
+e.Mandatory svidf6 MANDATORY_IF cm4w0
+e.Mandatory svidf7 MANDATORY_IF cTERLIBAT
+e.Mandatory svidf8 MANDATORY_IF cTERLIBAT
+
+e.validate lsvitype3PK VALIDATE tbddatkodidx mtbdblmkr_1 stbd {Pgv_dttabel} {Pgv_kunjungan} {Pgv_yt21}
+e.validate svistr3 VALIDATE tbddatkodidx mtbdblmkr_2 stbd {Pgv_dttabel} {Pgv_kunjungan} {Pgv_pemakai}
+e.validate svistr4 VALIDATE tbddatkodidx mtbdblmkr_3 stbd {Pgv_dttabel} {Pgv_personal} {Pgt_stsnikah} /* ok */
+e.validate svistr5 VALIDATE_IF cnonTUNGGAL tbddatkodidx mtbdblmkr_4 stbd {Pgv_dttabel} {Pgv_personal} {Pgt_stsnikah} /* ok */
+e.validate svistr6 VALIDATE_IF cnonTUNGGAL tbddatkodidx mtbdblmkr_5 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_hubpenj} /* ok */
+e.validate svistr7 VALIDATE tbddatkodidx mtbdblmkr_6 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pendidikan} /* ok */
+e.validate svistr8 VALIDATE tbddatkodidx mtbdblmkr_7 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah} /* ok */
+e.validate svistr9 VALIDATE tbldtdtmkod mtblblmkr_1 stbl {Pgv_dttabel} {Pgv_pekerjaan21}  /* ok */
+t.ValidatePekerjaan svistr10 VALIDATE tbddatkodidx mtbdblmkr_9 stbd {Pgv_dttabel} {Pgv_pekerjaan21} {Psvistr9}
+e.validate svistr1 VALIDATE tbddatkodidx mtbdblmkr_8 stbd {Pgv_dttabel} {Pgv_kunjungan} {Pgv_bpkb21}  /* ok */
+
+MAP(mtbdblmkr_8)
+tbdkode         svistr1        REPLACE
+
+MAP(mtbdblmkr_9)
+tbdkode         svistr10        REPLACE
+tbdket          lketpekerjaan3  REPLACE
+
+
+MAP(mtblblmkr_1)
+tblkode         svistr9         REPLACE
+tblket          lketpekerjaan1  REPLACE
+
+
+MAP(mtbdblmkr_7)
+tbdkode         svistr8         REPLACE
+
+MAP(mtbdblmkr_6)
+tbdkode         svistr7         REPLACE
+
+MAP(mtbdblmkr_5)
+tbdkode         svistr6         REPLACE
+
+MAP(mtbdblmkr_4)
+tbdkode         svistr5         REPLACE
+
+MAP(mtbdblmkr_3)
+tbdkode         svistr4         REPLACE
+
+MAP(mtbdblmkr_2)
+tbdkode         svistr3         REPLACE
+svitype3        lsvitype3PK     REPLACE
+cblanks         lpenghasilanpk  DO_CALC
+chsl1           lpenghasilanpk  DO_CALC_IF chsl1x
+chsl2           lpenghasilanpk  DO_CALC_IF chsl2x
+chsl3           lpenghasilanpk  DO_CALC_IF chsl3x
+chsl4           lpenghasilanpk  DO_CALC_IF chsl4x
+chsl5           lpenghasilanpk  DO_CALC_IF chsl5x
+chsl6           lpenghasilanpk  DO_CALC_IF chsl6x
+chsl7           lpenghasilanpk  DO_CALC_IF chsl7x
+
+cblanks         lterlibat5M3    DO_CALC
+cterlibat1      lterlibat5M3    DO_CALC_IF cterlibat1x
+cterlibat2      lterlibat5M3    DO_CALC_IF cterlibat2x
+
+cblanks         lJenis5M3       DO_CALC
+cjenis5m1       lJenis5M3       DO_CALC_IF cjenis5m1x
+cjenis5m2       lJenis5M3       DO_CALC_IF cjenis5m2x
+cjenis5m3       lJenis5M3       DO_CALC_IF cjenis5m3x
+cjenis5m4       lJenis5M3       DO_CALC_IF cjenis5m4x
+cjenis5m5       lJenis5M3       DO_CALC_IF cjenis5m5x
+
+cblanks         lSubJenis5M3    DO_CALC
+csubjenis5m1    lSubJenis5M3    DO_CALC_IF csubjenis5m1x
+csubjenis5m2    lSubJenis5M3    DO_CALC_IF csubjenis5m2x
+csubjenis5m3    lSubJenis5M3    DO_CALC_IF csubjenis5m3x
+csubjenis5m4    lSubJenis5M3    DO_CALC_IF csubjenis5m4x
+csubjenis5m5    lSubJenis5M3    DO_CALC_IF csubjenis5m5x
+csubjenis5m6    lSubJenis5M3    DO_CALC_IF csubjenis5m6x
+csubjenis5m7    lSubJenis5M3    DO_CALC_IF csubjenis5m7x
+csubjenis5m8    lSubJenis5M3    DO_CALC_IF csubjenis5m8x
+csubjenis5m9    lSubJenis5M3    DO_CALC_IF csubjenis5m9x
+csubjenis5m10   lSubJenis5M3    DO_CALC_IF csubjenis5m10x
+
+
+MAP(mtbdblmkr_1)
+tbdkode         lsvitype3PK     REPLACE
+tbdkode         svitype3        REPLACE
+lsvitype3PK	svitype3	REPLACE
+svitype3	lsvitype3PK	REPLACE
+
+CALCS()
+cTUNGGAL        svitype3=="Y"
+cbknm2w		mtsdvs=="HMC"
+
+MAP(mkosongin)
+cBLANKS         svistr5         DO_CALC
+cBLANKS         svistr6         DO_CALC
+
+MAP(mnohp)
+cdigit          ldigit          DO_CALC
+
+/*
+MAP(mpenghasilpk)
+cblanks         lpenghasilanpk           DO_CALC
+chsl1           lpenghasilanpk           DO_CALC_IF chsl1x
+chsl2           lpenghasilanpk           DO_CALC_IF chsl2x
+chsl3           lpenghasilanpk           DO_CALC_IF chsl3x
+chsl4           lpenghasilanpk           DO_CALC_IF chsl4x
+chsl5           lpenghasilanpk           DO_CALC_IF chsl5x
+chsl6           lpenghasilanpk           DO_CALC_IF chsl6x
+chsl7           lpenghasilanpk           DO_CALC_IF chsl7x
+
+MAP(mterlibat3)
+cblanks         lterlibat5M3    DO_CALC
+cterlibat1      lterlibat5M3    DO_CALC_IF cterlibat1x
+cterlibat2      lterlibat5M3    DO_CALC_IF cterlibat2x
+
+MAP(mjenis5m3)
+cblanks         lJenis5M3       DO_CALC
+cjenis5m1       lJenis5M3       DO_CALC_IF cjenis5m1x
+cjenis5m2       lJenis5M3       DO_CALC_IF cjenis5m2x
+cjenis5m3       lJenis5M3       DO_CALC_IF cjenis5m3x
+cjenis5m4       lJenis5M3       DO_CALC_IF cjenis5m4x
+cjenis5m5       lJenis5M3       DO_CALC_IF cjenis5m5x
+
+MAP(msubjenis5m3)
+cblanks         lSubJenis5M3    DO_CALC
+csubjenis5m1    lSubJenis5M3    DO_CALC_IF csubjenis5m1x
+csubjenis5m2    lSubJenis5M3    DO_CALC_IF csubjenis5m2x
+csubjenis5m3    lSubJenis5M3    DO_CALC_IF csubjenis5m3x
+csubjenis5m4    lSubJenis5M3    DO_CALC_IF csubjenis5m4x
+csubjenis5m5    lSubJenis5M3    DO_CALC_IF csubjenis5m5x
+csubjenis5m6    lSubJenis5M3    DO_CALC_IF csubjenis5m6x
+csubjenis5m7    lSubJenis5M3    DO_CALC_IF csubjenis5m7x
+csubjenis5m8    lSubJenis5M3    DO_CALC_IF csubjenis5m8x
+csubjenis5m9    lSubJenis5M3    DO_CALC_IF csubjenis5m9x
+csubjenis5m10   lSubJenis5M3    DO_CALC_IF csubjenis5m10x
+*/
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=lsvitype3PK	DO_MAP SHOW IF cTUNGGAL  mkosongin
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cTUNGGAL
+BEFORE_INPUT    cur_field=svistr6       DO_SKIP_IF cTUNGGAL
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF cbknm2w
+BEFORE_INPUT    cur_field=svidf6        DO_SKIP_IF cm4w1
+BEFORE_INPUT    cur_field=svidf7        DO_SKIP_IF cTDKTERLIBAT
+BEFORE_INPUT    cur_field=svidf8        DO_SKIP_IF cTDKTERLIBAT
+/*
+AFTER_INPUT     cur_field=svistr34        DO_MAP SHOW mpenghasilpk
+*/
+AFTER_INPUT     cur_field=svistr2       DO_MAP SHOW mnohp
+AFTER_INPUT     cur_field=svistr2 DO_MAP SHOW
+                IF cnohp mdum3
+                ELSE HKCURSOR STAY
+                     HKMSG t.Min10Digit /* minimal 10 digit*/
+
+AFTER_INPUT     cur_field=svidf6        DO_MAP SHOW mhilang
+/*
+AFTER_INPUT     cur_field=svidf7        DO_MAP SHOW mjenis5m3
+AFTER_INPUT     cur_field=svidf8        DO_MAP SHOW msubjenis5m3
+*/
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/* SFL_COND condkunjawl */
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp    gv_resurvey11 mtsnobuk lRESURVEY16
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsdata         svidata         REPLACE
+mtsnoasal       svidtmkode      REPLACE
+g_usrkode       svikode         REPLACE
+l1              svinourt        REPLACE
+lRESURVEY16     svitype         REPLACE
+gv_resurvey11   svidata         REPLACE
+
+CALCS()
+ckondisipk      abktype=="KOL" && abkkym2=="736"
+charus3pk	lttotalpk >=3 && djoinpsikol==1 && lpsijabatankol != "A/RRESURVSTAFF" && mtsdvs != "M4W"
+cabkbesok1	g_tgltrn + 1
+
+MAP(mupdabkkol1)
+gv_CLSD         abksts          REPLACE_IF cabkkol1
+DEBUG           ldumx           ldumx           REPLACE
+
+MAP(mscanabkpk)
+c1              lttotalpk       DO_CALC_IF ckondisipk
+DEBUG           ldumx           ldumx           REPLACE
+
+MAP(mupdabkpkbesok)
+gt_RINP         abksts          REPLACE_IF ckondisipk
+cabkbesok1      abktgl          DO_CALC_IF ckondisipk
+DEBUG           ldumx           ldumx           REPLACE
+
+MAP(mupdabkkol2)
+gv_CLSD         abksts          REPLACE_IF cabkkol1
+DEBUG           ldumx           ldumx           REPLACE
+
+
+CALCS()
+cjoinabkkol1     djoinabkkol1==1
+
+SPCALCS(spaddtmptrans)
+DO_LIB_IF cjoinabkkol1 ap_dbclc(DNAME dupdabkkol1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkkol1);
+DO_LIB  ap_dbclc(DNAME dbscanabkpk,DCOMMAND SCANSCAN,DTARGET abkdatstskym lkunciabsen gv_CLSD mtsplg l736x g_tgltrn,DBC_SUM_MAP mscanabkpk);
+DO_LIB_IF charus3pk ap_dbclc(DNAME dupdabkpkbesok,DCOMMAND UPDATE_RANGE,DTARGET abkdatstskym lkunciabsen gv_INPG mtsplg l736x,DMAP mupdabkpkbesok);
+
+SPCALCS(spupdtmptrans)
+DO_LIB_IF cjoinabkkol1 ap_dbclc(DNAME dupdabkkol2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkkol2);
+DO_LIB  ap_dbclc(DNAME dbscanabkpk1,DCOMMAND SCANSCAN,DTARGET abkdatstskym lkunciabsen gv_CLSD mtsplg l736x g_tgltrn,DBC_SUM_MAP mscanabkpk);
+DO_LIB_IF charus3pk ap_dbclc(DNAME dupdabkpkbesok1,DCOMMAND UPDATE_RANGE,DTARGET abkdatstskym lkunciabsen gv_INPG mtsplg l736x,DMAP mupdabkpkbesok);
+
+POSTING(tmptrans)
+PST_ADDCMD spaddtmptrans
+PST_UPDCMD spupdtmptrans
+

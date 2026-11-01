@@ -1,0 +1,62 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD--------------------------------------------\/--------------------\|
+| |   | |                                                      ||t.WaktuMenit        ||
+| |___| |                                                      ||  ________          ||
+| \---/ |                                                      ||spasi               ||
+|       |                                                      || ___________________||
+|       |                                                      || ___________        ||
+|       |                                                      |\--------------------/|
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       \------------------------------------------------------/                      |
+\-------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   sgmurt       PROTECT                 INPUTRI          1
+   sgmhrg2      PROTECT                 INPUTRI          2
+   sgmstr4      NOCHANGE                INPUTRI          3
+   lenter       NOCHANGE                INPUTRI          4
+
+DEFAULTS(tmptranst)
+sgmstr4		DFALT_SCAN_BLANKS	S "Sesuai"
+					TS "Tidak Sesuai"
+
+EDITS(tmptranst)
+e.Mandatory    sgmstr4  MANDATORY
+
+CALCS()
+cdjoinsgm91      ((djoinsgm9 == 1 || g_grpnam=="RI" || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA" || g_grpnam=="HRDSPV") && btmstsdata=="OPEN") || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD"
+clewat_jam9       (djoinsgmteltime == 1 && sgmjam <= lsgmjamtelA) || djoinpsd9tel==1 || djoinsgmteltime == 0
+cjoinsgmTEL       djoinsgmteltime==1
+ctambahjamtel     lsgmjamtel + l0004
+
+MAP(mwaktu_cepat)
+cSYSTIME	sgmjam		DO_CALC
+ctambahjamtel   lsgmjamtelA DO_CALC_IF cjoinsgmTEL
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sgmstr4 DO_MAP SHOW mwaktu_cepat
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW maddtgltes
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF clewat_jam9 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuTesSudahBerahkir
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     sgmstr2
+SFL_UPLREADONLY
+SFL_COND        cdjoinsgm91
+SFL_TARGET
+        sgmdabrplgtb   gv_testkry11   btmnobuk ltest_tel
+

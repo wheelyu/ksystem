@@ -1,0 +1,133 @@
+LOCAL
+PGM_FIELDS
+lvsn1			STRING		21
+
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+|! i.Ket          : _______________!|
+|! i.Tanggal      : _______________!|
+|! i.Nip          : _______________!|
+|! i.Sts          : _______________!|
+|! t.StsUpload    : _______________!|
+|! t.AccFoto      : ________       !|
+|! t.NipACC       : _______________!|
+|! t.AlasanTacc   : _______________!|
+|! t.JikaTaccTambahLagi            !|
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| ________________________        ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg                  PROTECT                  INPUTRI         1
+tldtglfak               NOLIMIT {DD-MM-YY}      INPUTRI		 2
+tldgrup                 NOCHANGE                 INPUTRI         3
+tldsts                  PROTECT                  INPUTRI         4
+tldsisbrg               PROTECT                  INPUTRI         5
+tldtydis                NOCHANGE                 INPUTRI         6
+tldlok2                 PROTECT                  INPUTRI         7
+tldket                  ALLCAPS                  INPUTRI         8
+lupload_ok2             TOMBOL                   INPUTRI         8
+
+
+EDITS(tmptranst)
+e.Mandatory tldbrg      MANDATORY
+e.Mandatory tldtglfak   MANDATORY
+
+DEFAULTS(tmptranst)
+tldsts          INIT_ADD                OPEN
+tldbrg		INIT_ADD		{tmpkode}
+tldgrup		INIT_ADD		{g_usrkode}
+lvsn1		INIT			VAKSIN1
+tldtydis	DFALT_SCAN		BLANKS
+					ACC "ACC"
+					TACC "TACC"
+					FRAU "FRAU"
+
+DBCALCS(djoinvaksin1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrglok		hrmnobuk    lvsn1  
+
+CALCS()
+/*
+cdet2INPG		tldsts =="INPG"*/
+
+cdet2OPEN		tldsts =="OPEN"
+csdhv1			djoinvaksin1 ==1
+cBLMCEK2		"BLMCEK_HRD"
+ctglbetul		tldtglfak <= g_tgltrn
+
+MAP(mupdhrm_u2)
+cBLMCEK2         hrmket2                 DO_CALC
+
+MAP(mupdtld_u2)
+cY              tldsisbrg       DO_CALC
+
+SPCALCS(supdupl2)
+        DO_LIB   ap_dbclc(DNAME dupdhrm_u2,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrm_u2);
+        DO_LIB   ap_dbclc(DNAME dupdtlg_u2,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mupdtld_u2);
+
+
+HOOKS(tmptranst)
+/* BEFORE_INPUT      cur_field=tldtglfak      DO_SKIP_IF cdet2INPG */
+BEFORE_INPUT      cur_field=tldtydis       DO_SKIP_IF cdet2OPEN
+BEFORE_INPUT      cur_field=tldket         DO_SKIP_IF cdet2OPEN
+AFTER_INPUT      cur_field=tldtydis       DO_MAP SHOW mnipacc
+AFTER_INPUT     cur_field=tldtglfak     DO_MAP SHOW
+                IF csdhv1   mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BlmVaksin1
+
+AFTER_INPUT     cur_field=tldtglfak     DO_MAP SHOW
+                IF csdhtacc2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SdhLbh2xTACCHubAtasan
+
+AFTER_INPUT     cur_keybd=EN     DO_MAP SHOW
+                IF csdhtacc2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SdhLbh2xTACCHubAtasan
+
+AFTER_INPUT     cur_field=tldtglfak     DO_MAP SHOW
+                IF ctglbetul  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiTglActualVaksin
+
+CLICKED      cur_field=lupload_ok2   DO_SPCALCS supdupl2
+
+CALCS()
+ccondsdh2		tmpkode =="VAKSIN2"
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        ccondsdh2
+SFL_UPLFLD hrmnobuk tldbrg  
+
+SFL_TARGET
+	tldbukbrglok   hrmnobuk  tmpkode 
+
+SFL_MAP
+hrmdata         tlddata         REPLACE
+hrmnobuk        tldnobuk        REPLACE
+tmpkode		tldbrg  	REPLACE
+
+
+
+
+
+
+

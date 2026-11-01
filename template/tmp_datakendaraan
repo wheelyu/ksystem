@@ -1,0 +1,416 @@
+LOCAL
+PGM_FIELDS
+lftmcab		STRING  21
+lftmdvs		STRING  21
+lftmkat		STRING  21
+lftmtgl1	DATE	4
+lftmbrg		STRING  21
+lftmplg		STRING  21
+lbtmnobuk	STRING	21
+lbtmthn		STRING	21
+lbtmtypmtr	STRING	21
+lbrgkat2713	STRING	11
+lbtmplg		STRING	21
+ljmntglklr	DATE	4
+ljmnnamamb	STRING	11
+lbpkbmktg	STRING	15
+	
+IMAGE(tmptranst) 
+/------------------------------------------------------------------------------------\
+|/----------------------------------\/---------------\/-----------------------------\|
+|| i.Historisbpkb   :               || _____________ || _____________               ||                          
+|| i.Kodemotor      : _____________ || _____________ || ___________  _____________  ||
+|| i.Merkmotor      : _____________ || _____________ || ___________  _____________  ||
+|| t.TglJtpPajak    : _____________ || _____________ || ___________  _____________  ||
+|| i.Tahunmotor     : _________     || _________     || ___________  _________   _  ||
+|| i.Anbpkb         : ____________  || _____________ || ___________  ___________ _ _||
+|\----------------------------------/\---------------/\-----------------------------/|
+\------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+lftmcab			PROTECT				INPUTRI	1
+svistr1			ALLCAPS SCROLL			INPUTRI 2
+
+lbtmtypmtr		PROTECT				INPUTRI	3
+lftmdvs			PROTECT                         INPUTRI 3
+svistr6			NOCHANGE			INPUTRI	3
+svistr5 		ALLCAPS SCROLL			INPUTRI 4
+
+lbrgkat2713		PROTECT				INPUTRI	5
+lftmkat			PROTECT                         INPUTRI 5
+svistr7                 PROTECT                         INPUTRI 5
+svistr2			PROTECT SCROLL			INPUTRI 6
+
+ljmntglklr		PROTECT {DD-MY-YY} NOLIMIT      INPUTRI 7
+lftmtgl1		PROTECT {DD-MY-YY} NOLIMIT	INPUTRI 7
+svistr8                 NOCHANGE                        INPUTRI 7
+svitgl1			NONE {DD-MM-YY} NOLIMIT		INPUTRI 8
+
+lbtmthn			PROTECT				INPUTRI	9
+lftmbrg			PROTECT                         INPUTRI 9
+svistr9                 NOCHANGE                        INPUTRI 9
+svistr3			ALLCAPS SCROLL			INPUTRI 10
+g_usrkode               PROTECT UNSEEN                  INPUTRI 10
+
+ljmnnamamb		PROTECT                         INPUTRI 11
+lftmplg			PROTECT                         INPUTRI 11
+svistr10                NOCHANGE                        INPUTRI 11
+svistr4 		ALLCAPS SCROLL			INPUTRI 12
+
+lenter			NOCHANGE			INPUTRI	13
+lbtmnobuk		UNSEEN				INPUTRI	14
+
+/*
+lbtmthn		tahun motor
+lbtmtypmtr	kode motor
+ljmntglklr	jtp pajak
+ljmnnamamb	an bpkb
+
+*/
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+svistr1		DFALT_SCAN KREDIT TUNAI
+lbtmnobuk	INIT	{btmnobuk}
+lbtmthn		INIT	{btmthn}
+lbtmtypmtr	INIT	{btmtypmtr}
+lbtmplg		INIT	{btmplg}
+ljaminput1      INIT    SYSTIME
+lDATAKEND       INIT    "DATAKEND"
+svistr6		DFALT_SCAN BLANKS	SESUAIMKTG
+					SESUAICMO
+					BEDA
+
+svistr7         DFALT_SCAN BLANKS       SESUAIMKTG
+                                        SESUAICMO
+                                        BEDA
+
+svistr8         DFALT_SCAN BLANKS       SESUAIMKTG
+                                        SESUAICMO
+                                        BEDA
+
+svistr9         DFALT_SCAN BLANKS       SESUAIMKTG
+                                        SESUAICMO
+                                        BEDA
+
+svistr10        DFALT_SCAN BLANKS       SESUAIMKTG
+                                        SESUAICMO
+                                        BEDA
+
+DBCALCS(djoinjmn714)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	jmnplgnoidx   lbtmplg lbtmnobuk
+
+DBCALCS(djoinbrg)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brgstdtkatbr   gv_INPG gt_dtmodel lspmb svistr5
+
+CALCS()
+cdjoinftmdatakendaraan714	djoinftmdatakendaraan==1
+cdjoinftmdatakendaraan7140	djoinftmdatakendaraan==0
+cdjoinjmn7140			djoinjmn714==0
+cdjoinbrg0			djoinbrg==0
+
+EDITS(tmptranst)
+
+e.validate	g_usrkode	VALIDATE psikodidx	mpsi713dt	
+t.TypeMotorTdkAdadi3128 	svistr5	        VALIDATE brgstdtkatbr mbrg sbrgTyp {Pgv_INPG} {Pgt_dtmodel} {Plspmb} 
+e.validate 	svistr3 	VALIDATE tbddatkodidx mtbd3_3 stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+e.validate 	svistr4 	VALIDATE tbddatkodidx mtbd3_2 stbd {Pgv_dttabel} {Pgv_kunjungan1} {Pgv_bpkb21}  /* ok */
+
+e.validate	lbtmnobuk	VALIDATE_DUP_IF cdjoinftmdatakendaraan714 ftmdatbukidx mftm713  {Pgv_dtkendaraan}
+e.validate	lbtmtypmtr	VALIDATE	brgdatkodidx mbrg713dt    {Pgt_dtmodel}
+e.validate	lbtmnobuk	VALIDATE	jmnplgnoidx mjmn713dt {Plbtmplg}
+e.Mandatory                     svistr1         MANDATORY
+e.Mandatory                     svistr5         MANDATORY
+e.Mandatory                     svistr2         MANDATORY
+e.Mandatory                     svitgl1         MANDATORY
+e.Mandatory                     svistr3         MANDATORY
+e.Mandatory                     svistr4         MANDATORY
+
+CALCS()
+cBLANKS713DT	BLANKS
+ctahunbenar     svistr3>="2010" && svistr3<="2026"
+
+MAP(mpsi713dt)
+cBLANKS713DT	lbrgkat2713	DO_CALC_IF cdjoinbrg0
+cBLANKS713DT	ljmntglklr	DO_CALC_IF cdjoinjmn7140
+cBLANKS713DT	ljmnnamamb	DO_CALC_IF cdjoinjmn7140
+cBLANKS713DT	lftmcab		DO_CALC_IF cdjoinftmdatakendaraan7140
+cBLANKS713DT	lftmdvs		DO_CALC_IF cdjoinftmdatakendaraan7140
+cBLANKS713DT	lftmkat		DO_CALC_IF cdjoinftmdatakendaraan7140
+cBLANKS713DT	lftmtgl1	DO_CALC_IF cdjoinftmdatakendaraan7140
+cBLANKS713DT	lftmbrg		DO_CALC_IF cdjoinftmdatakendaraan7140
+cBLANKS713DT	lftmplg		DO_CALC_IF cdjoinftmdatakendaraan7140
+
+
+MAP(mtbd3_2)
+tbdkode         svistr4         REPLACE
+
+MAP(mtbd3_3)
+tbdkode         svistr3         REPLACE
+
+MAP(mbrg)
+brgkode         svistr5		REPLACE
+brgkat2		svistr2		REPLACE
+
+MAP(mbrg713dt)
+brgkat2		lbrgkat2713	REPLACE
+
+CALCS()
+cisiPEMOHON     "PEMOHON"
+cisiPENJAMIN    "PENJAMIN"
+cisiBEDA        "BEDA"
+cPM714		ljmnnamamb=="PM"
+cPJ714		ljmnnamamb=="PJ"
+cBD714		ljmnnamamb=="BD"
+
+
+MAP(mjmn713dt)
+jmntglklr	ljmntglklr      REPLACE
+jmnnamamb	ljmnnamamb      REPLACE
+cisiPEMOHON	lbpkbmktg	DO_CALC_IF cPM714
+cisiPENJAMIN	lbpkbmktg	DO_CALC_IF cPJ714
+cisiBEDA	lbpkbmktg	DO_CALC_IF cBD714
+
+MAP(mftm713)
+ftmcab		lftmcab		REPLACE	/*hist bpkb*/
+ftmdvs		lftmdvs		REPLACE	/*kore motor*/
+ftmkat		lftmkat		REPLACE	/*merk motor */
+ftmtgl1		lftmtgl1	REPLACE	/*tnggal pajak*/
+ftmbrg		lftmbrg		REPLACE	/*tahun motor*/
+ftmplg		lftmplg		REPLACE	/*an bpkb*/
+
+CALCS()
+cinim2wsaja	(btmdvsjl=="M2W" || btmdvsjl=="M2W4W")
+csesuaimkt1	svistr6=="SESUAIMKTG"
+csesuaimkt3	svistr8=="SESUAIMKTG"
+csesuaimkt4	svistr9=="SESUAIMKTG"
+csesuaimkt5PM	svistr10=="SESUAIMKTG" && ljmnnamamb=="PM"
+csesuaimkt5PJ   svistr10=="SESUAIMKTG" && ljmnnamamb=="PJ"
+csesuaimkt5BD   svistr10=="SESUAIMKTG" && ljmnnamamb=="BD"
+
+csesuaicmo1	svistr6=="SESUAICMO"
+csesuaicmo3	svistr8=="SESUAICMO"
+csesuaicmo4	svistr9=="SESUAICMO"
+csesuaicmo5	svistr10=="SESUAICMO"
+
+cbeda1		svistr6=="BEDA"
+cbeda3		svistr8=="BEDA"
+cbeda4		svistr9=="BEDA"
+cbeda5		svistr10=="BEDA"
+
+csama1dt          svistr6=="SESUAIMKTG" || svistr6=="SESUAICMO"
+csama3dt          svistr8=="SESUAIMKTG" || svistr8=="SESUAICMO"
+csama4dt          svistr9=="SESUAIMKTG" || svistr9=="SESUAICMO"
+csama5dt          svistr10=="SESUAIMKTG" || svistr10=="SESUAICMO"
+
+ckodemotorbeda  (svistr6=="BEDA" && svistr5!=lftmdvs && svistr5!=lbtmtypmtr) || (svistr6!="BEDA")
+cpajakbeda	(svistr8=="BEDA" && svitgl1!=lftmtgl1 && svitgl1!=ljmntglklr) || (svistr8!="BEDA")
+ctahunbeda	(svistr9=="BEDA" && svistr3!=lftmbrg && svistr3!=lbtmthn) || (svistr9!="BEDA")
+cbpkbbeda	(svistr10=="BEDA" && svistr4!=lftmplg && svistr4!=lbpkbmktg) || (svistr10!="BEDA")
+
+MAP(misikodemotor)
+lbtmtypmtr	svistr5		REPLACE_IF csesuaimkt1
+lftmdvs		svistr5		REPLACE_IF csesuaicmo1
+cBLANKS		svistr5		DO_CALC_IF cbeda1
+
+MAP(misipajakmotor)
+ljmntglklr	svitgl1		REPLACE_IF csesuaimkt3
+lftmtgl1	svitgl1		REPLACE_IF csesuaicmo3
+cBLANKS		svitgl1         DO_CALC_IF cbeda3
+
+MAP(misitahunmotor)
+lbtmthn		svistr3         REPLACE_IF csesuaimkt4
+lftmbrg		svistr3         REPLACE_IF csesuaicmo4
+cBLANKS		svistr3         DO_CALC_IF cbeda4
+
+MAP(misianbpkb)
+cisiPEMOHON	svistr4		DO_CALC_IF csesuaimkt5PM
+cisiPENJAMIN	svistr4		DO_CALC_IF csesuaimkt5PJ
+cisiBEDA	svistr4		DO_CALC_IF csesuaimkt5BD
+lftmplg		svistr4         REPLACE_IF csesuaicmo5
+cBLANKS		svistr4         DO_CALC_IF cbeda5
+
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=svistr6 DO_MAP SHOW misikodemotor
+AFTER_INPUT cur_field=svistr8 DO_MAP SHOW misipajakmotor
+AFTER_INPUT cur_field=svistr9 DO_MAP SHOW misitahunmotor
+AFTER_INPUT cur_field=svistr10 DO_MAP SHOW misianbpkb
+
+BEFORE_INPUT cur_field=svistr5 DO_SKIP_IF csama1dt
+BEFORE_INPUT cur_field=svitgl1 DO_SKIP_IF csama3dt
+BEFORE_INPUT cur_field=svistr3 DO_SKIP_IF csama4dt
+BEFORE_INPUT cur_field=svistr4 DO_SKIP_IF csama5dt
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc11    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714a
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.BlmVerifCekKerjaCMO
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjointkmvertelOPEN1     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjointkmvertelOPEN1    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc11    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714a
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.BlmVerifCekKerjaCMO
+
+AFTER_INPUT cur_field=svistr5 DO_MAP SHOW
+        IF ckodemotorbeda     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF ckodemotorbeda    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_field=svitgl1 DO_MAP SHOW
+        IF cpajakbeda     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cpajakbeda    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_field=svistr3 DO_MAP SHOW
+        IF ctahunbeda     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF ctahunbeda    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cbpkbbeda     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cbpkbbeda    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.HarusBedaInputan
+
+AFTER_INPUT cur_field=svistr3 DO_MAP SHOW
+        IF ctahunbenar     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Min2010
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF ctahunbenar    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Min2010
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_COND	cinim2wsaja
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_dtkendaraan
+
+SFL_MAP
+gv_datasurvey		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_dtkendaraan		svitype			REPLACE
+gv_dtkendaraan		svikode			REPLACE
+
+/**********************************************************************/
+MAP(mupdtldwarnakendaraan)
+lhasil1BP		tldjmlren		REPLACE
+
+ctotalhmc               tldjml          DO_CALC_IF cnonA
+ctotalhmc               tldjml          DO_CALC_IF cnonB
+ctotalhmc               tldjml          DO_CALC_IF cnonAkhusus
+
+ctotalm2w1              tldjml          DO_CALC_IF cdatun1
+ctotalm2w2              tldjml          DO_CALC_IF cdatun2
+
+ctotalm2wbaru           tldjml          DO_CALC_IF cM2Wbaru
+
+MAP(mapmapdatakend)
+lDATAKEND       lDETAIL2        REPLACE
+
+SPCALCS(spkendaraan)
+DO_LIB ap_dbclc(DNAME dmapmapdatakend;DCOMMAND MAPMAP;DMAP mapmapdatakend);
+        DO_LIB ap_dbclc (DNAME dmapawal4,DCOMMAND MAPMAP,DMAP mmapawal);
+        DO_LIB_IF cdjointldwarna0 ap_dbclc (DNAME daddtldwarnakendaraan,DCOMMAND ADD,DFILE tld,DMAP maddtldwarna);
+        DO_LIB_IF cdjointldwarna1 ap_dbclc (DNAME dupdtldwarnakendaraan,DCOMMAND UPDATE,DTARGET tldotoidx   ltldoto,DMAP mupdtldwarnakendaraan);
+        DO_LIB                  ap_nxpst(l4461,lm4461det2);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD spkendaraan
+        PST_UPDCMD spkendaraan
+
+CALCS()
+ctambah_dtkendaraan	(btmsts == "714" && djoinsvidtkendaraan==0 && g_scrnumstr=="714") || (btmsts == "711" && djoinsvidtkendaraan==0 && g_scrnumstr=="711")
+cubah_dtkendaraan	(btmsts == "714" && g_scrnumstr=="714") || (btmsts == "711" && g_scrnumstr=="711")
+chapus_dtkendaraan	(btmsts == "714" && g_scrnumstr=="714" && djoinsvijanjikc==0) || (btmsts == "711" && g_scrnumstr=="711")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	ctambah_dtkendaraan
+  	PMT_UPDALL_COND cubah_dtkendaraan
+  	PMT_DEL_COND  	chapus_dtkendaraan

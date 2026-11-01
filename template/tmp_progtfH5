@@ -1,0 +1,94 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/------------------------------\
+|    t.STPLSepakatDamai        |
+| t.NoBuk : _________________  |
+|/-s.UPLOAD-------------------\|
+||                            || 
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+||                            ||
+|\----------------------------/|
+|/----------------------------\|
+||t.StsUpl  _________________ ||
+||t.TglUpl  _________________ ||
+||t.Hasil   __________________||
+||t.NoStpl  __________________||
+||t.TglStpl __________________||
+||                     _______||
+|\----------------------------/|
+|                              |
+\------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk                PROTECT                 INPUTRI         1
+tkdjwbstr2		PROTECT			INPUTRI		2
+tkdtgl2			PROTECT			INPUTRI		3
+tkdjenis		NOCHANGE		INPUTRI		4
+tkdrek			ALLCAPS			INPUTRI		5
+tkdtgl			NONE    {DD-MM-YYYY}	INPUTRI		6
+lENTER2			ALLCAPS			INPUTRI		7
+
+DEFAULTS(tmptranst)
+l5			INIT		5
+lINPG			INIT		INPG
+tkdnourt		INIT		5
+tkdsts			INIT		INPG
+tkdjwbstr1		INIT		FOTOPRG1TF4
+lENTER2			INIT		ENTER
+tkdjenis		DFALT_LIST	STPL
+					KESEPAKATAN_DAMAI
+CALCS()
+cstpl		tkdjenis=="STPL"
+cbknstpl	tkdjenis=="KESEPAKATAN_DAMAI"
+
+EDITS(tmptranst)
+e.Mandatory     tkdjenis        MANDATORY
+e.Mandatory	tkdrek		MANDATORY_IF cstpl
+e.Mandatory	tkdtgl		MANDATORY_IF cstpl
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdrek	DO_SKIP_IF cbknstpl
+BEFORE_INPUT    cur_field=tkdtgl        DO_SKIP_IF cbknstpl
+
+
+CALCS()
+chapustmptrans  g_usrkode==BLANKS || g_grpnam=="RI" || g_grpnam=="IT"
+
+MAP(mupduplfttmptrans)
+cOK                     tkdjwbstr2      DO_CALC
+g_fotodate1             tkdtgl2         REPLACE
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx tkdprm
+        DBC_MAP         mupduplfttmptrans
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD       tkdnobuk tkdjwbstr1
+SFL_UPL_DELCOND chapustmptrans
+SFL_UPLFLD_DBCALCS dupduplfttmptrans
+SFL_TARGET
+	tkdbukidx   tlmnobuk lINPG l5
+
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+tlmnoasal       tkdnoll         REPLACE
+
+CALCS()
+caddtrans5	(tlmsts=="762" && (tlmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="1706116") && tlmsts2=="PRG2" && djointkd5==0) 
+cupdtrans5	(tlmsts=="762" && (tlmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="1706116") && tlmsts2=="PRG2" && djointkd5==1)
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  caddtrans5
+  PMT_UPDALL_COND cupdtrans5
+  PMT_DEL_COND  c0
+

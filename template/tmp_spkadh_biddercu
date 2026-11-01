@@ -1,0 +1,258 @@
+LOCAL
+PGM_FIELDS
+lverbcu		STRING	11
+ltombuplbcu	STRING	11
+ltompjbcu	STRING  21
+ltomdvhbcu	STRING  21
+/*
+lrevhobcu       STRING  11
+lrevdvhbcu      STRING  11
+*/
+
+CALCS()
+ctkdbidder	tkdnoll == "BIDDERCU"
+
+DBCALCS(djointkdbidder)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkdbukidx svinobuk gv_OPEN svinourt
+	DBC_SELECT	ctkdbidder
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.BIDDERCHECKUNIT		    ||
+|\----------------------------------/|
+|/----------------------------------\|
+|		___		     |
+| t.Namabid	_____________________|
+| t.Ket         _____________________|
+|                              ______|
+|\----------------------------------/|
+
+|/----------------------------------\|
+| t.FotoSelfie                    ___|
+|\----------------------------------/|
+|/--------------UPLOAD--------------\|
+||                      	    ||
+||                                  ||
+||            		            ||
+||             	                    ||
+||             	                    ||
+|\----------------------------------/|
+|			    _________|
+
+|/----------------------------------\|
+| t.RevHO       __________ __ _______|
+|               _____________________|
+| t.RevDVH      __ __________________|
+|               _____________________|
+| ________________  ________________ |
+|       __                __         |
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	PROTECT		INPUTRI	 1  /*No Urut*/
+svinama		ALLCAPS		INPUTRI  2  /*Nama Bidder*/
+sviket          TEXTAREA        INPUTRI  3  /*Keterangan*/
+lenter          ALLCAPS         INPUTRI  4  /*Tombol Enter*/
+svistr2		PROTECT		INPUTRI  5  /*Tanda sudah Upload*/
+ltombuplbcu     TOMBOL          INPUTRI  6  /*Tombol Upload OK*/
+
+svitype2        PROTECT         INPUTRI  7 /*NIP Rev HO*/
+svistr34        NOCHANGE        INPUTRI  8 /*ket Rev SPV*/
+svistr3	        PROTECT         INPUTRI  9
+sviket2         TEXTAREA        INPUTRI 10 /*isi ket review HO*/
+svistr35        NOCHANGE        INPUTRI 11 /*ket Rev DVH*/
+svistr4	        PROTECT         INPUTRI 12
+sviket3         TEXTAREA        INPUTRI 13 /*isi ket review DVH*/
+
+ltompjbcu       TOMBOL          INPUTRI 14
+ltomdvhbcu      TOMBOL          INPUTRI 16
+svistr36        PROTECT         INPUTRI 15
+svistr37        PROTECT         INPUTRI 17
+
+
+DEFAULTS(tmptranst)
+lverbcu			INIT			2606.18v1
+svistr34                DFALT_SCAN_BLANKS       1 "ACC"
+                                                2 "TACC"
+svistr35                DFALT_SCAN_BLANKS       1 "ACC"
+                                                2 "TACC"
+ltombuplbcu		INIT			"UPLOAD OK"
+ltompjbcu               INIT                    "SELESAI REV PJ HO"
+ltomdvhbcu              INIT                    "SELESAI REV DVH"
+IF chnypjho svitype2    INIT_UPDATE             {g_usrkode}
+
+CALCS()
+ctdbcu			svidf1 + 1
+cbtsbcu			svidf1 < 1
+csdhuplbcu		svidf1 == 1
+cmenitbcu		tkdnourt==svinourt && djointkdbidder==1 && svidf1 == 1 && svistr2 != "OK"
+cjoinurtbcu0  		djoinurutbcu==0 && g_curcmd==1
+cjoinurtbcu1  		djoinurutbcu==1 && g_curcmd==1
+curtbcu1      		FLD_TO_STRING(svinourt) + "SELFBCU"
+crev1bcu        	svistr34 == "1" && svitype == "BIDDERCU"
+crev1abcu       	svistr35 == "1" && svitype == "BIDDERCU"
+crev2bcu        	svistr34 == "2" && svitype == "BIDDERCU"
+crev2abcu       	svistr35 == "2" && svitype == "BIDDERCU"
+cpjhosdhrevbcu  	svistr34 != BLANKS
+cdvhsdhrevbcu		svistr35 != BLANKS
+
+EDITS(tmptranst)
+e.Isi Nama Bidder	svinama		MANDATORY
+e.Isi Keterangan	sviket		MANDATORY
+
+MAP(msviurtbcu)
+l1		svinourt	REPLACE_IF cjoinurtbcu0
+curut		svinourt	DO_CALC_IF cjoinurtbcu1
+curtbcu1	svistr5		DO_CALC
+
+MAP(mhslrevbcu)
+cACC            svistr3         DO_CALC_IF crev1bcu
+cTACC           svistr3         DO_CALC_IF crev2bcu
+cACC            svistr4         DO_CALC_IF crev1abcu
+cTACC           svistr4	        DO_CALC_IF crev2abcu
+
+/*===== tanda sudah upload =====*/
+MAP(mupdsvibcu)
+ctdbcu          svidf1          DO_CALC_IF cbtsbcu
+DBCALCS(dupdsvibcu)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvibcu
+
+/*===== upd tkd dan svi saat klik upload ok =====*/
+MAP(mupdtkdbcu)
+l35             tkdjml3         REPLACE_IF cmenitbcu
+DBCALCS(dupdbcu)
+	DBC_COMMAND	UPDATE_RANGE
+	DBC_TARGET      tkddatbukll svidata svinobuk lBIDDERCU21
+	DBC_MAP         mupdtkdbcu
+
+MAP(mupdokbcu)
+cOK             svistr2         DO_CALC_IF csdhuplbcu
+
+/*===== add & upd tkd review =====*/
+MAP(mmapbcu)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+
+MAP(mupdrevpjhobcu)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum       REPLACE
+DBCALCS(dupdrevpjhobcu)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhobcu
+
+MAP(mupdrevdvhbcu)
+ctam1           tkdjml          DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhbcu)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhbcu
+
+MAP(muprevdpjhobcu1)
+lOK             svistr36                REPLACE_IF cpjhosdhrevbcu
+
+MAP(mupdrevdvhbcu1)
+lOK             svistr37                REPLACE_IF cdvhsdhrevbcu
+
+MAP(mupdrevabkpjhobcu2)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhbcu2)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spupdtkdbcu)
+dupdbcu
+DO_LIB          ap_dbclc(DNAME dupdokbcu,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdokbcu);
+
+SPCALCS(spupdrevpjhobcu)
+DO_LIB          		ap_dbclc(DNAME dmapbcu1,DCOMMAND MAPMAP,DMAP mmapbcu);
+DO_LIB          		ap_dbclc(DNAME dupdokbcu1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhobcu1);
+dupdrevpjhobcu
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjbcu2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhobcu2);
+
+SPCALCS(spupdrevdvhbcu)
+DO_LIB          		ap_dbclc(DNAME dmapbcu2,DCOMMAND MAPMAP,DMAP mmapbcu);
+DO_LIB          		ap_dbclc(DNAME dupdokbcu2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhbcu1);
+dupdrevdvhbcu
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhbcu2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhbcu2);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svinama		DO_MAP SHOW msviurtbcu
+
+CLICKED		cur_field=ltombuplbcu		DO_SPCALCS spupdtkdbcu
+
+BEFORE_INPUT    cur_field=svinama       	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=sviket        	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltombuplbcu  		DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2      	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr3       	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2       	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35      	DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=svistr4       	DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3       	DO_SKIP_IF cdvh
+	
+AFTER_INPUT     cur_field=svistr34      	DO_MAP SHOW mhslrevbcu
+AFTER_INPUT     cur_field=svistr35      	DO_MAP SHOW mhslrevbcu
+
+CLICKED         cur_field=ltompjbcu          	DO_SPCALCS spupdrevpjhobcu
+CLICKED         cur_field=ltomdvhbcu	        DO_SPCALCS spupdrevdvhbcu
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD tkmnobuk svistr5	/*nama foto upload*/
+SFL_UPLFLD_DBCALCS dupdsvibcu	/*tanda sudah upload*/
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lBIDDERCU
+SFL_MAP
+tkmnobuk        svinobuk
+lSPKADH11       svidata
+lBIDDERCU       svitype
+
+MAP(maddtkdbcu)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+lBIDDERCU21	tkdnoll		REPLACE
+gv_OPEN         tkdsts          REPLACE
+tkmplg          tkdstr1         REPLACE
+tkmtgl          tkdtgl          REPLACE
+svinourt        tkdnourt        REPLACE
+
+MAP(maddtkdrevbcu)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+SPCALCS(spaddtkdbcu)
+DO_LIB          ap_dbclc(DNAME daddtkdbcu,DCOMMAND ADD,DFILE tkd,DMAP maddtkdbcu);
+
+SPCALCS(spupdtkdbcu1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdbcu1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevbcu);
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtkdbcu
+PST_UPDCMD	spupdtkdbcu1

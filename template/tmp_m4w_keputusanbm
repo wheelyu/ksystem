@@ -1,0 +1,146 @@
+DBCALCS(djoinabkbm)
+DBC_COMMAND	JOIN
+DBC_TARGET	abkdatbukidx lkunciabsen tlmnobuk
+DBC_SELECT	creminder1
+
+DBCALCS(djoinabkdvh)
+DBC_COMMAND	JOIN
+DBC_TARGET	abkdatbukidx lkunciabsen tlmnobuk
+DBC_SELECT      creminder2
+
+DBCALCS(djoinabkmoubm)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx lkunciabsen tlmnobuk
+DBC_SELECT      cmoubm
+
+IMAGE(tmptranst)
+/-------------------------------------------\
+|/-----------------------------------------\|
+||              t.KeputusanBM              ||
+|\-----------------------------------------/|
+|/-----------------------------------------\|
+|| t.Hasil	: ______________	   !|
+|| t.Alasan	: _____________________    !|
+|| t.TanggalMou	: _____________________    !|
+|\-----------------------------------------/|
+|/-----------------------------------------\|
+|| t.AprDvh	: ________ 		   !|
+|| t.Alasan	: _____________________    !|
+|\-----------------------------------------/|
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr1		NOCHANGE			INPUTRI 1
+svistr3		ALLCAPS	SCROLL			INPUTRI 2
+svitgl1		NOCHANGE NOLIMIT {DD-MM-YYYY}	INPUTRI 3
+svistr2		NOCHANGE			INPUTRI	4
+svistr4		ALLCAPS	SCROLL			INPUTRI	5
+
+DEFAULTS(tmptranst)
+l3251		INIT		3251
+
+svistr1		DFALT_SCAN	BLANKS
+				PERPANJANGAN 	" "
+				PEMUTUSAN	" "
+svistr2		DFALT_SCAN	BLANKS
+				Y	" "
+				T	" "
+
+CALCS()
+cbisatambah     g_grpnam == "IT"  || g_grpnam == "RI" || g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WCSPV"
+cbisaupdate	((g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WBM"  || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WCSPV") && svistr2 == BLANKS && svistr4 == BLANKS) || g_grpnam == "RI" || g_grpnam == "IT"
+
+caddabkmou	djoinabkmoubm == 0 && ((svistr1 == "PERPANJANGAN" && svistr2 == "Y") || (svistr1 == "PEMUTUSAN" && svistr2 == "T"))
+
+caddabkdvh	svistr1 != BLANKS && svistr3 != BLANKS && djoinabkdvh == 0 
+cclsdabkdvh	svistr2 != BLANKS && svistr4 != BLANKS && djoinabkdvh == 1 
+
+c7hari		tlmtgl2 + 7
+ctglmax		((svitgl1 - tlmtgl2) <= 7 && (svitgl1 - g_tgltrn) >= 0) || svistr1 == "PEMUTUSAN"
+ctglharisama	svitgl1 == g_tgltrn
+cbukakuncibm	svistr1 != BLANKS && svistr3 != BLANKS && djoinabkbm == 1 
+cbm		g_grpnam == "B.M4WBM"
+cdvh		g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WCSPV"
+cskiptgl	svistr1 != "PERPANJANGAN"
+cpemutusan	svistr1 == "PEMUTUSAN"
+
+EDITS(tmptranst)
+e.Mandatory svistr1 MANDATORY_IF cbm
+e.Mandatory svistr3 MANDATORY_IF cbm
+e.Mandatory svistr2 MANDATORY_IF cdvh
+e.Mandatory svistr4 MANDATORY_IF cdvh
+
+MAP(maddabkdvh)
+lkunciabsen	abkdata		REPLACE
+lnipspvhom4w	abkkym		REPLACE_IF cjoinspvhom4w
+svitgl1		abktgl		REPLACE
+g_tgltrn	abktgl		REPLACE_IF cpemutusan
+l3251		abkscr		REPLACE
+gt_RINP		abksts		REPLACE
+gv_INPG		abksts		REPLACE_IF ctglharisama
+gv_INPG		abksts		REPLACE_IF cpemutusan
+tlmnobuk	abknobuk	REPLACE
+lketkunci2	abkkym2		REPLACE
+lreminder2      abktype         REPLACE
+DEBUG	        ldum	ldum	REPLACE
+
+MAP(mupdabkclsd)
+gv_CLSD		abksts		REPLACE
+DEBUG	        ldum	ldum	REPLACE
+
+MAP(maddabkmou)
+lkunciabsen	abkdata		REPLACE
+lnipbm		abkkym		REPLACE_IF cdjoinsgmnipbm
+svitgl1		abktgl		REPLACE
+c7hari		abktgl		DO_CALC_IF cpemutusan
+l3251		abkscr		REPLACE
+gt_RINP		abksts		REPLACE
+gv_INPG		abksts		REPLACE_IF ctglharisama
+tlmnobuk	abknobuk	REPLACE
+lketkunci3	abkkym2		REPLACE
+lmoubm          abktype         REPLACE
+DEBUG	        ldum	ldum    REPLACE
+
+SPCALCS(spenter)
+DO_LIB_IF caddabkdvh    ap_dbclc(DNAME daddabkdvh,DCOMMAND ADD,DFILE abk,DMAP maddabkdvh);
+DO_LIB_IF cclsdabkdvh   ap_dbclc(DNAME dupdabkdvh,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DBC_COND creminder2,DMAP mupdabkclsd);
+
+DO_LIB_IF cbukakuncibm	ap_dbclc(DNAME dupdabkbm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DBC_COND creminder1,DMAP mupdabkclsd);
+DO_LIB_IF caddabkmou	ap_dbclc(DNAME daddabkmou,DCOMMAND ADD,DFILE abk,DMAP maddabkmou);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cdvh
+
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF cdvh
+
+BEFORE_INPUT 	cur_field=svitgl1	DO_SKIP_IF cdvh
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF cskiptgl
+AFTER_INPUT	cur_field=svitgl1 	DO_MAP SHOW
+		IF ctglmax mdum
+		ELSE HKCURSOR STAY
+		HKMSG MAKSIMAL TGL MOU TIDAK LEBIH DARI 7 HARI DARI TGL SELESAI DI MASTER
+
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF cbm
+
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF cbm
+
+AFTER_INPUT	cur_keybd=EN		DO_SPCALCS spenter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp 	lEXTERNAL tlmnobuk lKUNCIANMAK
+
+SFL_MAP
+lEXTERNAL       svidata         REPLACE
+tlmnobuk        svinobuk        REPLACE
+l1              svinourt        REPLACE
+lKUNCIANMAK     svitype         REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cbisatambah
+PMT_UPDALL_COND	cbisaupdate
+PMT_DEL_COND	c0

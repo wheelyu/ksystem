@@ -1,0 +1,184 @@
+LOCAL
+PGM_FIELDS
+lketclsd2       STRING	61
+lpsicabskr	STRING	21
+lnamakba	STRING	61
+lpsijabatan2	STRING	21
+
+MAP(mjoinpsispk)
+psijabatan      lpsijabatan2    REPLACE
+psicabskr       lpsicabskr     	REPLACE
+psinama		lnamakba	REPLACE
+
+CALCS()
+careakba	sgmstr3 == lpsicabskr
+
+DBCALCS(djoinpsispk)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx       spkkode3
+        DBC_MAP         mjoinpsispk
+
+DBCALCS(djoinsgmspvkba)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatstr215	gv_dtpiccab lthbls21 lDIGMKTSPV tkmplg
+	DBC_SELECT	careakba
+
+CALCS()
+caktv2		spkkat5 != "1"
+caktv4		spkkat6 != "2"
+caktv5		spkkat5 != "2"
+caktv3		spkkat5 == "2" || spkkat6 != "1"
+
+caktvterh	spkkat5 == "1"
+ckbabaru	spkkat5 == "1" && spkkat6 == "1"
+
+cok		"ok"
+cdjoinosispk	(spkkode3 != BLANKS && djoinpsispk == 1 && djoinsgmspvkba == 1 && (lpsijabatan2 == "KBANMCOFFICER" || lpsijabatan2 == "MKTKBAHMC" || lpsijabatan2 == "T.LEADERKBA" ||
+		lpsijabatan2 == "MKTKBAM2W" || lpsijabatan2 == "KBAM2WOFFICER")) || spkkode3 == BLANKS
+
+ctdkterh	spkkat5 == "2"
+ctdkminat	spkkat6 == "2"
+cminat		spkkat6 == "1"
+cinput		tkmsts == "OPEN"
+
+IMAGE(tmptranst)
+/------------------------------------\
+|------------------------------------|
+| t.NamaAgen    : __________________ |
+| t.NikAgen     : __________________ |
+| t.NoHp        : __________________ |
+| t.TypeAgen    : __________________ |
+| t.Jl3BlnAkh   : __________________ |
+| t.PK3BlnAkh   : __________________ |
+| t.UplineSkr   : __________________ |
+| t.JabUpliSkr  : __________________ |
+| t.StsUplSkr   : __________________ |
+| t.Terhub     	: __ _______________ |
+| t.AlsTdkHub	: __________________ |
+| t.MntAgen     : __ _______________ |
+| t.AlsTdkMin   : ___ ______________ | 
+| 				     |
+| t.AssiKBABaru			     |
+| t.NipUpliBaru : __________________ |
+| t.NamaUpliBaru: __________________ |
+|                 ___                |
+| t.FotSSAtauTelp		     |                     
+|/---s.UPLOAD-----------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spknama		PROTECT		INPUTRI 1	/* Nama Agen */
+spkkode		PROTECT		INPUTRI	2	/* Nip Agen*/
+spknohp         PROTECT 	INPUTRI 2	/* No Hp*/
+spkhasil        PROTECT 	INPUTRI 3	/* Tipe Agen */
+spkgaji         PROTECT 	INPUTRI	4	/* Jual 3 Bulan Terakhir */
+spkssgaji	PROTECT 	INPUTRI	5	/* Pk 3 Bulan Terakhir */
+spknama2        PROTECT 	INPUTRI	6	/* Upline Saat Ini */
+spkkat2         PROTECT 	INPUTRI 7	/* Jabatan Upline Saat Ini  */
+spkkode2        PROTECT 	INPUTRI 8	/* Status Upline Saat Ini */
+spkkat5	        ALLCAPS 	INPUTRI 9	/* Terhubung atau Tidak */
+lalasan		PROTECT		INPUTRI 10
+spkket		ALLCAPS		INPUTRI 11	/* Alasan Tidak Terhubung */
+spkkat6	        ALLCAPS		INPUTRI 12	/* Masih Minat Agen */
+lmntagen	PROTECT		INPUTRI 13
+spkkat4	      	ALLCAPS		INPUTRI	14	/* Alasan Tidak Minat Menjadi Agen */
+lketclsd2	PROTECT		INPUTRI 15	/* Alasan Tidak Minat Menjadi Agen */
+spkkode3        ALLCAPS		INPUTRI	16	/* Nip Upline Baru */
+lnamakba        PROTECT		INPUTRI	17	/* Nama Upline Baru*/
+lenter		ALLCAPS		INPUTRI	18		
+
+DEFAULTS(tmptranst)
+spkket		DFALT_SCAN_BLANKS	TIDAK_MENGANGKAT_TELPON
+					PESAN_TIDAK_TERKIRIM
+					NO_TELPON_TIDAK_VALID
+					PESAN_TIDAK_DIBALAS
+
+EDITS(tmptranst)
+e.Mandatory	spkkat5	       	MANDATORY
+e.Mandatory	spkkat6        	MANDATORY_IF caktvterh
+e.Mandatory	spkkat4		MANDATORY_IF ctdkminat
+e.Mandatory	spkkode3	MANDATORY_IF ckbabaru
+e.Mandatory	spkket		MANDATORY_IF ctdkterh
+e.ValidateNoHp	spkkode        	VALIDATE_DUP psmkod2stsid mpsm 0
+e.ValidateRes 	spkkat4       	VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dttabel} {PlKLIKNSC} {PlALSKELUARAGEN}
+e.ValidateRes2	spkkat5		VALIDATE tbddatkodidx mtbd4 stbd {Pgv_dttabel} {PlKLIKNSC} {PlTERHUBUNG}
+e.ValidateRes3	spkkat6		VALIDATE tbddatkodidx mtbd5 stbd {Pgv_dttabel} {PlKLIKNSC} {PlMINATAGEN}
+
+MAP(mpsm)
+psmkode		spknohp		REPLACE
+
+MAP(mtbd2)
+tbdkode         spkkat4		REPLACE
+tbdket          lketclsd2	REPLACE
+
+MAP(mtbd4)
+tbdkode		spkkat5		REPLACE
+tbdket		lalasan		REPLACE
+
+MAP(mtbd5)
+tbdkode		spkkat6		REPLACE
+tbdket		lmntagen	REPLACE
+
+MAP(mblanks2)
+cBLANKS		spkkat6		DO_CALC_IF ctdkterh
+cBLANKS		spkkat4		DO_CALC_IF ctdkterh
+cBLANKS		spkkode3	DO_CALC_IF ctdkterh
+cBLANKS		lketclsd2	DO_CALC_IF ctdkterh
+cBLANKS		lnamakba	DO_CALC_IF ctdkterh
+cBLANKS		spkket		DO_CALC_IF caktvterh
+cBLANKS		lmntagen	DO_CALC_IF ctdkterh
+
+MAP(mblanks3)
+cBLANKS		spkkode3	DO_CALC_IF ctdkminat 
+cBLANKS		lnamakba	DO_CALC_IF ctdkminat
+cBLANKS		spkkat4		DO_CALC_IF cminat
+cBLANKS		lketclsd2	DO_CALC_IF cminat
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=spkkat6        DO_SKIP_IF caktv2
+BEFORE_INPUT    cur_field=spkkat4     	 DO_SKIP_IF caktv4
+BEFORE_INPUT    cur_field=spkkode3       DO_SKIP_IF caktv3
+BEFORE_INPUT	cur_field=spkket	 DO_SKIP_IF caktv5
+BEFORE_INPUT    cur_field=lnamakba       DO_SKIP_IF caktv3
+
+AFTER_INPUT     cur_field=spkkat5        DO_MAP SHOW mblanks2
+
+AFTER_INPUT     cur_field=spkkat6        DO_MAP SHOW mblanks3
+
+AFTER_INPUT     cur_field=spkkode3       DO_MAP SHOW
+                IF cdjoinosispk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaBisaKBADariDowlineSPVKBA
+
+MAP(mupdfoto)
+cok		spkfoto		DO_CALC
+
+DBCALCS(dupdfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx   spkprm
+        DBC_MAP         mupdfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+/* SFL_COND	cinput */
+SFL_UPLFLD spknobuk
+SFL_UPLFLD_DBCALCS  dupdfoto
+SFL_UPL_DIRFLD	tkmcab
+SFL_TITLE(tmptranst)
+SFL_TARGET	spkdatbuktyp   lFU_AGEN tkmnobuk
+SFL_MAP
+lketclsd2	lketclsd2	REPLACE
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	cinput
+	PMT_DEL_COND    c0

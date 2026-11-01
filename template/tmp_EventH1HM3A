@@ -1,0 +1,137 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Bukti Blast WA
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| _______________________       t.H_____  ||
+|| i.TanggalInput         : _____________  ||
+|| i.JumlahKontakKonsumen : _____________  ||
+|| i.JumlahKontakTerkirim : _____________  ||
+t.Bukti Status WA
+  /--s.UPLOAD2----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| _______________________       t.H_____  ||
+|| i.TanggalInput         : _____________  ||
+|| i.JumlahViews          : _____________  ||
+|| i.JumlahReply          : _____________  ||
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc : ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      PROTECT                         INPUTRI 1
+tkdnil3          PROTECT                         INPUTRI 1
+tkdtgl          PROTECT {DD-MM-YY}              INPUTRI 1
+tkdnildmke      NUMERIC             	        INPUTRI	2
+tkdnildmdr      NUMERIC             	        INPUTRI	3
+tkdjwbstr2      PROTECT                         INPUTRI 4
+tkdnil3         PROTECT                         INPUTRI 4
+tkdtgl2         PROTECT {DD-MM-YY}              INPUTRI 4
+tkdnil4         NUMERIC                         INPUTRI 5
+tkdnil5         NUMERIC                         INPUTRI 6
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts          PROTECT                                 INPUTRI 2
+
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 8
+tkdstr1         PROTECT                                 INPUTRI 2
+tkdket          TEXTAREA                                INPUTRI 9
+lenter          NOCHANGE                                INPUTRI 10
+ltombolblastwahok    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+ltmpisidf1      INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+ltkdnoll 	INIT            {ctipedetail}
+tkdnil3          INIT            {tmpisidf1}
+tkdtotsj        INIT            {gv_int1}
+tkdtotsj        INIT_UPDATE     0
+tkdtotsan        INIT            {tmpisidf1}
+tkdsts          INIT            {gv_OPEN}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+
+CALCS()
+cdetailhm3blast       tlmkode == g_usrkode && tkdnildmke != 0 &&  tkdjml > 0 && tkdjml2 > 0
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolblastwahok  DO_SPCALCS spdetailokhm3blast
+BEFORE_INPUT    cur_field=tkdnildmke            DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdnildmdr            DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdnil4            DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdnil5            DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+EDITS(tmptranst)
+e.Mandatory             tkdnildmke      MANDATORY
+e.Mandatory             tkdnildmdr      MANDATORY
+e.Mandatory             tkdnil4         MANDATORY
+e.Mandatory             tkdnil5         MANDATORY
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl
+SFL_UPLFLD tkdnobuk tkdjwbstr1
+SFL_UPLFLD2 tkdnobuk tkdjwbstr2
+SFL_UPLFLD_DBCALCS dtambahuploadfotoblastwa
+SFL_UPLFLD2_DBCALCS dtambahuploadfotostatuswa
+SFL_UPL_COND cuploadblastsosmedok
+SFL_UPL_COND_MSG        IF cdetailblastsosmed1sudahacc Detail H-3 Sudah ACC tidak bisa upload
+                        IF cdetailblastsosmed2sudahacc Detail H-1 Sudah ACC tidak bisa upload
+                        IF cdetailblastsosmed3sudahacc Detail Hari H Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetailblastsosmed1review Tunggu Review H-3 Terlebih Dahulu
+                        IF cdetailblastsosmed2review Tunggu Review H-1 Terlebih Dahulu
+                        IF cdetailblastsosmed3review Tunggu Review Hari H Terlebih Dahulu
+                        IF cbelumadablastpromosi Tekan T Enter Dulu
+                        IF cdalamkondisiupdate Tekan U Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_SELECT cselblastwa
+SFL_TARGET
+        tkddatbukll lEVNH1AHM3 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1AHM3 tkddata
+        labktype tkdnoll
+
+MAP(mupdinfodetailhm3blast)
+cketdetailblast         tkdrek          DO_CALC_IF cjumlahkontakkosong
+cketuploadfotodulu         tkdrek          DO_CALC_IF cfotostatuskosong
+cketuploadfotodulu         tkdrek          DO_CALC_IF cfotoblastkosong
+lSELESAIKANHMIN7DULU    tkdrek          REPLACE_IF cdjoindetailhm7apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+
+SPCALCS(spdetailokhm3blast)
+        DO_LIB_IF cdetailhm3blast          ap_dbclc(DNAME dupddetailreqhm3blast,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm3blast, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm3blast, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm3blast,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm3blast);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailadditionalbaru

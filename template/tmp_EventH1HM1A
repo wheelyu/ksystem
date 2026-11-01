@@ -1,0 +1,135 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------\
+ t.Penugasan SDM
+/--------------------t--------t-------------t-------------t-------------t--------t---------\
+|t.Nama              |t.NIP   |t.Subdept    |t.Tugas      |t.Posisi     |t.info  | __ __ __
+\--------------------.--------.-------------.-------------.-------------.--------.---------/
+\------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|____________________|________|_____________|_____________|_____________|__________________|
+
+CALCS()
+ckunci1a        abkkym2 == lketreviewhm1a
+chidetomaprovalhm1     (lnipamhmc != g_usrkode && lnipkawilhmc != g_usrkode) || ((lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tldtydis == gv_OPEN || tldtydis == gv_TACC || tldtydis == gv_ok))
+chidetomdetailokhm1	tlmkode != g_usrkode || ((tlmkode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tldtydis == gv_IN || tldtydis == gv_ok))
+FIELD(tmptranst)
+ltombol4acc      TOMBOL UNSEEN_IF chidetomaprovalhm1        INPUTRI 1
+ltombol4tacc    TOMBOL UNSEEN_IF chidetomaprovalhm1        INPUTRI 1
+ltombolhm1aok   TOMBOL UNSEEN_IF chidetomdetailokhm1       INPUTRI 2
+
+FIELD(tmptrans)
+lnamasdm 	PROTECT		        INPUTRI	1
+tldlok  	ALLCAPS SCROLL          INPUTRI	1
+lsubdept        PROTECT                 INPUTRI 2
+tldlok2          ALLCAPS NOCHANGE        INPUTRI 2
+tldsat          ALLCAPS NOCHANGE	INPUTRI	3
+tldstr1           PROTECT                 INPUTRI 4
+
+CALCS()
+cdetailhm1aok         tlmkode == g_usrkode && (tldtydis == gv_OPEN || tldtydis == gv_TACC) && tldlok != ""
+ctldloksama	        tldprm != ltldprm && tldlok == ltldlok
+camkawilintld   tldtydis == gv_IN && (lnipkawilhmc == g_usrkode || lnipamhmc == g_usrkode)
+
+cdetaildalamreviewhm1  tldtydis == gv_IN && tlmkode == g_usrkode
+DBCALCS(djoinsdmbertugasfix)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      tldplgbrgidx lEVNH1AHM1 gv_INPG tlmnobuk
+        DBC_SELECT      ctldloksama
+
+CALCS()
+csdmfixbelumdiinput     djoinsdmbertugasfix == 0
+cahassoks                djoindetailhm8 == 1 && ((ltkdjenis == "TIDAK" && tldukrwrn != "H2") || (ltkdjenis == "YA" ))
+cdetailbelumacctld     tldtydis != gv_ok
+cdetailstatusopentld			tldtydis == gv_OPEN
+cdetailstatustacctld   		tldtydis == gv_TACC
+cadakawilbelumacctld 	lnipkawilhmc != "" && tlmkode == g_usrkode && tldtydis != gv_ok && tldtydis == gv_IN && djoinabkdetailkawilinpgrinp == 0
+cadaambelumacctld    	lnipamhmc != "" && tlmkode == g_usrkode && tldtydis != gv_ok && tldtydis == gv_IN && djoinabkdetailaminpgrinp == 0
+
+DEFAULTS(tmptrans)
+lnamasdm        INIT                    ""
+lsubdept        INIT                    ""
+tldlok2          DFALT_LIST              SDM_BERTUGAS PJ
+tldsat          DFALT_LIST              CHECKPOINT TENDA
+tldnourt        INIT_UPDATE             {gv_int1}
+tldstr1         INIT                    "GANTI SDM"
+tldtydis        INIT                    {gv_OPEN}
+
+MAP(mupddetailreqtld)
+gv_IN         	tldtydis          REPLACE_IF cdetailstatusopentld
+gv_IN		tldtydis		REPLACE_IF cdetailstatustacctld
+
+MAP(mupddetailok1a)
+lSUDAHACC       tldstr1		        REPLACE
+gv_ok         	tldtydis                REPLACE
+
+MAP(mupddetailtrinci1a)
+lMENUNGGUREVISI tldstr1					REPLACE
+gv_TACC         tldtydis                  REPLACE
+
+MAP(mtldlok)
+tldprm          ltldprm                 REPLACE
+tldlok         ltldlok                REPLACE
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldlok        DO_MAP SHOW mtldlok
+AFTER_INPUT	cur_field=tldlok        DO_MAP
+                IF csdmfixbelumdiinput mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SDM Sudah Di Input
+AFTER_INPUT	cur_field=tldlok        DO_MAP
+                IF cahassoks mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TIDAK BOLEH INPUT AHASS
+
+
+MAP(msdmfixbertugas)
+psinama         lnamasdm                REPLACE
+psikode         tldlok                 REPLACE
+psijabatan      tldkat                  REPLACE
+psisdep         lsubdept                REPLACE
+psidvs          tldukrwrn               REPLACE
+
+EDITS(tmptrans)
+e.Mandatory             tldlok         MANDATORY
+t.KryNull               tldlok         VALIDATE psikodidx msdmfixbertugas spsiinpgcab
+e.Mandatory             tldlok2          MANDATORY
+e.Mandatory             tldsat          MANDATORY
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldplgbrgidx lEVNH1AHM1 gv_INPG tlmnobuk
+SFL_MAP
+        lEVNH1AHM1 tlddata
+        gv_INPG tldsts
+        tlmnobuk tldplg
+
+
+MAP(mupdinfodetailhm1a)
+lDALAMPROSESREVIEW      tldstr1          REPLACE_IF cdetaildalamreviewhm1
+
+SPCALCS(spdetailokhm1a)
+        DO_LIB_IF cdetailhm1aok                 ap_dbclc(DNAME dupddetailreqhm1a,DCOMMAND UPDATE_RANGE,DTARGET tldplgbrgidx tlddata tldsts tldplg, DMAP mupddetailreqtld);
+        DO_LIB                                  ap_dbclc(DNAME dupddetailreqhm1aok,DCOMMAND MAPMAP, DMAP mupddetailreqtld);
+        DO_LIB_IF cadakawilbelumacctld          ap_dbclc(DNAME daddabkreviewkawilhm1a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacctld             ap_dbclc(DNAME daddabkreviewamhm1a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cadaahass                     ap_dbclc(DNAME daddabkreviewahasshm1a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewahass);
+        DO_LIB_IF cdetailbelumacctld            ap_dbclc(DNAME dupdinfodetailhm1a,DCOMMAND UPDATE_RANGE,DTARGET tldplgbrgidx tlddata tldsts tldplg, DMAP mupdinfodetailhm1a);
+
+SPCALCS(saccdetailrinci1a)
+        DO_LIB_IF cadakawil             ap_dbclc(DNAME dupdabkclsdkawilaccdetail1A,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci1a, DMAP mupdabkclsdkawil);
+        DO_LIB_IF cadaam                ap_dbclc(DNAME dupdabkclsdamaccdetail1A,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci1a,DMAP mupdabkclsdam);
+        DO_LIB                          ap_dbclc(DNAME dupddetailokaccdetail1a, DCOMMAND UPDATE_RANGE, DTARGET tldplgbrgidx tlddata tldsts tldplg, DMAP mupddetailok1a);
+
+SPCALCS(staccdetailrinci1a)
+        DO_LIB                          ap_dbclc(DNAME dupddetailtacchm1a, DCOMMAND UPDATE_RANGE, DTARGET tldplgbrgidx tlddata tldsts tldplg, DMAP mupddetailtrinci1a);
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol4tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol4acc    DO_SKIP_IF camkawil
+CLICKED         cur_field=ltombolhm1aok DO_SPCALCS spdetailokhm1a
+
+CLICKED         cur_field=ltombol4tacc   DO_SPCALCS IF camkawilintld staccdetailrinci1a
+CLICKED         cur_field=ltombol4acc	DO_SPCALCS IF camkawilintld saccdetailrinci1a      

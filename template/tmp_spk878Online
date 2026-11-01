@@ -1,0 +1,96 @@
+LOCAL
+PGM_FIELDS
+ltkdjwbstr1tmp	STRING	61
+lenter_ol	STRING	21
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.NoBuk   : ______________        ||
+|| t.Tanggal : ______________	     ||
+|| t.Telp    : ______________	     ||
+|| t.Nama    : ______________	     ||
+|| t.Hasil   : ___  		     ||
+||	       _____________________ ||
+||               	       _____ ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk        PROTECT QPROTECT          	INPUTRI 1
+tkdtgl          PROTECT {DD-MM-YY} NOLIMIT      INPUTRI 2
+tkdnoll         PROTECT                         INPUTRI 2
+tkdstr1		PROTECT				INPUTRI	3
+tkdjwbstr1	NOCHANGE			INPUTRI	4
+ltkdjwbstr1tmp	TEXTAREA ALLCAPS		INPUTRI	5
+
+lenter_ol       NOCHANGE                        INPUTRI 11
+
+DEFAULTS(tmptranst)
+lenter_ol	INIT	ENTER
+
+tkdjwbstr1       DFALT_SCAN_BLANKS       1 "TERHUBUNG (CALL/WA)"
+                                         2 "TELEPON AKTIF TIDAK DIANGKAT"
+                                         3 "TELEPON TIDAK AKTIF"
+                                         4 "TELEPON TIDAK TERDAFTAR"
+
+CALCS()
+cjwb1           "TERHUBUNG (CALL/WA)"
+cjwb2           "TELEPON AKTIF TIDAK DIANGKAT"
+cjwb3           "TELEPON TIDAK AKTIF"
+cjwb4           "TELEPON TIDAK TERDAFTAR"
+
+cjwb1a		tkdjwbstr1 == "1"
+cjwb2a		tkdjwbstr1 == "2"
+cjwb3a		tkdjwbstr1 == "3"
+cjwb4a		tkdjwbstr1 == "4"
+csdhjwb		tkdjwbstr1 != BLANKS
+cjwbkosong	tkdjwbstr1 == BLANKS
+cTIDAK		"TIDAK"
+ctidak1tmp	tkdjwbstr1 != "1"
+cjwbstrlagi	~tkdjwbstr1 != "1"
+
+EDITS(tmptranst)
+e.Mandatory	tkdjwbstr1	MANDATORY
+e.Validate      tkdnobuk        VALIDATE tkmbukidx mtkmonline
+
+MAP(mtkmonline)
+tkmnobuk	tkdnobuk	REPLACE
+cjwb1		ltkdjwbstr1tmp	DO_CALC_IF cjwb1a
+cjwb2		ltkdjwbstr1tmp	DO_CALC_IF cjwb2a
+cjwb3		ltkdjwbstr1tmp	DO_CALC_IF cjwb3a
+cjwb4		ltkdjwbstr1tmp	DO_CALC_IF cjwb4a
+cblanks		ltkdjwbstr1tmp	DO_CALC_IF cjwbkosong
+
+MAP(mjawabonline)
+cjwb1		ltkdjwbstr1tmp	DO_CALC_IF cjwb1a
+cjwb2		ltkdjwbstr1tmp	DO_CALC_IF cjwb2a
+cjwb3		ltkdjwbstr1tmp	DO_CALC_IF cjwb3a
+cjwb4		ltkdjwbstr1tmp	DO_CALC_IF cjwb4a
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW mjawabonline
+BEFORE_INPUT	cur_field=ltkdjwbstr1tmp DO_SKIP_IF csdhjwb
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET      tkddatbukll	lSPKONLINE tkmnobuk
+SFL_MAP
+        lSPKONLINE	tkddata
+        tkmnobuk        tkdnobuk
+	g_tgltrn	tkdtgl
+
+
+MAP(mupdtkm_online)
+cTIDAK		tkmbuk2		DO_CALC_IF ctidak1tmp
+cblanks		tkmbuk2		DO_CALC_IF cjwbstrlagi
+
+SPCALCS(sptransonline)
+DO_LIB ap_dbclc(DNAME dupdtkm_online,DCOMMAND UPDATE,DTARGET tkmbukidx tkdnobuk,DMAP mupdtkm_online);
+
+POSTING(tmptrans)
+PST_UPDCMD	sptransonline
+

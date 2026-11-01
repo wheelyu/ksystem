@@ -1,0 +1,152 @@
+SCREEN 672 QUERY_TYPE t.MasterFormFeta
+SCR_FILE spk
+SCR_LOGFLD spknobuk 
+SCR_UPL_DIRFLD spkdata
+SCR_UPLFLD spknobuk
+
+LOCAL
+PGM_FIELDS
+lnama       STRING  21
+ldtmdata    STRING  11   
+lFORMMETA   STRING  11
+lurlform    STRING  700
+lSDMPRTONL  STRING  11
+lblanks     STRING  5
+lversi      STRING  11
+
+CALCS() 
+cfmtnobuk   "FMETA" + THBLS(g_tgltrn)
+ctempurl    "https://uatdlp.nusantara-sakti.co.id/?qr=5.2103.nobuk=" + spknobuk 
+c1          1
+c0          0
+cBLANKS     BLANKS
+cnotblank   spknobuk != BLANKS
+
+IMAGE(master)
+/-------------------------------------------------\
+|                                                 |
+|   t.Tgl       : _____________________________   |
+|   t.NIP       : __________  __________________  |
+|   t.Project   : _____________________________   |
+|   t.Bisnis    : _____________________________   |
+|   t.Prov      : ____________________________	  | 
+|   t.Target    : _____________________________	  |
+|   t.Kelas     : _____________________________   |
+|   t.EstimasiArea: ___________________________   |
+|   t.TipeKonten: _____________________________   |
+|   t.NamaKonten: _____________________________   |
+|   t.Banner    :   /--s.UPLOAD---------------\   |
+|                   |                         |   | 
+|                   |                         |   |                 
+|                   |                         |   |                 
+|                   |                         |   |               
+|                   |                         |   |              
+|                   |                         |   |              
+|                   \-------------------------/   |            
+|   t.Judul     : _____________________________	  |
+|   t.Intro     : _____________________________	  |
+|   t.AdsPromo1	: _____________________________	  |
+|   t.AdsPromo2	: _____________________________	  |
+|   t.AdsPromo3	: _____________________________	  |
+|                                                 |
+|   t.CopyURL	: ____________________________________________	  |_ _
+\-------------------------------------------------/
+
+
+FIELDS(master)
+spktgl		ALLCAPS NOLIMIT {DD-MM-YYYY}	INPUTRI 1
+spknoasal   ALLCAPS                 INPUTRI 3
+lnama       PROTECT                 INPUTRI 4
+spkket      ALLCAPS                 INPUTRI 5   /*PROJECT*/
+spkhasil     ALLCAPS                 INPUTRI 6   /*bisnis*/
+spkcab      ALLCAPS                 INPUTRI 7
+spknama     ALLCAPS                 INPUTRI 8
+spkrekom    ALLCAPS                 INPUTRI 9  /*Kelas*/
+spknama2    ALLCAPS                 INPUTRI 10
+spktgg2     ALLCAPS                 INPUTRI 11 /*TipeKonten*/
+spknama3    ALLCAPS                 INPUTRI 12
+
+spknama4                     INPUTRI 13
+spkket2                      INPUTRI 14
+spkreview                    INPUTRI 15
+spkreview2                   INPUTRI 16
+spkreview3                   INPUTRI 17
+lurlform    PROTECT                 INPUTRI 18
+spknobuk    PROTECT                 INPUTRI 99
+spkdata     PROTECT                 INPUTRI 99
+
+MAP(mnamapsi)
+psinama     lnama       REPLACE
+
+DBCALCS(djoinpsi)
+DBC_COMMAND	JOIN
+DBC_TARGET	psikodidx	spknoasal
+DBC_MAP mnamapsi
+
+CALCS()
+cjoinceknama    djoinpsi == 1
+
+MAP(mprop)
+dtmkode		spkcab		REPLACE
+ctempurl    lurlform    DO_CALC_IF cnotblank
+
+MAP(mnama)
+mtsnobuk    spknoasal   REPLACE
+lnama     lnama         REPLACE_IF cjoinceknama
+
+MAP(mgenurl)
+ctempurl    lurlform    DO_CALC
+
+MAP(mnomor)
+cfmtnobuk      spknobuk     DO_CALC
+
+HOOKS(master)
+AFTER_INPUT   cur_keybd=EN  	    DO_MAP SHOW mnomor
+BEFORE_INPUT  cur_field=lurlform    DO_SKIP_IF c1
+
+DEFAULT(master)
+spkdata     INIT    FORMMETA
+spktype     INIT_ADD    FORMMETA
+spkdata     INIT_QUERY   FORMMETA
+ldtmdata    INIT    DTKOTA
+lFORMMETA   INIT    FORMMETA
+lurlform    INIT    {cBLANKS}
+lSDMPRTONL  INIT    SDMPRTONL
+lblanks     INIT    {cBLANKS}
+lversi      INIT    "24092026"
+
+EDITS(master)
+Tanggal harus diisi     spktgl          MANDATORY
+Nip harus diisi         spknoasal       MANDATORY
+Project harus diisi     spkket          MANDATORY
+Bisnis harus diisi      spkhasil         MANDATORY
+Provinsi harus diisi    spkcab          MANDATORY
+Provinsi tidak ditemukan    spkcab      VALIDATE    dtmdtkodidx     mprop    sdtm {Pldtmdata}
+Nip tidak ditemukan     spknoasal       VALIDATE    mtsdatstsbuk    mnama    smts {PlSDMPRTONL} {Plblanks}
+Target harus diisi      spknama         MANDATORY
+Kelas harus diisi       spkrekom        MANDATORY
+Estimasi Area harus diisi spknama2      MANDATORY
+Tipe Konten harus diisi spktgg2         MANDATORY
+Nama Konten harus diisi spknama3        MANDATORY
+Judul harus diisi       spknama4        MANDATORY
+Intro harus diisi       spkket2         MANDATORY
+
+MAP(maddsub)
+spknobuk   	spknobuk  	REPLACE
+DEBUG ldtmdata  ldtmdata    REPLACE
+
+SPCALCS(sadd)
+DO_LIB  ap_dbclc(DNAME daddsub,DCOMMAND ADD_SUB,DFILE spk,DLTARGET spkdatbuktyp lFORMMETA spknobuk,DLLEN {l11},DMAP maddsub);
+
+SPCALCS(sadd2)
+DO_LIB  ap_dbclc(DNAME dmgenurl, DCOMMAND MAPMAP, DMAP mgenurl);
+
+
+PERMIT(master)
+PMT_DEL_COND c0
+
+POSTING(master)
+PST_SUB_ADDCMD sadd
+PST_ADDCMD sadd2
+
+END_SCREEN

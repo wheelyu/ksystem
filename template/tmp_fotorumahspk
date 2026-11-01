@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+l1              INT2             2
+lgmapfoto       STRING          31
+lgmapkons       STRING          31
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/---------------------------------------------------------------------\
+|/-------s.UPLOAD--------\/------------------------------------------\|
+||                       !! i.Ket      : ____________________________!|
+||                       !! t.TglFoto  : __________    t.Jam : __.__ !|
+||                       !! t.Latitude : ________.__                 !|
+||                       !! t.Longitude: ________.__                 !|
+||                       !! t.LongLatDeb  _______________            !|
+||                       !! t.lat      : _____________._____         !|
+||                       !! t.long     : _____________._____         !|
+||                       |! t.Jar      : _____________._____ t.KM    !|
+||                       |! ___________ ____________   _______       !|
+|\-----------------------/\------------------------------------------/|
+\---------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         2       
+svidf8                  PROTECT                 INPUTRI         3
+svidf6                  PROTECT NUMERIC         INPUTRI         3
+svidf7                  PROTECT NUMERIC         INPUTRI         3
+lgmapfoto 		TOMBOL			INPUTRI		7
+svidf4                  NOCHANGE                INPUTRI         4
+svidf5                  NOCHANGE                INPUTRI         5
+svidf2                  PROTECT NUMERIC         INPUTRI         6
+luploadOK2		TOMBOL			INPUTRI		7
+lgmapkons 		TOMBOL			INPUTRI		7
+sviyt1                  NOCHANGE                INPUTRI         7
+
+
+DEFAULTS(tmptranst)
+lcount          	INIT    	{tmpnourt}
+g_fotolat1              INIT            BLANKS
+g_fotolon1              INIT            BLANKS
+g_fotodate1             INIT            BLANKS
+lgmapfoto		INIT		GMAPFOTO
+lgmapkons		INIT		GMAPKONS
+l1			INIT		1
+
+CALCS()
+cadagps         g_fotolat1 != "" && g_fotolon1 != "" && g_fotodate1 == g_tgltrn
+crmhspk		(tmpkode == "FOTORMHSPK" || tmpkode == "FOTORUMAHSPK")
+crmhspk1	sviyt1 == "T"
+cdjoinalmTagih  djoinpik == 1 && djoinalmTagih==1
+cadajarak       svidf6!=BLANKS && svidf7!=BLANKS && svidf4!=BLANKS && svidf5!=BLANKS
+cjarak          ljarak/1000000
+
+MAP(mupdsvirumahspk)
+cY              sviyt1          DO_CALC
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+g_fototime1     svidf8          REPLACE
+g_fotodate1     svitgl2         REPLACE
+llatgmap        svidf4          REPLACE_IF cdjoinalmTagih
+llongmap        svidf5          REPLACE_IF cdjoinalmTagih
+
+MAP(mapjarak)
+cjarak  ljarak          DO_CALC_IF cadajarak
+
+DBCALCS(dmapmapjarak)
+        DBC_COMMAND     MAPMAP
+        DBC_MAP         mapjarak
+MAP(mmap6d2)
+ljarak          svidf2          REPLACE_IF cadajarak
+
+
+SPCALCS(supdrumahspk)
+        DO_LIB_IF cadagps	ap_dbclc(DNAME dupdrumahspk,DCOMMAND UPDATE,DTARGET sviotoidx svioto, DMAP mupdsvirumahspk);
+	DO_LIB_IF cadajarak 	ap_dsGPS(svidf6,svidf7,svidf4,svidf5,&ljarak);
+	dmapmapjarak
+	DO_LIB ap_dbclc(DNAME dmap6d2,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mmap6d2);
+
+SPCALCS(spcalc2)
+  DO_LIB ap_shmap(l1,g_fotolat1,g_fotolon1);
+SPCALCS(spcalc2b)
+  DO_LIB ap_shmap(l1,svidf4,svidf5);
+
+HOOKS(tmptranst)
+   CLICKED	cur_field=luploadOK2    DO_SPCALCS supdrumahspk
+   CLICKED      cur_field=lgmapfoto     DO_SPCALCS spcalc2
+   CLICKED      cur_field=lgmapkons     DO_SPCALCS spcalc2b
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND crmhspk
+SFL_UPL_DELCOND	crmhspk1
+SFL_UPLFLD svinobuk svikode
+
+SFL_TARGET
+	svidatbuktyp   ldtspk tkmnobuk lfotospk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

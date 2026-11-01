@@ -1,0 +1,78 @@
+LOCAL 
+PGM_FIELDS
+ldetjoininc		DFLOAT		8
+ldettbljoininc		DFLOAT		8
+lJOININCOME21		STRING		21
+lJOININCOME		STRING		11
+
+
+
+DBCALCS(djoinsvidetjincom)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   lDT704 btmnobuk lJOININCOME
+
+
+IMAGE(tmptranst) 
+/---------------------------------------------------------------------------------------\
+|--------t-----------------------------------------------------------t------------------|
+| i.No   | i.Ket                                                     |      i.Nil       |
+\--------.-----------------------------------------------------------.------------------/
+
+
+IMAGE(tmptrans)
+|________|___________________________________________________________|_______________.__|
+
+    
+FIELD(tmptrans)
+svinourt		PROTECT			INPUTRI 1
+sviket			PROTECT SCROLL		INPUTRI 2
+svidf1			NUMERIC			INPUTRI 3
+
+DEFAULTS(tmptrans)
+lJOININCOME		INIT	JOININCOME
+lJOININCOME21		INIT	JOININCOME
+lDT704			INIT	DT704
+
+CALCS()
+cjoindetsvijin		djoinsvidetjincom == 1
+
+SUBFILE(tmptrans)
+SFL_LINES(18)       
+SFL_COND cjoindetsvijin
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   lDT704 btmnobuk lJOININCOME
+
+
+MAP(mscansvijoininc)
+r_long8			ldetjoininc 		REPLACE
+
+DBCALCS(dbscansvijoininc)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	svidatbuktyp   lDT704 btmnobuk lJOININCOME
+	DBC_SUM_FIELD	svinourt
+	DBC_MAP		mscansvijoininc
+
+
+MAP(mscantbljoininc)
+r_long8			ldettbljoininc		REPLACE
+
+DBCALCS(dbscantbljoininc)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tbtdaturtidx   gv_dttemplate gv_tmpverifikasi lJOININCOME21 lJOININCOME21 
+	DBC_SUM_FIELD	tbtnourt
+	DBC_MAP		mscantbljoininc
+
+
+CALCS()
+cdetjoininc0		0
+cdetjoinincok		dbscansvijoininc == 0 || (dbscansvijoininc != 0 && dbscantbljoininc != 0 && ldetjoininc == ldettbljoininc + 6) 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cdetjoininc0
+  PMT_UPDALL_COND cdetjoininc0
+  PMT_EXIT_COND  cdetjoinincok
+
+
+

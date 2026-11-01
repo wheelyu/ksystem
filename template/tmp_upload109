@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/----------------------------\
+|/----s.UPLOAD--------------\|
+||                          ||
+||                          ||
+||                          ||
+||                          ||
+||                          ||
+||                          ||
+||                          ||
+|\--------------------------/|
+|       _____________        |
+|/--------------------------\|
+||t.Gedung    : ______      ||
+||t.Longitude : __._________||
+||t.Latitude  : __._________||
+|\--------------------------/|
+\----------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+luploadok       TOMBOL          INPUTRI         1
+tbdkode         NOCHANGE        INPUTRI         1
+tbddf1          NOCHANGE        INPUTRI         2
+tbddf2          NOCHANGE        INPUTRI         3
+
+DEFAULTS(tmptranst)
+tbddf1          INIT_UPDATE     {llonhp}
+tbddf2          INIT_UPDATE     {llathp}
+
+CALCS()
+clonlat         abknoll == "LONLAT"
+cnipkunci1       abkkym == g_usrkode && (abksts == "RINP" || abksts == "INPG")
+cgpsnyala       llonhp != BLANKS && llathp != BLANKS
+
+MAP(mupdfoto)
+g_fotolon1      tbddf1          REPLACE
+g_fotolat1      tbddf2          REPLACE
+DBCALCS(dupdfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tbdprmidx tbdprm
+        DBC_MAP         mupdfoto
+
+SPCALCS(spuplfoto)
+dupdfoto
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cgpsnyala mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nyalakan gps terlebih dahulu
+CLICKED         cur_field=luploadok       DO_SPCALCS spuplfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND   clonlat
+SFL_UPLFLD tbdtblkode tbdkode
+SFL_UPL_COND    cnipkunci1
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdfoto
+SFL_UPL_DIRFLD  abktgltrn
+SFL_TARGET
+        tbdotoidx abknobuk
+

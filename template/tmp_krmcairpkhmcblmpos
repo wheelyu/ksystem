@@ -1,0 +1,109 @@
+LOCAL
+PGM_FIELDS
+
+lnamakonsumen2 	STRING	     	21
+luangmuka2	DFLOAT		8
+langsuran2	DFLOAT		8
+ltenor2		DFLOAT		8
+lstok2		INT2		2
+
+/*----------JOIN--------*/
+
+MAP(mpsmkonsumen2)
+psmnama    lnamakonsumen2     REPLACE
+
+DBCALCS(djoinpsmkonsumen2)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmktpidx btmplg
+DBC_MAP         mpsmkonsumen2
+
+MAP(mnhmrincih12)
+nhmumriil    luangmuka2    REPLACE
+nhmbsrang    langsuran2	   REPLACE
+nhmtenor     ltenor2	   REPLACE
+
+DBCALCS(djoinnhmh12)
+DBC_COMMAND     JOIN
+DBC_TARGET      nhmdatbukidx	gv_dtbukutamu btmnobuk
+DBC_MAP         mnhmrincih12
+
+/*------------------Menghitung Jumlah Stok-----------------------*/
+MAP(mbrd2)
+brdsisa     lstok2       REPLACE
+
+DBCALCS(dscanbrd2)
+    DBC_COMMAND     SCANSCAN
+    DBC_TARGET      brdstscabbrg    gv_INPG btmcabjl btmtypmtr
+    DBC_SUM_MAP     mbrd2
+
+
+DBCALCS(djoinakt614)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx btmnobuk gv_historisdm l614
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.Tgl719       : _________         ||
+||i.NoPK         : _________________ ||
+||t.CabLok       : __________        ||
+||t.Dvs          : __________        ||
+||t.NamaKonsumen : _________________ ||
+||i.TypMtr       : _________________ ||
+||i.Thn          : __________        ||
+||t.TypJual      : ____              ||
+||t.UangMuka     : _________________ ||
+||t.Angs         : _________________ ||
+||t.Tenor        : ____              ||
+||t.JmlStok      : _________         ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   btmtgl           PROTECT {DD-MM-YY}         INPUTRI         1
+   btmnobuk         NOCHANGE SCROLL            INPUTRI         2
+   btmlokjual       NOCHANGE SCROLL            INPUTRI         3
+   btmdvsjl         NOCHANGE SCROLL            INPUTRI         4
+   lnamakonsumen2   NOCHANGE SCROLL            INPUTRI         5
+   btmtypmtr        NOCHANGE SCROLL            INPUTRI         6
+   btmthn           NOCHANGE SCROLL            INPUTRI         7
+   btmtypjl         NOCHANGE SCROLL            INPUTRI         8
+   luangmuka2       NOCHANGE SCROLL            INPUTRI         9
+   langsuran2       NOCHANGE SCROLL            INPUTRI         10
+   ltenor2          NOCHANGE SCROLL            INPUTRI         11
+   lstok2           NOCHANGE SCROLL            INPUTRI         12
+   
+
+CALCS()
+cdjoinpsmkonsumen02	djoinpsmkonsumen2==0
+cdjoinpsmkonsumen12	djoinpsmkonsumen2==1
+cdjoinnhmh1a2		djoinnhmh12==0
+cdjoinnhmh1b2		djoinnhmh12==1
+cblanksh12		BLANKS
+c0h12			0
+cdscanbrd2		dscanbrd2 >= 0
+cACCh12			djoinakt614 == 0 
+
+EDITS(tmptranst)
+e.Validate btmnobuk  VALIDATE btmbukidx mbtmh12 0
+
+MAP(mbtmh12)
+btmnobuk        btmnobuk        REPLACE
+cblanksh12      lnamakonsumen2	DO_CALC_IF cdjoinpsmkonsumen02
+lnamakonsumen   lnamakonsumen2	REPLACE_IF cdjoinpsmkonsumen12
+c0h12		luangmuka2	DO_CALC_IF cdjoinnhmh1a2
+luangmuka2	luangmuka2	REPLACE_IF cdjoinnhmh1b2
+c0h12		langsuran2	DO_CALC_IF cdjoinnhmh1a2
+langsuran2	langsuran2	REPLACE_IF cdjoinnhmh1b2
+c0h12		ltenor2		DO_CALC_IF cdjoinnhmh1a2
+ltenor2		ltenor2		REPLACE_IF cdjoinnhmh1b2
+lstok2		lstok2		REPLACE_IF cdscanbrd2
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT cACCh12
+SFL_TARGET btmstsposbuk gv_INPG cabkode lh1
+
+

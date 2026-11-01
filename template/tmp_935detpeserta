@@ -1,0 +1,83 @@
+MAP(mjoinlasturut)
+tkdnourt	lnourtpeserta	REPLACE
+DBCALCS(djoinlasturut)
+	DBC_COMMAND		JOIN_LAST_SFL
+	DBC_TARGET		tkdbukidx tlmnobuk tkdsts
+	DBC_MAP			mjoinlasturut
+
+IMAGE(tmptranst) 
+/---t--------------t-------------------t---------------------t-------------t----------t-------t-------\
+|Urt| i.Nip        | i.Nama            | i.Jabatan           | t.Konfirmasi| t.enter  |       |       |
+\---.--------------.-------------------.---------------------.-------------.----------.-------.-------/
+
+IMAGE(tmptrans) 
+|___|______________|__________________|______________________|____________|___________|_______|_______|
+
+FIELD(tmptrans)
+tkdnourt		PROTECT				INPUTRI 1
+tkdnoll			ALLCAPS SCROLL			INPUTRI 2
+tkdjwbstr1		ALLCAPS SCROLL			INPUTRI 3
+tkdjwbstr2		ALLCAPS	SCROLL			INPUTRI	4
+tkdtype			NOCHANGE			INPUTRI 5
+lenter			NOCHANGE			INPUTRI 6
+ltombkonf		TOMBOL				INPUTRI 7
+tkdstr1			PROTECT				INPUTRI 8
+
+CALCS()
+cupdkonf		g_curcmd == 2
+cjikatampeser		g_curcmd == 1
+cjointkdnourut0		djoinlasturut == 0
+cjointkdnourut1		djoinlasturut == 1
+cnourtpeserta		lnourtpeserta + 1
+cpeserta		g_usrkode == tkdnoll && djoinabkreminder == 1
+cpesertax		g_usrkode == tkdnoll
+cbukreminder		abknobuk == tlmnobuk && abktype == "MEETDIREK"
+
+DEFAULTS(tmptrans)
+tkdtype			DFALT_SCAN_BLANKS		Y
+							T
+EDITS(tmptrans)
+e.validateb	tkdnoll		VALIDATE psikodidx mpsi 0
+
+MAP(mpsi)
+psinama		tkdjwbstr1	REPLACE
+psijabatan	tkdjwbstr2	REPLACE
+
+MAP(mnourutpeserta)
+c1		tkdnourt	DO_CALC_IF cjointkdnourut0
+cBLANKS		lnourtpeserta	DO_CALC
+lnourtpeserta	lnourtpeserta	REPLACE_IF cjointkdnourut1
+cnourtpeserta	tkdnourt	DO_CALC
+
+MAP(mupdrmdrpsrt)
+gv_CLSD		abksts		REPLACE_IF cbukreminder
+
+MAP(mupdsdhkonf)
+lOK		tkdstr1		REPLACE
+
+SPCALCS(sptombkonf)
+DO_LIB_IF cpeserta		ap_dbclc(DNAME dupdrmdrpsrt,DCOMMAND UPDATE_RANGE,DTARGET abkdatstskym lKUNCIABSEN lINPH g_usrkode,DMAP mupdrmdrpsrt);
+DO_LIB_IF cpesertax		ap_dbclc(DNAME dupdsdhkonf,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm,DMAP mupdsdhkonf);
+
+HOOKS(tmptrans)
+BEFORE_INPUT		cur_field=tkdnoll	DO_MAP SHOW IF cjikatampeser mnourutpeserta
+
+BEFORE_INPUT		cur_field=tkdnourt	DO_SKIP_IF cupdkonf
+BEFORE_INPUT		cur_field=tkdnoll	DO_SKIP_IF cupdkonf
+BEFORE_INPUT		cur_field=tkdjwbstr1	DO_SKIP_IF cupdkonf
+BEFORE_INPUT		cur_field=tkdjwbstr2	DO_SKIP_IF cupdkonf
+
+CLICKED			cur_field=ltombkonf	DO_SPCALCS sptombkonf
+
+SUBFILE(tmptrans)
+SFL_LINES(15)        
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_SORT_BY_FIELD tkdnourt
+SFL_SORT_UPDOWN UP
+SFL_TARGET
+	tkddatbukll	lDETPESER   tlmnobuk
+
+SFL_MAP
+lDETPESER	tkddata
+tlmnobuk	tkdnobuk

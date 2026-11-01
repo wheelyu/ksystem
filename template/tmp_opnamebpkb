@@ -1,0 +1,134 @@
+LOCAL
+PGM_FIELDS
+lurtd		INT2		2
+
+MAP(mjointldd)
+tldnourt	lurtd		REPLACE
+DBCALCS(djointldd)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldbukbrglok	tlmnobuk
+	DBC_MAP		mjointldd
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/----s.UPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| t.No        :__________________ ||
+|| t.NoBPKB    :__________________ ||
+|| t.NoRangka  :__________________ ||
+|| t.Latitude  :____________       ||
+|| t.Longitude :____________       ||
+||              ____________       ||
+|| t.Jnsbiayaan:__________________ ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnourt	PROTECT			INPUTRI		1
+tldnobbm     	QRCODE        		INPUTRI		2
+tldbrdoto       PROTECT                 INPUTRI         4
+tldperdis4      PROTECT                 INPUTRI         5
+tldperdis5      PROTECT                 INPUTRI         6
+ltombolgmaps    TOMBOL                  INPUTRI         8
+ljnspembia2	PROTECT			INPUTRI		6
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg          INIT_ADD        {g_usrkode}
+tldsisbrg       INIT_ADD        OK
+tldsisbrg       INIT_UPDATE     OK
+
+EDITS(tmptranst)
+e.Mandatory 	tldnobbm	MANDATORY
+e.Dupkey        tldnobbm        DUPKEY          tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}
+
+CALCS()
+curtd		lurtd + 1
+cjointld0d	djointldd == 0 && g_curcmd == 1
+cjointld1d	djointldd == 1 && g_curcmd == 1
+cbknSISTEMd     tldsat != "SISTEM"
+cadakoordinat3   tldperdis4 != BLANKS && tldperdis5 != BLANKS
+
+MAP(mjnspembia)
+cBLANKS		lssunobuk2	DO_CALC
+cBLANKS		lbtdnobuk	DO_CALC
+cBLANKS		ljnspembia2	DO_CALC
+ljnspembia      ljnspembia2      REPLACE_IF cdjoinbtdmb
+cMB             ljnspembia2      DO_CALC_IF cMBkond
+cMBU            ljnspembia2      DO_CALC_IF cMBUkond
+
+SPCALCS(spgmaps3)
+DO_LIB_IF cadakoordinat3 ap_shmap(tldperdis4,tldperdis5);
+
+
+MAP(murtd)
+gv_int1		tldnourt	REPLACE_IF cjointld0d
+curtd  		tldnourt	DO_CALC_IF cjointld1d
+
+MAP(mupdfotobpkb)
+g_fotolat1      tldperdis1      REPLACE
+g_fotolon1      tldperdis2      REPLACE
+g_tgltrn        tldtgl2         REPLACE
+g_usrkode       tldukrwrn       REPLACE
+cOK             tldsisbrg       DO_CALC
+DBCALCS(dupdfotobpkb)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx       tldprm
+        DBC_MAP         mupdfotobpkb
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldnobbm	DO_MAP SHOW murtd
+AFTER_INPUT	cur_field=tldnobbm      DO_MAP SHOW mjnspembia
+CLICKED         cur_field=ltombolgmaps          DO_SPCALCS spgmaps3
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbknSISTEMd
+SFL_COND	cbpkb
+SFL_LINES(1)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tldnobuk tldoto
+SFL_UPLFLD_DBCALCS dupdfotobpkb
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND c0
+SFL_TARGET
+tldbukurtidx    tlmnobuk   
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat        	tldperdis4      REPLACE
+g_lon         	tldperdis5      REPLACE
+
+CALCS()
+cplus1c		tlmtotal + 1
+cmins1c		tlmtotal - 1
+
+
+MAP(mupdtlmaddc)
+cplus1c		tlmtotal	DO_CALC
+
+MAP(mupdtlmupdc)
+cmins1c		tlmtotal	DO_CALC
+
+
+SPCALCS(sptrans2addc)
+DO_LIB		ap_dbclc(DNAME dupdtlmaddc, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmaddc);
+
+SPCALCS(sptrans2updc)
+DO_LIB		ap_dbclc(DNAME dupdtlmupdc, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupdc);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2addc
+	PST_DELCMD	sptrans2updc
+

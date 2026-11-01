@@ -1,0 +1,97 @@
+LOCAL
+PGM_FIELDS
+lpikktp      STRING  21
+lnohp        STRING  21
+
+
+MAP(mjoincon)
+conhp        lnohp          REPLACE
+
+DBCALCS(djoincon)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              conkodstsidx   lpikktp gv_INPG
+        DBC_MAP                 mjoincon
+
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------\
+|/--t.detaildeskcall------------\/--t.hasildeskcall------------------\|
+||i.NoFak   :___________________||t.Ket      :_______________________||
+||i.Nama    :__________________ ||                                   ||
+||t.SisPok  :__________________ ||                                   ||
+||i.Jtp     :__________________ ||t.KonsByr  :_______________________||
+||t.NoTelp  :__________________ ||t.JdiKunju :_______________________||
+|\------------------------------/\-----------------------------------/|
+\---------------------------------------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdbrg          PROTECT                     INPUTRI 1       /* Nomor Faktur */
+tkdket          TEXTAREA 3                  INPUTRI 6       /* keterangan 1 */
+lnamadeb        PROTECT                     INPUTRI 2       /* Nama */
+piksispok       PROTECT                     INPUTRI 3       /* Sispok */
+mtdtglfak       PROTECT {DD-MM-YYYY}        INPUTRI 4       /* Jtp */
+tkdjwbstr1      NOCHANGE                    INPUTRI 7      /* bayar/tidak bayar */
+lnohp           PROTECT                     INPUTRI 5       /* No Telp */
+tkdjwbstr2      NOCHANGE                    INPUTRI 8       /* kunjungan */
+
+
+DEFAULTS(tmptranst)
+tkdjwbstr1        DFALT_SCAN      BLANKS  
+                                BAYAR
+                                TIDAK_BAYAR
+
+tkdjwbstr2        DFALT_SCAN      BLANKS  
+                                DIKUNJUNGI
+                                TIDAK_DIKUNJUNGI
+
+CALCS()
+chp             djoincon == 1
+ckunjungan      mtsdvs !=  "M4W" && tkdjwbstr2 == "TIDAK_DIKUNJUNGI"
+
+EDITS(tmptranst)
+e.Validatenofaktur mtdbrg      VALIDATE pikdatbukidx mmappik      0       {Pgv_dtpiu}
+e.Mandatory     tkdket        MANDATORY
+e.Mandatory     tkdjwbstr1        MANDATORY
+e.Mandatory     tkdjwbstr2        MANDATORY
+
+MAP(mmappik)
+pikktp        pikktp          REPLACE
+lnohp        lnohp           REPLACE_IF chp
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cm4w1
+SFL_TARGET
+        tkddatbukll   ljadwalkunj mtdoto
+
+SFL_MAP
+ljadwalkunj       tkddata           REPLACE
+mtdoto            tkdnobuk          REPLACE
+
+/*
+MAP(mupdmtd)
+cblanks         mtdnourt       DO_CALC
+cblanks         mtdnobbm       DO_CALC
+cblanks         mtdbisnis      DO_CALC
+cblanks         ljamkunj       DO_CALC
+cblanks         aktket         DO_CALC_IF cbisa
+cblanks         mtdhrg        DO_CALC
+cblanks         mtdgrup        DO_CALC
+*/
+
+MAP(mupdmts)
+ldum            ldum            REPLACE
+
+SPCALCS(sadddtmptrans)
+DO_LIB_IF ckunjungan ap_dbclc(DNAME dupdmts,DCOMMAND UPDATE,DTARGET mtsbukidx   mtdnobuk,DMAP mupdmts);
+
+
+POSTING(tmptrans)
+PST_ADDCMD sadddtmptrans
+
+

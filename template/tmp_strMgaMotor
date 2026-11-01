@@ -1,0 +1,282 @@
+LOCAL
+PGM_FIELDS
+lnamamotor	STRING	31
+lenter		STRING	11
+/*lastth          STRING  21*/
+lnhmbiaadm	DFLOAT	8
+lnhmpladis	DFLOAT	8
+lnhmkrepok	DFLOAT	8
+/*
+MAP(mjoinast)
+astth           lastth          REPLACE
+
+DBCALCS(djoinast)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	astdatkodidx	lasset btmplg lBPKB 
+	DBC_MAP         mjoinast
+MAP(mjoinppsKom)
+ppstotal        lppsKom         REPLACE
+DBCALCS(djoinppsKom)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppsdattypbuk    gv_dthut gv_komisi gv_OPEN btmnobuk
+        DBC_MAP         mjoinppsKom
+*/
+
+MAP(m45916b)
+btmtypdeb       r_string7       REPLACE
+btmtypjl        r_string17      REPLACE
+btmtype         r_string18      REPLACE
+btmdvsjl        r_string19      REPLACE
+btmnobuk        r_string20      REPLACE
+g_curcmd        r_count1        REPLACE
+btmdvs          r_string22      REPLACE
+btmcab          r_string24      REPLACE
+btmsales        r_string28      REPLACE
+btmscr          r_string32      REPLACE
+btmlmang        r_double2       REPLACE
+nhmpladis       r_double3       REPLACE
+
+
+IMAGE(tmptranst) 
+/----------------------------------\
+ i.NoBuk     ______________________
+ i.Merk      ______________________
+ i.KodeBrg   ______________________
+ i.NamaBrg   ______________________
+ i.Tahun     ______________________
+ i.Estimasi  __________________.___
+ t.HrgBks    __________________.___
+ t.MaxPinjam __________________.___
+ t.LmHr      __________________.___
+ t.LmBln     __________________.___
+ t.Pinjaman  __________________.___
+ t.TarifSewa __________________.___
+ i.ByrAdm    __________________.___
+ i.Insentif  __________________.___
+ i.BiaMkl    __________________.___
+ t.TrmKons   __________________.___
+ t.Enter     ________
+\----------------------------------/
+
+IMAGE(tmptrans) 
+    
+FIELD(tmptranst)
+nhmnobuk		NOCHANGE 			INPUTRI	1
+btmnomesin		PROTECT SCROLL			INPUTRI	2
+btmtypmtr		NOCHANGE SCROLL			INPUTRI	3
+lnamamotor		PROTECT SCROLL			INPUTRI	4
+nhmjns			NOCHANGE SCROLL			INPUTRI	5
+nhmestimasi		PROTECT NUMERIC			INPUTRI	5 /* biaya makelar */
+nhmhrgpasar		NOCHANGE NUMERIC		INPUTRI	6
+nhmmaxcair		NOCHANGE NUMERIC		INPUTRI	6
+btmlmang		NOCHANGE NUMERIC		INPUTRI	7
+btmum			NOCHANGE NUMERIC		INPUTRI	8
+nhmperjmn		NUMERIC				INPUTRI	9  /* Pinjaman */
+nhmkrepok		PROTECT NUMERIC			INPUTRI	10 /* tarif sewa */
+nhmbiaadm		PROTECT NUMERIC			INPUTRI	11 /* bayar admin */
+nhminsales		PROTECT NUMERIC			INPUTRI	12 /* insentif */
+nhmbiamklr		PROTECT NUMERIC			INPUTRI	13 /* biaya makelar */
+nhmcairpinj		PROTECT NUMERIC			INPUTRI	14 /* terima konsumen */
+
+
+lenter			NOCHANGE			INPUTRI	29
+
+
+CALCS()
+crmdcair2       "KATCAIR" + STRIP(btmnorangka) + STRIP(btmnomesin)
+crmdsewa2       "KATSEWA" + STRIP(btmnorangka) + STRIP(btmrekomen)
+crmdadmin2      "KATADMIN" + STRIP(btmnorangka)
+
+cjoinrmdcair2   lrmdgabcair != "" && djoinrmdcair == 1
+cjoinrmdsewa2   lrmdgabsewa != "" && djoinrmdsewa == 1
+cjoinrmdadmin2   lrmdgabadmin != "" && djoinrmdadmin == 1
+cjoinrmdbtscair2 lrmdgabbtscair != "" && djoinrmdbtscair == 1
+chrgpsr2        ((nhmhrgpasar * lhasil1cair) / 100) - nhmestimasi
+chrgtaksasi2    (nhmhrgpasar * lhasil1cair) / 100
+cbyrsewa2       ((nhmperjmn * lhasil1sewa) / 100)
+cbyradmin2      ((nhmperjmn * lhasil1admin) / 100)
+cbiadm22        20000
+cadm22          /*nhmperjmn < 1500000 ||*/ (btmtgl >= 20231221 && btmtgl <= 20231231)
+cadmjan24_2	nhmperjmn < 500000 && btmtgl >= 20240101
+cscannhdEst	dbscannhdEst==0 || dbscannhdEst!=0
+cbsrcair2       nhmperjmn - lhasilbulatadm - lhasilbulatsewa
+cbulatcair2     DO_LIB ap_bulat(nhmcairpinj,l500,&nhmcairpinj,lU);
+cdjoinppsKom1   djoinppsKomisi == 1
+cmaxcair2	nhmperjmn <= nhmmaxcair
+csewa		(nhmperjmn * lhasil1sewa)/100
+cbiaadmpot	nhmpladis - lppsKom
+cdjoinast1      djoinastpajak == 1
+chasilbulatadm	DO_LIB ap_bulat(lnhmbiaadm,l500,&nhmbiaadm,lU);
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+lm4591          INIT            m45916b
+
+EDITS(tmptranst)
+e.Mandatory		nhmperjmn	MANDATORY
+e.ValidateBrg           btmtypmtr       VALIDATE brgstsdatbrg mbrgBrg6b sbrg {Pgv_INPG} {Plmodel}
+
+MAP(mbrgBrg6b)
+brgnama		lnamamotor	REPLACE
+
+MAP(misirmd)
+btmlmang	nhmtenor	REPLACE
+crmdcair2       lrmdgabcair     DO_CALC
+crmdsewa2       lrmdgabsewa     DO_CALC
+crmdadmin2      lrmdgabadmin    DO_CALC
+
+
+MAP(misinhm)
+c0		ltotalestimasi	DO_CALC
+ltotalestimasi	nhmestimasi	REPLACE_IF cscannhdEst
+ltotalestimasi	nhmestimasi	REPLACE_IF cscannhdEst
+lhasil1cair     lhasil1cair     REPLACE_IF cjoinrmdcair2
+chrgpsr2        nhmmaxcair      DO_CALC_IF cBARU
+chrgtaksasi2    nhmtothrg       DO_CALC_IF cBARU
+cbyrsewa2       nhmpotbunga     DO_CALC_IF cbkn_tv
+csewa		nhmkrepok	DO_CALC
+
+MAP(mstruktur)
+c0		ltotalestimasi	DO_CALC
+ltotalestimasi	nhmestimasi	REPLACE_IF cscannhdEst
+lhasil1cair     lhasil1cair     REPLACE_IF cjoinrmdcair2
+chrgpsr2        nhmmaxcair      DO_CALC_IF cBARU
+chrgtaksasi2    nhmtothrg       DO_CALC_IF cBARU
+cbyrsewa2       nhmpotbunga     DO_CALC_IF cbkn_tv
+csewa		nhmkrepok	DO_CALC
+nhmkrepok	lnhmkrepok	REPLACE
+cbyradmin2      nhmdebpok       DO_CALC
+btmtdjadi       nhmhrgpsr       REPLACE_IF cBARU
+cbyradmin2      nhmpladis       DO_CALC
+cbiadm22        nhmpladis       DO_CALC_IF cadm22
+ladm5rb		nhmpladis	REPLACE_IF cadmjan24_2
+ladm60rb	nhmpladis       REPLACE_IF cadmjan24mtr
+ladm50rb	nhmpladis       REPLACE_IF ctv
+c0              nhmpladis       DO_CALC_IF cropln
+
+nhmpladis	lnhmpladis	REPLACE
+lnhmpladis	nhmbiaadm	REPLACE
+cbiaadmpot	nhmbiaadm	DO_CALC_IF cdjoinppsKom1
+c0              nhmbiaadm       DO_CALC_IF cropln
+nhmbiaadm	lnhmbiaadm	REPLACE
+lppsKom         nhminsales      REPLACE_IF cdjoinppsKom1
+ltahun21        nhmjns          REPLACE_IF cdjoinast1
+
+
+MAP(mbulat6b)
+nhmperjmn		nhmtotpok		REPLACE
+btmtdjadi		nhmbsrang		REPLACE
+nhmperjmn               nhmbsrang               REPLACE
+lhasilbulat             nhmtotpok               REPLACE
+lhasilbulatadm          nhmpladis               REPLACE
+chasilbulatadm          nhmbiaadm               DO_CALC
+lhasilbulatsewa         nhmkrepok               REPLACE
+lhasilbulattaks         nhmestimasi             REPLACE_IF cNotMotor
+lhasilbulathppass       nhmhppass               REPLACE
+lhasilbulatadmin        nhmumsis                REPLACE
+lhasilbulatsewapprj     nhmdkum                 REPLACE
+lhasilbulatdenda        nhmbiaplwil             REPLACE
+btmjtppjk               nhmtglang1              REPLACE
+btmkdmaxc               nhmnobuk2               REPLACE
+
+cbsrcair2               nhmcairpinj     	DO_CALC_IF cBARU
+cbulatcair2             nhmcairpinj     	DO_CALC
+cbiaadmpot		nhmbiaadm	DO_CALC_IF cdjoinppsKom1
+lppsKom         	nhminsales      REPLACE_IF cdjoinppsKom1
+
+
+DEBUG		nhmmaxcair nhmmaxcair	REPLACE
+
+SPCALCS(sdelpps)
+DO_LIB_IF cdjoinppsKom1 	ap_dbclc(DNAME ddelppsKomU,DCOMMAND DELETE_RANGE,DTARGET ppsdattypbuk gv_dthut gv_komisi gv_OPEN btmnobuk);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=nhmmaxcair	DO_MAP SHOW misirmd
+AFTER_INPUT	cur_field=nhmmaxcair	DO_LIB_IF cjoinrmdadmin2	ap_ambts(gv_INPG,lrmdgabadmin,nhmtenor,lNol,lNol,&lhasil1admin,&lhasil2admin,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT	cur_field=nhmmaxcair	DO_LIB_IF cjoinrmdsewa2 	ap_ambts(gv_INPG,lrmdgabsewa,nhmtenor,lNol,lNol,&lhasil1sewa,&lhasil2sewa,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT     cur_field=nhmmaxcair    DO_LIB_IF cjoinrmdbtscair2      ap_ambts(gv_INPG,lrmdgabbtscair,lNol,lNol,lNol,&lhasil1btscair,&lhasil2btscair,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT	cur_field=nhmmaxcair	DO_MAP SHOW misinhm
+
+AFTER_INPUT	cur_field=nhmperjmn	DO_MAP SHOW misirmd
+AFTER_INPUT	cur_field=nhmperjmn	DO_LIB_IF cjoinrmdadmin2	ap_ambts(gv_INPG,lrmdgabadmin,nhmtenor,lNol,lNol,&lhasil1admin,&lhasil2admin,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT	cur_field=nhmperjmn	DO_LIB_IF cjoinrmdsewa2 	ap_ambts(gv_INPG,lrmdgabsewa,nhmtenor,lNol,lNol,&lhasil1sewa,&lhasil2sewa,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT     cur_field=nhmperjmn     DO_LIB_IF cjoinrmdbtscair2      ap_ambts(gv_INPG,lrmdgabbtscair,lNol,lNol,lNol,&lhasil1btscair,&lhasil2btscair,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT	cur_field=nhmperjmn	DO_MAP SHOW misinhm
+AFTER_INPUT	cur_field=nhmperjmn	DO_MAP SHOW mstruktur
+AFTER_INPUT	cur_field=nhmperjmn	DO_MAP SHOW mbulat6b
+
+
+AFTER_INPUT     cur_field=nhmperjmn     DO_MAP SHOW
+                IF cmaxcair2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Pinjaman harus < Max Pinjam
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW misirmd
+AFTER_INPUT	cur_keybd=EN		DO_LIB_IF cjoinrmdadmin2	ap_ambts(gv_INPG,lrmdgabadmin,nhmtenor,lNol,lNol,&lhasil1admin,&lhasil2admin,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT	cur_keybd=EN		DO_LIB_IF cjoinrmdsewa2 	ap_ambts(gv_INPG,lrmdgabsewa,nhmtenor,lNol,lNol,&lhasil1sewa,&lhasil2sewa,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT     cur_keybd=EN	     	DO_LIB_IF cjoinrmdbtscair2      ap_ambts(gv_INPG,lrmdgabbtscair,lNol,lNol,lNol,&lhasil1btscair,&lhasil2btscair,&lhasil3sewa,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW misinhm
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mstruktur
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmperjmn,l500,&lhasilbulat,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmtotpok,l500,&lhasilbulatpok,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(lnhmbiaadm,l500,&lhasilbulatadm,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(lnhmkrepok,l500,&lhasilbulatsewa,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmestimasi,l1000,&lhasilbulattaks,lD);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmmaxcair,l1000,&lhasilbulatmaxc,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmhppass,l500,&lhasilbulathppass,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmumsis,l500,&lhasilbulatadmin,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmdkum,l500,&lhasilbulatsewapprj,lU);
+AFTER_INPUT     cur_keybd=EN            DO_LIB ap_bulat(nhmbiaplwil,l500,&lhasilbulatdenda,lU);
+AFTER_INPUT	cur_keybd=EN		DO_SPCALCS sdelpps
+AFTER_INPUT	cur_keybd=EN		DO_LIB_IF cadm3 		ap_nxpst(l4591,lm4591);
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mbulat6b
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	nhmdatbukidx	gv_bukutamu	btmnobuk 
+/************************************************/
+CALCS()
+cpinjkecil2d             btmtdjadi < 2000000
+cpinjbesar25d            btmtdjadi >= 2000000
+cpinjbesar510d           btmtdjadi >= 5000000
+cpinjbesar1015d          btmtdjadi >= 10000000
+/*cpinjbeasr15d            btmtdjadi >= 15000000*/
+
+
+MAP(mmapmapBpkb6b)
+ldum		ldum		REPLACE
+
+MAP(mupdbtm6B)
+lhasil2sewa     btmperbns       REPLACE_IF ctv
+cbyrsewa        btmperbns       DO_CALC_IF cbkn_tv
+nhmperjmn	btmtdjadi	REPLACE
+lAPR_MGAPIC             btmkodeapr      REPLACE_IF cpinjkecil2d
+lAPR_MGAAM              btmkodeapr      REPLACE_IF cpinjbesar25d
+lAPR_MGAAMBM            btmkodeapr      REPLACE_IF cpinjbesar510d
+lAPR_MGARM              btmkodeapr      REPLACE_IF cpinjbesar1015d
+/*lAPR_MGAGMDCOO          btmkodeapr	REPLACE_IF cpinjbeasr15d*/
+
+
+SPCALCS(sptransadd6b)
+	DO_LIB			ap_dbclc(DNAME dmapmapBpkb6b, DCOMMAND MAPMAP, DMAP mmapmapBpkb6b);
+	DO_LIB			ap_dbclc(DNAME dupdbtm6b, DCOMMAND UPDATE, DTARGET btmbukidx nhmnobuk, DMAP mupdbtm6B);
+
+SPCALCS(sptransupd6b)
+	DO_LIB			ap_dbclc(DNAME dmapmapBpkb6bU, DCOMMAND MAPMAP, DMAP mmapmapBpkb6b);
+	DO_LIB			ap_dbclc(DNAME dupdbtm6bU, DCOMMAND UPDATE, DTARGET btmbukidx nhmnobuk, DMAP mupdbtm6B);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransadd6b
+        PST_UPDCMD sptransupd6b
+
+/* CALCS()
+cstr0		0
+cstrOk		btmsts == "OPEN" && djoinast==1
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cstr0
+PMT_UPDALL_COND cstrOk
+PMT_DEL_COND	cstr0 */

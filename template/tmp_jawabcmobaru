@@ -1,0 +1,464 @@
+LOCAL
+PGM_FIELDS
+ljumlahnomor713baru         INT2    2
+ldigit1713baru              STRING  2
+ldigit2713baru              STRING  2
+
+ljumlahnomor713baru2         INT2    2
+ldigit1713baru2              STRING  2
+ldigit2713baru2              STRING  2
+
+ljumlahnomor713baru3         INT2    2
+ldigit1713baru3              STRING  2
+ldigit2713baru3              STRING  2
+
+ljumlahnomor713baru4         INT2    2
+ldigit1713baru4              STRING  2
+ldigit2713baru4              STRING  2
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.Indikasi5m    ____              ||
+||________________  ______________  ||
+||t.TerilibatLSM  ________________  ||
+||t.EmergencyCall _________________ ||
+||t.Keterangan    _________________ ||
+||t.PenggunaanDana _______________  ||
+||t.KegunaanDanaUnit  ____________  ||
+||t.JumlahTanggunganSesuaiKK  _____ ||
+||t.KesesuaianNoTelpKons      ____  ||
+||t.NoTelpAktf    _________________ ||
+||t.BertemuRT     ____              ||
+||t.NamaRT/TG1    _________________ ||
+||t.NoTelpRT/TG1  _________________ ||
+||t.NamaTG2       _________________ ||
+||t.NoTelpTG2     _________________ ||
+||t.Rumahatasnama _________________ ||
+||t.NamaPT        _________________ ||
+||t.NoTelpKantor  _________________ ||
+||t.tanyacek14    
+||                ________          ||
+||t.Sudahberapalama                 ||
+||  ____t.Tahun  _____t.Bulan ______||
+|\----------------------------------/|
+\------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviyt1		NOCHANGE	INPUTRI		1 /* indikasi 5m*/
+svistr1		ALLCAPS		INPUTRI		2 /* keterangan jika 5m*/
+svistr10	ALLCAPS		INPUTRI		2 /* sub keterangan 5m*/
+svistr33	NOCHANGE	INPUTRI		3 /* terlibat lsm*/
+svistr2		DIGITS 		INPUTRI		3 /* emergency call*/
+svistr3		ALLCAPS		INPUTRI	4 /* ket emergency call */
+svistr4		ALLCAPS		INPUTRI		5 /*penggunaan dana*/
+svistr5		ALLCAPS		INPUTRI		6 /*kegunaan dana unit*/
+svidf1		ALLCAPS		INPUTRI		7 /*jmlh tanggungan*/
+svitype2	NOCHANGE	INPUTRI		8 /* keseuaian no telp*/
+svistr6		ALLCAPS		INPUTRI		9 /*no telp aktif*/
+svistr31	NOCHANGE	INPUTRI		10 /*bertemu rt?*/
+sviket		ALLCAPS		INPUTRI		11 /* nama rt*/
+svistr7		DIGITS 		INPUTRI		12 /* no telp rt*/
+sviket2		ALLCAPS		INPUTRI		13 /* nama tg2*/
+svistr8		DIGITS		INPUTRI		14 /*no telp tg2*/
+svidtmkode      ALLCAPS         INPUTRI         15 
+sviket3		ALLCAPS		INPUTRI		15 /* nama pt*/
+svistr9		DIGITS 		INPUTRI		16 /* no telp kantor*/
+svitype3	NOCHANGE	INPUTRI		17 /*benar bekerja*/
+svidf2		ALLCAPS		INPUTRI		18 /*tahun kerja*/
+svidf3		ALLCAPS		INPUTRI		19 /*bulan kerja*/
+lenter		NOCHANGE	INPUTRI		20
+
+
+MAP(mjoinbtpkerja)
+btpkodeapr        lsvistr7P       REPLACE
+
+DBCALCS(djoinbtpkerja)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      btpdatbuktgl    gv_historisdm btmnobuk lkerjamktg
+        DBC_MAP         mjoinbtpkerja
+
+CALCS()
+cpekerjaanbaru		djoinbtpkerja== 1 && btmdvs=="M2W" && (lsvistr7P == "W1" || lsvistr7P == "W2" || lsvistr7P == "D1" || lsvistr7P == "D2")
+cselainpekerjaanbaru	(djoinbtpkerja==1 && btmdvs == "M2W" && lsvistr7P !="W1" && lsvistr7P != "W2" && lsvistr7P != "D1" && lsvistr7P != "D2") || (btmdvs!="M2W")
+
+DEFAULTS(tmptranst)
+sviyt1		DFALT_SCAN BLANKS
+				Y " "
+				T " "
+
+svistr33	DFALT_SCAN BLANKS
+                                Y " "
+                                T " "
+
+svistr5		DFALT_SCAN BLANKS
+		       KEPERLUAN_KELUARGA
+			MODAL_DAGANG
+			TRANSPORTASI
+
+svitype2 DFALT_SCAN BLANKS
+			SESUAI
+			T_SESUAI
+
+svistr31        DFALT_SCAN BLANKS
+                                Y " "
+                                T " "
+
+svitype3        DFALT_SCAN      BLANKS
+                                YA ""
+                                TIDAK ""
+
+IF cpekerjaanbaru           svistr4                 DFALT_SCAN BLANKS       MODAL_KERJA
+IF cselainpekerjaanbaru     svistr4                 DFALT_SCAN BLANKS       KONSUMTIF MODAL_KERJA INVESTASI
+
+CALCS()
+ckena5m		sviyt1=="Y"
+ctdkkena5m	sviyt1=="T"
+
+cpanjangnom713baru  DO_LIB ap_strln(svistr2,&ljumlahnomor713baru);
+cbukan08di713baru   (ldigit1713baru=="0" && ldigit2713baru=="8" && ljumlahnomor713baru>=10 && ljumlahnomor713baru<=14 && g_scrnumstr=="713") || g_scrnumstr!="713"
+cpanjangnom713baru2  DO_LIB ap_strln(svistr6,&ljumlahnomor713baru2);
+cbukan08di713baru2   (ldigit1713baru2=="0" && ldigit2713baru2=="8" && ljumlahnomor713baru2>=10 && ljumlahnomor713baru2<=14 && g_scrnumstr=="713") || g_scrnumstr!="713" || svitype2=="SESUAI"
+cpanjangnom713baru3  DO_LIB ap_strln(svistr8,&ljumlahnomor713baru3);
+cbukan08di713baru3   (ldigit1713baru3=="0" && ldigit2713baru3=="8" && ljumlahnomor713baru3>=10 && ljumlahnomor713baru3<=14 && g_scrnumstr=="713") || g_scrnumstr!="713" || svistr31=="Y"
+cpanjangnom713baru4  DO_LIB ap_strln(svistr9,&ljumlahnomor713baru4);
+cbukan08di713baru4   (ldigit1713baru4=="0" && ldigit2713baru4=="8" && ljumlahnomor713baru4>=10 && ljumlahnomor713baru4<=14 && g_scrnumstr=="713") || g_scrnumstr!="713"
+
+cusiakerjaadabaru                   (svidf2>0 || svidf3>0) || svitype3=="TIDAK"
+
+ctelptdksesuaibaru	svitype2=="T_SESUAI"
+ctelpsesuaibaru		svitype2=="SESUAI"
+ctdkketemurt	svistr31=="T"
+cketemurt	svistr31=="Y"
+ctdkketemurtbaru	lsvistr31baru=="T"
+cketemurtbaru	lsvistr31baru=="Y"
+
+ctdkkerjadisana		svitype3=="TIDAK"
+cKOSONG		BLANKS
+
+MAP(mpanjangnom713baru)
+cpanjangnom713baru             ljumlahnomor713baru      DO_CALC
+
+MAP(mpanjangnom713baru2)
+cpanjangnom713baru2             ljumlahnomor713baru2      DO_CALC
+
+MAP(mpanjangnom713baru3)
+cpanjangnom713baru3             ljumlahnomor713baru3      DO_CALC
+
+MAP(mpanjangnom713baru4)
+cpanjangnom713baru4             ljumlahnomor713baru4      DO_CALC
+
+EDITS(tmptranst)
+e.Mandatory	sviyt1          MANDATORY
+e.Mandatory	svistr1         MANDATORY_IF ckena5m
+e.Mandatory	svistr10        MANDATORY_IF ckena5m
+e.Mandatory	svistr33        MANDATORY
+e.Mandatory	svistr2         MANDATORY
+e.Mandatory	svistr3         MANDATORY
+e.Mandatory	svistr4         MANDATORY
+e.Mandatory	svistr5         MANDATORY
+e.Mandatory	svidf1          MANDATORY
+e.Mandatory	svitype2        MANDATORY
+e.Mandatory	svistr6         MANDATORY_IF ctelptdksesuaibaru
+e.Mandatory	svistr31        MANDATORY
+e.Mandatory	sviket          MANDATORY
+e.Mandatory	svistr7         MANDATORY
+e.Mandatory	sviket2         MANDATORY_IF ctdkketemurt
+e.Mandatory	svistr8         MANDATORY_IF ctdkketemurt
+e.Mandatory	sviket3         MANDATORY
+e.Mandatory	svistr9	     MANDATORY
+e.Mandatory	svitype3        MANDATORY
+e.Mandatory	svidtmkode	MANDATORY
+
+e.Validate      svistr1         VALIDATE_IF ckena5m tbddatkodidx  mtbd8_6baru stbd {Pgv_dttabel} {Pgv_survey21} {Pl5m}
+e.validate      svistr10        VALIDATE_IF ckena5m tbtdattypkod  mtbt8_7baru stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {Pl5m} {Psvistr1}
+e.validate	svidtmkode	VALIDATE tbddatkodidx mtbd8_8baru stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_rumah}
+
+MAP(mtbd8_8baru)
+tbdkode		svidtmkode	REPLACE
+
+MAP(mtbd8_6baru)
+tbdkode         svistr1         REPLACE
+
+MAP(mtbt8_7baru)
+tbtkode         svistr10        REPLACE
+
+MAP(mkosonglamakerja)
+cKOSONG		svidf2		DO_CALC_IF ctdkkerjadisana
+cKOSONG		svidf3		DO_CALC_IF ctdkkerjadisana
+
+MAP(mkosong5mbaru)
+cKOSONG		svistr1		DO_CALC_IF ctdkkena5m
+cKOSONG		svistr10	DO_CALC_IF ctdkkena5m
+
+MAP(mkosongtelpaktif)
+cKOSONG		svistr6		DO_CALC_IF ctelpsesuaibaru
+
+MAP(mkosongtg2)
+cKOSONG		sviket2		DO_CALC_IF cketemurt
+cKOSONG		svistr8		DO_CALC_IF cketemurt
+
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=svistr2      DO_LIB ap_amstr(svistr2,ln1i,ln1,&ldigit1713baru);
+AFTER_INPUT cur_field=svistr2      DO_LIB ap_amstr(svistr2,ln2i,ln1,&ldigit2713baru);
+AFTER_INPUT cur_field=svistr2      DO_MAP SHOW mpanjangnom713baru
+
+AFTER_INPUT cur_field=svistr6      DO_LIB ap_amstr(svistr6,ln1i,ln1,&ldigit1713baru2);
+AFTER_INPUT cur_field=svistr6      DO_LIB ap_amstr(svistr6,ln2i,ln1,&ldigit2713baru2);
+AFTER_INPUT cur_field=svistr6      DO_MAP SHOW mpanjangnom713baru2
+
+AFTER_INPUT cur_field=svistr8      DO_LIB ap_amstr(svistr8,ln1i,ln1,&ldigit1713baru3);
+AFTER_INPUT cur_field=svistr8      DO_LIB ap_amstr(svistr8,ln2i,ln1,&ldigit2713baru3);
+AFTER_INPUT cur_field=svistr8      DO_MAP SHOW mpanjangnom713baru3
+
+AFTER_INPUT cur_field=svistr9      DO_LIB ap_amstr(svistr9,ln1i,ln1,&ldigit1713baru4);
+AFTER_INPUT cur_field=svistr9      DO_LIB ap_amstr(svistr9,ln2i,ln1,&ldigit2713baru4);
+AFTER_INPUT cur_field=svistr9      DO_MAP SHOW mpanjangnom713baru4
+
+AFTER_INPUT cur_field=svitype3	DO_MAP SHOW mkosonglamakerja
+AFTER_INPUT cur_field=sviyt1  DO_MAP SHOW mkosong5mbaru
+AFTER_INPUT cur_field=svitype2  DO_MAP SHOW mkosongtelpaktif
+AFTER_INPUT cur_field=svistr31  DO_MAP SHOW mkosongtg2
+
+
+BEFORE_INPUT            cur_field=svistr1         DO_SKIP_IF ctdkkena5m
+BEFORE_INPUT            cur_field=svistr10        DO_SKIP_IF ctdkkena5m
+BEFORE_INPUT            cur_field=svistr6         DO_SKIP_IF ctelpsesuaibaru
+BEFORE_INPUT            cur_field=sviket2         DO_SKIP_IF cketemurt
+BEFORE_INPUT            cur_field=svistr8         DO_SKIP_IF cketemurt
+BEFORE_INPUT            cur_field=svidf2	DO_SKIP_IF ctdkkerjadisana
+BEFORE_INPUT            cur_field=svidf3	DO_SKIP_IF ctdkkerjadisana
+
+AFTER_INPUT  cur_field=svistr2  DO_MAP SHOW
+        IF cbukan08di713baru     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT  cur_keybd=EN  DO_MAP SHOW
+        IF cbukan08di713baru     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+
+AFTER_INPUT  cur_field=svistr6  DO_MAP SHOW
+        IF cbukan08di713baru2     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT  cur_keybd=EN  DO_MAP SHOW
+        IF cbukan08di713baru2     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT  cur_field=svistr8  DO_MAP SHOW
+        IF cbukan08di713baru3     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT  cur_keybd=EN  DO_MAP SHOW
+        IF cbukan08di713baru3     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT  cur_field=svistr9  DO_MAP SHOW
+        IF cbukan08di713baru4     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT  cur_keybd=EN  DO_MAP SHOW
+        IF cbukan08di713baru4     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT cur_field=svidf3 DO_MAP SHOW
+        IF cusiakerjaadabaru     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiLamaKerja
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cusiakerjaadabaru    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiLamaKerja
+
+CALCS()
+cini713baru		(((djointbdmynss==1 && g_mobile==2) || djointbdmynss==0 || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="ANSYSUAT") && (btmsts=="713" && btmflag1=="BLNK" && btmytbiro=="Y")) || btmsts!="713"
+cini713barupermit	(btmsts=="713" && btmflag1=="BLNK" && btmytbiro=="Y") || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="ROOT"
+
+ctertentubaru   btmsts=="713" && btmflag1=="BLNK" && (g_grpnam=="ANSYSUAT" || g_grpnam=="IT" || g_grpnam=="RI"|| g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cini713baru
+SFL_TARGET
+svidatbuktyp   lDTSURVEY btmnobuk gv_713
+
+
+MAP(mupdftmcharacterbaru)
+sviyt1		ftmtype1	REPLACE
+svistr1		ftmlok		REPLACE
+svistr10	ftmno3		REPLACE
+svistr2		ftmwarna	REPLACE
+svistr3		ftmnama1	REPLACE
+
+MAP(mupdftmpurposebaru)
+svistr4		ftmcab		REPLACE
+svistr5		ftmkat		REPLACE
+
+MAP(mupdsvicekrtbaru)
+lsvistr31baru	svistr35	REPLACE
+lsviketbaru	svinama		REPLACE_IF cketemurtbaru
+lsvistr7baru	svistr1		REPLACE_IF cketemurtbaru
+
+lsviyt1baru	svistr37	REPLACE
+lsvistr1baru	svistr6		REPLACE
+lsvistr10baru	svistr10	REPLACE
+lsvistr33baru	svistr36	REPLACE
+
+
+MAP(mupdsvitg1baru)
+lsviketbaru     svinama         REPLACE_IF ctdkketemurtbaru
+lsvistr7baru    svistr1         REPLACE_IF ctdkketemurtbaru
+gv_Y		svistr2		REPLACE_IF ctdkketemurtbaru
+
+lsviyt1baru     sviyt1        REPLACE
+lsvistr1baru    svistr10      REPLACE
+lsvistr10baru   svidtmkode    REPLACE
+lsvistr33baru   svistr36        REPLACE
+
+MAP(mupdsvitg2baru)
+lsviket2baru	svinama		REPLACE_IF ctdkketemurtbaru
+lsvistr8baru	svistr1		REPLACE_IF ctdkketemurtbaru
+gv_Y		svistr2		REPLACE_IF ctdkketemurtbaru
+
+lsviyt1baru     sviyt1        REPLACE
+lsvistr1baru    svistr10      REPLACE
+lsvistr10baru   svidtmkode    REPLACE
+lsvistr33baru   svistr36        REPLACE
+
+MAP(mupdftmcapacitybaru)
+lsviket3baru	ftmnama1	REPLACE
+lsvistr9baru	ftmno3		REPLACE
+lsvidf1baru	ftmhrg4		REPLACE
+
+MAP(mupdsvicekkerjabaru)
+lsvistr9baru	svistr2		REPLACE
+lsvitype3baru	svistr3		REPLACE
+lsvidf2baru	svidf1		REPLACE
+lsvidf3baru	svidf2		REPLACE
+
+MAP(mupdsvijawabcmobaru)
+lsvitype2baru	svistr3		REPLACE
+lsvistr6baru	svistr2		REPLACE
+
+MAP(mupdftmcapitalbaru)
+lsvidtmkodebaru	ftmplg		REPLACE
+
+MAP(mmapawalbaru)
+sviket		lsviketbaru		REPLACE
+svistr7		lsvistr7baru		REPLACE
+sviket2		lsviket2baru		REPLACE
+svistr8		lsvistr8baru		REPLACE
+sviket3		lsviket3baru		REPLACE
+svistr9		lsvistr9baru		REPLACE
+svitype3	lsvitype3baru		REPLACE
+svidf2		lsvidf2baru		REPLACE
+svidf3		lsvidf3baru		REPLACE
+svitype2	lsvitype2baru		REPLACE
+svistr6		lsvistr6baru		REPLACE
+
+sviyt1		lsviyt1baru		REPLACE
+svistr1		lsvistr1baru		REPLACE
+svistr10	lsvistr10baru		REPLACE
+svistr33	lsvistr33baru		REPLACE
+svistr2		lsvistr2baru		REPLACE
+svistr3		lsvistr3baru		REPLACE
+svistr4		lsvistr4baru		REPLACE
+svistr5		lsvistr5baru		REPLACE
+svidf1		lsvidf1baru		REPLACE
+svistr31	lsvistr31baru		REPLACE
+sviket		lsviketbaru		REPLACE
+
+svidtmkode	lsvidtmkodebaru		REPLACE
+DEBUG		lsviketbaru	lsviketbaru	REPLACE
+
+MAP(mupdsvisendiribaru)
+lsviketbaru	sviket		REPLACE
+lsvistr7baru	svistr7		REPLACE	
+lsviket2baru	sviket2		REPLACE
+lsvistr8baru	svistr8		REPLACE
+lsviket3baru	sviket3		REPLACE
+lsvistr9baru	svistr9		REPLACE
+lsvitype3baru	svitype3	REPLACE
+lsvidf2baru	svidf2		REPLACE
+lsvidf3baru	svidf3		REPLACE
+lsvitype2baru	svitype2	REPLACE
+lsvistr6baru	svistr6		REPLACE
+
+lsviyt1baru	sviyt1		REPLACE
+lsvistr1baru	svistr1		REPLACE
+lsvistr10baru	svistr10	REPLACE
+lsvistr33baru	svistr33	REPLACE
+lsvistr2baru	svistr2 	REPLACE
+lsvistr3baru	svistr3 	REPLACE
+lsvistr4baru	svistr4 	REPLACE
+lsvistr5baru	svistr5 	REPLACE
+lsvidf1baru	svidf1		REPLACE
+lsvistr31baru	svistr31	REPLACE
+lsviketbaru	sviket		REPLACE
+lsvidtmkodebaru	svidtmkode	REPLACE
+
+CALCS()
+cdjoinftmcharacter1	djoinftmcharacter==1
+cdjoinftmpurpose1	djoinftmpurpose==1
+cdjoinsvi713tg11	djoinsvi713tg1==1
+cdjoinsvi713tg21	djoinsvi713tg2==1
+cdjoinsvi713rt1		djoinsvi713rt==1
+cdjoinsvi713kerja1	djoinsvi713kerja==1
+cdjoinsvi7131		djoinsvi713==1
+cdjoinsvi713rt0		djoinsvi713rt==0
+cdjoinsvi713kerja0	djoinsvi713kerja==0
+cdjoinftmcapital1	djoinftmcapital==1
+MAP(maddsvicekrt)
+gv_datasurvey           svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+lcekrt                  svitype                 REPLACE
+lcekrt                  svikode                 REPLACE
+l1                      svinourt                REPLACE
+
+MAP(maddsvicekkerja)
+gv_datasurvey           svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+lcekkerja               svitype                 REPLACE
+lcekkerja               svikode                 REPLACE
+l1                      svinourt                REPLACE
+
+SPCALCS(spisicmo)
+DO_LIB ap_dbclc (DNAME dmapawalbaru,DCOMMAND MAPMAP,DMAP mmapawalbaru);
+DO_LIB ap_dbclc (DNAME dupdsvisendiribaru,DCOMMAND UPDATE,DTARGET sviotoidx	svioto,DMAP mupdsvisendiribaru);
+
+DO_LIB_IF cdjoinftmcharacter1 ap_dbclc (DNAME dupdftmcharacter,DCOMMAND UPDATE,DTARGET ftmotoidx	lftmotocharacter,DMAP mupdftmcharacterbaru);
+DO_LIB_IF cdjoinftmpurpose1 ap_dbclc (DNAME dupdftmpurpose,DCOMMAND UPDATE,DTARGET ftmotoidx    lftmotopurpose,DMAP mupdftmpurposebaru);
+DO_LIB_IF cdjoinftmcapacity1 ap_dbclc (DNAME dupdftmcapacity,DCOMMAND UPDATE,DTARGET ftmotoidx    lftmotocapacity,DMAP mupdftmcapacitybaru);
+DO_LIB_IF cdjoinftmcapital1 ap_dbclc (DNAME dupdftmcapital,DCOMMAND UPDATE,DTARGET ftmotoidx    lftmotocapital,DMAP mupdftmcapitalbaru);
+
+DO_LIB_IF cdjoinsvi713rt0 ap_dbclc(DNAME daddsvicekrt,DCOMMAND ADD,DFILE svi,DMAP maddsvicekrt);
+DO_LIB_IF cdjoinsvi713rt1 ap_dbclc (DNAME dupdsvicekrt,DCOMMAND UPDATE,DTARGET sviotoidx	lsviotocekrt,DMAP mupdsvicekrtbaru);
+
+DO_LIB_IF cdjoinsvi713tg11 ap_dbclc (DNAME dupdsvitg1,DCOMMAND UPDATE,DTARGET sviotoidx        lsviototg1,DMAP mupdsvitg1baru);
+DO_LIB_IF cdjoinsvi713tg21 ap_dbclc (DNAME dupdsvitg2,DCOMMAND UPDATE,DTARGET sviotoidx        lsviototg2,DMAP mupdsvitg2baru);
+DO_LIB_IF cdjoinsvi713kerja0 ap_dbclc(DNAME daddsvicekkerja,DCOMMAND ADD,DFILE svi,DMAP maddsvicekkerja);
+DO_LIB_IF cdjoinsvi713kerja1 ap_dbclc (DNAME dupdsvicekkerja,DCOMMAND UPDATE,DTARGET sviotoidx        lsviotocekkerja,DMAP mupdsvicekkerjabaru);
+DO_LIB_IF cdjoinsvi7131 ap_dbclc (DNAME dupdsvijawabcmo,DCOMMAND UPDATE,DTARGET sviotoidx        lsviotojawabcmo,DMAP mupdsvijawabcmobaru);
+
+DO_LIB ap_nxpst(l4544,lm4544);
+POSTING(tmptrans)
+        PST_UPDCMD spisicmo
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cini713barupermit
+  PMT_DEL_COND  ctertentubaru
+
+

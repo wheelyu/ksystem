@@ -1,0 +1,94 @@
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|/----------------------------------------------------\|
+|!t.TipeKunci  : ___________                          !|
+|!t.TglMunKunc : ___________                          !|
+|!t.Alasan     : ____________________________________ !|
+|!t.AccHrd     : ___________                          !|
+|!t.KetTacc    : __________________________________ _ !|
+|\----------------------------------------------------/|
+\------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketkode                 NOCHANGE                INPUTRI 1
+kettgl1                 NONE {DD-MM-YYYY}       INPUTRI 2
+ketisi                  TEXTAREA NONE           INPUTRI 3
+ketyt1                  NOCHANGE                INPUTRI 4
+ketisi2                 TEXTAREA NONE           INPUTRI 5
+ldum                    NOCHANGE                INPUTRI 6
+
+CALCS()
+caccbukaopsdm           djointbtbukaopsdmho==1 && laccbukaopsdm=="ACC"
+caccbukaopsdm2          djointbtbukaopsdmho==1 && laccbukaopsdm=="ACC" && ketyt1=="Y"
+caccbukaopsdm3          (djointbtbukaopsdmho==1 && laccbukaopsdm=="ACC" && ketyt1=="T") || djointbtbukaopsdmho==0
+ctdkbukaopsdm           (djointbtbukaopsdmho==1 && laccbukaopsdm!="ACC") || djointbtbukaopsdmho==0
+cbtsmundurtgl           djointbtbukaopsdm==1 && ((kettgl1 <= g_tgltrn + lbtsmundurtgl) || (djointbtbukaopsdmho==1 && kettgl1 <= g_tgltrn + lbtsmundurtglho))
+cbtsinputmundur         djointbtbukaopsdm==1 && (dscanketinp==0 || dscanketinp!=0) && ((lsdhinputmundur < lbtsinputmundur) || (djointbtbukaopsdmho==1 && lsdhinputmundur < lbtsinputmundurho))
+cket_survey             "137 HASIL SURVEY"
+cketaccftadh            "BM/ADH ACC FOTO 140"
+cketaccft               "SLSKAN 140 ACCFOTO"
+cketaccgaji             "SLSKAN 138 ACCGAJI"
+cdrsurvey               btmsurveyor=="SURVEY"
+cdraccftadh             btmsurveyor=="ACC_FOTO_ADH"
+cdraccft                btmsurveyor=="ACC_FOTO"
+cdraccgaji              btmsurveyor=="ACC_GAJI"
+
+DEFAULTS(tmptranst)
+ketyt1          DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.Mandatory     kettgl1 MANDATORY
+e.Mandatory     ketisi MANDATORY
+e.Mandatory     ketyt1 MANDATORY_IF caccbukaopsdm
+e.Mandatory     ketisi2 MANDATORY_IF caccbukaopsdm2
+
+MAP(misiketkunci)
+btmsurveyor             ketkode         REPLACE
+lkodekunci              ketnama         REPLACE_IF cjointbdkunci
+cket_survey             ketnama         DO_CALC_IF cdrsurvey
+cketaccftadh            ketnama         DO_CALC_IF cdraccftadh
+cketaccft               ketnama         DO_CALC_IF cdraccft
+cketaccgaji             ketnama         DO_CALC_IF cdraccgaji
+ltipekunci              ketnama         REPLACE_IF cjoinabk134inpg
+
+MAP(misiksngket)
+cBLANKS         ketisi2         DO_CALC
+c1              ketdf1          DO_CALC_IF caccbukaopsdm
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ketkode       DO_MAP SHOW misiketkunci
+BEFORE_INPUT    cur_field=ketyt1        DO_SKIP_IF ctdkbukaopsdm
+BEFORE_INPUT    cur_field=ketisi2       DO_SKIP_IF caccbukaopsdm3
+AFTER_INPUT     cur_field=ketyt1        DO_MAP SHOW misiksngket
+AFTER_INPUT     cur_field=kettgl1       DO_MAP SHOW
+                IF cbtsmundurtgl mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MaxTglMundurKunci
+
+AFTER_INPUT     cur_field=kettgl1       DO_MAP SHOW
+                IF cbtsinputmundur mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MaxInpMundurKunci
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbtsmundurtgl mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MaxTglMundurKunci
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbtsinputmundur mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MaxInpMundurKunci
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD ketoto
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+ketbukurtidx lbukaopsdm btmnobuk
+SFL_MAP
+btmnobuk        ketnobuk        REPLACE
+lbukaopsdm      ketdata         REPLACE

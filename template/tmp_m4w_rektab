@@ -1,0 +1,92 @@
+LOCAL 
+PGM_FIELDS
+lmsa		DFLOAT		8
+lm1sa		DFLOAT		8
+lm2sa		DFLOAT		8
+lmsk		DFLOAT		8
+lm1sk		DFLOAT		8
+lm2sk		DFLOAT		8
+
+DBCALCS(djoinsvitab)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   gv_dt1106 btmnobuk gv_tabungan
+
+IMAGE(tmptranst) 
+/--------t---------------------t------------------t------------------t------------------t------------------\
+| i.No   | i.Ket               |      i.M         |      i.Mm1       |      i.Mm2       |      i.Rata      |
+\--------.---------------------.------------------.------------------.------------------.------------------/
+
+IMAGE(tmptrans)
+|________|_____________________|_______________.__|_______________.__|_______________.__|_______________.__|
+
+FIELD(tmptrans)
+tmpnourt		PROTECT			INPUTRI 1
+tmpket			PROTECT SCROLL		INPUTRI 2
+tmpisidf1		NUMERIC			INPUTRI 3
+tmpisidf2		NUMERIC			INPUTRI 4
+tmpisidf3		NUMERIC			INPUTRI 5
+tmpisidf4		NOCHANGE			INPUTRI 6
+
+CALCS()
+cjoinsvitab		djoinsvitab == 0
+ctabisi			(tmpisidf1 + tmpisidf2 + tmpisidf3) > 0
+cratarata		(tmpisidf1 + tmpisidf2 + tmpisidf3) / 3
+
+MAP(mratarata)
+cratarata		tmpisidf4		DO_CALC_IF ctabisi
+
+CALCS()
+crt005			tmpkode == "RT005"
+crt006			tmpkode == "RT006"
+crt007			tmpkode == "RT007"
+cisidf1			lmsk - lmsa
+cisidf2			lm1sk - lm1sa
+cisidf3			lm2sk - lm2sa
+
+MAP(mselisih)
+tmpisidf1		lmsa			REPLACE_IF crt005
+tmpisidf2		lm1sa			REPLACE_IF crt005
+tmpisidf3		lm2sa			REPLACE_IF crt005
+
+tmpisidf1		lmsk			REPLACE_IF crt006
+tmpisidf2		lm1sk			REPLACE_IF crt006
+tmpisidf3		lm2sk			REPLACE_IF crt006
+
+cisidf1			tmpisidf1		DO_CALC_IF crt007
+cisidf2			tmpisidf2		DO_CALC_IF crt007
+cisidf3			tmpisidf3		DO_CALC_IF crt007
+
+HOOKS(tmptrans)
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW mratarata
+BEFORE_INPUT		cur_field=tmpisidf4	DO_MAP SHOW mratarata
+
+AFTER_INPUT		cur_field=tmpisidf1	DO_MAP SHOW mselisih
+AFTER_INPUT		cur_field=tmpisidf2	DO_MAP SHOW mselisih
+AFTER_INPUT		cur_field=tmpisidf3	DO_MAP SHOW mselisih
+
+SUBFILE(tmptrans)
+SFL_LINES(10)       
+SFL_COND cjoinsvitab
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	tmpdatkodurt   gv_dttemplate gv_tmprektab btmdvs
+
+MAP(maddreksvitabungan)
+gv_dt1106		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_tabungan		svitype			REPLACE
+tmpnourt		svinourt		REPLACE
+tmpket			sviket			REPLACE
+tmpkode			svikode			REPLACE
+tmpisidf1		svidf1			REPLACE
+tmpisidf2		svidf2			REPLACE
+tmpisidf3		svidf3			REPLACE
+tmpisidf4		svidf4			REPLACE
+
+SPCALCS(spdetail)
+	DO_LIB		ap_dbclc(DNAME daddsvitabungan,DCOMMAND ADD,DFILE svi,DMAP maddreksvitabungan);
+
+POSTING(tmptrans)
+  PST_COMMAND 	spdetail

@@ -1,0 +1,56 @@
+LOCAL
+PGM_FIELDS
+lketkode_2  	STRING	21
+lentr3		STRING	11
+ltlmperdisd_6	INT2	2
+lentar1		STRING	11
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+ /-----t.OpiniLegal-------------------------------------------------------\ 
+ |                                                 t.TglUpd __________    |
+ | _____________________________________________________________________  | 
+ |                                                                        | 
+ |                                                                        |
+ | t.PlpBcOpn                        : ____                               |
+ | __________ ___                                                         | 
+ \------------------------------------------------------------------------/ 
+\--------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+kettgl1		PROTECT		INPUTRI	1
+ketisi		TEXTAREA 3	INPUTRI 2
+ketyt1		NOCHANGE	INPUTRI	3
+lentr3		NOCHANGE	INPUTRI	4
+lentar1		NOCHANGE	INPUTRI	5
+
+DEFAULT(tmptranst)
+lketkode_2  	INIT			OPINILEGAL
+lentr3		INIT			"TABENTR"
+ketyt1		DFALT_SCAN_BLANKS	YA 
+ltlmperdisd_6	INIT			{tlmperdisd}
+lentar1		INIT			"ENTR"
+
+CALCS()
+chnyIR		tlmsts=="INPG" && tlmsts2=="O3+6" && (tlmgrup2 == g_usrkode || g_usrkode == "1832688" || g_grpnam=="RI" || g_grpnam=="IT")
+chnyplp		tlmsts=="INPG" && tlmsts2=="CAB6" && g_usrkode==tlmpst
+
+MAP(mtglupd)
+g_tgltrn	kettgl1		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=ketisi	DO_SKIP_IF chnyplp
+BEFORE_INPUT    cur_field=lentr3        DO_SKIP_IF chnyplp
+BEFORE_INPUT	cur_field=ketyt1	DO_SKIP_IF chnyIR
+AFTER_INPUT	cur_field=ketyt1	DO_MAP SHOW mtglupd
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	ketdatbukkod   tlmdata tlmnobuk lketkode_2
+SFL_MAP
+tlmnobuk	ketnobuk	REPLACE
+tlmdata		ketdata		REPLACE
+lketkode_2  	ketkode		REPLACE

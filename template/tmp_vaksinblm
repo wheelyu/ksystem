@@ -1,0 +1,156 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+|! i.Tanggal      : _______________!|
+|! i.Ket          : _______________!|
+|! i.Alasan       : _______________!|
+|! t.Alasan2      : _______________!|
+|! t.Tanggal2                      !|
+|! t.TglAntigen   : _______________!|
+|! i.Nip          : _______________!|
+|! i.Sts          : ________       !|
+|! t.StsUpload    : ________       !|
+|! t.AccFoto      : ________       !|
+|! t.NipACC       : ______________ !|
+|! t.AlasanTacc   : _______________!|
+|! t.JikaTaccTambahLagi            !|
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldtglfak               PROTECT {DD-MM-YY}      INPUTRI		 1
+tldbrg                  PROTECT                  INPUTRI         2
+tldkat                  ALLCAPS                  INPUTRI         3
+tldukrwrn               ALLCAPS                  INPUTRI         4
+tldtgl2                 NOLIMIT {DD-MM-YY}      INPUTRI		 5
+tldgrup                 NOCHANGE                 INPUTRI         6
+tldsts                  PROTECT                  INPUTRI         7
+tldsisbrg               PROTECT                  INPUTRI         8
+tldtydis                NOCHANGE                 INPUTRI         9
+tldlok2                 PROTECT                  INPUTRI         10
+tldket                  ALLCAPS                  INPUTRI         11
+
+MAP(mmappsm)
+psmgender		lpsmgender		REPLACE
+
+DBCALCS(djoinpsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx		hrmnip1
+	DBC_MAP		mmappsm
+
+CALCS()
+ctunggujwl			tldkat =="TUNGGU_JADWAL" || tldkat =="PERNAH_COVID"
+ckosongaja			tldkat !="TUNGGU_JADWAL" && tldkat !="PERNAH_COVID"
+calasan2OK			tldkat == BLANKS || tldkat =="KOMORBID" || (tldkat == "ALASAN_MEDIS" && djoinpsm ==1 && ((lpsmgender =="L" && tldukrwrn !="HAMIL" && tldukrwrn !="MENYUSUI") || lpsmgender =="P"))
+cmedis				tldkat == "ALASAN_MEDIS"  || tldkat =="KOMORBID"
+cnonmedis			tldkat != "ALASAN_MEDIS" && tldkat !="KOMORBID"
+
+
+EDITS(tmptranst)
+e.Mandatory tldbrg      MANDATORY
+e.Mandatory tldtglfak      MANDATORY
+e.Mandatory tldukrwrn      MANDATORY_IF cmedis
+e.Mandatory_tglcovid tldtgl2       MANDATORY_IF ctunggujwl
+t.ValidateAlasan   tldkat VALIDATE	tbddatkodidx	mtbdA	stbd {Pgv_dttabel} {Pgv_personal} {PlBLMVAKSIN}
+t.validateAlasan2  tldukrwrn VALIDATE_IF ckosongaja tbtdattypkod mtbt stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlBLMVAKSIN} {Ptldkat}
+
+
+MAP(mtbdA)
+tbdkode		tldkat			REPLACE
+
+MAP(mtbt)
+tbtkode		tldukrwrn		REPLACE
+
+MAP(mkosong2)
+cBLANKS		tldukrwrn		DO_CALC_IF cnonmedis
+
+
+DEFAULTS(tmptranst)
+tldsts          INIT_ADD                OPEN
+tldbrg		INIT_ADD		{tmpkode}
+tldgrup		INIT_ADD		{g_usrkode}
+tldtglfak	INIT_ADD		{g_tgltrn}
+tldtydis	DFALT_SCAN		BLANKS
+					TACC "TACC"
+					ACC "ACC"
+					FRAU "FRAUD"
+
+/* 
+tldkat		DFALT_SCAN		BLANKS
+					ALASAN_MEDIS
+					KOMORBID     
+					TUNGGU_JADWAL
+					PERNAH_COVID
+IF cPmedis	tldukrwrn	DFALT_SCAN	BLANKS
+						HAMIL
+						MENYUSUI
+						ALERGI
+
+IF cLmedis	tldukrwrn	DFALT_SCAN	BLANKS
+						ALERGI
+
+*/
+
+CALCS()
+caINPG			tldsts=="INPG"
+
+HOOKS(tmptranst)
+BEFORE_INPUT      cur_field=tldtglfak      DO_SKIP_IF ctldOPEN
+BEFORE_INPUT      cur_field=tldtydis       DO_SKIP_IF cdet2OPEN
+BEFORE_INPUT      cur_field=tldket         DO_SKIP_IF cdet2OPEN
+BEFORE_INPUT      cur_field=tldkat         DO_SKIP_IF caINPG
+
+BEFORE_INPUT      cur_field=tldukrwrn      DO_SKIP_IF cnonmedis
+BEFORE_INPUT      cur_field=tldtgl2        DO_SKIP_IF ckosongaja
+AFTER_INPUT      cur_field=tldkat         DO_MAP SHOW mkosong2
+AFTER_INPUT      cur_field=tldtydis       DO_MAP SHOW mnipacc
+
+AFTER_INPUT     cur_field=tldukrwrn     DO_MAP SHOW
+                IF calasan2OK	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Alasan2Salah
+
+
+MAP(mupdtldfoto2)
+cY              tldsisbrg       DO_CALC
+
+DBCALCS(dupdtldfoto2)
+        DBC_COMMAND     UPDATE
+        DTARGET         tldprmidx tldprm
+        DMAP            mupdtldfoto2
+
+CALCS()
+ccondblm		tmpkode =="BLMVAKSIN"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        ccondblm
+SFL_UPLFLD_DBCALCS dupdtldfoto2
+SFL_UPLFLD hrmnobuk tldoto  
+
+SFL_TARGET
+	tldbukbrglok   hrmnobuk  tmpkode 
+
+SFL_MAP
+hrmdata         tlddata         REPLACE
+hrmnobuk        tldnobuk        REPLACE
+tmpkode		tldbrg  	REPLACE
+
+
+
+
+
+
+
+

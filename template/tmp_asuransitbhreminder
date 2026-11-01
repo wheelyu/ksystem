@@ -1,0 +1,120 @@
+CALCS()
+crmndinpgataurinp	abksts=="INPG" || abksts=="RINP"
+
+DBCALCS(djoinabkrmnd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lkunciabsen lbukabkassrmd
+	DBC_SELECT	crmndinpgataurinp
+
+DBCALCS(djoinkettbhrmnd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketdatbukkod	lDTPS	lbukabkassrmd
+
+IMAGE(tmptranst)
+/------------------------------------\
+| /---------------------------------\|
+| |t.NoBukKunc	: __________________!|__
+| |t.TglKunc	: ____________ _____!|
+| |t.NipKym	: __________________!|
+| |t.NipPembuka : __________________!|
+| |i.Ket : _________________________!|
+| |				    !|
+| \---------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktkode		PROTECT			INPUTRI	1
+aktnobuk	PROTECT QPROTECT UNSEEN	INPUTRI	1
+akttgl		NONE {DD-MM-YYYY}	INPUTRI	2
+abksts		PROTECT			INPUTRI	2
+aktcab		ALLCAPS			INPUTRI	3
+aktkode2	PROTECT			INPUTRI	4
+aktket		TEXTAREA NONE		INPUTRI	5
+
+CALCS()
+cblmadaniprmnd	aktcab==BLANKS && g_curcmd == 1
+ctdkadarmnd	djoinabkrmnd==0
+cTMPTBHRMNDASS  tmpkode=="TBHRMNDASS"
+/*cSLCTTBHRMNDASS abksts=="RINP" || abksts=="INPG"*/
+ckettbhrmnd_0	djoinkettbhrmnd==0
+ckettbhrmnd_1	djoinkettbhrmnd==1
+ctglminbsok	akttgl > g_tgltrn
+
+EDITS(tmptranst)
+t.MandatoryTgl	akttgl	MANDATORY
+t.MandatoryNip	aktcab	MANDATORY
+t.Validatepsi   aktcab	VALIDATE psikodidx mpsitbhrmnd 0
+t.Validateabk	aktnobuk VALIDATE_IF clht abkotoidx mabktbhrmnd 0
+
+MAP(mpsitbhrmnd)
+psikode		aktcab		REPLACE
+
+MAP(mabktbhrmnd)
+abksts		abksts		REPLACE
+
+MAP(misitbhrmnd)
+tlmpst		aktcab		REPLACE_IF cblmadaniprmnd
+g_usrkode	aktkode2	REPLACE
+g_tgltrn	aktcrttgl	REPLACE
+lbukabkassrmd	aktkode		REPLACE
+g_scrnumstr	akttype		REPLACE
+ldatarmnd	aktdata		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=akttgl	DO_MAP SHOW misitbhrmnd
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW misitbhrmnd
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctdkadarmnd mdum
+		ELSE HKCURSOR STAY
+		HKMSG Masih Ada Kuncian Lain, Hanya Boleh 1
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctglminbsok mdum
+		ELSE HKCURSOR STAY
+		HKMSG Tanggal Kuncian Minimal Besok
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cTMPTBHRMNDASS
+SFL_TARGET
+aktkodtypidx	lbukabkassrmd ldatarmnd
+
+MAP(maddabktbhrmnd)
+lkunciabsen	abkdata		REPLACE
+akttgl		abktgl		REPLACE
+aktcab		abkkym		REPLACE
+aktkode2	abkkym2		REPLACE
+aktkode		abknobuk	REPLACE
+l109		abkscr		REPLACE
+lRINP		abksts		REPLACE
+
+MAP(maddkettbhrmnd)
+lDTPS		ketdata		REPLACE
+lbukabkassrmd	ketnobuk	REPLACE
+aktket		ketisi		REPLACE
+
+MAP(mupdkettbhrmnd)
+aktket		ketisi		REPLACE
+
+MAP(mmaptbhrmnd)
+abkoto		aktnobuk        REPLACE
+
+DBCALCS(dmaptbhrmnd)
+        DBC_COMMAND     MAPMAP
+        DBC_MAP         mmaptbhrmnd
+
+SPCALCS(spaddtbhrmnd)
+DO_LIB	ap_dbclc(DNAME daddabktbhrmnd, DCOMMAND ADD, DFILE abk, DMAP maddabktbhrmnd);
+DO_LIB_IF ckettbhrmnd_0	ap_dbclc(DNAME daddkettbhrmndA, DCOMMAND ADD, DFILE ket, DMAP maddkettbhrmnd);
+DO_LIB_IF ckettbhrmnd_1	ap_dbclc(DNAME dupdkettbhrmndA, DCOMMAND UPDATE_RANGE, DTARGET ketdatbukkod lDTPS lbukabkassrmd, DMAP mupdkettbhrmnd);
+dmaptbhrmnd
+
+SPCALCS(spupdtbhrmnd)
+DO_LIB_IF ckettbhrmnd_0 ap_dbclc(DNAME daddkettbhrmndU, DCOMMAND ADD, DFILE ket, DMAP maddkettbhrmnd);
+DO_LIB_IF ckettbhrmnd_1 ap_dbclc(DNAME dupdkettbhrmndU, DCOMMAND UPDATE_RANGE, DTARGET ketdatbukkod lDTPS lbukabkassrmd, DMAP mupdkettbhrmnd);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spaddtbhrmnd
+        PST_UPDCMD      spupdtbhrmnd

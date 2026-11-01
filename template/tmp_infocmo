@@ -1,0 +1,73 @@
+LOCAL
+PGM_FIELDS
+ldepartemensvy	STRING	21
+ljabatansvy	STRING	21
+lkategorisvy	STRING	21
+ltbtusrcrt	STRING	21
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+|/------------------------------------------------------------------------\|
+  t.InfoCmo
+  i.Nip		: _____________________
+  t.Nama	: _____________________
+  t.NoTlp	: _____________________
+  t.Cabang	: _____________________
+  t.Divisi	: _____________________
+  i.Dep         : _____________________
+  i.Jabatan     : _____________________
+  t.Prop        : _____________________
+  t.Kota        : _____________________
+  t.Kec         : _____________________
+  t.Kel         : _____________________
+  i.Kategori    : _____________________
+|\------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr1		NOCHANGE	INPUTRI 1
+psdstr3		PROTECT         INPUTRI 2
+psdstr2		PROTECT         INPUTRI 3
+psdstr4		PROTECT         INPUTRI 4
+psdstr5		PROTECT         INPUTRI 5
+ldepartemensvy	PROTECT		INPUTRI	6
+ljabatansvy	PROTECT		INPUTRI	7
+
+almnamprop_1	PROTECT         INPUTRI 8
+almnamkota_1	PROTECT         INPUTRI 9
+almnamkec_1	PROTECT         INPUTRI 10
+almnamkel_1	PROTECT         INPUTRI 11
+lkategorisvy	PROTECT		INPUTRI	12
+
+EDITS(tmptranst)
+t.validate psdstr1	VALIDATE psikodidx mpsisurvey
+
+MAP(mjointbtalm)
+tbtusrcrt	ltbtusrcrt	REPLACE
+
+DBCALCS(djointbtalm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdattypkod   gv_dtkota        gv_dtkota21 almprop_1 almkota_1 almkec_1 almkel_1
+	DBC_MAP		mjointbtalm
+
+CALCS()
+csurveyok               "SURVEY"
+ctsurvey                "TDK SURVEY"
+csurveyyy	djointbtalm==1 && ltbtusrcrt=="JUAL"
+ctsurveyyy	(djointbtalm==1 && ltbtusrcrt=="TDK_JUAL") || (djointbtalm==1 && ltbtusrcrt=="")
+
+MAP(mpsisurvey)
+psikode		psdstr1		REPLACE
+psisdep		ldepartemensvy	REPLACE
+psijabatan	ljabatansvy	REPLACE
+csurveyok	lkategorisvy	DO_CALC_IF csurveyyy
+ctsurvey	lkategorisvy	DO_CALC_IF ctsurveyyy
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+
+SFL_TARGET
+psddatpsmkod    lDTSURV1 btmnobuk

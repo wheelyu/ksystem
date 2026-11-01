@@ -1,0 +1,101 @@
+LOCAL
+PGM_FIELDS
+ltglawl		DATE	4
+ltglakh		DATE	4
+lmktcab		STRING	11
+lfaktur		STRING	21
+ldeskcall	STRING	11
+lpiudesk	STRING	11
+ltlmdari	STRING	21
+lketvalid	STRING	11
+ltypejl		STRING	5
+ltlmbisnis	STRING	21
+
+MAP(mjoinbtm)
+btmtypjl        ltypejl         REPLACE
+DBCALCS(djoinbtm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx       ppsnomst
+        DBC_MAP         mjoinbtm
+
+MAP(mjoinbkm)
+bkmnobuk	lfaktur		REPLACE
+DBCALCS(djoinbkm)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      bkmstsbsidx gv_CLSD mntnobuk
+	DBC_MAP		mjoinbkm
+
+MAP(mjoinppm)
+ppmnobuk	lfaktur		REPLACE
+DBCALCS(djoinppm)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      ppmnollidx mntnobuk
+	DBC_MAP		mjoinppm
+
+MAP(mjointlm840)
+tlmdari		ltlmdari	REPLACE
+tlmbisnis	ltlmbisnis	REPLACE
+DBCALCS(djointlm840)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdatstsasl    ldeskcall gv_CLSD lfaktur
+        DBC_MAP         mjointlm840
+DBCALCS(djointlm840K)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdatstsasl    lpiudesk gv_CLSD lfaktur
+        DBC_MAP         mjointlm840
+
+IMAGE(tmptranst)
+/--------------t------------t---------\
+|i.NoPK        |t.Faktur    |t.Ket    |
+\--------------.------------.---------/
+
+IMAGE(tmptrans)
+|______________|____________|_________|
+
+FIELD(tmptrans)
+mntnobuk	NOCHANGE		INPUTRI		1
+lfaktur		NOCHANGE		INPUTRI		1
+lketvalid	NOCHANGE		INPUTRI		1
+
+
+CALCS()
+cjualx		(cabusaha=="FINCO" && djoinbkm==1) || (cabusaha=="DEALER" && djoinppm==1)
+ctglawl		ststglprjgl + 1
+cadajual	(djoinbkm==1 || djoinppm==1)
+
+ctelpok         (djoinbkm==1 || djoinppm==1) && ((djoinbtm== 1 && ltypejl == "T" && djointlm840==1 && ltlmdari!=BLANKS) || (djoinbtm== 1 && ltypejl=="K" && djointlm840K==1 && ltlmbisnis=="VALID"))
+ctelpnot        (djoinbkm==1 || djoinppm==1) && ((djoinbtm== 1 && ltypejl == "T" && djointlm840==1 && ltlmdari==BLANKS) || (djoinbtm== 1 && ltypejl=="K" && djointlm840K==1 && ltlmbisnis==BLANKS))
+ctelpblm        (djoinbkm==1 || djoinppm==1) && ((djoinbtm==1 && ltypejl=="T" && djointlm840==0) || (djoinbtm==1 && ltypejl=="K" && djointlm840K==0))
+
+cvalid		"VALID"
+ctdkvld		"TDK VALID"
+cblmtelp	"BLM TELP"
+
+DEFAULTS(tmptrans)
+lmktcab		INIT		MKTCAB
+ltglawl		INIT		{ctglawl}
+ltglakh		INIT		{g_tgltrn}
+ldeskcall	INIT		DESKCALL
+lpiudesk	INIT		PIUDESK
+
+
+EDITS(tmptrans)
+e.ValidateNoBuk	mntnobuk	VALIDATE btmbukidx mbtm
+
+MAP(mbtm)
+btmplg		btmplg		REPLACE
+lfaktur		lfaktur		REPLACE_IF cadajual
+cvalid		lketvalid	DO_CALC_IF ctelpok
+ctdkvld		lketvalid	DO_CALC_IF ctelpnot
+cblmtelp	lketvalid	DO_CALC_IF ctelpblm
+
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT	cjualx
+SFL_TARGET_GTE
+	mntdatkodtgl	lmktcab cabkode ltglawl {lmktcab} {cabkode} {ltglakh}
+

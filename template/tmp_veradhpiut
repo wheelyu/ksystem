@@ -1,0 +1,106 @@
+LOCAL
+PGM_FIELDS
+lnipadh         STRING          21
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/--t.VerAdh------------------------\|
+||t.Userinput     _________________ ||
+||i.Pekerjaan                       ||
+||   ______________________________ ||
+||i.Statusrumah   _________________ ||
+||i.Digunakanoleh                   ||
+||   ______________________________ ||
+||i.Hubpmhnpnjmn                    ||
+||   ______________________________ ||
+||i.PmhnTnggl     _________________ ||
+||i.Rekomendasi   _________________ ||
+||i.HrsJelas                        ||
+||   _______________________________||
+|\----------------------------------/|
+\------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1         PROTECT         INPUTRI         1 
+svistr2         ALLCAPS SCROLL  INPUTRI         2 
+svistr3         ALLCAPS SCROLL  INPUTRI         3 
+svistr4         ALLCAPS SCROLL  INPUTRI         4 
+svistr5         ALLCAPS SCROLL  INPUTRI         5 
+svistr6         ALLCAPS SCROLL  INPUTRI         6 
+svistr7         ALLCAPS         INPUTRI         7 
+svistr8         TEXTAREA 3      INPUTRI         8 
+
+DEFAULTS(tmptranst)
+svistr7         DFALT_SCAN_BLANKS       ACC
+                                        TACC
+
+EDITS(tmptranst)
+e.validate svistr2 VALIDATE tbddatkodidx mtbd_2 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21}
+e.validate svistr3 VALIDATE tbddatkodidx mtbd2_2 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah}
+e.validate svistr4 VALIDATE tbddatkodidx mtbd3_2 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_pemakai}
+e.Validate svistr5 VALIDATE tbddatkodidx mtbd4_2 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_hubpenj}
+e.validate svistr6 VALIDATE tbddatkodidx mtbd5_2 stbd {Pgv_dttabel} {Pgv_kunjungan1} {Pgv_yt21}
+e.Mandatory	svistr2		MANDATORY
+e.Mandatory	svistr3		MANDATORY
+e.Mandatory	svistr4		MANDATORY
+e.Mandatory	svistr5		MANDATORY
+e.Mandatory	svistr6		MANDATORY
+e.Mandatory	svistr7		MANDATORY
+e.Mandatory	svistr8		MANDATORY
+
+MAP(mtbd5_2)
+tbdkode         svistr6         REPLACE
+
+MAP(mtbd4_2)
+tbdkode         svistr5         REPLACE
+
+MAP(mtbd3_2)
+tbdkode         svistr4         REPLACE
+
+MAP(mtbd2_2)
+tbdkode         svistr3         REPLACE
+
+MAP(mtbd_2)
+tbdkode         svistr2         REPLACE
+
+MAP(mjoinsgmadh)
+sgmstr5         lnipadh         REPLACE
+
+DBCALCS(djoinsgmadh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg gv_dtpiccab lm2w ladh lthbl btmcab btmcab
+        DBC_MAP         mjoinsgmadh
+
+CALCS()
+cbknadh			(djoinpsiadh==1 && (g_grpnam=="ADH" || g_grpnam=="ADM")) || (djoinsgmadh==1 && g_usrkode==lnipadh)
+			|| (djoinsgmbm==1 && g_usrkode==lnipbm) || (djoinsgmbuh==1 && g_usrkode==lnipbuh) || g_grpnam=="ANSYSUAT"
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=svistr2       DO_MAP SHOW
+                        IF cbknadh  mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.Bknadhkomite
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+svidatbuktyp   gv_datasurvey btmnobuk lveradh
+SFL_MAP
+gv_datasurvey   svidata         REPLACE
+btmnobuk        svinobuk        REPLACE
+lveradh         svitype         REPLACE
+lveradh         svikode         REPLACE
+g_usrkode       svistr1         REPLACE
+
+CALCS()
+ctambahadh	btmsts=="727" && djoinsviadh==0 && btmbichek!="SH"
+cubahadh	btmsts=="727" && djoinsviadh==1 && btmbichek!="SH"
+
+PERMIT(tmptrans)
+PMT_ADD_COND    ctambahadh
+PMT_UPDALL_COND cubahadh
+PMT_DEL_COND    c0
+

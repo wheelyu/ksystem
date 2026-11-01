@@ -1,0 +1,280 @@
+LOCAL
+PGM_FIELDS
+lket            STRING  251
+lket2           STRING  251
+lketisi         STRING  251
+lketisi2        STRING  251
+lY2             STRING  2
+lUplFoto        STRING  21
+lniprm          STRING  21
+lrm             STRING  21
+
+
+CALCS()
+cdv            abkkym == lnipdv 
+cdp            abkkym == lnipdp 
+
+MAP(mjoinket)
+ketisi          lketisi       REPLACE
+ketisi2         lketisi2      REPLACE
+
+DBCALCS(djoinket)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ketbukurtidx lfotombltrk tlmnobuk docnourt    
+        DBC_MAP         mjoinket
+
+MAP(mjoinsgmrm)
+sgmstr5         lniprm         REPLACE
+
+DBCALCS(djoinsgmrm)
+        DBC_COMMAND JOIN
+        DBC_TARGET  sgmdatstrbrg   gv_dtpiccab tlmdvs lrm lthbl tlmcab
+        DBC_MAP     mjoinsgmrm
+
+DBCALCS(djoinabkdv)
+        DBC_COMMAND JOIN
+        DBC_TARGET  abkdatstsky2   lkunciabsen gv_INPG docnobuk2 l738                 
+        DBC_SELECT  cdv
+
+DBCALCS(djoinabkdp)
+        DBC_COMMAND JOIN
+        DBC_TARGET  abkdatstsky2   lkunciabsen gv_INPG docnobuk2 l738
+        DBC_SELECT  cdp
+
+
+IMAGE(tmptranst)
+/--------------------------------\
+|/--------s.UPLOAD--------------\|
+||                              || 
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+|\------------------------------/| 
+||             _________________||
+|/------------------------------\|
+||t.Berkas     _________________|| 
+||______________________________|| 
+||             _________________|| 
+||             _________________|| 
+||t.AprovRm    _________________|| 
+||t.Ket        _________________|| 
+||t.AprovDh    _________________|| 
+||t.Ket        _________________|| 
+||                            __|| 
+|\------------------------------/| 
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lUplFoto        TOMBOL                  INPUTRI 11
+docnobuk	NOCHANGE		INPUTRI	1
+docno   	PROTECT			INPUTRI	2
+doctgljadi	PROTECT			INPUTRI	3
+docsts		PROTECT			INPUTRI	4
+doclok		ALLCAPS  		INPUTRI	5
+lket     	TEXTAREA		INPUTRI	6
+doccab		ALLCAPS			INPUTRI	7
+lket2    	TEXTAREA		INPUTRI	8
+lY2      	NOCHANGE        	INPUTRI	9  
+
+
+DEFAULTS(tmptranst)
+doclok             DFALT_SCAN_BLANKS Y T
+doccab             DFALT_SCAN_BLANKS Y T
+lY2                INIT              Y
+lUplFoto           INIT            "UPLOAD_OK"
+lrm                INIT             RM 
+
+CALCS()
+caprfoto         (tlmsts == "INPG" || tlmsts  == "OPEN") &&  (g_grpnam == "B.M4WRM" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WDVH" || g_grpnam == "RI" || g_grpnam == "B.M4WCSPV")
+cadaket0         djoinket == 0
+cadaket1         djoinket == 1 && g_curcmd != 1
+cadaket1b        djoinket == 1 && g_curcmd == 2
+cbukanubah       g_curcmd != 2 
+cin              "IN"
+csdhin           docsts == "IN"
+cdjoinbm         djoinsgmbm == 1 
+
+cbknrm           g_grpnam != "B.M4WRM" && g_grpnam !="RI"
+cbkndvh          g_grpnam != "B.M4WDVH" && g_grpnam != "B.M4WDPH" && g_grpnam!="RI" && g_grpnam != "B.M4WCSPV"
+cdjoinrm         djoinsgmrm == 1 
+crmjawb          doclok == "Y"    
+crmjawbt         doclok == "T"    
+crmjawb2x        doclok == "Y"  && djoinabkdv == 0 && (pikstspiubli=="Z1" || pikstspiubli=="Z2" || pikstspiubli=="Z4" || pikstspiubli=="Z6")
+crmjawb2y        doclok == "Y"  && djoinabkdp == 0 &&  pikstspiubli!="Z1" && pikstspiubli!="Z2" && pikstspiubli!="Z4" && pikstspiubli!="Z6"
+cdvjawb          doccab == "Y"    
+cdvjawbt         doccab == "T"    
+
+
+/*cdjoindv         djoinsgmdv == 1 
+cdjoindp         djoinsgmdp == 1 
+*/
+cdjoindv1	 djoinsgmdv == 1 && djoinabkdv == 0
+cdjoindp1        djoinsgmdp == 1 && djoinabkdp == 0
+
+crmblm           doclok == "Y"  ||  (g_grpnam == "B.M4WRM" || g_grpnam=="RI")                 
+cblmupl          docsts == "Y"
+
+EDITS(tmptranst)
+e.Validate      lY2  VALIDATE_IF cbukanubah stskodidx mstsx2 0
+
+MAP(mstsx2)
+cBLANKS         lket                    DO_CALC_IF cadaket0
+lketisi         lket                    REPLACE_IF cadaket1   
+cBLANKS         lket2                   DO_CALC_IF cadaket0 
+lketisi2        lket2                   REPLACE_IF cadaket1   
+
+
+MAP(mmapmap1a)
+ldum            ldum              REPLACE
+lnipdv          lnipdv            REPLACE_IF cdjoindv
+lnipdp          lnipdp            REPLACE_IF cdjoindp
+DEBUG		ldum	ldum	  REPLACE
+
+MAP(maddket)
+docnobuk        ketnobuk          REPLACE
+docdata         ketdata           REPLACE
+doctype         ketkode           REPLACE
+docnourt        ketnourt          REPLACE
+lket            ketisi            REPLACE_IF cadaket0     
+lket2           ketisi2           REPLACE_IF cadaket0     
+
+
+MAP(mupdket)
+lket            ketisi            REPLACE_IF cadaket1b
+cBLANKS         lket              DO_CALC
+ketisi          lket              REPLACE
+lket2           ketisi2           REPLACE_IF cadaket1b
+cBLANKS         lket2             DO_CALC
+ketisi2         lket2             REPLACE
+
+
+MAP(mkunci)
+gv_CLSD         abksts          REPLACE
+
+MAP(maddabkbm)
+docnobuk        abknobuk        REPLACE
+lnipbm          abkkym          REPLACE_IF cdjoinbm  
+lkunciabsen     abkdata         REPLACE
+docnobuk2       abkkym2         REPLACE
+c738            abkscr          DO_CALC
+cbesok	        abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+DEBUG		ldum	ldum	REPLACE
+
+MAP(maddabkrm)
+lniprm          abkkym          REPLACE_IF cdjoinrm
+docnobuk        abknobuk        REPLACE
+lkunciabsen     abkdata         REPLACE
+docnobuk2       abkkym2         REPLACE
+c738            abkscr          DO_CALC
+cbesok          abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+
+MAP(maddabkdv)
+lnipdv          abkkym          REPLACE_IF cdjoindv1
+docnobuk        abknobuk        REPLACE
+lkunciabsen     abkdata         REPLACE
+docnobuk2       abkkym2         REPLACE
+c738            abkscr          DO_CALC
+cbesok          abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+MAP(maddabkdp)
+lnipdp          abkkym          REPLACE_IF cdjoindp1
+docnobuk        abknobuk        REPLACE
+lkunciabsen     abkdata         REPLACE
+docnobuk2       abkkym2         REPLACE
+c738            abkscr          DO_CALC
+cbesok          abktgl          DO_CALC
+gt_RINP		abksts		REPLACE
+
+MAP(mkuncibuka)
+gv_INPG         abksts          REPLACE
+
+SPCALCS(saddket)
+DO_LIB_IF cadaket0     ap_dbclc(DNAME dket,DCOMMAND ADD,DFILE ket,DMAP maddket);
+
+SPCALCS(supdket)
+DO_LIB                 ap_dbclc(DNAME dmapmap21a,DCOMMAND MAPMAP,DMAP mmapmap1a);
+DO_LIB_IF cadaket0     ap_dbclc(DNAME dket2,DCOMMAND ADD,DFILE ket,DMAP maddket);
+DO_LIB_IF cadaket1     ap_dbclc(DNAME dupdket,DCOMMAND UPDATE,DTARGET ketbukurtidx lfotombltrk tlmnobuk docnourt,DMAP mupdket);
+DO_LIB_IF crmjawb      ap_dbclc(DNAME dupdkabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG docnobuk2 l738,DMAP mkunci);
+DO_LIB_IF crmjawbt     ap_dbclc(DNAME dupdkabkt,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG docnobuk2 l738,DMAP mkuncibuka);
+DO_LIB_IF crmjawb2x     ap_dbclc(DNAME daddabkdv,DCOMMAND ADD,DFILE abk,DMAP maddabkdv);
+DO_LIB_IF crmjawb2y     ap_dbclc(DNAME daddabkdp,DCOMMAND ADD,DFILE abk,DMAP maddabkdp);
+
+DO_LIB_IF cdvjawb      ap_dbclc(DNAME dupdkabk2,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG docnobuk2 l738,DMAP mkunci);
+DO_LIB_IF cdvjawbt     ap_dbclc(DNAME dupdkabk2t,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG docnobuk2 l738,DMAP mkuncibuka);
+
+
+SPCALCS(sdelket)
+DO_LIB_IF cadaket1     ap_dbclc(DNAME ddelket,DCOMMAND DELETE,DTARGET  ketbukurtidx  lfotombltrk tlmnobuk docnourt);
+
+MAP(mupddoc2)
+cY		docsts		DO_CALC
+g_tgltrn	doctgljadi	REPLACE
+
+
+SPCALCS(supload2)
+DO_LIB                 ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap1a);
+DO_LIB_IF csdhin       ap_dbclc(DNAME daddabkbm,DCOMMAND ADD,DFILE abk,DMAP maddabkbm);
+DO_LIB_IF csdhin       ap_dbclc(DNAME daddabkrm,DCOMMAND ADD,DFILE abk,DMAP maddabkrm);
+
+DO_LIB_IF csdhin       ap_dbclc(DNAME dupload2,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddoc2);
+
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lUplFoto      DO_SPCALCS supload2
+BEFORE_INPUT    cur_field=doccab        DO_SKIP_IF cbkndvh
+BEFORE_INPUT    cur_field=lket2         DO_SKIP_IF cbkndvh
+BEFORE_INPUT    cur_field=doclok        DO_SKIP_IF cbknrm 
+BEFORE_INPUT    cur_field=lket          DO_SKIP_IF cbknrm  
+AFTER_INPUT     cur_field=doccab        DO_MAP SHOW
+                IF crmblm  mdum
+                ELSE HKCURSOR STAY
+                HKMSG RM Blm Acc    
+
+AFTER_INPUT     cur_field=doclok        DO_MAP SHOW
+                IF cblmupl mdum
+                ELSE HKCURSOR STAY
+                HKMSG Upload dan Klik tombol Upload OK sampai status upload IN jadi Y ya 
+
+
+MAP(mupddoc3)
+cin             docsts          DO_CALC
+
+DBCALCS(dupddoc2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      docprmidx docprm
+        DBC_MAP         mupddoc3
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND csdhY
+SFL_UPLFLD_DBCALCS dupddoc2
+SFL_UPLFLD docnobuk2
+SFL_UPL_DIRFLD tlmtgl
+SFL_SHOW_NEXT
+SFL_TARGET
+        docdatbukidx	lfotombltrk tlmnobuk
+
+SFL_MAP
+tlmnobuk	docnobuk	REPLACE
+
+
+POSTING(tmptrans)
+        PST_ADDCMD saddket
+        PST_UPDCMD supdket
+        PST_DELCMD sdelket
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND		c0
+PMT_UPDALL_COND		caprfoto
+PMT_DEL_COND		c0

@@ -1,0 +1,114 @@
+LOCAL
+PGM_FIELDS
+lNamaPen	STRING	31
+lTransfer	STRING	11
+ltelpvalid	STRING	11
+ltlmdari	STRING	11
+ldeskcall	STRING	11
+lpiudesk	STRING	11
+ltypejl		STRING	11
+ltlmbisnis	STRING	21
+
+MAP(mjoinbtm)
+btmtypjl	ltypejl		REPLACE
+DBCALCS(djoinbtm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btmbukidx	ppsnomst
+	DBC_MAP		mjoinbtm
+
+MAP(mjoinpsmktp)
+psmnama		lNamaPen	REPLACE
+DBCALCS(djoinpsmktp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmktpidx	btmplg
+	DBC_MAP		mjoinpsmktp
+
+MAP(mjointlm840)
+tlmdari         ltlmdari        REPLACE
+tlmbisnis	ltlmbisnis	REPLACE
+DBCALCS(djointlm840)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdatstsasl    ldeskcall gv_CLSD ppsnobuk2
+        DBC_MAP         mjointlm840
+DBCALCS(djointlm840K)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdatstsasl    lpiudesk gv_CLSD ppsnobuk2
+        DBC_MAP         mjointlm840
+
+
+IMAGE(tmptranst)
+/---------------t-------------t---------------t-----------t----------t--------t---------t-------------\
+|i.NoPK         |i.NoFak      |i.Nama         |t.TanggalPK|t.Insetif |i.Telp  |t.Ket    |t.Sisa       |
+\---------------.-------------.---------------.-----------.----------.--------.---------.-------------/
+IMAGE(tmptrans)
+|_______________|_____________|_______________|___________|__________|________|_________|____________ |
+
+FIELD(tmptrans)
+ppsnomst	PROTECT SCROLL		   	INPUTRI 1
+ppsnobuk2	PROTECT SCROLL		   	INPUTRI 1
+lNamaPen	PROTECT SCROLL			INPUTRI	1
+ppstglbuk	PROTECT {DD-MM-YYYY}		INPUTRI	1
+ppstotal	PROTECT NUMERIC			INPUTRI	1
+ltelpvalid	PROTECT				INPUTRI	1
+lTransfer	PROTECT				INPUTRI	1
+ppssisa  	PROTECT				INPUTRI	1
+
+CALCS()
+cadakom		(ppssts=="INPG" || ppssts=="CLSD") && (ppskdpm=="KOMISIKARY" || ppskdpm=="KOMISIM2W" || ppskdpm=="INSENTIF") &&
+		ppstglbuk > (ststglprjgl - 31)
+
+cdjoinpsm1	djoinpsmktp == 1
+cTrans		"TRANSFER"
+cHold		"HOLD"
+cbelum		"BELUM_TRF"
+cValid		"VALID"
+ctdkValid	"TDK_VALID"
+cblmcall	"BLM_CALL"
+cProses		"PROSES_TRF"
+
+ctransx		ppssts=="CLSD" && ppssisa == BLANKS
+ctransotw	ppssts=="INPG" && ppssisa != BLANKS && ppssisprc==BLANKS
+cblmtrans	ppssts=="INPG" && ppssisa != BLANKS && ((djoinbtm== 1 && ltypejl == "T" && djointlm840==1 && ltlmdari=="VALID") || (djoinbtm== 1 && ltypejl=="K" && djointlm840K==1 && ltlmbisnis=="VALID"))
+chold		ppssts=="INPG" && ppssisa != BLANKS && ((djoinbtm== 1 && ltypejl == "T" && djointlm840==1 && ltlmdari!="VALID") || (djoinbtm== 1 && ltypejl=="K" && djointlm840K==1 && ltlmbisnis!="VALID"))
+
+ctelpok		((djoinbtm== 1 && ltypejl == "T" && djointlm840==1 && ltlmdari=="VALID") || (djoinbtm== 1 && ltypejl=="K" && djointlm840K==1 && ltlmbisnis=="VALID"))
+ctelpnot	((djoinbtm== 1 && ltypejl == "T" && djointlm840==1 && ltlmdari!="VALID") || (djoinbtm== 1 && ltypejl=="K" && djointlm840K==1 && ltlmbisnis!="VALID"))
+ctelpblm	(djoinbtm==1 && ltypejl=="T" && djointlm840==0) || (djoinbtm==1 && ltypejl=="K" && djointlm840K==0)
+cBLANKS		BLANKS
+
+
+
+EDITS(tmptrans)
+e.ValidateNoBuk ppsnomst	VALIDATE btmbukidx mbtm 0
+
+
+DEFAULTS(tmptrans)
+ldeskcall	INIT		DESKCALL
+lpiudesk	INIT		PIUDESK
+
+
+MAP(mbtm)
+cBLANKS		lNamaPen	DO_CALC
+cBLANKS		lTransfer	DO_CALC
+cBLANKS		ltelpvalid	DO_CALC
+
+btmplg		btmplg		REPLACE
+lNamaPen	lNamaPen	REPLACE_IF cdjoinpsm1
+cValid		ltelpvalid	DO_CALC_IF ctelpok
+ctdkValid	ltelpvalid	DO_CALC_IF ctelpnot
+cblmcall	ltelpvalid	DO_CALC_IF ctelpblm
+
+cbelum		lTransfer	DO_CALC_IF cblmtrans
+cHold		lTransfer	DO_CALC_IF chold
+cProses		lTransfer	DO_CALC_IF ctransotw
+cTrans		lTransfer	DO_CALC_IF ctransx
+
+SUBFILE(tmptrans)
+SFL_LINES(20)      
+SFL_TITLE(tmptranst)
+SFL_COND cbolehmasuk
+SFL_SORT_UPDOWN UP
+SFL_SELECT cadakom
+SFL_TARGET	
+ppsdatplgsts	gv_dthut psmkode 
+

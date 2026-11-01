@@ -1,0 +1,121 @@
+LOCAL
+PGM_FIELDS
+lnamaklikns	STRING	21
+lSURVEY         STRING  21
+lINPUTKIIKNSS   STRING  21
+
+
+/* 
+MAP(mjoinpsitld)
+psidep          lpsidep         REPLACE
+
+DBCALCS(djoinpsitld)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx tldlok
+        DBC_MAP         mjoinpsitld
+
+DBCALCS(djointbdubah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel lSURVEY lINPUTKIIKNSS g_usrkode
+*/
+
+IMAGE(tmptranst)
+/-----------------------------------------\
+|t.NoBt      _____________________        |
+|t.NoKlik    _____________________        |
+|t.TypeLeads _____________________        |
+|t.InfoLeads _____________________        |
+|t.NipAdmin  _____________________        |
+|t.NamaAdmin _____________________        |
+|t.SumberPC  _____________________        |
+|t.IdSpk     _________________________    |
+|t.Enter     ______                       |
+\-----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        PROTECT	        INPUTRI 1
+tldbrg          ALLCAPS SCROLL	INPUTRI 2
+tldkirim        PROTECT         INPUTRI 3
+tldket          PROTECT         INPUTRI 4
+tldlok          ALLCAPS SCROLL  INPUTRI 6
+lnamaklikns     PROTECT         INPUTRI 7
+tldukrwrn       PROTECT         INPUTRI 8
+tldkirim        ALLCAPS         INPUTRI 9
+lenter          ALLCAPS         INPUTRI 10
+
+DEFAULTS(tmptranst)
+lSURVEY                INIT             SURVEY
+lINPUTKIIKNSS          INIT             INPUTKIIKNSS
+
+MAP(mjointldc)
+tldnourt        	lsvturt         REPLACE
+
+DBCALCS(djointldc)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldbukbrglok   bkmnobuk
+        DBC_MAP         mjointldc
+
+CALCS()
+cdjointldc0             djointldc == 0
+cdjointldc1             djointldc == 1
+curt1d                  lsvturt + 1
+cblhisi                 g_grpnam=="DIGMKTDVH" || g_grpnam=="DIGMKTHEAD" || g_grpnam=="HMCSPV" ||  g_grpnam=="DIGMKT" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ROOT" || g_usrkode == "1914258" || g_usrkode == "2281239" || g_usrkode=="2215292"
+/* chanyadigi1          djointbdubah == 1 */
+/* chanyadigi           (djoinpsitld == 1 && lpsidep == "DIGITALDANACEPAT") || g_usrkode=="1523157" */
+cbukutamu               tlddata == btmdata
+cadaisiklikns	        btmrekomen!=BLANKS
+cklikns_HO     	        g_grpnam!="IT" && g_grpnam!="RAS" && g_usrkode!="2215292"
+cadaisi1                tldlok!=" " && g_usrkode!="1523157"
+cadaisi2                tldbrg!=" " && g_usrkode!="1523157"
+
+EDITS(tmptranst)
+e.Mandatory     	tldlok                  MANDATORY
+t.KryNull       	tldlok                  VALIDATE psikodidx mpsiC  0
+
+MAP(mpsiC)
+psikode			tldlok			REPLACE
+psinama         	lnamaklikns     	REPLACE
+
+MAP(murutd)
+c1              	tldnourt        	DO_CALC_IF cdjointldc0
+curt1d          	tldnourt        	DO_CALC_IF cdjointldc1
+btmrekomen		tldbrg			REPLACE_IF cadaisiklikns
+btmcab                  tldcab                  REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldlok        DO_MAP SHOW murutd
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF  cklikns_HO
+
+BEFORE_INPUT    cur_field=tldlok        DO_SKIP_IF  cadaisi1
+BEFORE_INPUT    cur_field=tldbrg        DO_SKIP_IF  cadaisi2
+
+/*
+AFTER_INPUT     cur_field=tldlok        DO_MAP SHOW
+                IF chanyadigi1 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaDivDigital
+*/
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cblhisi mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.JikaSdhJualCairTdkBlh
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbukutamu
+SFL_TARGET
+tldbukbbmidx    btmnobuk lKLIKNS
+
+SFL_MAP
+btmnobuk        tldnobuk        REPLACE
+/* btmrekomen	tldbrg		REPLACE */
+btmcab		tldcab		REPLACE
+btmdvs		tlddvs		REPLACE
+gv_bukutamu     tlddata         REPLACE
+gv_OPEN         tldsts          REPLACE
+lKLIKNS         tldnobbm        REPLACE
+
+

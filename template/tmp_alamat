@@ -1,0 +1,163 @@
+LOCAL
+PGM_FIELDS
+lpropinsi6		STRING		61
+lkota6			STRING		61
+lkec6			STRING		61
+lkel6			STRING		61
+lPSMKTP6			STRING		11
+lpsmkerja6		STRING		11
+lALMSURVEY6		STRING		11
+lalmbukoto6		STRING		21
+lALMTAGIH6		STRING		11
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   ____________________
+   t.SumberPC   : __________ ___________  _
+   i.Alamat     : _____________________________________________________________
+   i.Propinsi   : _______________ _____________________________________________
+   i.Kota       : _______________ _____________________________________________
+   i.Kec        : _______________ _____________________________________________
+   i.Kel        : _______________ _____________________________________________
+   i.RT         : ______
+   i.RW         : ______
+   i.KodePos    : ________                            
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almdata			PROTECT				INPUTRI	1
+almnama			NOCHANGE        		INPUTRI	1
+almnama2		NOCHANGE			INPUTRI	1
+lalmbukoto6		NOCHANGE         		INPUTRI	2
+almjalan		PROTECT  ALLCAPS		INPUTRI 3
+almprop			PROTECT SCROLL			INPUTRI 4
+lpropinsi6		PROTECT QPROTECT		INPUTRI 5
+almkota			PROTECT SCROLL			INPUTRI 6
+lkota6			PROTECT QPROTECT 		INPUTRI 7
+almkec			PROTECT SCROLL			INPUTRI 8
+lkec6			PROTECT QPROTECT		INPUTRI 9
+almkel			PROTECT SCROLL			INPUTRI 10
+lkel6			PROTECT QPROTECT		INPUTRI 11
+almrt                   PROTECT                         INPUTRI 11
+almrw                   PROTECT                         INPUTRI 12
+almkdpos		PROTECT SCROLL			INPUTRI 12
+
+CALCS()
+cinitagih	almdata=="ALMTAGIH"
+cinikirim	almdata=="ALAMATKIRI"
+ctambahbaru	g_curcmd==1
+
+DEFAULTS(tmptranst)
+IF cinitagih almnama		DFALT_SCAN BLANKS	ALAMAT_KTP ""
+					ALAMAT_TINGGAL ""
+					ALAMAT_KERJA ""
+
+IF cinikirim	almnama2	DFALT_SCAN BLANKS       ALAMAT_KTP ""
+                                        ALAMAT_TINGGAL ""
+
+IF ctambahbaru	almdata	INIT_ADD	ALMTAGIH
+
+lpsmkerja6	INIT		KERJA
+lalmbukoto6	INIT		{btmplg}
+lPSMKTP6	INIT		PSMKTP
+lALMSURVEY6	INIT		ALMSURVEY
+lALMTAGIH6	INIT		ALMTAGIH
+
+CALCS()
+cdariktp6		almnama=="ALAMAT_KTP"
+cdarisurvey6		almnama=="ALAMAT_TINGGAL"
+cdarikerja6		almnama=="ALAMAT_KERJA"
+
+
+EDITS(tmptranst)
+e.validatePropinsi6	almprop VALIDATE dtmdtkodidx  mdtm6 sdtm {Pgv_dtkota}
+e.validateKota6		almkota VALIDATE tbldtdtmkod mtbl6 stbl {Pgv_dtkota} {Palmprop}
+e.validateKec6		almkec VALIDATE tbddatkodidx mtbd6 stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel6		almkel VALIDATE tbtdattypkod mtbt6 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+e.Validate              lalmbukoto6      VALIDATE_BUF3_IF cdariktp6       almdatotobuk malmsurvey6  salm {PlPSMKTP6}
+e.Validate              lalmbukoto6      VALIDATE_BUF3_IF cdarisurvey6    almdatotobuk malmsurvey6  salm {PlALMSURVEY6} {Sbtmnobuk}
+e.Validate		lalmbukoto6	VALIDATE_BUF3_IF cdarikerja6	almdatotobuk malmsurvey6  salm {Plpsmkerja6}
+
+t.JenisTagih		almnama		MANDATORY_IF cinitagih
+t.Mandatory		almnama2	MANDATORY_IF cinikirim
+
+t.mandatoryJalan        almjalan        MANDATORY
+t.mandatoryProp         almprop         MANDATORY
+e.mandatoryKota1        almkota         MANDATORY
+e.mandatoryKec1         almkec          MANDATORY
+e.mandatoryKel1         almkel          MANDATORY
+
+MAP(malmsurvey6)
+#almjalan			almjalan		REPLACE
+#almprop			almprop			REPLACE
+#almkota			almkota			REPLACE
+#almkec				almkec			REPLACE
+#almkel				almkel			REPLACE
+#almkdpos			almkdpos		REPLACE
+#almrt                          almrt                   REPLACE
+#almrw                          almrw                   REPLACE
+
+MAP(mtbt6)
+tbtkode			almkel 			REPLACE
+tbtket			lkel6			REPLACE
+
+MAP(mtbd6)
+tbdkode			almkec 			REPLACE
+tbdket			lkec6			REPLACE
+
+MAP(mtbl6)
+tblkode			almkota 		REPLACE
+tblket			lkota6			REPLACE
+
+MAP(mdtm6)
+dtmkode			almprop 		REPLACE
+dtmket			lpropinsi6		REPLACE
+
+MAP(malamattagih)
+lALMTAGIH6       almdata         REPLACE_IF ctambahbaru
+btmplg          almbukoto       REPLACE_IF ctambahbaru
+btmnobuk        almnobuk        REPLACE_IF ctambahbaru
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=almnama	DO_SKIP_IF cinikirim
+BEFORE_INPUT cur_field=almnama2  DO_SKIP_IF cinitagih
+AFTER_INPUT cur_field=almnama	DO_MAP SHOW malamattagih
+
+
+AFTER_INPUT cur_field=almnama DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+CALCS()
+cinitagihkirim		((g_scrnumstr=="714" &&  almnobuk==btmnobuk && (almdata=="ALMTAGIH" || almdata=="ALAMATKIRI")) || 
+			((g_scrnumstr=="710" || g_scrnumstr=="709") && ((almdata=="ALMTAGIH" && almnobuk==btmnobuk) || (almdata=="ALAMATKIRI" && almnobuk==btmnobuk) || almdata=="ALMSURVEY" || (almdata=="KERJA" && (almnobuk==btmnobuk || almnobuk=="")) || almdata=="PSMKTP" || almdata=="PSMTINGGAL")))
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_SELECT	cinitagihkirim
+SFL_TARGET
+almotodatidx     btmplg
+
+DBCALCS(djoinalmtagih6)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almdatbukidx   lALMTAGIH6 btmnobuk
+
+
+CALCS()
+cmasih7146		btmsts=="714" && g_scrnumstr=="714"
+ctagihbelum		djoinalmtagih6==0 && g_scrnumstr=="714"
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  	ctagihbelum
+  PMT_UPDALL_COND 	cmasih7146
+  PMT_DEL_COND  	c0

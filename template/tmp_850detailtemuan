@@ -1,0 +1,180 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------\|
+||t.NoUrt        : ___ 	      t.Tanggal : ___________			      ||
+||t.AccTemuan    : ________   t.Acc 	: ____       t.Spvfraud : ___________ ||
+||t.Ket		 : ________________________________________________________   ||
+|\----------------------------------------------------------------------------/|
+|/----------------------------------------------------------------------------\|
+||t.Nip          : __________  ________________________________ ___________   ||
+||t.DetTemu      : ________________________________________________________   ||
+||t.DetTemu1     : ________________________________________________________   ||
+||t.DetTemu2     : ________________________________________________________   ||
+||                                       ___				      ||	
+||t.t									      ||	
+|\----------------------------------------------------------------------------/|
+\------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt                PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 1
+svitgl1                 PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 2
+svitype2                PROTECT	                        INPUTRI 3 
+svistr3                 PROTECT	                        INPUTRI 4
+svistr5                 PROTECT	                        INPUTRI 5
+svinama                 PROTECT                         INPUTRI 6
+svistr2                 PROTECT SCROLL                  INPUTRI 7
+lnama4                  PROTECT SCROLL                  INPUTRI 7
+svistr4                 PROTECT SCROLL                  INPUTRI 8
+sviket                  TEXTAREA                        INPUTRI 9
+sviket2                 TEXTAREA                        INPUTRI 10
+sviket3                 TEXTAREA                        INPUTRI 11
+lOK                     ALLCAPS SCROLL                  INPUTRI 12
+
+CALCS()
+csvi1                   djoinsvi2 == 0
+csvi2                   djoinsvi2 == 1
+ctambah1                (g_curcmd == 1 && djoinsviket == 0) || (g_curcmd == 2 && svinourt == BLANKS)
+ctambah2                g_curcmd == 1 && djoinsviket == 1
+cisiauditjr		g_curcmd == 1 && g_usrkode == tlmkode
+/*cspvaudit   		g_curcmd == 2 && g_usrkode == tlmplg */
+cabkspv                 DO_LIB ap_jtpkr(l1str,lkunciad1,l10, &lhkerja);
+cabkspvawl              DO_LIB ap_jtpkr(l1str,lkunciad1,l3, &lhkerja1);
+cabkspvdokpst		DO_LIB ap_jtpkr(l1str,lkunciad1,l9, &lhkerjadokpst);
+cabkspvdoksmg		DO_LIB ap_jtpkr(l1str,lkunciad1,l21, &lhkerjadoksmg);
+cjrtambah       	g_curcmd == 1 && svinourt > 1
+
+DEFAULTS(tmptranst)
+svists                  INIT                    INPG
+IF csvi1 svitgl1        INIT_ADD        {g_tgltrn}
+IF csvi2 svitgl1        INIT_ADD        {ltglsvi}
+svistr2                 INIT            {g_usrkode}
+svistr4                 INIT            {g_grpnam}
+
+EDITS(tmptranst)
+e.Mandatory sviket     MANDATORY_IF cisiauditjr
+e.Mandatory sviket2    MANDATORY_IF cisiauditjr
+e.Mandatory sviket3    MANDATORY_IF cisiauditjr
+
+e.Validatesdm           svistr2         VALIDATE psmkodidx mpsmaudit1 0
+
+CALCS()
+/*csmg                  tlmplg == "1000021" || tlmplg == "1029872" || tlmplg == "1000174"*/
+curtod2                 FLD_TO_STRING(svinourt)
+/*cbelumacc		tlmplg != g_usrkode && sviket == BLANKS && sviket2 == BLANKS && sviket3 == BLANKS*/
+cno858                  tlmnobbm != "DOKUMEN CHECKING"
+cyes858                 tlmnobbm == "DOKUMEN CHECKING"
+c16                     14
+c32                     30
+cbelumY			svistr3 == "TACC" || svistr3 == BLANKS
+cdesk           	tlmdari == "DESK AUDIT" || tlmdari == "DESK FIN"
+cjalan          	tlmdari == "FIELD AUDIT" 
+cabkspv1        	DO_LIB ap_jtpkr(l1str,svitgl1,ldeskjalan, &lhkerjafraud)
+
+
+MAP(mpsmaudit1)
+psmkode                 svistr2         REPLACE
+psmnama                 lnama4          REPLACE
+curtod2                 lurtype         DO_CALC
+
+MAP(misiurut)
+cno1                    svinourt        DO_CALC_IF ctambah1
+curut                   svinourt        DO_CALC_IF ctambah2
+
+CALCS()
+cdjoinabkawl    	djoinabk == 1 && djoinsvi2 == 0 && tlmsts == "INPG"
+/*cdjoinabk1      	(djoinsvi1 == 1 && djoinabk == 1 && (~svistr2 == BLANKS || ~sviket != sviket || ~sviket2 != sviket2 || 
+			~sviket3 != sviket3) && tlmsts == "INPG") || svistr5 != ""*/
+/*cdjoinabkfr3    	tkdjwbstr1 == "" && (djoinabk == 0 || (djoinabk == 1 && lkuncian == "CLSD")) && tlmplg != "" && djoinsvi1 == 1 && 
+			lisiabk == 0 && tlmsts == "INPG"*/
+ctamdet1        	((g_grpnam == "AUDIT" || g_grpnam == "AUDITSPV" || g_grpnam == "AUDITTL" || g_grpnam == "DESK" || g_grpnam == "DOC" 
+			|| g_grpnam == "AUDITHEAD"
+                	|| g_grpnam == "AUDDVH" || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS") && (tlmsts == "OPEN" ||
+ 			tlmsts == "INPG"))
+                	/*&& g_usrkode == tlmkode */ && tlmplg != BLANKS && (tlmpst == "AUDJR" || tlmpst == "FINJR")
+/*cdet1           	(((tlmsts == "OPEN" && svitype2 == BLANKS &&  (g_grpnam == "AUDIT" || g_grpnam == "IT" || g_grpnam == "RI" 
+			|| g_grpnam == "RAS")) ||
+                	(tlmsts == "INPG" && (((tlmytppn == BLANKS || tlmytppn == "T") && g_grpnam == "AUDIT") || (g_grpnam == "AUDITHEAD" ||
+	 		g_grpnam == "AUDDVH" || g_grpnam == "AUDITSPV" ||g_grpnam == "AUDITTL" || g_grpnam == "DESK" || g_grpnam == "DOC" || 
+			g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "RAS")))) || g_usrkode != tlmkode) && tlmpst == "AUDJR"*/
+cdet1 
+  (
+    (tlmsts == "OPEN" && (tlmpst == "AUDJR" || tlmpst == "FINJR") && svitype2 == BLANKS && (g_grpnam == "AUDIT" || g_grpnam == "AUDITSPV" || g_grpnam == "AUDITTL" ||
+	g_grpnam == "DOC" || g_grpnam == "DESK"))
+    ||
+    (tlmsts == "INPG" && (g_grpnam == "AUDITSPV" || g_grpnam == "AUDITTL" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "RAS" || 
+	g_grpnam == "DOC" || g_grpnam == "DESK"))
+  )
+
+
+
+
+MAP(mudpabksm)
+gv_CLSD		abksts		REPLACE
+
+MAP(mupaddkspv)
+svitgl1         lkunciad1       REPLACE_IF cno858
+tlmtgl          lkunciad1       REPLACE_IF cyes858
+cabkspv         lhkerja         DO_CALC
+cabkspvawl	lhkerja1	DO_CALC_IF cbelumY
+cabkspvdokpst	lhkerjadokpst	DO_CALC
+cabkspvdoksmg	lhkerjadoksmg	DO_CALC
+
+/*MAP(maddabkspv3)
+lKUNCIABSEN     abkdata         REPLACE
+tlmnobuk        abknobuk        REPLACE
+gv_INPG         abksts          REPLACE
+l850            abkscr          REPLACE
+tlmplg          abkkym          REPLACE
+lhkerjadokpst   abktgl          REPLACE
+lhkerjadoksmg   abktgl          REPLACE_IF csmg
+lketspvres      abkkym2         REPLACE
+DEBUG   ldum    ldum            REPLACE*/
+
+
+MAP(mdeskJalan)
+c16             ldeskjalan      DO_CALC_IF cdesk
+c32             ldeskjalan      DO_CALC_IF cjalan
+cabkspv1        lhkerjafraud    DO_CALC
+
+MAP(mupdtlmms2)
+cBLANKS         tlmytppn        DO_CALC_IF cjrtambah
+
+HOOKS(tmptranst)
+BEFORE_INPUT  cur_field=sviket  	DO_MAP SHOW misiurut
+AFTER_INPUT  cur_field=sviket     DO_MAP SHOW mupaddkspv
+AFTER_INPUT  cur_field=sviket3    DO_MAP SHOW mupaddkspv
+AFTER_INPUT  cur_field=sviket     DO_MAP SHOW mdeskJalan
+AFTER_INPUT  cur_field=sviket3    DO_MAP SHOW mdeskJalan
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cnotvalid
+SFL_SORT_BY_FIELD svinourt
+SFL_SORT_UPDOWN DOWN 
+SFL_TARGET
+        svidatbuktyp   tlmdata tlmnobuk
+
+SFL_MAP
+tlmdata         svidata                 REPLACE
+tlmnobuk        svinobuk                REPLACE
+laudit11        svitype                 REPLACE
+
+SPCALCS(spdet1)
+        DO_LIB_IF cdjoinabkawl   ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk);
+	DO_LIB                   ap_dbclc(DNAME dupdtlmms2,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmms2);
+
+SPCALCS(spdet2)
+        DO_LIB		         ap_dbclc(DNAME dupdabk2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mudpabksm);
+	/*DO_LIB_IF cdjoinabk1   ap_dbclc(DNAME dupdabk9,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkhead);*/
+
+POSTING(tmptrans)
+  PST_ADDCMD      spdet1
+  PST_UPDCMD      spdet2
+
+PERMIT(tmptrans)
+PMT_ADD_COND    ctamdet1
+PMT_UPDALL_COND cdet1
+PMT_DEL_COND    c0
+

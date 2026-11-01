@@ -1,0 +1,78 @@
+LOCAL
+PGM_FIELDS
+	lkodecair	STRING		21
+
+IMAGE(tmptranst)
+/---------t-------------t-------t------------\
+|t.Header |i.Kode       |i.Thn  |t.PlafCair  |
+|_________|_____________|_______|_________.__|
+|---------.-------------.-------.------------|
+|____________________________________________|
+\--------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+rmdkode			NOCHANGE	INPUTRI		1
+rmdkode3		NOCHANGE	INPUTRI		2
+rmdbts1			NOCHANGE	INPUTRI		3
+rmdtotal1		NUMERIC		INPUTRI		4
+rmdgab			PROTECT		INPUTRI		5
+
+CALCS()
+cpf		rmdkode == "PF"
+cpc		rmdkode == "PC"
+
+DEFAULTS(tmptranst)
+rmdkode		DFALT_SCAN_BLANKS	PF ""
+					PC ""
+
+IF cpf		rmddata		INIT	PLAFONCAIR
+IF cpf		rmddata		INIT_UPDATE	PLAFONCAIR
+IF cpc		rmddata		INIT	PFCAIR2
+IF cpc		rmddata		INIT_UPDATE	PFCAIR2
+
+rmdbts1		DFALT_SCAN_BLANKS	2011 "Tahun Motor 2011" 
+					2012 "Tahun Motor 2012"
+					2013 "Tahun Motor 2013"
+					2014 "Tahun Motor 2014"
+rmdsts		INIT		INPG
+rmdsts		INIT_UPDATE	INPG
+lkodecair	INIT		KODECAIR
+
+EDITS(tmptranst)
+e.Mandatory rmdkode3 MANDATORY
+e.Mandatory rmdbts1 MANDATORY
+t.ValidateKodeCair rmdkode3 VALIDATE tbddatkodidx mtbdCair stbd {Pgv_dttabel} {Pgv_infokredit} {Plkodecair}
+
+MAP(mtbdCair)
+tbdkode		rmdkode3	REPLACE
+
+CALCS()
+crmdgab		STRIP(rmdkode) + STRIP(cabkode) + STRIP(rmdkode3)
+
+MAP(mgabungan)
+crmdgab		rmdgab		DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=rmdtotal1	DO_MAP SHOW mgabungan
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mgabungan
+
+CALCS()
+cplafoncair0		cabusaha == "FINCO"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(5)
+SFL_COND cplafoncair0
+
+SFL_TARGET
+	rmdstskodgab	gv_INPG lplafoncair cabkode
+
+SFL_MAP
+cabkode		rmdkode2	REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND cuserplacair
+PMT_UPDALL_COND cuserplacair
+PMT_DEL_COND cuserplacair

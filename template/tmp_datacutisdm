@@ -1,0 +1,47 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------\
+|i.JmlCuti ______  i.AmbCuti _____                                                                |
+|-----------t------------t------------t-----------------t-------------t------------t--------------|
+|  t.Nip    |t.Ket       | t.Tanggal  | t.Nobuk         | t.JnsCuti   |t.AwalCt5Th |t.AkhCt5Th    |
+\-----------.------------.------------.-----------------.-------------.------------.--------------/
+
+IMAGE(tmptrans)
+!___________|____________|____________|_________________|_____________|____________|______________|
+
+FIELDS(tmptranst)
+psijmlcuti	PROTECT SCROLL			INPUTRI 1
+lambcuti	PROTECT	SCROLL			INPUTRI 2
+
+FIELDS(tmptrans)
+psdpsmkode      PROTECT SCROLL             INPUTRI 4
+psdket          ALLCAPS SCROLL             INPUTRI 5
+psdtgl1         ALLCAPS NOLIMIT {DD-MM-YY} INPUTRI 6
+psdstr1         ALLCAPS SCROLL             INPUTRI 7
+psdstr2		ALLCAPS SCROLL		   INPUTRI 8
+ltglawl 	PROTECT NOLIMIT {DD-MM-YY} INPUTRI 9
+psdtgl2		PROTECT NOLIMIT {DD-MM-YY} INPUTRI 10
+
+EDITS(tmptrans)
+t.Validate	psdpsmkode	VALIDATE psikodidx mpsicuti 0 
+
+CALCS()
+cJumCti         (psikode == psdpsmkode && psdtype == lthbl && (psdket == "CUTI 1 THN" || psdket=="HUTANGCUTI")) 
+		|| (psdket == "CUTI 5 THN" && psdtgl2>=g_tgltrn)
+ctglawl		DO_LIB ap_tambl(psdtgl2,lmin60,&ltglawl);
+ctglawl1	ltglawl+1
+cketcuti5thn	psdket == "CUTI 5 THN"
+
+MAP(mpsicuti)
+psikode		psdpsmkode	REPLACE
+cBLANKS		ltglawl		DO_CALC
+ctglawl		ltglawl		DO_CALC_IF cketcuti5thn
+ctglawl1	ltglawl		DO_CALC_IF cketcuti5thn
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT cJumCti
+SFL_SORT_BY_FIELD psdnourt        
+SFL_LINES(15)
+SFL_TARGET
+psddatpsmkod    lDTCUTI psikode
+

@@ -1,0 +1,149 @@
+LOCAL
+PGM_FIELDS
+lnamauser	STRING		61
+lnamatgt		STRING		61
+ltkdstr1    STRING      21
+ltkdstr2    STRING      21
+lenterkrs   STRING      21
+lPIC1406    STRING      11
+lUBAH_M2WAM              STRING  21
+lUBAH_CREDITAM           STRING  21
+lUBAH_AMOPR              STRING  21
+lUBAH_ARAM              STRING  21
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+ /--------------------------------------------------\
+  t.Pilihan   	    : _____________
+  t.Cabang          : _____________
+  t.Tanggal   	    : _____________
+  t.NipPengoreksi   : _______ ____________________
+  t.UbhNipKe  	    : _______ ____________________
+  t.Alasan    	    : _____________________
+                      ______            
+ \--------------------------------------------------/
+\----------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktbrg         NOCHANGE        INPUTRI 			1
+aktcab          ALLCAPS         INPUTRI                         2
+aktcrttgl       PROTECT NOLIMIT {DD-MM-YY}      INPUTRI         3
+aktkode2        PROTECT        INPUTRI 			4
+lnamauser       PROTECT        	INPUTRI 			5
+aktlok          ALLCAPS         INPUTRI 			6
+lnamatgt        PROTECT        	INPUTRI 			7
+aktket          TEXTAREA        INPUTRI 			8
+lenterkrs       NOCHANGE        INPUTRI 			10
+
+DEFAULT(tmptranst)
+aktbrg         DFALT_SCAN      BLANKS
+                                UBAH_M2WAM
+                                UBAH_CREDITAM
+                                UBAH_AMOPR
+                                UBAH_ARAMZ1Z6
+aktcrttgl       INIT_ADD        {g_tgltrn}
+aktkode2        INIT_ADD        {g_usrkode}
+lenterkrs       INIT_LABEL      Enter
+lPIC1406        INIT            "PIC1406"
+lUBAH_M2WAM     INIT            "UBAH_M2WAM"
+lUBAH_CREDITAM  INIT            "UBAH_CREDITAM"
+lUBAH_AMOPR     INIT            "UBAH_AMOPR"
+lUBAH_ARAM      INIT            "UBAH_ARAMZ1Z6"
+
+
+
+EDITS(tmptranst)
+e.Validatecab      aktcab     VALIDATE    tbddtmstidx mtbdkode stbdLok {Pgv_dttabel} {PlSURVEY} {PlAREAFIXHARPAS} {Pmtsnoasal} {Pmtsnoasal} 
+
+MAP(mtbdkode)
+tbdkode		aktcab	REPLACE
+
+
+MAP(mjointkdubahnip)
+tkdstr1         ltkdstr1        REPLACE
+tkdstr2         ltkdstr2        REPLACE
+
+
+DBCALCS(djointkdubahnip)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      tkddatbukll     lPIC1406 mtsnobuk aktcab
+        DBC_MAP         mjointkdubahnip
+
+DBCALCS(djoinabkubahnip)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      abkdatbukidx   lKUNCIABSEN mtsnobuk     
+
+
+
+CALCS()
+cubahm2wam              aktbrg == lUBAH_M2WAM
+cubahcreditam           aktbrg == lUBAH_CREDITAM
+cubahamopr           aktbrg == lUBAH_AMOPR
+cubaharam           aktbrg == lUBAH_ARAM
+
+cjointkdubahnip djointkdubahnip==1
+cdjoinabkubahnip     djoinabkubahnip==1
+ccabangsama             (
+                          (abkcab==aktcab && abkkym2==lacc1406m2wam && aktbrg == lUBAH_M2WAM) 
+                          || 
+                          (abkcab==aktcab && abkkym2==lacc1406creditam  && aktbrg == lUBAH_CREDITAM)
+                          ||
+                          (abkcab==aktcab && abkkym2==lacc1406amopr  && aktbrg == lUBAH_AMOPR)
+                          ||
+                          (abkcab==aktcab && abkkym2==lacc1406aram  && aktbrg == lUBAH_ARAM)
+                        )
+cbukanpengoreksi        (djointkdubahnip==1 && 
+                        (ltkdstr1!=g_usrkode  && aktbrg == lUBAH_M2WAM) 
+                         || 
+                        (ltkdstr2!=g_usrkode && aktbrg == lUBAH_CREDITAM)
+                        || 
+                        (ltkdstr2!=g_usrkode && aktbrg == lUBAH_AMOPR)
+                        || 
+                        (ltkdstr2!=g_usrkode && aktbrg == lUBAH_ARAM)
+                        ) 
+
+
+MAP(mupdtkd)
+aktlok        tkdstr1         REPLACE_IF cubahm2wam
+aktlok         tkdstr2         REPLACE_IF cubahcreditam
+aktlok         tkdstr3         REPLACE_IF cubahamopr
+aktlok         tkdstr4         REPLACE_IF cubaharam
+
+
+MAP(mupdabk)  
+aktlok        abkkym         REPLACE_IF ccabangsama
+DEBUG   ldum    ldum            REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=aktlok      DO_SKIP_IF cbukanpengoreksi
+BEFORE_INPUT    cur_field=aktket      DO_SKIP_IF cbukanpengoreksi
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD aktprm
+SFL_LINES(1)
+SFL_TARGET
+        aktkodtypidx    mtsnobuk mtsdata mtsdari
+SFL_MAP
+mtsnobuk      aktkode         REPLACE
+mtsnobuk      aktnobuk        REPLACE
+mtsdata       aktdata         REPLACE
+mtsdari       akttype         REPLACE
+mtstgl        akttgl          REPLACE
+g_usrkode     aktcrtusr       REPLACE
+
+
+
+SPCALCS(saddtrans2g3)
+DO_LIB_IF cjointkdubahnip   ap_dbclc(DNAME dupdtkd,DCOMMAND UPDATE,DTARGET tkddatbukll   lPIC1406 mtsnobuk aktcab  ,DMAP mupdtkd);
+DO_LIB_IF cdjoinabkubahnip ap_dbclc(DNAME dupdabkmso,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN mtsnobuk,DMAP mupdabk);
+
+POSTING(tmptrans)
+        PST_ADDCMD saddtrans2g3
+
+PERMIT(tmptrans)
+PMT_UPDALL_COND	c0
+PMT_DEL_COND	c0
+

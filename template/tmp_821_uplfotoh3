@@ -1,0 +1,114 @@
+LOCAL
+PGM_FIELDS
+lUploadOKE      STRING          11
+
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload      : _____
+  t.TglFt       : ______________
+  t.Acc         : _____ ___
+  t.NipAcc      : ______________
+  t.AlsanTlk : _________________
+  t.Enter       : ____ 
+       ___________________
+  t.FotoYgUplHrsDrKmr
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      PROTECT         INPUTRI 1
+tkdtgl2         PROTECT         INPUTRI 2
+tkdjwbstr2         NOCHANGE        INPUTRI 3
+tkdnil2          PROTECT        INPUTRI 3
+tkdstr2         NOCHANGE        INPUTRI 4
+tkdket          TEXTAREA 3 ALLCAPS         INPUTRI 5
+lENTER          NOCHANGE        INPUTRI 6
+lUploadOKE      TOMBOL          INPUTRI 8
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr2      MANDATORY
+e.Mandatory     tkdket          MANDATORY_IF ctacc
+
+
+DEFAULTS(tmptranst)
+lUploadOKE      INIT            UPLOAD_OK
+tkdjwbstr2         DFALT_SCAN      ACC
+                                TACC
+tkdstr2         INIT_UPDATE     {g_usrkode}
+
+CALCS()
+cOKE                    "OK"
+cBTLH1EVENT	        djointkdfotoh3 == 1 /*&& (tlmdvs == "H1" || tlmdvs == "HMC") && ((tlmgrup == "BTL" && (tlmdari == "PPR" || tlmdari == "RSM" || tlmdari == "KVS_INS" || tlmdari == "PTH" || tlmdari == "PAP" || tlmdari == "PMR" || tlmdari == "SRE" || tlmdari == "PMR" || tlmdari == "JUMBA")) || (tlmgrup == "ATL" && (tlmdari == "ADS_FACEBOOK_LOKER" || tlmdari == "ADS_FACEBOOK_PROMO" || tlmdari == "SPANDUK_WARUNG" || tlmdari == "SPANDUK_RMH_SLS"|| tlmdari == "BANNER_POHON" || tlmdari == "STICKER"))) && tlmtgljtp <= g_tgltrn*/
+cuploadh3               (djoinbkm == 1 && lbkmsts != "CLSD" && lbkmsts != "VOID") || tkdjwbstr2 == "ACC"
+ctlmnobuk		tlmnobuk + "FT"
+cFOTO                   "FOTO"
+cket821FOTO             "REVIEW FOTO 821" 
+
+
+MAP(mupdtkdfth3)
+cOKE            tkdjwbstr1      DO_CALC
+g_usrkode       tkdsisstr       REPLACE
+g_tgltrn        tkdtgl2         REPLACE
+
+MAP(macc)
+cblanks         tkdket  DO_CALC_IF cacc
+
+MAP(maddabkfoto)
+gv_INPG         abksts          REPLACE_IF cjamactkrg19 
+gt_RINP         abksts          REPLACE_IF cjamactlbh19  
+lKUNCIABSEN     abkdata         REPLACE
+lnipdca        abkkym          REPLACE_IF cevent3 
+ldcactr        abkkym          REPLACE_IF cevent1
+ldcalap        abkkym          REPLACE_IF cevent2
+ctlmnobuk       abknobuk        DO_CALC
+cbesok          abktgl          DO_CALC_IF cjamactlbh19
+g_tgltrn        abktgl          REPLACE_IF cjamactkrg19
+cket821FOTO     abkkym2         DO_CALC
+c821            abkscr          DO_CALC
+cFOTO		abktype		DO_CALC
+DEBUG ldum ldum REPLACE
+
+SPCALCS(supdtkdH3)
+DO_LIB_IF cdjoinabkfoto3	ap_dbclc(DNAME dupdabkfoto25,DCOMMAND UPDATE_RANGE, DBC_TARGET abkdatbukidx lKUNCIABSEN lnobukfoto ,DMAP mupdabk);
+DO_LIB_IF csdhupload  ap_dbclc(DNAME daddabkfoto33,DCOMMAND ADD, DFILE abk, DMAP maddabkfoto);
+DO_LIB_IF csdhupload  ap_dbclc(DNAME dupdtkdH3, DCOMMAND UPDATE, DTARGET tkdotoidx tkdoto, DMAP mupdtkdfth3);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lUploadOKE    DO_SPCALCS supdtkdH3
+AFTER_INPUT     cur_field=tkdjwbstr2    DO_MAP SHOW macc
+BEFORE_INPUT     cur_field=tkdket       DO_SKIP_IF cacc
+
+MAP(mupdtkduplh3)
+g_fotodate1     tkdtgl       REPLACE
+gv_int1         tkdnil          REPLACE
+
+DBCALCS(dupdtkdfoth3)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdotoidx tkdoto
+        DBC_MAP         mupdtkduplh3
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_UPLFLD tlmnobuk lFOTOH3
+SFL_UPL_COND    cbiayahrsCLSD
+SFL_UPL_COND_MSG IF  cuploadh3      t.303/301 blm selesai atau sudah acc
+SFL_UPLFLD_DBCALCS dupdtkdfoth3
+SFL_COND        cBTLH1EVENT
+/* SFL_UPL_CAMERAONLY */
+SFL_TARGET
+        tkddatbukll   lFOTOH3  tlmnobuk

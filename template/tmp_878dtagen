@@ -1,0 +1,68 @@
+LOCAL
+PGM_FIELDS
+lkatagen	STRING	21
+lKATMITRAA	STRING	11
+lkat		INT2	2
+
+MAP(mjoinpsd)
+psdtot7		lkat	REPLACE
+
+DBCALCS(djoinpsd)
+        DBC_COMMAND	JOIN
+        DBC_TARGET	psddatpsmkod lKATMITRAA psmkode 
+	DBC_MAP		mjoinpsd
+
+IMAGE(tmptranst)
+/-------------------------------------\
+ /-----------------------------------\
+  t.NoKtp	: ___________________
+  t.NamaLengkap	: ___________________
+  t.NoTlp	: ___________________
+  t.Alamat	: ___________________
+  t.RtRw	: ___  ___
+  t.Kota	: ___________________
+  t.Kecamatan	: ___________________
+  t.Kelurahan	: ___________________
+  t.KategoriAgen: ___________________
+ \-----------------------------------/
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psmkode2	PROTECT		INPUTRI 1
+psmnama		PROTECT		INPUTRI 2
+psmkode		PROTECT		INPUTRI 3
+psmalamat	PROTECT		INPUTRI 4
+psmrt		PROTECT		INPUTRI 5
+psmrw		PROTECT		INPUTRI 6
+psmkota		PROTECT		INPUTRI 7
+psmkec		PROTECT		INPUTRI 8
+psmkel		PROTECT		INPUTRI 9
+lkatagen	PROTECT		INPUTRI	10
+
+CALCS()
+cBESAR		"BESAR"
+cSEDANG		"SEDANG"
+cKECIL		"KECIL"
+cbsr		lkat == 3
+csdg		lkat == 2
+ckcl		lkat == 1
+cdjoinpsd	djoinpsd == 1
+
+EDITS(tmptranst)
+e.Validate	psmkota		VALIDATE tblkodeidx mtbl 0
+
+MAP(mtbl)
+cBESAR		lkatagen	DO_CALC_IF cbsr
+cSEDANG		lkatagen	DO_CALC_IF csdg
+cKECIL		lkatagen	DO_CALC_IF ckcl
+lkat		lkat		REPLACE_IF cdjoinpsd
+
+DEFAULTS(tmptranst)
+lKATMITRAA	INIT		KATMITRA
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_TARGET	psmkod2stsid tkmbuk1

@@ -1,0 +1,91 @@
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.RekPanelisMgrUp __                              ||
+||t.Panelis        :___________ _____________       ||
+||t.Tgl            :_____________                   ||
+||spasi                                             ||
+||t.Analy          :________    t.Int : ______      ||
+||t.AchDrv         :________    t.Comm: ______      ||
+||t.CustServ       :________    t.Cont: ______      ||
+||t.RelBuild       :________    t.Decs: ______      ||
+||t.BusSens        :________    t.Lead: ______      ||
+||spasi                                             ||
+||t.Avg            :_______                         ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sgmurt    		PROTECT                	INPUTRI 1
+sgmstr1  		PROTECT SCROLL                  	INPUTRI 2
+lnamauser		PROTECT 		INPUTRI 3
+sgmtgl			PROTECT NOLIMIT {DD-MM-YY} 		INPUTRI 4
+
+sgmhrg1			NUMERIC			INPUTRI	5
+sgmhrg2			NUMERIC			INPUTRI	6
+sgmhrg3			NUMERIC			INPUTRI	7
+sgmhrg4			NUMERIC			INPUTRI	8
+sgmhrg5			NUMERIC			INPUTRI	9
+sgmhrg6			NUMERIC			INPUTRI	10
+sgmhrg7			NUMERIC			INPUTRI	11
+sgmhrg8			NUMERIC			INPUTRI	12
+sgmhrg9			NUMERIC			INPUTRI	13
+sgmhrg10		NUMERIC			INPUTRI	14
+
+sgmhrg11		PROTECT			INPUTRI 15
+
+DEFAULTS(tmptranst)
+sgmstr1			INIT_ADD	{g_usrkode}
+sgmtgl			INIT_ADD	{g_tgltrn}
+
+EDITS(tmptranst)
+t.Validate sgmstr1 VALIDATE psikodidx mpsipanel
+t.Mandatory sgmhrg1  	MANDATORY
+t.Mandatory sgmhrg2  	MANDATORY
+t.Mandatory sgmhrg3  	MANDATORY
+t.Mandatory sgmhrg4  	MANDATORY
+t.Mandatory sgmhrg5  	MANDATORY
+t.Mandatory sgmhrg6  	MANDATORY
+t.Mandatory sgmhrg7  	MANDATORY
+t.Mandatory sgmhrg8  	MANDATORY
+t.Mandatory sgmhrg9  	MANDATORY
+t.Mandatory sgmhrg10 	MANDATORY
+
+MAP(mpsipanel)
+psikode	sgmstr1	REPLACE
+psinama	lnamauser	REPLACE
+
+CALCS()
+cjoinsgm0		djoinsgmpanelmgr==0 && g_curcmd==1
+cjoinsgm1		djoinsgmpanelmgr==1 && g_curcmd==1
+ctbh1			lsgmurt+1
+cavgpanel		(sgmhrg1+sgmhrg2+sgmhrg3+sgmhrg4+sgmhrg5+sgmhrg6+sgmhrg7+sgmhrg8+sgmhrg9+sgmhrg10)/10
+
+MAP(mnourt)
+c1			sgmurt		DO_CALC_IF cjoinsgm0
+ctbh1			sgmurt		DO_CALC_IF cjoinsgm1
+
+MAP(mavg)
+cavgpanel		sgmhrg11	DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=sgmhrg1	DO_MAP SHOW mnourt
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW mavg
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_LINES(1)
+
+SFL_TARGET
+	sgmdabrplgtb   hrmdata hrmnobuk hrmnip1 lPANELMGR     
+
+
+SFL_MAP
+hrmdata         sgmdata         REPLACE
+hrmnobuk        sgmplg          REPLACE
+hrmnip1   	sgmbrg 		REPLACE
+lPANELMGR		sgmtbl		REPLACE
+
+

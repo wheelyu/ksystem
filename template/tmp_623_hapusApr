@@ -1,0 +1,37 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|t.HapusApproval                   |
+|-------------------------------t--|
+|_______________________________|  |
+\-------------------------------.--/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lhapusapr               NOCHANGE                INPUTRI         1
+
+DEFAULTS(tmptranst)
+lhapusapr       INIT    "Tekan ENTER untuk Melanjutkan"
+
+CALCS()
+ckondhpsapr     ppmstsapr == "TL" || ((ppmstsapr == "IN" || ppmstsapr == "OK") && (g_grpnam == "ADHSPV" || g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHHO" || g_grpnam == "FINBANKCO" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "AHASSHEAD" || g_grpnam == "AHASSINVSPV"))
+cjoinapr	djoinapr == 1
+
+MAP(mupdppmhpsapr)
+cBLANKS		ppmstsapr 	DO_CALC
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND ckondhpsapr
+SFL_TARGET
+        ppmotoidx	ppmoto
+
+SPCALCS(sptransdelapr)
+	DO_LIB ap_dbclc(DNAME dupdppmhpsapr,DCOMMAND UPDATE,DTARGET ppmotoidx ppmoto,DMAP mupdppmhpsapr);
+	DO_LIB_IF cjoinapr ap_dbclc(DNAME ddelapr,DCOMMAND DELETE_RANGE,DTARGET aprbukkeurt ppmnobuk);
+
+
+POSTING(tmptrans)
+	PST_COMMAND	sptransdelapr

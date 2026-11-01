@@ -1,0 +1,170 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------\
+|_                                                    |
+|_/------------------------------------------------\_ |
+| | t.NamaAkun      : __________________           |  |
+| | t.InpLink       : __________________           |  |
+| |                   ______                       |  |
+| \------------------------------------------------/  |
+
+| /------------------------------------------------\  |
+|   t.FotoBuktiUploadSos                              |
+| \------------------------------------------------/  |
+| /------------------------------------------------\  |
+|   t.StsUpl        : _____  t.TglUpl : ________      |
+| \------------------------------------------------/  |
+| /------------s.UPLOAD----------------------------\  |
+| |                                                |  |
+| |                                                |  |
+| |                                                |  |
+| \------------------------------------------------/  |
+
+| /------------------------------------------------\  |
+| | t.JmlLike       : _________                    |  |
+| | t.JmlKom        : _________                    |  |
+| | t.JmlShare      : _________                    |  |
+| | t.JmlEngTot     : _________                    |  |
+| | t.JmlReach      : _________                    |  |
+| | t.JmlImp        : _________                    |  |
+| |                   ______                       |  |
+| \------------------------------------------------/  |
+
+| /------------------------------------------------\  |
+|   t.FotoBuktiEngRate                                |
+| \------------------------------------------------/  |
+| /------------------------------------------------\  |
+|   t.StsUpl         : _____  t.TglUpl : ________     |
+| \------------------------------------------------/  |
+| /--------------s.UPLOAD2-------------------------\  |
+| |                                                |  |
+| |                                                |  |
+| |                                                |  |
+| \------------------------------------------------/  |
+|                                                     |
+\-----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlddata         PROTECT QPROTECT UNSEEN   NONE
+tldnobuk        PROTECT QPROTECT UNSEEN   NONE
+tldnourt        PROTECT QPROTECT UNSEEN   NONE
+tldket2         NONE         	INPUTRI 1       /* NamaAkun */
+lLinkDetail     NONE            INPUTRI 2       /* Input Link */
+lENTER          NOCHANGE        INPUTRI 3
+tldjasbrg       PROTECT                         /* StatusUpl1 */
+tldtglfak       PROTECT NOCHANGE {DD-MM-YY}     /* TanggalUpl1 */
+tldjml          NUMERIC         INPUTRI ZERO 4       /* JumlahLike */
+tldhrg          NUMERIC         INPUTRI ZERO 5       /* JumlahKomen */
+tldsubtot       NUMERIC         INPUTRI ZERO 6       /* JumlahShare */
+tldperdis       NOCHANGE NOCHANGE        INPUTRI ZERO 7       /* JumlahEngagementTotal */
+tldtotdis       NUMERIC         INPUTRI ZERO 8       /* JumlahReach */
+tldsatbsr       NUMERIC         INPUTRI ZERO 9       /* JumlahImpression */
+lENTER          NOCHANGE        INPUTRI 10
+tldtydis        PROTECT                         /* StatusUpl2 */
+tldtgl2         PROTECT NOCHANGE {DD-MM-YY}     /* TanggalUpl2 */
+
+DEFAULTS(tmptranst)
+tldtgl3         INIT_ADD        {g_tgltrn}
+
+CALCS()
+cbkntik		tlmgrup2 != "TIKTOKSIPEDE"
+
+EDITS(tmptranst)
+e.Mandatory     lLinkDetail     MANDATORY_IF    cOPEN
+e.Mandatory     tldjml          MAND_ZERO_PLUS
+e.Mandatory     tldhrg          MAND_ZERO_PLUS
+e.Mandatory     tldsubtot       MAND_ZERO_PLUS
+e.Mandatory     tldtotdis       MAND_ZERO_PLUS
+e.Mandatory     tldsatbsr       MAND_ZERO_PLUS
+e.Validate      tldnourt        VALIDATE_IF cjkkos ketbukurtidx mjoinketnourt {Ptlddata} {Ptldnobuk}
+
+MAP(mjoinketnourt)
+cBLANKS         lLinkDetail     DO_CALC
+ketisi2         lLinkDetail     REPLACE
+
+/*
+CALCS()
+ctldstr1isi     tldstr1 != BLANKS
+ctldstr2isi     tldstr2 != BLANKS
+ctldstr3isi     tldstr3 != BLANKS
+ctldstr4isi     tldstr4 != BLANKS
+ctldstr5isi     tldstr5 != BLANKS
+
+MAP(mtldstr)
+tldstr1         tldjml          REPLACE_IF ctldstr1isi
+tldstr2         tldhrg          REPLACE_IF ctldstr2isi
+tldstr3         tldsubtot       REPLACE_IF ctldstr3isi
+tldstr4         tldtotdis       REPLACE_IF ctldstr4isi
+tldstr5         tldsatbsr       REPLACE_IF ctldstr5isi
+*/
+
+MAP(mjoinnourut)
+csatu           tldnourt        DO_CALC_IF cjoinurut0
+ctam1           tldnourt        DO_CALC_IF cjoinurut1
+
+MAP(mNamaAkun)
+lnamaakun       tldket2         REPLACE_IF cdjointldket
+
+MAP(mpanjangsosmed)
+cpnjgface       lhslpjg         DO_CALC_IF cjkface
+cpnjginst       lhslpjg         DO_CALC_IF cjkinst
+cpnjgtik        lhslpjg         DO_CALC_IF cjktik
+
+
+MAP(mblank)
+cBLANKS         lLinkDetail     DO_CALC_IF ctambah
+
+HOOKS(transt)
+BEFORE_INPUT    cur_field=lLinkDetail   DO_MAP SHOW mblank
+BEFORE_INPUT    cur_field=lLinkDetail   DO_MAP SHOW mNamaAkun
+BEFORE_INPUT	cur_field=tldket2	DO_SKIP_IF cbkntik
+BEFORE_INPUT    cur_field=lLinkDetail   DO_SKIP_IF cINPG
+BEFORE_INPUT    cur_field=tldjml        DO_SKIP_IF cbknINPG
+BEFORE_INPUT    cur_field=tldhrg        DO_SKIP_IF cbknINPG
+BEFORE_INPUT    cur_field=tldsubtot     DO_SKIP_IF cbknINPG
+BEFORE_INPUT    cur_field=tldperdis     DO_SKIP_IF cbknINPG
+BEFORE_INPUT    cur_field=tldtotdis     DO_SKIP_IF cbknINPG
+BEFORE_INPUT    cur_field=tldsatbsr     DO_SKIP_IF cbknINPG
+
+BEFORE_INPUT    cur_field=tldjml        DO_SKIP_IF cskipintikwa
+BEFORE_INPUT    cur_field=tldhrg        DO_SKIP_IF cskipintikwa
+BEFORE_INPUT    cur_field=tldsubtot     DO_SKIP_IF cskipintikwa
+BEFORE_INPUT    cur_field=tldperdis     DO_SKIP_IF cskipintikwa
+BEFORE_INPUT    cur_field=tldtotdis     DO_SKIP_IF cskipintikwa
+BEFORE_INPUT    cur_field=tldsatbsr     DO_SKIP_IF cskipintikwa
+
+BEFORE_INPUT    cur_field=tldperdis     DO_MAP SHOW mhasileng
+AFTER_INPUT     cur_field=tldnourt      DO_MAP SHOW mjoinnourut
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mhasileng
+AFTER_INPUT     cur_field=lLinkDetail    DO_MAP SHOW mpanjangsosmed
+AFTER_INPUT     cur_field=lLinkDetail   DO_MAP SHOW
+                                        IF cpanjangsama mdum
+                                        ELSE HKCURSOR STAY HKMSG h.Harus Isi LINK SOSMED
+/*
+AFTER_INPUT     cur_field=tldjml        DO_MAP SHOW mtldstr
+AFTER_INPUT     cur_field=tldhrg        DO_MAP SHOW mtldstr
+AFTER_INPUT     cur_field=tldsubtot     DO_MAP SHOW mtldstr
+AFTER_INPUT     cur_field=tldtotdis     DO_MAP SHOW mtldstr
+AFTER_INPUT     cur_field=tldsatbsr     DO_MAP SHOW mtldstr
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND    cselainlvtt
+SFL_TITLE(tmptranst)
+SFL_UPL_COND chrsisi
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DIRFLD2 tlmtgl
+SFL_UPLFLD  tldnobuk tldoto 
+SFL_UPLFLD2 tldoto tldnobuk /*tldnobuk tldnourt*/
+SFL_UPLFLD_DBCALCS dUpdateStsUpl1
+SFL_UPLFLD2_DBCALCS dUpdateStsUpl2
+SFL_UPL_DELCOND ctdkclsd
+/*SFL_UPL_DELCOND c0  */
+SFL_TARGET
+        tldbukurtidx   tlmnobuk
+SFL_MAP
+tlmdata         tlddata  REPLACE
+tlmnobuk        tldnobuk REPLACE
+

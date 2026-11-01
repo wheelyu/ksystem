@@ -1,0 +1,126 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|i.uplktpsdm                                                	 			  |                          
+|/--s.UPLOAD----------------------\/-----------------------------------------------------\|
+||                                ||i.Tgl     	 : __________  				 ||
+||                                ||t.Ktp     	 : _____________________  		 ||
+||                                ||t.NamaDiKTP  : ____________________________________  ||
+||                                ||t.StsNikah   : ____________  			 ||
+||                                ||t.JmlAnak    : ___  				 ||
+||                                ||t.Hp         : _________________  			 ||
+||                                ||t.NoWa       : _________________  			 ||
+||                                ||t.TglLahir   : ____________  			 ||
+||                                ||i.Nippic  	 : __________  				 ||
+||                                ||i.NipUpl  	 : __________  				 ||
+||                                ||t.OkUp    	 : __________  				 ||
+||				  ||t.AccPic  	 : __________  	___			 ||
+|\--------------------------------/|			    	  			 ||
+| 				   |			    	 			 ||
+| 				   |			    				 ||
+|                                  |               	    		   		 ||
+|                                  | 		    _________  _________    		 ||
+|                    		   |			    				 ||
+| 				   |			    				 ||
+|                                  | 			    				 ||
+|                                  \-----------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1  	PROTECT {DD-MM-YY}	INPUTRI 1
+psdstr1         DIGITS 	                INPUTRI 2
+psdket          ALLCAPS                 INPUTRI 3
+psdstr2         ALLCAPS SCROLL          INPUTRI 4
+psdstr3         DIGITS                  INPUTRI 5
+psdstr4         ALLCAPS SCROLL          INPUTRI 6
+psdstr5         ALLCAPS SCROLL          INPUTRI 7
+psdtgl2         NONE {DD-MM-YY} NOLIMIT INPUTRI 8
+psdtype2        PROTECT SCROLL          INPUTRI 9
+psdtype3        PROTECT SCROLL          INPUTRI 10
+psdtype         PROTECT SCROLL          INPUTRI 11
+psdket2         PROTECT SCROLL          INPUTRI 12
+lenter          NOCHANGE SCROLL         INPUTRI 13
+luploadtacc1	TOMBOL			INPUTRI 14
+luploadacc1	TOMBOL			INPUTRI 15
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdtgl1		INIT_UPDATE	{g_tgltrn}
+luploadtacc1	INIT		TACC PIC
+luploadacc1	INIT		ACC PIC
+l_count1	INIT		1
+psdstr2      	DFALT_SCAN_BLANKS          BELUMKAWIN "Belum Kawin"
+                                        KAWIN    "Kawin"
+                                        DUDA     "Duda"
+                                        JANDA    "Janda"
+
+CALCS()
+cacc1		"ACC"
+ctacc1		"TACC"
+
+MAP(mupdktpsdm4)
+ctacc1		psdket2		DO_CALC
+cblanks		psdtype		DO_CALC
+g_usrkode	psdtype2	REPLACE
+
+MAP(mupdktpsdm5)
+cacc1		psdket2		DO_CALC
+g_usrkode	psdtype2	REPLACE
+
+MAP(mupdpsdktpsdm21)
+g_tgltrn	psdtgl1		REPLACE
+cOK  		psdtype		DO_CALC
+g_usrkode	psdtype3	REPLACE
+
+DBCALCS(dupdpsdktpsdm21)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psdprmidx	psdprm
+	DBC_MAP		mupdpsdktpsdm21
+
+SPCALCS(supdpsd4)
+	DO_LIB_IF cadafoto1a ap_dbclc(DNAME dupdpsdktpsdm4,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm4);
+
+SPCALCS(supdpsd5)
+	DO_LIB_IF cadafoto1a ap_dbclc(DNAME dupdpsdktpsdm5,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdktpsdm5);
+
+CALCS()
+cktp            lpanjangktp == 16
+cpjgktp         DO_LIB ap_strln(psdstr1,&lpanjangktp);
+
+MAP(mcaripjgktp)
+cpjgktp               lpanjangktp             DO_CALC
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadtacc1  DO_SPCALCS supdpsd4
+CLICKED         cur_field=luploadacc1   DO_SPCALCS supdpsd5
+AFTER_INPUT     cur_field=psdstr1        DO_MAP SHOW mcaripjgktp
+AFTER_INPUT     cur_field=psdstr1        DO_MAP SHOW
+                IF cktp mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKTP16
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cktp mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKTP16
+
+CALCS()
+caccblanks	psdtype2 == BLANKS || g_usrkode=="2221048" 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_DEL_COND caccblanks
+SFL_UPLFLD  lUPLKTP166 psdpsmkode
+SFL_UPLFLD_DBCALCS dupdpsdktpsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+	psddatpsmkod  hrmdata hrmnobuk lUPLKTP166
+
+SFL_MAP
+hrmdata    		psddata		REPLACE
+lUPLKTP166		psdkode		REPLACE
+hrmnobuk  		psdpsmkode	REPLACE
+
+

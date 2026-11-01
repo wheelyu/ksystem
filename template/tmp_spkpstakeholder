@@ -1,0 +1,52 @@
+IMAGE(tmptranst)
+/-----------------t-----------t----------------t----------t---------------t-------------\
+| t.Nobuk         | t.Nip     | t.Nama         | t.Cabang | t.Divisi      | t.Jabatan   | 
+\-----------------.-----------.----------------.----------.---------------.-------------/
+
+IMAGE(tmptrans)
+|_________________|___________|________________|__________|_______________|_____________|
+
+FIELD(tmptrans)
+tldnobuk        PROTECT                 INPUTRI         1
+tldplg          ALLCAPS                 INPUTRI         2
+lsdmtr          PROTECT                 INPUTRI         3
+lcabtr          PROTECT                 INPUTRI         3
+ldvstr          PROTECT                 INPUTRI         4
+ljabtr          PROTECT                 INPUTRI         5
+
+EDITS(tmptrans)
+e.Mandatory     tldplg        MANDATORY
+e.Validate      tldplg        VALIDATE psikodidx mpsitld
+
+MAP(mpsitld)
+psinama         lsdmtr          REPLACE
+psidvs		ldvstr		REPLACE
+psijabatan	ljabtr		REPLACE
+psicabskr	lcabtr		REPLACE
+
+DBCALCS(djointldstknip)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstskodbrg tlmdata gv_OPEN tldplg lSPKPROJECT lSTAKEHOLDER tlmnobuk
+
+CALCS()
+cstk0		djointldstknip == 0
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW
+		IF cstk0 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.StkSudahAda
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(6)
+SFL_TARGET
+	tldbukbrglok  tlmnobuk lSPKPROJECT lSTAKEHOLDER
+
+SFL_MAP
+tlmdata		tlddata		REPLACE
+lSPKPROJECT	tldbrg		REPLACE
+lSTAKEHOLDER	tldlok		REPLACE
+tlmnobuk        tldnobuk 	REPLACE
+tlmnobuk	tldukrwrn	REPLACE
+gv_OPEN		tldsts		REPLACE

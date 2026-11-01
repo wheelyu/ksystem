@@ -1,0 +1,65 @@
+LOCAL
+PGM_FIELDS
+lyes		STRING		5
+lfotodokp	STRING		11
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}   
+/----------------------------------\
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!               
+| \-------------------------------/|
+| /-------------------------------\|
+| |i.Ket    : ___________________ !|
+| |t.UplodOk: _____               ||
+| |t.Wajib  : _______             ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        svinama                  PROTECT                 INPUTRI         1
+	svistr1			PROTECT		INPUTRI 2
+	svists			PROTECT		INPUTRI 3
+
+DEFAULTS(tmptranst)
+lyes		INIT		"OK"
+lfotodokp	INIT		"FOTODOKP"
+
+
+MAP(mupdsviftmand)
+lyes	svistr1		REPLACE
+
+DBCALCS(dbftmand)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmand
+
+CALCS()
+chanyasdvy	(btmflag1 == "SDVY" && svists != "OPEN" && svitype != "FOTORUMAH" && svitype != "FOTOKRY" && svitype != "FOTOCEKRMH") || btmflag1 != "SDVY" && svitype != "FOTORUMAH" && svitype != "FOTOKRY" && svitype != "FOTOCEKRMH"
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftmand
+SFL_SELECT chanyasdvy
+SFL_UPLFLD btmnobuk svikode
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOSVY btmnobuk lfotodokp
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

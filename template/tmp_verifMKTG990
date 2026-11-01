@@ -1,0 +1,132 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.KonsDeal   : ___                    ||
+||t.Sales      : __________             ||
+||t.Nama       : _____________________  ||
+||t.ProgKlik   : ___ __________________ ||
+||spasi                                 ||
+|\--------------------------------------/|
+|/--------s.UPLOAD----------------------\|
+||                                   	||
+||                                   	||
+||                                   	||
+||                                   	||
+||                                   	||
+||                                   	||
+||                                      || 
+||                                      ||
+|\--------------------------------------/|
+|/--------------------------------------\|
+||t.Ket       _______________________   ||
+||t.Tgl       __________                ||
+||t.UplOK     ___                       ||
+||t.Sesuai    ___                       ||
+|\--------------------------------------/|
+\----------------------------------------/
+ 
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjenis	ALLCAPS NOCHANGE INPUTRI 1
+tkdstr1		ALLCAPS		 INPUTRI 2
+lnamasales	PROTECT		 INPUTRI 3
+tkdnil2		ALLCAPS	NOCHANGE INPUTRI 4
+lprogklik	PROTECT		 INPUTRI 5
+tkdket		PROTECT		 INPUTRI 6
+tkdtgl		PROTECT		 INPUTRI 7
+tkdstr2		PROTECT		 INPUTRI 8
+tkdjwbstr1	ALLCAPS NOCHANGE INPUTRI 9
+
+DEFAULTS(tmptranst)
+tkdjenis	DFALT_SCAN      BLANKS
+				Y
+				T
+
+tkdjwbstr1      DFALT_SCAN	BLANKS 
+			        Y
+                                T
+
+tkdnil2		DFALT_SCAN_BLANKS	1 "POT BUNGA"
+					2 "POT DENDA"
+					3 "ALL"
+
+CALCS()
+cjikadeal	tkdjenis=="Y"
+cpotbunga       "POT BUNGA"
+cpotdenda       "POT DENDA"
+call            "ALL"
+cprogklik1      tkdnil2 == 1
+cprogklik2      tkdnil2 == 2
+cprogklik3      tkdnil2 == 3
+cblmupl		tkdstr2==BLANKS
+csdhupl		tkdstr2!=BLANKS
+
+EDITS(tmptranst)
+e.Mandatory tkdjenis	MANDATORY
+e.Mandatory tkdstr1	MANDATORY_IF cjikadeal
+e.Mandatory tkdnil2	MANDATORY_IF cjikadeal
+e.Mandatory tkdjwbstr1	MANDATORY_IF csdhupl
+e.Validate tkdstr1 VALIDATE psikodidx  mpsi3 0
+
+MAP(mpsi3)
+psikode		tkdstr1		REPLACE
+psinama		lnamasales 	REPLACE
+cpotbunga	lprogklik	DO_CALC_IF cprogklik1
+cpotdenda	lprogklik	DO_CALC_IF cprogklik2
+call		lprogklik	DO_CALC_IF cprogklik3
+
+CALCS()
+cblmok		0
+cOK		"OK"
+ctdeal		tkdjenis=="T"
+cuplbkti	"BUKTI KONSUMEN"
+ctkdnil		tkdnil+1
+
+MAP(mupdbukti)
+g_tgltrn	tkdtgl		REPLACE
+cOK		tkdstr2		DO_CALC
+cuplbkti	tkdket		DO_CALC
+cBLANKS		tkdjwbstr1	DO_CALC
+ctkdnil		tkdnil		DO_CALC
+
+DBCALCS(dupdtkdbukti)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx   tkdprm
+	DBC_MAP		mupdbukti
+
+CALCS()
+cbukanspv	g_grpnam!="IT" && g_grpnam!="DIGMKTHEAD" && g_grpnam!="DIGMKTDVH" && g_grpnam!="HMCSPV" && g_grpnam!="RI" && g_grpnam!="KLIKNSSHMCM2WHEAD"
+caddupl		tkmstsapr=="" && djointkdupl==0 && djoincall==1 && (ljdpkcall=="Y" || ljdpkcall=="YA") && tkmsts!="CLSD" && tkmsts!="CLS1"
+cupdupl 	tkmstsapr=="" && djointkdupl==1 && (djoincall==1 && ljdpkcall=="Y" || ljdpkcall=="YA") && tkmsts!="CLSD" && tkmsts!="CLS1"
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdstr1	DO_SKIP_IF ctdeal
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF ctdeal
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF ctdeal
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF cblmupl
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_SKIP_IF cbukanspv
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdtkdbukti
+SFL_UPL_COND	cupdupl
+SFL_UPLFLD tkmnobuk lBUKTI990
+SFL_UPL_DIRFLD	tkmtgl
+SFL_UPL_DELCOND cblmok
+
+SFL_TARGET
+        tkddatbukll lBUKTI990 tkmnobuk tkmnobuk2
+SFL_MAP
+lBUKTI990       tkddata         REPLACE
+tkmnobuk        tkdnobuk        REPLACE
+tkmnobuk2       tkdnoll         REPLACE
+gv_INPG         tkdsts          REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND    caddupl
+PMT_UPDALL_COND cupdupl
+PMT_ADD_MSG 	t.isi3d.hasilfucall
+PMT_DEL_COND    c0
+

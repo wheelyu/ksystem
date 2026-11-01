@@ -1,0 +1,121 @@
+IMAGE(tmptranst) 
+/--------------------------------------\
+|/--------s.UPLOAD--------------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+|/------------------------------------\|
+||i.Ket       : ______________________||
+!!t.Lat       : ___.__________________||
+!!t.Lon       : ___.__________________||
+||t.HasilVerif: ____________   __     ||
+||              ______________________||
+||t.NipVerif  : ________  ____________||
+||t.TglVer    : ___________           ||
+||t.JamVerif  : ______                ||
+||_____                              _||
+|\------------------------------------/|
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode                 PROTECT                 INPUTRI         1
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         6
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         7
+svistr10                NOCHANGE                INPUTRI         8
+svidf4                  PROTECT                 INPUTRI         9
+svistr9                 ALLCAPS                 INPUTRI         9
+svistr8                 PROTECT                 INPUTRI         10
+lnipver                 PROTECT                 INPUTRI         11
+ltglverif               PROTECT {DD-MM-YYYY}            INPUTRI         13
+ljamverif               PROTECT                 INPUTRI         14
+ltombolsvi              TOMBOL                  INPUTRI         15
+svinobuk                PROTECT UNSEEN          INPUTRI         15
+
+DEFAULTS(tmptranst)
+svistr10        DFALT_SCAN BLANKS
+                                SESUAI
+                                TIDAK
+svistr9         DFALT_SCAN BLANKS
+                                EDITAN/PALSU
+                                BURAM/TIDAKTERBACA
+                                TIDAKSESUAI
+
+ltombolsvi      INIT    |
+
+EDITS(tmptranst)
+e.Mandatory     svistr10         MANDATORY
+e.Mandatory     svistr9 MANDATORY_IF cfototdksesuai
+e.Validate      svinobuk        VALIDATE btmbukidx msvi5dx
+e.Validate      svistr8         VALIDATE psikodidx mpsi5dx
+
+MAP(mpsi5dx)
+psikode         svistr8         REPLACE
+psinama         lnipver         REPLACE
+
+MAP(msvi5dx)
+cblanks         ljamfoto714     DO_CALC
+cblanks         ljamverif       DO_CALC
+svidf8          ljamfoto714     REPLACE
+svidf5          ljamverif       REPLACE
+svistr7         ltglverif       REPLACE
+
+MAP(misitanggalverif5dx)
+g_tgltrn        svistr7         REPLACE
+ljamskr         svidf5          REPLACE
+g_usrkode       svistr8         REPLACE
+cBLANKS         svistr9         DO_CALC_IF cfotosesuai
+cBLANKS         svistr31        DO_CALC_IF cfotosesuai
+cY              svistr31        DO_CALC_IF cfototdksesuai
+
+CALCS()
+cbisakosongx    g_grpnam == "TDK" && svistr10==BLANKS && (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ANSYSUAT" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV")
+cfotocekktp     svikode == "CEKKERJA"
+
+MAP(mupdsvifotookx)
+cBLANKS         svistr31  DO_CALC
+
+SPCALCS(supdsvix)
+DO_LIB_IF cbisakosongx  ap_dbclc(DNAME dupdsviftookx,DCOMMAND UPDATE,DTARGET sviotoidx   svioto,DMAP mupdsvifotookx);
+
+HOOKS(tmptranst)
+AFTER_INPUT 	cur_field=svistr10  	DO_MAP SHOW misitanggalverif5dx
+BEFORE_INPUT    cur_field=svistr9       DO_SKIP_IF cfotosesuai
+
+CLICKED         cur_field=ltombolsvi    DO_SPCALCS supdsvix
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_COND        chanyaboleh
+SFL_SELECT      cfotocekktp    
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svikode
+SFL_UPLREADONLY            
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk lcekkerjad
+   
+SPCALCS(spcektmpkerja)     
+DO_LIB ap_dbclc(DNAME dmapcekberkaskrj,DCOMMAND MAPMAP,DMAP mmapkunci);
+DO_LIB_IF cfototdksesuai ap_dbclc(DNAME dupdsvisendirikrj,DCOMMAND UPDATE,DTARGET sviotoidx   svioto,DMAP mupdsvisendiri);
+DO_LIB ap_dbclc(DNAME dupdabkam1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN svinobuk,DMAP mupdabkam);
+DO_LIB_IF ctolakberkascms ap_dbclc(DNAME daddabkfoto714cms1, DCOMMAND ADD, DFILE abk, DMAP maddabkfoto714cms);
+DO_LIB_IF ctolakberkascmo ap_dbclc(DNAME daddabkfoto714cmo1, DCOMMAND ADD, DFILE abk, DMAP maddabkfoto714cmo);
+DO_LIB_IF ctolakberkaspicmkt ap_dbclc(DNAME daddabkfoto714picmkt1, DCOMMAND ADD, DFILE abk, DMAP maddabkfoto714picmkt);
+dscansvifotopk
+DO_LIB_IF cfotosdhsesuai ap_dbclc(DNAME mupdmntberkas1,DCOMMAND UPDATE_RANGE,DBC_TARGET  mntdatkodtgl   lBRKS btmnobuk btmtgl,DBC_MAP mupdmntbrks);
+DO_LIB_IF cfotosdhsesuai ap_dbclc(DNAME daddabkcms1, DCOMMAND ADD, DFILE abk, DMAP maddabkcms);
+DO_LIB_IF cpkmenjadibatal ap_dbclc(DNAME dupdbtmbatal1,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmbatal);
+DO_LIB_IF cpkmenjadibatal ap_dbclc(DNAME dupdabk1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN svinobuk,DMAP mupdabkbtl);
+DO_LIB_IF cpkmenjadibatal ap_dbclc(DNAME dupdabkcms1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lkunciabsencms,DMAP mupdabkbtl);
+
+POSTING(tmptrans)
+        PST_UPDCMD spcektmpkerja
+

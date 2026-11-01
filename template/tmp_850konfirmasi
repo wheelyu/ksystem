@@ -1,0 +1,126 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|/----------------------------------------------------------\|
+|| t.NoUrt         : ___                                    ||
+|| t.TACC	   : ___				    ||
+|| t.Ket	   : _________________________________	    ||
+|\----------------------------------------------------------/|
+|/----------------------------------------------------------\|
+|| t.TglKonfirm    : ___________   			    ||
+|| t.Nip           : ________ _________________________	    ||
+|| t.TipeSDM       : ____________                           ||
+|| t.KetSdm        : __________________			    ||
+|| t.Punishment    : __________________			    ||
+|| t.Punishment2   : __________________			    ||
+|| t.DetVerif      : __________________________________     ||
+||		     		_____			    ||	
+|\----------------------------------------------------------/|
+\------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akturt               	PROTECT  	        INPUTRI 3
+aktdk                   PROTECT		                INPUTRI 1
+aktcab                  PROTECT                         INPUTRI 2
+akttgl                  NONE    NOLIMIT {DD-MM-YY}      INPUTRI 4
+aktkode2                ALLCAPS                         INPUTRI 5
+lnamasdm		PROTECT	SCROLL			INPUTRI 5
+aktbrg                 	PROTECT                  	INPUTRI 6
+aktlok			ALLCAPS SCROLL			INPUTRI 7
+aktcrtusr	 	ALLCAPS SCROLL			INPUTRI 8
+aktbukoto		ALLCAPS	SCROLL			INPUTRI 9
+aktket			TEXTAREA			INPUTRI 10
+lOK			ALLCAPS SCROLL			INPUTRI 11
+
+DEFAULTS(tmptranst)
+lOK			INIT			OK
+aktdk			DFALT_SCAN_BLANKS	Y "ACC"
+						T "TACC"
+
+EDITS(tmptranst)
+e.Mandatory	akttgl		MANDATORY
+e.Mandatory	aktbrg		MANDATORY
+e.Mandatory	aktkode2	MANDATORY
+t.Validatepsi    aktkode2      VALIDATE psikodidx mpsireg 0
+t.ValidatePart   aktkode2      VALIDATE psikodidx mpsipart 0
+
+CALCS()
+ctambahakt              g_curcmd == 1 && djoinadaverif == 0
+ctambahakt2             g_curcmd == 1 && djoinadaverif == 1
+cbuknsdm (
+   (aktbrg == "LATIHAN"      && (ljnsdm == "MAGANG_UMR" || ljnsdm == "MAGANG_UANG_SAKU" || ljnsdm == "PELATIHAN"))
+|| (aktbrg == "REGULER"      && (ljnsdm == "REGULER" || ljnsdm == "KONTRAK" || ljnsdm == "PELATIHAN6BLN"))
+|| (aktbrg == "PARTNERSHIP"  && (ljnsdm == "PARTNERSHIP" || lpsinpwp == "PARTNERSHIP"))
+)
+
+ctamdetverif            ((g_grpnam == "AUDIT" || g_grpnam == "AUDITSPV" || g_grpnam == "AUDITTL" || g_grpnam == "DESK" || g_grpnam == "DOC"
+                        || g_grpnam == "AUDITHEAD"
+                        || g_grpnam == "AUDDVH" || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS") && (tlmpst == "AUDJR" || tlmpst == "FINJR")
+			&& (tlmsts == "OPEN" || tlmsts == "INPG"))
+                        /*&& g_usrkode == tlmkode */ && tlmplg != BLANKS && (tlmpst == "AUDJR" || tlmpst == "FINJR")
+cdetverif (
+    (
+        (tlmsts == "OPEN" && aktdk == BLANKS && 
+            (g_grpnam == "AUDIT" || g_grpnam == "DESK" || g_grpnam == "DOC" ||
+             g_grpnam == "AUDITSPV" || g_grpnam == "AUDITTL" ||
+             g_grpnam == "AUDITHEAD" || g_grpnam == "AUDDVH" || 
+             g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS")
+        ) 
+        || 
+        (
+            (tlmsts == "INPG" && (tlmpst == "AUDJR" || tlmpst == "FINJR")) && 
+            (g_grpnam == "AUDITHEAD" || g_grpnam == "AUDDVH" || g_grpnam == "AUDITSPV" || 
+             g_grpnam == "AUDITTL" || g_grpnam == "DESK" || g_grpnam == "DOC" ||
+             g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "RAS")
+        )
+    ) 
+    || g_usrkode != tlmkode
+)
+
+cPARTNER 	"PARTNERSHIP"
+cLATIHAN	"LATIHAN"
+cREGULER	"REGULER"
+cadapartner	(ljnsdm == "PARTNERSHIP" || lpsinpwp == "PARTNERSHIP")
+cadalatihan	(ljnsdm == "MAGANG_UMR" || ljnsdm == "MAGANG_UANG_SAKU" || ljnsdm == "PELATIHAN")
+cadareguler	(ljnsdm == "REGULER" || ljnsdm == "KONTRAK" || ljnsdm == "PELATIHAN6BLN")	
+
+MAP(misi4d)
+cno1            akturt        	DO_CALC_IF ctambahakt
+curutakt        akturt        	DO_CALC_IF ctambahakt2
+
+MAP(mtipe)
+cPARTNER	aktbrg		DO_CALC_IF cadapartner
+cLATIHAN	aktbrg		DO_CALC_IF cadalatihan
+cREGULER	aktbrg		DO_CALC_IF cadareguler
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=aktkode2       DO_MAP SHOW misi4d
+BEFORE_INPUT    cur_field=aktlok         DO_SKIP_IF cbagjr
+BEFORE_INPUT    cur_field=aktcrtusr	 DO_SKIP_IF cbagjr
+BEFORE_INPUT	cur_field=aktbukoto	 DO_SKIP_IF cbagjr
+AFTER_INPUT	cur_field=aktkode2	 DO_MAP SHOW mtipe
+AFTER_INPUT     cur_field=aktkode2       DO_MAP SHOW
+                IF cbuknsdm     mdum2
+                HKMSG t.SdmTidakSesuaidgnTipe
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD akturt
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+	aktkodtypidx   tlmnobuk lHSLVERIF11 lHSLVERIF
+SFL_MAP
+tlmnobuk        aktkode                 REPLACE
+lHSLVERIF       aktdata                REPLACE
+lHSLVERIF       akttype                 REPLACE
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    ctamdetverif
+PMT_UPDALL_COND cdetverif
+PMT_DEL_COND    cIT
+
+

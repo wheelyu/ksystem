@@ -1,0 +1,184 @@
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------\
+ /------------------------------------------------------------\
+  i.Urut        ______
+  i.Nama        _______________________________________
+  i.Nik         _________________
+  t.Jeniskel    ____
+  i.Tmplahir    _____________________
+  i.Tgllahir    ________
+  i.Agama       ________
+  i.Pendidikan  ____
+  i.Pekerjaan   ___________
+  i.Stsnikah    ___________
+  i.Hubungan    ___________
+  i.Warganegara ____
+  i.Namaayah    _______________________________________
+  i.Namaibu     _______________________________________
+
+ \------------------------------------------------------------/
+\--------------------------------------------------------------/
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+kkdnourt                NUMERIC                 INPUTRI 9
+kkdnama                 ALLCAPS SCROLL          INPUTRI 10
+kkdktp                  DIGITS                  INPUTRI 12
+kkdlp                   NOCHANGE                INPUTRI 13
+kkdtmplhr               ALLCAPS SCROLL          INPUTRI 14
+kkdtgllhr               NONE NOLIMIT {DD-MM-YYYY} INPUTRI 15
+kkdagama                ALLCAPS SCROLL          INPUTRI 16
+kkdpend                 ALLCAPS SCROLL          INPUTRI 17
+kkdpek                  ALLCAPS SCROLL          INPUTRI 18
+kkdnikah                NOCHANGE                INPUTRI 19
+kkdstskel               NOCHANGE                INPUTRI 20
+kkdnegara               NOCHANGE                INPUTRI 21
+kkdayah                 ALLCAPS SCROLL          INPUTRI 22
+kkdibu                  ALLCAPS SCROLL          INPUTRI 23
+
+DEFAULTS(tmptranst)
+kkdlp                   DFALT_LIST              L P
+kkdstskel               DFALT_SCAN              BLANKS
+                                                KEP_KEL
+                                                ISTRI
+                                                ANAK
+                                                SAUDARA
+                                                MENANTU
+                                                MERTUA
+                                                ORANG_TUA
+                                                CUCU
+                                                PEMBANTU
+kkdnegara               DFALT_LIST              WNI WNA
+kkdnikah                DFALT_SCAN_BLANKS       BELUMKAWIN "BELUM KAWIN"
+                                                KAWIN "KAWIN"
+                                                DUDA "DUDA"
+                                                JANDA "JANDA"
+EDITS(tmptranst)
+e.MandatoryNama         kkdnama         MANDATORY
+e.MandatoryKTP          kkdktp          MANDATORY
+e.MandatoryJnsKelamin   kkdlp           MANDATORY
+e.MandatoryTmpLhr       kkdtmplhr       MANDATORY
+e.MandatoryTglLhr       kkdtgllhr       MANDATORY
+e.MandatoryAgama        kkdagama        MANDATORY
+e.MandatoryPendidikan   kkdpend         MANDATORY
+e.MandatoryPekerjaan    kkdpek          MANDATORY
+e.MandatoryStsNikah     kkdnikah        MANDATORY
+e.MandatoryHubungan     kkdstskel       MANDATORY
+e.MandatoryNegara       kkdnegara       MANDATORY
+e.MandatoryNamaAyah     kkdayah         MANDATORY
+e.MandatoryNamaIbu      kkdibu          MANDATORY
+e.Dupkey                kkdktp          DUPKEY kkddatktpidx   {Pkkmdata}
+
+e.Validateagama         kkdagama        VALIDATE tbddatkodidx   mtbdagamaa stbd {Pgv_dttabel} {Pgv_personal} {Pgv_agama}
+e.Validatedidik         kkdpend         VALIDATE tbddatkodidx   mtbddidika stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pendidikan}
+e.ValidatePekerjaan     kkdpek          VALIDATE tbddatkodidx   mtbdpekerjaana stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21}
+
+MAP(mtbdpekerjaana)
+tbdkode                 kkdpek          REPLACE
+
+MAP(mtbddidika)
+tbdkode                 kkdpend         REPLACE
+
+MAP(mtbdagamaa)
+tbdkode                 kkdagama                REPLACE
+
+CALCS()
+ckkda0                   djoinkkdpemohon == 0 && g_curcmd == 1
+ckkda1                   djoinkkdpemohon == 1 && g_curcmd == 1
+
+MAP(murut)
+c1                      kkdnourt                DO_CALC_IF ckkda0
+curutan                 kkdnourt                DO_CALC_IF ckkda1
+
+MAP(mpjgnmapmh)
+cpjgnama                lpjgnma                 DO_CALC
+
+MAP(mpjgnmipmh)
+cpjgnami                lpjgnmi                 DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=kkdnourt      DO_SKIP_IF cbknit
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW murut
+AFTER_INPUT             cur_field=kkdayah       DO_MAP SHOW mpjgnmapmh
+AFTER_INPUT             cur_field=kkdibu        DO_MAP SHOW mpjgnmipmh
+
+AFTER_INPUT             cur_field=kkdayah       DO_MAP SHOW
+                        IF cpjgnma mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin3
+
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW
+                        IF cpjgnma mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin3
+
+AFTER_INPUT             cur_field=kkdibu        DO_MAP SHOW
+                        IF cpjgnmi mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin3
+
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW
+                        IF cpjgnmi mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin3
+
+CALCS()
+cadakkok	lbtmplg!=BLANKS && lnokkpemohon!=BLANKS
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cadakkok
+SFL_UPLREADONLY
+SFL_UPL_DIRFLD tkmtgl1
+SFL_UPLFLD tkmbuk1 lKK
+SFL_TARGET
+        kkdbukidx   lnokkpemohon
+SFL_MAP
+lnokkpemohon            kkdnobuk                REPLACE
+lDATAKK                 kkddata                 REPLACE
+
+
+MAP(mupdtkmmasterpemohon)
+c1      tkmnil3         DO_CALC_IF cygubahcms
+c1	tkmnil7		DO_CALC_IF cygtambahcms
+c1      tkmnil9         DO_CALC_IF cyghapuscms
+c1	tkmnil5		DO_CALC_IF cygubahnso
+c1	tkmtotsj	DO_CALC_IF cygtambahnso
+c1	tkmnildmdr	DO_CALC_IF cyghapusnso
+
+ltotalkkd	tkmcashsj	REPLACE
+ltotalkkd2	tkmtotsan	REPLACE
+
+SPCALCS(sphasilpemohon)
+dmapkosong
+IF cadanokk dbscankkd
+IF cadapenjamin19 dbscankkd2 
+DO_LIB ap_dbclc (DNAME dupdtkmmasterpemohon,DCOMMAND UPDATE,DTARGET tkmotoidx   tkmoto,DMAP mupdtkmmasterpemohon);
+
+POSTING(tmptrans)
+	PST_ADDCMD sphasilpemohon
+        PST_UPDCMD sphasilpemohon
+	PST_DELCMD sphasilpemohon
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cboleh
+        PMT_UPDALL_COND cboleh
+        PMT_DEL_COND    cboleh
+
+

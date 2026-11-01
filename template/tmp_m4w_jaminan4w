@@ -1,0 +1,144 @@
+LOCAL
+PGM_FIELDS
+lssurangka          STRING		  21
+lssumesin           STRING                21
+lversi3			STRING		11
+
+DBCALCS(djoinjmnmbl)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      jmnplgnoidx     btmplg btmnobuk
+
+MAP(mjoinssumotor)
+ssurangka	lssurangka	REPLACE
+ssumesin	lssumesin	REPLACE
+
+DBCALCS(djoinssumotor)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ssubuk2idx	btmnopj
+	DBC_MAP		mjoinssumotor
+
+IMAGE(tmptranst) 
+/----------------------------------\
+ /---t.InfoDebitur----------------\
+  i.Kode    : _________________
+  i.Ktp     : _________________
+ \--------------------------------/
+ /---t.InfoStnk-------------------\
+  i.Jenis   :_________________
+  i.NoPol   :_________________
+  t.SertYT  :_________________
+  i.JtpStnk :_________________
+  t.JtpPajak:_________________
+  t.JtpPjk5 :_________________
+  i.Norang  :_____________________
+  i.Nosin   :_____________________
+  i.Nama    :_________________
+  i.Alamat  :_________________
+  t.AtasNama:_________________
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans) 
+    
+FIELD(tmptranst)
+jmnno			PROTECT SCROLL			INPUTRI 1
+jmnplg			PROTECT QPROTECT		INPUTRI 2
+
+jmnjnsikat		ALLCAPS  SCROLL			INPUTRI	3
+jmnnopol		PROTECT SCROLL              	INPUTRI	4
+jmnsisa			ALLCAPS			INPUTRI	6
+jmntgl			NUMERIC {DD-MM-YYYY} NOLIMIT	INPUTRI	7
+jmntglklr		NUMERIC {DD-MM-YYYY} NOLIMIT INPUTRI 8
+jmntglnil		NUMERIC {DD-MM-YYYY} NOLIMIT INPUTRI 8
+jmnspec2		NOCHANGE SCROLL			MEDIUM 	9
+jmnspec1		NOCHANGE SCROLL			MEDIUM 	10
+jmnnama			NOCHANGE SCROLL			INPUTRI	11
+jmnalamat		NOCHANGE SCROLL			INPUTRI	12
+jmnnamamb		PROTECT	SCROLL			INPUTRI 13
+
+DEFAULTS(tmptranst)
+jmnsisa		DFALT_SCAN_BLANKS	1 "ADA"
+					2 "TIDAK ADA"
+lversi3		INIT		091221v1
+
+
+EDITS(tmptranst)
+e.Mandatory		jmnnopol	MANDATORY
+e.Mandatory		jmntgl  	MANDATORY
+e.Mandatory		jmnspec1	MANDATORY
+e.Mandatory		jmnspec2	MANDATORY
+e.Mandatory		jmnnama		MANDATORY
+e.Mandatory		jmnalamat	MANDATORY
+e.Mandatory		jmnsisa		MANDATORY
+e.Mandatory		jmnjnsikat	MANDATORY
+e.Dupkey		jmnno	 	DUPKEY jmnplgnoidx {Pbtmplg}
+t.Assettdksesuai	jmnjnsikat	VALIDATE astdatkodidx mastbpkb sastkode    {Pgv_dtassets} {Pbtmplg} {Pgv_bpkb}
+
+CALCS()
+cbpkb          "BPKB"
+cjoinssumotor1	djoinssumotor == 1
+
+MAP(mastbpkb)
+astkode		jmnjnsikat	REPLACE
+lssurangka	lssurangka	REPLACE_IF cjoinssumotor1
+lssumesin	lssumesin	REPLACE_IF cjoinssumotor1
+cbpkb           jmnbentuk       DO_CALC
+astnopol	jmnnopol	REPLACE
+astrangka	jmnspec2	REPLACE
+astmesin	jmnspec1	REPLACE
+astanstnk	jmnnama		REPLACE
+astalmstnk	jmnalamat	REPLACE
+astjml		jmnsisa		NO_REPLACE
+asttgl2		jmntgl		NO_REPLACE
+asttgl3		jmntglklr	NO_REPLACE
+astanbpkb	jmnnamamb	REPLACE
+
+MAP(misir)
+btmjtppjk       jmntglklr       REPLACE
+btmtgl2         jmntglnil        REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=jmnjnsikat 	DO_MAP SHOW misir	
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	jmnplgnoidx	btmplg btmnobuk
+
+SFL_MAP
+btmnobuk	jmnno		REPLACE         
+btmplg		jmnplg		REPLACE
+btmthn		jmnth		REPLACE
+
+MAP(mupdast)
+jmnsisa		astjml		REPLACE
+jmntgl		asttgl 		REPLACE
+jmntglklr	asttgl2		REPLACE
+jmntglnil 	asttgl3		REPLACE
+
+MAP(mupdbtm1)
+jmntglklr      btmjtppjk   REPLACE
+jmntglnil      btmtgl2     REPLACE
+
+SPCALCS(sptransadd)
+DO_LIB  ap_dbclc(DNAME dupdastA,DCOMMAND UPDATE,DTARGET astdatkodidx gv_dtassets btmplg gv_bpkb jmnjnsikat,DMAP mupdast);
+DO_LIB ap_dbclc(DNAME dupdbtmA,DCOMMAND UPDATE,DTARGET btmprmidx btmprm ,DMAP mupdbtm1);
+
+SPCALCS(sptransupd)
+DO_LIB ap_dbclc(DNAME dupdastU,DCOMMAND UPDATE,DTARGET astdatkodidx gv_dtassets btmplg gv_bpkb jmnjnsikat,DMAP mupdast);
+DO_LIB ap_dbclc(DNAME dupdbtmU,DCOMMAND UPDATE,DTARGET btmprmidx btmprm ,DMAP mupdbtm1);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransadd
+        PST_UPDCMD sptransupd
+
+CALCS()
+cast0           btmsts=="705" && djoinjmnmbl==0
+cast1           btmsts=="705" && djoinjmnmbl==1 
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cast0
+PMT_UPDALL_COND cast1
+PMT_DEL_COND	c0

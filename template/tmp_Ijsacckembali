@@ -1,0 +1,62 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.AccBrksKembali                                                         |
+|       /----------------------------------------------------\                   |
+|       !_____________________ __________                    !                   |
+|       !t.MktgHead   : ___ __________ _______________       !                   |
+|       !t.AdhHead    : ___ __________ _______________       !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL          INPUTRI 1
+psdtype		PROTECT SCROLL		INPUTRI 2
+psdtype2	NOCHANGE SCROLL		INPUTRI 3
+psdstr1         ALLCAPS SCROLL         INPUTRI 4
+lhrdpusat	PROTECT SCROLL		INPUTRI	5
+
+psdtype3	NOCHANGE SCROLL		INPUTRI 6
+psdstr2         ALLCAPS  SCROLL         INPUTRI 7
+lfinars         PROTECT SCROLL          INPUTRI 8
+
+CALCS()
+cpinjam_selesai	hrmcab2=="KIRIM_SMG"
+cnipkosong	psdstr1=="" || (g_usrkode!=psdstr1 && g_grpnam!="RI")
+cnipkosong1	psdstr2=="" || (g_usrkode!=psdstr2 && g_grpnam!="RI")
+cselect_acc	psdtype=="KEMBALI" || psdtype!="KEMBALI"
+
+DEFAULTS(tmptranst)
+psdtype2	DFALT_SCAN_BLANKS Y T
+psdtype3	DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+t.Validate psdstr1 VALIDATE psikodidx mpsitransc1
+t.Validate psdstr2 VALIDATE psikodidx mpsitransc2
+t.Mandatory psdstr1 MANDATORY
+t.Mandatory psdstr2 MANDATORY_IF cpinjam_selesai
+
+MAP(mpsitransc1)
+psikode         psdstr1 REPLACE
+psinama         lhrdpusat  REPLACE
+
+MAP(mpsitransc2)
+psikode         psdstr2 REPLACE
+psinama         lfinars        REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cnipkosong
+BEFORE_INPUT	cur_field=psdtype3	DO_SKIP_IF cnipkosong1
+
+SUBFILE(tmptrans)
+SFL_SELECT	cselect_acc
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod    lACCKEMBALI hrmnobuk gv_dtijazah21
+
+SFL_MAP
+lACCKEMBALI     psddata REPLACE
+hrmnobuk        psdpsmkode      REPLACE
+gv_dtijazah21	psdkode	REPLACE

@@ -1,0 +1,255 @@
+LOCAL
+PGM_FIELDS
+lfuke			STRING	21
+lketerangan1x           STRING  61
+lketerangan2x		STRING	61
+lketerangan3x		STRING	61
+lketerangan4x		STRING	61
+lketerangan5x		STRING	61
+lHASILFU21		STRING	21
+lHASILWA		STRING	21
+lALSTDKMINAT		STRING	21
+lALSBLMDAFTAR		STRING	21
+lDTAGEN			STRING	11
+lpanjangalasan1		INT2	2
+lpanjangalasan2		INT2	2
+lpanjangnohp		INT2	2
+lenterx			STRING	21
+
+DBCALCS(djoinpsmagn)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmdtskodidx   lDTAGEN gv_INPG svistr7
+
+IMAGE(tmptranst)
+/***************************************************************************************/
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk        _________________||
+||i.FUke         _____ ___________||
+||t.Dvs	         _____		  ||
+||t.Sumber       _________________||
+||t.NoHP         _________________||
+||t.Nama	 _________________||
+||t.Tgisiform    _________________||
+||t.Pengalaman   _____		  ||
+||t.HslTelepon   _________________||
+||t.AlsnTthbng   _____ ___________||
+||i.HasilWa      _____ ___________||
+||i.BenefitAgen  _____            ||
+||i.HasilFU      _____ ___________||
+||i.AlsTdkMnt    _____ ___________||
+||i.Lainnya	 _________________||
+||i.Alsblmdaftar _____ ___________||
+||i.Lainnya 	 _________________||
+||i.TelpDft      _____		  ||
+||i.NoTelp       _________________||
+||i.SdhDftr	 _____     _______||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	svinobuk	PROTECT		INPUTRI		1
+	svistr1		PROTECT		INPUTRI		2
+	lfuke		PROTECT		INPUTRI		3
+	lpsidvs		PROTECT		INPUTRI		4
+	svistr10	PROTECT		INPUTRI		5
+	svikode		PROTECT		INPUTRI		6
+	svinama		PROTECT		INPUTRI		7
+	svitgl2		PROTECT		INPUTRI		8
+	svistr9		PROTECT		INPUTRI		9
+	svistr2		NOCHANGE	INPUTRI		10
+	svidf1		NOCHANGE	INPUTRI		11
+	lketerangan1x	PROTECT		INPUTRI		12
+	svistr3		ALLCAPS		INPUTRI		13
+	lketerangan2x	NOCHANGE	INPUTRI		14
+	svistr31	NOCHANGE	INPUTRI		15
+	svistr4		ALLCAPS		INPUTRI		16
+	lketerangan3x	NOCHANGE	INPUTRI		17
+	svistr5		ALLCAPS		INPUTRI		18
+	lketerangan4x	PROTECT		INPUTRI		19
+	sviket		TEXTAREA ALLCAPS	INPUTRI	20
+	svistr6		ALLCAPS		INPUTRI		21
+	lketerangan5x	PROTECT		INPUTRI		22
+	sviket2		TEXTAREA ALLCAPS	INPUTRI	23
+	svistr32	NOCHANGE	INPUTRI		24
+	svistr7		DIGITS		INPUTRI		25
+	svistr33	NOCHANGE	INPUTRI		26
+	lenterx		NOCHANGE	INPUTRI		27
+
+CALCS()
+ctdkterhubungy          svistr2 == "TDK_TERHUBUNG"
+ctelpterhubung		svistr2 == "TERHUBUNG"
+cterhubungwa		svistr2 == "TERHUBUNG" || svistr3 == "1"
+ctdkterhubungwa		svistr2 == "TDK_TERHUBUNG" && svistr3 != "1"
+cagentdkminat		svistr4 == "3"
+cagenminat		svistr4 != "3"
+ctdkminatlainnya	svistr4 == "3" && svistr5 == "3"
+cskiplainnya1		svistr5 != "3"
+cblmdaftar		svistr4 == "2"
+csdhdaftar		svistr4 != "2"
+cblmdaftarlainnya	svistr4 == "2" && svistr6 == "3"
+cskiplainnya2		svistr6 != "3"
+cminatsdhdaftar		svistr4 == "1"
+ctdkminatblmdftr	svistr4 != "1"
+ctdkminatblmdftrx	svistr4 != "1" || svistr32 == "Y"
+cdaftarnosama		svistr32 == "Y"
+cdjoinpsmagn		djoinpsmagn == 1
+cdjoinpsmagn0		djoinpsmagn == 0
+cY1			"Y"
+cFU_CAGEN		tkmkode == "FU_CAGEN"
+cpanjangalasan1		DO_LIB ap_strln(sviket,&lpanjangalasan1);
+cpanjangalasan2		DO_LIB ap_strln(sviket2,&lpanjangalasan2);	
+cpanjangnohp		DO_LIB ap_strln(svistr7,&lpanjangnohp);
+calasan1x		((svistr5 == "3" && lpanjangalasan1 >= 40) || svistr5 != "3")
+calasan2x		((svistr6 == "3" && lpanjangalasan2 >= 40) || svistr6 != "3")
+cdigitnohp		((svistr32 == "T" && lpanjangnohp >= 10 && lpanjangnohp <= 13) || svistr32 == "Y" || svistr32 == BLANKS)
+
+DEFAULTS(tmptranst)
+lDTAGEN		INIT		"DTAGEN"
+lHASILWA	INIT		"HASILWA"
+lHASILFU21	INIT		"HASILFU"
+lALSTDKMINAT	INIT		"ALSTDKMINAT"
+lALSBLMDAFTAR	INIT		"ALSBLMDAFTAR"
+svistr2         DFALT_LIST      BLANKS
+                                TERHUBUNG
+                                TDK_TERHUBUNG
+
+svidf1          DFALT_SCAN      BLANKS
+                                1 "NOMOR_TIDAK_VALID"
+                                2 "NOMOR_TIDAK_DI_ANGKAT"
+
+svistr31        DFALT_LIST      BLANKS
+                                Y
+
+svistr32	DFALT_LIST	BLANKS
+				Y
+				T
+
+EDITS(tmptranst)
+e.Mandatory     svistr2         MANDATORY
+e.Mandatory	svidf1		MANDATORY_IF	ctdkterhubungy
+e.Mandatory	svistr3		MANDATORY_IF	ctdkterhubungy
+e.Mandatory	svistr31	MANDATORY_IF	cterhubungwa
+e.Mandatory	svistr4		MANDATORY_IF	cterhubungwa
+e.Mandatory	svistr5		MANDATORY_IF	cagentdkminat
+e.Mandatory	sviket		MANDATORY_IF	ctdkminatlainnya
+e.Mandatory	svistr6		MANDATORY_IF	cblmdaftar
+e.Mandatory	sviket2		MANDATORY_IF	cblmdaftarlainnya
+e.Mandatory	svistr32	MANDATORY_IF	cminatsdhdaftar
+e.Mandatory	svistr7		MANDATORY_IF	cminatsdhdaftar
+
+e.ValidateWA	svistr3		VALIDATE	tbddatkodidx mtbdwa stbd {Pgv_dttabel} {PlKLIKNSC} {PlHASILWA}
+e.ValidateFU	svistr4		VALIDATE	tbddatkodidx mtbdfu stbd {Pgv_dttabel} {PlKLIKNSC} {PlHASILFU21}
+e.Validate	svistr5		VALIDATE	tbddatkodidx mtbdxmnt stbd {Pgv_dttabel} {PlKLIKNSC} {PlALSTDKMINAT}
+e.Validate	svistr6		VALIDATE	tbddatkodidx mtbdxdft stbd {Pgv_dttabel} {PlKLIKNSC} {PlALSBLMDAFTAR}
+
+MAP(mtbdwa)
+tbdkode		svistr3		REPLACE
+tbdket		lketerangan2x	REPLACE
+
+MAP(mtbdfu)
+tbdkode		svistr4		REPLACE
+tbdket		lketerangan3x	REPLACE
+
+MAP(mtbdxmnt)
+tbdkode		svistr5		REPLACE
+tbdket		lketerangan4x	REPLACE
+
+MAP(mtbdxdft)
+tbdkode		svistr6		REPLACE
+tbdket		lketerangan5x	REPLACE
+
+MAP(mresetcagen)
+cblanks		svidf1		DO_CALC
+cblanks		svistr3		DO_CALC
+cblanks		svistr31	DO_CALC
+cblanks		svistr4		DO_CALC
+cblanks		svistr5		DO_CALC
+cblanks		sviket		DO_CALC
+cblanks		svistr6		DO_CALC
+cblanks		sviket2		DO_CALC
+cblanks		svistr32	DO_CALC
+cblanks		svistr33	DO_CALC
+
+MAP(mhasilterhubungx)
+cket1           lketerangan1x    DO_CALC_IF cjkhsl1
+cket2           lketerangan1x    DO_CALC_IF cjkhsl2
+
+MAP(misinohp)
+svikode		svistr7		REPLACE_IF cdaftarnosama
+cY1		svistr33	DO_CALC_IF cdjoinpsmagn 
+cblanks		svistr33	DO_CALC_IF cdjoinpsmagn0
+
+MAP(mcekhuruf)
+cpanjangalasan1	lpanjangalasan1	DO_CALC
+
+MAP(mcekhuruf2)
+cpanjangalasan2	lpanjangalasan2	DO_CALC
+
+MAP(mcekhuruf3)
+cpanjangnohp	lpanjangnohp	DO_CALC
+cY1             svistr33        DO_CALC_IF cdjoinpsmagn
+cblanks         svistr33        DO_CALC_IF cdjoinpsmagn0
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svistr2	DO_MAP SHOW	mresetcagen
+AFTER_INPUT     cur_field=svidf1        DO_MAP SHOW	mhasilterhubungx
+AFTER_INPUT	cur_field=svistr32	DO_MAP SHOW	misinohp
+AFTER_INPUT	cur_field=sviket	DO_MAP SHOW	mcekhuruf
+AFTER_INPUT	cur_field=sviket2	DO_MAP SHOW	mcekhuruf2
+AFTER_INPUT	cur_field=svistr7	DO_MAP SHOW	mcekhuruf3
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW
+                IF calasan1x mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Min40Karakter
+
+AFTER_INPUT     cur_field=sviket2        DO_MAP SHOW
+                IF calasan2x mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Min40Karakter
+
+AFTER_INPUT     cur_field=svistr7        DO_MAP SHOW
+                IF cdigitnohp mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.10sd13Digit
+
+AFTER_INPUT     cur_keybd=EN    	 DO_MAP SHOW
+                IF calasan1x mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Min40Karakter
+
+AFTER_INPUT     cur_keybd=EN	         DO_MAP SHOW
+                IF calasan2x mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Min40Karakter
+
+AFTER_INPUT     cur_keybd=EN 	         DO_MAP SHOW
+                IF cdigitnohp mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.10sd13Digit
+
+BEFORE_INPUT	cur_field=svidf1	DO_SKIP_IF	ctelpterhubung
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF	ctelpterhubung
+BEFORE_INPUT	cur_field=svistr31	DO_SKIP_IF	ctdkterhubungwa
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF	ctdkterhubungwa
+BEFORE_INPUT	cur_field=svistr5	DO_SKIP_IF	cagenminat
+BEFORE_INPUT	cur_field=sviket	DO_SKIP_IF	cskiplainnya1
+BEFORE_INPUT	cur_field=svistr6	DO_SKIP_IF	csdhdaftar
+BEFORE_INPUT	cur_field=sviket2	DO_SKIP_IF	cskiplainnya2
+BEFORE_INPUT	cur_field=svistr32	DO_SKIP_IF	ctdkminatblmdftr
+BEFORE_INPUT	cur_field=svistr7	DO_SKIP_IF	ctdkminatblmdftrx
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cFU_CAGEN
+SFL_TARGET
+	svidatbuktyp    lFU_CAGEN tkmnobuk lFU_CAGEN
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND cOPEN
+        PMT_DEL_COND    c0
+
+

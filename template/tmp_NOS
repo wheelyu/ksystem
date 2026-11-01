@@ -1,0 +1,126 @@
+LOCAL
+PGM_FIELDS
+ltombolketnos	   STRING  31
+l4633nos           INT2    2
+lm4633nos          STRING  15
+lNOSklik           STRING  21
+
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------------\
+  __________												      
+|----t--------------------t-----------------------------------------t-----t-------t---------------------------|
+|t.No| t.Keterangan       |t.Aktivitas                              |t.Fsk|t.Kds  |t.HasilObv     	      |
+\----.--------------------.-----------------------------------------.-----.-------.---------------------------/
+
+FIELD(tmptranst)
+ltombolketnos               TOMBOL          INPUTRI 1
+
+DEFAULTS(tmptranst)
+ltombolketnos               INIT            CLICKED
+
+
+IMAGE(tmptrans)
+|____|____________________|_________________________________________|_____|_______|___________________________|
+
+
+FIELD(tmptrans)
+ketstr3			PROTECT 	INPUTRI 1
+ketisi			PROTECT		INPUTRI 2
+ketstr4			PROTECT		INPUTRI 3
+ketstr1			ALLCAPS		INPUTRI 4 /*Fisik*/
+ketstr2			ALLCAPS		INPUTRI 5 /*Kondisi*/
+ketisi2			ALLCAPS		INPUTRI 6
+
+MAP(m4633nos)
+tlmnobuk         	r_string1       REPLACE
+svikode          	r_string7       REPLACE
+lNOSklik	 	r_string13	REPLACE
+
+
+DEFAULTS(tmptrans)
+lNOSklik		INIT		NOS
+l4633nos                INIT            4633
+lm4633nos               INIT            m4633nos
+lnostmp                 INIT            NOS
+ketstr1 		DFALT_SCAN	ADA 
+					TIDAK 
+ketstr2			DFALT_SCAN 	BAIK
+					RUSAK
+
+CALCS()
+cketblanknos      ketnama == svikode
+
+DBCALCS(djoinketblanknos)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      cketblanknos
+        DBC_TARGET      ketdatbukkod lnostmp tlmnobuk lNOS21
+
+
+CALCS()
+c0pen              tlmsts == "OPEN"
+cTDKadanos         ketstr1 == "TIDAK" || ketstr1 == BLANKS
+cadabaiknos	   ketstr1 == "ADA"
+ctidakfisik        ketstr1 == "TIDAK"
+
+MAP(mtidakfisik)
+lblanks                 ketstr2         REPLACE_IF ctidakfisik
+lblanks			ketisi2		REPLACE_IF ctidakfisik
+
+CALCS()
+cketpjg1           DO_LIB ap_strln (ketstr4,&lpanjangket4);
+cpanjangket1       lpanjangket4 >= 20
+cdjoinketblanknos  djoinketblanknos == 0 
+ckliknos		"NOS"
+
+MAP(m20cek)
+cketpjg1         lpanjangket4  DO_CALC
+
+MAP(mdumket1)
+lpanjangket4     lpanjangket4     REPLACE
+
+MAP(mapmapnos)
+ckliknos	lNOSklik	DO_CALC
+
+EDITS(tmptrans)
+e.Mandatory	 ketstr2	MANDATORY_IF cadabaiknos
+e.MandatoryKet	 ketisi2	MANDATORY_IF cadabaiknos
+
+SPCALCS(spkliknos)
+DO_LIB       ap_dbclc(DNAME dmapmapnos,DCOMMAND MAPMAP,DMAP mapmapnos);
+DO_LIB_IF cdjoinketblanknos  ap_nxpst(l4633nos,lm4633nos);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolketnos    	DO_SPCALCS spkliknos
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=ketstr2       	DO_SKIP_IF cTDKadanos
+BEFORE_INPUT    cur_field=ketisi2       	DO_SKIP_IF cTDKadanos
+AFTER_INPUT     cur_field=ketstr1       	DO_MAP SHOW mtidakfisik
+AFTER_INPUT     cur_field=ketstr4      		DO_MAP  SHOW    m20cek
+AFTER_INPUT     cur_field=ketstr4      		DO_MAP  SHOW
+                                    		IF cpanjangket1 mdumket1
+                                    		ELSE HKCURSOR STAY
+                                    		HKMSG t.Minimal20Karakter
+
+
+SUBFILE(tmptrans)
+SFL_LINES(11)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_SORT_BY_FIELD ketstr3  
+SFL_SORT_UPDOWN UP
+SFL_TARGET
+        ketdatbukkod lNOS tlmnobuk lNOS21 
+SFL_MAP
+lNOS	tbdtblkode
+
+
+POSTING(tmptranst)
+        PST_COMMAND spkliknos
+
+PERMIT(tmptrans)
+PMT_DEL_COND	cIT
+PMT_UPDALL_COND c0pen
+PMT_ADD_COND    c0
+

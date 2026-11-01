@@ -1,0 +1,185 @@
+/**25 Baris******************************************************************/
+IMAGE(ppmhead) 
+/-------------Daftar Faktur--------------------------------------------------\			
+|  Kode          Kode        Nama Pelanggan        Sisa         Sisa Renc    |
+|----------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|----------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                |
+\----------------------------------------------------------------------------/
+
+IMAGE(ppmroll) 
+  ______________ _________ ____________________ _____________ ______________
+
+FIELD(ppmroll)
+   ppmnobuk              NOCHANGE SCROLL          NONE              1  
+   ppmplg                PROTECT SCROLL           NONE              2  
+   ppmnama               PROTECT SCROLL           NONE              3  
+   ppmsisa               PROTECT                  NONE              4  
+   ppmsisprc             PROTECT                  NONE              5  
+
+
+IMAGE(ppmheadSLM) 
+/-------------Daftar Tagihan Per Kode----------------------------------------\			
+  Kode             Sisa		
+|----------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|----------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                |
+\----------------------------------------------------------------------------/
+
+IMAGE(ppmrollSLM) 
+  ______________ _____________ 
+
+FIELD(ppmrollSLM)
+   ppmsales              NOCHANGE SCROLL          NONE              1  
+   ppmsisa               PROTECT                  NONE              4  
+
+
+IMAGE(ppmheadPLG) 
+/-------------Daftar Tagihan Per Kode----------------------------------------\			
+  Kode             Sisa		
+|----------------------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|----------------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                                |
+\----------------------------------------------------------------------------/
+
+IMAGE(ppmrollPLG) 
+  ______________ _____________ 
+
+FIELD(ppmrollPLG)
+   ppmplg                NOCHANGE SCROLL          NONE              1  
+   ppmsisa               PROTECT                  NONE              4  
+
+/****************************************************************************/
+IMAGE(ppmheadCEK) 
+/-------------Daftar Faktur-----------------------\			
+|  Kode           Keterangan                      |
+|-------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|-------------------------------------------------|
+|      Tekan ESC untuk keluar                     |
+\-------------------------------------------------/
+
+
+IMAGE(ppmrollCEK) 
+  ______________  _______________________________ 
+
+FIELD(ppmrollCEK)
+   ppmnobuk               NOCHANGE SCROLL          NONE              1  
+   ppmcek                PROTECT SCROLL           NONE              2  
+
+
+/**40************************************************************************/
+IMAGE(ppmheadKRE) 
+/---------------------------------Daftar Faktur Kredit-------------------\
+| Pemohon               NoKontrak       Alamat                           |
+|------------------------------------------------------------------------|
+|                                                                        |
+|                                                                        |
+|                                                                        |
+|                                                                        |
+|                                                                        |
+|                                                                        |
+|                                                                        |
+|                                                                        |
+|                                                                        |
+\------------------------------------------------------------------------/
+
+IMAGE(ppmrollKRE) 
+  ____________________ ______________ _________________________________ 
+
+FIELD(ppmrollKRE)
+/* Symbol Name   Input Attribute  Output Attribute  Input Order   */
+   ppmnama            NOCHANGE SCROLL   NONE              1  
+   ppmnobuk           PROTECT SCROLL    NONE              2  
+   ppmket             PROTECT SCROLL    NONE              3  
+
+CALCS()
+ccekisi1	ppmcek > 0
+cfrF		#ppmfr == "F"
+cppmsisok	ppmsisprc + ~bkdtotal > 0
+cppmmotortlm	ppmdata == gv_dtpiu && ppmfr == gv_F && (ppmsts == "CLSD" || ppmsts == "INPG") && ppmscr == "614" && ppmcabinduk == tlmcab
+cdealerinpg      ppmsts=="INPG"
+
+SCAN(sppm) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(sppmdealer) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cdealerinpg}
+SCAN(sppmdealer2) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cdealerinpg}
+SCAN(sppma) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(sppm2) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(sppmF) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cfrF}
+SCAN(sppmKRE1) {IMAGE_OUT=ppmheadKRE} {IMAGE_ROL=ppmrollKRE} {IMAGE_INP=ppmrollKRE} {SELECT_BAR} {ROLL_LINES=8}
+SCAN(sppmKRE2) {IMAGE_OUT=ppmheadKRE} {IMAGE_ROL=ppmrollKRE} {IMAGE_INP=ppmrollKRE} {SELECT_BAR} {ROLL_LINES=8}
+SCAN(sppmCEKawl) {IMAGE_OUT=ppmheadCEK} {IMAGE_ROL=ppmrollCEK} {IMAGE_INP=ppmrollCEK} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ccekisi1}
+SCAN(sppmKS) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppmsisok}
+SCAN(sppmF2) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_INDEX=ppmplgstsbuk} {SCAN_TARGET=ppmplg} {SCAN_TARGET2=gv_INPG}
+SCAN(sppmmtrtlm) {IMAGE_OUT=ppmhead} {IMAGE_ROL=ppmroll} {IMAGE_INP=ppmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cppmmotortlm}
+
+SCAN(sppmR) {IMAGE_OUT=ppmheadSLM} {IMAGE_ROL=ppmrollSLM} {IMAGE_INP=ppmrollSLM} {SELECT_BAR} {ROLL_LINES=10} {SCAN_REKAP=ppmsales} {SCAN_SUM_FIELD=ppmsisa}
+SCAN(sppmR3) {IMAGE_OUT=ppmheadSLM} {IMAGE_ROL=ppmrollSLM} {IMAGE_INP=ppmrollSLM} {SELECT_BAR} {ROLL_LINES=10} {SCAN_REKAP=ppmsales} {SCAN_SUM_FIELD=ppmsisa}
+SCAN(sppmR2) {IMAGE_OUT=ppmheadPLG} {IMAGE_ROL=ppmrollPLG} {IMAGE_INP=ppmrollPLG} {SELECT_BAR} {ROLL_LINES=10} {SCAN_REKAP=ppmplg} {SCAN_SUM_FIELD=ppmsisa}
+SCAN(sppmR4) {IMAGE_OUT=ppmheadPLG} {IMAGE_ROL=ppmrollPLG} {IMAGE_INP=ppmrollPLG} {SELECT_BAR} {ROLL_LINES=10} {SCAN_REKAP=ppmplg} {SCAN_SUM_FIELD=ppmsisa}
+
+/*******************TEO******************************************************/
+IMAGE(ppmThead) {LSTFLD_ADVANCE} {FRSFLD_BACKUP}  {POP_UP} {BASE_ROW=7} {BASE_COLUMN=20}
+/-------Daftar BukuTamu------------\      
+| No. Bk Tamu  No. Faktur  Tanggal |                             
+|----------------------------------|
+
+
+
+
+
+
+
+
+
+|----------------------------------|
+|      Tekan ESC untuk keluar      |
+\----------------------------------/
+
+IMAGE(ppmTroll) {POP_UP} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=10} {BASE_COLUMN=20}
+ ____________ ____________ ________
+
+FIELD(ppmTroll)
+   ppmpry        NOCHANGE SCROLL    NONE        1
+   ppmnobuk      PROTECT            NONE        2
+   ppmtglfak     PROTECT            NONE        2
+
+SCAN(sppmT) {IMAGE_OUT=ppmThead} {IMAGE_ROL=ppmTroll} {IMAGE_INP=ppmTroll} {SELECT_BAR} {ROLL_LINES=10} /*{SCAN_SELECT=cnow}*/
+/*
+SCAN(sbtmCAB) {IMAGE_OUT=btmRhead} {IMAGE_ROL=btmRroll} {IMAGE_INP=btmRroll} {SELECT_BAR} {ROLL_LINES=10} {SCAN_SELECT=ccabok} 
+*/

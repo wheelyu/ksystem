@@ -1,0 +1,80 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.Atasan                                                                 |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               |                   |
+|       !t.Head       : __ __________ _______________________!                   |
+|       !t.GM/RH      : __ __________ _______________________!                   |
+|       !t.Direksi    : __ __________ _______________________!                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode              NOCHANGE SCROLL          INPUTRI 1
+
+psdsts  		NOCHANGE SCROLL		INPUTRI 2
+psdstr2                 NOCHANGE SCROLL          INPUTRI 3
+lnampic                 PROTECT SCROLL          INPUTRI 4
+
+psdtype2		NOCHANGE SCROLL		INPUTRI 5
+psdstr3                 NOCHANGE SCROLL          INPUTRI 6
+lnamhead                PROTECT SCROLL          INPUTRI 7
+
+psdtype3		NOCHANGE SCROLL		INPUTRI 8
+psdstr5                 NOCHANGE SCROLL          INPUTRI 9
+lnamgm                  PROTECT SCROLL          INPUTRI 10
+
+DEFAULTS(tmptranst)
+psdsts  		DFALT_SCAN_BLANKS Y T
+psdtype2		DFALT_SCAN_BLANKS Y T
+psdtype3		DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+t.Validate              psdstr2 VALIDATE psikodidx mpicx
+t.Validate              psdstr3 VALIDATE psikodidx mheadx
+t.Validate              psdstr5 VALIDATE psikodidx mgmx
+
+MAP(mpicx)
+psinama                 lnampic REPLACE
+
+MAP(mheadx)
+psinama                 lnamhead        REPLACE
+
+MAP(mgmx)
+psinama                 lnamgm          REPLACE
+
+MAP(maccdir)
+g_usrkode		psdstr5		REPLACE
+lACCPKT			psdtype		REPLACE
+
+CALCS()
+cbknhead		hrmdvs2!="ACC_HEAD" || (g_usrkode!=psdstr2 && hrmdvs2!="ACC_HEAD")
+cbkngm			hrmdvs2!="ACC_GM" || (g_usrkode!=psdstr3 && hrmdvs2!="ACC_GM")
+cbkndir			hrmdvs2!="ACC_DIR"|| (g_grpnam!="FIN" && g_usrkode!="1802178" && g_grpnam!="CMBNHEAD")
+csdhupload		djoinpsd5==1 && lupldir=="ACC"
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdsts  DO_SKIP_IF cbknhead
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cbknhead
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cbkngm
+BEFORE_INPUT	cur_field=psdstr3 	DO_SKIP_IF cbkngm
+BEFORE_INPUT	cur_field=psdtype3	DO_SKIP_IF cbkndir
+BEFORE_INPUT	cur_field=psdstr5 	DO_SKIP_IF cbkndir
+AFTER_INPUT	cur_field=psdtype3	DO_MAP SHOW maccdir
+AFTER_INPUT	cur_field=psdtype3	DO_MAP SHOW
+		IF csdhupload mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.UploadFotoDulu
+	
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod    lACCPKT hrmnobuk  hrmnip1
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+lACCPKT         psddata         REPLACE
+hrmnip1         psdkode         REPLACE
+

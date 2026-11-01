@@ -1,0 +1,106 @@
+LOCAL 
+PGM_FIELDS
+	lenter2          	STRING         21
+	lBM					STRING         21
+	lDVH				STRING         21
+	lDCOO				STRING         21
+
+
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------\
+|t.t                                                                                       |
+|t.Nobukdev       : ____________________                                      _____  _____ |
+|i.NoBuk          : ____________________ ___________                                       |
+|i.Idpelanggan    : ________________________________                                       |
+|t.Ket            : ______________________________________________________________________ |
+|                                                                                          |
+|                                                                                          |
+|i.Pltv           : ___.____                            t.Batasltv     : ___.__            |
+|t.ltvaju         : ___.____                            t.selisihltv   : ___.____          |
+|t.AprFinalLtv    : _________________                   t.AprAkhirltv  : _________________ |
+|_____________                                                                             |
+\------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+	svinobuk            NOCHANGE                        INPUTRI         1
+	svitype2            PROTECT                         INPUTRI         2
+	svitype3            PROTECT                         INPUTRI         3
+	svikode             PROTECT                         INPUTRI         4
+	svitype				ALLCAPS							INPUTRI			5
+	btmplg              PROTECT                         INPUTRI         6
+	sviket              TEXTAREA                        INPUTRI         7
+	svidf1   	 		PROTECT							INPUTRI		 	8
+	svidf4				PROTECT 						INPUTRI 		9
+	svidf2				PROTECT							INPUTRI		 	10
+	svidf3				PROTECT 						INPUTRI		 	11
+	svistr3   			PROTECT							INPUTRI			12
+	svistr4   			PROTECT							INPUTRI			13
+	lenter2        		ALLCAPS                         INPUTRI 		14
+
+DEFAULTS(tmptranst)
+	lenter2             INIT            ENTER
+	svinourt			INIT			1
+	svitype3            INIT            OPEN
+	svitype				DFALT_SCAN 		BLANKS
+										SLIK
+	lBM					INIT			"B.M4WBM"
+	lDVH				INIT			"B.M4WDVH"
+	lDCOO				INIT			"B.M4WCOO"
+
+EDITS(tmptranst)
+    e.Mandatory     	svitype         MANDATORY
+    e.Mandatory     	sviket          MANDATORY
+
+MAP(misi)
+	gt_deviasibr11		svidata			REPLACE
+	btmnobuk			svinobuk        REPLACE
+	btmplg				svikode			REPLACE
+	nhmperpok_2			svidf1			REPLACE
+	nhmperpok_2			svidf2			REPLACE
+	nhmmaxcair_2		svidf4			REPLACE
+
+CALCS()
+	cdevltv0			btmsts == "TACC" && (g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "B.M4WBM")
+	cselisihltv			svidf2 - svidf4
+	ctype3				svitype	== "SLIK"
+  	cITRI				g_grpnam == "RI" || g_grpnam == "IT"
+
+
+
+MAP(mselisihltv)
+	cselisihltv         svidf3          DO_CALC
+
+MAP(misitype3)
+	lDCOO				svistr3			REPLACE_IF ctype3 
+	
+HOOKS(tmptranst)
+	BEFORE_INPUT        cur_field=svinobuk      DO_MAP SHOW misi
+	AFTER_INPUT         cur_field=svinobuk      DO_MAP SHOW mselisihltv 
+	AFTER_INPUT         cur_field=svitype       DO_MAP SHOW misitype3 
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+
+SFL_TITLE(tmptranst)
+	SFL_TARGET
+        svidatbuktyp 	gt_deviasibr11 btmnobuk lSLIK
+
+	SFL_MAP
+	btmnobuk			svinobuk	REPLACE
+	gt_deviasibr11		svidata		REPLACE
+	l1					svinourt	REPLACE
+
+
+PERMIT(tmptrans)
+  	PMT_ADD_COND  		cdevltv0
+  	PMT_UPDALL_COND 	c0
+  	PMT_DEL_COND  		cITRI
+
+
+
+
+

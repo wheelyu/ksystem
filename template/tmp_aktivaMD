@@ -1,0 +1,156 @@
+LOCAL
+PGM_FIELDS
+ltotaktiva		INT2	2
+ltotkwitansi		INT2	2
+ltotPL			DFLOAT	8
+ltotKBS			DFLOAT	8
+lPIUKRY			STRING	11
+laprusr4                 STRING  21
+
+MAP(mjoinaprMD4)
+aprusr                laprusr4         REPLACE
+
+DBCALCS(djoinaprMD4)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aprbukkeurt   hrmnobuk
+        DBC_MAP         mjoinaprMD4
+
+
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.TekanTambah                                     ||
+||                 :___________                     ||
+||t.Aktiva         :_______                         ||
+||t.PL             :___________.__                  ||
+||t.Kbs            :___________.__                  ||
+||t.Kwitansi       :___________.__                  ||
+||t.Status         :_________                       ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+kettype                 NOCHANGE           	INPUTRI 1
+ketdf1   		NOCHANGE               	INPUTRI 2
+ketdf2                  NOCHANGE           	INPUTRI 3
+ketdf3                  NOCHANGE           	INPUTRI 4
+ketdf4                  NOCHANGE           	INPUTRI 5
+ketyt4                  NOCHANGE           	INPUTRI 5
+
+DBCALCS(djointldgantiakt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrgoto		hrmnobuk	gv_INPG		brgkode
+
+CALCS()
+cjoinbrgakt		djointldgantiakt ==0
+
+
+MAP(mmapbrgaktiva)
+c1		ltotaktiva		DO_CALC_IF cjoinbrgakt
+
+DBCALCS(dbscanbrgaktiva)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	brgstdtnip		gv_INPG  gv_dtaktiva  hrmnip1
+	DBC_SUM_MAP	mmapbrgaktiva
+
+MAP(mmapscankwitansi)
+c1		ltotkwitansi			DO_CALC
+
+DBCALCS(dbscankwitansi)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	kwistsnipidx		lDTKWI11 gv_INPG   hrmnip1
+	DBC_SUM_MAP	mmapscankwitansi 
+
+MAP(mmapscanbkm)
+bkmtotal			ltotKBS	REPLACE 
+
+DBCALCS(dbscanbkm)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	bkmkodstsjns	 hrmnip1    gv_INPG    gv_BS 
+	DBC_SUM_MAP	mmapscanbkm    
+
+
+MAP(mmapscanpps)
+ppssisa			ltotPL			REPLACE
+
+DBCALCS(dbscanpps)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	ppsdatplgsts		gv_dtpiu	  hrmnip1   gv_INPG
+	DBC_SUM_MAP	mmapscanpps
+
+CALCS()
+caktiva0		(ketdf1 == 0 && ketdf4 ==0) || djoinketLGL ==1
+
+MAP(mmaptanggungan)
+ltotaktiva		ketdf1		REPLACE	
+ltotPL      		ketdf2 		REPLACE
+ltotKBS      		ketdf3 		REPLACE
+ltotkwitansi		ketdf4		REPLACE
+cOK			ketyt4		DO_CALC_IF caktiva0
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=kettype              DO_SCAN dbscanbkm      
+AFTER_INPUT     cur_field=kettype              DO_SCAN dbscanpps      
+AFTER_INPUT     cur_field=kettype              DO_SCAN dbscanbrgaktiva
+AFTER_INPUT     cur_field=kettype              DO_SCAN dbscankwitansi 
+BEFORE_INPUT    cur_field=ketdf1               DO_MAP mmaptanggungan
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+                IF caktiva0        mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SelesaikanAktiva
+
+
+
+EDITS(tmptranst)
+e.Mandatory kettype  	MANDATORY
+
+
+DEFAULTS(tmptranst)
+kettype		INIT_ADD	TANGGUNGAN
+lPIUKRY		INIT		PIUKRY
+
+CALCS()
+cAKTIVA		tmpkode=="AKTIVA" && ((djoinaprMD4 == 1 && laprusr4 == g_usrkode) || hrmnip2 == g_usrkode || hrmnip1 == g_usrkode || hrmusrapr == g_usrkode ||g_grpnam=="CMBNHEAD" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="CMBNSPV" || g_grpnam=="HRDDVH" || g_grpnam=="HRD" || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT"  || g_grpnam== "RAS" || g_usrkode=="2104701" || g_grpnam=="RASMGR" || g_grpnam=="GAHEAD" || g_grpnam=="GA" || g_grpnam=="B.IVAROHRD" || g_grpnam=="HRDSPV")
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND	cAKTIVA
+SFL_LINES(1)
+
+SFL_TARGET
+	ketdatbuktgl	hrmdata     hrmnobuk   lTANGGUNGAN 
+
+
+SFL_MAP
+hrmnobuk        ketnobuk        REPLACE
+hrmdata         ketdata         REPLACE
+
+CALCS()
+ctotpiu		ltotKBS + ltotPL
+cINPG_RCLS_0	djoinkettanggungan==0 && (hrmsts=="INPG" || hrmsts=="RCLS" || (hrmsts=="OPEN" && g_tgltrn >= hrmtgl2))
+cINPG_RCLS_1	djoinkettanggungan==1 && (hrmsts=="INPG" || hrmsts=="RCLS" || (hrmsts=="OPEN" && g_tgltrn >= hrmtgl2))
+
+MAP(mupdhrm)
+ctotpiu		hrmdf2		DO_CALC
+
+SPCALCS(spcaladdakt)
+DO_LIB ap_dbclc(DNAME dupdhrmakt,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrm);
+
+SPCALCS(spcalupdakt)
+DO_LIB ap_dbclc(DNAME dupdhrmakt2,DCOMMAND UPDATE,DTARGET hrmprmidx hrmprm,DMAP mupdhrm);
+ 
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdakt 
+        PST_UPDCMD      spcalupdakt 
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cINPG_RCLS_0
+        PMT_UPDALL_COND cINPG_RCLS_1
+        PMT_DEL_COND    c0
+
+

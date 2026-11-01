@@ -1,0 +1,116 @@
+IMAGE(tmptranst)
+/--------t------------t----------t---------t--------------------------------------------\
+|t.Gedung|t.KodePT    |t.TypeBgn |i.Cab    |i.Alamat                                    |
+\--------.------------.----------.---------.--------------------------------------------/
+
+IMAGE(tmptrans)
+|________|____________|__________|_________|____________________________________________|
+
+FIELD(tmptrans)
+almbukoto       PROTECT		INPUTRI         1
+almnobuk        NOCHANGE	INPUTRI         2
+almutama        NOCHANGE	INPUTRI         2
+almkec		ALLCAPS		INPUTRI		3
+almjalan	ALLCAPS		INPUTRI         4
+
+
+CALCS()
+ckondetasr	g_grpnam == "FINASS" || g_grpnam == "FINASSCO" || g_grpnam == "IT" || g_grpnam == "RI"
+cubahalmasr	g_curcmd == 2 || g_curcmd == 1
+calmgdgsama	((g_curcmd == 2 || g_curcmd == 1) && (almbukoto == cabtwr || tbdkode == cabtwr) && almkec != BLANKS) ||
+		almkec == BLANKS
+
+DEFAULTS(tmptrans)
+almdata		INIT		ALAMATASR
+
+almnobuk        DFALT_SCAN	BLANKS " "
+                                PT.NSC " "              /*susut*/
+                                PT.NSC_M4W " "          /*susut*/
+                                PT.NSC_GAD " "          /*susut*/
+                                PT.NSC_INV " "          /*susut*/
+                                PT.NSS " "              /*susut*/
+                                PT.NSS_EKS " "          /*tdk susut, rek transisi 122.00.4101, rmd transisi*/
+                                PT.NSS_EKP " "          /*tdk susut, rek transisi 122.00.4104, rmd transisi*/
+                                PT.NSS_IDP " "          /*tdk susut, rek transisi 122.00.5104, rmd transisi*/
+                                PT.NS " "               /*susut*/
+                                PT.NS_AHM " "           /*tdk susut, rek transisi 122.00.6101, rmd transisi*/
+                                PT.NS_EKP " "           /*tdk susut, rek transisi 122.00.4104, rmd transisi*/
+                                PT.NS_INV " "           /*susut*/
+                                PT.NS_IDP " "           /*tdk susut, rek transisi 122.00.5104, rmd transisi*/
+                                PT.NSS_AHM " "          /*tdk susut, rek transisi 122.00.6101, rmd transisi*/
+                                PT.NSS_INV " "          /*susut*/
+                                PT.NIAGA_S " "          /*tdk susut, rek transisi 122.00.4108, rmd transisi*/
+                                PT.NIAGA_E " "          /*tdk susut, rek transisi 122.00.4108, rmd transisi*/
+                                PT.MMS " "              /*tdk susut, rek transisi 122.00.4109, rmd transisi*/
+                                PT.MMS_EKP " "          /*tdk susut, rek transisi 122.00.4104, rmd transisi*/
+                                PT.MNT " "              /*tdk susut, rek transisi 122.00.6102, rmd transisi*/
+                                PT.DWS " "              /*tdk susut, bayar sendiri*/
+                                PT.IVARO_V " "          /*tdk susut, bayar sendiri*/
+                                PT.HARDIKA " "          /*tdk susut, -*/
+				PT.SPI " "		/*tdk susut*/
+				PT.GAD_JTG " "
+				PT.GAD_DIY " "
+				PT.GAD_JKT " "
+				PT.GAD_BNT " "
+				PT.GDSAKTI " "
+				PT.NSC-GD " "
+				PT.NSS_GD " "
+				PT.NS_GD " "
+				PT.GSI " "
+                                NANIK-W " "             /*tdk susut, bayar sendiri*/
+                                TJOA_ANDY " "           /*tdk susut. bayar sendiri*/
+
+
+almutama	DFALT_SCAN	BLANKS " "
+                                DEALER " "
+                                GUDANG " "
+                                GUDANG_1 " "
+                                GUDANG_2 " "
+                                GUDANG_3 " "
+                                GUDANG_4 " "
+                                GUDANG_5 " "
+                                KANTOR " "
+                                POS " "
+                                RUMAH " "
+                                RUMAH_1 " "
+                                RUMAH_2 " "
+                                RUMAH_3 " "
+                                RUMAH_4 " "
+                                RUMAH_5 " "
+                                RUMAH_6 " "
+                                RUMAH_7 " "
+                                RUMAH_8 " "
+                                RUMAH_9 " "
+                                RUMAH_10 " "
+				BENGKEL " "
+				TANAH " "
+				BATAL " "
+
+
+
+EDITS(tmptrans)
+e.Kode PT Tidak Boleh Kosong almnobuk MANDATORY
+e.Type Bangunan Tidak Boleh Kosong almutama MANDATORY
+e.Alamat Tidak Boleh Kosong almjalan MANDATORY
+e.ValidateCab almkec VALIDATE_DUP_IF cubahalmasr cabkodidx mcabalmasr 0
+
+MAP(mcabalmasr)
+cabkode		almkec		REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=almkec	DO_MAP SHOW
+		IF calmgdgsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Gedung Beda, Cek 3105
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW 
+		IF calmgdgsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Gedung Beda, Cek 3105
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND ckondetasr
+SFL_TARGET almdatotobuk lALAMATASR tbdkode 
+SFL_MAP
+tbdkode		almbukoto	REPLACE

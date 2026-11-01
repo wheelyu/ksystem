@@ -1,0 +1,135 @@
+LOCAL
+PGM_FIELDS
+lnamasdm2	STRING	61
+ltomacc2	STRING	21
+ltomtacc2	STRING	21
+lurtcomment	INT2	2
+
+
+
+MAP(mjoinurtcomment)
+aktjml		lurtcomment	REPLACE
+
+DBCALCS(djoinurtcomment)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	aktkodtypidx brgkode lCOMMENTBKS
+	DBC_MAP		mjoinurtcomment
+
+DBCALCS(djoinmediacomment)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx brgkode lCOMMENTBKS akttype brgtgl1
+
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------\
+|/--------------------------------\/-------UPLOAD------------\|
+||t.Media     : _________________ ||                         ||
+||t.Ket       : _________________ ||                         ||
+||t.NipApr1   : _________________ ||                         ||
+||t.NamaSdm   : _________________ ||                         ||
+||t.AccAtasan :_______   _______  ||                         ||
+||t.OkUp      : ________  _______ ||                         ||
+|\--------------------------------/\-------------------------/|
+\-------------------------------------------------------------/
+ ___
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+akttype		ALLCAPS			INPUTRI	1
+aktket		TEXTAREA		INPUTRI	2
+aktcrtusr	PROTECT			INPUTRI	3
+lnamasdm2	PROTECT			INPUTRI	4
+ltomacc2	TOMBOL		INPUTRI	5
+ltomtacc2	TOMBOL		INPUTRI	6
+akttype2	PROTECT			INPUTRI	7
+aktdk		PROTECT			INPUTRI	8
+aktdata		PROTECT	QPROTECT	INPUTRI	50
+
+CALCS()
+ccomment0		(djoinmediacomment == 0 && g_curcmd == 1) || g_curcmd == 2
+cjoinurtcomment0	djoinurtcomment == 0 && g_curcmd == 1
+cjoinurtcomment1	djoinurtcomment == 1 && g_curcmd == 1
+curtcomment0		1
+curtcomment		lurtcomment + 1
+cOPE2			akttype_1 == gv_INPG && aktlok_1 == gv_RCLS
+cRCL2			akttype_1 == gv_RCLS && aktlok_1 == "CAB" && aktdk == "T"
+
+DEFAULTS(tmptranst)
+aktdata		INIT		"COMMENTBKS"
+ltomacc2	INIT		"ACC"
+ltomtacc2	INIT		"TACC"
+
+EDITS(tmptranst)
+t.ValidatMedia	akttype		VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dttabel} {PlLELANG21} {PlUPLIKLAN21}
+t.ValidateNip	aktcrtusr	VALIDATE psikodidx mpsi2 0
+
+MAP(mtbd2)
+tbdkode		akttype		REPLACE
+
+MAP(mpsi2)
+psinama		lnamasdm2	REPLACE
+
+MAP(mnourut2)
+lurtcomment	lurtcomment	REPLACE_IF cjoinurtcomment1
+curtcomment0	aktjml		DO_CALC_IF cjoinurtcomment0
+curtcomment	aktjml		DO_CALC_IF cjoinurtcomment1
+brgtgl1		akttgl		REPLACE
+
+MAP(mdum2)
+ldum		ldum		REPLACE
+
+MAP(mupduplacc2)
+cACC		aktdk		DO_CALC
+c0		aktjml2		DO_CALC
+g_usrkode	aktcrtusr	REPLACE
+
+MAP(mupdupltacc2)
+cTACC		aktdk		DO_CALC
+g_usrkode	aktcrtusr	REPLACE
+
+SPCALCS(sptomacc2)
+DO_LIB_IF csudahupl	ap_dbclc(DNAME dupduplacc2,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP mupduplacc2);
+
+SPCALCS(sptomtacc2)
+DO_LIB_IF csudahupl	ap_dbclc(DNAME dupdupltacc2,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP mupdupltacc2);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=akttype	DO_MAP SHOW mnourut2
+AFTER_INPUT	cur_field=akttype	DO_MAP SHOW
+		IF ccomment0 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG t.InputanMediaSdhAda
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ccomment0 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG t.InputanMediaSdhAda
+
+CLICKED		cur_field=ltomacc2	DO_SPCALCS sptomacc2
+CLICKED		cur_field=ltomtacc2	DO_SPCALCS sptomtacc2
+
+MAP(mupduplcomment)
+cUPLOADOK	akttype2	DO_CALC_IF cOPE2
+c1		aktjml2		DO_CALC_IF cRCL2
+
+DBCALCS(dupduplcomment)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	aktprmidx aktprm
+	DBC_MAP		mupduplcomment
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT		ciklanbks
+SFL_UPL_DELCOND		c0
+SFL_UPLFLD		aktkode aktprm
+SFL_UPLFLD_DBCALCS	dupduplcomment
+SFL_UPL_DIRFLD  brgtgl1
+SFL_TARGET
+aktkodtypidx  brgkode lCOMMENTBKS 
+
+SFL_MAP
+brgkode		aktkode		REPLACE
+lCOMMENTBKS	aktdata		REPLACE
+

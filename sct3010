@@ -1,0 +1,50 @@
+SCREEN 3010 APPLICATION_TYPE s.PindahDatabaseThBl
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+/* doda symbol name	field type 	field length */
+   ldir                  STRING                 11
+   ltekan       	 STRING		        21
+   ldir_exist            INT2                    2
+
+IMAGE(master) 
+/-----------------------------------------------\
+|   /---------------------------------------\   |
+                i.ThBlSkrg: __________
+ 	        i.ThBlTuj : __________   
+                i.Enter   : _______                                             
+|   \---------------------------------------/   |
+\-----------------------------------------------/
+FIELD(master)
+  g_dir   PROTECT          NONE    1
+  ldir    ALLCAPS DIGITS    NONE 2
+  ltekan  NOCHANGE         INPUTRI 3 
+
+
+HELP(master)
+  Masukkan direktori dalam format tahun_bulan mis.0207 atau tekan ? ldir
+  Tekan End untuk merekam ltekan
+
+CALCS()
+  csubdir        ldir != BLANKS
+  cadadir        ldir_exist == 1 || ldir == BLANKS
+
+MAP(mdum)
+  ltekan     ltekan    REPLACE
+
+HOOKS(master)
+  AFTER_INPUT   cur_field=ldir  DO_LIB_IF csubdir ap_chkdb(ldir,&ldir_exist);
+  AFTER_INPUT   cur_field=ldir  DO_MAP SHOW
+	IF cadadir mdum
+	ELSE
+		HKCURSOR STAY
+		HKMSG    Database tidak ada
+
+SPCALCS(spcalc1)
+   DO_LIB  ap_chgdb(ldir);
+
+POSTING(master)
+	PST_COMMAND spcalc1
+
+END_SCREEN

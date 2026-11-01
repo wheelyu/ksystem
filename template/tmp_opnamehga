@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+lurth           INT2            2
+lJL             STRING          21
+lHGA            STRING          21
+lLOKHGA         STRING          21
+
+MAP(mjointldh)
+tldnourt        lurth           REPLACE
+DBCALCS(djointldh)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukurtidx    tlmnobuk
+        DBC_MAP         mjointldh
+
+
+IMAGE(tmptranst)
+/------t-------------------t------------------t-------------t------------t------------\
+|t.No  |t.Brg2             |t.Lok             |t.Jumlah     |t.Latitude  |t.Longitude |
+\------.-------------------.------------------.-------------.------------.------------/
+IMAGE(tmptrans)
+|______|___________________|__________________|_____________|___.________|___.________|
+
+FIELDS(tmptrans)
+tldnourt                PROTECT                 INPUTRI         1
+tldnobbm                ALLCAPS SCROLL          INPUTRI         1
+tlddvs                  ALLCAPS SCROLL          INPUTRI         2
+tldjml                  ALLCAPS SCROLL          INPUTRI         4
+tldperdis4      	PROTECT                 INPUTRI         4
+tldperdis5      	PROTECT                 INPUTRI         4
+
+DEFAULTS(tmptrans)
+tldtglfak               INIT_ADD        {g_tgltrn}
+tldplg          	INIT_ADD        {g_usrkode}
+tldsts                  INIT_ADD        ADD
+lHGA                    INIT            HGA
+lJL                     INIT            JL 
+lLOKHGA                 INIT            LOKHGA  
+
+CALCS()
+curth           lurth + 1
+cjointld0h      djointldh == 0 && g_curcmd == 1
+cjointld1h      djointldh == 1 && g_curcmd == 1
+cubhhga         g_curcmd == 2
+cubhhgax        g_curcmd != 2
+
+EDITS(tmptrans)
+e.MandatoryBrg          tldnobbm        MANDATORY
+e.MandatoryLok          tlddvs          MANDATORY
+e.MandatoryJml          tldjml          MANDATORY
+e.ValidateLok           tlddvs          VALIDATE_IF cubhhgax    tbddtmstidx mtbd3 stbd2 {Pgv_dttabel} {Pgv_barang} {PlLOKHGA} {PlJL} {Ptlmcab}
+e.Dupkey                tlddvs          DUPKEY                  tldbukbbmidx {Ptlmnobuk} {Ptldnobbm} {Ptlmcab}
+
+MAP(mtbd3)
+tbdkode         tlddvs          REPLACE
+
+
+MAP(murth)
+gv_int1         tldnourt        REPLACE_IF cjointld0h
+curth           tldnourt        DO_CALC_IF cjointld1h
+
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tldnobbm      DO_MAP SHOW murth
+BEFORE_INPUT    cur_field=tldnobbm      DO_SKIP_IF cubhhga
+BEFORE_INPUT    cur_field=tlddvs        DO_SKIP_IF cubhhga
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_COND        chga
+SFL_SELECT      cbknSISTEMa
+SFL_TARGET
+tldbukurtidx    tlmnobuk
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat         	tldperdis4      REPLACE
+g_lon      	tldperdis5      REPLACE
+
+CALCS()
+cplus1h         tlmtotal + 1
+cmins1h         tlmtotal - 1
+
+MAP(mupdtlmaddh)
+cplus1h         tlmtotal        DO_CALC
+
+MAP(mupdtlmupdh)
+cmins1h         tlmtotal        DO_CALC
+
+
+SPCALCS(sptrans2addh)
+DO_LIB          ap_dbclc(DNAME dupdtlmaddh, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmaddh);
+
+SPCALCS(sptrans2updh)
+DO_LIB          ap_dbclc(DNAME dupdtlmupdh, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupdh);
+
+POSTING(tmptrans)
+        PST_ADDCMD      sptrans2addh
+        PST_DELCMD      sptrans2updh
+

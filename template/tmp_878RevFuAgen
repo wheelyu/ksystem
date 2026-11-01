@@ -1,0 +1,175 @@
+LOCAL
+PGM_FIELDS
+lketevalfu	STRING	21
+
+DBCALCS(djoinaktfuagen)
+        DBC_COMMAND   JOIN
+        DBC_TARGET    akttgltypidx  g_tgltrn lSPKKBA tkmplg tkmplg
+
+IMAGE(tmptranst)
+/-------------------------------------\
+     t.Kunjungan       t.Aktivitas
+ /---s.UPLOAD-----\ /---s.UPLOAD2----\
+ |                | |                |
+ |                | |                |
+ |                | |                |
+ |                | |                |
+ |                | |                |
+ |                | |                |
+ \----------------/ \----------------/
+
+ /-----------------------------------\
+  t.NipReview     : _________________
+  t.TglReview     : _________________
+  t.JamKBAPosting : _________________
+  t.JamSPVReview  : _________________
+  t.HslFuAgen     : _________________
+  t.FotoKunj      : _________________
+  t.FotoAktv      : _________________
+  t.KetReview	  : _________________
+
+  t.HslKunjungan  : _________________
+  t.HslTelepon    : _________________
+  t.HslWa         : ____ ____________
+  t.EvaluasiFu	  : ____ ____________
+  t.SdhPhmAturan  : ____
+  t.PhmProgramJual: ____
+  t.SdhJalanAktv  : ____
+  t.MediaPromosi  : _________________
+  t.Pilihan       : _________________
+  t.AdaPlanPK     : ____
+  t.Kapan         : ____ ____________
+  t.KonsSama	  : ____
+  t.AlasanBlmPK   : ____ ____________
+  t.SolusiKba     : ____ ____________
+  t.SdhJlsApk     : ____
+  t.Enter	  : ____
+ \-----------------------------------/
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkkode9        PROTECT                 INPUTRI 1       /* nip */
+spktgl          PROTECT {DD-MM-YYYY}    INPUTRI 2       /* tgl */
+spkjam		PROTECT			INPUTRI 3
+spkjam2		PROTECT			INPUTRI 3
+spkkat6         NONE			INPUTRI 3       /* hasil fu agen */
+spknoasal       NONE			INPUTRI 4       /* foto kunjungan */
+spkket2         NONE			INPUTRI 5       /* foto aktivitas */
+spkreview	NONE			INPUTRI 6	/* ket review */
+
+spkkat10        PROTECT                 INPUTRI 6	/*BERTEMU*/
+spkkode2        PROTECT                 INPUTRI 7	/*HASILTLP*/
+spkkode3        PROTECT                 INPUTRI 8	/*HASILWA*/
+lket            PROTECT                 INPUTRI 9
+
+spkkat8		NONE			INPUTRI	10	/* eval hasil */
+lketevalfu	PROTECT			INPUTRI	11	/* eval hasil */
+
+spkkode4        PROTECT                	INPUTRI 10 	/*SDHPHM*/
+spkkode5        PROTECT                	INPUTRI 11 	/*PHMJUAL*/
+spkkode6        PROTECT                	INPUTRI 12 	/*JLNAKTV*/
+spkkode7        PROTECT                 INPUTRI 13 	/*MEDIAPROMO*/
+spkkode8        PROTECT 	        INPUTRI 14 	/*PIL*/
+spkkode         PROTECT                 INPUTRI 15 	/*PLANPK*/
+spkkode10       PROTECT                 INPUTRI 16 	/*KAPAN*/
+lket31          PROTECT                 INPUTRI 17
+spkkat7		PROTECT	        	INPUTRI 18 	/*KONSUMEN SAMA*/
+spkkat2         PROTECT                 INPUTRI 19 	/*ALASANBLMPK*/
+lket11          PROTECT SCROLL          INPUTRI 20
+spkkat3         PROTECT                 INPUTRI 21 	/*SOLUSIKBA*/
+lket21          PROTECT SCROLL          INPUTRI 22
+spkkat4         PROTECT                 INPUTRI 23 	/*SDHJLS*/
+lenter		NOCHANGE		INPUTRI	23
+
+DEFAULTS(tmptranst)
+spktgl          INIT            	{g_tgltrn}
+spkkat6       	DFALT_SCAN_BLANKS	SESUAI
+					TIDAK_SESUAI
+spknoasal       DFALT_SCAN_BLANKS	SESUAI
+					TIDAK_SESUAI
+spkket2         DFALT_SCAN_BLANKS	SESUAI
+					TIDAK_SESUAI
+spkreview	DFALT_SCAN_BLANKS	SESUAI
+					TIDAK_SESUAI
+
+CALCS()
+crfuagen                tkmsts != "OPEN" && tkmkode == "FU_AGEN"
+cdjoinaktfuagen1        djoinaktfuagen == 1 && tkmkode == "FU_AGEN" && spknoasal == "Y" && spkket2 == "Y"
+cdjoinaktfuagen0        djoinaktfuagen == 0 && tkmkode == "FU_AGEN" && spknoasal == "Y" && spkket2 == "Y"
+ctotalfuagen            akttotal + 1
+ctersambung		(spkkat10 == "BERTEMU" || spkkode2 == "TERHUBUNG" || spkkode3 == "WA1")
+ctdktersambung		(spkkat10 != "BERTEMU" && spkkode2 != "TERHUBUNG" && spkkode3 != "WA1")
+
+MAP(mevalb)
+tbdkode		spkkat8		REPLACE
+
+EDITS(tmptranst)
+e.Mandatory     	spkkat6      	MANDATORY_IF ctersambung
+e.Mandatory     	spknoasal    	MANDATORY_IF ctersambung
+e.Mandatory     	spkket2      	MANDATORY_IF ctersambung
+e.Mandatory		spkreview	MANDATORY_IF ctersambung
+e.Mandatory		spkkat8		MANDATORY_IF ctdktersambung
+
+t.Validate		spkkat8		VALIDATE tbddatkodidx mevalb stbd {Pgv_dttabel} {PlKLIKNSC} {PlEVALFUAGEN}
+e.ValidateWA		spkkode3	VALIDATE tbddatkodidx mtbd51 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlHASILWA1}
+e.ValidateSbr		spkkode7	VALIDATE tbddatkodidx mtbd52 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlSPKAGEN}
+e.ValidatePil   	spkkode8 	VALIDATE tbtdatkodtyp mtbt2  stbt {Pgv_dttabel} {PlKLIKNSC1} {PlSPKAGEN} {Pspkkode7} {Pgv_dttabel21}
+e.ValidateAlasan	spkkat2  	VALIDATE tbddatkodidx mtbd53 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlALASAN}
+e.ValidateSolusi	spkkat3  	VALIDATE tbddatkodidx mtbd54 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlSOLUSI}
+e.ValidateKapan 	spkkode10	VALIDATE tbddatkodidx mtbd55 stbd {Pgv_dttabel} {PlKLIKNSC1} {PlKAPAN}
+
+MAP(mniprev)
+g_usrkode       spkkat5		REPLACE
+
+MAP(mupdabkfuagen)
+gv_CLSD		abksts		REPLACE
+
+MAP(maddaktfuagen)
+tkmplg          aktkode         REPLACE
+lSPKKBA         aktdata         REPLACE
+tkmplg          akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+tkmplg          aktkode2        REPLACE
+ctotalfuagen    akttotal        DO_CALC
+
+MAP(mupdaktfuagen)
+ctotalfuagen    akttotal        DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkkat6	DO_SKIP_IF ctdktersambung
+BEFORE_INPUT	cur_field=spknoasal	DO_SKIP_IF ctdktersambung
+BEFORE_INPUT	cur_field=spkket2	DO_SKIP_IF ctdktersambung
+BEFORE_INPUT	cur_field=spkreview	DO_SKIP_IF ctdktersambung
+BEFORE_INPUT	cur_field=spkkat8	DO_SKIP_IF ctersambung
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mniprev
+AFTER_INPUT	cur_keybd=EN          	DO_MAP SHOW mupdjamrev
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        crfuagen
+SFL_UPLFLD      spknobuk spkfoto
+SFL_UPLFLD2     spknobuk spkfoto5
+SFL_UPLREADONLY
+SFL_UPL_DIRFLD	tkmcab
+SFL_TARGET      spkdatbuktyp   lFU_AGEN tkmnobuk
+
+CALCS()
+crevgabx        tkmsts != "CLSD" && (g_usrkode == spkkode9 || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS" || g_grpnam=="TLDHMC" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" ||
+                g_grpnam == "PICMKT" || g_grpnam == "PICMKTM2W" || g_grpnam == "DIGMKT" || g_grpnam == "DIGMKTSPV")
+
+SPCALCS(sptmpupdabk)
+        DO_LIB  ap_dbclc(DNAME dupdabkfuagen,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN spknobuk,DMAP mupdabkfuagen);
+        DO_LIB  ap_dbclc(DNAME dupdtkmfuagen,DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkmmaster);
+        DO_LIB_IF cdjoinaktfuagen1      ap_dbclc(DNAME dupdaktfuagen,DCOMMAND UPDATE, DTARGET akttgltypidx g_tgltrn lSPKKBA tkmplg tkmplg, DMAP mupdaktfuagen);
+        DO_LIB_IF cdjoinaktfuagen0      ap_dbclc(DNAME daddaktfuagen,DCOMMAND ADD, DFILE akt, DMAP maddaktfuagen);
+
+POSTING(tmptrans)
+	PST_UPDCMD	sptmpupdabk
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND crevgabx
+        PMT_DEL_COND    c0

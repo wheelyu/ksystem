@@ -1,0 +1,235 @@
+LOCAL
+PGM_FIELDS
+l4974                   INT2            2
+lm4974                  STRING          15
+lm4974a                 STRING          15
+lnasawl                 STRING          21
+lhitcba21               STRING          21
+lhitcba31               STRING          31
+lidktp                  STRING          31
+lbtppsmpenjamin31       STRING          31
+lahmno2cbas             STRING          31
+lgsm11			STRING		11
+
+CALCS()
+ctidak_valid	conkel == "TDK_VALID"
+cambilnik	conkode == btmplg
+
+
+DBCALCS(djointbdhitcba)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lhitcba21 lnasawl
+
+DBCALCS(djoinahmcbas1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ahmstsfakidx gv_INPG lidktp lhitcba31 lahmno2cbas
+
+DBCALCS(djoinahmcbas2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ahmstsfakidx gv_INPG lbtppsmpenjamin31 lhitcba31 lahmno2cbas
+
+DBCALCS(djoinhpgsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lgsm11 btmdbname	
+	DBC_SELECT	ctidak_valid
+
+DBCALCS(djoinhpgsm2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lgsm11 btmdbname
+	DBC_SELECT	cambilnik
+
+DBCALCS(djoinhpgsm3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lgsm11 btmdbname
+
+IMAGE(tmptranst)
+/------------------------------------\
+ /----------------------------------\
+  i.Alamatktp   : __________________
+  t.NoGsm       : __________________
+  t.NoWa        : __________________
+  t.NoMshSama	: __________________
+  t.NoGsmOtp	: __________________
+  t.AdaPenj: __ : __________________
+  t.NamaPenj	: __________________
+ \----------------------------------/
+ /----t.InfoPemohon-----------------\
+  t.SbgPmh : _______________________
+  t.SbgPjm : _______________________
+ \----------------------------------/
+ /----t.InfoPenjamin----------------\
+  t.SbgPmh : _______________________
+  t.SbgPjm : _______________________
+ \----------------------------------/
+\------------------------------------/
+  _____
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+lalmjalanktp            PROTECT SCROLL                          INPUTRI 1               /* Alamat Debitur       */
+lconhp                  PROTECT SCROLL                          INPUTRI 2               /* Nomor Telp Debitur   */
+lconhpwa		PROTECT SCROLL				INPUTRI 3		/* Nomor Wa Debitur	*/
+btmytver		NOCHANGE				INPUTRI 4
+btmdbname		DIGITS					INPUTRI 5
+lbtmstr1		ALLCAPS                                 INPUTRI 6               /* Ada Penjamin */
+btppsm_3                ALLCAPS SCROLL                          INPUTRI 7               /* KTP Penjamin */
+lnamapenj		NOCHANGE				INPUTRI	8
+lpsmstsbill             PROTECT                                 INPUTRI 9
+lpsmstsbill2            PROTECT                                 INPUTRI 10
+lstspenj                PROTECT                                 INPUTRI 11
+lsts2penj               PROTECT                                 INPUTRI 12
+btmlokjual		PROTECT	UNSEEN				INPUTRI	13
+
+
+DEFAULTS(tmptranst)
+l4974           INIT            4974
+lm4974          INIT            m4974
+lm4974a         INIT            m4974a
+lhitcba21       INIT    HITCBA
+lhitcba31       INIT    HITCBA
+lnasawl         INIT    NASAWL
+btmytver	DFALT_SCAN_BLANKS Y
+				  T
+lgsm11		INIT		GSM
+
+CALCS()
+cpenjaminlkp		(btmtypjl == "K" && btmtype == "IN" && btmstr1 == "Y" && djoinpsmpenjamin == 1 && ltempatlahirpenjamin != BLANKS && djoinalmpenjamin == 1) || (btmtypjl == "K" && btmtype == "IN" && btmstr1 == "T") || (btmtypjl == "K" && btmtype == "EX") || btmtypjl == "T"
+chitCBApmh              djointbdhitcba==1 && djoinahmcbas1==0
+chitCBApjm              djointbdhitcba==1 && btmstr1=="Y" && lbtppsmpenjamin31!=BLANKS && djoinahmcbas2==0
+ctypeverif		 btmytver == "T"
+ctypeverifx		 btmytver == "Y"
+cpanjangnom     	DO_LIB ap_strln(btmdbname,&ljumlahnomor);
+
+EDITS(tmptranst)
+e.Mandatoryverif	btmytver	MANDATORY
+e.Mandatorynobaru	btmdbname	MANDATORY_IF ctypeverif
+e.Mandatory             lbtmstr1	MANDATORY_IF cK
+e.Mandatory             btppsm_3        MANDATORY_IF cadapenj
+
+t.ValidateCab		btmlokjual	VALIDATE cabstskodidx mcab 0 {Pgv_INPG}
+t.Validate              lbtmstr1	VALIDATE tbddatkodidx mtbdyt stbd {Pgv_dttabel} {Pgv_kunjungan} {PlYT}
+t.ValidateKtp           btppsm_3        VALIDATE_IF cadapenj psmplgstsktp mpsmpenj 0 {Pgv_dtkonsumen} {Pgv_INPG}
+
+CALCS()
+cpenjaminY	lbtmstr1 == "Y"
+cpenjaminT	(lbtmstr1 == "T" || lbtmstr1 == BLANKS)
+ctidaksamax	btmmakelar == BLANKS || btppsm_3 != btmmakelar
+cktpslspartpjm      djoinpsi == 1 && ( lpsinpwp != "PARTNERSHIP" || (lpsinpwp == "PARTNERSHIP" && djoinpsmsls == 1 &&  btppsm_3 != lpsmktpsales))
+cbukan08        (ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=11 && ljumlahnomor<=13 && btmytver == "T") || btmytver == "Y"
+cjointelpgsm	djoinhpgsm == 0 || btmytver == "Y"
+cjointelpgsm2	djoinhpgsm2 == 0 || btmytver == "Y"
+cjointelpgsm3	djoinhpgsm3 == 0 || btmytver == "Y"
+
+MAP(mpanjangnom)
+cpanjangnom     ljumlahnomor            DO_CALC
+
+MAP(mdump_pjm)
+btppsm_3	btppsm_3	REPLACE_IF cpenjaminY
+cBLANKS		btppsm_3	DO_CALC_IF cpenjaminT
+
+MAP(mnootomatis)
+lconhp		btmdbname	REPLACE_IF ctypeverifx
+cBLANKS		btmdbname	DO_CALC_IF ctypeverif
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=lbtmstr1	DO_SKIP_IF cT
+BEFORE_INPUT            cur_field=lbtmstr1	DO_SKIP_IF cK_EX
+BEFORE_INPUT            cur_field=btppsm_3      DO_SKIP_IF cT
+BEFORE_INPUT            cur_field=btppsm_3      DO_SKIP_IF ctdkpenj
+BEFORE_INPUT		cur_field=btmdbname	DO_SKIP_IF ctypeverifx
+AFTER_INPUT 		cur_field=btmdbname      DO_LIB ap_amstr(btmdbname,ln1i,ln1,&ldigit1);
+AFTER_INPUT 		cur_field=btmdbname      DO_LIB ap_amstr(btmdbname,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=btmdbname       DO_MAP SHOW mpanjangnom
+AFTER_INPUT		cur_field=btmytver	DO_MAP SHOW mnootomatis
+AFTER_INPUT		cur_field=btppsm_3	DO_LIB ap_tglhr(g_tgltrn,&lhari,&ltanggal,&lbulan,&ltahun,&lstrtgl);
+AFTER_INPUT		cur_field=btppsm_3	DO_MAP SHOW mtgl
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4759,lm4513penj_P1);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4513,lm4513penj_P1_03);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4513,lm4513penj_P1_02);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4513,lm4513penj_P1_01);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4759,lm4513penj_P2);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4687,lm4513penj_P2_03);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4687,lm4513penj_P2_02);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3      DO_LIB_IF cadapenj ap_nxpst(l4687,lm4513penj_P2_01);    /* cari kategori RO */
+AFTER_INPUT             cur_field=btppsm_3    DO_MAP SHOW
+                        IF ctidaksamax	mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KTPSama
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW
+                        IF ctidaksamax  mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KTPSama
+
+AFTER_INPUT             cur_field=btppsm_3      DO_MAP SHOW
+                        IF cpenjaminlkp  mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.Datapenjaminblmlengkap
+AFTER_INPUT             cur_field=btppsm_3      DO_MAP SHOW
+                        IF cpenjaminbeda mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.KtpPjmNoKtpPmh
+
+AFTER_INPUT             cur_field=btppsm_3      DO_MAP SHOW
+                        IF cktpslspartpjm  mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG t.NipSlsPart
+
+AFTER_INPUT             cur_field=btmdbname DO_MAP SHOW
+                        IF cbukan08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT     	cur_field=btmdbname DO_MAP SHOW
+                	IF cjointelpgsm  mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG Nomor Telepon   Sudah Pernah tidak valid
+
+AFTER_INPUT             cur_field=btmdbname DO_MAP SHOW
+                        IF cjointelpgsm2  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon sama Dengan No GSM 
+
+AFTER_INPUT             cur_field=btmdbname DO_MAP SHOW
+                        IF cjointelpgsm3  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon sudah pernah diisi
+
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW mdump_pjm
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+btmbukidx       btmnobuk
+
+
+MAP(mapmap)
+btmplg          lidktp          	REPLACE
+btmnobuk        lahmno2cbas     	REPLACE
+btppsm_3	lbtppsmpenjamin31	REPLACE
+
+MAP(m4974)
+btmnobuk        r_string1       REPLACE
+lidktp          r_string2       REPLACE
+l1              r_count1        REPLACE
+l1              r_count2        REPLACE
+
+MAP(m4974a)
+btmnobuk                r_string1       REPLACE
+lbtppsmpenjamin31       r_string2       REPLACE
+l1                      r_count1        REPLACE
+l2                      r_count2        REPLACE
+
+MAP(mupdbtppnjmn)
+btppsm_3	btppsm		REPLACE
+gv_historisdm   btpdata         REPLACE
+
+SPCALCS(sptrans2g1)
+	DO_LIB		ap_dbclc(DNAME dupdbtp,DCOMMAND UPDATE_RANGE,DTARGET btptypbukidx gv_penjamin btmnobuk,DMAP mupdbtppnjmn);
+	DO_LIB  ap_dbclc(DNAME dmapmap, DCOMMAND MAPMAP, DMAP mapmap);
+	DO_LIB_IF chitCBApmh ap_nxpst(l4974,lm4974);
+	DO_LIB_IF chitCBApjm ap_nxpst(l4974,lm4974a);
+
+POSTING(tmptrans)
+PST_UPDCMD	sptrans2g1

@@ -1,0 +1,231 @@
+LOCAL
+PGM_FIELDS
+lubahnama			STRING	61
+lubahnamacapil			STRING	51
+lubahtgllhr			DATE	4
+lubahgender			STRING	21
+lubahstsnkh			STRING	21
+lubahagama			STRING	21
+lubahhp				STRING	21
+lbukcab				STRING	4
+lubahtvld			STRING	151
+
+DBCALCS(djoinpsm3201)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx       btmplg
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+|!t.NoBuktiApr :________________        !|
+|!t.Tgl       _:___________ t.Sts _____ !|
+|!t.Ubah       :___________             !|
+|!t.NamaDiKTP  :________________________!|
+|!t.NmKependdkn:________________________!|
+|!t.TglLhr     :___________             !|
+|!t.JnsKel     :_____                   !|
+|!t.StsNikah   :___________             !|
+|!t.Agama      :_____________           !|
+|!t.Hp         :_____________           !|
+|!t.KetTdkVld  :____________________ _  !|
+|!i.KdApr      :__________________      !|
+|!              ___ ________            !|
+|!              ________________________!|
+|\--------------------------------------/|
+|t.FotoKtp ___                           |
+|/---------s.UPLOAD---------------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+\----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmnobuk		PROTECT				INPUTRI 1
+tkmkode 		NOCHANGE UNSEEN			INPUTRI 2
+tkmtgl			PROTECT NOLIMIT {DD-MM-YY}	INPUTRI 3
+tkmsts			PROTECT				INPUTRI	4
+tkmlok1			NOCHANGE			INPUTRI 5
+lubahnama		ALLCAPS				INPUTRI	6
+lubahnamacapil		ALLCAPS				INPUTRI	7
+lubahtgllhr		ALLCAPS NOLIMIT {DD-MM-YY}	INPUTRI 8
+lubahgender		NOCHANGE			INPUTRI	9
+lubahstsnkh		NOCHANGE			INPUTRI	10
+lubahagama		NOCHANGE			INPUTRI	11
+lubahhp			DIGITS				INPUTRI 12
+lubahtvld		TEXTAREA ALLCAPS		INPUTRI 13
+ldum			NOCHANGE			INPUTRI	14
+tkmlok2         	PROTECT         		INPUTRI 15
+tkmstsapr       	PROTECT         		INPUTRI 16
+tkmusrapr       	PROTECT         		INPUTRI 17
+lhsldukcapil		TEXTAREA PROTECT        	INPUTRI 18
+btmtotal		PROTECT				INPUTRI 19
+
+CALCS()
+cunama			tkmlok1=="NAMA"
+cutgllhr		tkmlok1=="TGL_LAHIR"
+cugender		tkmlok1=="GENDER"
+custsnkh		tkmlok1=="STATUS"
+cuagama			tkmlok1=="AGAMA"
+cuhp			tkmlok1=="NOTELP"
+cutvld			tkmlok1=="TIDAK_VALID"
+
+cbunama			tkmlok1!="NAMA"
+cbutgllhr		tkmlok1!="TGL_LAHIR"
+cbugender		tkmlok1!="GENDER"
+cbustsnkh		tkmlok1!="STATUS"
+cbuagama		tkmlok1!="AGAMA"
+cbuhp			tkmlok1!="NOTELP"
+cbutvld			tkmlok1!="TIDAK_VALID"
+cnobuk7d		STRIP(btmnobuk) + "-"
+csdhadapsm      	djoinpsm3201==0 || (btmtotal>0 && (tkmlok1=="NAMA" || tkmlok1=="TGL_LAHIR" || tkmlok1=="TIDAK_VALID")) || (djointlddukcapil==1 && lstsdukcapil=="TACCDUK" && (tkmlok1=="NAMA" || tkmlok1=="TGL_LAHIR" || tkmlok1=="TIDAK_VALID"))
+cnamabeda       	(tkmlok1=="NAMA" && (lubahnama!=btmnama || lubahnamacapil!=almnama2_1)) || tkmlok1!="NAMA" || g_grpnam=="IT"
+ctlhrbeda       	(tkmlok1=="TGL_LAHIR" && lubahtgllhr!=btmrtglkrm) || tkmlok1!="TGL_LAHIR" || g_grpnam=="IT"
+caprubah137		"APR_UBAH137"
+chrd3x			djointbdusrcdkpil==1 || tkmlok1=="TIDAK_VALID"
+ckuotacek		btmtotal==0 || (djointbdcdkpil==0 || (djointbdcdkpil==1 && (btmtotal<=lkuotacapil || (djointbdusrcdkpil==1 && btmtotal<=lkuotacapilho))))
+			|| tkmlok1=="TIDAK_VALID"
+ckuota7d		((dscantkm7d==0 || dscantkm7d!=0) && (dscantkm7di==0 || dscantkm7di!=0) && ((djointbdkuo7d==1 && lsdhubah7do+lsdhubah7di<=ljmlkuota7d) || (djointbdusrcdkpil==1 && lsdhubah7do+lsdhubah7di<=lkuotacapilho2)))
+			|| tkmlok1=="TIDAK_VALID"
+cpilbknhrd		djointbdusrcdkpil==0
+cpilhrd			djointbdusrcdkpil==1
+
+DEFAULTS(tmptranst)
+IF cpilbknhrd	tkmlok1		DFALT_SCAN_BLANKS NAMA TGL_LAHIR GENDER STATUS AGAMA NOTELP
+IF cpilhrd	tkmlok1		DFALT_SCAN_BLANKS NAMA TGL_LAHIR GENDER STATUS AGAMA NOTELP TIDAK_VALID
+lubahgender	DFALT_SCAN_BLANKS L "Laki-laki"
+                                  P "Perempuan"
+
+
+EDITS(tmptranst)
+t.Mandatory	tkmlok1		MANDATORY
+t.Mandatory	lubahnama	MANDATORY_IF cunama
+t.Mandatory	lubahnamacapil	MANDATORY_IF cunama
+t.Mandatory	lubahtgllhr	MANDATORY_IF cutgllhr
+t.Mandatory	lubahgender	MANDATORY_IF cugender
+t.Mandatory	lubahstsnkh	MANDATORY_IF custsnkh
+t.Mandatory	lubahagama	MANDATORY_IF cuagama
+t.Mandatory	lubahhp		MANDATORY_IF cuhp
+t.Mandatory	lubahtvld	MANDATORY_IF cutvld
+t.ValidateBtm tkmkode VALIDATE btmbukidx mbtm137
+e.Validate lubahagama VALIDATE tbddatkodidx mtbdagama stbd {Pgv_dttabel} {Pgv_personal} {Pgv_agama}
+e.Validatestsnikah lubahstsnkh VALIDATE tbddatkodidx mtbdstsnikah stbd {Pgv_dttabel} {Pgv_personal} {Pgt_stsnikah}
+
+MAP(mbtm137)
+btmnobuk		tkmkode			REPLACE
+cblanks			lubahnama		DO_CALC
+cblanks			lubahnamacapil		DO_CALC
+cblanks			lubahtgllhr		DO_CALC
+cblanks			lubahgender		DO_CALC
+cblanks			lubahstsnkh		DO_CALC
+cblanks			lubahagama		DO_CALC
+cblanks			lubahhp			DO_CALC
+cblanks			lubahtvld		DO_CALC
+tkmket			lubahnama		REPLACE_IF cunama
+tkmnama			lubahnamacapil		REPLACE_IF cunama
+tkmtgl1			lubahtgllhr		REPLACE_IF cutgllhr
+tkmket			lubahgender		REPLACE_IF cugender
+tkmket			lubahstsnkh		REPLACE_IF custsnkh
+tkmket			lubahagama		REPLACE_IF cuagama
+tkmket			lubahhp			REPLACE_IF cuhp
+tkmket			lubahtvld		REPLACE_IF cutvld
+
+MAP(mtbdagama)
+tbdkode			lubahagama		REPLACE
+
+MAP(mtbdstsnikah)
+tbdkode			lubahstsnkh		REPLACE
+
+MAP(mnobuk7d)
+btmcabjl		lbukcab			REPLACE
+cnobuk7d		tkmnobuk		DO_CALC_IF ctambah
+lubahnama		tkmket			REPLACE_IF cunama
+lubahnamacapil		tkmnama			REPLACE_IF cunama
+lubahtgllhr		tkmtgl1			REPLACE_IF cutgllhr
+lubahgender		tkmket			REPLACE_IF cugender
+lubahstsnkh		tkmket			REPLACE_IF custsnkh
+lubahagama		tkmket			REPLACE_IF cuagama
+lubahhp			tkmket			REPLACE_IF cuhp
+lubahtvld		tkmket			REPLACE_IF cutvld
+gv_int1			tkmtotal		REPLACE
+caprubah137		tkmlok2			DO_CALC
+g_tgltrn		tkmtgl			REPLACE
+
+MAP(mksnglokal)
+cblanks			lubahnama		DO_CALC
+cblanks			lubahnamacapil		DO_CALC
+cblanks			lubahtgllhr		DO_CALC
+cblanks			lubahgender		DO_CALC
+cblanks			lubahstsnkh		DO_CALC
+cblanks			lubahagama		DO_CALC
+cblanks			lubahhp			DO_CALC
+cblanks			lubahtvld		DO_CALC
+cOK			tkmstsapr		DO_CALC_IF chrd3x
+g_usrkode		tkmusrapr		REPLACE_IF chrd3x
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=tkmlok1	DO_MAP SHOW mksnglokal
+BEFORE_INPUT		cur_field=lubahnama	DO_SKIP_IF cbunama
+BEFORE_INPUT		cur_field=lubahnamacapil DO_SKIP_IF cbunama
+BEFORE_INPUT		cur_field=lubahtgllhr	DO_SKIP_IF cbutgllhr
+BEFORE_INPUT		cur_field=lubahgender	DO_SKIP_IF cbugender
+BEFORE_INPUT		cur_field=lubahstsnkh	DO_SKIP_IF cbustsnkh
+BEFORE_INPUT		cur_field=lubahagama	DO_SKIP_IF cbuagama
+BEFORE_INPUT		cur_field=lubahhp	DO_SKIP_IF cbuhp
+BEFORE_INPUT		cur_field=lubahtvld	DO_SKIP_IF cbutvld
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW mnobuk7d
+AFTER_INPUT     	cur_keybd=EN            DO_MAP SHOW
+                	IF ckuotacek mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG t.MaxUbahNamaTgl2xPost
+
+AFTER_INPUT     	cur_keybd=EN            DO_MAP SHOW
+                	IF ckuota7d mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG t.MaxUbahNamaTgl3x
+
+AFTER_INPUT     	cur_keybd=EN            DO_MAP SHOW
+                	IF cnamabeda mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG t.UbahNamaHarusBeda
+
+AFTER_INPUT     	cur_keybd=EN            DO_MAP SHOW
+                	IF ctlhrbeda mdum
+                	ELSE HKCURSOR STAY
+               		HKMSG t.UbahTanggalLahirHarusBeda
+
+AFTER_INPUT     	cur_keybd=EN            DO_MAP SHOW
+                	IF csdhadapsm mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG t.NoKtpSdhAda3201
+
+MAP(mupdbtmubh)
+gv_int1		btmjmlsv	REPLACE
+
+DBCALCS(dupdbtmubh)
+        DCOMMAND	UPDATE
+        DTARGET	btmotoidx btmoto
+        DMAP	mupdbtmubh
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkmnobuk
+SFL_SORT_UPDOWN DOWN
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD      tkmkode lubah137
+SFL_UPLFLD_DBCALCS dupdbtmubh
+SFL_UPL_DELCOND c0
+SFL_COND cubah7dbrkas
+SFL_TARGET
+tkmdtkdstlok lubah137 btmnobuk 
+SFL_MAP
+lubah137	tkmdata		REPLACE
+btmnobuk	tkmkode		REPLACE
+gv_OPEN		tkmsts		REPLACE

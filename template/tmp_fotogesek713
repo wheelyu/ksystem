@@ -1,0 +1,135 @@
+LOCAL
+PGM_FIELDS
+lklikest1x	STRING		31
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket   : _____________________ ||
+||          _____ ___________ __  ||
+!!t.TglFt : __________            ||
+!!t.Lat   : ___.__________________||
+!!t.Lon   : ___.__________________||
+!!t.LatPos: ___.__________________||
+!!t.LonPos: ___.__________________||
+!!t.LatCabCair: ___.______________||
+!!t.LonCabCair: ___.______________||
+!!t.JarakFoto : __________  t.M   ||
+!!t.JarakPos  : __________  t.M   ||
+!!t.HasilFoto : _________________ ||
+!!t.HasilPost : _________________ ||
+!!t.NipUpl    : ________          ||
+!!t.NamaUpl   : _________________ ||
+!!t.JabUpl    : _________________ ||
+!!t.NipPost   : ________          ||
+!!t.NamaPost  : _________________ ||
+!!t.JabPost   : _________________ ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2
+lklikest1x              TOMBOL                  INPUTRI         3
+svinobuk                PROTECT UNSEEN          INPUTRI         4
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         5
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         6
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         7
+llatpos			PROTECT NUMERIC {99,999999999}          INPUTRI         8
+llonpos			PROTECT NUMERIC {99,999999999}          INPUTRI         9
+llattkm			PROTECT NUMERIC {99,999999999}          INPUTRI         10
+llontkm			PROTECT NUMERIC {99,999999999}          INPUTRI         11
+svidf5                  PROTECT                 INPUTRI         12
+ljarakpost              PROTECT                 INPUTRI         13
+lhasilfoto              PROTECT                 INPUTRI         14
+lhasilpost              PROTECT                 INPUTRI         15
+svistr1                 PROTECT                 INPUTRI         16
+lpsinamafoto            PROTECT                 INPUTRI         17
+lpsijabfoto             PROTECT                 INPUTRI         18
+lnippost                PROTECT                 INPUTRI         19
+lpsinamapost            PROTECT                 INPUTRI         20
+lpsijabpost             PROTECT                 INPUTRI         21
+
+CALCS()
+csdhuplest1x		svitgl2!=0
+
+DEFAULTS(tmptranst)
+lklikest1x	INIT	"UPLOAD OK"
+
+EDITS(tmptranst)
+e.ValidatePsi	svistr1		VALIDATE psikodidx mpsiftest1x 0
+e.ValidatePsi	lnippost	VALIDATE psikodidx mpsipost1x 0
+
+MAP(mpsiftest1x)
+psikode		svistr1		REPLACE
+psinama		lpsinamafoto	REPLACE
+psijabatan	lpsijabfoto	REPLACE
+csesuai		lhasilfoto	DO_CALC_IF cjrkftsesuai
+ctsesuai	lhasilfoto	DO_CALC_IF cjrkfttsesuai
+csesuai		lhasilpost	DO_CALC_IF cjrkpossesuai
+ctsesuai	lhasilpost	DO_CALC_IF cjrkpostsesuai
+
+MAP(mpsipost1x)
+psikode		lnippost	REPLACE
+psinama		lpsinamapost	REPLACE
+psijabatan	lpsijabpost	REPLACE
+
+MAP(mupdsviftest1x)
+cY              sviyt1          DO_CALC_IF csdhuplest1x
+g_fotolat1      svidf6          REPLACE_IF csdhuplest1x
+g_fotolon1      svidf7          REPLACE_IF csdhuplest1x
+
+DBCALCS(dupdsviftest1x)
+        DCOMMAND        UPDATE
+        DTARGET         sviotoidx svioto
+        DMAP            mupdsviftest1x
+
+SPCALCS(spcaluplftest1x)
+dupdsviftest1x
+
+HOOKS(tmptranst)
+CLICKED                 cur_field=lklikest1x	DO_SPCALCS IF csdhuplest1 spcaluplftest1x
+
+MAP(mupdsviestmtrx)
+g_tgltrn        svitgl2         REPLACE
+cSYSTIME	svidf8		DO_CALC
+g_usrkode	svistr1		REPLACE
+
+DBCALCS(dupdsviestmtrx)
+        DCOMMAND UPDATE
+        DTARGET	sviotoidx svioto
+        DMAP mupdsviestmtrx
+
+CALCS()
+cestmtrx		sviyt1 != "Y"
+chanyagsk		svikode=="FTGESEKMESIN" || svikode=="FTGESEKRANGKA" || svikode=="FTNOKA"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT	chanyagsk
+SFL_UPLFLD_DBCALCS dupdsviestmtrx
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND cestmtrx
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

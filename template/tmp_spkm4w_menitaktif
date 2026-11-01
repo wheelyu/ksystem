@@ -1,0 +1,118 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------\
+ t.NOTE
+ t.adaaktivitas
+ t.tidakadaaktivitas
+|------t----------------------t--------t---------t-----------t-------------t-------------|
+| i.No |i.Ket                 |t.IN    |t.OUT    |t.Aktual   |t.BatasMenit |t.TotalMenit |
+\------.----------------------.--------.---------.-----------.-------------.-------------/
+
+IMAGE(tmptrans)
+|______|______________________|________|_________|______.____|_____________|_______._____|_|_
+
+FIELD(tmptrans)
+tkdnourt                NOCHANGE       INPUTRI 1
+lketspk                 PROTECT         INPUTRI 3
+ljamadd                 PROTECT         INPUTRI 8
+ljampst                 PROTECT         INPUTRI 9
+lmenitaktual            PROTECT         INPUTRI 5
+lbatasmenit             PROTECT         INPUTRI 6
+lttlmenit               PROTECT         INPUTRI 7
+tkdnoll                 PROTECT UNSEEN  INPUTRI 9
+tkdnobuk                PROTECT UNSEEN  INPUTRI 10
+
+CALCS()
+cadaurut                tkdnourt != BLANKS
+cjikafurox              tkdnoll == "FURO"
+cjikadet1x              tkdnoll == "DET1"
+cjikavrox               tkdnoll == "VISITRO"
+cjikatelsamx            tkdnoll == "DTTELSAM"
+cjikartx                tkdnoll == "GCIRT"
+cjikaeventx             tkdnoll == "EVENT"
+cjikakunjsamx           tkdnoll == "DET2"
+cjikamain1x             tkdnoll == "VISIT1"
+cjikamain2x             tkdnoll == "VISIT1HO"
+cjikamedsosx            tkdnoll == "MEDSOS"
+cjikatlpmitrax          tkdnoll == "TELPMITRA"
+cjikasvyx               tkdnoll == "PKSURVEY"
+cjikainputpkx           tkdnoll == "DET3"
+cjikampax               tkdnoll == "MPAGARAP"
+
+cjika30menit            tkdnoll == "DTTELSAM" || tkdnoll == "FURO" || tkdnoll == "TLPMITRA" || tkdnoll == "MEDSOS" || tkdnoll == "TELPMITRA" || tkdnoll == "DET3"
+cjika60menit            tkdnoll == "VISITRO" || tkdnoll == "MPAGARAP"
+cjika105menit           tkdnoll == "GCIRT" || tkdnoll == "DET2"
+cjika120menit           tkdnoll == "DET1" || tkdnoll == "VISIT1HO" || tkdnoll =="VISIT1"
+cjika267menit           tkdnoll == "PKSURVEY"
+cjika420menit           tkdnoll == "EVENT"
+
+cmenitadd               tkdjml
+cmenitpst               tkdjml2
+cselesai                ljampst != BLANKS
+cmenitaktual            ljampst - ljamadd
+
+/*cbawahbatas           lmenitaktual <= lbatasmenit && ((tkdnoll != "EVENT" && djoinsvitkd == 0 && djoinsvitkd1 == 0 && djoinsvitkd2 == 0) || (djoinsvitkd == 1 && ltlpsambung == "TRHBNG_DEBITUR") || (djoinsvitkd1 == 1 && lterhubung == "TERHUBUNG") || (djoinsvitkd2==1 && lterhubungsam=="TERHUBUNG"))
+catasbatas              lmenitaktual > lbatasmenit && ((tkdnoll != "EVENT" && djoinsvitkd == 0 && djoinsvitkd1 == 0 && djoinsvitkd2==0) || (djoinsvitkd == 1 && ltlpsambung == "TRHBNG_DEBITUR") || (djoinsvitkd1 == 1 && lterhubung == "TERHUBUNG") || (djoinsvitkd2==1 && lterhubungsam=="TERHUBUNG"))
+ceventbatas             tkdnoll == "EVENT" && ljampst != BLANKS
+*/
+
+/*
+cjoinaktrev0            djoinaktrev == 0 && svidtmkode == BLANKS
+cjoinaktrev0x           djoinaktrev == 1
+cjoinaktrev1            djoinaktrev1 == 0 && svidtmkode != BLANKS
+cjoinaktrev1x           djoinaktrev1 == 1 && svidtmkode != BLANKS
+*/
+/*cjamreview              svidf1*/
+/*cmasih0                 aktjml == 0 && djoinsvirev==1 && ltandarev == 0*/
+/*cudah1                  aktjml >= 1 && djoinsvirev==1 && ltandarev == 0*/
+/*cmasihkosong          svidf2 == 0
+*/
+
+EDITS(tmptrans)
+e.Validatespk           tkdnobuk VALIDATE tkmbukidx  mtkd 0
+
+MAP(mtkd)
+cBLANKS         lketspk         DO_CALC
+lketfuro        lketspk         REPLACE_IF cjikafurox
+lketdbareagrp   lketspk         REPLACE_IF cjikadet1x
+lketvisitro     lketspk         REPLACE_IF cjikavrox
+lkettelsam      lketspk         REPLACE_IF cjikatelsamx
+lketgcirt       lketspk         REPLACE_IF cjikartx
+lketevent       lketspk         REPLACE_IF cjikaeventx
+lketkunjsam     lketspk         REPLACE_IF cjikakunjsamx
+lketmain1       lketspk         REPLACE_IF cjikamain1x
+lketmain2       lketspk         REPLACE_IF cjikamain2x
+lketmedsos      lketspk         REPLACE_IF cjikamedsosx
+lkettlpmitra    lketspk         REPLACE_IF cjikatlpmitrax
+lketsurvey      lketspk         REPLACE_IF cjikasvyx
+lketinputpk     lketspk         REPLACE_IF cjikainputpkx
+lketmpa         lketspk         REPLACE_IF cjikampax
+
+cBLANKS         lbatasmenit     DO_CALC
+lmenit36x       lbatasmenit     REPLACE_IF cjika30menit
+lmenit72x       lbatasmenit     REPLACE_IF cjika60menit
+lmenit126x      lbatasmenit     REPLACE_IF cjika105menit
+lmenit144x      lbatasmenit     REPLACE_IF cjika120menit
+lmenit321x      lbatasmenit     REPLACE_IF cjika267menit
+lmenit420x      lbatasmenit     REPLACE_IF cjika420menit
+
+cBLANKS         ljamadd         DO_CALC
+cBLANKS         ljampst         DO_CALC
+cmenitadd       ljamadd         DO_CALC
+cmenitpst       ljampst         DO_CALC
+cBLANKS         lmenitaktual    DO_CALC
+cmenitaktual    lmenitaktual    DO_CALC_IF cselesai
+
+cBLANKS         lttlmenit       DO_CALC
+tkdjml3         lttlmenit       REPLACE
+/*lmenitaktual  lttlmenit       REPLACE_IF cbawahbatas
+lbatasmenit     lttlmenit       REPLACE_IF catasbatas
+lmenit420x      lttlmenit       REPLACE_IF ceventbatas
+*/
+DEBUG           ldum    ldum    REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(11)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cadaurut
+SFL_TARGET
+tkddatbukll     tkmtype tkmnobuk

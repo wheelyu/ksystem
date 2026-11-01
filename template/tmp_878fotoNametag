@@ -1,0 +1,100 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------\
+ /-------s.UPLOAD------------------\
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ \---------------------------------/
+ /---------------------------------\
+ |i.Ket      : ______________  ____|
+ |t.TglFoto  : _____________       |
+ |t.Latitude : ________.____       |
+ |t.Longitude: ________.____       |
+ |t.Jam      : __.__               |
+ |t.LongLatDeb                     |
+ |______________ __________________|
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2
+svitgl2			PROTECT {DD-MM-YYYY}	INPUTRI		3
+svidf6			PROTECT NUMERIC		INPUTRI		3
+svidf7			PROTECT NUMERIC		INPUTRI		3
+ljam4			PROTECT			INPUTRI		4
+svinobuk                PROTECT SCROLL          INPUTRI         7
+luploadOK4		TOMBOL			INPUTRI		7
+
+
+CALCS()
+cadajarak4      svidf6!=BLANKS && svidf7!=BLANKS && svidf4!=BLANKS && svidf5!=BLANKS
+cjarak4         ljarak/1000
+cnametag4	( tmpkode == "FOTOKBA3" && lsvistr1 == "TIDAK_BERTEMU" ) || tmpkode == "FOTOKBA5" || tmpkode == "FOTOKBA6" 
+cnametag	sviyt1 == "T"
+
+EDITS(tmptranst)
+e.Validate svinobuk	VALIDATE tkmbukidx mtkm4 0
+
+MAP(mtkm4)
+tkmnobuk	svinobuk	REPLACE
+svidf8		ljam4		REPLACE
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+
+MAP(mupdsvinametag)
+cY             sviyt1          DO_CALC
+g_lat		svidf6		REPLACE
+g_lon		svidf7		REPLACE
+lsystime	svidf8		REPLACE
+g_tgltrn 	svitgl2		REPLACE
+
+
+MAP(mapjarak4)
+cjarak4  ljarak          DO_CALC_IF cadajarak4
+
+DBCALCS(dmapmapjarak4)
+        DBC_COMMAND     MAPMAP
+        DBC_MAP         mapjarak4
+MAP(mmap6d24)
+ljarak          svidf2          REPLACE_IF cadajarak4
+
+/*MAP(mupdtldinfo4)
+c1              tldperdis7      DO_CALC_IF cadagps4*/
+
+SPCALCS(supdnametag)
+	DO_LIB ap_dbclc(DNAME dupdsvinametag,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdsvinametag);
+	DO_LIB_IF cadajarak4 	ap_dsGPS(svidf6,svidf7,svidf4,svidf5,&ljarak);
+	dmapmapjarak4
+	DO_LIB ap_dbclc(DNAME dmap6d24, DCOMMAND UPDATE,DTARGET sviotoidx svioto, DMAP mmap6d24);
+	/*DO_LIB_IF ckba  ap_dbclc(DNAME dupdtld4, DCOMMAND UPDATE_RANGE, DTARGET  tldbukbrgoto svinobuk gv_OPEN lINFOALAMAT, DMAP mupdtldinfo4);*/
+HOOKS(tmptranst)
+   CLICKED      cur_field=luploadOK4	DO_SPCALCS supdnametag
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_COND cnametag4
+SFL_UPL_DELCOND	cnametag
+SFL_UPLFLD tkmnobuk svikode
+
+SFL_TARGET
+	svidatbuktyp   ldtspk tkmnobuk lfotospk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

@@ -1,0 +1,110 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ t.UplPenawaranHasilNego
+ /---------s.DOCUPLOAD-----------\
+ |                               |
+ |                               |
+ |                               |
+ |                               |
+ |                               |
+ |                               |
+ \-------------------------------/
+ /-------------------------------\
+  ____________
+  t.Upload    : ___  
+  t.Tanggak   : _________________
+  t.NoBuk     : _________________
+  t.Kontraktor: _________________
+  t.HargaAwal : _________________
+  t.Harganego : _________________
+  t.HargaBR   : _________________
+                t.HargaPpn                           
+  t.AprAdh    : _____ ___________
+  t.JenisBiaya: _________________
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+luplok2         TOMBOL          INPUTRI 1
+lok		NOCHANGE	INPUTRI	1
+tkdtgl		PROTECT {DD-MM-YYYY} INPUTRI 1
+tkdnobuk	PROTECT		INPUTRI	2
+tkdnoll		ALLCAPS		INPUTRI	3
+tkdjml2		PROTECT		INPUTRI 4
+tkdjml3		ALLCAPS		INPUTRI 5
+tkdjml 		NUMERIC		INPUTRI	6
+tkdjwbstr1	NOCHANGE 	INPUTRI	7
+lnama		PROTECT		INPUTRI 8
+tkdjwbstr2	NOCHANGE	INPUTRI 9
+
+CALCS()
+cadhacc		tkdjwbstr1=="ACC" && tkdjwbstr2!=BLANKS
+
+DEFAULTS(tmptranst)
+tkdtgl		INIT_ADD	{g_tgltrn}
+luplok2         INIT            "UPLOAD OK"
+IF cpengaduan tkdjwbstr2	DFALT_SCAN	BLANKS 
+					TERMINA "TERMIN 50 45 5"
+					TERMINB "TERMIN 45 50 5"
+					TERMINC "TERMIN 40 55 5"
+IF c500 tkdjwbstr2	DFALT_SCAN	BLANKS
+					ALTERNATIF1 "ALTERNATIF 1"
+					ALTERNATIF2 "ALTERNATIF 2"
+IF c1000 tkdjwbstr2	DFALT_SCAN	BLANKS
+					ALTERNATIF "ALTERNATIF"
+IF cterminga1 tkdjwbstr2	DFALT_SCAN	BLANKS
+						ALTERNATIF1 "ALTERNATIF 1"
+						ALTERNATIF2 "ALTERNATIF 2"
+IF cterminga2 tkdjwbstr2	DFALT_SCAN	BLANKS
+						ALTERNATIF1 "ALTERNATIF 1"
+						ALTERNATIF2 "ALTERNATIF 2"
+						ALTERNATIF3 "ALTERNATIF 3"
+IF cterminga3 tkdjwbstr2	DFALT_SCAN	BLANKS
+						ALTERNATIF1 "ALTERNATIF 1"
+						ALTERNATIF2 "ALTERNATIF 2"
+tkdjwbstr1	DFALT_SCAN	BLANKS	ACC	TACC
+IF cadhacc	tkdtgl		INIT	{g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory	tkdnoll		MANDATORY
+e.Mandatory	tkdjml2     	MANDATORY
+e.Mandatory	tkdjml3     	MANDATORY
+e.Mandatory	tkdjml     	MANDATORY
+e.Mandatory	tkdjwbstr2 	MANDATORY_IF cpembangunan
+e.Validate      tkdnoll 	VALIDATE bidbukstsidx mbidqq 0 {Pmtsnobuk} {Pgv_INPG}
+
+MAP(mbidqq)
+bidrekbia	tkdnoll		REPLACE
+bidtotal	tkdjml2		REPLACE
+
+MAP(mtkdqq)
+g_tgltrn	tkdtgl		REPLACE
+
+SPCALCS(sptkdqq)
+DO_LIB ap_dbclc(DNAME dtkdqq,DCOMMAND UPDATE_RANGE,DTARGET tkdotoidx tkdoto,DMAP mtkdqq);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF caktiva
+CLICKED         cur_field=luplok2       DO_SPCALCS sptkdqq
+
+MAP(mupdtkdfotoqq)
+cOK		lok	DO_CALC
+DBCALCS(dupdtkdfotoqq)
+DBC_COMMAND	JOIN
+DBC_TARGET	tkdotoidx tkdoto
+DBC_MAP		mupdtkdfotoqq
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_DOCUPLFLD tkdnobuk tkdoto 
+SFL_DOCUPLFLD_DBCALCS dupdtkdfotoqq
+SFL_UPL_DIRFLD tkdtgl 
+SFL_TARGET
+        tkddatbukll lNEGOSIASI mtsnobuk 
+SFL_MAP
+	lNEGOSIASI	tkddata		REPLACE
+	mtsnobuk	tkdnobuk	REPLACE 
+	gv_OPEN		tkdsts		REPLACE

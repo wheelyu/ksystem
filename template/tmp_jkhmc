@@ -1,0 +1,217 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+|t.TglJanjiKrm  _________________|____|
+|t.JamJanjiKrm  _______               |
+|t.Alasan       ______________________|
+|t.Ket          ______________________|
+|t.AccBumBm     _  __ ___________|____|
+|t.JamJanjiKrm  _______               |
+|t.AccBmmAdh    _  __ ___________|____|
+|t.JamJanjiKrm  _______               |
+|t.ketjamjnjkrm __ ___________________|
+|--------------------------------.----|
+|t.TglJkirim                          |
+|t.JcJkPkAcc1                         |
+|t.JcJkPkAcc2                         |
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+amttgl1         NUMERIC NOLIMIT {DD-MM-YYYY}            INPUTRI         1
+lharijml        NOCHANGE NUMERIC                        INPUTRI         2
+amtjam		NUMERIC		{99:99}			INPUTRI		3
+amtstr1		ALLCAPS                                 INPUTRI         4
+amtalamat	ALLCAPS                                 INPUTRI         5
+amtdf1          NOCHANGE                                INPUTRI         6
+lytjnj1         PROTECT                                 INPUTRI         7
+amttgl2  	NUMERIC NOLIMIT {DD-MM-YYYY}		INPUTRI		8
+lharijml2       NOCHANGE NUMERIC                        INPUTRI         9
+ljamjnj		NUMERIC		{99:99}			INPUTRI		10
+amtdf2          NOCHANGE                                INPUTRI         11
+lytjnj2         PROTECT                                 INPUTRI         12
+amttgl3  	NUMERIC NOLIMIT {DD-MM-YYYY}		INPUTRI		13
+lharijml3       NOCHANGE NUMERIC                        INPUTRI         14
+amtjam2		NUMERIC		{99:99}			INPUTRI		15
+amtstr5		ALLCAPS                                 INPUTRI         16
+lketjam		PROTECT				        INPUTRI		17
+
+
+DEFAULT(tmptranst)
+amtdf1 		DFALT_SCAN	BLANKS	
+				1 "YA"
+				2 "TIDAK"
+amtdf2 		DFALT_SCAN	BLANKS	
+				1 "YA"
+				2 "TIDAK"
+
+ljaminput1      INIT    SYSTIME
+lJANJKIRIM      INIT    "JANJKIRIM"
+
+EDITS(tmptranst)
+e.Mandatory amttgl1 MANDATORY_IF cinicms
+e.Mandatory amtjam MANDATORY_IF cinicms
+e.Mandatory amtstr1 MANDATORY_IF cinicms
+e.Mandatory amtalamat MANDATORY_IF cinicms
+e.Mandatory amtdf1  MANDATORY_IF cinibum
+e.Mandatory amttgl2 MANDATORY_IF ctlktglkrm
+e.Mandatory ljamjnj  MANDATORY_IF cinibum
+e.Mandatory amtdf2  MANDATORY_IF cinibmm
+e.Mandatory amttgl3 MANDATORY_IF ctlktglkrm2
+e.Mandatory amtjam2  MANDATORY_IF cinibmm
+e.Mandatory amtstr5 MANDATORY
+
+e.Validate1 amtstr1 VALIDATE_IF cjkr_biasa tbddatkodidx mtbdjk stbd {Pgv_dttabel} {Pgv_infoumum} {Pljanjikirim21}
+e.Validate2 amtstr1 VALIDATE_IF cjkr_gc tbddatkodidx mtbdjk stbd {Pgv_dttabel} {Pgv_infoumum} {Pljanjikirimgc21}
+e.Validate3 amtstr5 VALIDATE 	        tbddatkodidx mtbd3106 stbd {Pgv_dttabel} {Pgv_infoumum} {Pljamket}  
+
+MAP(mtbd3106)
+tbdkode         amtstr5         REPLACE
+tbdket          lketjam         REPLACE
+
+MAP(mtbdjk)
+tbdkode		amtstr1		REPLACE
+gv_Y		lytjnj1		REPLACE_IF cytjnj1y
+gv_T		lytjnj1		REPLACE_IF cytjnj1t
+gv_Y		lytjnj2		REPLACE_IF cytjnj2y
+gv_T		lytjnj2		REPLACE_IF cytjnj2t
+amtdf6		ljamjnj		REPLACE_IF cadjamjnj
+
+MAP(mksngtglkrm2)
+amttgl1		amttgl2		REPLACE_IF cytjnj1y
+MAP(mksngtglkrm3)
+amttgl2		amttgl3		REPLACE_IF cytjnj2y
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=amttgl1	DO_SKIP_IF cslncms
+BEFORE_INPUT    cur_field=amtjam	DO_SKIP_IF cslncms
+BEFORE_INPUT    cur_field=amtstr1	DO_SKIP_IF cslncms
+BEFORE_INPUT    cur_field=amtalamat	DO_SKIP_IF cslncms
+AFTER_INPUT     cur_field=amttgl1	DO_MAP SHOW
+                IF cblmpic mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.Isipernyataan
+
+AFTER_INPUT     cur_field=amttgl1	DO_MAP SHOW mhitungjml
+AFTER_INPUT     cur_field=amttgl1	DO_MAP SHOW
+                IF chariesok mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.TglCairHarusBesokAtauHariIni
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF chariesok mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.TglCairHarusBesokAtauHariIni
+AFTER_INPUT     cur_field=amttgl1       DO_MAP SHOW
+                IF cnothk mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHarusHariKerja            
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cnothk mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHarusHariKerja           
+AFTER_INPUT     cur_field=amttgl1	DO_MAP SHOW
+                IF cmaxhari mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.JjKirimMax5Hari
+AFTER_INPUT     cur_field=amtjam	DO_MAP SHOW
+                IF cminjam1 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.MinJamKirim
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cminjam1 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.MinJamKirim
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cmaxhari mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.JjKirimMax5Hari
+
+BEFORE_INPUT    cur_field=amtdf1	DO_SKIP_IF cbknbumjnj
+BEFORE_INPUT    cur_field=amttgl2	DO_SKIP_IF cacctglkrm
+BEFORE_INPUT    cur_field=ljamjnj	DO_SKIP_IF cbknbumjnj
+AFTER_INPUT     cur_field=amtdf1	DO_MAP SHOW mksngtglkrm2
+AFTER_INPUT     cur_field=amttgl2	DO_MAP SHOW
+                IF cmaxhari2 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.JjKirimMax5Hari
+AFTER_INPUT     cur_field=amttgl2	DO_MAP SHOW
+                IF ctglbdcms mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.TglBedaCms
+AFTER_INPUT     cur_field=amttgl2	DO_MAP SHOW mhitungjml
+AFTER_INPUT     cur_field=ljamjnj       DO_MAP SHOW misijam
+AFTER_INPUT     cur_field=ljamjnj	DO_MAP SHOW
+                IF cminjam2 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.MinJamKirim
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cminjam2 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.MinJamKirim
+
+BEFORE_INPUT    cur_field=amtdf2	DO_SKIP_IF cbknbmmjnj
+BEFORE_INPUT    cur_field=amttgl3	DO_SKIP_IF cacctglkrm2
+BEFORE_INPUT    cur_field=amtjam2	DO_SKIP_IF cbknbmmjnj
+AFTER_INPUT     cur_field=amtdf2	DO_MAP SHOW mksngtglkrm3
+AFTER_INPUT     cur_field=amtdf2	DO_MAP SHOW
+                IF csdhisibwh mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.AccSebelumIsi
+AFTER_INPUT     cur_field=amttgl3	DO_MAP SHOW
+                IF cmaxhari3 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.JjKirimMax5Hari
+AFTER_INPUT     cur_field=amttgl3	DO_MAP SHOW
+                IF ctglbdbum mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.TglBedaBum
+AFTER_INPUT     cur_field=amttgl3	DO_MAP SHOW mhitungjml
+AFTER_INPUT     cur_field=amtjam2	DO_MAP SHOW
+                IF cminjam3 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.MinJamKirim
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cminjam3 mdum714
+                ELSE HKCURSOR STAY
+                HKMSG t.MinJamKirim
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cH1F
+SFL_TARGET
+	amtdatotoidx	ldatajanji btmnobuk
+SFL_MAP
+btmnobuk		amtbukoto	REPLACE
+ldatajanji		amtdata		REPLACE
+
+MAP(maddbtpjk)
+gv_historisdm           btpdata         REPLACE
+btmnobuk                btpnobuk        REPLACE
+ljanjikirim             btptype         REPLACE
+amttgl1			btptgltrn	REPLACE
+amtstr1			btpnobuk2	REPLACE
+amtalamat		btpjabatan	REPLACE
+g_usrkode		btppsm		REPLACE
+g_grpnam		btpjnsdeb	REPLACE
+gv_ok			btpstsapr	REPLACE
+
+MAP(mupdbtpjk)
+amttgl1			btptgltrn	REPLACE
+/*amttgl3			btptgltrn	REPLACE_IF cadatgljnj*/
+amtstr1                 btpnobuk2       REPLACE
+amtalamat               btpjabatan      REPLACE
+
+MAP(mapmapjanjkirim)
+lJANJKIRIM       lDETAIL2        REPLACE
+
+
+SPCALCS(spjnjkrm)
+DO_LIB ap_dbclc(DNAME dmapmapjanjkirim;DCOMMAND MAPMAP;DMAP mapmapjanjkirim);
+DO_LIB_IF cdjoinbtpjk ap_dbclc (DNAME daddbtpjk,DCOMMAND ADD,DFILE btp,DMAP maddbtpjk);
+DO_LIB_IF cdjoinbtpjk1 ap_dbclc (DNAME dupdbtpjk,DCOMMAND UPDATE_RANGE,DTARGET btptypbukidx  ljanjikirim btmnobuk,DMAP mupdbtpjk);
+DO_LIB                  ap_nxpst(l4461,lm4461det2);
+
+POSTING(tmptrans)
+        PST_ADDCMD spjnjkrm
+        PST_UPDCMD spjnjkrm

@@ -1,0 +1,735 @@
+SCREEN 416 QUERY_TYPE t.SrhTrmSparePartGdg
+SCR_FILE tlm
+SCR_LOGFLD tlmnobuk
+SCR_NXT_POSTING 4630
+SCR_NXT_MAP mnext
+SCR_NXT_COND cpost
+SCR_NXT_MSG IF cpost1 t.NIPadmMshKosong
+	    IF cpost2 t.YTadmbelumdiisi		
+	    IF cpost3 t.NIPmekanikMshKosong
+	    IF cpost4 t.YTpenerimabelumdiisi
+	    IF cpost5 t.Sts621SdhTdkBsaPosting
+	    IF cpost6 t.StsSdhCLSDdan621sdhFINISH		
+
+SCR_UPL_CAMERAONLY 
+SCR_UPLFLD tlmplg 
+SCR_UPL_DIRFLD tlmdata 
+SCR_UPLFLD_DBCALCS dupdtlmfoto
+
+LOCAL
+PGM_FIELDS
+lversi		STRING		21
+lnamaADMPART	STRING		61
+ltombol1	STRING		31
+ltombolUPL	STRING		21
+lytadm		INT2		2
+lytpenerima	INT2		2
+lrecord		INT2		2
+ltldtydis	STRING		3
+ltldsisbrg	STRING		3
+lh2		STRING		21
+lADMPART	STRING		21
+lthbl		STRING		21
+lsystime	TIME		4
+lscanadmY	STRING		3
+lscanpnrmY	STRING		3
+ldum		STRING		5
+lAHASSMEK	STRING		21
+lnamaMEKANIK	STRING		61
+
+lppdnomst2	STRING		21
+lppdnobuk	STRING		21
+lppdbrdoto      STRING		21
+lppdlok      	STRING		21
+lppdukrwrn      STRING		21
+lppdsat      	STRING		21
+lppdjml		DFLOAT		 8
+lppdcab      	STRING		21
+lppdjasbrg	STRING		 3
+lppdsts		STRING		 5
+lppdbrg		STRING		21
+/*lppmtglfak    	DATE		 4*/
+lppdjmlren	DFLOAT		 8		
+/*ldipenuhi       DFLOAT           8*/
+ltothpp         DFLOAT           8
+/*lhrgrata        DFLOAT           8*/
+/*lmapbtf		STRING		30	
+lbtfjml		DFLOAT		 8*/
+lOP		STRING		 3
+lsisaprc	DFLOAT		 8
+lCAB416		STRING		21
+lppdoto2	STRING		21
+ltgmtype	STRING		11
+lppdsisbrg	STRING		21
+
+lACCOUNTINGDLRSPV	STRING		21
+lACCOUNTINGADMALL	STRING		21
+lADHJR			STRING		21
+lPLTACCOUNTINGDLRSPV	STRING		21
+lADHOFFICER		STRING		21
+lPLTADHJR		STRING		21
+
+lAHASSKEPALABENGOFF	STRING		21
+lAHASSSERVICEADVOFF	STRING		21
+lAHASSFRONTDESK		STRING		21
+
+lcabdealer		STRING		21
+lcabinduk		STRING		21
+lNAS			STRING		21
+
+lbrgbbmprs      STRING          21
+lbrgkat4        STRING          21
+lbrgkat5        STRING          21
+
+lKUNCIABSEN		STRING		11
+
+lusrkode             STRING  21
+
+lajubuka	STRING		11
+l416_21		STRING		21
+lbukasdkjr01	STRING		21
+lbukasdkjr02	STRING		21
+lyt_buka_01	STRING		21
+lyt_buka_02	STRING		21
+
+CALCS()
+ctlddata	tlddata == "SPAREPARTG"	
+cytadm		tldtydis != BLANKS
+cytpenerima	tldsisbrg != BLANKS
+
+MAP(mscand1)
+gv_int1		lytadm		REPLACE_IF cytadm
+gv_int1		lytpenerima	REPLACE_IF cytpenerima
+gv_int1		lrecord		REPLACE
+tldtydis	lscanadmY	REPLACE
+tldsisbrg	lscanpnrmY	REPLACE
+DBCALCS(dscand1)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tldbukurtidx tlmnobuk
+        DBC_SELECT      ctlddata
+        DBC_SUM_MAP     mscand1
+
+MAP(mjointld)
+tldtydis	ltldtydis	REPLACE
+tldsisbrg	ltldsisbrg	REPLACE
+DBCALCS(djointld)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukurtidx tlmnobuk 
+	DBC_SELECT	ctlddata
+	DBC_MAP		mjointld
+
+
+MAP(mjoinppd)
+ppdnomst2	lppdnomst2	REPLACE
+ppdnobuk	lppdnobuk	REPLACE
+ppdbrdoto	lppdbrdoto	REPLACE
+ppdlok		lppdlok		REPLACE
+ppdukrwrn	lppdukrwrn	REPLACE
+ppdsat		lppdsat		REPLACE
+ppdjml		lppdjml		REPLACE
+ppdcab		lppdcab		REPLACE
+ppdjasbrg	lppdjasbrg	REPLACE
+ppdsts		lppdsts		REPLACE
+ppdbrg		lppdbrg		REPLACE
+ppdsisbrg	lppdsisbrg	REPLACE
+ppdjmlren	lppdjmlren	REPLACE
+DBCALCS(djoinppd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppdotoidx	tldplg
+	DBC_MAP		mjoinppd	
+
+MAP(mjoinppd2)
+ppdoto		lppdoto2	REPLACE
+DBCALCS(djoinppd2)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	ppdbukbrgidx   tldgrup gv_dtahass tldbrg
+	DBC_MAP		mjoinppd2
+
+/*MAP(mjoinppm)
+ppmtglfak	lppmtglfak	REPLACE
+DBCALCS(djoinppm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppmbukidx	lppdnobuk
+	DBC_MAP		mjoinppm*/
+
+/*MAP(mjoinbtf)
+btfjml          lbtfjml		REPLACE
+DBCALCS(djoinbtf)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btfbukotosts    tldnoll tldplg lOP
+        DBC_MAP         mjoinbtf
+
+CALCS()
+ctldbrg		btfbrg == tldbrg && btflok == tldlok
+
+DBCALCS(djoinbtf2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btfbukotosts    tldnoll tldplg lOP
+	DBC_SELECT	ctldbrg*/
+
+MAP(mscanbrd)
+brdsisprc	lsisaprc	REPLACE
+DBCALCS(dscanbrd)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	brdstscabbrg	gv_INPG tldcab tldbrg tldlok
+	DBC_SUM_MAP	mscanbrd
+
+/*DBCALCS(djointbdCAB416)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx	gv_dttabel gv_infoumum lCAB416 tlmcab 
+
+DBCALCS(djointbdNAS416)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_infoumum lCAB416 lNAS*/
+
+MAP(mjointgm)
+tgmtype		ltgmtype	REPLACE
+DBCALCS(djointgm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx    gv_TGL tlmtgl
+	DBC_MAP		mjointgm
+
+/*CALCS()
+ccabpsi		psipos == tlmcab
+cusrgrpADH	usrgrp == "ADH"
+
+DBCALCS(djoinpsiADMPART)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      ccabpsi
+        DBC_TARGET      psistsjabkod    gv_INPG lADMPART*/
+
+
+MAP(mjoincab)
+cabpst2		lcabdealer	REPLACE
+cabnobbm2	lcabinduk	REPLACE
+DBCALCS(djoincab)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cabkodidx   tlmcab
+	DBC_MAP		mjoincab
+
+CALCS()
+cpsicab		(psicabskr == lcabdealer) || (psicabskr == lcabinduk) || (psicabskr == tlmcab)
+c1		1
+/*cpsikode	psikode == tlmgrup*/
+
+/*DBCALCS(djoinpsiDLR)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cpsikode
+	DBC_TARGET	psicbskrsts   lcabdealer gv_INPG
+
+DBCALCS(djoinpsiIDK)
+        DBC_COMMAND     JOIN
+	DBC_SELECT	cpsikode
+	DBC_TARGET	psicbskrsts   lcabinduk gv_INPG*/
+
+DBCALCS(djoinpsicab)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cpsicab
+	DBC_TARGET	psikodidx	tlmgrup
+
+MAP(mjoinbrg)
+brgbbmprs       lbrgbbmprs      REPLACE
+brgkat4         lbrgkat4        REPLACE
+brgkat5         lbrgkat5        REPLACE
+DBCALCS(djoinbrg)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      brgdatkodidx  gv_dtbarang ppdbrg
+        DBC_MAP         mjoinbrg
+
+MAP(mupdtlmfoto)
+c1         	tlmjml          DO_CALC
+DBCALCS(dupdtlmfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tlmotoidx   tlmoto
+        DBC_MAP         mupdtlmfoto
+
+CALCS()
+cbukasdkjrCLSD	tkdsts == "CLSD"
+
+MAP(mjointkdbukasdkjr01)
+tkdjenis	lyt_buka_01	REPLACE
+
+DBCALCS(djointkdbukasdkjr01)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll	lajubuka lbukasdkjr01 l416_21
+	DBC_SELECT	cbukasdkjrCLSD
+	DBC_MAP		mjointkdbukasdkjr01
+
+MAP(mjointkdbukasdkjr02)
+tkdjenis	lyt_buka_02	REPLACE
+
+DBCALCS(djointkdbukasdkjr02)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll	lajubuka lbukasdkjr02 l416_21
+	DBC_SELECT	cbukasdkjrCLSD
+	DBC_MAP		mjointkdbukasdkjr02
+
+CALCS()
+cpost		(
+		(tlmsts == "OPEN" && tlmnobuk != BLANKS && tlmgrup != BLANKS && dscand1 >= 0 && lytadm == lrecord && 
+		(djointld == 1 && (ltldtydis == "Y"|| ltldtydis == "T"))) ||
+		(tlmsts == "TRMA" && tlmgrup != BLANKS && ((tlmbisnis != "BELIPART" && tlmgrup2 != BLANKS) || 
+		(tlmbisnis == "BELIPART" && tlmgrup2 == BLANKS)) && dscand1 >= 0 && lytpenerima == lrecord && (djointld == 1 && 
+			(ltldsisbrg == "Y" || ltldsisbrg == "T"))) /*||
+		(tlmsts == "621" && djointld == 1 && ltldsisbrg == BLANKS)*/
+		) && ((lbukasdkjr01 != BLANKS && djointkdbukasdkjr01 == 1 && lyt_buka_01 == "Y") || (lbukasdkjr01 != BLANKS && djointkdbukasdkjr01 == 0 && lbukasdkjr02 != BLANKS && djointkdbukasdkjr02 == 1 && lyt_buka_02 == "Y") || (lusrkode !=BLANKS && CEKSJ(lusrkode)) || lusrkode == BLANKS)
+
+cpost1		(tlmsts == "OPEN" && tlmgrup == BLANKS)
+cpost2		(tlmsts == "OPEN" && tlmnobuk != BLANKS && dscand1 >= 0 && lytadm != lrecord)
+cpost3		(tlmsts == "TRMA" && tlmgrup != BLANKS && tlmbisnis != "BELIPART" && tlmgrup2 == BLANKS)
+cpost4		(tlmsts == "TRMA" && tlmgrup != BLANKS && ((tlmbisnis != "BELIPART" && tlmgrup2 != BLANKS) || 
+		(tlmbisnis == "BELIPART" && tlmgrup2 == BLANKS)) && dscand1 >= 0 && lytpenerima != lrecord)
+cpost5		(tlmsts == "621")
+cpost6		tlmsts == "CLSD" && tlmpst == "FINISH"
+
+MAP(mnext)
+tlmnobuk        r_string1       REPLACE
+tlmdata         r_string2       REPLACE
+
+IMAGE(master)
+/---------------------------------------------------------------------\
+|/-------------------------------------------------------------------\|
+||t.NoBuk         :__________________                                ||
+||t.NoBuk620      :__________________  t.NoPol  :_________           ||
+||t.Tgl           :_________           t.Norang :________________    ||
+||t.NipADMPART    :_________           t.NoMesin:________________    ||
+||t.NamaADMPART   :_________________   t.Cab    :_____               ||
+||t.NipMEKANIK    :_________           t.Sts    :_____ t.621 :______ ||
+||t.NamaMEKANIK416:__________________  t.JamTrm :_________  ________ ||
+||/---------------------------s.UPLOAD------------------------------\||
+|||                                                                 |||
+|||                                                                 |||
+|||                                                                 |||
+||\-----------------------------------------------------------------/||
+|\-------------------------------------------------------------------/|
+|/-------------------------------------------------------------------\|
+|| __ ___ _______                                                    ||
+|\-------------------------------------------------------------------/|
+|/-------------------------------------------------------------------\|
+|| _____________                                                     ||_
+|\-------------------------------------------------------------------/|_
+|t.ClickUpoadUtkMknkPnrmaY                                            |
+\---------------------------------------------------------------------/
+
+FIELD(master)
+tlmnobuk	PROTECT		INPUTRI		1
+tlmplg		PROTECT		INPUTRI		2 /*NOBUK 620*/
+tlmnobbm	PROTECT		INPUTRI		3 /*NOPOL*/
+tlmtgl		PROTECT		INPUTRI		4
+tlmdari		PROTECT		INPUTRI		5 /*NO RANGKA*/
+tlmgrup		ALLCAPS SCROLL		INPUTRI		6 /*NIP ADMPART*/
+tlmuntuk	PROTECT		INPUTRI		7 /*NOMESIN*/
+lnamaADMPART	PROTECT		INPUTRI		8
+tlmcab		PROTECT		INPUTRI		9 
+tlmgrup2	PROTECT		INPUTRI		10 /*NIP MEKANIK*/
+tlmsts		PROTECT		INPUTRI		11
+tlmpst		PROTECT		INPUTRI		12
+lnamaMEKANIK	PROTECT		INPUTRI		13
+tlmjam1		PROTECT		INPUTRI		14
+tlmbisnis	PROTECT		INPUTRI		15
+tlmjml		PROTECT		INPUTRI		16
+tlmbrdoto	PROTECT		INPUTRI		17
+ltombolUPL	TOMBOL		INPUTRI		18
+ltombol1	TOMBOL		INPUTRI		19
+tlmscr		PROTECT		INPUTRI		98
+tlmdata		PROTECT		INPUTRI		99
+
+CALCS()
+cBLANKS		BLANKS
+cgrupBLANKS1	tlmgrup != BLANKS
+cgrupBLANKS0	tlmgrup == BLANKS
+cgrup2BLANKS1	tlmgrup2 != BLANKS
+cgrup2BLANKS0	tlmgrup2 == BLANKS
+/*cjoinbtf	djoinbtf == 1*/
+
+cHK		djointgm == 1 && ltgmtype == "HK" 
+cHL		djointgm == 1 && ltgmtype == "HL"
+
+cADH            g_grpnam == "ADH" || 
+                g_grpnam == "ADM01" || g_grpnam == "ADM02" || g_grpnam == "ADM03" || g_grpnam == "ADM04" || g_grpnam == "ADM05" || 
+                g_grpnam == "ADM06" || g_grpnam == "ADM07" || g_grpnam == "ADM08" || g_grpnam == "ADM09" || g_grpnam == "ADM10" || 
+                g_grpnam == "ADM11" || g_grpnam == "ADM12" || g_grpnam == "ADM13" || g_grpnam == "ADM14" || g_grpnam == "ADM15" || 
+                g_grpnam == "ADM16" || g_grpnam == "ADM17" || g_grpnam == "ADM18" || g_grpnam == "ADM19" || g_grpnam == "ADM20" || 
+                g_grpnam == "ADM21" || g_grpnam == "ADM22" || g_grpnam == "ADM23" || g_grpnam == "ADM24" || g_grpnam == "ADM25" || 
+                g_grpnam == "ADM26"
+cbukasdkjr01	"BUKA02" + STRIP(cabtwr) + "00" + THBLS(g_tgltrn) + THBLS_DD(g_tgltrn)
+cbukasdkjr02	"BUKA02" + STRIP(tlmcab) + THBLS(g_tgltrn) + THBLS_DD(g_tgltrn)
+
+
+EDITS(master)
+/*e.ValidateHKADMPART   	tlmgrup VALIDATE_IF cHK psikodidx mpsi2 0
+e.ValidateHKADMPART   	tlmgrup VALIDATE_IF cHL psikodidx mpsi2 0*/
+e.ValidateHKADMPART	tlmgrup	VALIDATE_IF cHK psmdtkodidx mpsm2 {Pgv_dtkaryawan} {Pgv_INPG} 
+e.ValidateHKADMPART     tlmgrup VALIDATE_IF cHL psmdtkodidx mpsm2 {Pgv_dtkaryawan} {Pgv_INPG}
+
+/*e.ValidateMEKANIK	tlmgrup2 VALIDATE psikodidx mpsi3 0*/
+e.ValidateMEKANIK	tlmgrup2 VALIDATE psmdtkodidx mpsm3 {Pgv_dtkaryawan} {Pgv_INPG}
+
+e.ValidateCab		tlmcab	VALIDATE cabkodidx mcab 0
+
+
+MAP(mpsm2)
+psmkode		tlmgrup		REPLACE
+psmnama		lnamaADMPART	REPLACE_IF cgrupBLANKS1
+cBLANKS		lnamaADMPART    DO_CALC_IF cgrupBLANKS0 
+g_usrkode       lusrkode        REPLACE_IF cADH
+
+MAP(mpsm3)
+psmkode		tlmgrup2	REPLACE
+psmnama		lnamaMEKANIK	REPLACE_IF cgrup2BLANKS1
+cBLANKS		lnamaMEKANIK	DO_CALC_IF cgrup2BLANKS0
+
+MAP(mcab)
+cabkode		tlmcab		REPLACE
+cabtwr		cabtwr		REPLACE
+g_usrkode       lusrkode        REPLACE_IF cADH
+cbukasdkjr01	lbukasdkjr01	DO_CALC
+cbukasdkjr02	lbukasdkjr02	DO_CALC
+
+
+MAP(mdum)
+ldum	ldum	REPLACE
+
+CALCS()
+cthbl		THBLS(g_tgltrn)
+
+DEFAULTS(master)
+lversi		INIT		23052026
+tlmdata		INIT_QUERY	SPAREPARTG
+ltombol1	INIT		"1d.Detail Part"
+tlmscr		INIT		416
+tlmtgl		INIT_QUERY	{g_tgltrn}
+lh2		INIT		H2
+lthbl		INIT		{cthbl}
+lADMPART	INIT		ADMPART
+lsystime	INIT		SYSTIME
+lOP		INIT		OP
+lAHASSMEK	INIT		AHASSMEK
+/*lmapbtf		INIT		mapbtf*/
+lCAB416		INIT		CAB416
+ltombolUPL	INIT		"UPLOAD"
+tlmbrdoto	INIT		OK
+
+lACCOUNTINGDLRSPV	INIT	ACCOUNTINGDLRSPV
+lACCOUNTINGADMALL	INIT	ACCOUNTINGADMALL
+lADHJR			INIT	ADHJR
+lPLTACCOUNTINGDLRSPV	INIT	PLTACCOUNTINGDLRSPV
+lADHOFFICER		INIT	ADHOFFICER
+lPLTADHJR		INIT	PLTADHJR
+
+lAHASSKEPALABENGOFF	INIT	AHASSKEPALABENGOFF
+lAHASSSERVICEADVOFF	INIT	AHASSSERVICEADVOFF
+lAHASSFRONTDESK		INIT	AHASSFRONTDESK
+
+lNAS			INIT	NAS
+lKUNCIABSEN		INIT	KUNCIABSEN
+lajubuka		INIT	AJUBUKA
+l416_21			INIT	416
+
+CALCS()
+cpsijab         (djointgm == 1 && (ltgmtype == "HL" || ltgmtype == "HK") && djoincab == 1 && djoinpsicab == 1)
+cnipADMPART0	tlmgrup != BLANKS
+ctlmjml1 	tlmsts != "OPEN" && tlmgrup2 != BLANKS && tlmjml == 1 && dscand1 >= 0 && lytadm == lrecord
+
+HOOKS(master)
+BEFORE_INPUT	cur_field=tlmgrup	DO_SKIP_IF cnipADMPART0
+CLICKED         cur_field=ltombolUPL    DO_SPCALCS IF ctlmjml1 spmasterUPL
+AFTER_INPUT     cur_field=tlmgrup       DO_MAP SHOW
+                IF cpsijab mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyAdmptKbgSAFD
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cpsijab mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyAdmptKbgSAFD
+
+
+
+IMAGE(transt)
+/----t--------------t--------------t--------------t---------t-------------t-----------t--------t-------\
+|t.No|t.KodePart    |t.NamaPart    |t.Lokasi      |t.Jumlah |t.QRKodePart |t.QRLokasi |t.YTADM |t.YTP  |
+\----.--------------.--------------.--------------.---------.-------------.-----------.--------.-------/
+
+IMAGE(trans)
+|____|______________|______________|______________|_________|_____________|___________|________|_______|_
+
+FIELD(trans)
+tldnourt	PROTECT		INPUTRI		1
+tldbrg		PROTECT		INPUTRI		2
+tldket		PROTECT		INPUTRI		3
+tldlok		PROTECT		INPUTRI		4
+tldjml		PROTECT		INPUTRI		5
+tldgrup2	QRCODE		INPUTRI		6
+tldlok2		QRCODE		INPUTRI		7
+tldtydis	PROTECT		INPUTRI		8	/*YT ADMPART*/
+tldsisbrg	PROTECT		INPUTRI		9	/*YT PENERIMA*/
+tldplg		PROTECT		INPUTRI		10
+
+CALCS()
+/*cADM		((tlmsts == "OPEN" && tlmgrup != BLANKS && tlmgrup == g_usrkode) || (tlmsts == "TRMA" && tlmgrup == g_usrkode) || (tlmsts == "621" && tlmgrup == g_usrkode))
+cPenerima     	tldtydis != "T" && ((tlmsts == "TRMA") || (tlmsts == "621" && (g_usrkode == tlmgrup2)))
+cPenerimax      tldtydis == "T" && ((tlmsts == "TRMA") || (tlmsts == "621" && (g_usrkode == tlmgrup2)))*/
+cppdoto_1	tldplg != BLANKS /*&& g_batalpst == 99*/
+
+EDITS(trans)
+t.Validateppd	tldplg	VALIDATE_IF cppdoto_1 ppdotoidx mppd 
+
+MAP(mppd)
+ppdoto		tldplg		REPLACE
+
+
+
+DEFAULTS(trans)
+/*IF cADM tldtydis 	DFALT_SCAN_BLANKS	Y
+						T
+						BLANKS
+
+IF cPenerima tldsisbrg	DFALT_SCAN_BLANKS	Y
+						T
+						BLANKS
+
+IF cPenerimax tldsisbrg  DFALT_SCAN_BLANKS      T
+                                                BLANKS*/
+
+CALCS()
+/*ADMY		(((tldtydis != BLANKS) || (tlmsts == "TRMA" && tldtydis != BLANKS) || (tlmsts == "621" && tldtydis != BLANKS)) && tlmgrup != g_usrkode)
+cPenerimaY      (*/(tldsisbrg != BLANKS) ||*//*
+                (tlmsts == "OPEN") ||
+		(tlmsts == "TRMA" && tldtydis == BLANKS) || 
+                (tlmsts == "621" && ((tldsisbrg != BLANKS) || (((tldtydis != BLANKS && tldsisbrg == BLANKS) || (tldtydis == BLANKS &&
+                tldsisbrg == BLANKS)) && tlmgrup == g_usrkode))) && (tlmgrup2 == g_usrkode || tlmgrup == g_usrkode)   )
+cstokada	((tldtydis == "Y" || tldsisbrg == "Y") && dscanbrd >= 0 && lsisaprc > 0) || (tldtydis != "Y" && tldsisbrg != "Y")*/
+/*cstokada        dscanbrd >= 0 && lsisaprc > 0*/
+ckodebrgsama    tldbrg == tldgrup2
+ckodeloksama    tldlok == tldlok2
+cY              "Y"
+cbarangOK       tldbrg == tldgrup2 && tldlok == tldlok2 && dscanbrd >= 0 && lsisaprc >= 0
+
+MAP(mQR_OK)
+cY              tldtydis        DO_CALC_IF cbarangOK
+
+HOOKS(trans)
+AFTER_INPUT     cur_field=tldlok2       DO_MAP SHOW mQR_OK
+AFTER_INPUT     cur_field=tldgrup2      DO_MAP SHOW
+                IF ckodebrgsama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KodeBrgTdkSama
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckodebrgsama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KodeBrgTdkSama
+
+AFTER_INPUT     cur_field=tldlok2      DO_MAP SHOW
+                IF ckodeloksama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KodeLokTdkSama
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckodeloksama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KodeLokTdkSama
+
+/*AFTER_INPUT     cur_field=tldlok2       DO_MAP SHOW
+                IF cstokada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakAdaStok
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cstokada mdum
+                ELSE HKCURSOR STAY
+		HKMSG t.TidakAdaStok*/
+
+/*BEFORE_INPUT	cur_field=tldtydis	DO_SKIP_IF cADMY
+BEFORE_INPUT	cur_field=tldsisbrg	DO_SKIP_IF cPenerimaY
+
+AFTER_INPUT	cur_field=tldtydis	DO_MAP SHOW
+		IF cstokada mdum
+		ELSE HKCURSOR STAY
+                HKMSG t.TidakAdaStok
+
+AFTER_INPUT     cur_field=tldsisbrg     DO_MAP SHOW
+                IF cstokada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakAdaStok
+
+AFTER_INPUT     cur_keybd=EN  		DO_MAP SHOW
+                IF cstokada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakAdaStok*/
+
+
+CALCS()
+cdata		tlddata == "SPAREPARTG"		
+
+SUBFILE(trans)
+SFL_LINES(5)
+SFL_TITLE(transt)	
+SFL_SELECT	cdata
+SFL_TARGET
+tldbukurtidx	tlmnobuk
+
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+tlmdata		tlddata		REPLACE
+
+
+CALCS()
+cjoinppd	((djoinppd == 1) || (djoinppd == 0 && djoinppd2 == 1))
+/*cbrgok		(djointbdCAB416 == 1 || djointbdNAS416 == 1) && (tldtydis == "Y" && (djoinppd == 1 && lppdjasbrg == "BR" && lppdsts== "OPEN" && lppdjml > 0 && djoinppm == 1 && djoinbtf2 == 0))*/
+ctldplg_0	tldplg == BLANKS
+cupdppdtld	(tldtydis == "T" && tldsisbrg == "T") || (tlmsts == "621" && tldtydis == "Y" && tldsisbrg == "T")
+
+MAP(mmap)
+lppdnomst2	lppdnomst2	REPLACE
+lppdnobuk       lppdnobuk	REPLACE
+lppdbrdoto      lppdbrdoto	REPLACE
+lppdlok         lppdlok		REPLACE
+lppdukrwrn      lppdukrwrn	REPLACE
+lppdsat         lppdsat		REPLACE
+lppdjml         lppdjml		REPLACE
+lppdcab         lppdcab		REPLACE
+lppdjasbrg     	lppdjasbrg	REPLACE
+lppdsts         lppdsts		REPLACE
+lppdbrg		lppdbrg		REPLACE
+lppdsisbrg	lppdsisbrg	REPLACE
+/*lppmtglfak      lppmtglfak	REPLACE*/
+lppdjmlren	lppdjmlren	REPLACE
+lppdoto2	tldplg		REPLACE_IF ctldplg_0
+DEBUG	ldum ldum	REPLACE
+
+/*MAP(mmap2)
+lbtfjml		tldjml2		REPLACE_IF cjoinbtf
+DEBUG ldum ldum REPLACE*/
+
+MAP(mupdppdtld)
+gv_VOID		ppdsts		REPLACE
+
+/*MAP(mapbtf)
+ppmplg          btfplg          REPLACE
+ppdtglfak       btftglfak       REPLACE
+ppdhrg          btfhrgjl        REPLACE*/
+
+CALCS()
+cdjoinbrg1      djoinbrg == 1
+cBRa            ppdjasbrg =="BR" || ppdjasbrg == "BI"
+ctothpp1        ppdtothpp != 0  && ppdjml != 0 && ppdjasbrg == "BR"
+ctothppKosong   (ltothpp == 0 || ppdtothpp == 0) && ppdjasbrg == "BR"
+conlykpb1       ppmsup == "PKTSERVICEKPB1" && ppdjasbrg == "BR" && ppdsup == "AHM"
+cadadiskon      ppdperdis > 0 || ppdperdis1 > 0 || ppdperdis2 > 0 || ppdperdis3 > 0 || ppdperdis4 > 0 || ppdperdis5 > 0 || ppdperdis6 > 0 || ppdperdis7 > 0
+/*cdjoinbtf3      djoinbtf3 == 1*/
+
+ctothpp         ppdtothpp / ppdjml
+ctothpp2        ppdhpp * ppdjml
+cppdsubtot      (ppdjml * (ppdhrg * ppmkurs)) - (ppdhrgbp * (ppdjml-1))
+cdiskon         ppdperdis4 + ppdperdis5 + ppdperdis6 + ppdperdis7
+cppdhrgnet      ppdhrg - ppdtotdis
+cppdtotfak      ppdhrgnet
+cppdtotfak1     ppdhrg
+cppdtotbp       ppdhrgbp
+cnotdiskon      ppdperdis == 0 && ppdperdis1 == 0 && ppdperdis2 == 0 && ppdperdis3 == 0 && ppdperdis4 == 0 && ppdperdis5 == 0 && ppdperdis6 ==0 && ppdperdis7 == 0
+
+
+
+MAP(mmapppd)
+lbrgbbmprs        lbrgbbmprs    REPLACE_IF cdjoinbrg1
+
+MAP(mupdppd)
+lbrgbbmprs      ppdnobbm        REPLACE
+ppdjml          ppdjmlawl       REPLACE  
+
+ltothpp         ppdtothpp       REPLACE_IF cBRa
+ctothpp         ppdhpp          DO_CALC_IF ctothpp1
+ctothpp2        ppdtothpp       DO_CALC_IF ctothppKosong
+ppdhpp          ppdhrg          REPLACE_IF conlykpb1
+cppdsubtot      ppdsubtot       DO_CALC
+
+cdiskon         ppdtotdis       DO_CALC_IF cadadiskon
+cppdhrgnet      ppdhrgnet       DO_CALC_IF cadadiskon
+cppdtotfak      ppdtotfak       DO_CALC_IF cadadiskon
+cppdtotfak1     ppdtotfak       DO_CALC_IF cnotdiskon
+cppdtotbp       ppdtotbp        DO_CALC
+
+/*btfbrdoto       ppdbrdoto       REPLACE_IF cBRa*/
+/*lnip            ppdsales        REPLACE*/
+
+/*llok            ppdlok          REPLACE_IF cdjoinbtf3*/
+
+MAP(mupdtldMekanikY)
+cY              tldsisbrg       DO_CALC
+
+CALCS()
+cOK		"OK"
+cket416		"ADMPART KERJAKAN 416"
+
+MAP(mupdtlmOK)
+cOK		tlmbrdoto	DO_CALC
+
+MAP(mmapmaster)
+DEBUG   ldum ldum REPLACE
+
+MAP(maddabkmstr)
+gv_INPG         abksts          REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+tlmgrup     	abkkym          REPLACE
+tlmnobuk     	abknobuk        REPLACE
+tlmtgl          abktgl          REPLACE
+cket416         abkkym2         DO_CALC
+tlmscr          abkscr          REPLACE
+tlmscr          abktype         REPLACE
+lADMPART        abknoll         REPLACE
+DEBUG   ldum ldum REPLACE
+
+CALCS()
+cppdopen        djoinppd == 1 && (lppdsts == "OPEN" && ((lppdjmlren > 0 && lppdjasbrg == "BR") || (lppdjasbrg == "JI")))
+cNipADMPARTada	tlmgrup != BLANKS
+
+SPCALCS(spmaster)
+DO_LIB		ap_dbclc(DNAME dmapmaster, DCOMMAND MAPMAP, DMAP mmapmaster);
+DO_LIB_IF cNipADMPARTada	ap_dbclc(DNAME daddabkmstr, DCOMMAND ADD, DFILE abk, DMAP maddabkmstr);
+
+SPCALCS(sptrans)
+DO_LIB_IF cjoinppd		ap_dbclc(DNAME dmapmap, DCOMMAND MAPMAP, DMAP mmap);
+/*DO_LIB_IF cbrgok ap_adbtf(gv_O,lppdbrdoto,lppdnomst2,lppdbrg,lppdlok,tldplg,lppdukrwrn,lppdsat,lppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lppdcab,lppmtglfak);*/
+DO_LIB ap_dbclc(DNAME dmapmapg1a,DCOMMAND MAPMAP,DMAP mmapppd);
+DO_LIB_IF cppdopen ap_dbclc(DNAME dupdppd,DCOMMAND UPDATE,DTARGET ppdotoidx tldplg,DMAP mupdppd);
+
+/*DO_LIB		ap_dbclc(DNAME dmapmap2, DCOMMAND MAPMAP, DMAP mmap2);*/
+DO_LIB_IF cupdppdtld	ap_dbclc(DNAME dupdppdtld, DCOMMAND UPDATE, DTARGET ppdotoidx tldplg, DMAP mupdppdtld);
+
+SPCALCS(spmasterUPL)
+DO_LIB          ap_dbclc(DNAME dupdtldMekanikY2,DCOMMAND UPDATE_RANGE,DTARGET tldbukurtidx tlmnobuk,DMAP mupdtldMekanikY);
+DO_LIB          ap_dbclc(DNAME dupdtlmOK,DCOMMAND UPDATE,DTARGET tlmotoidx   tlmoto ,DMAP mupdtlmOK);
+
+
+POSTING(master)
+PST_UPDCMD      spmaster
+
+POSTING(trans)
+PST_UPDCMD      sptrans
+
+
+CALCS()
+c0		0
+cupdmstr	tlmsts == "OPEN" || tlmsts == "TRMA" || tlmsts == "621"
+cupdtrns1       (
+                (tlmsts == "OPEN" && tlmgrup != BLANKS && tldtydis == BLANKS && tlmgrup == g_usrkode) ||
+                (tlmsts == "TRMA" && tldsisbrg == BLANKS && tlmgrup2 == g_usrkode) ||
+		(tlmsts == "TRMA" && tldtydis == BLANKS && tlmgrup == g_usrkode) ||
+                (tlmsts == "621" && ((tldtydis == BLANKS && tlmgrup == g_usrkode) || (tldtydis != BLANKS && tldsisbrg == BLANKS && (g_usrkode == tlmgrup || g_usrkode == tlmgrup2))))
+                )
+
+PERMIT(master)
+PMT_ADD_COND		c0
+PMT_UPDALL_COND		cupdmstr
+PMT_DEL_COND		c0
+
+PERMIT(trans)
+PMT_ADD_COND		c0
+PMT_UPDALL_COND		cupdtrns1
+PMT_DEL_COND		c0
+
+
+END_SCREEN
+

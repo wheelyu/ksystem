@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+lcaOK		STRING	21
+ldt3120		STRING	21
+linpg		STRING	21
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+| t.t                                                                          |
+| i.Tanggal            : ________                                              |
+| t.Nip		       : ________					       |
+| t.AnalisaCa          : _______________________                               |
+| i.Hasil	       : _______________________                               |
+| t.t                    _____                                                 |
+\------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+tldtglfak		PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 1
+tldplg			PROTECT				INPUTRI 2
+tldket			TEXTAREA			INPUTRI 3
+tldukrwrn		NOCHANGE			INPUTRI 4
+lcaOK			ALLCAPS				INPUTRI 10
+
+DEFAULTS(tmptranst)
+tldplg			INIT		{g_usrkode}
+tldtglfak		INIT		{g_tgltrn}
+tldukrwrn		DFALT_SCAN	BLANKS
+					REKOMEN
+					NOTREKOMEN
+lcaOK			INIT		"OK"
+ldt3120			INIT		DT3120
+linpg			INIT		INPG
+
+/*CALCS()
+cnotrekomen		svistr1 == "NOTREKOMEN"
+crekomen		svistr1 != "NOTREKOMEN"
+*/
+
+EDITS(tmptranst)
+e.Mandatory		tldket  MANDATORY
+e.Mandatory		tldukrwrn MANDATORY
+
+/*CALCS()
+crekomca0		g_curcmd == 1 && djoinsvirekomca == 0
+crekomca1		g_curcmd == 1 && djoinsvirekomca == 1
+curutrekomca		lurut_rekomca + 1
+curutrekomca1		1
+crekom			svistr1 == "REKOMEN"
+
+MAP(murut_rekomca)
+curutrekomca1		svinourt		DO_CALC_IF crekomca0
+curutrekomca		svinourt		DO_CALC_IF crekomca1
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW murut_rekomca
+BEFORE_INPUT		cur_field=svistr3	DO_SKIP_IF crekom
+BEFORE_INPUT		cur_field=sviket	DO_SKIP_IF crekomen
+*/
+
+
+/*CALCS()
+csdmca		g_grpnam=="B.M4WCM" || g_grpnam=="B.M4WCA" || g_grpnam=="IT" || g_grpnam=="RI"
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+/*SFL_COND	csdmca*/
+SFL_TARGET
+	tldllbrgurt  cmpkode cmpkode linpg
+
+SFL_MAP
+ldt3120			tlddata			REPLACE
+cmpkode			tldnoll
+cmpkode			tldbrg 			REPLACE
+linpg			tldlok
+
+/*MAP(mupdbtmrekomen)
+svistr1			btmrekomen		REPLACE
+
+
+SPCALCS(stmptrans)
+	DO_LIB		ap_dbclc(DNAME dupdbtmrekomen,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdbtmrekomen);
+
+POSTING(tmptrans)
+	PST_ADDCMD	stmptrans
+*/
+
+CALCS()
+cupd_rekomca		(g_grpnam == "B.M4WCA" || g_grpnam == "RI" || g_grpnam == "B.M4WCM")
+cupd_rekomca0		0
+
+PERMIT(tmptrans)
+  	PMT_ADD_COND cupd_rekomca 
+  	PMT_UPDALL_COND cupd_rekomca0
+  	PMT_DEL_COND  	cupd_rekomca
+
+

@@ -1,0 +1,168 @@
+IMAGE(tmptranst)
+/---------------------------------\
+|/-------------------------------\|
+||t.Nourt   :____                ||
+||t.NipInp  :____________________||
+||i.Login   :____________________||
+||t.NoBuk   :____________________||
+||t.Ubah    :____________________||
+||t.NipLama :____________________||
+||t.NipBaru :____________________||
+|\-------------------------------/|
+\---------------------------------/
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+tkdnourt        NOCHANGE        INPUTRI 1
+tkdnoll         PROTECT         INPUTRI 2
+tkdrek          PROTECT         INPUTRI 3
+tkdnobuk        PROTECT         INPUTRI 4
+tkdjenis        NOCHANGE        INPUTRI 5
+tkdjwbstr1      PROTECT         INPUTRI 6
+tkdjwbstr2      ALLCAPS         INPUTRI 7
+
+CALCS()
+cHO             g_grpnam=="IT" || g_grpnam == "COLLAREASP" || g_grpnam == "SYOMAHEAD"|| g_grpnam=="B.M4WCSPV" || g_grpnam=="ARAM" || g_grpnam == "ARAMZ1Z2" || 
+		g_grpnam == "ARAMZ4Z6" || g_grpnam == "REMAM" || g_grpnam == "BOM" || g_grpnam=="ARAM" || g_grpnam=="REMDVH" || g_grpnam=="COLLHEAD" || g_grpnam=="REMHEAD" ||
+		g_grpnam == "ADHSYOMA" || g_grpnam == "BPI" || g_grpnam == "DCARESURVEY"
+cBM             g_grpnam=="BM" || g_grpnam=="ARPIC"
+DEFAULTS(tmptranst)
+tkdnoll         INIT            {g_usrkode}
+tkdrek          INIT            {g_grpnam}
+tkdsts          INIT            OPEN
+tkddata         INIT            RESURVEY
+IF cHO          tkdjenis        DFALT_LIST      KOL
+                                                SPV
+                                                PIC
+                                                BM
+
+IF cBM          tkdjenis        DFALT_LIST      KOL
+                                                SPV
+EDITS(tmptranst)
+
+e.Mandatory     tkdjwbstr2      MANDATORY
+e.Mandatory     tkdjenis        MANDATORY
+t.ValidateNip   tkdjwbstr2      VALIDATE psmdtkodidx mpsinip  {Pgv_dtkaryawan} {Pgv_INPG}
+
+MAP(mpsinip)
+psmkode         tkdjwbstr2      REPLACE
+
+CALCS()
+ckol            tkdjenis == "KOL"
+cspv            tkdjenis == "SPV"
+cpic            tkdjenis == "PIC"
+cbm             tkdjenis == "BM"
+csatux          1
+cplusx          ltkdnourt + 1
+csatu2x         1
+cplus2x         ltldnourt + 1
+cjointkd_0      djointkd == 0 && g_curcmd==1
+cjointkd_1      djointkd == 1 && g_curcmd==1
+cbatas2         ((g_grpnam =="BM" || g_grpnam == "ARAMZ1Z2" || g_grpnam == "ARAMZ4Z6" || g_grpnam=="ARAM"|| g_grpnam == "REMAM" || g_grpnam=="COLLHEAD") && tkdnourt <=2) ||  g_grpnam=="IT" || g_grpnam == "COLLAREASP" || g_grpnam == "SYOMAHEAD" || g_grpnam=="B.M4WCSPV" || g_grpnam == "ARAM" || g_grpnam=="COLLHEAD" || g_grpnam == "ARAMZ1Z2" || g_grpnam == "ARAMZ4Z6" || g_grpnam == "REMAM" || g_grpnam == "BOM" || g_grpnam == "REMDVH" || g_grpnam=="COLLHEAD" || g_grpnam=="REMHEAD" || g_grpnam=="ADHSYOMA" || g_grpnam == "BPI" || g_grpnam == "DCARESURVEY"
+cnipdvs         (djoinnipdvs==1 && (lnipdvs=="HMC" || lnipdvs=="M2W") && mtsdvs!="M4W") || mtsdvs=="M4W" || mtsdvs=="M2W4W"
+
+MAP(misiurutx)
+csatux          tkdnourt        DO_CALC_IF cjointkd_0
+cplusx          tkdnourt        DO_CALC_IF cjointkd_1
+
+
+MAP(misitransd)
+mtsnobuk        tkdnobuk        REPLACE
+mtsplg          tkdjwbstr1      REPLACE_IF ckol
+mtspst          tkdjwbstr1      REPLACE_IF cspv
+mtsbisnis       tkdjwbstr1      REPLACE_IF cpic
+mtshcin         tkdjwbstr1      REPLACE_IF cbm
+/*
+MAP(mdum3)
+ldumx            ldumx            REPLACE
+*/
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdnourt      DO_MAP misiurutx
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW misitransd
+
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP  SHOW
+                IF cbatas2 mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Max 2 kali input
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cnipdvs mdum3
+                ELSE HKCURSOR STAY
+                HKMSG Hanya bisa nip yang sesuai bisnis
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+        tkddatbukll gv_resurvey11 mtsnobuk
+
+CALCS()
+ctransd3                mtssts == "OPEN" || mtssts == "INPG" || mtssts=="RCLS" || g_grpnam=="IT"
+cadakunci               djoinabk736kol==1 && tkdjenis == "KOL"
+clockkolhrini           djoinlockkol==0 && tkdjenis == "KOL"
+
+cadakuncispv            djoinabk736spv==1 && tkdjenis == "SPV"
+cadakuncipic            djoinabk736pic==1 && tkdjenis == "PIC"
+cadakuncibm             djoinabk736bm==1 && tkdjenis == "BM"
+ckondisiabkkol          abktype=="KOL"
+ckondisiabkspv          abktype=="SPV"
+ckondisiabkpic          abktype=="PIC"
+ckondisiabkbm           abktype=="BM"
+cblmabkbmrsvy		tkdjenis == "BM" && djoinabk736bm==0
+
+MAP(mupdmtstransd)
+
+tkdjwbstr2      mtsplg          REPLACE_IF ckol
+tkdjwbstr2      mtspst          REPLACE_IF cspv
+tkdjwbstr2      mtsbisnis       REPLACE_IF cpic
+tkdjwbstr2      mtshcin         REPLACE_IF cbm
+
+
+MAP(mupdabk736kolm)
+tkdjwbstr2      abkkym          REPLACE_IF ckondisiabkkol
+
+MAP(mupdabk736spv)
+tkdjwbstr2      abkkym          REPLACE_IF ckondisiabkspv
+
+MAP(mupdabk736pic)
+tkdjwbstr2      abkkym          REPLACE_IF ckondisiabkpic
+
+MAP(mupdabk736bm)
+tkdjwbstr2      abkkym          REPLACE_IF ckondisiabkbm
+
+MAP(maddabk736kolm)
+gv_INPG         abksts          REPLACE
+g_tgltrn        abktgl          REPLACE
+lkunciabsen     abkdata         REPLACE
+l736            abkkym2         REPLACE
+mtsplg          abkkym          REPLACE
+mtsnobuk        abknobuk        REPLACE
+l736x           abkscr          REPLACE
+cKOL            abktype         DO_CALC
+
+MAP(maddabktrancbm)
+gv_INPG         abksts          REPLACE
+g_tgltrn        abktgl          REPLACE
+lkunciabsen     abkdata         REPLACE
+l736            abkkym2         REPLACE
+mtshcin         abkkym          REPLACE
+mtsnobuk        abknobuk        REPLACE
+l736x           abkscr          REPLACE
+cBMx            abktype         DO_CALC
+
+SPCALCS(sptmptrans)
+DO_LIB_IF ctransd3      ap_dbclc(DNAME dupdmtstransd,DCOMMAND UPDATE,DTARGET mtsbukidx tkdnobuk,DMAP mupdmtstransd);
+DO_LIB_IF cadakunci     ap_dbclc(DNAME dupdabktranckol,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabk736kolm);
+DO_LIB_IF cadakuncispv  ap_dbclc(DNAME dupdabktrancspv,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabk736spv);
+DO_LIB_IF cadakuncipic  ap_dbclc(DNAME dupdabktrancpic,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabk736pic);
+DO_LIB_IF cadakuncibm   ap_dbclc(DNAME dupdabktrancbm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabk736bm);
+DO_LIB_IF clockkolhrini ap_dbclc(DNAME daddabktranckol,DCOMMAND ADD,DFILE abk,DMAP maddabk736kolm);
+DO_LIB_IF cblmabkbmrsvy	ap_dbclc(DNAME daddabktrancbm,DCOMMAND ADD,DFILE abk,DMAP maddabktrancbm);
+
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans
+
+

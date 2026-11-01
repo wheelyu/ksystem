@@ -1,0 +1,61 @@
+LOCAL
+PGM_FIELDS
+lEstGdi			STRING		21
+lMGA			STRING		21
+
+
+DBCALCS(djoinnhd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbukidx   btmnobuk  lnhddata1	                    
+
+
+/*
+DBCALCS(djoinnhd1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbukidx   btmnopj  lnhddata1
+*/
+
+IMAGE(tmptranst)
+/----t--------------------t----------------------------------\                  
+|t.No|   t.ItemBrg        | t.ket                            |                   
+\----.--------------------.----------------------------------/                   
+
+IMAGE(tmptrans)
+|____|____________________|__________________________________|                   
+
+FIELD(tmptrans)
+tbtnourt      NOCHANGE               INPUTRI 	1 /* No Urt */
+tbtkode	      PROTECT                INPUTRI	2 /* Item Brg */
+tbtket        PROTECT                INPUTRI	3 /* Kelengkapan */
+
+DEFAULT(tmptrans)
+lEstGdi		INIT			"ESTGADAI"
+lMGA            INIT                    MGA    
+
+
+CALCS()
+cdjoinnhd0	djoinnhd==0 && (btmrekomen == "BARU" || (btmrekomen == "PINJAMAN_ULANG" && (btmtotal == 3 || btmtotal == 6 || btmtotal == 9))) 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_LINES(10)
+SFL_SORT_BY_FIELD	tbtnourt
+SFL_COND    cdjoinnhd0
+SFL_TARGET
+    tbtdattypkod gv_dttemplate lMGA lEstGdi btmkdkms     btmkdkms    
+
+
+MAP(maddnhd)
+btmnobuk	nhdnobuk	REPLACE
+lnhddata1	nhddata		REPLACE
+tbtnourt	nhdnourt	REPLACE
+tbtkode		nhdkode		REPLACE
+gv_INPG		nhdsts  	REPLACE
+btmnobuk 	nhdkode2	REPLACE
+
+SPCALCS(sptrans)
+DO_LIB ap_dbclc(DNAME daddnhd,DCOMMAND ADD,DFILE nhd,DMAP maddnhd);
+
+POSTING(tmptrans)
+PST_COMMAND sptrans

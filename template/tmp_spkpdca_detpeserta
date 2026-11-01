@@ -1,0 +1,47 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------\
+|/------------------------------------------------------------\|
+||t.DetPeserta                                                ||
+|\------------------------------------------------------------/|
+|/--------t---------------t---------------t--------t----------\|
+||t.Np    |t.NamaPeserta  |t.Jabatan      |t.Sts   |          ||
+|\--------t---------------t---------------t--------t----------/|
+\--------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|________|_______________|_______________|________|__________|
+
+FIELDS(tmptrans)
+spktgg                  ALLCAPS                                 INPUTRI 1               /*NIP Peserta*/
+spktgg2                 PROTECT                                 INPUTRI 2               /*Nama Peserta*/
+spktgg3                 PROTECT                                 INPUTRI 3               /*Jabatan Peserta*/
+spktgg4                 PROTECT                                 INPUTRI 4               /*Status*/
+lenter                  NOCHANGE                                INPUTRI 5               /*Enter*/
+
+CALCS()
+cpesinpg                spktgg4 == "INPG"
+
+EDITS(tmptrans)
+e.ValidateNip           spktgg          VALIDATE psikodidx mdetpeserta 0
+
+MAP(mdetpeserta)
+psikode                 spktgg          REPLACE
+psinama                 spktgg2         REPLACE
+psijabatan              spktgg3         REPLACE
+psists                  spktgg4         REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_keybd=EN    DO_MAP SHOW
+                        IF cpesinpg     mdum
+                        ELSE HKCURSOR
+                        HKMSG Status Peserta Tidak INPG
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_TARGET     
+        spkdatbuktyp lSPKPDCA tlmnobuk lDETPESERTA
+SFL_MAP
+        lSPKPDCA        spkdata
+        tlmnobuk        spknobuk
+        lDETPESERTA     spktype

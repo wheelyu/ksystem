@@ -1,0 +1,137 @@
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/-----------------------------------------------\|
+  t.UserIntv    : ________ __________________
+  t.Pil1        : ___________________________
+  t.TglIntv     : ___________________________
+  t.Pil2        : ___________________________
+  t.JamIntv     : ___________________________
+  t.SdmInput    : ________ __________________
+|\-----------------------------------------------/|
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktkode2	PROTECT			INPUTRI 1
+lnmusr1		PROTECT			INPUTRI 2
+akttype		NOCHANGE		INPUTRI 3
+akttgl          NOCHANGE NOLIMIT {DD-MM-YY} INPUTRI 4
+aktlok		NOCHANGE		INPUTRI 5
+aktjam		ALLCAPS                 INPUTRI 6
+aktcrtusr	PROTECT			INPUTRI 6
+lnminput	PROTECT			INPUTRI 6
+
+CALCS()
+cuserisi	g_usrkode==aktkode2 || g_grpnam=="RAS" || g_grpnam=="IT" || g_grpnam=="RI"
+cbknuserisi	g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT" || g_usrkode==aktcrtusr
+cabkintv1	abkkym==lusr1 && abkkym2=="136 INTERVIEW USER1" && (abksts=="RINP" || abksts=="INPG")
+cabkintv2	abkkym==lusr2 && abkkym2=="136 INTERVIEW USER2" && (abksts=="RINP" || abksts=="INPG")
+
+
+DEFAULTS(tmptranst)
+IF cuserisi   	akttype          DFALT_SCAN_BLANKS      INTVU1  "INTERVIEW USER 1"
+							MD	"MENGUNDURKAN DIRI"
+							NO_RESPON "TIDAK RESPON"
+
+IF cbknuserisi  akttype          DFALT_SCAN_BLANKS      RESCU1  "RESCHEDULE USER 1"
+							RESCK1  "RESCHEDULE KANDIDAT USER 1"
+
+IF cuserisi  aktlok		DFALT_SCAN_BLANKS	ACC
+							RESC
+
+IF cbknuserisi  aktlok          DFALT_SCAN_BLANKS       ACC
+							TACC
+
+MAP(mscanabkkuncintv)
+abktgl          ltglakhintv1    REPLACE_IF cabkintv1
+abktgl          ltglakhintv1    REPLACE_IF cabkintv2
+
+DBCALCS(dscanabkkuncintv)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN     btmnobuk
+        DBC_SUM_MAP     mscanabkkuncintv
+
+
+CALCS()
+cresc           akttype=="MD" || akttype=="NO_RESPON"
+clnjtintvu1	akttype=="INTVU1" || akttype=="RESCU1"  || akttype=="RESCK1"
+ctambah1	g_curcmd==1
+ctdkblhlewat	((dscanabkkuncintv==0 || dscanabkkuncintv!=0) && akttgl<=ltglakhintv1) || akttype=="RESCU1"  || akttype=="RESCK1"
+cresudh2	((dscanaktintv1==0 || dscanaktintv1!=0) && ljmlresc<2) || akttype=="INTVU1" || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT"
+cresudh2xy	((dscanaktintv1x==0 || dscanaktintv1x!=0) && ljmlrescx<2) || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT" || g_usrkode==aktcrtusr || akttype=="INTVU1"
+/*cterimaintv	djointaktintv1x==1 && g_curcmd==1 && (akttype=="INTVU1" || akttype=="INTVU2")*/
+
+EDITS(tmptranst)
+e.Mandatory     aktkode2   MANDATORY
+e.Mandatory     akttgl     MANDATORY_IF clnjtintvu1
+e.Mandatory     akttype    MANDATORY
+e.Mandatory     aktlok     MANDATORY_IF clnjtintvu1
+e.Mandatory     aktcrtusr  MANDATORY_IF clnjtintvu1
+
+e.Validate   aktkode2  VALIDATE psikodidx musrintv1
+e.Validate   aktcrtusr VALIDATE psikodidx musrinpt
+
+MAP(musrintv1)
+psinama		lnmusr1		REPLACE
+
+MAP(musrinpt)
+psinama         lnminput         REPLACE
+
+MAP(misiuser1)
+/*g_usrkode	aktkode2	REPLACE*/
+lusr1		aktkode2	REPLACE
+lusrisi1	aktcrtusr	REPLACE
+lJWBUSR1	aktdata		REPLACE
+btmnobuk        aktkode         REPLACE
+
+/*MAP(misitgl)
+ltglintv1	akttgl		REPLACE*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=aktlok        DO_SKIP_IF cresc
+BEFORE_INPUT    cur_field=aktjam        DO_SKIP_IF cresc
+/*BEFORE_INPUT    cur_field=akttgl        DO_SKIP_IF cintvterima*/
+BEFORE_INPUT    cur_field=akttype       DO_MAP SHOW IF ctambah1 misiuser1
+
+AFTER_INPUT     cur_field=akttype        DO_MAP SHOW
+                IF cresudh2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBlh>2
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF cresudh2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBlh>2
+
+AFTER_INPUT     cur_field=aktlok        DO_MAP SHOW
+                IF cresudh2xy mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBlh>2
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF cresudh2xy mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBlh>2
+
+AFTER_INPUT     cur_field=akttgl        DO_MAP SHOW
+                IF ctdkblhlewat mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBlhLwtTglKuncian
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF ctdkblhlewat mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBlhLwtTglKuncian
+
+
+
+/*AFTER_INPUT     cur_field=akttype        DO_MAP SHOW
+                IF cterimaintv misitgl*/
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+
+SFL_TARGET
+aktkodtypidx	btmnobuk lJWBUSR1

@@ -1,0 +1,141 @@
+LOCAL
+PGM_FIELDS
+lnamarev	STRING          31
+lgruprev	STRING          31
+lsviyt1		STRING		21
+lsviyt2H17	STRING		21
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.HasilReviewKunj               ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||t.KonsBisadiHub : ____ _________||
+||t.HslTelpKons                   ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.SPKKUNJ       : ____          ||
+||________________________________||
+||t.Plan          : ______________||
+||t.Userinput     : ______________||
+||t.Nama          : ______________||
+||t.GrpLog        : ______________||
+||                  __________    ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviket			TEXTAREA	INPUTRI	1
+sviyt1			ALLCAPS 	INPUTRI	2
+lsviyt1			PROTECT		INPUTRI 2
+sviket2			TEXTAREA	INPUTRI 3
+lsviyt2H17		ALLCAPS		INPUTRI	4
+lket_treatmen		PROTECT		INPUTRI	5
+svistr1			PROTECT		INPUTRI	5
+svikode			PROTECT		INPUTRI	6
+lnamarev                PROTECT         INPUTRI 7
+lgruprev                PROTECT         INPUTRI 8
+lenter                  ALLCAPS         INPUTRI 9
+
+
+DEFAULT(tmptranst)
+svitype			INIT		KUNJKOL17
+svidata			INIT		KUNJUNGAN 
+svikode			INIT		{g_usrkode}
+svikode			INIT_UPDATE	{g_usrkode}
+lket_treatmen		INIT		BLANKS
+svinourt		INIT		1
+svinourt		INIT_UPDATE	1
+lyt                     INIT    	YT
+sviyt1			DFALT_SCAN_BLANK	Y "YA"
+						T "TIDAK"
+
+CALCS()
+cm2w		mtsdvs!="M4W"
+cm4w		mtsdvs=="M4W"
+
+EDITS(tmptranst)
+/*e.Validate      sviyt1          VALIDATE	 tbddatkodidx mtbd1_17 stbd {Pgv_dttabel} {Pgv_kunjungan} {Plyt} */
+e.Validate	lsviyt2H17		VALIDATE	tbddatkodidx mtbdspk7 stbd {Pgv_dttabel} {Pgv_infokredit} {PlSPKKOL}
+Nama tidak ada          svikode         VALIDATE        psikodidx mpsirev 0
+Jabatan tidak ada       svikode         VALIDATE        usrkodidx musrrev 0
+e.Mandatory		sviket		MANDATORY
+e.Mandatory		sviyt1		MANDATORY_IF cm2w
+e.Mandatory		sviket2		MANDATORY_IF cm2w
+e.Mandatory		lsviyt2H17		MANDATORY
+
+MAP(musrrev)
+usrgrp                  lgruprev     REPLACE
+
+MAP(mpsirev)
+psinama                 lnamarev     REPLACE
+sviyt2			lsviyt2H17	REPLACE
+
+MAP(mtbdspk7)
+tbdkode			lsviyt2H17	REPLACE
+tbdkode			sviyt2		REPLACE
+lsviyt2H17		sviyt2		REPLACE
+sviyt2			lsviyt2H17	REPLACE
+tbdket			lket_treatmen	REPLACE
+
+/*MAP(mtbd1_17)
+tbdkode         sviyt1           REPLACE
+tbdket          lsviyt1          REPLACE*/
+
+CALCS()
+cpanjangmin     DO_LIB ap_strln(sviket,&lpanjangmin);
+cmin10          (lpanjangmin >=10) || g_grpnam == "RI"
+
+MAP(mpanjangmin)
+cpanjangmin                lpanjangmin          DO_CALC
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=sviyt1      DO_SKIP_IF cm4w
+BEFORE_INPUT    cur_field=sviket2     DO_SKIP_IF cm4w
+AFTER_INPUT     cur_field=sviket      DO_MAP SHOW mpanjangmin
+
+AFTER_INPUT     cur_field=sviket      DO_MAP
+                IF cmin10 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PanjangMin10Karakter
+
+
+
+AFTER_INPUT     cur_keybd=EN     DO_MAP
+                IF cmin10 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PanjangMin10Karakter
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp   gv_kunjungan11 mtsnobuk lKUNJKOL17
+SFL_MAP
+mtsnobuk	svinobuk	REPLACE
+mtsnoasal       svidtmkode      REPLACE
+lKUNJKOL17	svitype         REPLACE
+gv_kunjungan11	svidata         REPLACE
+g_usrkode	svikode         REPLACE
+l1		svinourt        REPLACE
+
+
+CALCS()
+caddtransg17	mtssts=="INPG" && djointransg17==0 && (((mtsdvs=="M4W" || (mtsscr=="770" && mtsjml2==0)) && (mtstgl==g_tgltrn || (mtsdvs=="M4W" && tldtydis_1=="KMAL")) && (mtstype1==g_usrkode || mtstype2==g_usrkode || g_grpnam=="ARPIC" || g_grpnam=="PICPIUT" || g_grpnam=="BM" || g_grpnam == "B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WCSPV" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam=="B.M4WRM")) ||
+		(mtsscr=="770" && (mtsjml2==1 || mtsjml2==10 || mtsjml2==20) && mtstype2==g_usrkode))
+cupdtransg17	mtssts=="INPG" && djointransg17==1 && (((mtsdvs=="M4W" || (mtsscr=="770" && mtsjml2==0)) && (mtstgl==g_tgltrn || (mtsdvs=="M4W" && tldtydis_1=="KMAL")) && (mtstype1==g_usrkode || mtstype2==g_usrkode || g_grpnam=="ARPIC" || g_grpnam=="PICPIUT" || g_grpnam=="BM" || g_grpnam == "B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WCSPV" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam=="B.M4WRM")) ||
+		(mtsscr=="770" && (mtsjml2==1 || mtsjml2==10 || mtsjml2==20) && mtstype2==g_usrkode))
+
+PERMIT(tmptrans)
+PMT_ADD_COND    caddtransg17
+PMT_UPDALL_COND cupdtransg17
+PMT_DEL_COND    c0

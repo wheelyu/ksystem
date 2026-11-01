@@ -1,0 +1,292 @@
+LOCAL
+PGM_FIELDS
+
+luplok3			STRING	11
+lenter3			STRING	21
+laktnobuk_lcr		STRING	21
+laktkode2_lcr		STRING	21
+laktcrtusr_lcr		STRING	21
+lakthrg_lcr		DFLOAT	8
+lakttgl2_lcr		DATE	4
+lurut_str		STRING	3
+lpanjangket     	INT2    2
+laktket         	STRING  61
+laktket1		STRING	61
+lhrgtumbler		DFLOAT	8
+ljmlhtumbler		DFLOAT	8
+lppdtotdisawal		DFLOAT	8
+
+
+MAP(mjoinakt_promolcr)
+aktnobuk	laktnobuk_lcr	REPLACE
+aktkode2	laktkode2_lcr	REPLACE
+akthrg		lakthrg_lcr	REPLACE
+akttgl2		lakttgl2_lcr	REPLACE
+aktcrtusr	laktcrtusr_lcr	REPLACE
+aktket		laktket1	REPLACE
+
+DBCALCS(djoinakt_promolcr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx    tkdnoll     lPROMOLCR11      lPROMOLCR
+	DBC_MAP		mjoinakt_promolcr
+
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+|| 		__________________  ||
+||t.NoOto     : ______________ ___  ||
+||i.Kode      : __________________  ||
+||i.Nobuk     : __________________  ||
+||i.Norang    : __________________  ||
+||t.nbkclaimjs: __________________  ||
+||t.nbkclamprt: __________________  ||
+||t.Nominal   : _________	    ||
+||t.Upload    : ___		    ||
+||i.Tgl       : _________           ||
+||t.TglExp    : _________           ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk     PROTECT			INPUTRI		 1
+tkdsisstr    PROTECT                    INPUTRI          1
+tkdnourt     PROTECT                    INPUTRI          2
+
+tkdnoll      ALLCAPS                    INPUTRI          3 /* Kode Unik */
+tkdstr1      PROTECT            	INPUTRI          4 /* Nobuk 620 */
+tkdstr2	     PROTECT			INPUTRI		 5 /* Norangka */
+laktket      PROTECT                    INPUTRI          6 /* nobuk claim */
+tkdket       ALLCAPS                    INPUTRI          7
+tkdjml       PROTECT                    INPUTRI          8 /* Nominal */
+tkdstr3      PROTECT             	INPUTRI          9 /* Ket Upload */
+tkdtgl       PROTECT {DD-MM-YYYY}  	INPUTRI          10 /* Tgl Upload */
+tkdtgl2      PROTECT {DD-MM-YYYY}  	INPUTRI          11 /* Tgl Exp */
+lenter1	     NOCHANGE			INPUTRI		 12
+luplok1	     TOMBOL			INPUTRI		 13
+
+
+
+DEFAULTS(tmptranst)
+lenter3		INIT		ENTER
+luplok3		INIT		UPLOAD_OK
+
+CALCS()
+curut_tmp               ltotal_tmp + 1
+curut_tmp0              ((dscantkd_tmp >= 0 && ltotal_tmp==0) && g_curcmd==1)
+curut_tmp1              ((dscantkd_tmp >= 0 && ltotal_tmp > 0) && g_curcmd==1)
+ckode_det               STRIP(ppmnobuk) + "-" + STRIP(lurut_str)
+cY3                     "Y"
+cfotobaru3              tkdtgl == g_tgltrn    
+cdjoinakt_promolcr1     djoinakt_promolcr == 1
+ctdkadanominal          tkdjml > 0
+cvouchertdkada          djoinakt_promolcr == 1 && laktcrtusr_lcr == BLANKS
+cHrsAdaDetail           djoinppd == 1
+cpnjgtkdket             DO_LIB ap_strln(tkdket,&lpanjangket);
+ctkdketoke              lpanjangket >= 26 && lpanjangket <= 28
+cOnlyTumbler		djointbl_voucherlcr == 0
+
+EDITS(tmptranst)
+e.Mandatory		tkdnoll	MANDATORY
+e.MandatoryNobuk	tkdstr1	MANDATORY
+e.MandatoryNo           tkdket  MANDATORY
+e.validate      	tkdnobuk VALIDATE  ppmbukidx mppmkode 0
+
+MAP(mppmkode)
+ppmnobuk        tkdnobuk        REPLACE
+laktket1        laktket1	REPLACE_IF cdjoinakt_promolcr1
+laktket1	laktket         REPLACE
+
+
+MAP(murut2)
+csatu		tkdnourt	DO_CALC_IF curut_tmp0
+curut_tmp	tkdnourt	DO_CALC_IF curut_tmp1
+tkdnourt	lurut_str	REPLACE
+ckode_det	tkdsisstr	DO_CALC
+
+MAP(maktpromolcr)
+laktnobuk_lcr	tkdstr1		REPLACE_IF cdjoinakt_promolcr1
+laktkode2_lcr	tkdstr2		REPLACE_IF cdjoinakt_promolcr1 
+lakthrg_lcr	tkdjml		REPLACE_IF cdjoinakt_promolcr1
+lakttgl2_lcr	tkdtgl2		REPLACE_IF cdjoinakt_promolcr1
+
+MAP(mupdtkdpromo3)
+g_tgltrn	tkdtgl		REPLACE
+cY3             tkdstr3   	DO_CALC_IF cfotobaru3
+
+DBCALCS(dupdfoto3)
+DBC_COMMAND     UPDATE
+DBC_TARGET      tkdprmidx   tkdprm
+DBC_MAP         mupdtkdpromo3
+
+MAP(mpanjang)
+cpnjgtkdket     lpanjangket     DO_CALC        
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW murut2
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW maktpromolcr
+
+AFTER_INPUT     cur_field=tkdket  DO_MAP SHOW mpanjang
+AFTER_INPUT     cur_field=tkdket  DO_MAP SHOW
+                IF ctkdketoke mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.panjangharus26digit
+
+
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW
+		IF cHrsAdaDetail mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.HrsAdaDetailDO_CALC
+
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW
+		IF ctdkadanominal mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.TdkAdaNominal
+
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW
+		IF cvouchertdkada mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.VoucherTdkAda
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cHrsAdaDetail mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.HrsAdaDetail
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ctdkadanominal mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkAdaNominal
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cvouchertdkada mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.VoucherTdkAda
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cPromoLCR
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tkdoto
+SFL_SORT_BY_FIELD tkdnourt
+SFL_UPLFLD_DBCALCS dupdfoto3
+SFL_UPL_DIRFLD ppmtglfak
+SFL_TARGET
+tkddatbukll	lDTLCRESAF	ppmnobuk
+SFL_MAP
+	ppmnobuk	tkdnobuk
+	lDTLCRESAF	tkddata
+
+CALCS()
+ctotal_tmp1	tkdjml < ppmtotfak
+ctotal_tmp2	tkdjml >= ppmtotfak
+
+charga1		tkdjml - akthrg
+charga2		tkdjml + akthrg
+
+cppmtotnk1	ppmtotnk + tkdjml
+
+cppmtotnk1a	ppmtotfak
+cppmtotnk2	ppmtotnk - tkdjml
+cppmtotnk2a	ppmtotfak - ppmtotnk
+
+cppmsisa1	ppmsisa - tkdjml
+cppmsisa1a	ppmsisa - ppmtotnk
+cppmsisa2	ppmsisa + tkdjml
+cppmsisa2a	ppmsisa + ppmtotnk
+
+cHitungDiskon	lhrgtumbler * ljmlhtumbler - tkdjml
+cHitungSub	lhrgtumbler - ppdtotdis
+cCekSisaBukan0	(ppmsisa > ppmtotdis) && djointbl_voucherlcr == 0
+cCekSisa0	(ppmsisa <= ppmtotdis) && djointbl_voucherlcr == 0
+cSisa		ppmsisa - ppdtotdis
+cResetSisa	ppmsisa + ppdtotdis
+cSubAwal	ppdtotfak + ppdtotdis
+cdiskondettumbler	ppmtotdisdet / (1 + (stsperppn/100))
+
+MAP(mupdakt_promolcr1)
+charga1		akthrg		DO_CALC
+ppmnobuk	aktcrtusr	REPLACE
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mupdppm_promolcr1)
+cppmtotnk1	ppmtotnk	DO_CALC_IF ctotal_tmp1
+cppmtotnk1a	ppmtotnk	DO_CALC_IF ctotal_tmp2
+cppmsisa1	ppmsisa		DO_CALC_IF ctotal_tmp1
+cppmsisa1a	ppmsisa		DO_CALC_IF ctotal_tmp2
+DEBUG	ldumstr	ldumstr		REPLACE
+
+/* Ini untuk mengembalikan nilai VCH di file akt */
+MAP(mupdakt_promolcr2)
+charga2		akthrg		DO_CALC
+cBLANKS		aktcrtusr	DO_CALC
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mupdppm_promolcr2)
+cppmsisa2	ppmsisa		DO_CALC_IF ctotal_tmp1
+cppmsisa2a	ppmsisa		DO_CALC_IF ctotal_tmp2
+cppmtotnk2	ppmtotnk	DO_CALC_IF ctotal_tmp1
+cppmtotnk2a	ppmtotnk	DO_CALC_IF ctotal_tmp2
+ppmtothrg	ppmsisa		REPLACE_IF cCekPromoTumbler
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mmaptumbler)
+ppdhrg		lhrgtumbler	REPLACE_IF cOnlyTumbler
+ppdjml		ljmlhtumbler	REPLACE_IF cOnlyTumbler
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mupdtumbler)
+ppdtotdis	lppdtotdisawal  REPLACE_IF cOnlyTumbler
+cHitungDiskon	ppdtotdis	DO_CALC_IF cOnlyTumbler
+cHitungSub	ppdtotfak	DO_CALC_IF cOnlyTumbler
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mupdtumbler2)
+cSubAwal	ppdtotfak	DO_CALC_IF cOnlyTumbler
+lppdtotdisawal	ppdtotdis	REPLACE_IF cOnlyTumbler
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mupdppmtumbler)
+ppdtotfak	ppmtotfak	REPLACE_IF cOnlyTumbler
+ppdtotfak	ppmtothrg	REPLACE_IF cOnlyTumbler
+cSisa		ppmsisa		DO_CALC_IF cCekSisaBukan0
+cResetSisa	ppmsisa		DO_CALC_IF cCekSisa0
+ppdtotdis	ppmtotdisdet	REPLACE_IF cOnlyTumbler
+cdiskondettumbler ppmsblbulat	DO_CALC
+DEBUG	ldumstr	ldumstr		REPLACE 
+
+SPCALCS(sptmptranst_add)
+DO_LIB ap_dbclc(DNAME dupdakt_promolcr1,DCOMMAND UPDATE_RANGE,DBC_TARGET aktkodtypidx tkdnoll lPROMOLCR11 lPROMOLCR, DMAP mupdakt_promolcr1);
+DO_LIB_IF cCekPromoTumbler ap_dbclc(DNAME dmaptumbler, DCOMMAND MAPMAP, DMAP mmaptumbler);
+DO_LIB_IF cCekPromoTumbler ap_dbclc(DNAME dupdtumbler, DCOMMAND UPDATE, DTARGET ppdotoidx ppdoto, DMAP mupdtumbler);
+DO_LIB_IF cCekPromoTumbler ap_dbclc(DNAME dupdppmtumbler, DCOMMAND UPDATE, DTARGET ppmbukidx ppmnobuk, DMAP mupdppmtumbler);
+DO_LIB ap_dbclc(DNAME dupdppm_promolcr1,DCOMMAND UPDATE,DBC_TARGET ppmbukidx tkdnobuk, DMAP mupdppm_promolcr1);
+
+
+SPCALCS(sptmptranst_del)
+DO_LIB ap_dbclc(DNAME dupdakt_promolcr2,DCOMMAND UPDATE_RANGE,DBC_TARGET aktkodtypidx tkdnoll lPROMOLCR11 lPROMOLCR, DMAP mupdakt_promolcr2);
+DO_LIB_IF cCekPromoTumbler ap_dbclc(DNAME dupdtumbler2, DCOMMAND UPDATE, DTARGET ppdotoidx ppdoto, DMAP mupdtumbler2);
+DO_LIB_IF cCekPromoTumbler ap_dbclc(DNAME dupdppmtumbler2, DCOMMAND UPDATE, DTARGET ppmbukidx ppmnobuk, DMAP mupdppmtumbler);
+DO_LIB ap_dbclc(DNAME dupdppm_promolcr2,DCOMMAND UPDATE,DBC_TARGET ppmbukidx tkdnobuk, DMAP mupdppm_promolcr2);
+
+
+POSTING(tmptrans)
+PST_ADDCMD sptmptranst_add
+PST_DELCMD sptmptranst_del

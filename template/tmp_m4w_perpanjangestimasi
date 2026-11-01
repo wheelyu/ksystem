@@ -1,0 +1,93 @@
+LOCAL
+PGM_FIELDS
+lXEST		STRING		5
+lurut		INT2		2
+
+MAP(mjoinxest)
+tkdnourt	lurut		REPLACE
+
+DBCALCS(djoinxest)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tkdbukidx btmnobuk lXEST
+	DBC_MAP		mjoinxest
+
+CALCS()
+cjoinxest0	djoinxest==0 && g_curcmd==1
+cjoinxest1	djoinxest==1 && g_curcmd==1
+caddtmptrans	g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="RI" || g_grpnam=="IT"
+cupdtmptrans	(g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="RI" || g_grpnam=="IT") && djoinxest==1 && lurut==tkdnourt && tkdjenis==BLANKS
+cskipx		g_grpnam!="B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam!="B.M4WADHDVH" && g_grpnam!="RI"
+
+ckunciest705    abktype == "705EST"
+
+DBCALCS(djoinabkxx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsenx btmnobuk
+        DBC_SELECT      ckunciest705
+
+IMAGE(tmptranst)
+/---------------------------------------\
+ /-------------------------------------\
+  t.Nobuk         __ __________________
+  t.Tglinput      _____________________
+  t.TglPerpanjang _____________________
+  t.Ket  ______________________________
+  t.Approval      ______ _______
+ \-------------------------------------/
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnourt	NOCHANGE		INPUTRI		1
+tkdnobuk	PROTECT			INPUTRI		1
+tkdtgl		PROTECT {DD-MM-YYYY}	INPUTRI		2
+tkdtgl2		NOLIMIT {DD-MM-YYYY}	INPUTRI		3
+tkdket		TEXTAREA ALLCAPS	INPUTRI		4
+tkdjenis	NOCHANGE		INPUTRI		5
+lenter		ALLCAPS			INPUTRI		6
+
+DEFAULTS(tmptranst)
+lXEST		INIT			XEST
+tkdjenis	DFALT_SCAN_BLANKS	ACC TACC
+tkdtgl		INIT_ADD		{g_tgltrn}
+
+MAP(murutx)
+c1		tkdnourt	DO_CALC_IF cjoinxest0
+curut		tkdnourt	DO_CALC_IF cjoinxest1
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdnourt	DO_MAP SHOW murutx
+BEFORE_INPUT	cur_field=tkdjenis	DO_SKIP_IF cskipx
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+tkdbukidx btmnobuk lXEST
+SFL_MAP
+btmnobuk	tkdnobuk	REPLACE
+lXEST		tkdsts		REPLACE
+lXEST		tkddata		REPLACE
+
+CALCS()
+cjoinabkxx	djoinabkxx == 1 && tkdjenis == "ACC"
+ctglabkx1	tkdtgl2 > g_tgltrn
+ctglabkx2	tkdtgl2 <= g_tgltrn
+
+MAP(mupdabkxx)
+gt_RINP		abksts		REPLACE_IF ctglabkx1
+gv_INPG		abksts		REPLACE_IF ctglabkx2
+tkdtgl2		abktgl		REPLACE
+
+SPCALCS(stmptrans)
+DO_LIB_IF cjoinabkxx ap_dbclc(DNAME dupdabkxx,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsenx btmnobuk,DBC_COND ckunciest705,DMAP mupdabkxx);
+
+POSTING(tmptrans)
+	PST_UPDCMD stmptrans
+	PST_ADDCMD stmptrans
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	caddtmptrans
+	PMT_UPDALL_COND	cupdtmptrans
+	PMT_DEL_COND	c0           

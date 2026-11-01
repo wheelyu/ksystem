@@ -1,0 +1,192 @@
+LOCAL()
+PGM_FIELDS
+lFOTOKOMMIT	STRING	11
+lFOTOKOMMITRA	STRING	21
+lKM001		STRING	21
+lKM002		STRING	21
+lketKM001	STRING	81
+lketKM002	STRING	81
+lnamausr	STRING	21
+lKOMMIT5	STRING	21
+lKOMMIT11	STRING	21
+l5blntgl1	DATE	4
+l5blntgl2	DATE	4
+l11blntgl1	DATE	4
+l11blntgl2	DATE	4
+lmastertgt	STRING	21
+lprodukmitra	STRING	21
+
+CALCS()
+ckm001		aktbrg == "KM001"
+ckm002		aktbrg == "KM002"
+
+MAP(mjoinkomitmitra1)
+aktlok		lprodukmitra	REPLACE
+
+DBCALCS(djoinkomitmitra1)
+	DBC_COMMAND	JOIN	
+	DBC_TARGET	aktkodtypidx psmktp lFOTOKOMMIT lFOTOKOMMITRA g_tgltrn
+	DBC_SELECT	ckm001
+	DBC_MAP		mjoinkomitmitra1
+
+DBCALCS(djoinkomitmitra2)
+	DBC_COMMAND	JOIN	
+	DBC_TARGET	aktkodtypidx psmktp lFOTOKOMMIT lFOTOKOMMITRA g_tgltrn
+	DBC_SELECT	ckm002
+
+MAP(mjoinprog5bln)
+tbdtgl1		l5blntgl1	REPLACE
+tbdtgl2		l5blntgl2	REPLACE
+DBCALCS(djoinprog5bln)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx gv_dttabel lmastertgt gv_m4w21 lKOMMIT5
+	DBC_MAP		mjoinprog5bln
+
+MAP(mjoinprog11bln)
+tbdtgl1		l11blntgl1	REPLACE
+tbdtgl2		l11blntgl2	REPLACE
+DBCALCS(djoinprog11bln)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx gv_dttabel lmastertgt gv_m4w21 lKOMMIT11
+	DBC_MAP		mjoinprog11bln
+
+CALCS()
+cperiode11	djoinprog11bln==1 && g_tgltrn >= l11blntgl1 && g_tgltrn <= l11blntgl2
+cperiode5 	djoinprog5bln==1 && g_tgltrn >= l5blntgl1 && g_tgltrn <= l5blntgl2
+
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}  
+/------------------------------------------------------------------------------------------\
+ /-------s.UPLOAD----------\/-------------------------------------------------------------\ 
+ |                         !! i.Ket   : _______________________________________           ! _
+ |                         !! i.Produk: __________________                                ! 
+ |                         !! t.Tgl    : _________			                  ! 
+ |                         !! t.TglFoto: _________					  !
+ |			   !! t.t		 			                  ! 
+ |                         !! t.User  : __________		                          ! 
+ |                         |! t.Nama  : _____________________ ___                         ! 
+ \-------------------------/\-------------------------------------------------------------/ 
+\------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktket                  PROTECT                 INPUTRI         1
+aktkode			NOCHANGE		INPUTRI 	2
+aktlok			NOCHANGE		INPUTRI 	3
+akttgl			PROTECT			INPUTRI 	4
+aktcrttgl		PROTECT			INPUTRI		5
+aktcrtusr		PROTECT			INPUTRI 	6
+lnamausr		PROTECT			INPUTRI		7
+aktdk			NOCHANGE		INPUTRI		8
+/*luploadok		TOMBOL			INPUTRI		10
+*/
+
+DEFAULTS(tmptranst)
+lFOTOKOMMIT	INIT		FOTOKOMMIT
+lFOTOKOMMITRA	INIT		FOTOKOMMITRA
+lKM001		INIT		KM001
+lKM002		INIT		KM002
+IF cperiode5	aktlok	DFALT_SCAN	BLANKS	
+				5BLN "5 BULAN"
+
+IF cperiode11	aktlok DFALT_SCAN BLANKS
+				11BLN "11 BULAN"	
+aktdk		DFALT_SCAN	BLANKS Y T 
+lketKM001	INIT		"Foto Surat Perjanjian di TTD Mitra"
+lketKM002	INIT		"Foto Mitra Dan Upline Memegang Surat Perjanjian bersama"
+aktcrtusr	INIT_UPDATE 	{g_usrkode}
+lKOMMIT5	INIT		KOMMIT5
+lKOMMIT11	INIT		KOMMIT11
+lmastertgt	INIT		MASTERTARGET
+
+CALCS()
+cjoinkomitmitra1		djoinkomitmitra1==0
+cjoinkomitmitra2		djoinkomitmitra1== 1 && djoinkomitmitra2==0
+cprodukbeda			(djoinkomitmitra1== 1 && lprodukmitra == aktlok) || djoinkomitmitra1==0
+
+EDITS(tmptranst)
+e.Validate	aktcrtusr	VALIDATE psikodidx mpsikommit
+/*e.Validate	aktkode		VALIDATE psmktpidx mpsmkommit
+
+MAP(mpsmkommit)
+psmktp		aktkode		REPLACE
+*/
+
+MAP(mpsikommit)
+psinama		lnamausr	REPLACE
+
+MAP(mkodefoto)
+lKM001		aktbrg		REPLACE_IF cjoinkomitmitra1
+lKM002		aktbrg		REPLACE_IF cjoinkomitmitra2
+lketKM001	aktket		REPLACE_IF cjoinkomitmitra1
+lketKM002	aktket		REPLACE_IF cjoinkomitmitra2
+
+
+MAP(mupdfotokomit)
+g_fotodate1	aktcrttgl	REPLACE
+
+DBCALCS(dbfotokomit)
+        DCOMMAND UPDATE
+        DTARGET aktprmidx aktprm
+        DMAP mupdfotokomit
+
+
+/*MAP(mupdsvifotombl)
+cY              sviyt1          DO_CALC
+g_fotolat1	svidf6		REPLACE
+g_fotolon1	svidf7		REPLACE
+g_fototime1	svidf8		REPLACE
+
+DBCALCS(dbfotomobil)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvifotombl
+
+MAP(mupddelfotokomit)
+cBLANKS 	aktcrttgl	DO_CALC
+
+DBCALCS(ddelfotokomit)
+	DBC_COMMAND	UPDATE	
+	DBC_TARGET	aktprmidx aktprm
+	DBC_MAP		mupddelfotokomit
+*/
+
+
+CALCS()
+csdm		g_grpnam != "B.M4WMSPV" && g_grpnam != "RI"
+caddkomit	psmstssup == "INPG" && (djoinkomitmitra1==0 || (djoinkomitmitra1==1 && djoinkomitmitra2==0))
+cupdkomit	aktcrttgl != BLANKS && (g_grpnam=="B.M4WMSPV" || g_grpnam=="RI")
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktcrtusr	DO_SKIP_IF csdm
+BEFORE_INPUT	cur_field=aktdk		DO_SKIP_IF csdm
+AFTER_INPUT     cur_field=aktlok     DO_MAP SHOW mkodefoto
+AFTER_INPUT 	cur_field=aktlok 	DO_MAP
+		IF cprodukbeda mdum
+		ELSE HKCURSOR STAY
+		HKMSG PROGRAM MITRA HARUS SAMA DENGAN PILIHAN PERTAMA
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SORT_UPDOWN DOWN
+SFL_SORT_BY_FIELD akttgl
+SFL_UPLFLD_DBCALCS dbfotokomit
+/*SFL_UPLREADONLY        */
+SFL_UPL_CAMERAONLY
+SFL_UPLFLD psmktp aktbrg akttgl
+/*SFL_UPLFLD_DELDBCALCS	ddelfotokomit*/
+SFL_TARGET	aktkodtypidx  psmktp  lFOTOKOMMIT lFOTOKOMMITRA
+SFL_MAP		psmktp		aktkode		REPLACE
+		lFOTOKOMMIT	aktdata		REPLACE
+		lFOTOKOMMITRA	akttype		REPLACE	
+		g_tgltrn	akttgl		REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  caddkomit
+  PMT_UPDALL_COND cupdkomit
+/*  PMT_DEL_COND  c0
+*/

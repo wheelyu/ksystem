@@ -1,0 +1,113 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+ t.Rincian Biaya
+/--------------------t--------t-------------t-------------t--------t-----------\
+|t.KeteranganBiaya   |t.Jumlah|t.HargaSatuan|t.JumlahBiaya| t.info | __ __ __ |
+\--------------------.--------.-------------.-------------.--------.-----------/
+\------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+|____________________|________|_____________|_____________|____________________|
+
+CALCS()
+chidetomdetailok12a	tlmkode != g_usrkode || ((tlmkode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tkdsts == gv_IN || tkdsts == gv_ok)) && djoindetailhm12 == 1 && lopsidetail == "YA"
+FIELD(tmptranst)
+ltombol1tacc    TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombol1acc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombolhm12aok   TOMBOL UNSEEN_IF chidetomdetailok12a       INPUTRI 2
+
+FIELD(tmptrans)
+tkdjenis 	ALLCAPS		        INPUTRI	1
+tkdjml	        NUMERIC                 INPUTRI	2
+tkdjml2         NUMERIC                 INPUTRI 3
+tkdjml3         NUMERIC PROTECT	        INPUTRI	3
+tkdrek          PROTECT                 INPUTRI 3
+
+DEFAULTS(tmptrans)
+tkdsts INIT            {gv_OPEN}
+EDITS(tmptrans)
+e.Mandatory             tkdjenis        MANDATORY
+e.Mandatory             tkdjml          MANDATORY
+e.Mandatory             tkdjml2         MANDATORY
+e.Mandatory             tkdjml3         MANDATORY
+
+CALCS()
+cjumlahbiaya            tkdjml * tkdjml2
+cselisihjumlahbiaya     tkdjml3 - ~tkdjml3
+cupdatebiaya            tlmtotal + lselisihjumlahbiaya
+cdetailhm12aok         tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdjenis != ""
+ckunci12a       abkkym2 == lketreviewhm12a
+
+MAP(mjumlahbiaya)
+cjumlahbiaya            tkdjml3         DO_CALC
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_field=tkdjml     DO_MAP SHOW mjumlahbiaya
+AFTER_INPUT             cur_field=tkdjml2    DO_MAP SHOW mjumlahbiaya
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol1tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol1acc    DO_SKIP_IF camkawil
+CLICKED         cur_field=ltombolhm12aok DO_SPCALCS spdetailokhm12a
+
+CLICKED         cur_field=ltombol1tacc   DO_SPCALCS IF camkawilin staccdetailrinci
+CLICKED         cur_field=ltombol1acc	DO_SPCALCS IF camkawilin saccdetailrinci      
+
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNH1AHM12 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1AHM12 tkddata
+
+
+MAP(mupdtlmmasterbiaya)
+cBLANKS                 lselisihjumlahbiaya     DO_CALC
+cselisihjumlahbiaya     lselisihjumlahbiaya     DO_CALC
+cupdatebiaya            tlmtotal                DO_CALC
+gv_int1         tlmjml          REPLACE_IF ckrg50
+ctgtpk          tlmjml          DO_CALC_IF clbh50
+ctgtpkbulat     tlmjml          DO_CALC
+tlmjml          ltgtpkx         REPLACE
+ctgtjual        tlmjml2         DO_CALC
+ctgtjlbulat     tlmjml2         DO_CALC
+DEBUG ldum              ldum                    REPLACE
+
+MAP(mresetjumlahbiaya)
+cBLANKS                 tkdjml3                 DO_CALC
+
+
+MAP(mupdinfodetailhm12a)
+lMINIMAL1RINCIBIAYA     tkdrek          REPLACE_IF ctidakadarincianbiaya
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm12a)
+        DO_LIB_IF cdetailhm12aok   ap_dbclc(DNAME dupddetailreqhm12a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailreq);
+        DO_LIB                          ap_dbclc(DNAME dupddetailreqhm12aok,DCOMMAND MAPMAP, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm12a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm12a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm12a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupdinfodetailhm12a);
+
+SPCALCS(saccdetailrinci)
+        DO_LIB_IF cadakawil             ap_dbclc(DNAME dupdabkclsdkawilaccdetail,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci12a, DMAP mupdabkclsdkawil);
+        DO_LIB_IF cadaam                ap_dbclc(DNAME dupdabkclsdamaccdetail,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci12a,DMAP mupdabkclsdam);
+        DO_LIB                          ap_dbclc(DNAME dupddetailokaccdetaila, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailok);
+        DO_LIB                          ap_dbclc(DNAME dupddetailreqhm12aoks,DCOMMAND MAPMAP, DMAP mupddetailreq);
+
+SPCALCS(staccdetailrinci)
+        DO_LIB                          ap_dbclc(DNAME dupddetailtacchma, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailtrinci);
+
+SPCALCS(sptambahhm12a)
+        DO_LIB                  ap_dbclc(DNAME dupdbiayatambahhm12a,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterbiaya);
+SPCALCS(spubahhm12a)
+        DO_LIB                  ap_dbclc(DNAME dupdbiayaubahhm12a,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterbiaya);
+SPCALCS(sphapushm12a)
+        DO_LIB                  ap_dbclc(DNAME dresetjumlahbiayahapushm12a, DCOMMAND MAPMAP, DMAP mresetjumlahbiaya);
+        DO_LIB                  ap_dbclc(DNAME dupdbiayahapushm12a,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterbiaya);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptambahhm12a
+        PST_UPDCMD spubahhm12a
+        PST_DELCMD sphapushm12a

@@ -1,0 +1,165 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoBuk      :___________________||
+||i.NoFak      :___________________||
+||t.KunjYT     :___  _____________ ||
+||t.BayarYT    :___  ______________||
+||t.SebabTdkByr:___  ______________||
+||t.tgljanjibyr:___________________||
+||t.Ket        :                   ||
+||             :                   ||
+||             :___________________||
+||/------s.UPLOAD-----------------\||
+|||                               |||
+|||                               |||
+|||                               |||
+|||                               |||
+|||                               |||
+|||                               |||
+|||                               |||
+||\-------------------------------/||
+||t.lat    _____________.______    ||
+||t.long   _____________.______    ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk        NOCHANGE                INPUTRI 1
+svidtmkode      PROTECT                 INPUTRI 1
+svistr31	NOCHANGE		INPUTRI	2	/* Apakah di kunjungi				*/
+lket1		PROTECT			INPUTRI	3	/* Keterangan Apakah di kunjungi		*/
+svidf2          NOCHANGE                INPUTRI 4 	/* Konsumen Bayar                               */
+lkonsbyr        PROTECT                 INPUTRI 5 	/* Keterangan Konsumen Bayar			*/
+svidf4		NOCHANGE		INPUTRI 6	/* Penyebab Kons Tidak Bayar			*/
+lPKonsTdkByr	PROTECT			INPUTRI 7	/* Keterangan Kons Tdk Bayar			*/
+svitgl1		NONE	{DD-MM-YYYY}	INPUTRI	8	/* Tanggal janji bayar				*/
+sviket		TEXTAREA		INPUTRI 9
+g_lat           PROTECT                 INPUTRI 10        
+g_lon           PROTECT                 INPUTRI 11       
+
+CALCS()
+cketkunj01	"Dikunjungi"
+cketkunj02	"Belum Dikunjungi"
+
+cketbyr01	"BAYAR"
+cketbyr02	"TIDAK BAYAR"
+cketbyr03	"TARIK"
+
+cisikunj01	svistr31 == "1"
+cisikunj02	svistr31 == "2"
+cisibyr01	svidf2 == 1
+cisibyr02	svidf2 == 2
+cisibyr03	svidf2 == 3
+coty		g_curcmd == 1
+
+cKPKonsTdkByr1  "TOKO TUTUP" 
+cKPKonsTdkByr2	"UANG BLM TERKUMPUL"
+cKPKonsTdkByr3	"KONSUMEN SAKIT"
+cKPKonsTdkByr4	"KONSUMEN PULANG KAMPUNG"
+cKPKonsTdkByr5  "EDUKAAN ANGGOTA KELUARGA INTI"
+cKPKonsTdkByr6  "ITIKAT BURUK"
+cKPKonsTdkByr7  "KONSUMEN DI PENJARA"
+cKPKonsTdkByr8  "KONSUMEN MENINGGAL"
+cKPKonsTdkByr9  "HANYA ATAS NAMA"
+cKPKonsTdkByr10 "KONSUMEN PINDAH"
+
+MAP(mketkta3)
+cKPKonsTdkByr1	lPKonsTdkByr	DO_CALC_IF cPKonsTdkByr1x
+cKPKonsTdkByr2	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr2x
+cKPKonsTdkByr3	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr3x
+cKPKonsTdkByr4	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr4x
+cKPKonsTdkByr5	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr5x
+cKPKonsTdkByr6	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr6x
+cKPKonsTdkByr7	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr7x
+cKPKonsTdkByr8	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr8x
+cKPKonsTdkByr9	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr9x
+cKPKonsTdkByr10	lPKonsTdkByr    DO_CALC_IF cPKonsTdkByr10x
+
+DEFAULTS(tmptranst)
+svistr31        DFALT_SCAN_BLANKS       1 "DiKunjungi"
+                                        2 "Belum Dikunjungi"
+
+svidf2          DFALT_SCAN_BLANKS       1 "BAYAR"
+                                        2 "TIDAK BAYAR"
+		/*			3 "TARIK"*/
+
+svidf4		DFALT_SCAN_BLANKS        
+1           "TOKO TUTUP"
+2           "UANG BLM TERKUMPUL"
+3           "KONSUMEN SAKIT"
+4           "KONSUMEN PULANG KAMPUNG"
+5           "KEDUKAAN ANGGOTA KELUARGA INTI"
+6           "ITIKAT BURUK"
+7           "KONSUMEN DI PENJARA"
+8           "KONSUMEN MENINGGAL"
+9           "HANYA ATAS NAMA"
+10          "KONSUMEN PINDAH"
+
+
+
+EDITS(tmptranst)
+t.Mandatory1	svistr31	MANDATORY
+t.Mandatory2	svidf2		MANDATORY
+t.Mandatory3    svidf4          MANDATORY_IF cisibyr02
+t.Mandatory4    svitgl1         MANDATORY_IF cisibyr02
+t.Mandatory5	sviket		MANDATORY
+
+t.DupNoBuk svinobuk DUPKEY svidatbuktyp   {Pmtsdata} {SlKUNJKOL37} {Sl1}
+
+
+MAP(mketkta1)
+cketkunj01		lket1		DO_CALC_IF cisikunj01
+cketkunj02		lket1		DO_CALC_IF cisikunj02
+
+MAP(mketkta2)
+cketbyr01		lkonsbyr	DO_CALC_IF cisibyr01
+cketbyr02		lkonsbyr	DO_CALC_IF cisibyr02
+cketbyr03		lkonsbyr	DO_CALC_IF cisibyr03
+
+
+MAP(misibuk)
+mtsnobuk	svinobuk	REPLACE
+mtsnoasal	svidtmkode	REPLACE
+
+CALCS()
+cjb3            svitgl1 <= (g_tgltrn + 3)
+ctglmaju3       svitgl1 > g_tgltrn
+
+HOOKS(tmptranst)
+BEFORE_INPUT  cur_field=svinobuk DO_MAP SHOW IF coty misibuk
+AFTER_INPUT  cur_field=svistr31 DO_MAP SHOW mketkta1
+AFTER_INPUT  cur_field=svidf2   DO_MAP SHOW mketkta2
+AFTER_INPUT  cur_field=svidf4   DO_MAP SHOW mketkta3
+BEFORE_INPUT  cur_field=svidf4   DO_SKIP_IF cisibyr01
+BEFORE_INPUT  cur_field=svitgl1   DO_SKIP_IF cisibyr01
+
+AFTER_INPUT     cur_field=svitgl1       DO_MAP SHOW
+                IF cjb3 mdum3
+                ELSE HKCURSOR STAY
+                HKMSG t.TglJbMax3hrKunj
+
+AFTER_INPUT     cur_field=svitgl1       DO_MAP SHOW
+                IF ctglmaju3 mdum3
+                ELSE HKCURSOR STAY
+                HKMSG t.InputTglJbTdkBsMundur
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      mtsnobuk
+SFL_UPL_DIRFLD mtstgl
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    gv_kunjungan11 mtsnobuk lKUNJKOL37
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svidtmkode      REPLACE
+g_usrkode       svikode         REPLACE
+l1              svinourt        REPLACE
+gv_kunjungan11  svidata         REPLACE
+lKUNJKOL37      svitype         REPLACE
+

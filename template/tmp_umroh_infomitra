@@ -1,0 +1,197 @@
+LOCAL
+PGM_FIELDS
+lokmitra        STRING          5
+lfotodokpx      STRING          11
+lARSIPx         STRING          21
+lTOLAKANM4Wx    STRING          21
+lkettolakx      STRING          31
+lnobukkuncix    STRING          21
+lKUNCIABSENx    STRING          11
+lnipbmx         STRING          21
+lnipadhxy       STRING          21
+lADHXY          STRING          21
+lthblxy         STRING          21
+lenterxy        STRING          11
+lnamauserxxy    STRING          21
+lblankx         STRING          21
+lkode2mitra     STRING          21
+lkode2mitrax    STRING          3
+lversi9x        STRING          11
+
+MAP(mjoinbmmitra)
+sgmstr5         lnipbmx    REPLACE
+
+DBCALCS(djoinbmmitra)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab gv_m4w21 gt_bm21 lthblxy btmcab btmcab
+        DBC_MAP         mjoinbmmitra
+
+MAP(mjoinadhmitra)
+sgmstr5         lnipadhxy   REPLACE
+
+DBCALCS(djoinadhmitra)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab gv_m4w21 lADHXY lthblxy btmcab btmcab
+        DBC_MAP         mjoinadhmitra
+
+CALCS()
+cubahxxy        g_curcmd==2
+cver0x          sviyt1=="T"
+cadauserx       svistr3!=BLANKS
+/*cfotkod               STRIP(svikode) + "P" */
+cnobukkuncimit  STRIP(btmnobuk) + STRIP(svikode)
+caddkuncixxy    sviyt1=="T"
+cjoinbmx        djoinbmmitra==1
+cjoinadhx       djoinadhmitra==1
+cthblxy         THBLS(g_tgltrn)
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7} 
+/----------------------------------------\
+| /-------------------------------------\|
+| |  i.Ket __________________________   ||
+| \-------------------------------------/|
+| /-------------s.UPLOAD----------------\|
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| |                                     ||
+| \-------------------------------------/|
+| /-------------------------------------\|
+| |  t.UplodOk    __________________    ||
+| |  t.Wajib      __________________    ||
+| \-------------------------------------/|
+| /-------------------------------------\|
+| |  t.Verifikasi __________________    ||
+| |  t.Tolakan    __________________    ||
+| | _______________________________     ||
+| |  t.Ket                              ||
+| |  _______________________________    ||
+| |  t.User       __________________    ||
+| |  _______________________________    ||
+| |  t.Tanggal    _________________     ||
+| |               ________              ||
+| \-------------------------------------/|
+\----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	svinama         PROTECT                 INPUTRI 1
+        svistr1         PROTECT                 INPUTRI 2
+        svists          PROTECT                 INPUTRI 3
+        sviyt1          NOCHANGE                INPUTRI 4
+        svistr2         ALLCAPS                 INPUTRI 5
+        lkettolakx      PROTECT                 INPUTRI 6
+        sviket2         TEXTAREA ALLCAPS        INPUTRI 7
+        svistr3         PROTECT                 INPUTRI 8
+        lnamauserxxy    PROTECT                 INPUTRI 9
+        svitgl1         PROTECT                 INPUTRI 10
+        lenterxy        ALLCAPS                 INPUTRI 11
+
+DEFAULTS(tmptranst)
+lokmitra                INIT            "OK"
+lfotodokpx              INIT            "FOTOCAIR"
+IF cubahxxy sviyt1              DFALT_SCAN_BLANKS Y T
+svistr3                 INIT_UPDATE     {g_usrkode}
+svitgl1                 INIT_UPDATE     {g_tgltrn}
+lARSIPx                 INIT            ARSIP
+lTOLAKANM4Wx            INIT            TOLAKANM4W
+lnamauserxxy            INIT            BLANKS
+lKUNCIABSENx            INIT            KUNCIABSEN
+lADHXY                  INIT            ADH
+lenterxy                INIT            ENTER
+lversi9x                INIT            110822v1
+
+EDITS(tmptranst)
+e.Mandatory             sviyt1          MANDATORY
+e.Mandatory             svistr2         MANDATORY_IF cver0x
+e.JenisTolakan          svistr2         VALIDATE_IF cver0x tbddtmstidx mtbdverx stbd1 {Pgv_dttabel} {PlARSIPx} {PlTOLAKANM4Wx} {Plblankx} {Plkode2mitra}
+e.Validateuser          svistr3         VALIDATE_IF cadauserx psikodidx mpsiverx 0
+e.Mandatory             sviket2         MANDATORY
+
+MAP(mtbdverx)
+tbdkode         svistr2         REPLACE
+cBLANKS         lkettolakx      DO_CALC
+tbdket          lkettolakx      REPLACE
+/*cfotkod               svitype2        DO_CALC */
+cnobukkuncimit  lnobukkuncix    DO_CALC
+cthblxy         lthblxy          DO_CALC
+
+MAP(mpsiverx)
+psinama         lnamauserxxy    REPLACE
+svinourt        lkode2mitrax    REPLACE
+lkode2mitrax    lkode2mitra     REPLACE
+
+MAP(mupdsviftmandm)
+lokmitra    svistr1         REPLACE
+
+DBCALCS(dbftmandm)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandm
+
+CALCS()
+chanyasdvyxm     ((btmflag1 == "SDVY" && svists != "OPEN") || btmflag1 != "SDVY") && (svikode == "MTR001" || svikode == "MTR002")
+cupdtmptransx    sviyt1==BLANKS && (g_grpnam=="FINARSIP" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="FINARSIPCO")
+cketkuncixxy     "PERBAIKI BERKAS 705"
+c705x            "705"
+clusax           g_tgltrn + 2
+cdtmitra1	 (dscanfotoqa == 0 || dscanfotoqa != 0) && lftmitra > 0
+
+MAP(misikodex)
+svinourt        lkode2mitrax         REPLACE
+lkode2mitrax    lkode2mitra          REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviyt1        DO_MAP SHOW misikodex
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdtmitra1
+SFL_UPLFLD_DBCALCS dbftmandm
+SFL_SELECT chanyasdvyxm
+SFL_UPL_DIRFLD          btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOADH btmnobuk lfotodokpx
+
+MAP(maddkuncixxm)
+lnipbmx         abkkym          REPLACE_IF cjoinbmx
+lnobukkuncix    abknobuk        REPLACE
+lKUNCIABSENx    abkdata         REPLACE
+cketkuncixxy    abkkym2         DO_CALC
+c705x           abkscr          DO_CALC
+clusax          abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+MAP(maddkuncix2m)
+lnipadhxy       abkkym          REPLACE_IF cjoinadhx
+lnobukkuncix    abknobuk        REPLACE
+lKUNCIABSENx    abkdata         REPLACE
+cketkuncixxy    abkkym2         DO_CALC
+c705x           abkscr          DO_CALC
+clusax          abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+SPCALCS(stmptrans)
+DO_LIB_IF caddkuncixxy ap_dbclc(DNAME daddkuncixxm,DCOMMAND ADD,DFILE abk,DMAP maddkuncixxm);
+DO_LIB_IF caddkuncixxy ap_dbclc(DNAME daddkuncix2m,DCOMMAND ADD,DFILE abk,DMAP maddkuncix2m);
+
+POSTING(tmptrans)
+        PST_UPDCMD      stmptrans
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cupdtmptransx
+  PMT_DEL_COND  c0
+
+

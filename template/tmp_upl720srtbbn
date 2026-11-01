@@ -1,0 +1,46 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------------------------------------------------------------\
+| /-------s.UPLOAD----------\/-------------------------------------------------------------\ |
+| |                         !! i.Ket : _______________________________________             ! |
+| |                         !!         ___ _____                                           ! |
+| |                         !!                                                             ! |
+| |                         !!                                                             ! |
+| |                         !!                                                             ! |
+| |                         |!                                                             ! |
+| \-------------------------/\-------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1                  NOCHANGE                INPUTRI         10
+svitblkode              NOCHANGE                INPUTRI         11
+
+CALCS()
+cfotosrtbbn      svitblkode == "ADH" && svikode =="SRTBBN" 
+cbukasrtbbn	 tmpkode =="SRTBBN" && dscansvifotopk >= 0 && ladasrtbbn == 1
+
+
+MAP(mupdsvifotosrtbbn)
+cY              sviyt1          DO_CALC
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+g_fototime1     svidf8          REPLACE
+
+DBCALCS(dupdsvifotosrtbbn)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvifotosrtbbn
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbukasrtbbn
+SFL_SELECT cfotosrtbbn
+SFL_UPL_DELCOND cblmupl
+SFL_UPLFLD_DBCALCS dupdsvifotosrtbbn
+SFL_UPLFLD tlmnobbm svikode
+
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey tlmnobbm gv_fotopk 
+

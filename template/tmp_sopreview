@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+lreviewsop	STRING	21
+lmastersop	STRING	11
+
+DBCALCS(djointldrev)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr lbuatsop gv_OPEN tlmnobuk lreviewsop
+
+IMAGE(tmptranst)
+/-------------------------------------------\
+ /-----------------------------------------\
+  t.SopAnalyst : ________ _________________
+  t.HslReview  : _____________
+  t.NoBukRev   : __________________________
+  t.KelBerkas  : _____________                     
+  t.Keterangan : __________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldplg		PROTECT		INPUTRI	1
+lnama1		PROTECT		INPUTRI	2
+tldkat		NOCHANGE	INPUTRI	3
+tldnoll		NOCHANGE	INPUTRI	4
+tldsat		NOCHANGE	INPUTRI	5
+tldket		ALLCAPS		INPUTRI	6
+
+DEFAULTS(tmptranst)
+tldplg		INIT_ADD	{g_usrkode}
+lreviewsop	INIT		REVIEWSOP
+lmastersop	INIT		MASTERSOP
+tldkat		DFALT_SCAN	BLANKS
+				REVISI
+				TIDAK_BERLAKU
+				TIDAK_REVISI
+				PENGAJUAN_BARU
+
+tldsat		DFALT_SCAN	BLANKS
+				LENGKAP
+				TIDAK_LENGKAP
+
+CALCS()
+cRVS		tldkat == "REVISI"
+cblm1		(tldsat == "LENGKAP" && (dscantldview != 0 || dscantldview == 0) && ltdklengkap == 0) ||
+		(tldsat == "TIDAK_LENGKAP" && (dscantldview != 0 || dscantldview == 0) && ltdklengkap >= 1)
+
+EDITS(tmptranst)
+e.Mandatory	tldkat		MANDATORY
+e.Mandatory	tldsat		MANDATORY
+e.Mandatory	tldket		MANDATORY
+e.Validate	tldnoll		VALIDATE_BUF3_IF cRVS tlmdatstsbuk mtlm stlm {Plmastersop} {Pgv_INPG}
+
+MAP(mtlm)
+#tlmnobuk	tldnoll		REPLACE
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+CALCS()
+crevisi		tldkat!="REVISI"
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=tldnoll	DO_SKIP_IF crevisi
+AFTER_INPUT	cur_field=tldsat	DO_MAP SHOW 
+		IF cblm1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.KelBerkasSesuaiDetBerkas
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET	
+tldstsbrgukr	lbuatsop gv_OPEN tlmnobuk lreviewsop 
+
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+lbuatsop	tlddata		REPLACE
+gv_OPEN		tldsts		REPLACE
+tlmnobuk	tldbrg		REPLACE
+lreviewsop	tldukrwrn	REPLACE
+
+MAP(mupdanalist)
+tldplg		tlmdari		REPLACE
+g_tgltrn	tlmtgljtp	REPLACE
+tldnoll		tlmgrup		REPLACE
+
+SPCALCS(supdd)
+	DO_LIB ap_dbclc(DNAME dupdanalist,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdanalist);
+
+POSTING(tmptrans)
+PST_ADDCMD 	supdd
+
+CALCS()
+c0x		0
+cOPENx		tlmsts == "OPEN"
+cblmada		djointldrev == 0 && tlmsts == "OPEN"
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cblmada
+PMT_UPDALL_COND	cOPENx
+PMT_DEL_COND	c0x

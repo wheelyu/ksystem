@@ -1,0 +1,101 @@
+LOCAL
+PGM_FIELDS
+lyes5		STRING		5
+luplokplng      STRING	        21
+lYokplng	STRING	        5
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}   
+/----------------------------------\
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!               
+| \-------------------------------/|
+| /-------------------------------\|
+| |i.Ket    : ___________________ !|
+| |t.UplodOk: _____               ||
+| |t.Wajib  : _______             ||
+| |           ___________________ ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        svinama                 PROTECT         INPUTRI 1
+        svistr1                 PROTECT         INPUTRI 2
+	svists                  PROTECT         INPUTRI 3
+        luplokplng              TOMBOL          INPUTRI 4
+
+DEFAULTS(tmptranst)
+lyes5		INIT		"OK"
+luplokplng	INIT		"UPLOAD OK"
+lYokplng	INIT		Y
+
+MAP(mokplng)
+lYokplng	sviyt1		REPLACE
+
+DBCALCS(dbftplngok)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mokplng
+
+MAP(mupdsvipulang)
+lyes5	svistr1		REPLACE
+
+DBCALCS(dbfotopulang)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvipulang
+
+CALCS()
+ckepulangan		svikode=="FPC005" || svikode=="FPC006"
+csudahcair		btmsts=="CLSD" || g_grpnam=="RI" || g_grpnam=="IT"
+caktuplclsdplng         djoinaktuplclsdplng == 0 && btmsts=="CLSD" && btmflag1=="PLNG"
+csudahokplng            sviyt1 == "Y"
+
+
+MAP(maddaktuplclsdplng)
+	btmnobuk        aktkode         REPLACE
+	btmnobuk        aktnobuk        REPLACE
+	btmnobuk        aktbrg          REPLACE
+	l669         	aktkode2        REPLACE
+	lSLAUMROH       aktdata         REPLACE
+	lCLSDUPLPLNG    akttype         REPLACE
+	g_tgltrn        akttgl          REPLACE
+	lsystime        aktjam          REPLACE
+	g_usrkode       aktcrtusr       REPLACE
+	btmlokjual      aktcab          REPLACE
+	l669            aktscr          REPLACE
+	lA		aktlok		REPLACE
+	lCLSDPSTPLNG    aktket		REPLACE
+	l1		akturt		REPLACE
+
+SPCALCS(supdplng)
+	dbfotopulang
+	DO_LIB_IF       caktuplclsdplng ap_dbclc(DNAME daddaktuplclsdplng,DCOMMAND ADD,DFILE akt,DMAP maddaktuplclsdplng);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luplokplng IF	csudahokplng  DO_SPCALCS supdplng
+				   ELSE t.UplFotoDulu
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csudahcair
+SFL_UPLFLD_DBCALCS dbftplngok
+SFL_SELECT ckepulangan
+SFL_UPL_DIRFLD          btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOADH btmnobuk lFOTOCAIR
+
+
+

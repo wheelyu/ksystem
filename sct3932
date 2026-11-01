@@ -1,0 +1,163 @@
+SCREEN 3932 APP_TYPE s.replyToJsonRequest
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+lnamfil               	STRING          31
+lrequestreply         	STRING          31
+linptitle         	STRING          31
+ldettitle         	STRING          31
+lmstlabels              STRING          31
+lmstfields              STRING          31
+linplabels              STRING          601
+ldetlabels              STRING          601
+linpfields              STRING          601
+ldetfields              STRING          601
+ldatetype             	INT2            2
+linpnamamap	  	STRING		21
+ldetnamamap	  	STRING		21
+lnumfail                INT2		2
+lsavedata		INT2		2
+lenter			STRING		2
+lSYSTIME		TIME		4
+
+levent			STRING		21
+levent_id		STRING		21
+lsent_at		STRING		21
+lchannel		STRING		21
+lphone_number_id	STRING		21
+ldisplay_phone_number	STRING		21
+lwa_id			STRING		21
+lname			STRING		21
+lid			STRING		21
+lid1			STRING		21
+lfrom			STRING		21
+lfrom1			STRING		21
+ltimestamp		STRING		21
+ltimestamp1		STRING		21
+lreceived_at		STRING		21
+ltype			STRING		21
+ltype1			STRING		21
+ltext			STRING		21
+ltext6			STRING		6
+lcabang			STRING		21
+lmedia			STRING		21
+lreply_to		STRING		21
+ldata			STRING		21
+lbody			STRING		21
+l4562                   INT2    2
+lm4562                  STRING  15
+lok                     STRING          3
+lversi                  STRING          11
+
+DBCALCS(djoincab)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cabkodidx lcabang
+
+
+
+IMAGE(master) 
+/-------------------------------------\
+| /---------------------------------\ |
+| |i.enter  : ____________________  | |
+| |v15072024			    | |
+| \---------------------------------/ |
+\-------------------------------------/
+
+FIELDS(master)
+lenter	      NONE           		INPUTRI          1 
+
+DEFAULTS(master)
+  lnamfil   	INIT     	{r_string1}
+  ldatetype 	INIT		1
+  linpnamamap   INIT  		BLANKS
+  ldetnamamap   INIT  		BLANKS
+  linplabels   	INIT     	"event+event_id+sent_at+channel+phone_number_id+display_phone_number+contact:{wa_id+name}+message:{id+from+timestamp+received_at+type+text+media+reply_to+data}+raw:{from+id+timestamp+text:{body}+type}"
+  linpfields   	INIT     	"levent+levent_id+lsent_at+lchannel+lphone_number_id+ldisplay_phone_number+lwa_id+lname+lid+lfrom+ltimestamp+lreceived_at+ltype+ltext+lmedia+lreply_to+ldata+lfrom1+lid1+ltimestamp1+lbody+ltype1"
+  ldetlabels   	INIT     	""
+  ldetfields   	INIT     	""
+  lmstlabels    INIT            "respon"
+  lmstfields    INIT            "lok"
+  lrequestreply INIT    	"replay"
+  linptitle    	INIT 	   	"" 
+  ldettitle    	INIT 	   	""
+  lsavedata	INIT		0
+  lnumfail	INIT		0
+  lSYSTIME	INIT		SYSTIME
+  l4562         INIT            4562
+  lm4562        INIT            m4562    
+  lok           INIT            OK
+  lversi        INIT            29102026
+
+HOOKS(master)
+   BEFORE_INPUT cur_field=lenter           DO_LIB ap_rdjsa(lnamfil,linplabels,linpfields,g_strksg,lsavedata);
+
+
+MAP(mmapmap)
+levent			levent			REPLACE
+levent_id		levent_id		REPLACE
+lsent_at		lsent_at		REPLACE
+lchannel		lchannel		REPLACE
+lphone_number_id	lphone_number_id	REPLACE
+ldisplay_phone_number	ldisplay_phone_number	REPLACE
+lwa_id			lwa_id			REPLACE
+lname			lname			REPLACE
+lid			lid			REPLACE
+lid1			lid1			REPLACE
+lfrom			lfrom			REPLACE
+lfrom1			lfrom1			REPLACE
+ltimestamp		ltimestamp		REPLACE
+lreceived_at		lreceived_at		REPLACE
+ltype			ltype			REPLACE
+ltext			ltext			REPLACE
+ltext			ltext6			REPLACE
+ltext6			lcabang 		REPLACE
+lmedia			lmedia			REPLACE
+lreply_to		lreply_to		REPLACE
+ldata			ldata			REPLACE
+ltimestamp1		ltimestamp1		REPLACE
+lbody			lbody			REPLACE
+ltype1			ltype1			REPLACE
+
+CALCS()
+ctest		"INBOX"
+csystime	SYSTIME
+cantri          djoincab==1
+cantrian        "ANTRIAN"
+cIN             "IN"
+
+MAP(maddakt)
+ctest			aktdata		DO_CALC
+levent			aktkode		REPLACE
+ldisplay_phone_number	aktkode2	REPLACE
+lwa_id			aktnobuk	REPLACE
+lwa_id			akttype         REPLACE
+lname			aktbrg		REPLACE
+ltext			aktket		REPLACE
+g_tgltrn		akttgl		REPLACE
+csystime		aktjam		DO_CALC
+cIN                     akttype2        DO_CALC
+lcabang                 aktcab          REPLACE
+cantrian                aktstr1         DO_CALC_IF cantri
+
+MAP(m4562)
+cantrian        r_string2       DO_CALC
+lwa_id          r_string1       REPLACE
+ltext6          r_string3       REPLACE
+cantrian        r_string4       DO_CALC
+
+
+/*---------------------------------------------------------------*/
+SPCALCS(spmaster)
+	DO_LIB	ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+	DO_LIB  ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+        DO_LIB ap_jsamt(lrequestreply,lmstlabels,lmstfields);
+        DO_LIB_IF cantri        ap_nxpst(l4562,lm4562);
+
+POSTING(master)
+   PST_COMMAND     spmaster       
+
+END_SCREEN
+
+
+

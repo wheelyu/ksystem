@@ -1,0 +1,105 @@
+SCREEN 2946 APP_TYPE api_getformleads
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+lnamfil               	STRING  31
+lrequestreply         	STRING  31
+linplabels             	STRING  3000
+linpfields             	STRING  3000
+linpmap			STRING	21
+lsavedata	  	INT2	2
+lmsttitle               STRING  31
+lmstlabel               STRING  100
+lmstfields              STRING  100
+lstatus			STRING	5
+
+lNoFaktur              	STRING  21
+
+lVERSI			STRING	21
+ljamskrng		TIME	4
+lstatuskosong   STRING  31
+
+lmstlabelOK     STRING  100
+lmstfieldsOK    STRING  100
+lformId         STRING  21
+ljudul          STRING  61
+lop1            STRING  251
+lop2            STRING  251
+lop3            STRING  251
+lop4            STRING  251
+lspknobuk       STRING  21
+lspkdata        STRING  11
+lurl_img        STRING  501
+
+lFORMMETA       STRING  11
+
+IMAGE(master) 
+/--------------------------------------------------------\
+| /----------------------------------------------------\ |
+| |i.NoBuk   : ____________________                    | |
+| \----------------------------------------------------/ |
+\--------------------------------------------------------/
+
+FIELDS(master)
+   lNoFaktur            NONE           INPUTRI          1 
+
+DEFAULTS(master)
+lFORMMETA       INIT    "FORMMETA"
+linplabels   	INIT    "api_getformleads:[{FormId}]"
+linpfields   	INIT    "lformId"
+  
+linpmap		    INIT	mmapnobuk 
+lrequestreply   INIT    "reply"
+lsavedata	    INIT	1
+lVERSI	        INIT	01082025
+lstatuskosong   INIT    "Data tidak ditemukan"
+
+lmstlabel       INIT     "status"
+lmstfields      INIT     "lstatuskosong"
+
+lmstlabelOK     INIT     "judul+op1+op2+op3+op4+spknobuk+spkdata+url_img"
+lmstfieldsOK    INIT     "ljudul+lop1+lop2+lop3+lop4+lspknobuk+lspkdata+lurl_img"
+lmsttitle       INIT    ""
+
+CALCS()
+curl_img    "https://uatdlp.nusantara-sakti.co.id/upload/"+spkdata+"/"+spknobuk+".jpg"
+
+MAP(mmapnobuk)
+lformId     lNoFaktur     REPLACE
+
+MAP(mdump)
+lmstlabelOK     lmstlabel   REPLACE  
+lmstfieldsOK    lmstfields  REPLACE	
+
+MAP(mdataform)
+spknama4    ljudul      REPLACE
+spkket2     lop1        REPLACE
+spkreview   lop2        REPLACE
+spkreview2  lop3        REPLACE
+spkreview3  lop4        REPLACE
+spknobuk    lspknobuk   REPLACE
+spkdata     lspkdata    REPLACE
+curl_img    lurl_img    DO_CALC
+
+HOOKS(master)
+   BEFORE_INPUT cur_field=lNoFaktur DO_LIB ap_rdjsn(lnamfil,linplabels,linpfields,linpmap,g_strksg,g_strksg,g_strksg,lsavedata);
+   /* BEFORE_INPUT cur_field=lNoFaktur DO_LIB ap_rdjsa(lnamfil,linplabels,linpfields,linpmap,lsavedata); */
+
+DBCALCS(djoinspk)
+DBC_COMMAND	JOIN
+DBC_TARGET	spkdatbuktyp	lFORMMETA lNoFaktur lFORMMETA
+DBC_MAP mdataform
+
+CALCS()
+cekAdaForm  djoinspk == 1
+
+/*---------------------------------------------------------------*/
+SPCALCS(spmaster)             
+      DO_LIB_IF cekAdaForm    ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mdump);
+	   DO_LIB	                ap_jsnmt(lrequestreply,lmsttitle,lmstlabel,lmstfields);
+
+POSTING(master)
+   PST_COMMAND     spmaster       
+
+END_SCREEN

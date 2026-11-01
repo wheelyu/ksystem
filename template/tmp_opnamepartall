@@ -1,0 +1,110 @@
+LOCAL
+PGM_FIELDS
+lurtall		INT2		2
+
+MAP(mscanstokintiall)
+brdsisprc       lstokbaranginti         REPLACE_IF cadastokintiall
+
+DBCALCS(dscanstokintiall)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brdbrglokoto    gv_INPG tldbrg tlmcab tldlok
+        DBC_SUM_MAP     mscanstokintiall
+
+MAP(mjointldall)
+tldnourt	lurtall		REPLACE
+DBCALCS(djointldall)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldbukbrgoto tlmnobuk lALL
+	DBC_MAP		mjointldall
+
+IMAGE(tmptranst)
+/------t--------t------------t------------------t-----------------t-------t--------t-------t------t----------t--------------\
+|t.No  |t.User  |t.Lokasi    |t.Brg2            |t.NamaBrg        |t.Scan |t.Jumlah|t.Ket  |t.Jam |t.Tanggal |t.Kategori    |
+\------.--------.------------.------------------.-----------------.-------.--------.-------.------.----------.--------------/
+IMAGE(tmptrans)
+|______|________|____________|__________________|_________________|_______|________|_______|______|__________|______________|
+
+FIELDS(tmptrans)
+tldnourt                PROTECT                 INPUTRI         1
+tldlok2                 PROTECT                 INPUTRI         2
+tldlok			PROTECT         	INPUTRI		3
+tldbrg                  PROTECT                 INPUTRI         5
+lnamabrg4               PROTECT                 INPUTRI         6
+tldket2			QRCODE			INPUTRI		4
+tldjml                  NUMERIC                 INPUTRI         7
+tldkat                  PROTECT                 INPUTRI         8
+tldsat   		PROTECT			INPUTRI		9
+tldtglfak		PROTECT			INPUTRI		10
+tldbisnis		PROTECT                 INPUTRI		11
+
+
+DEFAULTS(tmptrans)
+tldlok2                 INIT_ADD        {g_usrkode}
+tldlok2                 INIT_UPDATE     {g_usrkode}
+
+EDITS(tmptrans)
+e.ValidateppdBrg4 tldbrg VALIDATE brgstsdatbrg mbrg4x sbrg {Pgv_INPG} {Pgv_dtbarang}
+/*e.ValidatetbdBrg4 tldlok VALIDATE tbddtmstidx mtbd4x stbdLokAsl {Pgv_dttabel} {Pgv_barang} {PlLOKAHASS} {Pgv_BR} {Ptlmcab}*/
+
+CALCS()
+cdscanstokintiall	dscanstokintiall >= 0
+curtall			lurtall + 1
+cjointld0all		djointldall == 0
+cjointld1all		djointldall == 1
+cbrgbeda		tldket2 == tldbrg
+clokbeda                aktbukoto == tldlok 
+csudahscan		tldket2 != BLANKS
+
+MAP(mbrg4x)
+brgkode         tldbrg          REPLACE
+brgnama         lnamabrg4       REPLACE
+
+/*MAP(mtbd4x)
+tbdkode		tldlok		REPLACE
+*/
+MAP(mmaptldstokintix)
+c0		lstokbaranginti	DO_CALC
+lstokbaranginti tldperdis7      REPLACE_IF cdscanstokintiall
+g_tgltrn	tldtglfak	REPLACE
+cstrtime	tldsat		DO_CALC
+DEBUG   ldum    ldum            REPLACE
+
+MAP(murtahs2x)
+gv_int1		tldnourt	REPLACE_IF cjointld0all
+curtall		tldnourt	DO_CALC_IF cjointld1all
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldbrg	DO_MAP SHOW murtahs2x
+BEFORE_INPUT	cur_field=tldket2	DO_SKIP_IF csudahscan
+AFTER_INPUT     cur_field=tldjml        DO_SCAN dscanstokinti
+AFTER_INPUT     cur_field=tldjml        DO_MAP SHOW     mmaptldstokintix
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW     mmaptldstokintix
+AFTER_INPUT     cur_field=tldket2      DO_MAP SHOW
+                IF cbrgbeda     mdum
+                ELSE  HKCURSOR STAY
+                HKMSG t.BrgBeda         
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbrgbeda     mdum
+                ELSE  HKCURSOR STAY
+                HKMSG t.BrgBeda         
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(15)
+SFL_SORT_BY_FIELD  tldnourt
+SFL_COND        cahassintiall 
+SFL_SELECT      clokbeda        
+SFL_TARGET
+tldbukbrgoto    tlmnobuk  lALL 
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmcab          tldplg          REPLACE
+tlmtype1        tldgrup         REPLACE
+lALL 		tldsts		REPLACE
+
+
+

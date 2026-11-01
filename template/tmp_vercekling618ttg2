@@ -1,0 +1,331 @@
+LOCAL
+PGM_FIELDS
+lindikasi5mTTG2         STRING  3
+lhubpenj2                STRING  21
+lkethsl2                STRING  60
+lLSM2                   STRING  11
+
+MAP(mjoinsvi714ttg2)
+svistr33        lindikasi5mTTG2     REPLACE
+svistr35        lLSM2            REPLACE
+
+DBCALCS(djoinsvi714ttg2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey mtdgrup lhasilH1
+        DBC_MAP         mjoinsvi714ttg2
+
+
+MAP(mjoinsvi714hubpenj2)
+svistr3         lhubpenj2        REPLACE
+
+DBCALCS(djoinsvi714hubpenj2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey mtdgrup gv_characterH1
+        DBC_MAP         mjoinsvi714hubpenj2
+
+DBCALCS(djointldhslverifttg2)                                                                                                                           
+        DBC_COMMAND     JOIN    
+        DBC_TARGET      tldbukbrglok    mtdnobuk   mtdnoll lhslverif
+
+
+IMAGE(tmptranst)
+/--------------------------------------------\
+|/------------------------------------------\|
+  t.Nama      	   : ____________________     _
+  t.HubPemPen      : __________  _______
+  t.LamaTinggal    : ______ i.Th  _____ i.Bln
+  t.Indikasi5m     : __________  _______
+  t.AgtOrg  	   : ____  ____
+  t.NamaOrg        : ___________________ 
+  t.JikaTupload1
+||/--s.UPLOAD---------\||
+|||                   |||
+|||                   |||
+|||                   |||
+|||                   |||
+|||                   |||
+|||                   |||
+|||                   |||
+||\-------------------/||
+|\------------------------------------------/|
+|/------------------------------------------\|
+  t.Pekerjaan      : ___  ______________
+  t.Ketrekttg2	   : ___________________
+  t.HasilVerif2    : ____ _____________
+|\------------------------------------------/|
+|/-----i.ENTER------------------------------\|
+  ______
+|\------------------------------------------/|
+\--------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkfoto6	ALLCAPS SCROLL	INPUTRI 12      /*nama tetangga 2*/
+spknobuk        PROTECT UNSEEN  INPUTRI 12
+lhubpenj2        PROTECT COLOR=cred,cyellow,cgreen         INPUTRI 13      /*hub penj dari 614*/
+spktgg2         NOCHANGE SCROLL  INPUTRI 13      /*hubungan pemohon dan penjamin*/
+spkjrk7         NUMERIC SCROLL  INPUTRI 14      /*lama tahun tinggal 2*/
+spklat          NUMERIC SCROLL  INPUTRI 15      /*lama bulan tinggal 2*/
+lindikasi5mTTG2 PROTECT COLOR=cred,cyellow,cgreen        INPUTRI 16      /*keterangan 5 m dari 713 tetangga 2*/
+spknohp10       NOCHANGE SCROLL  INPUTRI 16      /*keterangan 5 m TTG2*/
+lLSM2           PROTECT COLOR=cred,cyellow,cgreen       INPUTRI 17
+spkfoto         NOCHANGE SCROLL  INPUTRI 17      /*anggota organisai ttg 2*/
+spkalamat2      ALLCAPS SCROLL  INPUTRI 18      /*nama organisasi 2*/
+spknohp5        ALLCAPS SCROLL  INPUTRI 19      /*Pekerjaan ttg 2*/
+lketpekerjaanTTG2 PROTECT SCROLL COLOR=cred,cyellow,cgreen   INPUTRI 20      /*Getail Pekerjaan ttg 2*/
+spkfoto7	ALLCAPS SCROLL	INPUTRI 21      /*keterangan pekerjaan 2*/
+spkkode        PROTECT COLOR=cred,cyellow,cgreen   INPUTRI 50      /*Hasil verifikasi*/
+lkethsl2        PROTECT SCROLL COLOR=cred,cyellow,cgreen  INPUTRI 50
+lENTER          NOCHANGE        INPUTRI 51
+
+CALCS()
+corgTTG2                spkfoto == "Y" || lLSM2 == "Y"
+ctdkorgTTG2             spkfoto == "T"
+clindikasi5mTTG2        lindikasi5mTTG2 == "Y"
+ctdklindikasi5mTTG2     lindikasi5mTTG2 == BLANKS || lindikasi5mTTG2 == "T"
+clLSM2                  lLSM2 == "Y"
+ctdklLSM2               lLSM2 == BLANKS || lLSM2 == "T"
+cjoinsvi714ttg2        djoinsvi714ttg2 == 1
+cdjoinsvi714hubpenj2    djoinsvi714hubpenj2 == 1
+cTidak1          "T"
+
+
+DEFAULTS(tmptranst)
+spktglft        INIT_ADD        {g_tgltrn}                                                                                                              
+spktglft        INIT_UPDATE        {g_tgltrn}
+
+
+spkfoto 	DFALT_SCAN BLANKS	Y "YA"
+                                        T "TIDAK"
+
+spknohp10       DFALT_SCAN BLANKS       Y "SESUAI"
+                                        T "TIDAK SESUAI"
+
+spktgg2         DFALT_SCAN BLANKS       Y "YA"
+                                        T "TIDAK"
+
+
+lKETTOLAKSURVEY         INIT            KETTOLAKSURVEY
+
+EDITS(tmptranst)
+e.validatepkrjntg2		spknohp5 	VALIDATE tbldtdtmkod mtbdj5b  stbl {Pgv_dttabel} {Pgv_pekerjaan21}
+e.Mandatorybhub			spktgg2         MANDATORY
+e.MandatoryAngtOrg		spkfoto        MANDATORY_IF ctdklLSM2
+e.MandatorybnmaOrg2		spkalamat2      MANDATORY_IF ctdkorgTTG2
+e.MandatorybpkrjnTTG2		spknohp5		MANDATORY
+e.Mandatorybrekttg2		spkfoto6         MANDATORY
+e.Mandatorybpilrekttg2		spkfoto7     MANDATORY
+e.MandatoryIndikasi5MTTG2	spknohp10       MANDATORY_IF ctdklindikasi5mTTG2
+e.Mandatorylamatinggal  	spkjrk7       MANDATORY
+e.Mandatorylamatinggal  	spklat       MANDATORY
+e.Validate                      spknobuk     VALIDATE ppmbukidx mppmkons 0
+
+MAP(mtbdj5b)
+tblkode         spknohp5         REPLACE                                                                                                                
+tblket          lketpekerjaanTTG2   REPLACE
+
+MAP(mppmkons)
+lindikasi5mTTG2 lindikasi5mTTG2 REPLACE_IF cjoinsvi714ttg2
+lhubpenj2        lhubpenj2        REPLACE_IF cdjoinsvi714hubpenj2
+lLSM2           lLSM2           REPLACE_IF cjoinsvi714ttg2
+cTidak1         lindikasi5mTTG2 DO_CALC_IF ctdklindikasi5mTTG2
+cTidak1         lLSM2           DO_CALC_IF ctdklLSM2
+
+
+CALCS()
+chapusfoto2      g_grpnam == "ADH" || g_grpnam == "IT" || g_grpnam == "DRIVER" || g_grpnam == "RI" || mtshcex_1 == g_usrkode
+/*calasanblk      djointld618 == 0*/
+chslverifa        spktgg2 == "T" || spknohp10 == "T" || spkfoto == "T"
+chslverif2a       spktgg2 == "Y"  && (spknohp10 == "Y" || lindikasi5mTTG2=="Y") && (spkfoto == "Y" || lLSM2=="Y")
+        
+chslverifttg1a   spktgg3 == "T" || spknohp9 == "T" || spkfoto == "T"
+chslverifttg1atrue   spktgg3 != "T" && spknohp9 != "T" && spkfoto != "T"
+chslverifttg2a   (spktgg2 == "T" || lindikasi5mTTG2== "Y") || spknohp10 == "T" || spkfoto == "T"
+chslverifttg2atrue   spktgg2 != "T" && (spknohp10 != "T" || lindikasi5mTTG2=="Y") && (spkfoto != "T"|| lLSM2=="Y")
+chslverifkons1   spkhasil2 == "TIDAK" || spktgg4 == "T" || spknohp6 == "T" || spknohp8 == "T" || 
+                spkkat4 == "T" || spkkat5 == "T" || spkkat7 == "T" || spkkat8 == "T" || spkfoto8 == "T" 
+chslverifkons1true   spkhasil2 != "TIDAK" && spktgg4 != "T" && spknohp6 != "T" && spknohp8 != "T" && 
+                spkkat4 != "T" && spkkat5 != "T" && spkkat7 != "T" && spkkat8 != "T" && spkfoto8 != "T" 
+chslverifakl1    spkfoto9 == "T"
+chslverifakl1true    spkfoto9 != "T"
+
+cY1              "Y"
+
+cttg1a           "TTG1"
+cttg2a           "TTG2"
+ckonsa           "KONS"
+cakla            "AKL"
+
+ckode1a          "TTG1.1"
+ckode1oka         spktgg3 == "T"
+ckode2a          "TTG1.2"
+ckode2oka         spknohp9 == "T"
+ckode3a          "TTG1.3"
+ckode3oka         spkfoto3 == "T"
+ckode4a          "TTG2.1"
+ckode4oka         spktgg2 == "T"
+ckode5a          "TTG2.2"
+ckode5oka         spknohp10 == "T"
+ckode6a          "TTG2.3"
+ckode6oka         spkfoto == "T"
+ckode7a          "KONS.1"
+ckode7oka         spkhasil2 == "TIDAK"
+ckode8a          "KONS.2"
+ckode8oka         spktgg4 == "T"
+ckode9a          "KONS.3"
+ckode9oka         spknohp6 == "T"
+ckode10a          "KONS.4"
+ckode10oka         spknohp8 == "T"
+ckode11a          "KONS.5"
+ckode11oka         spkkat4 == "T"
+ckode12a          "KONS.6"
+ckode12oka         spkkat5 == "T"
+ckode13a          "KONS.7"
+ckode13oka         spkkat7 == "T"
+ckode14a          "KONS.8"
+ckode14oka         spkkat8 == "T"
+ckode15a          "KONS.9"
+ckode15oka         spkfoto8 == "T"
+ckode16a          "AKL.1"
+ckode16oka         spkfoto9 == "T"
+
+cgabungketa      STRIP(lkode1)+" "+STRIP(lkode2)+" "+STRIP(lkode3)+" "+STRIP(lkode4)+" "+STRIP(lkode5)+" "+STRIP(lkode6)
+cgabungket2a     STRIP(lkode7)+" "+STRIP(lkode8)+" "+STRIP(lkode9)+" "+STRIP(lkode10)+" "+STRIP(lkode11)+" "+STRIP(lkode12)
+                +" "+STRIP(lkode13)+" "+STRIP(lkode14)+" "+STRIP(lkode15)+" "+STRIP(lkode16)
+cdokumentasia    STRIP(lttg1)+"-"+STRIP(lttg2)+"-"+STRIP(lkons)+"-"+STRIP(lakl)
+
+MAP(mgabungket2)
+
+ckode1a          lkode1           DO_CALC_IF ckode1oka
+ckode2a          lkode2           DO_CALC_IF ckode2oka
+ckode3a          lkode3           DO_CALC_IF ckode3oka
+ckode4a          lkode4           DO_CALC_IF ckode4oka
+ckode5a          lkode5           DO_CALC_IF ckode5oka
+ckode6a          lkode6           DO_CALC_IF ckode6oka
+ckode7a          lkode7           DO_CALC_IF ckode7oka
+ckode8a          lkode8           DO_CALC_IF ckode8oka
+ckode9a          lkode9           DO_CALC_IF ckode9oka
+ckode10a         lkode10          DO_CALC_IF ckode10oka
+ckode11a         lkode11          DO_CALC_IF ckode11oka
+ckode12a         lkode12          DO_CALC_IF ckode12oka
+ckode13a         lkode13          DO_CALC_IF ckode13oka
+ckode14a         lkode14          DO_CALC_IF ckode14oka
+ckode15a         lkode15          DO_CALC_IF ckode15oka
+ckode16a         lkode16          DO_CALC_IF ckode16oka
+
+cttg1a           lttg1           DO_CALC_IF chslverifttg1a
+cttg2a           lttg2           DO_CALC_IF chslverifttg2a
+ckonsa           lkons           DO_CALC_IF chslverifkons1
+cakla            lakl            DO_CALC_IF chslverifakl1
+
+cBLANKS           lttg1           DO_CALC_IF chslverifttg1atrue
+cBLANKS           lttg2           DO_CALC_IF chslverifttg2atrue
+cBLANKS           lkons           DO_CALC_IF chslverifkons1true
+cBLANKS           lakl            DO_CALC_IF chslverifakl1true
+
+
+cgabungketa      lgabungket      DO_CALC
+cgabungket2a     lgabungket2     DO_CALC
+cdokumentasia    lgabungan       DO_CALC
+
+MAP(maddtldalasanblk3)
+mtdnobuk         tldnobuk       REPLACE
+mtdnoll          tldbrg         REPLACE
+lhslverif        tldlok         REPLACE
+
+MAP(mupdtldcekling2)
+lgabungan        tldgrup        REPLACE
+lgabungket       tldket         REPLACE
+lgabungket2      tldket2        REPLACE
+
+MAP(mhasilverif1)
+cTidak1  spkkode        DO_CALC_IF chslverifa
+cY1      spkkode        DO_CALC_IF chslverif2a
+cbalik   lkethsl2       DO_CALC_IF chslverifa
+ckirim   lkethsl2       DO_CALC_IF chslverif2a
+
+
+MAP(misispkkat62)
+lindikasi5mTTG2 lindikasi5mTTG2 REPLACE_IF cjoinsvi714ttg2
+lhubpenj2        lhubpenj2        REPLACE_IF cdjoinsvi714hubpenj2
+lLSM2           lLSM2           REPLACE_IF cjoinsvi714ttg2
+cTidak1         lindikasi5mTTG2 DO_CALC_IF ctdklindikasi5mTTG2
+cTidak1         lLSM2           DO_CALC_IF ctdklLSM2
+
+HOOKS(tmptranst)
+BEFORE_INPUT 	cur_field=spknohp10        DO_SKIP_IF clindikasi5mTTG2
+BEFORE_INPUT 	cur_field=spkfoto        DO_SKIP_IF clLSM2
+AFTER_INPUT     cur_field=spkfoto6      DO_MAP SHOW misispkkat62
+BEFORE_INPUT 	cur_field=spkalamat2        DO_SKIP_IF corgTTG2
+AFTER_INPUT     cur_field=spkfoto       DO_MAP SHOW mhasilverif1
+
+MAP(mjointkm2)
+tkmkode		ltkmkode		REPLACE
+
+DBCALCS(djointkmmts1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkmbukidx	mtsnobuk_1
+	DBC_MAP		mjointkm2
+
+MAP(mjointbd618a)
+tbdkode2        ltbdkode2       REPLACE
+
+DBCALCS(djointbd618a)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_survey21 lVERAKL61821 g_grpnam
+        DBC_MAP         mjointbd618a
+
+
+
+CALCS()
+chanyaakl1       (djointkmmts1 == 1 && ltkmkode  == g_usrkode && djoinppmmtd == 1 && lppmtk == "K") || (djointbd618a == 1 && (ltbdkode2 == "LIHAT" || ltbdkode2 == "UBAH" )) &&  djoinspkverakl618 == 1 && lspkrekom == "Y"
+
+/*********************FOTO 2**************************/
+MAP(mupdfotobsn2)
+gv_int1              spklmtgbl     REPLACE
+
+DBCALCS(dupdfotobsn2)
+DBC_COMMAND        UPDATE
+DBC_TARGET         spkprmidx   spkprm
+DBC_MAP            mupdfotobsn2
+/******************************************************/
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND chanyaakl1
+SFL_UPL_DIRFLD spktglft
+SFL_UPL_CAMERAONLY
+SFL_UPLFLD     spknobuk spktgg3
+SFL_UPLFLD_DBCALCS dupdfotobsn2
+SFL_UPL_DELCOND chapusfoto2
+
+SFL_TARGET
+	spkdatbuktyp	gv_datasurvey /*mtdnobuk*/ mtdplg   lVERAKL618
+
+SFL_MAP
+gv_datasurvey		spkdata			REPLACE
+mtdplg   		spknobuk		REPLACE
+lVERAKL618		spktype			REPLACE
+mtdplg              	spknoasal               REPLACE
+
+
+CALCS()
+cveriflingk2     djointldhslverifttg2 == 0 /*&& (spktgg2 == "T" || spknohp10 == "T" || spkfoto == "T")*/
+
+cdjointldupd2    djointldhslverifttg2 == 1 /*&& (spktgg3 == "T" || spknohp9 == "T" || spkfoto3 == "T" || spktgg2 == "T" || spknohp10 == "T" || spkfoto == "T" || spkhasil2 == "TIDAK" || spktgg4 == "T" || spknohp6 == "T" || spknohp8 == "T" || spkkat4 == "T" || spkkat5 == "T" || spkkat7 == "T" || spkkat8 == "T" || spkfoto8 == "T" || spkfoto9 == "T")*/
+
+SPCALCS(sphasilttg2)
+DO_LIB_IF cveriflingk2 ap_dbclc(DNAME daddtldalasanblk3,DCOMMAND ADD,DFILE tld,DMAP maddtldalasanblk3); 
+
+SPCALCS(sphasilttg2a)
+DO_LIB ap_dbclc(DNAME dmapmgabungket2,DCOMMAND MAPMAP,DMAP mgabungket2);
+DO_LIB_IF cveriflingk2 ap_dbclc(DNAME daddtldalasanblk3upd,DCOMMAND ADD,DFILE tld,DMAP maddtldalasanblk3);
+DO_LIB_IF cdjointldupd2 ap_dbclc(DNAME dupdtldcekling2,DCOMMAND UPDATE_RANGE,DTARGET tldbukbrglok mtdnobuk mtdplg lhslverif,DMAP mupdtldcekling2);
+
+
+POSTING(tmptrans)
+        PST_ADDCMD sphasilttg2
+        PST_UPDCMD sphasilttg2a

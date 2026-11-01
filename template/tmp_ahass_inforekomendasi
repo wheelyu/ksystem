@@ -1,0 +1,233 @@
+LOCAL
+PGM_FIELDS
+lbrdsisatmp		DFLOAT		8
+lbrdsisprctmp		DFLOAT		8
+lbrdoto			STRING		21
+lbrdsat			STRING		21
+lbrgkattmp		STRING		21
+ltkdnobuk_rekom		STRING		21
+ltkdjenis_rekom		STRING		21
+ltkdket_rekom		STRING		261
+ltkdrek_rekom		STRING		21
+ltkdjwbstr1_rekom 	STRING		21
+ltkdnoll_rekom		STRING		21
+ltkdjml_rekom		INT2		2
+lBARANGLEBIH2		STRING		21
+lVERSITMP		STRING		21
+
+
+MAP(mbrdtmp)
+brdsisa     lbrdsisatmp       REPLACE
+brdsisprc   lbrdsisprctmp     REPLACE
+
+DBCALCS(dscanbrdtmp)
+    DBC_COMMAND     SCANSCAN
+    DBC_TARGET      brdstscabbrg    gv_INPG btmcab tkdjenis
+    DBC_SUM_MAP     mbrdtmp
+
+DBCALCS(djointbd_baranglebih2)
+    DBC_COMMAND     JOIN
+    DBC_TARGET	    tbddatkodidx	gv_dttabel gt_ahass lBARANGLEBIH2 tkdjenis
+
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------\
+|----t---------------t-----t--------------t-------------t-------|
+|i.No|  t.Rekomen    |t.Y/T|t.KodeBrg     |i.NamaBrg	| i.Jml |
+\----.---------------.-----.--------------.-------------.-------/
+
+IMAGE(tmptrans)
+|____|_______________|_____|______________|_____________|_______|______|__|
+
+FIELD(tmptrans)
+tkdnourt                PROTECT SCROLL          INPUTRI 1 /* NO URUT */
+tkdnoll	                TEXTAREA PROTECT        INPUTRI 2 /* REKOMENDASI */
+tkdjwbstr1              NOCHANGE                INPUTRI 3 /* Y/T */
+tkdjenis		ALLCAPS	SCROLL		INPUTRI 4 /* Kode Barang */
+tkdket         		PROTECT			INPUTRI 5 /* Nama Barang */
+tkdjml 			NUMERIC			INPUTRI 6 /* Jumlah Barang */
+tkdrek			PROTECT UNSEEN SCROLL	INPUTRI	7 /* Loakasi Barang */
+tkdnobuk		PROTECT UNSEEN		INPUTRI	8 /* Nobuk */
+
+CALCS()
+cJikaY		tkdjwbstr1 == "YA"
+cJikaY2b	tkdjwbstr1 == "YA" && tkdrek == BLANKS
+cJikaY2c	tkdjwbstr1 == "YA" && lbrdsisprctmp > 0 
+cJikaY2d	tkdjwbstr1 == "YA" && lbrdsisprctmp == 0
+cJikaT		tkdjwbstr1 == "TIDAK"
+cadastoktmp	(dscanbrdtmp == 0 || dscanbrdtmp != 0)
+cBlhFast2	((tkdjwbstr1 == "YA" && tkdrek != BLANKS && djointbd_fastmoving2 == 1 && ltbdtblkode_fast == "FASTMOVING") || 
+		(tkdjwbstr1 == "YA" && tkdrek == BLANKS) ||
+		tkdjwbstr1 != "YA")
+
+cbrgtdklebih2	tkdjwbstr1 == "YA" && djointbd_baranglebih2 == 0
+cbrglebih2	tkdjwbstr1 == "YA" && djointbd_baranglebih2 == 1
+
+DEFAULTS(tmptrans)
+lBARANGLEBIH2		INIT			BARANGLEBIH2
+lVERSITMP		INIT			20062023
+tkdjwbstr1              DFALT_LIST              YA
+						TIDAK
+EDITS(tmptrans)
+e.Mandatory	tkdjwbstr1	MANDATORY
+e.Mandatory	tkdjenis	MANDATORY_IF cJikaY
+e.ValidateNobuk	tkdnobuk	VALIDATE btmbukidx mbtm5 0
+e.ValidateppdBrg1 tkdjenis VALIDATE tbtdattypkod mtbt5 stbt2 {Pgv_dttabel} {Pbtmtypmtr} {Pgt_ahass} {PlPARTPERMOTOR} {Sbtmtypmtr}
+e.ValidateppdBrg2 tkdjenis VALIDATE brgstdtkatbr mbrg5 0 {Pgv_INPG} {Pgv_dtbarang} {PlPARTSPM}
+e.ValidateppdLok tkdrek	VALIDATE_RKP brdbrglokoto mbrdlok5 sbrdLok {Pgv_INPG} {Ptkdjenis} {Pbtmcab}
+
+MAP(mbrg5)
+brgnama		tkdket         	REPLACE
+brgkat		lbrgkattmp	REPLACE
+
+MAP(mbtm5)
+btmtypmtr	lbtmtypmtr	REPLACE
+
+MAP(mtbt5)
+tbttbdkode	tkdjenis	REPLACE
+
+MAP(mbrdlok5)
+brdlok		tkdrek		REPLACE
+brdoto		lbrdoto		REPLACE
+brdsat		lbrdsat		REPLACE
+brdhrg		lbrdhrg		REPLACE
+
+MAP(mBlanks)
+cBLANKS		tkdjenis	DO_CALC_IF cJikaT
+cBLANKS		tkdket		DO_CALC_IF cJikaT
+cBLANKS		tkdrek		DO_CALC_IF cJikaT
+cBLANKS		tkdjml		DO_CALC_IF cJikaT
+
+MAP(mdumstrtmp)
+DEBUG	ldumstr		ldumstr	REPLACE
+
+MAP(misijumlah)
+gv_int1		tkdjml		REPLACE_IF cbrgtdklebih2
+cBLANKS		tkdjml		DO_CALC_IF cbrglebih2
+
+MAP(maddppdRekom)
+c1		ppdnourt2	DO_CALC_IF cjoinppdu0a
+curut2		ppdnourt2	DO_CALC_IF cjoinppdu1a
+gv_999		ppdnourt	REPLACE
+gv_dtahass	ppddata		REPLACE
+btmcab		ppdcab		REPLACE
+tkdjenis	ppdbrg		REPLACE
+tkdket		ppdket		REPLACE
+gv_OPEN		ppdsts		REPLACE
+tkdnobuk	ppdnomst2	REPLACE
+g_scrnumstr	ppdscr		REPLACE
+lK		ppddk		REPLACE
+stssetsisbrg	ppdsisbrg	REPLACE
+gv_BR		ppdjasbrg	REPLACE
+lADDSERVIS	ppdnopsn	REPLACE
+tkdjml		ppdjml		REPLACE
+tkdrek		ppdlok		REPLACE
+lbrdsisatmp	ppdjmlren	REPLACE_IF cadastoktmp
+lbrdoto		ppdbrdoto	REPLACE
+lbrdsat		ppdsat		REPLACE
+lK		ppdkb		REPLACE
+lbrgkattmp	ppdkat		REPLACE
+
+c0		lbrchrgjla	DO_CALC
+c0		lhrgjs		DO_CALC
+c0		lppdhrgbp	DO_CALC
+c0		ppdhrgbp	DO_CALC_IF ckpbxx
+c0		ppdhrgbp	DO_CALC_IF cdjointbd_promoJasa
+c0		ppdretpos	DO_CALC
+
+gv_svgratis	ppdnorangka	REPLACE_IF conlykpb
+cAHM		ppdsup		DO_CALC_IF conlykpb
+cKPBNSS		ppdsup		DO_CALC_IF conlykpbnss
+crekpiu		lRekPiuastra	DO_CALC
+lRekPiuastra	ppdnomesin	REPLACE_IF ckpb1
+
+lbrchrgjla	lbrchrgjla	REPLACE_IF cjoinbrcU3
+lhrgjs		lhrgjs		REPLACE_IF cjoinbrcU3
+chrgjs		lppdhrgbp	DO_CALC
+lppdhrgbp	ppdhrgbp	REPLACE
+
+chrgtot		lhrgtot		DO_CALC_IF cjikatambah
+chrgtot3	lhrgtot3	DO_CALC_IF cjikatambah
+
+lbrdhrg		ppdhrg		REPLACE_IF conlykpbxx
+lhrgtot		ppdhrg		REPLACE_IF ckpb234x
+lhrgtot3	ppdhrg		REPLACE_IF cserviceoli
+chrgtot3	ppdhrg		DO_CALC_IF ckpb234
+chrgtot3	ppdhrg		DO_CALC_IF ckpb234xx
+
+cdisco		ppdtotdis	DO_CALC
+ctothrg		ppdtotfak	DO_CALC
+
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(maddtkd_lostorder)
+c1		tkdnourt	DO_CALC_IF cjointkdu0a
+curut3a		tkdnourt	DO_CALC_IF cjointkdu1a
+btmnobuk	tkdnobuk	REPLACE
+lINFOLPART	tkddata		REPLACE
+tkdjenis	tkdnoll		REPLACE
+tkdjml		tkdjml		REPLACE
+
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mmaptkd_rekom1)
+tkdnobuk	ltkdnobuk_rekom	REPLACE
+tkdjenis	ltkdjenis_rekom	REPLACE
+tkdket		ltkdket_rekom	REPLACE
+tkdrek		ltkdrek_rekom	REPLACE
+tkdjml		ltkdjml_rekom	REPLACE
+tkdjwbstr1	ltkdjwbstr1_rekom	REPLACE
+tkdnoll		ltkdnoll_rekom	REPLACE
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mupdtkd_rekom)
+ltkdjenis_rekom	tkdjenis	REPLACE
+ltkdket_rekom	tkdket		REPLACE
+ltkdrek_rekom	tkdrek		REPLACE
+ltkdjml_rekom	tkdjml		REPLACE
+ltkdjwbstr1_rekom	tkdjwbstr1	REPLACE
+ltkdnoll_rekom	tkdnoll		REPLACE
+
+DEBUG	ldumstr	ldumstr		REPLACE
+
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tkdjenis 	DO_SKIP_IF cJikaT
+BEFORE_INPUT	cur_field=tkdjml	DO_SKIP_IF cbrgtdklebih2
+AFTER_INPUT	cur_field=tkdjwbstr1 	DO_MAP SHOW mBlanks
+AFTER_INPUT	cur_field=tkdjenis 	DO_SCAN_IF cJikaY dscanbrdtmp
+
+AFTER_INPUT	cur_field=tkdjenis 	DO_MAP SHOW misijumlah
+
+AFTER_INPUT	cur_field=tkdrek	DO_MAP SHOW
+		IF cBlhFast2 mdumstrtmp
+		ELSE HKCURSOR STAY
+		HKMSG t.HnyaBlhFast
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cBlhFast2 mdumstrtmp
+		ELSE HKCURSOR STAY
+		HKMSG t.HnyaBlhFast
+
+
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmaptkd_rekom1, DCOMMAND MAPMAP, DMAP mmaptkd_rekom1);
+DO_LIB_IF cJikaY2b ap_dbclc(DNAME dupdtkdRekom,DCOMMAND UPDATE_BUF3, DTARGET tkddatbukll lINFORKMN btmnobuk #tkdnoll, DMAP mupdtkd_rekom);
+DO_LIB_IF cJikaY2c ap_dbclc(DNAME daddppdRekom,DCOMMAND ADD,DFILE ppd,DMAP maddppdRekom);
+DO_LIB_IF cJikaY2d ap_dbclc(DNAME daddtkdLost,DCOMMAND ADD_NO_CLEAR, DFILE tkd,DMAP maddtkd_lostorder);
+
+POSTING(tmptrans)
+PST_UPDCMD	sptmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkdnourt
+SFL_TARGET
+tkddatbukll	lINFORKMN btmnobuk
+
+SFL_MAP
+lINFORKMN	tkddata		REPLACE
+btmnobuk	tkdnobuk	REPLACE
+

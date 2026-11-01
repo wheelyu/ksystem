@@ -1,0 +1,75 @@
+IMAGE(tmptranst)
+/---------------t------------------t-----------------t----------------\
+|t.TglPameran   |t.NipSdmJaga      |t.NamaSdmJaga    |t.Kehadiran     |
+\---------------.------------------.-----------------.----------------/
+
+IMAGE(tmptrans)
+|_______________|__________________|_________________|________________|__|
+FIELD(tmptrans)
+tldtglfak	ALLCAPS		INPUTRI 1
+tldplg		ALLCAPS		INPUTRI 2
+lsdm		PROTECT		INPUTRI 3
+lhadir		PROTECT		INPUTRI 4
+tldnobuk	PROTECT UNSEEN	INPUTRI 5 
+
+CALCS()
+csdmjab		ljabsdm == "TLDPICMKTGM2W" || ljabsdm == "PLTTLDPICMKTM2W" || ljabsdm == "SALESDTN" || ljabsdm == "MKTLAPANGANM2W" || ljabsdm == "MKTCOUNTERM2W" || ljabsdm == "SALESREFIMOTOR"
+csdminpg 	lstssdm == "INPG" 
+cdjoinpsisdm	djoinpsisdm == 1
+cdjoinabdsdm	djoinabdsdm == 1
+crangetgl	tldtglfak >= tlmtgl && tldtglfak <= tlmtgljtp
+cjointld	djointldjaga == 1 && tlmdvs == "M2W" && tlmdari == "PAP"
+
+EDITS(tmptrans)
+t.ValidateNip           tldplg          VALIDATE psikodidx mpsisdm spsi
+
+MAP(mpsisdm)
+psikode         tldplg          REPLACE
+psinama         lsdm	        REPLACE
+lhadir		lhadir		REPLACE_IF cdjoinabdsdm
+ljabsdm		ljabsdm		REPLACE_IF cdjoinpsisdm
+lstssdm		lstssdm		REPLACE_IF cdjoinpsisdm
+tldnobuk	tldnobuk	REPLACE
+ctgl6		ltgl6		DO_CALC
+ctglpameran6	ltglpameran6	DO_CALC
+
+MAP(mtglsdm)
+tldtglfak	tldtglfak	REPLACE
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=tldtglfak        DO_MAP SHOW
+                IF crangetgl mtglsdm
+                ELSE HKCURSOR STAY
+                HKMSG t.Hanya Input Range Tanggal Mulai dan Selesai Pameran
+
+AFTER_INPUT     cur_field=tldplg        DO_MAP SHOW
+                IF csdmjab mpsisdm
+                ELSE HKCURSOR STAY
+                HKMSG Hanya Bisa Input Jabatan TLD SALES COUNTER
+
+AFTER_INPUT     cur_field=tldplg        DO_MAP SHOW
+                IF csdminpg mpsisdm
+                ELSE HKCURSOR STAY
+                HKMSG HANYA BISA INPUT SDM YANG INPG
+
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW
+		IF clbh6 mdum
+		ELSE HKCURSOR STAY
+		HKMSG	t.Pengisian Lebih dari 6 hari
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND cjointld
+SFL_TARGET
+        tldbukbrglok    tlmnobuk lLISTJAGA lLISTJAGA
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+lLISTJAGA       tldbrg          REPLACE
+lLISTJAGA       tldlok          REPLACE
+gv_OPEN         tldsts          REPLACE
+

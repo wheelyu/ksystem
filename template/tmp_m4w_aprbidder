@@ -1,0 +1,77 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||                                      t.Approval                           ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.Ket                                                                      ||
+|| _________________________________________________________________________ ||
+||t.Approval ________  _____________________________________ ______ ________ ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdket		TEXTAREA ALLCAPS	INPUTRI		1
+tkdnoll		PROTECT			INPUTRI		2
+lnamaapr	PROTECT			INPUTRI		3
+tkdjenis	NOCHANGE		INPUTRI		4
+lENTER		ALLCAPS			INPUTRI		5
+
+DEFAULTS(tmptranst)
+tkdjenis	DFALT_SCAN_BLANKS	ACC TACC
+tkdnoll		INIT_ADD		{g_usrkode}
+	
+EDITS(tmptranst)
+Nama TDK ADA	tkdnoll		VALIDATE psikodidx mpsi
+e.Mandatory	tkdket		MANDATORY
+e.Mandatory	tkdjenis	MANDATORY
+
+MAP(mpsi)
+psinama		lnamaapr	REPLACE
+
+CALCS()
+chitfoto	docsts=="CLSD"
+cuploadok	ljmlfoto1==ljmlfoto2
+cTACC		"TACC"
+caccx		tkdjenis=="ACC"
+ctaccx		tkdjenis=="TACC"
+
+MAP(mscanfoto)
+l1		ljmlfoto1	REPLACE
+l1		ljmlfoto2	REPLACE_IF chitfoto
+
+DBCALCS(dscanfoto)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	docdatbukidx lDOCBIDDER psmkode
+	DBC_SUM_MAP	mscanfoto
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdket	DO_SCAN dscanfoto
+AFTER_INPUT	cur_field=tkdket	DO_MAP SHOW
+	        IF cuploadok mdum
+                ELSE HKCURSOR STAY
+                HKMSG UPLOAD FOTO DI DETAIL DAN KLIK TOMBOL UPLOADOK SAMPAI STS FOTO CLSD
+
+MAP(mupdpsm)
+gv_INPG		psmstssup	REPLACE_IF caccx
+cTACC		psmstssup	DO_CALC_IF ctaccx
+
+SPCALCS(stmptrans)
+DO_LIB ap_dbclc(DNAME dupdpsm,DCOMMAND UPDATE,DTARGET psmkodidx psmkode,DMAP mupdpsm);
+
+POSTING(tmptrans)
+	PST_ADDCMD	stmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkddatbukll	lDOCBIDDER psmkode
+SFL_MAP
+psmkode        tkdnobuk        REPLACE
+lDOCBIDDER	tkddata		REPLACE
+gv_INPG		tkdsts		REPLACE	
+

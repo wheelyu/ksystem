@@ -1,0 +1,79 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.detailcall  _____                ||
+|\-----------------------------------/|
+|/-----------------\/----------------\|
+||t.callvia        || ______________ ||
+||t.durasicall     || ______________ ||
+||t.HasilFu        || ______________ ||
+||t.HasilFuWa      || ______________ ||
+|\-----------------/\----------------/|
+|/-----------------------------------\|
+||                            _____  ||
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdsts		PROTECT			INPUTRI	1
+tkdjwbstr1	ALLCAPS NOCHANGE	INPUTRI	2
+tkdjenis	ALLCAPS NOCHANGE	INPUTRI	2
+tkdjwbstr2	ALLCAPS NOCHANGE	INPUTRI 4
+tkdsisstr	ALLCAPS NOCHANGE	INPUTRI	5
+lenter          NOCHANGE		INPUTRI 6
+
+DEFAULTS(tmptranst)
+tkdtgl          INIT_ADD                        {g_tgltrn}
+
+tkdjwbstr1	DFALT_SCAN_BLANKS	GSM
+					WA
+
+tkdjenis	DFALT_SCAN_BLANKS	<1_MENIT
+					1_MENIT
+					2_MENIT
+					3-5_MENIT
+					>5_MENIT
+tkdjwbstr2	DFALT_SCAN_BLANKS	DIBALAS
+					TDK_DIBALAS
+tkdsisstr	DFALT_SCAN_BLANKS	MINAT
+					TDK_MINAT
+
+EDITS(tmptranst)
+e.Mandatory	tkdjenis	MANDATORY
+e.Mandatory	tkdjwbstr1	MANDATORY
+e.Mandatory	tkdjwbstr2	MANDATORY
+e.Mandatory	tkdsisstr	MANDATORY
+
+CALCS()
+cstsdetOPEN		djointkddetailcall==0 && g_curcmd==1 && tkmsts=="OPEN"
+cstsdetINP1		djointkddetailcall==0 && g_curcmd==1 && tkmsts=="INP1"
+cstsdetINP2		djointkddetailcall==0 && g_curcmd==1 && tkmsts=="INP2"
+csdhisidetcall		djointkddetailcall==0 || g_curcmd==2
+
+MAP(murutdetcall)
+c1		tkdnourt	DO_CALC_IF cstsdetOPEN
+c2		tkdnourt	DO_CALC_IF cstsdetINP1
+c3		tkdnourt	DO_CALC_IF cstsdetINP2
+tkmsts          tkdsts          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjenis	DO_MAP SHOW murutdetcall
+BEFORE_INPUT	cur_field=tkdjenis	DO_SKIP_IF ctdkterhub
+AFTER_INPUT	cur_field=tkdsts	DO_MAP SHOW
+		IF csdhisidetcall mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TidakBolehTambahLg
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkddatbukll tkmdata tkmnobuk lDETAILCALL
+
+SFL_MAP
+tkmnobuk	tkdnobuk	REPLACE
+tkmdata		tkddata		REPLACE
+lDETAILCALL	tkdnoll		REPLACE
+

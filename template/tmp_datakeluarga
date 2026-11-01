@@ -1,0 +1,80 @@
+MAP(mjoinsgm)
+sgmurt                   lurut           REPLACE
+
+DBCALCS(djoinsgm)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      sgmdatplgurt lDTKELUARGA lpsmktp lDATAKELUARGA
+        DBC_MAP         mjoinsgm
+
+IMAGE(tmptranst)
+/------t--------------------t---------t--------------t------------t-------------t------------\
+| t.No | t.Nama             |t.Gender | t.StsNikah   | t.TglLahir | t.HubKel    | t.TglNkh   |
+\------.--------------------.---------.--------------.------------.-------------.------------/
+
+IMAGE(tmptrans)
+|_____ |____________________|_________|______________|____________|_____________|____________|
+
+
+FIELD(tmptrans)
+sgmurt          PROTECT                 	INPUTRI         1
+sgmstr2         ALLCAPS SCROLL          	INPUTRI         2
+sgmstr3         ALLCAPS SCROLL          	INPUTRI         3
+sgmstr4         ALLCAPS SCROLL          	INPUTRI         4
+sgmtgl          ALLCAPS NOLIMIT {DD-MM-YY}      INPUTRI         5
+sgmtbl          ALLCAPS SCROLL          	INPUTRI         6
+sgmtgl1         ALLCAPS NOLIMIT {DD-MM-YY}      INPUTRI         7
+
+CALCS()
+cL		sgmstr3 == "L"
+cP		sgmstr3 == "P"
+
+DEFAULTS(tmptrans)
+sgmstr3                 DFALT_SCAN      BLANKS
+					L
+					P
+
+sgmstr4                 DFALT_SCAN      BLANKS
+					KAWIN
+					BELUMKAWIN
+
+IF cL sgmtbl                  DFALT_SCAN      	BLANKS
+						SUAMI
+						ANAK 
+
+IF cP sgmtbl                  DFALT_SCAN      	BLANKS
+						ISTRI
+						ANAK 
+
+CALCS()
+c1a                     1
+curuta                  lurut + 1
+cjoinsgma0		djoinsgm == 0
+cjoinsgma1		djoinsgm == 1
+
+EDITS(tmptrans)
+e.MandatoryGender sgmstr3 MANDATORY
+e.MandatoryStatus sgmstr4 MANDATORY
+e.MandatoryHubKel sgmtbl  MANDATORY
+e.MandatoryNama   sgmstr2 MANDATORY
+e.MandatoryTgl    sgmtgl  MANDATORY
+
+MAP(muruta)
+c1a             sgmurt     DO_CALC_IF cjoinsgma0
+curuta          sgmurt     DO_CALC_IF cjoinsgma1
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=sgmstr2       DO_MAP SHOW muruta
+
+SUBFILE(tmptrans)
+        SFL_LINES(4)
+	SFL_SORT_BY_FIELD sgmurt
+        SFL_TITLE(tmptranst)
+        SFL_TARGET
+        sgmdabrplgtb lDTKELUARGA lpsmktp  lDATAKELUARGA        
+
+	SFL_MAP
+	lDTKELUARGA		sgmdata		REPLACE
+	lpsmktp 		sgmplg		REPLACE
+	lDATAKELUARGA		sgmbrg		REPLACE
+	psikode      		sgmstr1		REPLACE
+

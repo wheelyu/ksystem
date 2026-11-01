@@ -1,0 +1,133 @@
+LOCAL
+PGM_FIELDS
+lprovinsi               STRING 21
+lkota	                STRING 21
+lkecamatan              STRING 21
+
+IMAGE(tmptranst)
+/-----------------------------------\
+ t.Lokasi
+/-----------------------------------\
+||i.Propinsi : ____________________||
+||i.Kota     : ____________________||
+||i.Kec      : ____________________||
+||i.Kel      : ____________________|| 
+||i.DetLokasi: ____________________||  
+\-----------------------------------/
+ /---------------------------------\
+  t.Info     : ___________________
+  t.Status   : ___________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________
+  t.AlsanTacc: ___________________
+  i.Enter    : _____
+  _________________________________
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lprovinsi       PROTECT                                 INPUTRI 1
+lkota	        PROTECT                                 INPUTRI 1
+tkdsisstr      ALLCAPS                                 INPUTRI 1
+tkdjwbstr1      ALLCAPS		                        INPUTRI	1
+tkdjwbstr2      ALLCAPS		                        INPUTRI	2
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 3
+tkdsts          PROTECT                                 INPUTRI 3
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 3
+tkdket          TEXTAREA                                    INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhm14ok   TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+/*
+ltombolacc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 40
+ltomboltacc     TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 40
+*/
+DEFAULTS(tmptranst)
+ltkdjwbstr1     INIT            ""
+lprovinsi       INIT            ""
+lkota	        INIT            ""
+lkecamatan      INIT            ""
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+MAP(mlokasi)
+tbtdtmkode      lprovinsi		REPLACE
+tbttblkode      lkota			REPLACE
+tbttbdkode      lkecamatan		REPLACE
+tbtkode         tkdjwbstr1              REPLACE
+
+MAP(mkec)
+tbddtmkode      lprovinsi               REPLACE
+tbdtblkode      lkota                  REPLACE
+tbdkode         tkdsisstr               REPLACE
+
+CALCS()
+
+EDITS(tmptranst)
+e.Mandatory             tkdjwbstr1      MANDATORY
+e.Mandatory             tkdjwbstr2      MANDATORY
+e.Mandatory             tkdsisstr      MANDATORY
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+e.validateKec           tkdsisstr       VALIDATE tbddtkodidx mkec stbd {Pgv_dtkota}
+e.validateKel1          tkdjwbstr1	VALIDATE tbtdattypkod mlokasi stbt {Pgv_dtkota} {Pgv_dtkota21} {Plprovinsi} {Plkota} {Ptkdsisstr}
+
+
+CALCS()
+csellokasieventsudahdigunakan  tkdnobuk != tlmnobuk && tkdnoll == tlmcab && tkdtype == tlmthbl && tkdjwbstr1 == ltkdjwbstr1
+
+DBCALCS(dlokasieventsudahdigunakan)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      csellokasieventsudahdigunakan
+        DBC_TARGET      tkddatbukll lEVNBTLHM14
+
+CALCS()
+clokasieventok          (lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode) || dlokasieventsudahdigunakan == 0
+cdetailhm14ok           tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdjwbstr1 != "" && tkdjwbstr2 != "" && tkdtotjsa == 1
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdjwbstr1    DO_MAP SHOW mtkdjwbstr1
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+		IF clokasieventok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Lokasi event sudah digunakan. Klik Ok untuk lanjut
+
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjwbstr2    DO_SKIP_IF camkawil
+
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+/*
+BEFORE_INPUT    cur_field=ltomboltacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombolacc    DO_SKIP_IF camkawil
+*/
+CLICKED         cur_field=ltombolhm14ok  DO_SPCALCS spdetailokhm14
+/*
+CLICKED         cur_field=ltomboltacc   DO_SPCALCS IF camkawilin staccdetail
+CLICKED         cur_field=ltombolacc	DO_SPCALCS IF camkawilin saccdetail
+*/
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNBTLHM14 tlmnobuk 
+
+MAP(mupdinfodetailhm14)
+lISIKELURAHANDULU       tkdrek          REPLACE_IF ctkdjwbstr1kosong
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+DEBUG ldum ldum REPLACE
+
+
+SPCALCS(spdetailokhm14)
+        DO_LIB_IF cdetailhm14ok         ap_dbclc(DNAME dupddetailreqhm14,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm14, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm14, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm14,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm14);
+        DO_LIB_IF cstatusopen           ap_dbclc(DNAME dupdtlmmasterhm14,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmaster);
+        DO_LIB_IF cstatusopen           ap_dbclc(DNAME dupdtlmmasterstatushm14,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterstatus);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

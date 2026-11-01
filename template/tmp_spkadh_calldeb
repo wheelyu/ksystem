@@ -1,0 +1,410 @@
+LOCAL
+PGM_FIELDS
+lsvikode2         STRING  21
+lktpdeb		  STRING  21
+lnamadeb	  STRING  21
+lnohpdeb          STRING  21
+ltompjcdeb        STRING  21
+ltomdvhcdeb       STRING  21
+ltomuplcall       STRING  11
+lrevhocdeb        STRING  11
+lrevdvhcdeb       STRING  11
+lvercdeb	  STRING  11
+lovdmin		  DATE	  11
+lovdmax		  DATE	  11
+ljamcdeb	  TIME	   4
+
+/*ljmlcalldeb	  INT2	   2*/
+
+/*========== join ambil no telp ==========*/
+CALCS()
+cnotelpdeb         condata == gv_TELP11
+
+MAP(mjoinnohpdeb)
+conhp           lnohpdeb           REPLACE
+DBCALCS(djoinnohpdeb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx lktpdeb
+        DBC_SELECT      cnotelpdeb
+        DBC_MAP         mjoinnohpdeb
+
+/*============ join ambil tkd ============*/
+CALCS()
+ctkdcdeb	tkdnoll == "CALLDEB"
+cadajamcdeb	#svikode != BLANKS
+
+MAP(mjoincdeb)
+tkdjml2         ljamcdeb	REPLACE_IF cadajamcdeb
+DBCALCS(djoinjamtkdcdeb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkdbukidx svinobuk gv_OPEN svinourt
+	DBC_SELECT	ctkdcdeb 
+        DBC_MAP         mjoincdeb
+
+/*============ cek data svi agar tdk duplikat ============*/
+/*
+CALCS()
+csdhcalldeb    #svikode == svikode
+
+MAP(mscancalldeb)
+l1              ljmlcalldeb    REPLACE_IF csdhcalldeb
+DBCALCS(dscancalldeb)
+        DBC_COMMAND     SCANSCAN_BUF3
+        DBC_TARGET      svidatbuktyp  lSPKADH11 tkmnobuk lCALLDEB
+        DBC_SELECT      csdhcalldeb
+        DBC_SUM_MAP     mscancalldeb
+*/
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.TELPDEB			     ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+|		___		      |
+| t.NoFak       __________ ___________|_
+| t.Telp        __________            |
+| t.Jtp	        __________ _____ _____|
+| t.Jamkerja    ______________________|
+| t.KetDc       _____________________ |
+| t.HasilDC     _____________________ |
+| t.TglByr      ______________________|
+| t.Ket         ______________________|
+|			       _______|
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.BuktiCall  			   ___|
+|\-----------------------------------/|
+|/---------------UPLOAD--------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+			    _________
+|/-----------------------------------\|
+| t.RevHO       __________ __ _______ |
+| 	        _____________________ |
+| t.RevDVH      __ __________________ |
+| 	        _____________________ |
+| ________________   ________________ |
+|       __                 __         |
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt		PROTECT				INPUTRI 1 /*No Urut*/
+svikode			ALLCAPS				INPUTRI 2 /*No Faktur*/
+lnamadeb		PROTECT ALLCAPS			INPUTRI 2 /*Nama Debitur*/
+lktpdeb			UNSEEN PROTECT			INPUTRI	2 /*untuk taro KTP Deb*/
+svistr5			ALLCAPS				INPUTRI 3 /*No Telpon Debitur*/
+svitgl1			PROTECT {DD-MM-YY}		INPUTRI 6 /*Tgl JTP*/
+svidf2			PROTECT 			INPUTRI 7 /*Angsuran*/
+svidf3			PROTECT 			INPUTRI 8 /*Tenor*/		
+ljamcdeb		PROTECT				INPUTRI 9 /*Jam mulai spk*/
+svistr1			NOCHANGE			INPUTRI 10 /*Ket. Deb Call*/
+svistr2			NOCHANGE			INPUTRI 11 /*Hasil Deb Call*/
+svitgl2			NONE {DD-MM-YY} NOLIMIT		INPUTRI 12 /*Tgl JB*/
+sviket			TEXTAREA			INPUTRI 13 /*Ket. Call tdk angkat*/
+lenter			ALLCAPS				INPUTRI 14 /*Tombol enter*/
+svistr3			PROTECT				INPUTRI 15 /*Status Sudah Upload*/
+ltomuplcall		TOMBOL				INPUTRI 16 /*Tombol Upload OK*/
+
+svitype2        	PROTECT	        		INPUTRI 17 /*NIP Rev HO*/
+svistr34        	NOCHANGE        		INPUTRI 18 /*ket Rev SPV*/
+lrevhocdeb		PROTECT				INPUTRI 19
+sviket2	        	TEXTAREA        		INPUTRI 20 /*isi ket review HO*/
+svistr35        	NOCHANGE        		INPUTRI 21 /*ket Rev DVH*/
+lrevdvhcdeb		PROTECT				INPUTRI 22
+sviket3			TEXTAREA        		INPUTRI 23 /*isi ket review DVH*/
+
+ltompjcdeb     		TOMBOL       			INPUTRI 24
+ltomdvhcdeb     	TOMBOL          		INPUTRI 26
+svistr36        	PROTECT         		INPUTRI 25
+svistr37        	PROTECT         		INPUTRI 27
+	
+
+DEFAULTS(tmptranst)
+lvercdeb		INIT			2606.18v1
+svistr1			DFALT_SCAN_BLANKS	DIANGKAT
+						TIDAK
+						TIDAK_ACTIVE
+svistr2			DFALT_SCAN_BLANKS	JANJI_BAYAR
+						SUDAH_BAYAR
+svistr34       		DFALT_SCAN_BLANKS       1 "SESUAI"
+                	                        2 "TIDAK"
+svistr35        	DFALT_SCAN_BLANKS       1 "SESUAI"
+                	                        2 "TIDAK"
+ltompjcdeb      	INIT                    "SELESAI REV PJ HO"
+ltomdvhcdeb     	INIT                    "SELESAI REV DVH"
+ltomuplcall		INIT			"UPLOAD OK"
+IF chnypjho svitype2    INIT_UPDATE             {g_usrkode}
+
+CALCS()
+cjawabcall		svistr1 == "DIANGKAT" && (g_curcmd == 1 || g_curcmd == 2)
+ctdkcall		(svistr1 == "TIDAK" || svistr1 == "TIDAK_ACTIVE") && (g_curcmd == 1 || g_curcmd == 2)
+covdmin			g_tgltrn - 1
+covdmax			g_tgltrn - 3	
+cokcdeb			svidf1 == 1
+cbtsuplcdeb		svidf1 < 1
+ctdcdeb			svidf1 + 1
+cupljawab		tkdnourt == svinourt && djoinjamtkdcdeb==1 && svistr1 == "DIANGKAT" && svidf1 == 1 && svistr3 != "OK"
+cupltdk			tkdnourt == svinourt && djoinjamtkdcdeb==1 && (svistr1 == "TIDAK" || svistr1 == "TIDAK_ACTIVE") && svidf1 == 1 && svistr3 != "OK"
+cmenittkdcdeb		djoinjamtkdcdeb == 1
+cjoinurtcdeb0		djoinurutcdeb == 0 && g_curcmd == 1
+cjoinurtcdeb1		djoinurutcdeb == 1 && g_curcmd == 1
+curtcdeb		FLD_TO_STRING(svinourt) + "TELPDEB"
+cjoinnohpdeb		djoinnohpdeb == 1
+/*
+ccalldecek      	g_curcmd==1 && (dscancalldeb==0 || dscancalldeb!=0) && ljmlcalldeb < 1 
+covdcek			svitgl1 <= lovdmin && svitgl1 >= lovdmax
+cfktcek         	lcab == tkmcab && lpikdvs == "M4W"
+*/
+crev1cdeb		svistr34 == "1"
+crev1acdeb		svistr35 == "1"
+crev2cdeb		svistr34 == "2"
+crev2acdeb		svistr35 == "2"
+cpjhosdhrevcdeb         svistr34 != BLANKS
+cdvhsdhrevcdeb          svistr35 != BLANKS
+ctambahdata             (g_curcmd == 1 || g_curcmd == 2) && (g_usrkode == tkmplg || g_grpnam == "IT") 
+
+EDITS(tmptranst)
+e.No Faktur Tidak Boleh Kosong		svikode		MANDATORY
+e.Ket. Deb Call Harus diisi		svistr1		MANDATORY
+e.Hasil Call Harus diisi		svistr2		MANDATORY_IF cjawabcall
+e.No. Telp Tidak Boleh Kosong		svistr5		MANDATORY
+e.Tanggal Bayar Harus diisi		svitgl2		MANDATORY_IF cjawabcall
+e.Keterangan Harus diisi		sviket		MANDATORY_IF ctdkcall
+e.Tidak Ada Faktur Yang Overdue 	svikode		VALIDATE_IF ctambahdata tbtdattypkod mfakturtbt stbtspk {Pgv_dttabel} {Pgv_dttabel21} {PlMASTERTARGET}   {PlM4W21}  {PlMASTERCALLSPK} 
+e.Faktur Tidak Ada di 742		svikode		VALIDATE pikdatbukidx mfaktur 0 {Pgv_dtpiu}
+e.Data KTP Faktur di 742 Belum Lengkap	lktpdeb		VALIDATE psmktpidx mktpdeb 0
+
+MAP(mfakturtbt)
+tbtkode        svikode         REPLACE
+
+/*===== untuk mengambil data debitur =====*/
+MAP(mfaktur)
+pikplg		lktpdeb		REPLACE
+piktgljtp	svitgl1		REPLACE
+pikke		svidf2		REPLACE
+piklama		svidf3		REPLACE
+pikcab		lcab		REPLACE
+pikdvs		lpikdvs		REPLACE
+cwib            ljamcdeb        DO_CALC_IF ckdwib
+cwita           ljamcdeb        DO_CALC_IF ckdwita
+cwit            ljamcdeb        DO_CALC_IF ckdwit
+covdmin		lovdmin		DO_CALC
+covdmax		lovdmax		DO_CALC
+lnohpdeb	svistr5		REPLACE_IF cjoinnohpdeb
+ljamcdeb        ljamcdeb        REPLACE_IF cmenittkdcdeb
+cBLANKS		lrevhocdeb	DO_CALC
+cBLANKS		lrevdvhcdeb	DO_CALC
+cSESUAI         lrevhocdeb      DO_CALC_IF crev1cdeb
+cTIDAK          lrevhocdeb      DO_CALC_IF crev2cdeb
+cSESUAI         lrevdvhcdeb     DO_CALC_IF crev1acdeb
+cTIDAK          lrevdvhcdeb     DO_CALC_IF crev2acdeb
+
+MAP(mktpdeb)
+psmnama		lnamadeb	REPLACE
+
+MAP(murtcalldeb)
+l1              svinourt        REPLACE_IF cjoinurtcdeb0
+curut           svinourt        DO_CALC_IF cjoinurtcdeb1
+curtcdeb        svistr4         DO_CALC
+
+MAP(mhslrevcdeb)
+cSESUAI		lrevhocdeb	DO_CALC_IF crev1cdeb
+cTIDAK		lrevhocdeb	DO_CALC_IF crev2cdeb
+cSESUAI		lrevdvhcdeb	DO_CALC_IF crev1acdeb
+cTIDAK		lrevdvhcdeb	DO_CALC_IF crev2acdeb
+
+/*===== Jika ubah ket. call == TIDAK =====*/
+MAP(mupdfield)
+cBLANKS		svistr2		DO_CALC_IF ctdkcall
+cBLANKS		svitgl2		DO_CALC_IF ctdkcall
+cBLANKS		sviket		DO_CALC_IF cjawabcall
+
+MAP(msvikode2)
+~svikode         lsvikode2       REPLACE
+DEBUG ldum      ldum            REPLACE
+
+/*===== tanda sudah upload =====*/
+MAP(mupdsvicdeb)
+ctdcdeb         svidf1          DO_CALC_IF cbtsuplcdeb
+DBCALCS(dupdsvicdeb)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvicdeb
+
+/*===== add menit di tkd =====*/
+MAP(mupdtkdcdeb)
+l10             tkdjml3         REPLACE_IF cupljawab
+l1              tkdjml3         REPLACE_IF cupltdk
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mupdokcdeb)
+cOK             svistr3         DO_CALC_IF cokcdeb
+
+/*===== upd tkd review =====*/
+MAP(mmapcdeb)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+MAP(mupdrevpjhocdeb)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+DEBUG ctamnip1	tkdjml2		DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum      	REPLACE
+DBCALCS(dupdrevpjhocdeb)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhocdeb
+
+MAP(mupdrevdvhcdeb)
+ctam1           tkdjml         	DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhcdeb)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhcdeb
+
+MAP(muprevdpjhocdeb1)
+lOK             svistr36                REPLACE_IF cpjhosdhrevcdeb
+
+MAP(mupdrevdvhcdeb1)
+lOK             svistr37                REPLACE_IF cdvhsdhrevcdeb
+
+MAP(mupdrevabkpjhocdeb)
+gv_CLSD		abksts			REPLACE
+
+MAP(mupdrevabkdvhcdeb)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spupdtkdcdeb)
+DO_LIB		ap_dbclc(DNAME dupdcdeb,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll svidata svinobuk lCALLDEB21,DMAP mupdtkdcdeb);
+DO_LIB		ap_dbclc(DNAME dupdokcdeb,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdokcdeb);
+
+SPCALCS(spupdrevpjhocdeb)
+DO_LIB          		ap_dbclc(DNAME dmapcdeb1,DCOMMAND MAPMAP,DMAP mmapcdeb);
+DO_LIB          		ap_dbclc(DNAME dupdokcdeb1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhocdeb1);
+dupdrevpjhocdeb
+DO_LIB_IF cbukaabkrevpjho	ap_dbclc(DNAME dupdabkpjcdeb,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhocdeb);
+
+SPCALCS(spupdrevdvhcdeb)
+DO_LIB          		ap_dbclc(DNAME dmapcdeb2,DCOMMAND MAPMAP,DMAP mmapcdeb);
+DO_LIB          		ap_dbclc(DNAME dupdokcdeb2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhcdeb1);
+dupdrevdvhcdeb
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhcdeb,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhcdeb);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF ctdkcall
+AFTER_INPUT	cur_field=svistr2	DO_MAP SHOW mupdfield
+BEFORE_INPUT	cur_field=svitgl2	DO_SKIP_IF ctdkcall
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW msvikode2
+
+/*
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF cfktcek      mdum
+                ELSE
+                HKCURSOR STAY
+                HKMSG    Bukan Faktur Cabang atau Faktur M4W
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF covdcek	mdum
+		ELSE
+		HKCURSOR STAY
+		HKMSG	Faktur Bukan Overdue 1, 2 & 3
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW
+		IF ccalldecek	mdum
+		ELSE
+		HKCURSOR STAY
+		HKMSG	Faktur Sudah Ditambahkan
+*/
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW murtcalldeb
+
+CLICKED		cur_field=ltomuplcall	DO_SPCALCS spupdtkdcdeb
+
+BEFORE_INPUT	cur_field=svikode	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr2       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svitgl1       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svitgl2       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      DO_SKIP_IF cpjho
+BEFORE_INPUT	cur_field=lrevhocdeb	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2   	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35   	DO_SKIP_IF cdvh
+BEFORE_INPUT	cur_field=lrevdvhcdeb	DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3  	DO_SKIP_IF cdvh
+
+AFTER_INPUT	cur_field=svistr34	DO_MAP SHOW mhslrevcdeb
+AFTER_INPUT	cur_field=svistr35	DO_MAP SHOW mhslrevcdeb
+
+CLICKED         cur_field=ltompjcdeb    DO_SPCALCS spupdrevpjhocdeb
+CLICKED         cur_field=ltomdvhcdeb   DO_SPCALCS spupdrevdvhcdeb
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD svinobuk svistr4	/*nama file upload*/
+SFL_UPLFLD_DBCALCS dupdsvicdeb  /*tanda upload foto*/
+SFL_UPL_DELCOND c0
+SFL_TARGET
+	svidatbuktyp	lSPKADH11 tkmnobuk lCALLDEB
+SFL_MAP
+tkmnobuk 	svinobuk
+lSPKADH11	svidata
+lCALLDEB	svitype
+
+/*====== add ke file tkd dan ket =====*/
+MAP(maddtkdcdeb)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+lCALLDEB21      tkdnoll         REPLACE
+tkmtgl          tkdtgl          REPLACE
+gv_OPEN         tkdsts          REPLACE
+ljamcdeb        tkdjml2         REPLACE
+svinourt        tkdnourt        REPLACE
+tkmplg		tkdstr1		REPLACE
+
+MAP(maddtkdrevcdeb)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam	tkdjenis	REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mupdtandalistcall)
+l1              tbtdf1          REPLACE
+
+MAP(mupdresettanda)
+l0              tbtdf1          REPLACE
+
+SPCALCS(spaddtkdcdeb)
+DO_LIB                      ap_dbclc(DNAME daddtkdcdeb,DCOMMAND ADD,DFILE tkd,DMAP maddtkdcdeb);
+DO_LIB                      ap_dbclc(DNAME dupdtbtcdeb,DCOMMAND UPDATE,DTARGET tbtdattypkod gv_dttabel gv_dttabel21 lMASTERTARGET lM4W21 lMASTERCALLSPK svikode,DMAP mupdtandalistcall);  /*tandai jika kode sudah diinput*/
+
+SPCALCS(spupdtkdcdeb1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdcdeb1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevcdeb);
+DO_LIB_IF ctambahdata       ap_dbclc(DNAME dupdtbtcdeb2,DCOMMAND UPDATE,DTARGET tbtdattypkod gv_dttabel gv_dttabel21 lMASTERTARGET lM4W21 lMASTERCALLSPK svikode,DMAP mupdtandalistcall);  /*update tanda jika revisi kode*/
+DO_LIB_IF ctambahdata       ap_dbclc(DNAME dupdtbtcdeb3,DCOMMAND UPDATE,DTARGET tbtdattypkod gv_dttabel gv_dttabel21 lMASTERTARGET lM4W21 lMASTERCALLSPK lsvikode2,DMAP mupdresettanda);    /*reset tanda jika revisi kode*/
+
+POSTING(tmptrans)
+PST_ADDCMD	spaddtkdcdeb
+PST_UPDCMD	spupdtkdcdeb1

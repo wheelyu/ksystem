@@ -1,0 +1,134 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------\
+|/-------------------------------------------------------------------\|
+||                t.PerpanjangPCA                                    ||
+|\-------------------------------------------------------------------/|
+|/---------------------------------------\ /-------s.UPLOAD----------\|
+||t.NoBuk          :___ _________________! !                         !|
+||t.IDEksternal    :_____________________! !                         !|
+||t.NamaEksternal  :_____________________! !                         !|
+||t.NamaPenanggung :_____________________! !                         !|
+||t.user           :________ ___________ ! !                         !|
+||t.StsCetakPKS    :____                 ! !                         !|
+||t.StsUploadPKS   :____                 ! !                         !|
+||t.Acc1           :____                 ! !                         !|
+|\---------------------------------------/ \-------------------------/|
+\---------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	NOCHANGE		INPUTRI	1
+svikode 	PROTECT			INPUTRI	2
+svinobuk	PROTECT			INPUTRI 3
+psmnama_1	PROTECT			INPUTRI 4
+tlmket		PROTECT			INPUTRI	5
+svinama		PROTECT			INPUTRI	6
+svitgl1		PROTECT {DD-MM-YYYY}	INPUTRI	7
+sviyt1 		PROTECT 		INPUTRI	8
+sviyt2		PROTECT			INPUTRI 9
+svitype2	NOCHANGE		INPUTRI 10
+
+DEFAULTS(tmptranst)
+svinama		INIT       		{g_usrkode}
+svinama		INIT_UPDATE		{g_usrkode}
+svitgl1		INIT			{g_tgltrn}
+svitgl1		INIT_UPDATE		{g_tgltrn}
+
+svitype2	DFALT_SCAN      	BLANKS
+                                	ACC
+
+CALCS()
+cremdvh		g_grpnam=="REMDVH"
+
+EDITS(tmptranst)
+e.Mandatory	svitype2	MANDATORY_IF cremdvh
+	
+
+MAP(mjoinpanjangpca)
+svinourt	lurut		REPLACE
+
+DBCALCS(djoinpanjangpca)
+	DCOMMAND	JOIN_LAST_SFL
+	DTARGET		svidatbuktyp lPANJANGPCA tlmnobuk lPANJANGPCA
+	DMAP		mjoinpanjangpca
+
+DBCALCS(djoinabklnjtpca)
+	DCOMMAND	JOIN
+	DTARGET		abkdatbukidx lkunciabsen tlmnobuk
+
+CALCS()
+cjoinpanjangpca0	djoinpanjangpca==0 && g_curcmd==1
+cjoinpanjangpca1	djoinpanjangpca==1 && g_curcmd==1
+ckode2			"P" + STRIP(tlmnobuk) + STRIP(lurutstr)
+cudahcetak		sviyt1=="OK" || (tlmdvs=="HMC" || tlmdvs=="M2W")
+cjoinabklnjtpca		djoinabklnjtpca==1 && svitype2=="ACC"
+cjklnjtpca      	abkkym2=="TINDAK_LANJUT_PCA"
+cbknremdvh		g_grpnam!="REMDVH" && g_grpnam!="RI"
+ckenaFotoPnjgPCA	(sviyt2=="OK" && (tlmdvs=="HMC" || tlmdvs=="M2W") && g_curcmd==2) || (tlmdvs!="HMC" && tlmdvs!="M2W") || g_curcmd==1
+
+MAP(mpanjangpca)
+c1		svinourt	DO_CALC_IF cjoinpanjangpca0
+curut		svinourt	DO_CALC_IF cjoinpanjangpca1
+svinourt        lurutstr        REPLACE_IF ctambah
+ckode2          svikode         DO_CALC_IF ctambah
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mpanjangpca
+BEFORE_INPUT    cur_field=svitype2	DO_SKIP_IF cbknremdvh
+
+AFTER_INPUT     cur_field=svitype2      DO_MAP SHOW
+                IF ckenaFotoPnjgPCA mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BelumUploadFotoPerpanjangPCA
+
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+                IF ckenaFotoPnjgPCA mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BelumUploadFotoPerpanjangPCA
+
+
+MAP(muploadperpanjang)
+cOK	sviyt2		DO_CALC_IF cudahcetak
+
+DBCALCS(duploadperpanjang)
+	DCOMMAND	UPDATE
+	DTARGET		sviprmidx sviprm
+	DMAP		muploadperpanjang 
+
+MAP(mupdmaster2)
+gv_INPG		tlmsts		REPLACE
+g_tgltrn	tlmtgl		REPLACE
+
+MAP(mupdmaster3)
+ctglselesai     tlmtgl2         DO_CALC
+
+MAP(mupdabklnjtpca2)
+gv_CLSD		abksts		REPLACE_IF cjklnjtpca
+
+SPCALCS(spanjangpca1)
+	DO_LIB ap_dbclc(DNAME dupdmaster2,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdmaster2);
+
+SPCALCS(spanjangpca2)
+        DO_LIB ap_dbclc(DNAME dupdmaster3,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdmaster3);
+        DO_LIB_IF cjoinabklnjtpca ap_dbclc(DNAME dupdabklnjtpca2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DMAP mupdabklnjtpca2);
+
+
+
+POSTING(tmptrans)
+	PST_ADDCMD	spanjangpca1
+	PST_UPDCMD      spanjangpca2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD svikode
+SFL_UPLFLD_DBCALCS duploadperpanjang
+SFL_UPL_DIRFLD tlmdata
+SFL_TARGET
+svidatbuktyp lPANJANGPCA tlmnobuk lPANJANGPCA
+SFL_MAP
+lPANJANGPCA	svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lPANJANGPCA	svitype		REPLACE
+

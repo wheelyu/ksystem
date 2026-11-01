@@ -1,0 +1,46 @@
+IMAGE(tmptranst)
+/----t----------------t--------------t--------t----t----------t----------t----------\
+|i.Ty|t.NoKont        |i.BukByr      |i.TglByr|i.Ke| t.ByrPkk |t.ByrBgMrg|t.ByrDdTazir|
+\----.----------------.--------------.--------.----.----------.----------.----------/
+IMAGE(tmptrans)
+|____|________________|______________|________|____|__________|__________|__________|__
+
+FIELDS(tmptrans)
+anhtype                         NOCHANGE                INPUTRI 1
+anhnobuk                        NOCHANGE                INPUTRI 1
+anhnobyr                        NOCHANGE                INPUTRI 1
+anhtglbyr                       NOCHANGE {DD-MM-YYYY}       INPUTRI 2
+anhke                           NOCHANGE                INPUTRI 4
+anhbyrpk                        NOCHANGE                INPUTRI 4
+anhbyrbg                        NOCHANGE                INPUTRI 5
+anhbyrden                   NOCHANGE                INPUTRI 8
+lamtbukoto                  UNSEEN                  INPUTRI 9
+
+EDITS(tmptrans)
+e.Validate anhnobuk  VALIDATE pikdatbukidx   mpikgsu {Pgv_dtpiu}
+e.Validate lamtbukoto  VALIDATE_IF cjtpgsu amtdatotoidx   mamtjtpEF {PlJTPGSU}
+
+MAP(mamtjtpEF)
+amttgl1     ltgljtp     REPLACE
+
+CALCS()
+camtbukoto  STRIP(anhnobuk)+"-"+FLD_TO_STRING(anhke)
+
+MAP(mpikgsu)
+anhnobyr    anhnobyr   REPLACE
+anhcrttgl   ltgljtp     REPLACE
+cblanks     lamtbukoto  DO_CALC
+camtbukoto  lamtbukoto  DO_CALC
+
+CALCS()
+canhokEF     anhsts == "CLSD" && (anhbyrum !=0 || anhbyrpk !=0 || anhbyrbg != 0 || anhbyrden != 0 || anhbyradm != 0)
+
+SUBFILE(tmptrans)
+SFL_SELECT canhokEF
+SFL_LINES(36)
+
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD  anhtglbyr
+SFL_SORT_UPDOWN    DOWN
+SFL_TARGET
+anhbukotourt    piknobuk

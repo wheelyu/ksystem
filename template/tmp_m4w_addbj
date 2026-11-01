@@ -1,0 +1,176 @@
+LOCAL
+PGM_FIELDS
+lbirojasa21		STRING		21
+lMASTERTARGET		STRING		21
+lM4W			STRING		21
+lTGTADHBJ		STRING		21
+lTGTADHBJ2		STRING		21
+lkodetgt1		STRING		21
+lkodetgt2		STRING		21
+lesbj001		INT2		2
+lesbj002		INT2		2
+lesbj003		INT2		2
+lesbj004		INT2		2
+lesbj005		INT2		2
+lesbj006		INT2		2
+lesbj007		INT2		2
+lesbj008		INT2		2
+lesbj009		INT2		2
+lnhddk			STRING		3
+
+MAP(mjointarget1)
+tbtjml		lesbj004	REPLACE
+tbttot		lesbj001	REPLACE
+tbtdf1		lesbj009	REPLACE
+tbtdf2		lesbj007	REPLACE
+
+DBCALCS(djointarget1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdattypkod   gv_dttabel lMASTERTARGET lMASTERTARGET lM4W lTGTADHBJ lkodetgt1
+	DBC_MAP		mjointarget1
+
+MAP(mjointarget2)
+tbtjml          lesbj003        REPLACE
+tbttot          lesbj002        REPLACE
+tbtdf1          lesbj008        REPLACE
+tbtdf2          lesbj006        REPLACE
+
+DBCALCS(djointarget2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdattypkod   gv_dttabel lMASTERTARGET lMASTERTARGET lM4W lTGTADHBJ2 lkodetgt2
+        DBC_MAP         mjointarget2
+
+MAP(mjoinnhd1)
+nhddk		lnhddk		REPLACE
+
+DBCALCS(djoinnhdada)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbuk2idx   tlmnobuk                                                              
+        DBC_MAP         mjoinnhd1    
+
+
+
+IMAGE(tmptranst) 
+/------------------------------------------------------------------------------------------------------\
+|------------------------------------------------------t---------------t---------------t---------------|
+|i.Ket                                                 | t.lababbn     | t.HPPbbn      | t.Hrgjl       |
+\------------------------------------------------------.---------------.---------------.---------------/
+
+IMAGE(tmptrans)
+|______________________________________________________|____________.__|____________.__|____________.__|
+
+    
+FIELD(tmptrans)
+tbtket			PROTECT SCROLL			INPUTRI 2
+tbtdf1			PROTECT 			INPUTRI 3
+tbtdf2			NUMERIC				INPUTRI 4
+tbttot 			PROTECT SCROLL			INPUTRI 5
+
+CALCS()
+cjktdk		      djoinnhdada == 0
+
+DEFAULT(tmptrans)
+lbirojasa21		INIT		BIROJASA
+lMASTERTARGET		INIT		MASTERTARGET
+lM4W			INIT		M4W
+lTGTADHBJ		INIT		TGTADHBJ
+lTGTADHBJ2		INIT		TGTADHBJ2
+
+SUBFILE(tmptrans)
+SFL_LINES(10)       
+SFL_APP_TYPE
+SFL_COND  	cjktdk
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tbtdaturtidx   gv_dttemplate ltmpbiro lbirojasa21 lbirojasa21 tlmdvs
+
+
+CALCS()
+ctotalbiro		tlmtotal + tlmjml2
+ctotalbiro2		tlmtotal + ltotalbiro
+ctotalbiro3		tlmjml2 + ltotalfee
+chargajual		tbtdf1 + tbtdf2 
+ckodetgt1		"TGTADHBJM4W" + STRIP(tlmcab)
+ckodetgt2		"TGTADHBJ2M4W" + STRIP(tlmcab)
+cjointarget1		djointarget1==1
+cjointarget2		djointarget2==1
+ctglbj001		tlmtgl + lesbj001
+ctglbj002		tlmtgl + lesbj002
+ctglbj003		tlmtgl + lesbj003
+ctglbj004		tlmtgl + lesbj004
+ctglbj005		tlmtgl + lesbj005
+ctglbj006		tlmtgl + lesbj006
+ctglbj007		tlmtgl + lesbj007
+ctglbj008		tlmtgl + lesbj008
+ctglbj009		tlmtgl + lesbj009
+ctglbj001x		tbtkode=="BJ001" && ((tlmtgl + lesbj001) >= tlmtgl2)
+ctglbj002x		tbtkode=="BJ002" && ((tlmtgl + lesbj002) >= tlmtgl2)
+ctglbj003x		tbtkode=="BJ003" && ((tlmtgl + lesbj003) >= tlmtgl2)
+ctglbj004x		tbtkode=="BJ004" && ((tlmtgl + lesbj004) >= tlmtgl2)
+ctglbj005x		tbtkode=="BJ005" && ((tlmtgl + lesbj005) >= tlmtgl2)
+ctglbj006x		tbtkode=="BJ006" && ((tlmtgl + lesbj006) >= tlmtgl2)
+ctglbj007x		tbtkode=="BJ007" && ((tlmtgl + lesbj007) >= tlmtgl2)
+ctglbj008x		tbtkode=="BJ008" && ((tlmtgl + lesbj008) >= tlmtgl2)
+ctglbj009x		tbtkode=="BJ009" && ((tlmtgl + lesbj009) >= tlmtgl2)
+
+MAP(mmapbiaya)
+c0                      ltotalfee               DO_CALC
+c0                      ltotalbiro              DO_CALC
+tbtdf1                  ltotalfee               REPLACE    
+tbtdf2                  ltotalbiro              REPLACE              
+chargajual		tbttot			DO_CALC
+ckodetgt1		lkodetgt1		DO_CALC
+ckodetgt2		lkodetgt2		DO_CALC
+lesbj001		lesbj001		REPLACE_IF cjointarget1
+lesbj002		lesbj002		REPLACE_IF cjointarget2
+
+MAP(maddnhdbiro)
+gv_dtbirojasa 		nhddata			REPLACE
+tlmnobbm		nhdnobuk		REPLACE
+tlmnobuk		nhdnobuk2		REPLACE
+tbtkode			nhdkode			REPLACE
+gv_INPG                 nhdsts                  REPLACE
+tbtket			nhdkode2		REPLACE
+tbtdf1			nhdhrg1			REPLACE
+tbtdf2			nhdhrg2			REPLACE
+ctotalbiro		nhdhrg3			DO_CALC
+tbttot     		nhdhrg4			REPLACE
+tlmytppn		nhddk			REPLACE
+  
+MAP(mupdtlmbiro)
+ctotalbiro3 		tlmjml2 		DO_CALC
+ctotalbiro2		tlmtotal		DO_CALC
+ctotalbiro		tlmperdisd		DO_CALC
+tlmtgl			tlmtgl2			REPLACE
+ctglbj001		tlmtgl2			DO_CALC_IF ctglbj001x
+ctglbj002		tlmtgl2			DO_CALC_IF ctglbj002x
+ctglbj003		tlmtgl2			DO_CALC_IF ctglbj003x
+ctglbj004		tlmtgl2			DO_CALC_IF ctglbj004x
+ctglbj005		tlmtgl2			DO_CALC_IF ctglbj005x
+ctglbj006		tlmtgl2			DO_CALC_IF ctglbj006x
+ctglbj007		tlmtgl2			DO_CALC_IF ctglbj007x
+ctglbj008		tlmtgl2			DO_CALC_IF ctglbj008x
+ctglbj009		tlmtgl2			DO_CALC_IF ctglbj009x
+
+MAP(mnhd)
+chargajual		tbttot 			DO_CALC
+
+
+HOOKS(tmptrans)
+AFTER_INPUT		cur_field=tbtdf2	DO_MAP SHOW mnhd
+
+CALCS()
+cbiurusada		tbtdf2 > 0
+
+
+SPCALCS(spdetailbiro)
+	DO_LIB               ap_dbclc(DNAME dmapmapbiaya,DCOMMAND MAPMAP,DMAP mmapbiaya);
+	DO_LIB_IF cbiurusada ap_dbclc(DNAME dupdmtsbiro ,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmbiro);
+   	DO_LIB_IF cbiurusada ap_dbclc(DNAME daddnhdbiro ,DCOMMAND ADD,DFILE nhd,DMAP maddnhdbiro);   
+
+POSTING(tmptrans)
+  PST_COMMAND 	spdetailbiro 
+
+
+
+

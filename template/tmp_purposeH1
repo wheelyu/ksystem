@@ -1,0 +1,237 @@
+LOCAL
+PGM_FIELDS
+lPURPOSEDANA            STRING  21
+lkegunaan               STRING  51
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   spasi
+   t.TujuanPembiayaan : ___________________
+   i.Digunakanoleh    : ___________________
+   i.Keterangan       : _________________________________________________________________________
+   t.KegunaanPembia   : ___________________
+                        _________________________________________________________________________
+   spasi
+| \----------------------------------------------------------------------------------------------/ |
+| /----------------------------------------------------------------------------------------------\ |
+   t.CMSSesuai        : __  ______
+   t.AnalisaCMS       : _________________
+                        ______
+
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			NOCHANGE SCROLL			INPUTRI 1
+svistr2			ALLCAPS SCROLL			INPUTRI 2
+sviket			ALLCAPS SCROLL 			INPUTRI 3
+svistr3			NOCHANGE SCROLL			INPUTRI 4
+lkegunaan               PROTECT                         INPUTRI 4
+sviyt1                  ALLCAPS SCROLL                  INPUTRI 5
+lsviyt1p                NOCHANGE                        INPUTRI 5
+sviket2                 TEXTAREA SCROLL                 INPUTRI 6
+lenter                  NOCHANGE                        INPUTRI 7
+
+IMAGE(tmptrans)
+
+CALCS()
+cbknpekerjaan		(djoinsvicapacityd == 1 || djoinsvicapacityd == 0) && btmdvs == "HMC" || (btmdvs == "M2W" && lsvistr2capacity != "W1" 
+			&& lsvistr2capacity != "W2" && lsvistr2capacity != "D1" && lsvistr2capacity != "D2")
+cblhpekerjaan		djoinsvicapacityd == 1 && btmdvs=="M2W" && g_scrnumstr=="714" && (lsvistr2capacity == "W1" ||lsvistr2capacity == "W2"
+                        || lsvistr2capacity == "D1" || lsvistr2capacity == "D2")
+chnysyariah		(btmytsales == "2" || (btmytsales == BLANKS && cabprop == "ACEH"))
+
+DEFAULTS(tmptranst)
+/*svistr3         	DFALT_SCAN BLANKS 	KEPERLUAN_KELUARGA MODAL_DAGANG TRANSPORTASI*/
+sviyt1          	DFALT_SCAN_BLANKS       Y " "
+                                        	T " "
+IF cbknpekerjaan	svistr1			DFALT_SCAN      BLANKS 	
+                                                                KONSUMTIF "KONSUMTIF" 
+                                                                MODAL_KERJA "PRODUKTIF MODAL KERJA" 
+                                                                INVESTASI "PRODUKTIF INVESTASI"
+IF cblhpekerjaan	svistr1			DFALT_SCAN      BLANKS 	
+                                                                MODAL_KERJA "PRODUKTIF MODAL KERJA" 
+                                                                INVESTASI "PRODUKTIF INVESTASI"
+IF chnysyariah		svistr1			DFALT_SCAN      BLANKS 	
+                                                                KONSUMTIF "KONSUMTIF" 
+                                                                MODAL_KERJA "PRODUKTIF MODAL KERJA" 
+                                                                INVESTASI "PRODUKTIF INVESTASI"
+ljaminput1      INIT    SYSTIME
+lPURPOSE714     INIT    "PURPOSE714"
+lPURPOSEDANA    INIT    PURPOSEDANA
+
+
+EDITS(tmptranst)
+e.validate svistr2 VALIDATE tbddatkodidx mtbd7_1 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_pemakai} /* ok */
+e.Mandatory		svistr1         	MANDATORY
+e.Mandatory             svistr2         	MANDATORY
+e.Mandatory             svistr3         	MANDATORY
+e.Mandatory             sviket          	MANDATORY
+e.Mandatory             sviket2         	MANDATORY_IF cdi714ok
+e.Mandatory		sviyt1			MANDATORY
+e.validate              svistr3                  VALIDATE tbtdatkodtyp mtbdpur01 stbt {Pgv_dttabel} {Pgv_survey21} {PlPURPOSEDANA} {Psvistr1} {Pgv_dttabel21}
+MAP(mtbdpur01)
+tbtkode         svistr3          REPLACE
+tbtket          lkegunaan       REPLACE
+
+MAP(mtbd7_1)
+tbdkode	svistr2		REPLACE
+
+MAP(mjoinftmpurpose714)
+ftmtype4		lsesuaitidak	REPLACE
+
+DBCALCS(djoinftmpurpose714)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ftmdatbukidx   gv_purposeH1 btmnobuk
+	DBC_MAP		mjoinftmpurpose714
+
+
+CALCS()
+cdjoinftmpurpose7140	djoinftmpurpose714==0  || (djoinftmpurpose714==1 && lsesuaitidak=="T") || (djoinsvi713sudah==0 && djoinsvi713==0)
+cdjoinsvitrans2		(djoinsvicapacityd == 1) || g_usrkode=="2571073"
+cdjoinsvicapacity714    (djoinsvicapacityd == 1 && g_scrnumstr=="714") || g_usrkode=="2571073"
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cmasih713
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cmasih713
+BEFORE_INPUT 	cur_field=svistr1 DO_MAP SHOW
+                  IF cdjoinsvicapacity714   mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG t.IsiCapacityDahulu
+
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW  mhitunganalisasvi
+
+AFTER_INPUT cur_field=sviket2 DO_MAP SHOW
+        IF canalisa50svi   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF canalisa50svi   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+	IF cdjoinsvitrans2	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.IsiCapacityDulu
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+	IF cdjoinsvitransc11	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.Belum714a
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714e
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc11    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714a
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc21     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714b
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc31     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714c
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc41     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714d
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinsvitransc51     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Belum714e
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjoinftmpurpose7140     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.SesuaikanVerifikasiPurpose4D
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjoinftmpurpose7140    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.SesuaikanVerifikasiPurpose4D
+
+/*AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdjointkmvertelOPEN1     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjointkmvertelOPEN1    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp*/
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk gv_purposeH1
+
+SFL_MAP
+gv_datasurvey  		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_purposeH1		svitype			REPLACE
+gv_purposeH1		svikode			REPLACE
+
+
+/**********************************************************************/
+CALCS()
+cadd_purpose	(btmsts=="714" && djoinsvipurpose==0 && g_scrnumstr=="714") || (btmsts=="711" && djoinsvipurpose==0 && g_scrnumstr=="711")
+cupd_purpose	(btmsts=="714" && djoinsvipurpose==1 && g_scrnumstr=="714" && djoinsvijanjikc==0 && btmflag1!="BRKS" && btmflag1!="BTTD" && btmflag1!="ACCD") || (btmsts=="711" && djoinsvipurpose==1 && g_scrnumstr=="711")
+cdel_purpose	(btmsts=="714" && djoinsvipurpose==1 && g_scrnumstr=="714" && djoinsvijanjikc==0 && btmflag1!="BRKS" && btmflag1!="BTTD" && btmflag1!="ACCD") || (btmsts=="711" && djoinsvipurpose==1 && g_scrnumstr=="711")
+
+
+MAP(mapmappurose)
+lPURPOSE714       lDETAIL2        REPLACE
+
+
+
+SPCALCS(sppurpose)
+DO_LIB ap_dbclc(DNAME dmapmappurose;DCOMMAND MAPMAP;DMAP mapmappurose);
+DO_LIB                  ap_nxpst(l4461,lm4461det2);
+
+POSTING(tmptrans)
+        PST_UPDCMD      sppurpose     
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_purpose	
+  	PMT_UPDALL_COND	cupd_purpose
+  	PMT_DEL_COND  	cdel_purpose

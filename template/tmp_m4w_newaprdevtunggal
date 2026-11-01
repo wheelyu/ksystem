@@ -1,0 +1,130 @@
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |            _________ _________||_
+| |             __________________||
+| |t.Jenis      __________________||
+| |t.UplodOk    ________ _________||_
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.divheadmkt _____             ||
+| |_______________________________||
+| |______  ___________  __________||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svists          PROTECT                   INPUTRI 1
+        svistr5         PROTECT                   INPUTRI 1
+        svinobuk        PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svikode         PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svistr2         PROTECT                   INPUTRI 2
+        svistr1         PROTECT                   INPUTRI 3
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 4
+        svinobuk        PROTECT UNSEEN            INPUTRI 5
+        sviyt1          ALLCAPS                   INPUTRI 5
+        sviket          TEXTAREA ALLCAPS          INPUTRI 6
+        lok             NOCHANGE                  INPUTRI 7
+        ltglcm          PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamcm          PROTECT                   INPUTRI 7
+
+ 
+CALCS()
+ckodetunggal1      svitype == "DEVTUNGGAL"
+
+DEFAULTS(tmptranst)
+sviyt1             DFALT_SCAN_BLANKS Y T
+svistr2            DFALT_SCAN_BLANKS CERAI CERAI_MATI BELUM_MENIKAH
+
+
+MAP(mapra4)
+g_grpnam        svistr5           REPLACE
+gv_CLSD         svists            REPLACE_IF ctlk00  
+gv_TACC         svists            REPLACE_IF ctlk11
+
+
+EDITS(tmptranst)
+e.isiyt           sviyt1         MANDATORY
+e.isiket          sviket         MANDATORY_IF cT
+e.stsbukan707     svikode        VALIDATE ftmdatbukidx mftm4b sftm6 {PlMULTI4W}
+
+MAP(mftm4b)
+ftmnofak          svikode         REPLACE
+ltglcm            ltglcm          REPLACE_IF cjoinaktcm
+ljamcm            ljamcm          REPLACE_IF cjoinaktcm
+
+
+MAP(mmapmap4)
+ldum            ldum              REPLACE
+svinourt        lurut             REPLACE
+cnobukabk       lkunci            DO_CALC
+
+MAP(mkunci4)
+gv_CLSD         abksts            REPLACE
+
+MAP(maddakt4)
+svidata         aktdata         REPLACE
+svitype         akttype        REPLACE
+svinobuk        aktkode         REPLACE
+svinobuk        aktnobuk        REPLACE
+g_usrkode       aktkode2        REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_grpnam        aktlok          REPLACE
+
+
+SPCALCS(supdabk4)
+DO_LIB                 ap_dbclc(DNAME dmapmap4,DCOMMAND MAPMAP,DMAP mmapmap4);
+DO_LIB                 ap_dbclc(DNAME dakt4,DCOMMAND ADD,DFILE akt,DMAP maddakt4);
+DO_LIB_IF cbkunci      ap_dbclc(DNAME daddkunc4,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci4);
+DO_LIB_IF cbkunci2     ap_dbclc(DNAME dupdkunc4a,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci4);
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapra4
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdabk4
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknCR
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknCR
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket        DO_MAP
+                IF cisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+
+MAP(mupdsviftmandx4)
+cOK             svistr1         DO_CALC
+g_tgltrn        svitgl1         REPLACE
+
+DBCALCS(dbftupl4)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx4
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl4
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT   ckodetunggal1
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c02             
+  PMT_UPDALL_COND  cdevinpg
+  PMT_DEL_COND  c02            
+
+
+
+

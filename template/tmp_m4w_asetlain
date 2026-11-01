@@ -1,0 +1,156 @@
+LOCAL 
+PGM_FIELDS
+
+lasetlain	STRING		11
+lMOBIL          STRING          21
+lMULTIGUNA      STRING          21
+lTHN4W          STRING          21
+
+
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|t.NoBuk         : ________________|
+|t.Asset         : _______________ |
+|t.Merk          : ________________|
+|t.Tipe          : ________________|
+|t.Tahun         : _________t.Th   |
+|t.AtasNama      : _______________ |
+|t.Masihkredit   : ___             |
+|t.TipeTanah     : _______________ |
+|t.AtasNama      : _______________ |
+|t.TipeSurat     : _______________ |
+|t.Masihkredit   : ___             |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk		PROTECT SCROLL		INPUTRI 1
+svistr1			NOCHANGE SCROLL		INPUTRI 2 /* ASSET*/
+svistr2 		ALLCAPS SCROLL		INPUTRI 3 /* MERK*/
+svistr3			ALLCAPS SCROLL		INPUTRI 4 /* TIPE*/ 
+svistr4 		NUMERIC			INPUTRI 5 /* THN*/
+svistr5 		NOCHANGE		INPUTRI 6 /* ATSNAMA*/
+svistr31		NOCHANGE		INPUTRI 7 /* KREDIT? */
+svistr6 		NOCHANGE		INPUTRI 8 /* TIPETANAH */
+svistr7 		NOCHANGE		INPUTRI 8 /* ATSNAMATNH*/
+svistr8			NOCHANGE		INPUTRI 9 /* TIPESURAT*/
+svistr32		NOCHANGE		INPUTRI 10 /*KREDIT*/
+
+DEFAULTS(tmptranst)
+svistr1 		DFALT_SCAN_BLANKS 	MOBIL ""
+						MOTOR "" 
+						TANAH ""
+
+svistr5			DFALT_SCAN_BLANKS	SENDIRI ""
+						PASANGAN ""
+						SEGARIS ""
+						ORANGLAIN ""
+
+svistr7			DFALT_SCAN_BLANKS	SENDIRI ""
+						PASANGAN ""
+						SEGARIS ""
+						ORANGLAIN ""
+
+svistr6			DFALT_SCAN_BLANKS	HANYA_TANAH ""
+						TNH_BANGUNAN ""
+
+svistr8			DFALT_SCAN_BLANKS	AJB  ""
+						SHGB ""
+						SHM  ""
+						LAIN ""
+
+svistr31		DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+
+svistr32		DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+
+lasetlain		INIT			ASETLAIN
+lMOBIL                  INIT                    MOBIL
+lMULTIGUNA      INIT                    MULTIGUNA
+lTHN4W          INIT                    TAHUNMOBIL
+
+
+
+
+CALCS()
+cbkntanah		svistr1 != "TANAH"
+cbkntanah2		svistr1 != "TANAH" && svistr1 != "MOTOR"
+ctanah			svistr1 == "TANAH"
+ctanah2			svistr1 == "TANAH" || svistr1 == "MOTOR"
+cmobil                  svistr1 == "MOBIL"
+cmotor                  svistr1 == "MOTOR"
+
+EDITS(tmptranst)
+e.Validatemerk          svistr2         VALIDATE_IF cmobil tbddatkodidx    mtblmerk stbd {Pgv_dttabel} {Pgv_barang} {PlMOBIL}
+e.Validatetype          svistr3         VALIDATE_IF cmobil tbtdatkodtyp   mtbttype stbt {Pgv_dttabel} {Pgv_barang} {Pgv_merk21} {Psvistr2} {Pgv_m4w21}
+e.ValidateTahun         svistr4         VALIDATE_IF cmobil  tbddatkodidx   mtbdTHN stbdon  {Pgv_dttabel} {PlMULTIGUNA} {PlTHN4W}
+e.Validate              svistr2         VALIDATE_IF cmotor tbddatkodidx   mmerkmotor stbd {Pgv_dttabel} {Pgv_personal} {Pgv_MERK}
+e.ValidateKatbrg 	svistr3         VALIDATE_IF cmotor tbddatkodidx  mtbdTypBrg stbdJns {Pgv_dttabel} {Pgv_barang} {Pgv_series}
+e.Validatemtr           svistr4         VALIDATE_IF cmotor tbddatkodidx   mtbdthmtr stbd {Pgv_dttabel} {Pgv_barang} {Pgv_tahun}
+
+
+e.Mandatory		svistr1		MANDATORY	
+e.Mandatory		svistr2		MANDATORY_IF cbkntanah2
+e.Mandatory		svistr3		MANDATORY_IF cbkntanah
+e.Mandatory		svistr4		MANDATORY_IF cbkntanah
+e.Mandatory		svistr5		MANDATORY_IF cbkntanah
+e.Mandatory		svistr31	MANDATORY_IF cbkntanah
+e.Mandatory		svistr6		MANDATORY_IF ctanah    
+e.Mandatory		svistr7		MANDATORY_IF ctanah    
+e.Mandatory		svistr8		MANDATORY_IF ctanah    
+e.Mandatory		svistr32	MANDATORY_IF ctanah    
+
+
+MAP(mtblmerk)
+tbdkode                 svistr2        REPLACE
+
+MAP(mtbttype)
+tbtkode                 svistr3        REPLACE
+
+MAP(mtbdTHN)
+tbdkode         	svistr4         REPLACE
+
+
+MAP(mmerkmotor)
+tbdkode                 svistr2         REPLACE
+
+MAP(mtbdthmtr)
+tbdkode                 svistr4         REPLACE
+
+MAP(mtbdTypBrg)
+tbdkode                 svistr3         REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=svistr2       DO_SKIP_IF ctanah2
+BEFORE_INPUT            cur_field=svistr3       DO_SKIP_IF ctanah  
+BEFORE_INPUT            cur_field=svistr4       DO_SKIP_IF ctanah  
+BEFORE_INPUT            cur_field=svistr5       DO_SKIP_IF ctanah  
+BEFORE_INPUT            cur_field=svistr31      DO_SKIP_IF ctanah  
+BEFORE_INPUT            cur_field=svistr6       DO_SKIP_IF cbkntanah
+BEFORE_INPUT            cur_field=svistr7       DO_SKIP_IF cbkntanah
+BEFORE_INPUT            cur_field=svistr8       DO_SKIP_IF cbkntanah
+BEFORE_INPUT            cur_field=svistr32      DO_SKIP_IF cbkntanah
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	svidatbuktyp   gv_dt1106 btmnobuk lasetlain
+
+SFL_MAP
+gv_dt1106		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+lasetlain		svitype			REPLACE
+
+CALCS()
+cdel_tmpasetlain	btmsts == "701"
+c701sd			btmsts == "701" && (btmflag1 == "SRVY" || btmflag1 == "SDVY" || btmflag1 == "BM")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    c701sd
+	PMT_UPDALL_COND c701sd
+	PMT_DEL_COND  	cdel_tmpasetlain

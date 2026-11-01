@@ -1,0 +1,170 @@
+LOCAL
+PGM_FIELDS
+lrmdgabmasterinap       STRING          61
+lgol                    STRING          2
+lpropinsi		STRING		21
+lhasil1hotel            DFLOAT          8	
+lhasil2kost             DFLOAT          8	
+lhasil3inap             DFLOAT          8
+lgolongansdm		DFLOAT		8
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.Ket        : ________________  ||
+||i.Tanggal    : ________________  ||
+||i.s/d        : ________________  || 
+||i.Hari       : ________________  || 
+||i.Plafon     : ________________  || 
+||i.Total      : ________________  ||
+||i.Rek        : ________________  ||
+||i.KetRek     : ________________  ||
+|\---------------------------------/|
+| /------s.UPLOAD-----------------\ |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| |                               | |
+| \-------------------------------/ |
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bkdket   		TEXTAREA ALLCAPS       	INPUTRI 1
+bkdtgl    		NOLIMIT {DD-MM-YY}     	INPUTRI 2
+bkdtglgj  		NOLIMIT {DD-MM-YY}     	INPUTRI 3
+bkddf1    		PROTECT                	INPUTRI 4
+bkdhrg    		PROTECT                	INPUTRI 5
+bkdjml    		NUMERIC                	INPUTRI 6
+bkdnobbm  		ALLCAPS                	INPUTRI 7
+bbgket    		PROTECT                	INPUTRI 8
+
+DEFAULTS(tmptranst)
+bkdsts		INIT_ADD		OPEN
+lbkdjml         INIT_UPDATE             {bkdjml}
+bkdnobbm	INIT_ADD		{lREKINAP}
+
+DBCALCS(djoinrmdmaster)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx gv_INPG lrmdgabmasterinap
+
+MAP(mmapsvi)
+svistr1			lpropinsi	REPLACE
+psigol			lgol		REPLACE
+
+DBCALCS(djoinsvi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp		  bkmdata     bkmnobuk     bkmdata   l1
+	DBC_MAP		mmapsvi 
+
+CALCS()
+cjoinrmdmasterinap		lrmdgabmasterinap != BLANKS && djoinrmdmaster ==1
+cadasvi				djoinsvi ==1
+
+CALCS()
+crmdgabmasterinap		       "INAP" + STRIP(lpropinsi)+ lgol 			
+clamahari				bkdtglgj  - bkdtgl
+clbh3hari				bkddf1 > 3
+ckrg3hari				bkddf1 <= 3 && bkddf1 >1
+chithotel				bkddf1 * lhasil1hotel	
+
+MAP(mrmdgab)
+psigol					lgol				REPLACE
+lpropinsi				lpropinsi				REPLACE_IF cadasvi
+crmdgabmasterinap			lrmdgabmasterinap		DO_CALC
+
+MAP(misibiayainap)
+clamahari				bkddf1				DO_CALC
+chithotel   	 			bkdhrg			DO_CALC_IF ckrg3hari
+lhasil2kost				bkdhrg			REPLACE_IF clbh3hari
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW murut
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW mrmdgab
+AFTER_INPUT    cur_field=bkdtglgj   DO_LIB_IF cjoinrmdmasterinap ap_ambts(gv_INPG,lrmdgabmasterinap,lgolongansdm,lNol,lNol,&lhasil1hotel,&lhasil2kost,&lhasil3inap,&lhasilstr1,lhasilstr2);
+BEFORE_INPUT    cur_field=bkdjml    DO_MAP SHOW misibiayainap
+
+EDITS(tmptranst)
+e.Mandatory bkdket  	MANDATORY
+e.Mandatory bkdtgl   	MANDATORY
+e.Mandatory bkdtglgj	MANDATORY
+e.Mandatory bkdjml  	MANDATORY
+e.ValidateBbm   bkdnobbm        VALIDATE bbggolnoidx mbbg3 sbbgRL {Pgv_05}
+
+MAP(mbbg3)
+bbgno           bkdnobbm        REPLACE
+bbgket          bbgket          REPLACE
+
+
+MAP(mupdbkdbiaya)
+cY			bkdfl		DO_CALC
+
+DBCALCS(dupdbkdbiaya)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	bkdprmidx	bkdprm
+	DMAP		mupdbkdbiaya
+
+CALCS()
+cbkdbiaya1      	bkdfl != "Y"
+cINAP			tmpkode=="INAP" 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_COND cINAP
+SFL_UPLFLD         bkmnobuk   bkdbukll
+SFL_UPLFLD_DBCALCS dupdbkdbiaya    
+SFL_UPL_DELCOND  cbkdbiaya1  
+
+SFL_TARGET
+	bkdbuklloto    bkmnobuk   lINAP               
+
+SFL_MAP
+bkmdata         bkddata         REPLACE
+bkmnobuk        bkdnobuk        REPLACE
+lINAP		bkdbukll	REPLACE
+lINAP           bkdgrup         REPLACE
+
+CALCS()
+c2totalbi                bkdjml + bkmbia
+c2totalbi2               bkmbia - lbkdjml + bkdjml
+c2totalbi3               bkmbia - bkdjml
+cbkmpend2                 bkmbia - bkmpokok
+
+MAP(mupdbkmb)
+c2totalbi                bkmbia          DO_CALC
+cbkmpend2		 bkmpend	DO_CALC_IF cPBS
+
+MAP(mupdbkmb2)
+c2totalbi2               bkmbia          DO_CALC
+cbkmpend2		 bkmpend	DO_CALC_IF cPBS
+
+MAP(mupdbkmb3)
+c2totalbi3               bkmbia          DO_CALC
+cbkmpend2		 bkmpend	DO_CALC_IF cPBS
+
+
+
+SPCALCS(spcaladd4)
+DO_LIB ap_dbclc(DNAME dupdbkmadd2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmb);
+
+SPCALCS(spcalupd4)
+DO_LIB ap_dbclc(DNAME dupdbkmupd2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmb2);
+
+SPCALCS(spcaldel4)
+DO_LIB ap_dbclc(DNAME dupdbkmdel2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmb3);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladd4
+        PST_UPDCMD      spcalupd4
+        PST_DELCMD      spcaldel4
+
+PERMIT(tmptrans)
+	PMT_ADD_COND     cOPEN_SAJA
+        PMT_UPDALL_COND  cOPEN_SAJA
+        PMT_DEL_COND     cOPEN_SAJA 
+

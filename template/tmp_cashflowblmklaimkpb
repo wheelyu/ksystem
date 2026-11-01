@@ -1,0 +1,60 @@
+LOCAL
+PGM_FIELDS
+
+lstskpb		STRING		5
+
+/*----------JOIN--------*/
+
+MAP(mpps)
+ppssts    lstskpb     REPLACE
+
+DBCALCS(djoinpps)
+DBC_COMMAND     JOIN
+DBC_TARGET      ppsbukidx    ppmnobuk
+DBC_MAP         mpps
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||i.Cab          : ______            ||
+||t.No623        : __________________||
+||i.NoPol        : __________        ||
+||i.NoKar        : _________________ ||
+||t.Tgl623       : __________        ||
+||t.StsK         : __________        ||
+||t.Nominal      : _________         ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ppmcab           NOCHANGE SCROLL            INPUTRI         1
+   ppmnobuk         NOCHANGE SCROLL            INPUTRI         2
+   ppmnoll          NOCHANGE SCROLL            INPUTRI         3
+   ppmsup           NOCHANGE SCROLL            INPUTRI         4
+   ppmtglfak        PROTECT {DD-MM-YY}         INPUTRI         5
+   lstskpb          NOCHANGE SCROLL            INPUTRI         6
+   ppmtothrg        NOCHANGE SCROLL            INPUTRI         7
+   
+CALCS()
+ckpb		ppmscr == "623"  && ppmstskrm == "FD"
+cblanks		BLANKS
+cdjoinpps0	djoinpps == 0
+cdjoinpps1	djoinpps == 1
+
+EDITS(tmptranst)
+e.Validate ppmnobuk  VALIDATE ppmbukidx mppmkpb 0
+
+MAP(mppmkpb)
+ppmnobuk	ppmnobuk	REPLACE
+cblanks		lstskpb		DO_CALC_IF cdjoinpps0
+lstskpb		lstskpb		REPLACE_IF cdjoinpps1
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+SFL_SELECT ckpb
+SFL_TARGET ppmdtcpostgl gv_dtpiu cabkode
+
+

@@ -1,0 +1,118 @@
+LOCAL
+PGM_FIELDS
+	lhp_enter	STRING		11
+	lTELP    	STRING		11
+	ltypehp		STRING		21
+	lSURVEY		STRING		21
+	lJAMTELPON	STRING		21
+	lconkode   STRING		21
+	ljumlahnomor	INT2		2
+	ldigit1                 STRING  2
+	ldigit2                 STRING  2
+	ln1                     INT2		2
+	ln2                     INT2		2
+	ln1i                     INT2		2
+	ln2i                     INT2		2
+	ldum			STRING		2
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|i.Data       : ___________________ |
+|t.Kode       : ___________________ |
+|i.Handphone  : ___________________ |
+|t.JamTelp    : ___________________ |
+|t.GsmWa      : ___________________ |
+ spasi
+|               ___________________ |
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktdata		PROTECT	SCROLL		INPUTRI	3
+aktkode         PROTECT SCROLL          INPUTRI 2
+aktnobuk           DIGITS SCROLL          INPUTRI 1
+aktbrg 		NOCHANGE		INPUTRI	4
+aktlok 		NOCHANGE      		INPUTRI 6
+lhp_enter	NOCHANGE		INPUTRI	7
+
+EDITS(tmptranst)
+e.Mandatory		aktnobuk	MANDATORY
+e.Mandatory 		aktlok  MANDATORY
+e.Validate              aktlok  VALIDATE tbddatkodidx mtypehp stbd {Pgv_dttabel} {Pgv_infoumum} {Pltypehp}
+e.Validate		aktbrg  VALIDATE tbddatkodidx mjamtelp stbd {Pgv_dttabel} {PlSURVEY} {PlJAMTELPON}
+
+MAP(mtypehp)
+tbdkode		aktlok 		REPLACE
+
+MAP(mjamtelp)
+tbdkode		aktbrg 		REPLACE
+
+DEFAULTS(tmptranst)
+lTELP     INIT   TELP
+lhp_enter	INIT	ENTER
+ltypehp		INIT	TYPEHP
+lSURVEY		INIT	SURVEY
+lJAMTELPON	INIT	JAMTELPON
+ln1                     INIT            1
+ln2                     INIT            16
+ln1i                     INIT            1
+ln2i                     INIT            2
+
+
+MAP(mmapcon)
+conkode			lconkode		REPLACE
+
+DBCALCS(djoincon)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lTELP	aktnobuk
+	DBC_MAP		mmapcon 
+
+
+CALCS()
+cpanjangnom             DO_LIB ap_strln(aktnobuk,&ljumlahnomor);
+cHP			tmpkode =="NOHP"
+cnotuser                g_usrkode != hrmnip1
+cbukan08                ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=10 && ljumlahnomor<=14
+cjoincon		djoincon ==1
+csdhada			djoincon==0 || (djoincon==1 && lconkode == psmktp_1)
+
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+lconkode	 	aktkode2	REPLACE_IF cjoincon	
+
+MAP(mdum)
+ldum	ldum		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=aktnobuk       DO_LIB ap_amstr(aktnobuk,ln1i,ln1,&ldigit1);
+AFTER_INPUT             cur_field=aktnobuk       DO_LIB ap_amstr(aktnobuk,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=aktnobuk       DO_MAP SHOW mpanjangnom
+
+BEFORE_INPUT		cur_field=aktnobuk		DO_SKIP_IF cnotuser      
+
+AFTER_INPUT             cur_field=aktnobuk DO_MAP SHOW
+                        IF cbukan08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT             cur_field=aktnobuk DO_MAP SHOW
+                        IF csdhada  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telp Ini Sdh ada
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_SELECT cHP
+
+SFL_TARGET
+aktkodtypidx	hrmnobuk
+
+SFL_MAP
+hrmnobuk        aktkode                 REPLACE
+hrmdata		aktdata			REPLACE
+tmpkode         akttype                 REPLACE
+

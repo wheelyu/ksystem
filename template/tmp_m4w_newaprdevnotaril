@@ -1,0 +1,130 @@
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |            _________ _________||
+| |             __________________||
+| |t.Kategori   __________________||
+| |t.NTF        __________________||
+| |t.UplodOk    _______  _________||_
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.divheadmkt _____             ||
+| |_______________________________||
+| |         ________  _________   ||
+| |_____                          ||
+| \-------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svists          PROTECT                   INPUTRI 1
+        svistr5         PROTECT                   INPUTRI 1
+        svikode         PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svistr2         PROTECT                   INPUTRI 2
+        svidf1          PROTECT                   INPUTRI 2
+        svistr1         PROTECT                   INPUTRI 3
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 4
+        svinobuk        PROTECT UNSEEN            INPUTRI 5
+        sviyt1          ALLCAPS                   INPUTRI 5
+        sviket          TEXTAREA ALLCAPS          INPUTRI 6
+        ltglca          PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamca          PROTECT                   INPUTRI 7
+        lok             NOCHANGE                  INPUTRI 7
+ 
+
+CALCS()
+ckodenot          svitype == "DEVNOTARIL"
+
+DEFAULTS(tmptranst)
+sviyt1             DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.isiyt           sviyt1         MANDATORY_IF cbknCL1
+e.isiket          sviket         MANDATORY_IF cT        
+e.stsbukan707     svikode        VALIDATE ftmdatbukidx mftm7a sftm6 {PlMULTI4W}
+
+MAP(mftm7a)
+ftmkode7        svistr2         REPLACE
+ltgldvh1        ltgldvh1        REPLACE_IF cjoinaktdvh1
+ljamdvh1        ljamdvh1        REPLACE_IF cjoinaktdvh1
+ltglcm          ltglcm          REPLACE_IF cjoinaktcm
+ljamcm          ljamcm          REPLACE_IF cjoinaktcm
+ltglcoo         ltglcoo         REPLACE_IF cjoinaktcoo
+ljamcoo         ljamcoo         REPLACE_IF cjoinaktcoo
+
+MAP(mapra11)
+g_grpnam        svistr5           REPLACE
+gv_RCLS         svists            REPLACE_IF ctolaka2
+gv_TACC         svists            REPLACE_IF ctlk1aa
+gv_CLSD         svists            REPLACE_IF ctlk0aa
+
+MAP(mmapmap11)
+ldum            ldum              REPLACE
+svinourt        lurut             REPLACE
+cnobukabk       lkunci            DO_CALC
+
+MAP(mkunci11)
+gv_CLSD         abksts            REPLACE
+
+
+SPCALCS(supdabk11)
+DO_LIB                 ap_dbclc(DNAME dmapmap11,DCOMMAND MAPMAP,DMAP mmapmap11);
+DO_LIB                 ap_dbclc(DNAME dakt11,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cbkunci      ap_dbclc(DNAME daddkunc11,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci11);
+DO_LIB_IF cbkunci2     ap_dbclc(DNAME dupdkunc11b,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci11);
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapra11
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdabk11
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknCR
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknCR
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket        DO_MAP
+                IF cisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+MAP(mupdsviftmandx11a)
+cOK             svistr1         DO_CALC
+g_tgltrn        svitgl1         REPLACE
+
+DBCALCS(dbftupl11a)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx11a
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl11a
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT   ckodenot
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+SFL_MAP
+tlmnobuk        svinobuk        REPLACE
+tlmuntuk        svidtmkode      REPLACE
+tlmnoasal       svikode         REPLACE
+tlmdata         svidata         REPLACE
+tmpkode         svitype         REPLACE
+tmpnourt        svinourt        REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c02
+  PMT_UPDALL_COND  cdevinpg
+  PMT_DEL_COND  c02
+
+
+
+

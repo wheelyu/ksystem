@@ -1,0 +1,277 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+|| t.NoMesin      :__________________        ||
+|| t.NoMesin      :__________________        ||
+|| t.NoRangka 	  :__________________	     ||
+|| t.NoRangka 	  :__________________	     ||
+|| t.StokSis      :______________            ||
+|| t.Barcode      :______________ _____      ||
+|| t.NoPK         :______________	     ||
+|| t.Nofaktur	  :______________            ||
+|| t.Status614 	  :______________            ||
+|| t.Status614kr  :__________                ||
+|| t.LokSistem 	  :__________                ||
+|| t.LokAktual    :______________	     ||
+|| t.LokAktualain :______________	     ||
+|| t.KondisiMtor  :______________	     ||
+|| t.Kelengkapan  :______________	     ||
+|\-------------------------------------------/|
+||spasi                                      ||
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviket              QRCODE            INPUTRI 2
+svikode             ALLCAPS           INPUTRI 2
+svidtmkode          QRCODE            INPUTRI 3
+svitblkode          ALLCAPS           INPUTRI 3
+svitype             PROTECT           INPUTRI 4
+svistr1             PROTECT           INPUTRI 5
+svistr31            PROTECT           INPUTRI 5
+svistr2             PROTECT           INPUTRI 6
+svistr3             PROTECT           INPUTRI 7
+svistr4             PROTECT           INPUTRI 8
+svistr5             PROTECT           INPUTRI 9
+svistr6             PROTECT           INPUTRI 10
+svistr7             ALLCAPS           INPUTRI 11
+svistr8             ALLCAPS           INPUTRI 12
+svistr9             NOCHANGE          INPUTRI 13
+svistr10            NOCHANGE          INPUTRI 14
+
+DEFAULTS(tmptranst)
+svistr9             DFALT_SCAN_BLANKS   RUSAK
+                                        OK
+                                        TEMUAN_LAIN
+svistr10            DFALT_SCAN_BLANKS   LENGKAP
+                                        TIDAK_LENGKAP
+
+CALCS()
+cmesinppd         ppdnomesin == svikode 
+cnokappd          ppdnorangka == svitblkode
+cmesinbrd         brdnomesin == svikode 
+cnokabrd          brdnorangka == svitblkode
+
+MAP(mjoinbrdmesin)
+brdnorangka     lnokabrd        REPLACE
+brdhrg          lhrgbrd         REPLACE
+brdlok          llokbrd         REPLACE
+
+DBCALCS(djoinbrdmesin)
+        DBC_COMMAND    JOIN
+        DBC_TARGET     brdstscabbrg   gv_INPG  
+        DBC_SELECT     cmesinbrd
+        DBC_MAP        mjoinbrdmesin
+
+MAP(mjoinbrdnoka)
+brdnomesin      lnosinbrd       REPLACE
+brdhrg          lhrgbrd         REPLACE
+brdlok          llokbrd         REPLACE
+
+DBCALCS(djoinbrdnoka)
+        DBC_COMMAND    JOIN
+        DBC_TARGET     brdstscabbrg   gv_INPG  
+        DBC_SELECT     cnokabrd
+        DBC_MAP        mjoinbrdnoka
+
+MAP(mjoinppdnosin)
+ppdnobuk        lnofakppd      REPLACE
+ppdnorangka     lnokappd       REPLACE    
+ppdlok          llokppd        REPLACE
+ppdhrg          lhrgppd        REPLACE
+
+DBCALCS(djoinppdnosin)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppddatcabtgl   lDATAPIU 
+        DBC_SELECT      cmesinppd
+        DBC_MAP         mjoinppdnosin
+
+MAP(mjoinppdnoka)
+ppdnobuk        lnofakppd      REPLACE
+ppdnomesin      lnosinppd      REPLACE   
+ppdlok          llokppd        REPLACE
+ppdhrg          lhrgppd        REPLACE
+
+DBCALCS(djoinppdnoka)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppddatcabtgl   lDATAPIU 
+        DBC_SELECT      cnokappd
+        DBC_MAP         mjoinppdnoka
+
+MAP(mjoinppm)
+ppmnobuk    lnofaktur       REPLACE
+ppmnoll     lnopk           REPLACE
+ppmsts      lstsppm         REPLACE
+ppmstskrm   lstskrmppm      REPLACE
+
+DBCALCS(djoinppm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppmbukidx   lnofakppd
+        DBC_MAP         mjoinppm
+
+MAP(mjointbdlok)
+tbdlv2      lcablok         REPLACE
+
+DBCALCS(djointbdlok)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx  gv_dttabel  lBARANG  lLOKMOTOR  svistr6
+        DBC_MAP         mjointbdlok
+
+MAP(mjoinsvinourt)
+	svinourt	lsvinour		REPLACE
+
+DBCALCS(djoinsvinourt)
+    DBC_COMMAND     JOIN_LAST_SFL
+    DBC_TARGET      svidatbuktyp lRINCISO tlmnobuk
+    DBC_MAP	    mjoinsvinourt
+   
+CALCS()
+cloklain           svistr7 == BLANKS
+cjoinppdnosin      djoinppdnosin == 1 && svikode != BLANKS
+cjoinppdnoka       djoinppdnoka == 1 && svikode == BLANKS
+cjoinppm           djoinppm == 1
+/*cjoinbrd           djoinbrd == 1 && svistr6 == BLANKS */
+cjoinbrdnosin      djoinbrdmesin == 1 && svikode != BLANKS
+cjoinbrdnoka       djoinbrdnoka == 1 && svikode == BLANKS
+cadabarcode        sviket != BLANKS || svidtmkode != BLANKS
+ctdkbarcode        sviket == BLANKS && svidtmkode == BLANKS
+cqrmesinmbr        sviket != BLANKS
+cqrrangkambr       svidtmkode != BLANKS
+cscanbarcode       svistr31 == "SC"
+ctdkscanbarcode    svistr31 == "MN"
+cadanorasin        svikode != BLANKS && svitblkode != BLANKS   
+ctdknorasin        svikode == BLANKS || svitblkode == BLANKS    
+cmtrrusak          svistr9 == "RUSAK" && g_curcmd == 1
+cmtrtmlain         svistr9 == "TEMUAN_LAIN" && g_curcmd == 1
+cdjoinketurt0      g_curcmd == 1 && djoinsvinourt == 0
+cdjoinketurt1      g_curcmd == 1 && djoinsvinourt == 1
+ctambhsvikod       STRIP(tlmnobuk) + "-"+ FLD_TO_STRING(svinourt) 
+ctambahnobuksvi    g_curcmd == 1
+ctambahsviurt      lsvinour + 1
+cppdada            lhrgppd != BLANKS
+cbrdada            svidf1 == BLANKS
+ctmlain            svitype == "TIDAK ADA" || lcablok != tlmcab || svistr5 == "KR"
+cjointbdlok        djointbdlok == 1 || djointbdlok == 0
+
+MAP(misisvinourt)
+c1      	svinourt        DO_CALC_IF cdjoinketurt0
+ctambahsviurt  	svinourt        DO_CALC_IF cdjoinketurt1
+ctambhsvikod    lnobukbru    	DO_CALC_IF ctambahnobuksvi
+
+MAP(mqrmesin)
+sviket          svikode         REPLACE_IF  cqrmesinmbr
+
+MAP(mqrrangka)
+svidtmkode      svitblkode      REPLACE_IF  cqrrangkambr
+/*
+MAP(mbarcode)
+lscan           svistr31        REPLACE_IF  cadabarcode
+sviket          svikode         REPLACE_IF  cadabarcode
+svidtmkode      svitblkode      REPLACE_IF  cadabarcode
+lmanual         svistr31        REPLACE_IF  ctdkbarcode
+lada            svistr1         REPLACE_IF  cscanbarcode
+ltdkada         svistr1         REPLACE_IF  ctdkscanbarcode */
+
+MAP(maddnoka)
+lnokappd        svitblkode      REPLACE_IF  cjoinppdnosin
+lnokabrd        svitblkode      REPLACE_IF  cjoinbrdnosin
+lada            svitype         REPLACE_IF  cadanorasin
+ltdkada         svitype         REPLACE_IF  ctdknorasin
+
+MAP(maddnosin)
+lnosinppd       svikode         REPLACE_IF  cjoinppdnoka
+lnosinbrd       svikode         REPLACE_IF  cjoinbrdnoka 
+lada            svitype         REPLACE_IF  cadanorasin
+ltdkada         svitype         REPLACE_IF  ctdknorasin
+
+MAP(maddsvirinmobar2)   
+lscan           svistr31        REPLACE_IF  cadabarcode
+lmanual         svistr31        REPLACE_IF  ctdkbarcode
+lada            svistr1         REPLACE_IF  cscanbarcode
+ltdkada         svistr1         REPLACE_IF  ctdkscanbarcode
+
+lnofakppd       svistr3         REPLACE_IF  cjoinppdnosin
+lnofakppd       svistr3         REPLACE_IF  cjoinppdnoka
+llokppd         svistr6         REPLACE_IF  cjoinppdnosin
+llokbrd         svistr6         REPLACE_IF  cjoinbrdnosin
+llokppd         svistr6         REPLACE_IF  cjoinppdnoka
+llokbrd         svistr6         REPLACE_IF  cjoinbrdnoka
+lnopk           svistr2         REPLACE_IF  cjoinppm
+lstsppm         svistr4         REPLACE_IF  cjoinppm
+lstskrmppm      svistr5         REPLACE_IF  cjoinppm
+lhrgppd         svidf1          REPLACE_IF  cppdada
+lhrgbrd         svidf1          REPLACE_IF  cbrdada
+
+MAP(maddtmulain)
+ltemuan         svistr9         REPLACE_IF  ctmlain
+
+MAP(maddtkmrusak)
+svikode         tkmplg          REPLACE
+svitblkode      tkmbuk1         REPLACE
+lUNITRUSAK      tkmdata         REPLACE
+tlmnobuk        tkmkode         REPLACE
+gv_OPEN         tkmsts          REPLACE
+lnobukbru       tkmnobuk        REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+MAP(maddaktlain)
+svikode         aktkode         REPLACE
+svitblkode      aktkode2        REPLACE
+tlmnobuk        aktbrg          REPLACE
+lMOBAR          akttype         REPLACE
+lTEMULAIN       aktdata         REPLACE
+lnobukbru       aktnobuk        REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+MAP(madddocrusak)
+svikode         docnobuk2       REPLACE
+tlmnobuk        docnobuk        REPLACE
+lDOCPENDUKUNG   docdata         REPLACE
+lRUSAK          doctype         REPLACE
+
+MAP(mtambah)
+cBLANKS         lnofakppd       DO_CALC_IF ctambahnobuksvi
+cBLANKS         llokppd         DO_CALC_IF ctambahnobuksvi           
+cBLANKS         lnokappd        DO_CALC_IF ctambahnobuksvi           
+cBLANKS         lnokabrd        DO_CALC_IF ctambahnobuksvi           
+cBLANKS         lnopk           DO_CALC_IF ctambahnobuksvi
+cBLANKS         lstsppm         DO_CALC_IF ctambahnobuksvi
+cBLANKS         lstskrmppm      DO_CALC_IF ctambahnobuksvi     
+cBLANKS         lhrgppd         DO_CALC_IF ctambahnobuksvi
+cBLANKS         lhrgbrd         DO_CALC_IF ctambahnobuksvi
+cBLANKS         lcablok         DO_CALC_IF ctambahnobuksvi
+
+EDITS(tmptranst)
+e.Mandatory1     svistr8        MANDATORY_IF cloklain
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SORT_BY_FIELD svinourt
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+svidatbuktyp  lRINCISO  tlmnobuk 
+
+SFL_MAP
+tlmnobuk    svinobuk    REPLACE
+lRINCISO    svidata     REPLACE
+
+SPCALCS(sadarinci)
+	 DO_LIB_IF cmtrrusak    ap_dbclc(DNAME daddtkmrusak,DCOMMAND ADD,DFILE tkm,DMAP maddtkmrusak);
+	 DO_LIB_IF cmtrtmlain   ap_dbclc(DNAME daddaktlain,DCOMMAND ADD,DFILE akt,DMAP maddaktlain);
+         DO_LIB_IF cmtrrusak    ap_dbclc(DNAME dadddocrusak, DCOMMAND ADD, DFILE doc, DMAP madddocrusak);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=sviket        DO_MAP SHOW misisvinourt
+BEFORE_INPUT    cur_field=sviket        DO_MAP SHOW mtambah
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mqrmesin
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW maddnoka
+AFTER_INPUT     cur_field=svidtmkode    DO_MAP SHOW mqrrangka
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW maddnosin
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW maddsvirinmobar2
+AFTER_INPUT     cur_field=svistr7       DO_MAP SHOW IF cjointbdlok maddtmulain
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS sadarinci
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cOPEN
+PMT_UPDALL_COND cOPEN

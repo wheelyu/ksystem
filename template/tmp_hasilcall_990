@@ -1,0 +1,285 @@
+LOCAL
+PGM_FIELDS
+lnourtcall 	INT2	2
+laktjam		TIME	4
+lstscall	STRING	21
+
+MAP(mjointkducall)
+tkdnourt	lnourtcall 	REPLACE
+
+DBCALCS(djointkducall)
+	DBC_COMMAND 	JOIN_LAST_SFL
+	DBC_TARGET  	tkddatbukll tkmdata tkmnobuk lNOLL2
+	DBC_MAP		mjointkducall
+
+MAP(mjoinaktfucall1)
+aktjam		laktjam		REPLACE
+
+DBCALCS(djoinaktfucall1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx tkmnobuk lFUCALL990 lstscall
+	DBC_MAP		mjoinaktfucall1
+
+CALCS()
+caktif_tdkangkat_1	tkdjenis == "T" && ((tkdjwbstr1=="AKTIF_TDK_DIANGKAT" || tkdjwbstr1=="NO_TLP_TAKTIF" || tkdjwbstr1=="NO_TLP_TDAFTAR") && (tkdsisstr=="AKTIF_TDK_DIANGKAT" || tkdsisstr==BLANKS))
+ctdk_terhubung		"TDK_TERHUBUNG"
+ccallsysY	lhasilcallsys == "Yes"
+ccallsysT	lhasilcallsys == "No"
+/*cfupenjamin	(tkdjwbstr1 == "AKTIF_TDK_DIANGKAT" || tkdjwbstr1 == "SALAH_SAMBUNG" || tkdjwbstr1 == "NO_TLP_TAKTIF" || tkdjwbstr1 == "NO_TLP_TDAFTAR") &&
+		tkmlok1 != lnohppenjamin && lnohppenjamin != BLANKS
+ctdkfupenjamin	(tkdjwbstr1 != "AKTIF_TDK_DIANGKAT" && tkdjwbstr1 != "SALAH_SAMBUNG" && tkdjwbstr1 != "NO_TLP_TAKTIF" && tkdjwbstr1 != "NO_TLP_TDAFTAR") ||
+		tkmlok1 == lnohppenjamin || lnohppenjamin == BLANKS
+cpjterhubung	tkmdf5 == 0 &&
+		((tkdsisstr!=BLANKS && (tkdsisstr != "SALAH_SAMBUNG" && tkdsisstr != "NO_TLP_TAKTIF" && tkdsisstr != "NO_TLP_TDAFTAR") && tkdjwbstr1 != "AKTIF_TDK_DIANGKAT") ||
+		 (tkdsisstr==BLANKS && (tkdjwbstr1 != "SALAH_SAMBUNG" && tkdjwbstr1 != "NO_TLP_TAKTIF" && tkdjwbstr1 != "NO_TLP_TDAFTAR" && tkdjwbstr1 != "AKTIF_TDK_DIANGKAT")))
+cpjtdkhubung	tkmdf5 == 0 &&
+		((tkdsisstr!=BLANKS && (tkdsisstr == "SALAH_SAMBUNG" || tkdsisstr == "NO_TLP_TAKTIF" || tkdsisstr == "NO_TLP_TDAFTAR") && tkdjwbstr1 != "AKTIF_TDK_DIANGKAT") || 
+		 (tkdsisstr==BLANKS && (tkdjwbstr1 == "SALAH_SAMBUNG" || tkdjwbstr1 == "NO_TLP_TAKTIF" || tkdjwbstr1 == "NO_TLP_TDAFTAR") && tkdjwbstr1 != "AKTIF_TDK_DIANGKAT"))
+cbukatdkangkat	tkmdf5 == 0 && tkdjwbstr1 == "AKTIF_TDK_DIANGKAT"
+*/
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.rekapcall __                                    ||
+|\--------------------------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.fu             || ______                        ||
+||t.Tanggal        || __________ ______             ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.Pemohon        || spasi	                    ||
+||t.callke         || __________                    ||
+||t.HasilCallWa    || ________________              ||
+||t.HasilCallGsm   || ________________              ||
+||t.ResponWa	   || __________		    ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.Penjamin       || spasi	                    ||
+||t.NamaPenj       || _______________________       ||
+||t.NoTelpPj       || ________________              ||
+||t.HasilCallWa    || ________________              ||
+||t.HasilCallGsm   || ________________              ||
+|\-----------------/\-------------------------------/|
+|/-----------------\/-------------------------------\|
+||t.jdpk           || _____                         ||
+||t.Tglminat	   || __________		    ||
+||t.KatTdkM2w      || ____________________________  ||
+||t.KatTdkHmc	   || ____________________________  ||
+||t.Kebunit        || ____________________________  ||
+||spasi            ||		                    ||
+|\-----------------/\-------------------------------/|
+|spasi  _______                                      |
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnourt	PROTECT				INPUTRI 1
+tkdsts		PROTECT				INPUTRI	1
+tkdtgl		PROTECT {DD-MM-YY} NOLIMIT  	INPUTRI	2
+laktjam		PROTECT {99:99}			INPUTRI	2
+tkdnil		PROTECT 			INPUTRI 3
+tkdjwbstr1	ALLCAPS	NOCHANGE		INPUTRI 4	/* PEMOHON */
+tkdjenisaw	PROTECT				INPUTRI	5
+tkdket		PROTECT				INPUTRI	6
+lnamapenjamin	PROTECT				INPUTRI	7	/* PENJAMIN */
+lnohppenjamin	PROTECT				INPUTRI	8
+tkdsisstr	ALLCAPS NOCHANGE		INPUTRI	9
+tkdkodejsa	PROTECT				INPUTRI	10
+tkdjenis        ALLCAPS NOCHANGE      		INPUTRI 11
+tkdtgl2		PROTECT {DD-MM-YY} NOLIMIT	INPUTRI	12
+tkdstr1		PROTECT				INPUTRI	13
+tkdstr2		PROTECT				INPUTRI	14
+tkdtmp1		PROTECT				INPUTRI	15
+tkmplg		PROTECT				INPUTRI 50
+
+DEFAULTS(tmptranst)
+tkdjwbstr1	DFALT_SCAN 		BLANKS	
+					AKTIF_TDK_DIANGKAT
+					TERHUBUNG_PM
+					TERHUBUNG_PJ
+					TERHUBUNG_KELUARGA
+					SALAH_SAMBUNG
+					NO_TLP_TAKTIF
+					NO_TLP_TDAFTAR
+/*
+IF cpjterhubung tkdjenis DFALT_SCAN	BLANKS
+					Y
+					T
+					FU
+
+IF cbukatdkangkat tkdjenis DFALT_SCAN	BLANKS
+					Y
+					T
+					FU
+
+IF cpjtdkhubung tkdjenis DFALT_SCAN_BLANKS	T
+
+IF cbknotomatis tkdjenis DFALT_SCAN_BLANKS	Y
+
+
+IF cpjterhubung tkdstr1		DFALT_SCAN_BLANKS
+                                        SDH_AMBIL_TEMPATLAIN
+                                        BLM_BUTUH/MINAT
+                                        SDH_TDK_MINAT/BUTUH
+                                        ALASAN_MENDESAK
+
+IF cbukatdkangkat tkdstr1	DFALT_SCAN_BLANKS
+                                        SDH_AMBIL_TEMPATLAIN
+                                        BLM_BUTUH/MINAT
+                                        SDH_TDK_MINAT/BUTUH
+                                        ALASAN_MENDESAK
+
+IF cpjtdkhubung tkdstr1		DFALT_SCAN_BLANKS 
+					SALAH_SAMBUNG
+                                        NO_TLP_TAKTIF
+                                        NO_TLP_TDAFTAR
+
+tkdtgl		INIT			{g_tgltrn}
+
+IF csub1	 tkdstr2	DFALT_SCAN 1 "ANGSURAN LEBIH MURAH DITEMPAT LAIN " 
+					   2 "RP PENCAIRAN LEBIH TINGGI DITEMPAT LAIN"
+					   3 "PROMO CASHBACK DI TEMPAT LAIN "
+                                           4 "MNDPTKAN PNWRAN DANA TUNAI LBH AWL DR TMP LAIN"
+                                           5 "PROSES LEBIH MUDAH DITEMPAT LAIN"
+                                           6 "PENCAIRAN LEBIH CEPAT"
+
+IF csub2	tkdstr2		DFALT_SCAN HOT  "PROSPEK JD PK DI MINGGU YG SAMA"
+					   WARM "PROSPEK JD PK DI BULAN YG SAMA"
+					   COLD "PROSPEK JD PK DI BULAN DPN/TUNGGU LUNAS"
+
+IF csub3	tkdstr2		DFALT_SCAN 7 "PENGHASILAN SEDANG MINIM"
+					   8 "TDK ADA PEKERJAAN/USAHA "
+					   9 "TDK INGIN ADA PINJAMAN "
+
+IF csub4	tkdstr2		DFALT_SCAN 10 "MOTOR DILUAR KOTA "
+					   11 "PJ DILUAR KOTA"
+					   12 "TDK MAU PERPANJANG PAJAK (PAJAK MATI)"
+					   13 "MOTOR SDH DIJUAL (PAJAK MATI)"
+
+IF csub5	tkdstr2		DFALT_SCAN CALL1 "Sdh di telp 1 kali"
+					   CALL2 "Sdh di telp 2 kali"
+					   CALL3 "Sdh di telp 3 kali"
+*/
+tkdsisstr	DFALT_SCAN	BLANKS
+				TERHUBUNG
+				AKTIF_TDK_DIANGKAT
+				SALAH_SAMBUNG
+				NO_TLP_TAKTIF
+				NO_TLP_TDAFTAR
+
+IF ccallsysY	lhasilcallsys	INIT	Y
+IF ccallsysT	lhasilcallsys	INIT	T
+
+EDITS(tmptranst)
+e.Mandatory     tkdnil 	                MANDATORY
+e.Mandatory     tkdjwbstr1              MANDATORY
+e.Mandatory	tkdjenis		MANDATORY
+e.Mandatory	tkdstr1			MANDATORY_IF cjenist
+e.Mandatory     tkdstr2                 MANDATORY_IF cjenista
+e.Mandatory     tkdket			MANDATORY_IF cjenista
+/*e.Mandatory	tkdsisstr		MANDATORY_IF cfupenjamin*/
+e.Validate	tkdstr2			VALIDATE tbtdattypkod mtbtsub 0 {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {PlKLIKNSS} {PlSUBKAT}
+e.Validate	tkmplg			VALIDATE psikodidx mpsifucall 0
+
+CALCS()
+cjointkducall0	djointkducall==0 && g_curcmd==1
+cjointkducall1	djointkducall==1 && g_curcmd==1
+curutcall       lnourtcall + 1
+cdjoinaktfucall1	djoinaktfucall1 == 1
+
+MAP(mtbtsub)
+tbtkode	tkdstr2	REPLACE
+tbtket	lsubkat	REPLACE
+
+MAP(mpsifucall)
+psikode		psikode		REPLACE
+tkdsts		lstscall	REPLACE
+cjam0		laktjam		DO_CALC
+laktjam		laktjam		REPLACE_IF cdjoinaktfucall1
+
+MAP(murut)
+csatu		tkdnourt	DO_CALC_IF cjointkducall0
+curutcall       tkdnourt        DO_CALC_IF cjointkducall1
+csatu           tkdnil        	DO_CALC_IF cjointkducall0
+curutcall       tkdnil  	DO_CALC_IF cjointkducall1
+tkmsts		tkdsts		REPLACE	
+
+MAP(mtkdjenis)
+cBLANKS 	tkdstr1		DO_CALC
+ctdk_terhubung	tkdstr1		DO_CALC_IF caktif_tdkangkat_1
+
+MAP(mtkdstr1)
+cBLANKS tkdstr2	DO_CALC
+
+MAP(mtkdjwbstr1)
+cBLANKS tkdstr1 	DO_CALC
+cBLANKS tkdstr2 	DO_CALC
+cBLANKS tkdjenis 	DO_CALC
+cBLANKS tkdket		DO_CALC
+cBLANKS lsubkat		DO_CALC
+cBLANKS	tkdsisstr	DO_CALC
+
+CALCS()
+ctdkterhubung	(tkdsisstr=="SALAH_SAMBUNG" || tkdsisstr=="NO_TLP_TAKTIF" || tkdsisstr=="NO_TLP_TDAFTAR") || 
+		(tkdsisstr==BLANKS && (tkdjwbstr1=="SALAH_SAMBUNG" || tkdjwbstr1=="NO_TLP_TAKTIF" || tkdjwbstr1=="NO_TLP_TDAFTAR"))
+ctdkangkat	(tkdsisstr == "AKTIF_TDK_DIANGKAT" || (tkdsisstr==BLANKS && tkdjwbstr1=="AKTIF_TDK_DIANGKAT"))
+ccallno		(tkdsisstr=="NO_TLP_TAKTIF" || tkdsisstr=="NO_TLP_TDAFTAR") || (tkdsisstr==BLANKS && (tkdjwbstr1=="NO_TLP_TAKTIF" || tkdjwbstr1=="NO_TLP_TDAFTAR"))
+cisiket         DO_LIB ap_strln(tkdket,&lisiket);
+cminisiket      (lisiket >= 20) || tkdjenis=="Y" || tkdjenis=="FU" || tkdstr1=="" || (tkdjenis == "T" && tkdstr1 == "TDK_TERHUBUNG")
+
+MAP(misiket)
+cisiket	lisiket	DO_CALC
+
+HOOKS(tmptranst)
+ 	BEFORE_INPUT	cur_field=tkdjwbstr1    DO_MAP SHOW murut
+	BEFORE_INPUT  cur_field=tkdstr1          DO_SKIP_IF cjadipk
+	BEFORE_INPUT  cur_field=tkdstr1          DO_SKIP_IF ccallno
+        BEFORE_INPUT  cur_field=tkdstr1         DO_SKIP_IF cjadipkfu
+	BEFORE_INPUT  cur_field=tkdstr2         DO_SKIP_IF cjadipk
+        BEFORE_INPUT  cur_field=tkdstr2          DO_SKIP_IF cjadipkfu
+        BEFORE_INPUT  cur_field=tkdstr2          DO_SKIP_IF ccallno
+	BEFORE_INPUT  cur_field=tkdket          DO_SKIP_IF cjadipk
+        BEFORE_INPUT  cur_field=tkdket          DO_SKIP_IF cjadipkfu	
+	BEFORE_INPUT  cur_field=tkdstr1			DO_SKIP_IF ctdkterhubung
+	BEFORE_INPUT  cur_field=tkdstr1			DO_SKIP_IF caktif_tdkangkat_1
+	BEFORE_INPUT  cur_field=tkdstr2			DO_SKIP_IF ctdkterhubung
+	BEFORE_INPUT  cur_field=tkdket                  DO_SKIP_IF ctdkterhubung
+	BEFORE_INPUT  cur_field=tkdket			DO_SKIP_IF ctdkangkat
+	/*BEFORE_INPUT	cur_field=tkdsisstr	DO_SKIP_IF ctdkfupenjamin*/
+
+	AFTER_INPUT	cur_field=tkdjenis	DO_MAP SHOW
+			IF cudhinp2 mdum
+			ELSE HKCURSOR STAY
+			HKMSG WAJIB PILIH T ATAU Y
+	AFTER_INPUT   cur_field=tkdjwbstr1      DO_MAP SHOW
+                      IF cisicall mdum
+                      ELSE HKCURSOR STAY
+                      HKMSG TIDAK BOLEH TAMBAH DATA LAGI SUDAH JADI PK
+	AFTER_INPUT     cur_field=tkdjwbstr1    DO_MAP SHOW mtkdjwbstr1
+	AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW mtkdjenis
+	AFTER_INPUT	cur_field=tkdstr1	DO_MAP SHOW mtkdstr1	
+	AFTER_INPUT     cur_field=tkdket        DO_MAP SHOW misiket
+	AFTER_INPUT     cur_field=tkdket DO_MAP SHOW
+               		IF cminisiket mdum
+                	ELSE HKCURSOR STAY
+                    	HKMSG t.Min20Karakter
+	AFTER_INPUT     cur_field=tkdjwbstr1 DO_MAP SHOW
+                        IF cudahisi mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.TidakBolehTambahLg
+	
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkdnourt
+SFL_TARGET
+           tkddatbukll tkmdata tkmnobuk lNOLL2
+SFL_MAP
+tkmdata	                 tkddata         REPLACE
+tkmnobuk                 tkdnobuk        REPLACE
+lNOLL2			 tkdnoll         REPLACE
+tkmnobuk2                tkdrek          REPLACE
+tkmplg			 tkdstr3	 REPLACE
+lktppenjamin		 tkdstr4	 REPLACE

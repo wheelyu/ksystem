@@ -1,0 +1,76 @@
+LOCAL
+PGM_FIELDS
+lnamaref	STRING	21
+lMANUAL         STRING  251
+lbtmsales       STRING  21
+
+
+MAP(mjoinnamareff)
+psinama         lnamaref        REPLACE
+
+DBCALCS(djoinpsireff)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx   tkdjwbstr1
+        DBC_MAP         mjoinnamareff
+
+
+IMAGE(tmptranst)
+/-----------------------------------------\
+|t.NoBt      _____________________        |
+|t.NipRefKn  _____________________        |
+|t.NmaRefKn  _____________________        |
+|t.NipAdmin  _____________________        |
+|t.Enter     ______                       |
+\-----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk        PROTECT	        INPUTRI 1
+tkdjwbstr1      ALLCAPS SCROLL	INPUTRI 2
+lnamaref        ALLCAPS SCROLL  INPUTRI 3
+tkdjwbstr2      PROTECT         INPUTRI 4 /* Nip Inpit */
+lenter          ALLCAPS         INPUTRI 5
+
+DEFAULTS(tmptranst)
+lREFERRAL       INIT             REFERRAL
+lMANUAL         INIT             MANUAL
+tkdjwbstr2      INIT             {g_usrkode}
+
+CALCS()
+cbolehisi2        btmrekomen != BLANKS && (g_usrkode != tkdjwbstr1 || g_usrkode != "1914258" || g_usrkode != "2281239" || lbtmsales != tkdjwbstr1)
+cjoinpsireff     djoinpsireff == 1
+
+EDITS(tmptranst)
+e.Validatenobuk   tkdnobuk           VALIDATE btmbukidx   mnobuk630 0
+e.Validatenip     tkdjwbstr1          VALIDATE psikodidx mtkdjwbstr1 0
+
+MAP(mnobuk630)
+btmsales        lbtmsales       REPLACE
+
+MAP(mtkdjwbstr1)
+cBLANKS         lnamaref        DO_CALC
+psinama         lnamaref        REPLACE_IF cjoinpsireff
+
+MAP(mdum)
+ldumstr         ldumstr         REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tkdjwbstr1     DO_MAP SHOW
+                IF cbolehisi2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBoleh
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkddatbukll   lREFERRAL btmnobuk btmplg
+
+SFL_MAP
+lREFERRAL       tkddata      REPLACE
+btmnobuk	tkdnobuk     REPLACE
+btmsales        tkdjwbstr1   REPLACE
+btmplg		tkdnoll	     REPLACE
+lMANUAL         tkdket       REPLACE
+

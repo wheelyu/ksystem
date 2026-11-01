@@ -1,0 +1,170 @@
+LOCAL
+PGM_FIELDS
+ldebug          STRING    5
+
+DBCALCS(djoinaktcragen)
+        DBC_COMMAND   JOIN
+        DBC_TARGET    akttgltypidx  g_tgltrn lSPKKBA tkmplg tkmplg
+
+IMAGE(tmptranst)
+/--------------------------------------\
+  t.Kunjungan       t.SelfieDgnAgen    
+ /--s.UPLOAD------\ /--s.UPLOAD2-----\ 
+ |                | |                | 
+ |                | |                | 
+ |                | |                | 
+ |                | |                | 
+ |                | |                | 
+ |                | |                | 
+ \----------------/ \----------------/ 
+  spasi                                
+  t.SsFlwAkun                          
+ /--s.UPLOAD3-----\                    
+ |                |                    
+ |                |                    
+ |                |                    
+ |                |                    
+ |                |                    
+ |                |                    
+ \----------------/                    
+ /------------------------------------\
+  t.NipReview     : _________________
+  t.TglReview     : _________________
+  t.NoWaAktif     :  ___
+  t.FotoKunj      :  ___
+  t.FotoSelfie    :  ___
+  t.FotoSSFlwAkun :  ___
+  t.KetReview	: ___________________
+  t.Nama	: ___________________
+  t.NoWaAktif	: ___________________
+  t.Pekerjaan	: __________________
+  t.SubPekerjaan: __________________
+  t.Industri	: __________________
+		  ___________________
+  t.Perusahaan	: ___________________
+  t.JmlKaryawan	: ____ ______________
+  t.AdaKomunitas:  __ 
+  t.Komunitas	: ____ ______________
+  t.JmlAnggota	: ____ _______________
+  t.JlmMotor	: ____ _______________
+  t.MedSos	: ___________________
+  t.NamaAkun	: ____________________
+  t.JmlFollower	: ____________________
+  t.PasangBanner:  __
+  t.Enter         :  ___
+ \------------------------------------/
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkkode9      	PROTECT              	INPUTRI 1       /* nip */
+spktgl        	PROTECT {DD-MM-YYYY} 	INPUTRI 2       /* tgl */
+spkkode10     	CHECKBOX             	INPUTRI 3       /* wa aktif */
+spkkat4       	CHECKBOX             	INPUTRI 4       /* foto kunjungan */
+spkkat3       	CHECKBOX             	INPUTRI 5       /* foto selfie */
+spkket3       	CHECKBOX             	INPUTRI 6       /* foto follow */
+spkreview	ALLCAPS			INPUTRI 6
+spknama       	PROTECT              	INPUTRI 7 	/* NAMA */
+spknohp       	PROTECT              	INPUTRI 8 	/* NOHP */
+spkkode2      	PROTECT 	       	INPUTRI 9 	/* PEKERJAAN */
+spkkode3      	PROTECT          	INPUTRI 10 	/* SUBPEKERJAAN */
+spkkode4      	PROTECT          	INPUTRI 11 	/* INDUSTRI */
+lindustri     	PROTECT          	INPUTRI 12 	/* INDUSTRI */
+spkket        	TEXTAREA PROTECT     	INPUTRI 13 	/* PERUSAHAAN */
+ljmlkry       	PROTECT              	INPUTRI 14 	/* JMLKRY */
+spkkode5      	PROTECT              	INPUTRI 15 	/* JMLKRY */
+spkkode6      	PROTECT              	INPUTRI 16 	/* KOMUNITAS */
+lkomunitas    	PROTECT              	INPUTRI 17 	/* JML KOMUNITAS */
+spkkode7      	PROTECT              	INPUTRI 18 	/* JML KOMUNITAS */
+ljmlkom       	PROTECT              	INPUTRI 19 	/* JML ANGGOTA */
+spkkode8      	PROTECT              	INPUTRI 20 	/* JML ANGGOTA */
+ljmlmotor     	PROTECT              	INPUTRI 21 	/* JML MOTOR */
+spkkode       	PROTECT              	INPUTRI 22 	/* JML MOTOR */
+spkkode10     	PROTECT              	INPUTRI 23 	/* MEDSOS */
+spkket2       	PROTECT              	INPUTRI 24 	/* NAMA AKUN */
+spkkat        	PROTECT              	INPUTRI 25 	/* JMLFLWR */
+spkkat2       	PROTECT              	INPUTRI 26 	/* BANNER */
+lenter        	NOCHANGE             	INPUTRI 26
+
+CALCS()
+cCragen                 tkmsts != "OPEN" && tkmkode == "CR_AGEN"
+cdjoinaktcragen1        djoinaktcragen == 1 && tkmkode == "CR_AGEN" && spkkat4 == "Y" && spkkat3 == "Y" && spkket3 == "Y"
+cdjoinaktcragen0        djoinaktcragen == 0 && tkmkode == "CR_AGEN" && spkkat4 == "Y" && spkkat3 == "Y" && spkket3 == "Y"
+ctotalcragen            akttotal + 1
+cVALID			"VALID"
+cTidakValid             "TDK_VALID"
+crevvalid		spkkat4 == "SESUAI" && spkket2 == "SESUAI" && spkkode10 == "SESUAI" && spkalamat2 == "YA"
+cjikatdkvalid           spkhasil2 == "TDK_VALID"
+
+EDITS(tmptranst)
+e.Mandatory     spkkode10	MANDATORY
+e.Mandatory     spkkat4  	MANDATORY
+e.Mandatory     spkkat3  	MANDATORY
+e.Mandatory     spkket3  	MANDATORY
+e.Mandatory	spkreview	MANDATORY
+
+DEFAULTS(tmptranst)
+spktglft4       INIT            {g_tgltrn}
+/*spkkode10     DFALT_SCAN      BLANKS Y T
+spknoasal       DFALT_SCAN      BLANKS Y T
+spkket2         DFALT_SCAN      BLANKS Y T
+spkket3         DFALT_SCAN      BLANKS Y T*/
+
+MAP(mniprevx)
+g_usrkode     	spkkode9      	REPLACE
+g_strksg	spkhasil	REPLACE
+cVALID		spkhasil      	DO_CALC_IF crevvalid
+cTidakValid     spkhasil        DO_CALC_IF cjikatdkvalid
+
+MAP(mupdabkcragen)
+gv_CLSD       	abksts        	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mniprevx
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND      cCragen
+SFL_UPLFLD    spknobuk spkfoto
+SFL_UPLFLD2   spknobuk spkfoto5
+SFL_UPLFLD3   spknobuk spkfoto6
+SFL_UPLREADONLY
+SFL_UPL_DIRFLD	tkmcab
+SFL_TARGET    spkdatbuktyp    lCR_AGEN tkmnobuk
+
+MAP(mapdebug)
+DEBUG	ldebug	ldebug		REPLACE
+
+MAP(maddaktcragen)
+tkmplg          aktkode         REPLACE
+lSPKKBA         aktdata         REPLACE
+tkmplg          akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+tkmplg          aktkode2        REPLACE
+ctotalcragen    akttotal        DO_CALC
+
+MAP(mupdaktcragen)
+ctotalcragen    akttotal        DO_CALC
+
+CALCS()
+crevgabxx	(tkmsts != "CLSD" && (g_usrkode == spkkode9 || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS" || g_grpnam=="TLDHMC" 
+                || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" || g_grpnam == "PICMKT" || g_grpnam == "PICMKTM2W" || g_grpnam == "DIGMKTSPV" || g_grpnam == "NSOHEAD")) ||
+                (tkmsts == "CLSD" && spkhasil == "VALID" && (g_grpnam == "SPVKLIKNSC" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "KLIKNSCM2WHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "DIGMKT"))
+
+SPCALCS(sptmpabkcragen)
+       DO_LIB ap_dbclc(DNAME dupdabkcragen,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tkmnobuk,DMAP mupdabkcragen);
+       DO_LIB ap_dbclc(DNAME dmapmap, DCOMMAND MAPMAP,DMAP mapdebug);
+
+       DO_LIB ap_dbclc(DNAME dupdtkmcragen,DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkmmaster);
+
+       DO_LIB_IF cdjoinaktcragen1  	ap_dbclc(DNAME dupdaktcragen,DCOMMAND UPDATE, DTARGET akttgltypidx g_tgltrn lSPKKBA tkmplg tkmplg, DMAP mupdaktcragen);
+       DO_LIB_IF cdjoinaktcragen0	ap_dbclc(DNAME daddaktcragen,DCOMMAND ADD, DFILE akt, DMAP maddaktcragen);
+
+POSTING(tmptrans)
+	PST_UPDCMD	sptmpabkcragen
+
+PERMIT(tmptrans)
+	PMT_ADD_COND         c0
+	PMT_UPDALL_COND      crevgabxx
+	PMT_DEL_COND         c0

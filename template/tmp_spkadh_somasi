@@ -1,0 +1,510 @@
+LOCAL
+PGM_FIELDS
+lnobuk737	STRING	21
+lktpsom		STRING	21
+lbrkssom	STRING	21
+lresi		STRING	21
+lbukti		STRING	21
+ltompjsom       STRING  21
+ltomdvhsom      STRING  21
+ltomuplresi	STRING	21
+ltombuplsom	STRING	21
+lrevhosom       STRING  11
+lrevdvhsom      STRING  11
+lversom		STRING	11
+ldvssom		STRING	21
+lcabsom		STRING	21
+ljmlsomasi	INT2	 2
+ltkdjml3	INT2	 2
+
+CALCS() 
+ctkdsom         tkdnoll == "SOMASI"
+csdhsomasi	#svikode == svikode
+
+/*============ cek data svi ===========*/
+
+MAP(mscansomasi)
+l1              ljmlsomasi    REPLACE_IF csdhsomasi
+DBCALCS(dscansomasi)
+        DBC_COMMAND     SCANSCAN_BUF3
+        DBC_TARGET      svidatbuktyp  lSPKADH11 tkmnobuk lSOMASI
+        DBC_SELECT      csdhsomasi
+        DBC_SUM_MAP     mscansomasi
+
+
+/*============ join ambil tkd ============*/
+MAP(mmenitkirim)
+tkdjml3		ltkdjml3	REPLACE
+DBCALCS(djointkdsom)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkdbukidx svinobuk gv_OPEN svinourt
+        DBC_SELECT      ctkdsom
+	DBC_MAP		mmenitkirim
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.KIRIMSOMASI			     ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||		___	 	     ||
+||t.NoFak	__________ __________||_
+||t.Sts		__________ __________||
+||t.NobukSom	_____________________||
+||t.KrmVia	____________________ ||
+||t.TglKirim	_____________________||
+||t.NoResi      _____________________||
+||t.TglTrm      _________  __________||
+||			       ______||
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.BerkasSom			  ___ |
+|\-----------------------------------/|
+|/-------------DOCUPLOAD-------------\|
+||				     ||
+||				     ||
+||				     ||
+||				     ||
+||				     ||
+|\-----------------------------------/|
+
+|/-----------------------------------\|
+| t.BuktiKirim			  ___ |
+|\-----------------------------------/|
+|/--------------UPLOAD2--------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||  
+|\-----------------------------------/|
+			 ____________
+
+|/-----------------------------------\|
+| t.BuktiTerima			  ___ |
+|\-----------------------------------/|
+|/--------------UPLOAD3--------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||  
+|\-----------------------------------/|
+		 	 ____________
+
+|/-----------------------------------\|	
+| t.RevHO       __________ __ _______ |
+|               _____________________ |
+| t.RevDVH      __ __________________ |
+|               _____________________ |
+| ________________   ________________ |
+|       __                 __         |
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt		PROTECT			INPUTRI  1   /*No Urut*/
+svikode			ALLCAPS			INPUTRI  2   /*No Faktur*/
+svinama			PROTECT ALLCAPS		INPUTRI  3   /*Nama Debitur*/
+lktpsom			UNSEEN PROTECT		INPUTRI  3   /*untuk taro ktpsom*/
+svists			PROTECT			INPUTRI  4   /*Status Somasi*/
+svistr6			PROTECT			INPUTRI  5   /*Keterangan Somasi*/ 
+svistr7			PROTECT			INPUTRI  6   /*Nobuk scr737*/
+svitype3		NOCHANGE		INPUTRI	 7   /*Via Kolektor or Paket*/
+svitgl1			NONE {DD-MM-YY}		INPUTRI  8   /*Tgl Pengiriman*/
+svistr1                 ALLCAPS                 INPUTRI  9   /*No Resi*/
+svistr2                 NOCHANGE                INPUTRI 10   /*Ket. Resi*/
+svitgl2                 NONE {DD-MM-YY}         INPUTRI 11   /*Tgl Diterima*/
+lenter			ALLCAPS			INPUTRI	12   /*Tombol Enter*/
+
+svistr3                 PROTECT                 INPUTRI 13   /*Tanda Upload Berkas SOM*/
+svistr4                 PROTECT                 INPUTRI 14   /*Tanda Upload Resi*/
+ltomuplresi		TOMBOL			INPUTRI 15   /*Tombol Upload Resi*/
+svistr5                 PROTECT                 INPUTRI 16   /*Tanda Bukti Terima*/
+ltombuplsom		TOMBOL			INPUTRI 17   /*Tombol Upload OK*/
+
+svitype2        	PROTECT                 INPUTRI 18 /*NIP Rev HO*/
+svistr34        	NOCHANGE                INPUTRI 19 /*ket Rev SPV*/
+lrevhosom	      	PROTECT                 INPUTRI 20
+sviket2         	TEXTAREA                INPUTRI 21 /*isi ket review HO*/
+svistr35        	NOCHANGE                INPUTRI 22 /*ket Rev DVH*/
+lrevdvhsom	     	PROTECT                 INPUTRI 23
+sviket3         	TEXTAREA                INPUTRI 24 /*isi ket review DVH*/
+
+ltompjsom     		TOMBOL          	INPUTRI 25
+ltomdvhsom      	TOMBOL          	INPUTRI 27
+svistr36        	PROTECT         	INPUTRI 26
+svistr37        	PROTECT	        	INPUTRI 28
+
+
+CALCS()
+cbtstanda		svidf1 < 3
+ctdsom			svidf1 + 1
+cupdsom			g_curcmd == 2
+cisiresi		svitype3 == "PAKET"
+ckrmsom         	svistr31 == "Y" && svistr32 == "Y"
+cblmkirim		(g_curcmd == 1 && svists == "OPEN") ||
+			(g_curcmd == 2 && svistr32 != "Y" && svistr4 != "OK") || 
+			(g_curcmd == 2 && svistr32 == "Y" && svistr4 != "OK") 
+csdhkirim		svistr31 == "Y" && svistr32 == "Y" && svistr4 == "OK"
+cINPG           	"INPG"
+cKIRIM          	"KIRIM"
+cCLSD           	"CLSD"
+cmenitkol		tkdnourt == svinourt && djointkdsom == 1 && svitype3 == "KOLEKTOR" && 
+			svistr2 == BLANKS && svitgl2 == BLANKS && svistr31 == "Y" && svistr32 == "Y" && svistr3 == "OK" && svistr4 != "OK" 
+	
+cmenitpkt		tkdnourt == svinourt && djointkdsom == 1 && svitype3 == "PAKET"	   &&
+			svistr2 == BLANKS && svitgl2 == BLANKS && svistr31 == "Y" && svistr32 == "Y" && svistr3 == "OK" && svistr4 != "OK"
+
+ctrmsom         	svistr33 == "Y" && svitgl2 != BLANKS && svistr3 != BLANKS
+creminder		svists == "OPEN" && svistr2 == BLANKS && svitgl2 == BLANKS
+/*
+csdhuplsom		svists == "CLSD"
+cokberkas		svistr31 == "Y"
+*/
+cjoinurtsom0    	djoinurutsom==0 && g_curcmd==1
+cjoinurtsom1    	djoinurutsom==1 && g_curcmd==1
+curtsom1        	FLD_TO_STRING(svinourt) + "BERKAS"
+curtsom2        	FLD_TO_STRING(svinourt) + "RESI"
+curtsom3        	FLD_TO_STRING(svinourt) + "BUKTI"
+csomasicek      	g_curcmd==1 && (dscansomasi==0 || dscansomasi!=0) && ljmlsomasi < 1
+cketterima		"Upload Bukti Terima Somasi No. " + svistr1
+crev1som        	svistr34 == "1" && svitype == "SOMASI"
+crev1asom       	svistr35 == "1" && svitype == "SOMASI"
+crev2som        	svistr34 == "2" && svitype == "SOMASI"
+crev2asom       	svistr35 == "2" && svitype == "SOMASI"
+cpjhosdhrevsom          svistr34 != BLANKS
+cdvhsdhrevsom           svistr35 != BLANKS
+cupdterima		svistr2 == "DITERIMA" && svitgl2 != BLANKS && svistr33 =="Y" && svistr5 != "OK"
+ctam5mnt		ltkdjml3 + 5
+cupdmenitterima		tkdnourt == svinourt && djointkdsom == 1
+cjointkdsom		djointkdsom == 1
+chrsdvscab		ldvssom == "M4W" && lcabsom == tkmcab
+cpilihkolektor		svitype3 == "KOLEKTOR"
+cnobuksama		aktnobuk == svinobuk
+cisiterima		(svists == "OPEN" && svistr4 != "OK") || (svists == "INPG" && svistr2 != BLANKS && svitgl2 != BLANKS)
+cisiterimax		svists == "INPG" && svistr2 == BLANKS && svitgl2 == BLANKS
+/*ctglkirimbenar		(svists == "OPEN" && svitgl2 == BLANKS) || (svists == "INPG" &&  svitgl2 >= svitgl1)
+*/
+DEFAULTS(tmptranst)
+lversom			INIT			2606.18v1
+svistr2			DFALT_SCAN_BLANKS	DITERIMA
+svistr34		DFALT_SCAN_BLANKS	1 "ACC"
+						2 "TACC"
+svistr35		DFALT_SCAN_BLANKS	1 "ACC"
+						2 "TACC"
+svitype3		DFALT_SCAN_BLANKS	KOLEKTOR
+						PAKET
+svists			INIT			OPEN
+lbrkssom		INIT			SOM_BERKAS
+lresi			INIT			SOM_RESI
+lbukti			INIT			SOM_BUKTI
+ltomuplresi		INIT			"UPLOAD KIRIM"
+ltombuplsom		INIT			"UPLOAD TERIMA"
+ltompjsom               INIT                    "SELESAI REV PJ HO"
+ltomdvhsom              INIT                    "SELESAI REV DVH"
+IF chnypjho svitype2	INIT_UPDATE		{g_usrkode}
+
+EDITS(tmptranst)
+e.Wajib Isi Kirim Via			svitype3	MANDATORY
+e.Tgl Kirim Tidak Boleh Kosong		svitgl1		MANDATORY
+e.No Resi Tidak Boleh Kosong		svistr1		MANDATORY_IF cisiresi
+
+e.Faktur Belum Input di 737  		svikode 	VALIDATE pikdatbukidx mfktrsom {Pgv_dtpiu}
+e.Ktp di Faktur Belum Ditambahkan	lktpsom         VALIDATE psmktpidx mktpsom 0
+
+/*===== Ambil Data Somasi 737 =====*/
+MAP(mdtsom)
+tlmnobuk        lnobuk737       REPLACE
+DBCALCS(djoinsom)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdataslsts lSOMASI svikode
+        DBC_MAP         mdtsom
+
+CALCS()
+cjoinsom        djoinsom == 1
+
+/*===== MAP validate =====*/
+MAP(mfktrsom)
+pikplg          lktpsom         REPLACE
+pikdvs		ldvssom		REPLACE
+pikcab		lcabsom		REPLACE	
+cBLANKS         lrevhosom       DO_CALC
+cBLANKS         lrevdvhsom      DO_CALC
+cACC	        lrevhosom       DO_CALC_IF crev1som
+cTACC           lrevhosom       DO_CALC_IF crev2som
+cACC	        lrevdvhsom      DO_CALC_IF crev1asom
+cTACC           lrevdvhsom      DO_CALC_IF crev2asom
+ltkdjml3	ltkdjml3	REPLACE_IF cjointkdsom
+
+MAP(mktpsom)
+cBLANKS		svinama		DO_CALC
+psmnama         svinama         REPLACE
+lnobuk737       lnobuk737       REPLACE_IF cjoinsom
+/*
+cOK             svistr3         DO_CALC_IF cokberkas
+cOK             svistr4         DO_CALC_IF ckrmsom
+cOK             svistr5         DO_CALC_IF csdhuplsom
+*/
+/*===== MAP HOOKS =====*/
+MAP(mdtsom2)
+lnobuk737       svistr7         REPLACE_IF cjoinsom
+lbrkssom        svistr8         REPLACE
+lresi           svistr9         REPLACE
+
+MAP(murtsom)
+l1		svinourt	REPLACE_IF cjoinurtsom0
+curut		svinourt	DO_CALC_IF cjoinurtsom1
+curtsom1	svistr8		DO_CALC
+curtsom2	svistr9		DO_CALC
+
+MAP(mhslrevsom)
+cACC            lrevhosom       DO_CALC_IF crev1som
+cTACC           lrevhosom       DO_CALC_IF crev2som
+cACC            lrevdvhsom      DO_CALC_IF crev1asom
+cTACC           lrevdvhsom      DO_CALC_IF crev2asom
+lrevhosom	lrevhosom	REPLACE
+lrevdvhsom	lrevdvhsom	REPLACE
+
+/*===== MAP tombol Resi =====*/
+MAP(mupdtkdsom)
+l7		tkdjml3		REPLACE_IF cmenitkol
+l57		tkdjml3		REPLACE_IF cmenitpkt
+
+MAP(mupd1mnt)
+l2		tkdjml3		REPLACE_IF cmenitkol
+l2		tkdjml3		REPLACE_IF cmenitpkt
+
+MAP(mstsinpg)
+cINPG           svists          DO_CALC_IF ckrmsom
+cKIRIM          svistr6         DO_CALC_IF ckrmsom
+cOK             svistr4         DO_CALC_IF ckrmsom
+lbukti          svistr10        REPLACE_IF ckrmsom
+curtsom3        svistr10        DO_CALC_IF ckrmsom
+
+MAP(maddaktterima)
+tkmnobuk	aktnobuk	REPLACE
+tkmplg		aktkode		REPLACE
+tkmcab		aktlok		REPLACE
+tkmtgl		akttgl		REPLACE
+tkmcab		aktcab		REPLACE
+tkmnobuk	aktbrg		REPLACE
+svikode		aktkode2	REPLACE
+svidata		aktdata		REPLACE
+lSOMASI21       akttype         REPLACE
+cketterima	aktket		DO_CALC
+
+/*===== MAP tombol Terima =====*/
+MAP(mstsclsd)
+cCLSD		svists		DO_CALC_IF ctrmsom
+cBLANKS		svistr6		DO_CALC_IF ctrmsom
+cOK             svistr5         DO_CALC_IF ctrmsom
+
+MAP(mupdaktterima)
+svitgl2		akttgl2		REPLACE_IF ctrmsom
+
+MAP(mtam5mnt)
+ctam5mnt	tkdjml3		DO_CALC_IF cupdmenitterima
+
+/*===== upd tkd review =====*/
+MAP(mmapsom)
+cnobukrevspk    lnobukrevspk            DO_CALC
+DEBUG           ldum    ldum            REPLACE
+
+
+MAP(mupdrevpjhosom)
+ctam1           tkdjml          DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum ldum       REPLACE
+DBCALCS(dupdrevpjhosom)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevpjhosom
+
+MAP(mupdrevdvhsom)
+ctam1           tkdjml          DO_CALC_IF csdhrevdvh1
+ctamnip1	tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dupdrevdvhsom)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+        DBC_MAP         mupdrevdvhsom
+
+MAP(muprevdpjhosom1)
+lOK             svistr36                REPLACE_IF cpjhosdhrevsom
+
+MAP(mupdrevdvhsom1)
+lOK             svistr37                REPLACE_IF cdvhsdhrevsom
+
+MAP(mupdrevabkpjhosom1)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhsom1)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spupdtombolresi)
+DO_LIB_IF crecord1	ap_dbclc(DNAME dupdsom,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll svidata svinobuk lSOMASI21,DMAP mupdtkdsom);
+DO_LIB_IF crecordnext   ap_dbclc(DNAME dupd1mnt,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll svidata svinobuk lSOMASI21,DMAP mupd1mnt);
+DO_LIB_IF creminder     ap_dbclc(DNAME daddaktterima,DCOMMAND ADD,DFILE akt,DMAP maddaktterima);
+DO_LIB			ap_dbclc(DNAME dupdstssom,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mstsinpg);
+
+SPCALCS(spupdtombolterima)
+DO_LIB_IF cupdterima    ap_dbclc(DNAME dupdmenitterima,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll svidata svinobuk lSOMASI21,DMAP mtam5mnt);
+DO_LIB			ap_dbclc(DNAME dupdoksvisom,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mstsclsd);
+DO_LIB                  ap_dbclc(DNAME daddaktterima2,DCOMMAND UPDATE_RANGE,DTARGET aktkod2typid svikode svidata lSOMASI21 tkmtgl,DBC_SELECT cnobuksama, DMAP mupdaktterima);
+
+SPCALCS(spupdrevpjhosom)
+DO_LIB          		ap_dbclc(DNAME dmapsom1,DCOMMAND MAPMAP,DMAP mmapsom);
+DO_LIB          		ap_dbclc(DNAME dupdoksom1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhosom1);
+dupdrevpjhosom
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjsom1,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhosom1);
+
+SPCALCS(spupdrevdvhsom)
+DO_LIB         	 		ap_dbclc(DNAME dmapsom2,DCOMMAND MAPMAP,DMAP mmapsom);
+DO_LIB          		ap_dbclc(DNAME dupdoksom2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhsom1);
+dupdrevdvhsom
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhsom1,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhsom1);
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF chrsdvscab      mdum
+                ELSE
+                HKCURSOR STAY
+                HKMSG    Bukan Faktur Cabang atau Divisi M4W
+
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF csomasicek      mdum
+                ELSE
+                HKCURSOR STAY
+                HKMSG    No Faktur Sudah Ditambahkan
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW mdtsom2
+
+BEFORE_INPUT	cur_field=svikode	DO_SKIP_IF cupdsom
+
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF cblmkirim 
+BEFORE_INPUT	cur_field=svitgl2	DO_SKIP_IF cblmkirim
+
+/*AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF ctglkirimbenar
+		ELSE
+		HKCURSOR STAY
+		HKMSG	Tanggal Terima Tidak Boleh Kurang Dari Tanggal Kirim
+*/
+BEFORE_INPUT	cur_field=svitype3	DO_SKIP_IF csdhkirim 
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF csdhkirim	
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF csdhkirim
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cpilihkolektor
+
+CLICKED		cur_field=ltomuplresi	DO_SPCALCS spupdtombolresi
+
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW murtsom
+CLICKED		cur_field=ltombuplsom 	DO_SPCALCS spupdtombolterima
+
+BEFORE_INPUT	cur_field=svikode	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svitgl1       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr2       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltomuplresi   DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svitgl2       DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF crevho
+BEFORE_INPUT	cur_field=ltombuplsom	DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      DO_SKIP_IF cpjho
+BEFORE_INPUT	cur_field=lrevhosom	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35      DO_SKIP_IF cdvh
+BEFORE_INPUT	cur_field=lrevdvhsom	DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cdvh
+
+AFTER_INPUT     cur_field=svistr34      DO_MAP SHOW mhslrevsom
+AFTER_INPUT     cur_field=svistr35      DO_MAP SHOW mhslrevsom
+
+CLICKED         cur_field=ltompjsom     DO_SPCALCS spupdrevpjhosom
+CLICKED         cur_field=ltomdvhsom    DO_SPCALCS spupdrevdvhsom
+
+/*========= tanda sudah upload berkas =========*/
+MAP(mupdsvisom)
+ctdsom          svidf1          DO_CALC_IF cbtstanda
+cY		svistr31	DO_CALC
+cOK             svistr3         DO_CALC
+DBCALCS(dupdsvisom)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvisom
+
+/*========= tanda sudah upload resi =========*/
+MAP(mupdsvisom2)
+ctdsom          svidf1          DO_CALC_IF cbtstanda
+cY	        svistr32        DO_CALC
+DBCALCS(dupdsvisom2)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvisom2
+
+/*========= tanda sudah upload penerimaan =========*/
+MAP(mupdsvisom3)
+ctdsom          svidf1          DO_CALC_IF cbtstanda
+cY	        svistr33        DO_CALC
+DBCALCS(dupdsvisom3)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvisom3
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tkmtgl
+SFL_DOCUPLFLD  	svinobuk   svistr8  /*upload berkas som*/
+SFL_UPLFLD2 	svinobuk   svistr9  /*upload resi*/
+SFL_UPLFLD3 	svinobuk   svistr10 /*upload bukti penerimaan*/
+SFL_DOCUPLFLD_DBCALCS dupdsvisom    /*tanda upload berkas som*/
+SFL_UPLFLD2_DBCALCS   dupdsvisom2   /*tanda upload resi*/
+SFL_UPLFLD3_DBCALCS   dupdsvisom3   /*tanda upload bukti penerimaan*/
+SFL_UPL_COND 		cisiterima
+SFL_UPL_COND_MSG IF	cisiterimax Tanggal Diterima Tidak Boleh Kosong
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lSOMASI
+SFL_MAP
+tkmnobuk        svinobuk
+lSPKADH11       svidata
+lSOMASI         svitype
+
+MAP(maddtkdsom)
+tkmnobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+lSOMASI21       tkdnoll         REPLACE
+tkmtgl          tkdtgl          REPLACE
+gv_OPEN         tkdsts          REPLACE
+tkmplg          tkdstr1         REPLACE
+svinourt        tkdnourt        REPLACE
+
+MAP(maddtkdrevsom)
+cnobukrevspk    tkdnobuk        DO_CALC
+lnobukrevspk    tkdnobuk        REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn        tkdtgl          REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1              tkdnourt        REPLACE
+lREVSPKADH      tkddata         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+SPCALCS(spaddtkdsom)
+DO_LIB          ap_dbclc(DNAME daddtkdsom,DCOMMAND ADD,DFILE tkd,DMAP maddtkdsom);
+
+SPCALCS(spupdtkdsom1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdsom1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevsom);
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtkdsom
+PST_UPDCMD	spupdtkdsom1
+

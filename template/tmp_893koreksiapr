@@ -1,0 +1,36 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.HapusApr                             |
+|------------------------------------t--|
+|____________________________________|  |
+\------------------------------------.--/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lenter          NOCHANGE        INPUTRI         1
+
+DEFAULTS(tmptranst)
+lenter          INIT            "Tekan ENTER untuk hapus apr"
+
+MAP(mupdtlmapr)
+cBLANKS         tlmstsapr       DO_CALC
+
+SPCALCS(sphpsapr)
+DO_LIB ap_dbclc(DNAME ddelapr, DCOMMAND DELETE_RANGE, DTARGET aprbukkeurt tlmnobuk);
+DO_LIB ap_dbclc(DNAME dupdtlmapr, DCOMMAND UPDATE, DTARGET tlmbukidx tlmnobuk, DMAP mupdtlmapr);
+
+POSTING(transe2g1)
+PST_COMMAND     sphpsapr
+
+CALCS()
+chapusapr    tlmsts=="OPEN" && tlmstsapr != BLANKS && (g_grpnam == "ADHSPV" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHDVH" || g_grpnam == "RI" || g_grpnam == "IT")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND chapusapr
+SFL_TARGET
+        aprbukkeurt       tlmnobuk
+

@@ -1,0 +1,141 @@
+LOCAL
+PGM_FIELDS
+lnamapasangan1	STRING	61
+lnamapenjamin1	STRING	61
+lnamadebitur1	STRING	61
+ljamselesainya	TIME	 4
+ljenis		STRING	11
+lhpdebi1	STRING	21
+lhppas1		STRING	21
+lhppenj1	STRING	21
+lhppasangan1	STRING	21
+lhppenjamin1	STRING	21
+
+MAP(mjoinhpdebi)
+conhp           lhpdebi1          REPLACE
+DBCALCS(djoinhpdebi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx svikode
+	DBC_MAP		mjoinhpdebi
+
+MAP(mjoinhppas)
+conhp           lhppas1          REPLACE
+DBCALCS(djoinhppas)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx svistr5
+	DBC_MAP		mjoinhppas
+
+MAP(mjoinhppenj)
+conhp           lhppenj1          REPLACE
+DBCALCS(djoinhppenj)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx svistr4
+	DBC_MAP		mjoinhppenj
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.IdDeb       : _______________ |
+ |t.Namadeb     : _______________ |
+ |i.Handphone	: _______________ |
+ |t.IdPasangan  : _______________ |
+ |t.NamaPasangan: _______________ |
+ |i.Handphone   : _______________ |
+ |t.IdPenjamin  : _______________ |
+ |t.NamaPenjamin: _______________ |
+ |i.Handphone   : _______________ |
+ |t.Jamsel      : __________      |
+ |              : __________ _____|
+ |                ______ _______  |
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode		PROTECT		INPUTRI 1
+lnamadebitur1	PROTECT		INPUTRI 1
+lhpdebi1	PROTECT		INPUTRI 1
+svistr5		ALLCAPS SCROLL	INPUTRI 2
+lnamapasangan1	PROTECT		INPUTRI 3
+lhppasangan1	PROTECT		INPUTRI 3
+svistr4		ALLCAPS SCROLL		INPUTRI 4
+lnamapenjamin1	PROTECT		INPUTRI 5
+lhppenjamin1	PROTECT		INPUTRI	5
+svistr3		PROTECT		INPUTRI 6
+svitgl1		PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 7
+ljamselesainya	PROTECT		INPUTRI 8
+lenter		ALLCAPS		INPUTRI 8
+svidata		PROTECT QPROTECT INPUTRI 9
+
+
+DEFAULT(tmptranst)
+svidata		INIT		SLIK
+svitype		INIT		DTPASPEN
+ljenis		INIT		DTJENIS
+lSLIK		INIT		SLIK
+ldtpaspen	INIT		DTPASPEN
+
+CALCS()
+cpenjamin	svitype == "PENJAMIN"
+cdjoinhppas	djoinhppas == 1
+cdjoinhppenj	djoinhppenj == 1
+cdjoinhpdebi	djoinhpdebi == 1 
+
+EDITS(tmptranst)
+e.Validate1	svikode		VALIDATE psmplgstsktp mpsmdeb {Pgv_dtkonsumen} {Pgv_INPG}
+e.Validate2	svistr5		VALIDATE psmplgstsktp mpsmpas spsm2 {Pgv_dtkonsumen} {Pgv_INPG}
+e.Validate3	svistr4		VALIDATE psmplgstsktp mpsmpenj spsm3 {Pgv_dtkonsumen} {Pgv_INPG}
+
+
+CALCS()
+cSLIK		"SLIK"
+cDTPASPEN	"DTPASPEN"
+
+MAP(mpsmpas)
+psmktp 			svistr5		REPLACE
+psmnama			lnamapasangan1	REPLACE
+lnamapasangan1		lnamapasangan1	REPLACE
+lhppas1			lhppasangan1	REPLACE_IF cdjoinhppas
+
+MAP(mpsmpenj)
+psmktp 			svistr4		REPLACE
+psmnama			lnamapenjamin1	REPLACE
+lhppenj1		lhppenjamin1	REPLACE_IF cdjoinhppenj
+
+MAP(mpsmdeb)
+psmnama			lnamadebitur1	REPLACE
+cSLIK			lSLIK		DO_CALC
+cDTPASPEN		ldtpaspen	DO_CALC
+svidf3			ljamselesainya	REPLACE
+lhpdebi1		lhpdebi1	REPLACE_IF cdjoinhpdebi
+
+CALCS()
+cgabolehsamapen	 svistr5 != svistr4
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svistr5	DO_SKIP_IF cpenjamin
+AFTER_INPUT		cur_field=svistr4        DO_MAP SHOW
+                        IF cgabolehsamapen   mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Penjamin Tidak Boleh Sama Dengan Pasangan
+
+CALCS()
+cbelumada		djoinsviposslik == 1 && lsvistr1debitur == "NONTUNGGAL"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cbelumada
+SFL_TARGET
+        svidatkodtyp lSLIK btmplg ldtpaspen  gv_INPG
+
+SFL_MAP
+btmnobuk		svinobuk	REPLACE
+btmplg			svikode		REPLACE
+gv_INPG			svists		REPLACE
+ldtpaspen		svitype		REPLACE
+lSLIK			svidata		REPLACE
+

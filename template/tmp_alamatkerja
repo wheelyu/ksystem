@@ -1,0 +1,114 @@
+LOCAL
+PGM_FIELDS
+lpropinsi5		STRING		61
+lkota5			STRING		61
+lkec5			STRING		61
+lkel5			STRING		61
+lkodert                 STRING          21
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   i.Alamatkrj : _____________________________________________________________
+   i.Propinsi  : _______________ _____________________________________________
+   i.Kota      : _______________ _____________________________________________
+   i.Kec       : _______________ _____________________________________________
+   i.Kel       : _______________ _____________________________________________
+   i.RT         : ______
+   i.RW         : ______
+   i.KodePos   : ________                            
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+almjalan		TEXTAREA			INPUTRI 2
+almprop			ALLCAPS SCROLL			INPUTRI 3
+lpropinsi5		PROTECT QPROTECT		INPUTRI 4
+almkota			ALLCAPS SCROLL			INPUTRI 5
+lkota5			PROTECT QPROTECT 		INPUTRI 6
+almkec			ALLCAPS SCROLL			INPUTRI 7
+lkec5			PROTECT QPROTECT		INPUTRI 8
+almkel			ALLCAPS SCROLL			INPUTRI 9
+lkel5			PROTECT QPROTECT		INPUTRI 10
+almrt                   NUMERIC                         INPUTRI 11
+almrw                   NUMERIC                         INPUTRI 11
+almkdpos		ALLCAPS SCROLL			INPUTRI 12
+
+IMAGE(tmptrans) 
+
+DEFAULT(tmptranst)
+lkodert		INIT		KODERT
+
+EDITS(tmptranst)
+e.validatePropinsi3	almprop VALIDATE dtmdtkodidx  mdtm5 sdtm {Pgv_dtkota}
+e.validateKota3		almkota VALIDATE tbldtdtmkod mtbl5 stbl {Pgv_dtkota} {Palmprop}
+e.validateKec3		almkec VALIDATE tbddatkodidx mtbd5 stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel3		almkel VALIDATE tbtdattypkod mtbt5 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+t.validateRT            almrt VALIDATE tbddatkodidx mtbdrt1 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW            almrw VALIDATE tbddatkodidx mtbdrw1 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+
+e.Mandatoryjalan2       almjalan      MANDATORY
+e.Mandatoryrt2          almrt         MANDATORY
+e.Mandatoryrw           almrw         MANDATORY
+e.Mandatoryprop         almprop       MANDATORY
+e.Mandatorykota         almkota       MANDATORY
+e.Mandatorykec          almkec        MANDATORY
+e.Mandatorykel          almkel        MANDATORY
+e.Mandatorykdpos      almkdpos      MANDATORY
+
+
+MAP(mtbt5)
+tbtkode			almkel 			REPLACE
+tbtket			lkel5			REPLACE
+
+MAP(mtbd5)
+tbdkode			almkec 			REPLACE
+tbdket			lkec5			REPLACE
+
+MAP(mtbl5)
+tblkode			almkota 		REPLACE
+tblket			lkota5			REPLACE
+
+MAP(mdtm5)
+dtmkode			almprop 		REPLACE
+dtmket			lpropinsi5		REPLACE
+
+MAP(mtbdrt1)
+tbdkode         almrt         REPLACE
+
+MAP(mtbdrw1)
+tbdkode         almrw         REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=almjalan DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	 almotodatidx	btmplg gv_psmkerja
+
+SFL_MAP
+gv_psmkerja     almdata         REPLACE
+btmplg          almbukoto       REPLACE
+
+
+CALCS()
+cblmadakerja	(btmsts=="714" && djoinalmkerja==0 && g_scrnumstr=="714") || (btmsts=="711" && djoinalmkerja==0 && g_scrnumstr=="711")
+cadakerja	(btmsts=="714" && djoinalmkerja==1 && g_scrnumstr=="714" && djoinsvijanjikc==0) || (btmsts=="711" && djoinalmkerja==1 && g_scrnumstr=="711")
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  	cblmadakerja
+  PMT_UPDALL_COND 	cadakerja
+  PMT_DEL_COND  	calm_edit0

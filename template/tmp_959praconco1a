@@ -1,0 +1,67 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD------------------------------\/----------------------------------\|
+| |___| |                                        || ________                         ||
+| \---/ |                                        || spasi                            ||
+|       |                                        || t.Pilihan ______                 ||
+|       |                                        || t.KetJawaban                     ||
+|       |                                        || _____________________________    ||
+|       |                                        || spasi                            ||
+|       |                                        || t.Evaluasi                       ||
+|       |                                        || _____________________________    ||
+|       |                                        || _________                        ||
+|       |                                        |\----------------------------------/|
+|       |                                        |                                    |
+|       |                                        |                                    |
+|       |                                        |                                    |
+|       \----------------------------------------/                                    |
+\-------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ketnourt     PROTECT                 INPUTRI          1
+   kettgl1      PROTECT {DD-MM-YY}		INPUTRI		2
+   ketyt2       NOCHANGE                INPUTRI          3
+   ketisi 	TEXTAREA ALLCAPS	INPUTRI		 5
+   ketisi2	TEXTAREA ALLCAPS	INPUTRI		 6
+   lenter       NOCHANGE                INPUTRI          7
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+ketyt2		DFALT_SCAN	Y "YA" 
+				T "TIDAK"
+CALCS()
+cbukanodtm	tlmtype1!="HSL_CONCO" || (g_grpnam!="HRDODTM" && g_grpnam!="ODTMHEAD" && g_usrkode!="2371221" && g_grpnam!="HRDDVH" && g_grpnam!="HRDHEAD" && g_grpnam!="RI" && g_grpnam!="IT" && g_usrkode!="2360620")
+cbukansdm 	tlmtype1!="PRACONCO" || (g_usrkode!=tlmplg && g_grpnam!="RI" && g_grpnam!="IT" && g_usrkode!="2360620")
+cbukansdm2	tlmtype1!="PRACONCO" || ketnourt==7 || ketnourt==8 || (g_usrkode!=tlmplg && g_grpnam!="RI" && g_grpnam!="IT" &&
+		g_usrkode!="2360620")
+codtm		tlmtype1=="HSL_CONCO" && (g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD" || g_usrkode=="2371221" || g_grpnam=="HRDDVH" || g_grpnam=="HRDHEAD" || g_grpnam=="RI" || g_grpnam=="IT")
+csdm2		tlmtype1=="PRACONCO" && ketnourt!=7 && ketnourt!=8 && (g_usrkode==tlmplg || g_grpnam=="RI" || g_grpnam=="IT"
+		|| g_usrkode=="2360620")
+csdm 		tlmtype1=="PRACONCO" && (g_usrkode==tlmplg || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="2360620")
+ctipe_freetext	ketyt1=="FR"
+
+EDITS(tmptranst)
+t.Mandatory	ketisi	MANDATORY_IF csdm
+t.Mandatory	ketisi2	MANDATORY_IF codtm
+t.Mandatory	ketyt2	MANDATORY_IF csdm2
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=ketyt2	DO_SKIP_IF cbukansdm2
+BEFORE_INPUT	cur_field=ketisi	DO_SKIP_IF cbukansdm
+BEFORE_INPUT	cur_field=ketisi2	DO_SKIP_IF cbukanodtm
+ 
+SUBFILE(tmptrans)
+        SFL_LINES(1)
+        SFL_TITLE(tmptranst)
+	SFL_SELECT ctipe_freetext
+	SFL_UPLFLD	ketkode
+	SFL_UPLREADONLY 
+        SFL_TARGET
+        ketdatbuktgl  tlmdata tlmnobuk lPRACONCO
+
+SFL_MAP
+tlmdata         ketdata         REPLACE
+tlmnobuk        ketnobuk        REPLACE
+lPRACONCO       kettype         REPLACE
+

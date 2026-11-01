@@ -1,0 +1,87 @@
+
+DBCALCS(djoinsvidokumen)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   gv_datasurvey btmnobuk gv_dokumen
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+|---------t----------------------------------------------------------------------t-----------------|
+| i.No    |                                                                      | i.Yt            |
+\---------.----------------------------------------------------------------------.-----------------/
+
+
+IMAGE(tmptrans)
+|_________|______________________________________________________________________| _____           |
+
+    
+FIELD(tmptrans)
+tmpnourt		PROTECT SCROLL			INPUTRI 1
+tmpket			PROTECT SCROLL			INPUTRI 2
+tmptypisi		NOCHANGE			INPUTRI 3
+
+
+DEFAULT(tmptrans)
+tmptypisi			DFALT_LIST		Y T
+ljaminput1                      INIT                    SYSTIME
+lVERDOKUMENH1                   INIT                    "VERDOKUMENH1"
+
+
+EDITS(tmptrans)
+e.Mandatory	tmptypisi	MANDATORY
+
+CALCS()
+csvidokumen0		djoinsvidokumen == 0
+
+HOOKS(tmptrans)
+AFTER_INPUT cur_field=tmptypisi DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+
+SUBFILE(tmptrans)
+SFL_LINES(15)       
+SFL_APP_TYPE
+SFL_COND	csvidokumen0
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+	tmpdatkodurt   gv_dttemplate gv_tmpcekdok btmdvs
+
+
+
+MAP(maddsvidokumen)
+gv_datasurvey		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_dokumen		svitype			REPLACE
+tmpnourt		svinourt		REPLACE
+tmpket			sviket			REPLACE
+tmpkode			svikode			REPLACE
+tmptypisi		sviyt1			REPLACE
+
+
+MAP(mapmapverdokumenh1)
+lVERDOKUMENH1       l724DETAIL3        REPLACE
+
+SPCALCS(spdetailsvidok)
+DO_LIB ap_dbclc(DNAME dmapmapverdokumenh1;DCOMMAND MAPMAP;DMAP mapmapverdokumenh1);
+	DO_LIB		ap_dbclc(DNAME daddsvidokumen,DCOMMAND ADD,DFILE svi,DMAP maddsvidokumen);
+        DO_LIB ap_nxpst(l4461,lm4461det3);
+
+POSTING(tmptrans)
+  PST_COMMAND 	spdetailsvidok
+
+CALCS()
+cbolehverdokumen	btmsts=="714" && g_scrnumstr=="714"
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cbolehverdokumen
+  PMT_DEL_COND  c0
+

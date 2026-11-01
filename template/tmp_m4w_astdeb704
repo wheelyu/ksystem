@@ -1,0 +1,92 @@
+LOCAL  
+PGM_FIELDS
+llabel1			STRING	21
+llabel2			STRING	21
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+|/-----------------------------------------------\/-----------------------------------------------\|
+||i.Typeasset  : _____________  ___________      ||  i.Nilai    : __________________.__           ||
+||i.Typeasset  : _______________                 ||  i.Nama     : _______________________________ ||
+||i.Tahun      : _________                       ||  i.Merk     : ________________                ||
+||i.Katmbl     : _________________________       ||  i.Kodembl  : _______________________________ ||
+||i.Warna      : ___________                     ||  i.Jnsbbm   : ______                          ||
+||i.NoPol      : _____________                   ||  i.Norangka : _______________________________ ||
+||i.Nomesin    : _______________________________ ||  i.Nostnk   : _______________________________ ||
+||_____________: _______________________________ ||  __________ : _______________________________ ||
+||i.Panjang    : ___ i.M  ___ i.M   _______ i.M2 ||  i.t          _______________________________ ||
+|\-----------------------------------------------/\-----------------------------------------------/|
+\--------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans) 
+    
+FIELD(tmptranst)
+astjns			NOCHANGE		INPUTRI 4
+astkode			ALLCAPS SCROLL		INPUTRI 5
+astnilai	        PROTECT 		INPUTRI 6
+astjns			PROTECT SCROLL		INPUTRI 8
+astnama			PROTECT SCROLL		INPUTRI	8
+astth			PROTECT SCROLL		INPUTRI 10
+astmerk			PROTECT SCROLL		INPUTRI 11
+asttype			PROTECT SCROLL		INPUTRI 12
+astbrg			PROTECT SCROLL		INPUTRI 12
+astwarna		PROTECT SCROLL		INPUTRI 13
+astjnsbbm		PROTECT SCROLL		INPUTRI 14
+astnopol		PROTECT SCROLL		INPUTRI 15
+astrangka		PROTECT SCROLL		INPUTRI 16
+astmesin		PROTECT SCROLL		INPUTRI 17
+aststnk			PROTECT SCROLL		INPUTRI 19		
+llabel1			PROTECT SCROLL		INPUTRI 20
+astno1			PROTECT SCROLL		INPUTRI 21
+llabel2			PROTECT SCROLL		INPUTRI	22
+astno2			PROTECT SCROLL		INPUTRI 23
+astpj			PROTECT 		INPUTRI 24
+astlb			PROTECT			INPUTRI 25
+astluas			PROTECT			INPUTRI 26
+astpsmkode		PROTECT QPROTECT	INPUTRI 27
+
+CALCS()
+cnontambah		g_curcmd != 1
+
+EDITS(tmptranst)
+e.Dupkey		astkode 	DUPKEY astdatkodidx   {Pgv_dtassets} {Ppsmkode} {Pastjns} 
+e.Validate		astpsmkode 	VALIDATE_IF cnontambah psmkodidx mpsm 0	
+
+CALCS()
+cjnsbpkb		astjns == "BPKB"
+cjnsserti		astjns == "SERTIFIKAT"
+clabel1bpkb		"No. BPKB"
+clabel2bpkb		"Faktur BPKB"
+clabel1serti		"No. PBB"
+clabel2serti		"No Sertifikat"
+cubah			g_curcmd == 2
+
+MAP(mpsm)
+psmkode			astpsmkode		REPLACE
+clabel1bpkb		llabel1			DO_CALC_IF cjnsbpkb
+clabel2bpkb		llabel2			DO_CALC_IF cjnsbpkb
+clabel1serti		llabel1			DO_CALC_IF cjnsserti
+clabel2serti		llabel2			DO_CALC_IF cjnsserti
+
+MAP(misilabel)
+clabel1bpkb		llabel1			DO_CALC_IF cjnsbpkb
+clabel2bpkb		llabel2			DO_CALC_IF cjnsbpkb
+clabel1serti		llabel1			DO_CALC_IF cjnsserti
+clabel2serti		llabel2			DO_CALC_IF cjnsserti
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=astjns	DO_MAP SHOW misilabel
+BEFORE_INPUT		cur_field=astjns	DO_SKIP_IF cubah
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	astdatkodidx   gv_dtassets btmplg gv_bpkb nhmjns_3
+
+CALCS()
+casset_edit0		0
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  	casset_edit0
+  PMT_UPDALL_COND 	casset_edit0
+  PMT_DEL_COND  	casset_edit0

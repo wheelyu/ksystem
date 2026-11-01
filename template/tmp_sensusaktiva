@@ -1,0 +1,138 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.NamaAktiva :__________________|
+ |t.Kepemilikan:__________________|
+ |t.KodeAktiva :__________  ______|
+ |t.Nip        :__________        |
+ |t.Dipakai    :__________________|
+ |t.KetBarcode :______  __________|
+ |t.HasilSensus:______  __________|
+ |t.KodeScan   :__________________|
+ |t.Ket        :__________________|
+ |t.Lantai     :__________________|
+ |t.KodeRuangan:__________________|
+ |             :__________________|
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tldsat          PROTECT                         INPUTRI         1
+        lbrgsat4        PROTECT                         INPUTRI         2
+        tldbrg          PROTECT                         INPUTRI         3
+        tldcab          PROTECT                         INPUTRI         4
+        tldppdoto       PROTECT                         INPUTRI         5
+        tldstr2         NOCHANGE                        INPUTRI         6
+        tldukrwrn       NOCHANGE                        INPUTRI         7
+        lketkode        PROTECT                         INPUTRI         8
+        tldjasbrg       NOCHANGE                        INPUTRI         9
+        tldkat          PROTECT                         INPUTRI         10
+        tldplg          QRCODE                          INPUTRI         11
+        tldket          TEXTAREA ALLCAPS SCROLL         INPUTRI         12
+        tldgrup2        ALLCAPS                         INPUTRI         13 
+        tldgrup         ALLCAPS                         INPUTRI         14
+        lenter          ALLCAPS                         INPUTRI         15
+
+DEFAULTS(tmptranst)
+tldukrwrn       DFALT_SCAN_BLANKS       1 "SUDAH CETAK BARCODE"
+                                        2 "BELUM CETAK BARCODE"
+IF cdjoinseri1 tldjasbrg       DFALT_SCAN_BLANKS       A "FISIK ADA TAPI BEDA SERIAL NUMBER/MERK"
+                                        B "FISIK ADA TAPI RUSAK"
+                                        C "FISIK TIDAK ADA"
+                                        D "FISIK SAMA DENGAN SYSTEM"
+
+IF cdjoinseri0 tldjasbrg       DFALT_SCAN_BLANKS       B "FISIK ADA TAPI RUSAK"
+                                        C "FISIK TIDAK ADA"
+                                        D "FISIK SAMA DENGAN SYSTEM"
+tldstr2		DFALT_SCAN		BLANKS
+					DIGUNAKAN "AKTIVA DI GUNAKAN"
+					TIDAK "AKTIVA TIDAK DI GUNAKAN"
+CALCS()
+cwajibscan	(tldukrwrn=="1" && djoinbrg==1 && lbrgkat!="TC2401" && lbrgkat!="TA2211" && lbrgkat!="TA2200" && lbrgkat!="TA2205" && lbrgkat!="TA2174" && lbrgkat!="TA2256" && lbrgkat!="TA2204" && lbrgkat!="TA2203" && lbrgkat!="TA2202" && lbrgkat!="TF2101" && lbrgkat!="TF2105" && lbrgkat!="TG1201" && lbrgkat!="01001" && lbrgkat!="Y02" && lbrgkat!="TG1201" && lbrgkat!="GEDUNG" && lbrgkat!="TANAH" && djoincab==1 && lcabtwr!="PST" && tldjasbrg!="C") 
+cadax		tldjasbrg!="C"
+
+EDITS(tmptranst)
+e.Mandatory	tldukrwrn	MANDATORY
+e.Mandatory     tldjasbrg       MANDATORY
+e.Mandatory     tldstr2         MANDATORY
+e.Mandatory     tldket          MANDATORY_IF cAC
+e.Mandatory     tldplg          MANDATORY_IF cwajibscan 
+e.Mandatory	tldgrup		MANDATORY_IF cadax
+e.Mandatory	tldgrup2	MANDATORY_IF cadax
+e.Validate	tldbrg 		VALIDATE brgdatkodidx mbrg {Pgv_dtaktiva} 
+e.Validate	tldcab 		VALIDATE cabkodidx mcaba
+
+e.Validate      tldgrup2        VALIDATE tbedattypkod mtbex stbe {Pgv_dttabel} {Pgv_gedung} {PlLANTAI} {Plcabtwr} {Stbekode}
+e.Validate      tldgrup         VALIDATE tbedattypkod mtbe2 stbeon {Pgv_dttabel} {Pgv_gedung} {PlLANTAI} {Plcabtwr} {Ptldgrup2}
+
+MAP(mcaba)
+cabkode		tldcab		REPLACE
+cabtwr		lcabtwr2	REPLACE
+
+MAP(mbrg)
+brgsat4		lbrgsat4	REPLACE
+brgytblnol	tldukrwrn	REPLACE_IF csudah
+brgkode		tldplg		REPLACE_IF csudah
+brgnip		tldppdoto	REPLACE
+brgcab		tldcab		REPLACE
+brgkat2		tlddvs		REPLACE
+cfisika         tldkat          DO_CALC_IF cfisikax
+cfisikb         tldkat          DO_CALC_IF cfisikbx
+cfisikc         tldkat          DO_CALC_IF cfisikcx
+cfisikd         tldkat          DO_CALC_IF cfisikdx
+cfisike         tldkat          DO_CALC_IF cfisikex
+
+MAP(mtbex)
+tbetbtkode	tldgrup2		REPLACE
+
+MAP(mtbe2)
+tbekode		tldgrup		REPLACE
+
+MAP(mtbe)
+tbekode		tldgrup		REPLACE
+
+MAP(mtbt)
+tbtkode		tldgrup2	REPLACE
+
+MAP(mket)
+ckodea          lketkode        DO_CALC_IF ckodeax
+ckodeb          lketkode        DO_CALC_IF ckodebx
+cfisika         tldkat          DO_CALC_IF cfisikax
+cfisikb         tldkat          DO_CALC_IF cfisikbx
+cfisikc         tldkat          DO_CALC_IF cfisikcx
+cfisikd         tldkat          DO_CALC_IF cfisikdx
+cfisike         tldkat          DO_CALC_IF cfisikex
+
+MAP(mpanjangket)
+cpanjangket     lpanjangket     DO_CALC
+
+CALCS()
+clewatscan	(djoinbrg==1 && (lbrgkat=="01001" || lbrgkat=="02001" || lbrgkat=="03012" || lbrgkat=="06047" || lbrgkat=="GEDUNG" || lbrgkat=="TANAH" || lbrgkat=="TA2174" || lbrgkat=="TA2200" || lbrgkat=="TA2202" || lbrgkat=="TA2203" || lbrgkat=="TA2204" || lbrgkat=="TA2205" || lbrgkat=="TA2211" || lbrgkat=="TA2256" || lbrgkat=="TANAH" || lbrgkat=="TC1103" || lbrgkat=="TC1105" || lbrgkat=="TC1106" || lbrgkat=="TC1111" || lbrgkat=="TC1112" || lbrgkat=="TC1113" || lbrgkat=="TC1114" || lbrgkat=="TC1115" || lbrgkat=="TC116" || lbrgkat=="TC1117" || lbrgkat=="TC1118"|| lbrgkat=="TC1311" || lbrgkat=="TC1312" || lbrgkat=="TC1313" || lbrgkat=="TC1415" || lbrgkat=="TC2401" || lbrgkat=="TC3301" || lbrgkat=="TE2701" || lbrgkat=="TF2101" || lbrgkat=="TF2105" || lbrgkat=="TG1201" || lbrgkat=="Y02" || lbrgkat==" "))
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cBD
+BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF clewatscan
+BEFORE_INPUT	cur_field=tldukrwrn	DO_SKIP_IF csudah
+BEFORE_INPUT	cur_field=tldplg   	DO_SKIP_IF csudah
+AFTER_INPUT     cur_field=tldjasbrg     DO_MAP SHOW mket
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW mpanjangket
+AFTER_INPUT     cur_field=tldket        DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cmasukx
+SFL_TARGET
+        tldbukurtidx tlmnobuk 
+SFL_MAP
+        tlmnobuk        tldnobuk        REPLACE
+        tlmdata         tlddata         REPLACE

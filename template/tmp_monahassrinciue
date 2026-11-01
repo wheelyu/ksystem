@@ -1,0 +1,51 @@
+LOCAL
+PGM_FIELDS
+lnipFD		STRING          21
+
+
+MAP(mjoinbtmUE)
+btmnopj		lnipFD		REPLACE
+
+DBCALCS(djoinbtmUE)
+DBC_COMMAND     JOIN
+DBC_TARGET      btmbukidx    	ppmpry
+DBC_MAP         mjoinbtmUE
+
+IMAGE(tmptranst)
+/-------------t--------------t-------------t--------------------t----------------\
+| t.Nobuk     | t.Mekanik    | t.usr       |t.NoSer		|i.Total         |
+\-------------.--------------.-------------.--------------------.----------------/
+
+IMAGE(tmptrans)
+|_____________|______________|_____________|____________________|________________|
+
+
+FIELD(tmptrans)
+ppmpry			NOCHANGE	INPUTRI		1
+ppmsales		PROTECT		INPUTRI		2
+lnipFD			PROTECT		INPUTRI		3
+ppmsup			PROTECT		INPUTRI		4
+ppmtotfak		PROTECT		INPUTRI		5
+
+CALCS()
+cdjoinbtmUE1		djoinbtmUE == 1
+cdjoinbtmUE0       	djoinbtmUE == 0
+
+EDITS(tmptrans)
+e.Validate3 ppmsales VALIDATE psikodidx mpsitmp3 0
+
+MAP(mpsitmp3)
+lnipFD		lnipFD		REPLACE_IF cdjoinbtmUE1
+cBLANKS		lnipFD		DO_CALC_IF cdjoinbtmUE0
+
+CALCS()
+cFaktur623	(ppmsts == "INPG" || ppmsts =="CLSD") && ppmscr =="623"
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cpil2a
+SFL_SELECT cFaktur623
+SFL_TARGET
+ppmdatslstgl	gv_dtpiu lnip ltanggal
+

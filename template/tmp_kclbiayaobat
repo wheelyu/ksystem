@@ -1,0 +1,70 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+| ________________________________                           |
+|/--s.UPLOAD----------------------\/------------------------\|
+||                                ||i.Tgl     : __________  ||
+||                                ||t.OkUp    : __________  ||
+||			    	  ||spasi		    ||
+||                                ||i.Nippic  : __________  ||
+||                                ||i.AdaBiaya: __________  ||
+||                                ||i.Nominal : __________  ||
+||			    	  ||spasi		    ||
+||                                ||i.Nipacc  : __________  ||
+||                                ||t.Acccmbn : _________   ||
+||                                ||______________________  ||
+||			    	  ||spasi		    ||
+|\--------------------------------/\------------------------/|
+\------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tmpket			PROTECT			INPUTRI 1
+psdtgl1                 PROTECT {DD-MM-YY}     INPUTRI 1
+psdtype                 PROTECT                 INPUTRI 4
+psdstr1                 NOCHANGE		INPUTRI 1
+psdstr5			PROTECT			INPUTRI 2
+psdtot			NUMERIC			INPUTRI 3
+psdstr2                 PROTECT                 INPUTRI 3
+psdtype2                ALLCAPS                 INPUTRI 5
+psdket                  TEXTAREA ALLCAPS SCROLL INPUTRI 8
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT			{g_tgltrn}
+psdtype2	DFALT_SCAN_BLANKS	ACC TACC
+psdstr1		INIT			{g_usrkode}
+
+CALCS()
+ctnpbiaya	psdstr5 == "T" || tlmtypbrg == "T" 
+cadabiaya	psdstr5 == "Y" || tlmtypbrg == "Y"
+
+EDITS(tmptranst)
+e.Mandatory	psdtype2	MANDATORY_IF cpsdacc2
+e.Mandatory	psdtot		MANDATORY_IF cadabiaya
+e.Mandatory     psdket          MANDATORY_IF cpsdtacc
+
+MAP(mupdopsibia)
+tlmtypbrg	psdstr5		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cpsdacc
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cpsdblmacc
+BEFORE_INPUT	cur_field=psdtot	DO_SKIP_IF ctnpbiaya
+BEFORE_INPUT	cur_field=psdtot	DO_SKIP_IF cjikainp3
+AFTER_INPUT 	cur_field=psdtype2	DO_MAP SHOW mupdnipacc
+AFTER_INPUT	cur_field=psdstr1	DO_MAP SHOW mupdopsibia
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD  psdpsmkode	psdkode
+SFL_UPLFLD_DBCALCS dupdpsdupl
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+        psddatpsmkod tlmdata tlmnobuk lBIAYAOBAT
+
+SFL_MAP
+tlmdata    	psddata		REPLACE
+lBIAYAOBAT	psdkode		REPLACE
+tlmnobuk	psdpsmkode	REPLACE
+tlmtypbrg       psdstr5         REPLACE

@@ -1,0 +1,144 @@
+IMAGE(tmptranst)
+/----------------------------------------------------\
+ t.Upload PICA
+ /--------------------------------------------------\
+ ||i.Problem Identification  : ___________________||
+ ||i.Correction Action       : ___________________||
+ \--------------------------------------------------/
+ t.Upload Laporan MD
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+ /---------------------------------\
+  t.Info     : ___________________
+  t.Status   : ___________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________
+  t.AlsanTlk : ___________________
+  i.Enter    : _____
+  _________________________________
+ \---------------------------------/
+\----------------------------------------------------/
+IMAGE(tmptrans)
+
+CALCS()
+cisitaccspk spkhasil != "TACC"
+cadakawilaccspk            lnipkawilhmc != "" && spkhasil == "ACC"
+cadaamaccspk               lnipamhmc != "" && spkhasil == "ACC"
+chidetomdetailokspk	tlmkode != g_usrkode || ((tlmkode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (spkrekom == gv_IN || spkrekom == gv_ok))
+camkawiltaccspk (lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode) && spkhasil == "TACC"
+camkawilaccspk		(lnipamhmc == g_usrkode || lnipkawilhmc == g_usrkode) && spkhasil == "ACC"
+cinfokosongspk spkkat == ""
+FIELD(tmptranst)
+spkket      TEXTAREA		                        INPUTRI	1
+spkket2      TEXTAREA		                        INPUTRI	2
+spkkat          PROTECT UNSEEN_IF cinfokosongspk  COLOR=credspk,cyellowspk,cgreenspk  INPUTRI 3
+spkrekom          PROTECT                                 INPUTRI 3
+spkhasil          ALLCAPS SCROLL                         INPUTRI 3       
+spkkat2         PROTECT                                 INPUTRI 3
+spkket3          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhp5ok   TOMBOL UNSEEN_IF chidetomdetailokspk     INPUTRI 40
+
+DEFAULTS(tmptranst)
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+tkdjml          INIT            {tmpisidf1}
+
+spkhasil         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+
+e.Mandatory             spkket3          MANDATORY_IF camkawiltaccspk
+e.Mandatory             spkket      MANDATORY
+e.Mandatory             spkket2      MANDATORY
+
+CALCS()
+cdetailhp5ok           tlmkode == g_usrkode && (spkrekom == gv_OPEN || spkrekom == gv_TACC) && spkket != "" && spkket2 != "" && spkjrk2 == 1 && spkjrk > 0
+cdetailstatusopenspk			spkrekom == gv_OPEN
+cdetailstatustaccspk   		spkrekom == gv_TACC
+cfoto1kosongspk        spkjrk == 0
+ctambahuploadspk       spklmtg + gv_int1
+ctambahuploadspkfoto1  spkjrk + gv_int1
+cspkketkosong   spkket == ""
+cuploadfotook2    			tlmkode == g_usrkode && (spkrekom == gv_OPEN || spkrekom == gv_TACC) && spkjrk3 == 1
+cspkket2kosong   spkket2 == ""
+cdetaildalamreviewspk  spkrekom == gv_IN && tlmkode == g_usrkode
+cdalamkondisiupdatespk spkjrk2 == 0
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=spkket    DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=spkket2    DO_SKIP_IF camkawil
+
+BEFORE_INPUT    cur_field=spkhasil        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=spkket3        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=spkket3        DO_SKIP_IF cisitaccspk
+
+CLICKED         cur_field=ltombolhp5ok  DO_SPCALCS spdetailokhp5
+
+MAP(mtambahuploadfoto1spk)
+ctambahuploadspk			spklmtg		DO_CALC
+ctambahuploadspkfoto1      spkjrk          DO_CALC
+gv_int1                 spkjrk2       REPLACE
+DBCALCS(dtambahuploadfoto1spk)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	spkprmidx	spkprm
+	DBC_MAP		mtambahuploadfoto1spk
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPLFLD  spknobuk lLAPORANMD
+SFL_UPLFLD_DBCALCS dtambahuploadfoto1spk
+SFL_UPL_COND cuploadfotook2
+SFL_UPL_COND_MSG        IF cdetailsudahaccspk Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreviewspk Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdatespk Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+
+SFL_TARGET
+        spkdatbuktyp lEVNBTLHP5 tlmnobuk lEVNBTLHP5
+
+MAP(mupdinfodetailhp5)
+lUPLOADLAPORANMD     spkkat          REPLACE_IF cfoto1kosongspk
+lISIPICADULU           spkkat          REPLACE_IF cspkketkosong
+lISIPICADULU           spkkat          REPLACE_IF cspkket2kosong
+lSELESAIKANHPLUS3       spkkat          REPLACE_IF cdjoindetailhp3apr
+lDALAMPROSESREVIEW      spkkat          REPLACE_IF cdetaildalamreviewspk
+
+DEBUG ldum ldum REPLACE
+
+MAP(mupddetailreqspk)
+gv_IN         	spkrekom          REPLACE_IF cdetailstatusopenspk
+gv_IN			spkrekom			REPLACE_IF cdetailstatustaccspk
+
+MAP(mupddetailspk)
+gv_int1         spkjrk2       REPLACE
+
+MAP(mupdkondisiupdatespk)
+gv_int1         spkjrk3       REPLACE
+
+SPCALCS(spubahdetailspk)
+        DO_LIB_IF cpicnso               ap_dbclc(DNAME dmupddetailspk, DCOMMAND MAPMAP, DMAP mupddetailspk);
+	DO_LIB_IF cpicnso               ap_dbclc(DNAME dmupkondisiupdatedetailspk, DCOMMAND MAPMAP, DMAP mupdkondisiupdatespk);
+        DO_LIB_IF camkawiltaccspk      ap_dbclc(DNAME dmhitungpanjangalasantacctaccdetailspk, DCOMMAND MAPMAP, DMAP mhitungpanjangalasantacc);
+        DO_LIB_IF camkawiltaccspk      ap_dbclc(DNAME dupddetailtacchmspk, DCOMMAND MAPMAP, DMAP mupddetailtaccspk);
+        DO_LIB_IF cadakawilaccspk          ap_dbclc(DNAME dupdabkclsdkawilaccdetailspk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdkawil);
+        DO_LIB_IF cadaamaccspk             ap_dbclc(DNAME dupdabkclsdamaccdetailspk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdam);
+	DO_LIB_IF camkawilaccspk       ap_dbclc(DNAME dupdabkclsdpicnsoaccdetailspk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkclsdpicnso);
+        DO_LIB_IF camkawilaccspk       ap_dbclc(DNAME dupddetailokaccdetailspk, DCOMMAND MAPMAP, DMAP mupddetailokspk);
+        DO_LIB_IF camkawilaccspk       ap_dbclc(DNAME dupdtlmmasteraccdetailspk,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmaster);
+
+SPCALCS(spdetailokhp5)
+        DO_LIB_IF cdetailhp5ok         ap_dbclc(DNAME dupddetailreqhp5,DCOMMAND UPDATE,DTARGET spkprmidx spkprm, DMAP mupddetailreqspk);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhp5, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhp5, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhp5,DCOMMAND UPDATE,DTARGET spkprmidx spkprm, DMAP mupdinfodetailhp5);
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailspk

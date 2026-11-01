@@ -1,0 +1,77 @@
+LOCAL
+PGM_FIELDS
+lPJPK		STRING		11
+
+
+IMAGE(tmptranst)
+/---------------t---------------t---------------\
+| t.INDUK       | t.BISNIS      | t.LOGIN       |
+\---------------.---------------.---------------/
+
+IMAGE(tmptrans)
+|_______________|_______________|_______________|
+
+
+FIELD(tmptrans)
+cadkdcab	PROTECT		INPUTRI 1
+cadtype		NOCHANGE	INPUTRI 2
+cadkode		ALLCAPS		INPUTRI 3	
+
+
+DEFAULTS(tmptrans)
+cadtype		DFALT_SCAN	BLANKS
+				ALLBISNIS
+				HMC
+				M2W
+lPJPK		INIT		PJPK
+
+EDITS(tmptrans)
+e.validate	cadkode		VALIDATE	grpnamidx mgrup sgrp 
+e.Mandatory 	cadtype		MANDATORY
+e.Mandatory	cadkode		MANDATORY
+
+
+MAP(mgrup)
+grpnam		cadkode		REPLACE
+
+
+
+MAP(mdum22)
+ldum		ldum		REPLACE
+
+DBCALCS(djoincad1)
+DBC_COMMAND	JOIN
+DBC_TARGET	cadcabdtidx	cabkode	  lPJPK    cadtype
+
+CALCS()
+ctes		(djoincad1 == 0 && g_curcmd==1) || g_curcmd!=1
+cubah		g_curcmd==2 
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=cadtype	DO_SKIP_IF cubah
+AFTER_INPUT     cur_field=cadtype           	DO_MAP SHOW
+                IF ctes  mdum22
+                ELSE HKCURSOR STAY
+                HKMSG Tipe bisnis sudah ada
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+cadcabdtidx   cabkode lPJPK 
+
+SFL_MAP
+cabkode		cadkdcab	REPLACE
+lPJPK		caddata		REPLACE
+
+
+
+
+
+
+
+
+

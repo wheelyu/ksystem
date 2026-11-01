@@ -1,0 +1,171 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.DetailKK                      ||
+||i.NIK       ____________________||
+||i.Nama      ____________________||
+||t.PnyMtr    ____________________||
+||t.ThnMotor  ____________________||
+||t.TypMtr    ____________________||
+||t.PnyMobil  ____________________||
+||t.ThnMobil  ____________________||
+||t.TipeMbl   ____________________||
+||t.AdaTelp   ____________________||
+||t.NoAktif   ____________________||
+|| __                             ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnoll                 PROTECT                 INPUTRI         1
+lnama                   PROTECT                 INPUTRI         2
+ladamotor2              NOCHANGE                INPUTRI         3
+tkdjwbstr1              NOCHANGE                INPUTRI         4
+tkdjenis                ALLCAPS                 INPUTRI         5
+ladamobil2              NOCHANGE                INPUTRI         6
+tkdjwbstr2              NOCHANGE                INPUTRI         7
+tkdrek                  ALLCAPS                 INPUTRI         8
+ladatelp2               NOCHANGE                INPUTRI         9
+tkdsisstr               DIGITS                  INPUTRI         10
+tkdnobuk                PROTECT QPROTECT UNSEEN        INPUTRI  11
+
+DEFAULTS(tmptranst)
+ladamotor2               DFALT_SCAN_BLANKS       YA
+                                                TIDAK
+
+ladamobil2               DFALT_SCAN_BLANKS       YA
+                                                TIDAK
+
+ladatelp2                DFALT_SCAN_BLANKS       YA
+                                                TIDAK
+
+CALCS()
+cYA                     "YA"
+cTDK                    "TIDAK"
+
+cadamotor               ladamotor2 == "YA" && djoinkkd == 1
+cadamobil               ladamobil2 == "YA"
+cadatelp                ladatelp2  == "YA"
+
+ctdkmotor               ladamotor2 == "TIDAK"
+ctdkmobil               ladamobil2 == "TIDAK"
+ctdktelp                ladatelp2  == "TIDAK"
+
+cadamotorx              tkdjwbstr1 != BLANKS && djointkd==1 && g_curcmd==0
+cadamobilx              tkdjwbstr2 != BLANKS && djointkd==1 && g_curcmd==0
+cadatelpx               tkdsisstr != BLANKS && djointkd==1 && g_curcmd==0
+
+cadamotory              tkdjwbstr1 == BLANKS && djointkd==1 && g_curcmd==0
+cadamobily              tkdjwbstr2 == BLANKS && djointkd==1 && g_curcmd==0
+cadatelpy               tkdsisstr == BLANKS && djointkd==1 && g_curcmd==0
+
+EDITS(tmptranst)
+e.MandatoryMtr          ladamotor2      MANDATORY
+e.MandatoryThnMtr       tkdjwbstr1      MANDATORY_IF cadamotor
+e.MandatoryJnsMtr       tkdjenis        MANDATORY_IF cadamotor
+e.MandatoryMobil        ladamobil2      MANDATORY
+e.MandatoryThnMbl       tkdjwbstr2      MANDATORY_IF cadamobil
+e.MandatoryJnsMbl       tkdrek          MANDATORY_IF cadamobil
+e.MandatoryTelp         ladatelp2       MANDATORY
+e.MandatoryNoTelp       tkdsisstr       MANDATORY_IF cadatelp
+
+e.Validatemtr           tkdjwbstr1      VALIDATE tbddatkodidx   mtbdthmtr stbd {Pgv_dttabel} {Pgv_barang} {Pgv_tahun}
+e.Validatetipemtr       tkdjenis        VALIDATE tbddatkodidx   mtbdjenis stbd {Pgv_dttabel} {Pgv_barang} {Pgv_jenis}
+e.Validatembl           tkdjwbstr2      VALIDATE tbddatkodidx   mtbdthmbl stbd {Pgv_dttabel} {Pgv_barang} {Pgv_tahun}
+e.Validatetipembl       tkdrek          VALIDATE tbddatkodidx   mtbdmobil stbd {Pgv_dttabel} {Pgv_barang} {PlMOBIL}
+e.ValidateKK            tkdnobuk        VALIDATE kkmbukidx mkkm 0
+e.ValidateKTP           tkdnoll         VALIDATE kkddatktpidx   mkkd2 0 {Pgt_datakk}
+
+MAP(mkkd2)
+cblanks                 lnama           DO_CALC
+kkdnama                 lnama           REPLACE_IF cdjoinkkd
+
+
+MAP(mtbdmobil)
+tbdkode                 tkdrek                  REPLACE
+
+MAP(mtbdthmbl)
+tbdkode                 tkdjwbstr2              REPLACE
+
+MAP(mkkm)
+cYA                     ladamotor2               DO_CALC_IF cadamotorx
+cYA                     ladamobil2               DO_CALC_IF cadamobilx
+cYA                     ladatelp2                DO_CALC_IF cadatelpx
+cTDK                    ladamotor2               DO_CALC_IF cadamotory
+cTDK                    ladamobil2               DO_CALC_IF cadamobily
+cTDK                    ladatelp2                DO_CALC_IF cadatelpy
+
+MAP(mtbdjenis)
+tbdkode                 tkdjenis                REPLACE
+
+                                                                                    
+MAP(mtbdthmtr)
+tbdkode                 tkdjwbstr1               REPLACE
+cYA                     ladamotor2               DO_CALC_IF cadamotorx
+cYA                     ladamobil2               DO_CALC_IF cadamobilx
+cYA                     ladatelp2                DO_CALC_IF cadatelpx
+cTDK                    ladamotor2               DO_CALC_IF cadamotory
+cTDK                    ladamobil2               DO_CALC_IF cadamobily
+cTDK                    ladatelp2                DO_CALC_IF cadatelpy
+
+CALCS()
+cpanjangjwb     DO_LIB ap_strln(tkdsisstr,&lpanjangjwb);
+cjawab          (lpanjangjwb <=13) || (ladatelp2 =="TIDAK")
+cbknfuahass     tkmkode != "FU_AHASS"
+
+MAP(madamotor)
+cblanks                 tkdjwbstr1              DO_CALC_IF ctdkmotor
+cblanks                 tkdjenis                DO_CALC_IF ctdkmotor
+MAP(madamobil)
+cblanks                 tkdjwbstr2              DO_CALC_IF ctdkmobil
+cblanks                 tkdrek                  DO_CALC_IF ctdkmobil
+
+MAP(madatelp)
+cblanks                 tkdsisstr               DO_CALC_IF ctdktelp
+
+MAP(mpnjgtelp)
+cpanjangjwb             lpanjangjwb             DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=tkdjwbstr1    DO_SKIP_IF ctdkmotor
+BEFORE_INPUT            cur_field=tkdjenis      DO_SKIP_IF ctdkmotor
+BEFORE_INPUT            cur_field=tkdjwbstr2    DO_SKIP_IF ctdkmobil
+BEFORE_INPUT            cur_field=tkdrek        DO_SKIP_IF ctdkmobil
+BEFORE_INPUT            cur_field=tkdsisstr     DO_SKIP_IF ctdktelp
+AFTER_INPUT             cur_field=ladamotor2    DO_MAP SHOW madamotor
+AFTER_INPUT             cur_field=ladamobil2    DO_MAP SHOW madamobil
+AFTER_INPUT             cur_field=ladatelp2     DO_MAP SHOW madatelp
+
+AFTER_INPUT             cur_field=tkdsisstr     DO_MAP SHOW mpnjgtelp
+AFTER_INPUT             cur_field=tkdsisstr     DO_MAP
+                                        IF cjawab mdum
+                                        ELSE HKCURSOR STAY
+                                        HKMSG Panjang Nomor Telpon 13 digit
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cbknfuahass
+SFL_TARGET
+        tkddatbukll   gt_datakk lnomorkk kkdktp
+SFL_MAP
+kkdnourt                tkdnourt                REPLACE
+kkddata                 tkddata                 REPLACE
+gv_INPG                 tkdsts                  REPLACE
+kkdnobuk                tkdnobuk                REPLACE
+kkdktp                  tkdnoll                 REPLACE
+
+SPCALCS(sptmptrans)
+        DO_LIB_IF cblmjoincon2a ap_dbclc(DNAME daddcon2a,DCOMMAND ADD,DFILE con,DMAP maddcontelp);
+        DO_LIB_IF cadajoincon2a ap_dbclc(DNAME dupdcon2a,DCOMMAND UPDATE,DTARGET condathpidx gt_TELP11 tkdsisstr,DMAP mupdcontelp);
+
+POSTING(tmptrans)
+        PST_COMMAND     sptmptrans
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cbisatambah
+        PMT_UPDALL_COND cOPEN
+        PMT_DEL_COND    c0
+ 

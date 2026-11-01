@@ -1,0 +1,70 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+|/-----------------------------------------\|
+||t.Tipe        : ________________         ||
+||t.KdLama      : _________________        ||
+||t.KdBaru      : ________________         ||
+|| ________  ________  __________ _________||
+|\-----------------------------------------/|
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akttype         NOCHANGE                INPUTRI 1
+aktbrg          PROTECT                 INPUTRI 2
+aktkode2        ALLCAPS                 INPUTRI 3
+aktcrtusr       PROTECT                 INPUTRI 4
+aktjam          PROTECT                 INPUTRI 5
+akttgl          PROTECT {DD-MM-YYYY}    INPUTRI 6
+aktdata         PROTECT                 INPUTRI 7
+
+DEFAULTS(tmptranst)
+aktcrtusr       INIT            {g_usrkode}
+akttgl          INIT            {g_tgltrn}
+aktdata         INIT            UBHDATA858
+akttype		INIT		{tmpkode}
+aktkode2	DFALT_LIST	RCLS
+
+CALCS()
+ctmp858ubhdataA	tmpdtmkode == "TMPVERDOC" && tmpkode == "KORSTATUS"
+ckonubhdt858A	aktdata == "UBHDATA858"
+ckor858utkCLSD	tlmsts == "CLSD"
+cblhubhkor858A	g_grpnam == "DOC" || g_usrkode == "1935049" || g_grpnam == "RI"
+
+EDITS(tmptranst)
+e.Mandatory     aktkode2        MANDATORY
+
+MAP(misitypkorA)
+tlmnobuk	aktkode		REPLACE
+tlmkode		aktbrg		REPLACE
+cjam            ljam            DO_CALC
+ljam            aktjam          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktkode2	DO_MAP SHOW misitypkorA
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ckor858utkCLSD mdum
+		ELSE HKCURSOR STAY
+		HKMSG Hanya Status CLSD saja
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctmp858ubhdataA
+SFL_SELECT ckonubhdt858A
+SFL_TARGET aktkodtypidx tlmnobuk lubhdata858
+
+MAP(mupdtlm858korA)
+aktkode2	tlmsts		REPLACE
+
+SPCALCS(spcaladdkor858A)
+DO_LIB	ap_dbclc(DNAME dupdtlm858korA,DCOMMAND UPDATE,DTARGET tlmbukidx aktkode,DMAP mupdtlm858korA);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladdkor858A
+
+PERMIT(tmptrans)
+        PMT_ADD_COND	cblhubhkor858A
+        PMT_UPDALL_COND	c0
+        PMT_DEL_COND	c0

@@ -1,0 +1,114 @@
+MAP(mjointldurut)
+tldnourt        lnourt      REPLACE
+
+DBCALCS(djointldurut)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukbrgoto psikode gv_INPG  lprtulg
+        DBC_MAP         mjointldurut
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------\
+|/-------------------------------------------------------------------\|
+||t.Untuk kuncian surat tugass jalankan 2d. Detail Tugas dan Nameteg ||
+||t.Untuk surat tugas, cetak tekan O. pilihan 1			     ||
+||								     ||
+||t.No           :______                                             ||
+||t.Pilihan      :__________________                                 ||
+||i.Alasan    	 :__________________			             ||
+||i.NIP Apr 1    :______ ____________ 	                             ||
+||i.NIP Apr 2    :______ ____________ 	                             ||
+||________                                                           ||
+|\-------------------------------------------------------------------/|
+\---------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt         NOCHANGE               INPUTRI 1
+tldkat           NOCHANGE 		INPUTRI 2
+tldket           TEXTAREA 3             INPUTRI 3
+tldgrup		 PROTECT                INPUTRI 4 
+tldlok2          NOCHANGE               INPUTRI 5  /* acc bm  */
+tldgrup2         PROTECT                INPUTRI 6 
+tldbisnis        NOCHANGE               INPUTRI 7 /* acc am */
+lENTER           NOCHANGE               INPUTRI 8
+
+DEFAULTS(tmptranst)
+tldkat	   DFALT_SCAN	          1 "PRINT ULANG"
+tlddata    INIT                   "MONPIUT744"
+lprtulg    INIT                   "PRINTULANG"
+ldtpiicab  INIT                   "DTPICCAB"
+tldlok2    DFALT_SCAN_BLANKS      ACC
+tldbisnis  DFALT_SCAN_BLANKS      ACC
+lENTER     INIT                   ENTER
+
+CALCS()
+cpil	        tldkat=="1"
+cpilket	        "PRINT ULANG"
+cjoinBM         djoinsgmBM ==1 
+cjoinAM         djoinsgmAM ==1
+cacc            tldlok2=="ACC"
+cbmprtulg       g_grpnam=="BM"
+camprtulg       g_grpnam=="ARAMZ1Z6" || g_grpnam=="ARAMZ1Z2" || g_grpnam=="ARAM"
+
+camprtulg1	g_grpnam!="BM"
+cbmprtulg1	g_grpnam!="ARAM" && g_grpnam!="ARAMZ1Z6" && g_grpnam!="ARAMZ1Z2" 
+
+cisi            1
+curut           lnourt+1
+ctld0           djointldurut == 0 && g_curcmd==1
+ctld1           djointldurut == 1 && g_curcmd==1
+cadanourt	tldnourt>=0
+cjointkdx       djointkdcetak == 1  && tldlok2=="ACC" && tldbisnis == "ACC"
+cjointkd2x	djointkdcetak2 == 1 && tldlok2=="ACC" && tldbisnis == "ACC"
+
+EDIT(tmptranst)
+e.Mandatory	tldkat	MANDATORY
+
+MAP(mpil)
+cpilket	        tldkat          DO_CALC_IF cpil
+lbm             tldgrup         REPLACE_IF cjoinBM
+lam             tldgrup2        REPLACE_IF cjoinAM
+
+MAP(murut)
+cisi            tldnourt        DO_CALC_IF  ctld0
+curut           tldnourt        DO_CALC_IF  ctld1
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldnourt	    DO_SKIP_IF cadanourt
+BEFORE_INPUT    cur_field=tldkat        DO_MAP SHOW murut
+AFTER_INPUT     cur_field=tldkat        DO_MAP SHOW mpil
+
+BEFORE_INPUT     cur_field=tldbisnis    DO_MAP SHOW
+                 IF cacc mjoinsgmBM
+                 ELSE HKCURSOR STAY
+                 HKMSG t.BMBelumMelakukanACC
+
+BEFORE_INPUT     cur_field=tldlok2      DO_SKIP_IF camprtulg1
+BEFORE_INPUT     cur_field=tldbisnis    DO_SKIP_IF cbmprtulg1
+
+BEFORE_INPUT     cur_field=tldkat       DO_SKIP_IF camprtulg
+BEFORE_INPUT     cur_field=tldkat       DO_SKIP_IF cbmprtulg
+BEFORE_INPUT     cur_field=tldket       DO_SKIP_IF camprtulg
+BEFORE_INPUT     cur_field=tldket       DO_SKIP_IF cbmprtulg
+
+
+SPCALCS(sptmptrans)
+DO_LIB_IF   cjointkdx	ap_dbclc(DNAME ddeltkd, DCOMMAND DELETE,DTARGET tkddatbukll lmonpiut744 psikode lTHBL);  
+DO_LIB_IF   cjointkd2x	ap_dbclc(DNAME ddeltkd2, DCOMMAND DELETE,DTARGET tkddatbukll lmonpiut744 psikode lTHBLDPN);  
+
+
+POSTING(tmptrans)
+    	PST_UPDCMD	sptmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+         tldbukbrgoto psikode gv_INPG  lprtulg
+SFL_MAP
+         tldnourt   lnourt        REPLACE
+         psikode    tldnobuk      REPLACE
+         gv_INPG    tldsts        REPLACE
+         lprtulg    tldbrg        REPLACE
+	 lthbl	    tldlok	  REPLACE

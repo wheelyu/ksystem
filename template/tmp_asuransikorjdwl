@@ -1,0 +1,83 @@
+IMAGE(tmptranst) 
+/-----------------t-----------t------------t------------\
+| i.NoBuk	  | t.NipPJ   | t.Nipacc   | t.Jtp	|
+\-----------------.-----------.------------.------------/
+
+IMAGE(tmptrans)
+|_________________|___________|____________|____________|
+
+FIELD(tmptrans)
+abknobuk	PROTECT SCROLL	INPUTRI         1
+abkkym		ALLCAPS		INPUTRI         2
+abkkym2		ALLCAPS		INPUTRI         3
+abktgl		NONE {DD-MM-YY}	INPUTRI		4
+
+CALCS()
+cTMPKORJDWLASS	tmpkode=="KORJDWLASS"
+cSLCTKORJDWLASS	abksts=="RINP" || abksts=="INPG"
+ctglkorclmlbh	abktgl > g_tgltrn
+ctglkorclmkrg	abktgl <= g_tgltrn
+cbknclm109	abkscr != "109"
+cutkclm109	abkscr == "109"
+ckorjdwlclmok	(abkscr != "109" && abkkym2 == ~abkkym2 && g_curcmd == 2) || (abkscr == "109")
+ckorjdwlclmok2	(abktgl >= g_tgltrn && abktgl != ~abktgl && g_curcmd == 2) || abktgl == ~abktgl
+ckorjdwlclmok3	(psists == "INPG" && abkkym != ~abkkym && g_curcmd == 2) || abkkym == ~abkkym
+ckorjdwlclmok4	((usrgrp == "FINASS" || usrgrp == "FINASSCO" || usrgrp == "BOMZ1Z2" || usrgrp == "BOMZ4" || usrgrp == "BOMZ6" || usrgrp == "BOMREM") && abkkym2 != ~abkkym2 && g_curcmd == 2) || abkkym2 == ~abkkym2
+ckorjdwlclmok5	((g_grpnam == "FINASSCO" || g_usrkode == "1935049") && abkscr == "109" && abktgl != ~abktgl) || 
+		(abkscr != "109") || (abkscr == "109" && abktgl == ~abktgl)
+ckorjdwlclmok6	(abktgl >= g_tgltrn && abktgl != ~abktgl && abktgl <= (g_tgltrn+3) && g_curcmd == 2 && g_grpnam != "FINASSCO" && g_usrkode != "1935049") || 
+		(abktgl >= g_tgltrn && abktgl != ~abktgl && g_curcmd == 2 && (g_grpnam == "FINASSCO" || g_usrkode == "1935049")) ||
+		abktgl == ~abktgl
+
+EDITS(tmptrans)
+e.Mandatory	abkkym	MANDATORY
+e.Mandatory	abkkym2	MANDATORY_IF cutkclm109
+t.Validatepsi	abkkym VALIDATE psikodidx mpsikorjdwlclm 0
+t.Validateusr	abkkym2 VALIDATE_IF cutkclm109 usrkodidx musrkorjdwlclm 0
+
+MAP(mpsikorjdwlclm)
+psikode		abkkym		REPLACE
+
+MAP(musrkorjdwlclm)
+usrkode		abkkym2		REPLACE
+
+MAP(mkorjdwlclm)
+lRINP		abksts		REPLACE_IF ctglkorclmlbh
+gv_INPG		abksts		REPLACE_IF ctglkorclmkrg
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=abkkym2	DO_SKIP_IF cbknclm109
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mkorjdwlclm
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ckorjdwlclmok mdum
+		ELSE HKCURSOR STAY
+		HKMSG NipAcc tdk boleh diubah
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckorjdwlclmok2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tgl Tdk Boleh Kurang Dari Sekarang
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ckorjdwlclmok3 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Nip SDM PJ Cabang Tdk INPG
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckorjdwlclmok4 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nip Acc Hanya Boleh Grup Finass/Finassco/BOMZ1Z2/BOMZ4/BOMZ6/BOMREM
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ckorjdwlclmok5 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Ubah Tanggal 109 Hanya Untuk FINASSCO
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ckorjdwlclmok6 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Ubah Tanggal Lebih Dari 3 Hari Hanya Untuk FINASSCO
+
+SUBFILE(tmptrans)
+SFL_LINES(5) 
+SFL_TITLE(tmptranst)
+SFL_COND        cTMPKORJDWLASS
+SFL_SELECT	cSLCTKORJDWLASS
+SFL_TARGET_GTE
+abkdatbukidx	lkunciabsen lbukabkclmawl {lkunciabsen} {lbukabkclmakh}
+

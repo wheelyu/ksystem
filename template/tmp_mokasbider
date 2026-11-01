@@ -1,0 +1,64 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------------------------------------------------------\|
+||                                                   t.Bidder                                                            ||
+|\-----------------------------------------------------------------------------------------------------------------------/|
+|/-----t---------------t-------------------t------------t------------------------t-------------t-------------------------\|
+||t.No |t.IDBidder     |t.NamaBider        |t.Telp      |t.HrgpenawaranADH       |t.KetTelp    |t.HrgpenawaranHO         ||
+|\-----.---------------.-------------------.------------.------------------------.-------------.-------------------------/|
+\------.---------------.-------------------.------------.------------------------.-------------.--------------------------/
+
+IMAGE(tmptrans)
+|___|__________________|___________________|____________|_____________________.__|_____________|_______________________.__|
+
+FIELDS(tmptrans)
+svinourt                        PROTECT                         INPUTRI         1
+svikode                         ALLCAPS                         INPUTRI         2
+lnamabider                      PROTECT                         INPUTRI         3
+ltelpbider                      PROTECT                         INPUTRI         4
+svidf1				NUMERIC				INPUTRI		5
+svistr1				NOCHANGE			INPUTRI		6
+svidf2				NUMERIC				INPUTRI		7
+
+DEFAULTS(tmptrans)
+svistr1		DFALT_SCAN_BLANKS	TERHUBUNG TDK_TERHUBUNG TDK_TERDAFTAR
+
+EDITS(tmptrans)
+ID Bidder Tdk Ada	svikode		VALIDATE psmkodidx mpsmbider spsm
+e.Mandatory		svikode		MANDATORY
+e.Mandatory		svidf1		MANDATORY_IF cmandopen
+e.Mandatory		svistr1		MANDATORY_IF cmandinp3
+
+MAP(mpsmbider)
+psmkode		svikode		REPLACE
+psmnama		lnamabider	REPLACE
+psmtelp		ltelpbider	REPLACE
+psmins		lpekerjaan	REPLACE
+
+CALCS()
+curut		lurut + 1
+curut0		djoinbider==0 && g_curcmd==1
+curut1		djoinbider==1 && g_curcmd==1
+cskipinp3cls2	tlmsts == "OPEN"
+
+
+MAP(murut)
+l1		svinourt	REPLACE_IF curut0
+curut		svinourt	DO_CALC_IF curut1
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=svikode	DO_MAP SHOW murut
+BEFORE_INPUT	cur_field=svidf1	DO_SKIP_IF cskipopen
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cskipinp3cls2
+BEFORE_INPUT	cur_field=svidf2	DO_SKIP_IF cskipinp3cls2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(5)
+SFL_TARGET
+svidatbuktyp   tlmdata tlmnobuk lbidder     
+
+SFL_MAP
+tlmdata		svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lbidder		svitype		REPLACE 

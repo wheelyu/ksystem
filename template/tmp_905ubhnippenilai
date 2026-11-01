@@ -1,0 +1,63 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+|t.UbhNipAtasan                        |
+|/------------------------------------\|
+||t.NipInput    :________________     ||
+||t.Tgl         :________________	  ||
+||t.NipSebelum  :________________	  ||
+||t.NipSesudah  :________________	  ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdstr3		PROTECT                        INPUTRI         1
+psdtgl1 	PROTECT NOLIMIT	{DD-MM-YY}     INPUTRI         2
+psdstr1		PROTECT                        INPUTRI         4
+psdstr2		ALLCAPS                        INPUTRI         5
+
+DEFAULTS(tmptranst)
+psdstr3     INIT        {g_usrkode}
+psdtgl1     INIT        {g_tgltrn}
+
+MAP(mscanpsdubhnip)
+c1      ltotubhnip      DO_CALC
+
+DBCALCS(dbscanpsdubhnip)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      psddatpsmurt   lUBHNIP905 tlmnobuk
+        DBC_SUM_MAP     mscanpsdubhnip
+
+CALCS()
+cpsdkodenip STRIP(tlmnobuk) + FLD_TO_STRING(ltotubhnip)
+cscanpsdubhnip  dbscanpsdubhnip!=0 || dbscanpsdubhnip==0
+
+EDITS(tmptranst)
+t.ValidateNip   psdstr2  VALIDATE psikodidx misiubhats spsiINPG
+
+MAP(misiubhats)
+psikode         psdstr2        REPLACE
+psidep          ldivpen        REPLACE
+psisdep         ldeppen        REPLACE
+psijabatan      ljabpen        REPLACE
+ 
+MAP(misinipatasan)
+tlmplg     psdstr1     REPLACE
+ltotubhnip  ltotubhnip  REPLACE_IF cscanpsdubhnip
+ltotubhnip  psdnourt    REPLACE
+cpsdkodenip psdkode     DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=psdstr2       DO_MAP SHOW misinipatasan
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmurt   lUBHNIP905 tlmnobuk
+
+SFL_MAP
+tlmnobuk        psdpsmkode      REPLACE
+lUBHNIP905      psddata         REPLACE

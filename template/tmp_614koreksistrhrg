@@ -1,0 +1,68 @@
+IMAGE(tmptranst)
+/--------------------------t------\
+|t.UbahStrukturHarga       |      |
+\--------------------------.------/
+IMAGE(tmptrans)
+|__________________________|______|
+
+FIELD(tmptrans)
+lalasan         NOCHANGE        NONE    1
+lYT             NOCHANGE        NONE    2
+
+DEFAULTS(tmptrans)
+lalasan  DFALT_SCAN_BLANKS      UBH_WRN_MTR/KODE_BRG
+                                UBH_TNR_DAN_ANGSURAN
+                                UBH_INDT/BRG_READY
+                                UBH_TYPE_UNIT_READY
+                                UBH_JANJI_KIRIM
+                                UBH_ALAMAT_KIRIM
+                                UBH_TAHUN_MOTOR
+                                UBH_PEMOHON_PENJAMIN
+                                BLM_INPUT_BNS_JAKET
+                                UBH_NAMA_STNK
+                                SALAH_NO_TELP
+				UBH_SUBSIDI
+
+lYT             DFALT_LIST      Y
+                                T
+
+EDITS(tmptrans)
+e.Mandatory     lalasan         MANDATORY
+
+CALCS()
+csubsidi_expired	((lalasan == "UBH_SUBSIDI" && (djoinsgmPro2 == 0 || (djoinsgmPro2 == 1 && ((lstssubs != "INPG") || (g_tgltrn < ltglawlsubs) || (g_tgltrn > ltglakhsubs))))) || lalasan != "UBH_SUBSIDI")
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=lalasan	DO_MAP SHOW
+		IF csubsidi_expired mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SubsIniMshBerlaku
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF csubsidi_expired mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SubsIniMshBerlaku
+
+CALCS()
+cppmOPEN01      ((ppmsts=="OPEN" && djoinppm == 1 && lppmsts == "OPEN") || (ppmsts=="611" && djoinppm == 1 && lppmsts == "611")) &&
+                 (
+		  (
+		   (
+		    (ppmtk== "T" && (g_grpnam=="BMM" || g_grpnam=="KAWIL" || g_grpnam =="HMCAM" || g_grpnam == "MKTSRGM")) || 
+		    (ppmtk== "K" && (g_grpnam=="CREDITDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam=="BMM" || g_grpnam == "KAWIL" || g_grpnam =="HMCAM" || g_grpnam == "MKTSRGM")) || 
+		    g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHSPV") && 
+		   ppmkodeapr == BLANKS || 		
+		  (ppmkodeapr != BLANKS && (ppmstsapr == BLANKS || ppmstsapr == "TL" || (ppmstsapr == "OK" && djoincadBis == 1 && lauto == "AUTO")))) ||
+                
+		 ((ppmstsapr == "IN" || (ppmstsapr == "OK" && djoincadBis == 1 && lauto != "AUTO")) && (g_grpnam == "ADHDVH" || g_grpnam == "ADHHO" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" ||
+                 g_grpnam == "ADHSPV" || g_grpnam == "RI" || g_grpnam == "IT" || g_usrkode=="1928542"))
+		 ) && ppmkdpiu == BLANKS
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cppmOPEN01
+SFL_APP_TYPE
+
+SFL_TARGET
+        tmpdatdvskod    gv_dttemplate ltmpperintah ppmdvs lK lubahstrhrg
+

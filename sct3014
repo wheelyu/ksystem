@@ -1,0 +1,445 @@
+SCREEN 3014 QUERY_TYPE s.DataRumus
+SCR_TGLTRN_PASS_OK
+SCR_FILE tbt
+SCR_LOGFLD tbtkode  
+
+LOCAL
+PGM_FIELDS
+ltomdet_d    	STRING		30
+ltomdet_2d    	STRING		30
+ltomdet_3d	STRING		30
+lGSM11          STRING          11
+ltools4w	STRING		11
+ltools4w1	STRING		11
+ltools4w2	STRING		11
+ltools4w3	STRING		11
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------\/----------------------------------------------\ |
+| |i.Data       : ______________                 || i.Scr         : ___________                  | |
+| |s.Template   : ______________                 || i.Data        : ___________                  | |
+| |i.Kode       : ______________________         || i.Type        : ___________                  | |
+| |i.Keterangan : ______________________________ ||                                              | |
+| \----------------------------------------------/\----------------------------------------------/ |
+|   _____________ ______________ _____________           ___          		                   |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+   tbtdtmkode        ALLCAPS PROTECT    INPUTRI          1 
+   tbtscr            PROTECT QPROTECT 	INPUTRI          2 
+
+   tbttblkode        ALLCAPS PROTECT    INPUTRI          3 
+   tbtdata           PROTECT QPROTECT 	INPUTRI          4 
+
+   tbtkode           ALLCAPS          	INPUTRI          5 
+   tbtkat            PROTECT QPROTECT 	INPUTRI          6 
+   tbtket            ALLCAPS          	INPUTRI          7 
+   ltomdet_d  	     TOMBOL	 	INPUTRI     	 10 /* Tombol Detil d*/
+   ltomdet_2d  	     TOMBOL	 	INPUTRI     	 11 /* Tombol Detil d*/
+   ltomdet_3d	     TOMBOL		INPUTRI		 12	   
+   tbtyt             PROTECT UNSEEN QPROTECT INPUTRI     13 
+
+DEFAULTS(master)
+ltomdet_d    	INIT            "1d.Input Tabel"
+ltomdet_2d    	INIT            "2d.Input Tabel"
+ltomdet_3d	INIT		"3d.Input Tabel"
+tbtdata         INIT_QUERY      DTTEMPLATE   
+tbtyt           INIT_QUERY      Y
+lGSM11          INIT            GSM
+
+IMAGE(transt) 
+/------------t------------t----------t----------t--------t--------t--------t---------t--------t--------t--------t--------\
+| i.Kode     | i.Kode2    |i.Kode3   |i.Kode4   | i.Bts1 | i.Bts2 | i.Bts3 |i.Hasil1 |i.Hasil2|i.Hasil3|t.Hasil4| i.Tgl  |
+\------------.------------.----------.----------.--------.--------.--------.---------.--------.--------.--------.--------/
+
+IMAGE(trans) 
+|____________|____________|__________|__________|________|________|________|_________|________|________|________|________|
+    
+FIELD(trans)
+rmdkode		PROTECT SCROLL	  INPUTRI 	1
+rmdkode2	ALLCAPS SCROLL	  INPUTRI       1
+rmdkode3	ALLCAPS		  INPUTRI	2
+rmdkode4	ALLCAPS		  INPUTRI	3
+rmdbts1		NUMERIC		  INPUTRI	4
+rmdbts2		NUMERIC		  INPUTRI	5
+rmdbts3		NUMERIC		  INPUTRI	6
+rmdtotal1	NUMERIC		  INPUTRI	7
+rmdtotal2	NUMERIC		  INPUTRI	8
+rmdtotal3	NUMERIC		  INPUTRI	9
+rmdtotal4	NUMERIC		  INPUTRI	10
+rmdtgl		NOLIMIT {DD-MM-YYYY} INPUTRI	11
+
+DEFAULTS(trans)
+rmdsts	INIT	INPG
+rmdkode2	DUP_INIT
+rmdkode3	DUP_INIT
+rmdkode4	DUP_INIT
+rmdbts1		DUP_INIT
+rmdbts2		DUP_INIT
+rmdbts3		DUP_INIT	
+rmdtotal1	DUP_INIT
+rmdtotal2	DUP_INIT
+rmdtotal3	DUP_INIT
+
+EDITS(trans)
+i.Mandatory rmdkode  MANDATORY
+
+CALCS()
+cgab		STRIP(rmdkode) + STRIP(rmdkode2) + STRIP(rmdkode3) + STRIP(rmdkode4)
+
+MAP(mgab)
+cgab		rmdgab		DO_CALC
+
+
+MAP(misikode1)
+tbtkode		rmdkode		REPLACE
+
+HOOKS(trans)
+BEFORE_INPUT	cur_field=rmdkode2 	DO_MAP SHOW misikode1
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mgab
+
+CALCS()
+cnokas		tbtkode != "KAS " && tbtkode != "GSM" && tbtkode != "TAGIHAN" 
+
+SUBFILE(trans)
+SFL_LINES(10) 
+SFL_COND	cnokas
+SFL_TITLE(transt)
+
+SFL_TARGET
+rmdstskodgab   gv_INPG tbtkode 
+
+SFL_MAP
+tbtkode             rmdkode       	REPLACE
+
+
+IMAGE(transat) 
+/------------t------------t----------t----------t-----------t-----------t----------t---------t---------t-----------\
+| i.Kode     | i.Kode2    |i.Kode3   |i.Kode4   |  i.Bts1   | i.Bts2    | i.Bts3   |i.text1  |i.text2  |t.rmdusrcrt|
+\------------.------------.----------.----------.-----------.-----------.----------.---------.---------------------/
+
+IMAGE(transa) 
+|____________|____________|__________|__________|___________|___________|__________|_________|_________|___________|
+    
+FIELD(transa)
+rmdkode		PROTECT SCROLL	  INPUTRI 	1
+rmdkode2	ALLCAPS SCROLL	  INPUTRI       1
+rmdkode3	ALLCAPS		  INPUTRI	2
+rmdkode4	ALLCAPS		  INPUTRI	3
+rmdbts1		NUMERIC		  INPUTRI	4
+rmdbts2		NUMERIC		  INPUTRI	5
+rmdbts3		NUMERIC		  INPUTRI	6
+rmdtext1	ALLCAPS SCROLL	  INPUTRI	7
+rmdtext2	ALLCAPS SCROLL	  INPUTRI	8
+rmdusrcrt	ALLCAPS SCROLL	  INPUTRI	8
+
+DEFAULTS(transa)
+rmdsts	INIT	INPG
+rmdbts1		DUP_INIT
+rmdbts2		DUP_INIT
+rmdbts3		DUP_INIT	
+rmdtext1	DUP_INIT
+rmdtext2	DUP_INIT
+
+EDITS(transa)
+i.Mandatory rmdkode  MANDATORY
+
+CALCS()
+cgaba		STRIP(rmdkode) + STRIP(rmdkode2) + STRIP(rmdkode3) + STRIP(rmdkode4)
+
+MAP(mgaba)
+cgaba		rmdgab		DO_CALC
+
+
+MAP(misikode1a)
+tbtkode		rmdkode		REPLACE
+
+HOOKS(transa)
+BEFORE_INPUT	cur_field=rmdkode2 	DO_MAP SHOW misikode1a
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mgaba
+
+SUBFILE(transa)
+SFL_LINES(10) 
+SFL_COND	cnokas
+SFL_TITLE(transat)
+
+SFL_TARGET
+rmdstskodgab   gv_INPG tbtkode 
+
+SFL_MAP
+tbtkode             rmdkode       	REPLACE
+
+IMAGE(transg1t) 
+/---------t------------t----------t--------t---------t--------t---------t--------t--------t-------t-------t----t--------t---\
+| i.Kode  | i.Kode2    |i.Hasil1  |i.Hasil2|i.Hasil3 |t.Hasil4| t.Text1 |t.Text2 |t.Text3 |t.Text4|t.Text5|t.YT| t.Tgl  |t.1|
+\---------.------------.----------.--------.---------.--------.---------.--------.--------.-------.-------.----.--------.---/
+
+IMAGE(transg1) 
+|_________|____________|__________|________|_________|________|_________|________|________|_______|_______|____|______ _|___|
+    
+FIELD(transg1)
+rmdkode		PROTECT SCROLL	  INPUTRI 	1
+rmdkode2	ALLCAPS SCROLL	  INPUTRI       1
+rmdtotal1	NUMERIC		  INPUTRI	2
+rmdtotal2	NUMERIC		  INPUTRI	3
+rmdtotal3	NUMERIC		  INPUTRI	4
+rmdtotal4	NUMERIC		  INPUTRI	5
+rmdtext1	ALLCAPS		  INPUTRI	6
+rmdtext2	ALLCAPS		  INPUTRI	7
+rmdusrcrt	ALLCAPS		  INPUTRI	8
+rmdkode3	ALLCAPS		  INPUTRI	9
+rmdkode4	ALLCAPS		  INPUTRI	10
+rmdytbts2	ALLCAPS		  INPUTRI	10
+rmdtgl  	NOLIMIT {DD-MM-YYYY}		  INPUTRI	10
+rmdtotal6	ALLCAPS		  INPUTRI	10
+rmdbts4		NUMERIC		  INPUTRI	11
+
+DEFAULTS(transg1)
+rmdsts	INIT	INPG
+rmdkode2	DUP_INIT
+rmdtotal1	DUP_INIT
+rmdtotal2	DUP_INIT
+rmdtotal3	DUP_INIT
+rmdtext1	DUP_INIT
+rmdtext2	DUP_INIT
+rmdusrcrt	DUP_INIT
+rmdkode3	DUP_INIT
+rmdkode4	DUP_INIT
+
+EDITS(transg1)
+i.Mandatory rmdkode  MANDATORY
+
+CALCS()
+cgabrmd		STRIP(rmdkode) + STRIP(rmdkode2) 
+
+MAP(mgabrmd)
+cgabrmd		rmdgab		DO_CALC
+
+
+MAP(misikode2)
+tbtkode		rmdkode		REPLACE
+
+HOOKS(transg1)
+BEFORE_INPUT	cur_field=rmdkode2 	DO_MAP SHOW misikode2
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mgabrmd
+
+CALCS()
+cyakas		tbtkode == "KAS "
+
+SUBFILE(transg1)
+SFL_LINES(10) 
+SFL_COND	cyakas
+SFL_TITLE(transg1t)
+
+SFL_TARGET
+rmdstskodgab   gv_INPG tbtkode 
+
+SFL_MAP
+tbtkode             rmdkode       	REPLACE
+
+IMAGE(transg2t)
+/------------t------------t----------t----------t-----------t--------t--------t---------t---------\
+| i.Kode     | i.Kode2    |t.Text1   |t.Text2   |t.Rmdusrcrt|i.Hasil1|i.Hasil2|t.Tgl1   |t.Tgl2   | 
+\------------.------------.----------.----------.-----------.--------.--------.---------.---------/
+
+IMAGE(transg2)
+|____________|____________|__________|__________|___________|________|________|_________|_________|
+
+FIELD(transg2)
+rmdkode         PROTECT SCROLL    	INPUTRI 1
+rmdkode2        ALLCAPS SCROLL    	INPUTRI 2
+rmdtext1        ALLCAPS           	INPUTRI 3
+rmdtext2        ALLCAPS          	INPUTRI 4
+rmdusrcrt       ALLCAPS           	INPUTRI 5
+rmdtotal1	NUMERIC		  	INPUTRI	6
+rmdtotal2	NUMERIC		  	INPUTRI	7
+rmdtgl		NOLIMIT {DD-MM-YYYY}	INPUTRI	8
+rmdtglawl	NOLIMIT {DD-MM-YYYY}  	INPUTRI	9
+
+CALCS()
+cGSM	tbtkode == "GSM"
+
+SUBFILE(transg2)
+SFL_LINES(10)
+SFL_COND        cGSM
+SFL_TITLE(transg2t)
+SFL_TARGET rmdstskodgab   gv_INPG tbtkode
+SFL_MAP
+tbtkode             rmdkode             REPLACE
+
+CALCS()
+c0      	0
+c1027490	g_usrkode == "1027492" || g_usrkode == "1027490" || g_usrkode =="1000635" || g_usrkode =="ROOT"
+
+IMAGE(trans2)
+________ _______________ _________.__ _________________
+
+FIELDS(trans2)
+tldtglfak       PROTECT {DD-MM-YYYY}    INPUTRI         1
+tldbrg          PROTECT                 INPUTRI         2
+tldjml          PROTECT                 INPUTRI         3
+tldnobuk        PROTECT                 INPUTRI         4
+
+CALCS()
+cGSMdet         rmdkode == "GSM"
+
+SUBFILE(trans2)
+SFL_LINES(10)
+SFL_COND cGSMdet
+SFL_SORT_BY_FIELD tldtglfak
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+tldstsbrgukr lGSM11 gv_CLSD rmdkode2
+
+IMAGE(transg3t)
+/------------t------------t----------t----------t----------t----------t-----------t-----------t------------t---------\
+| i.Kode     | i.Kode2    |t.Periode |t.Reminder|i.TglJtp  |t.TglAwl  |  i.TglAkh | i.Nip     | i.Total    | i.Sts   |
+\------------.------------.----------.----------.----------.----------.-----------.-----------.------------.---------/
+
+IMAGE(transg3)
+|____________|____________|__________|__________|__________|__________|___________|___________|____________|_________|
+
+FIELD(transg3)
+rmdkode         PROTECT SCROLL    INPUTRI       1
+rmdkode2        ALLCAPS SCROLL    INPUTRI       1
+rmdtext1        NOCHANGE     INPUTRI       2
+rmdtotal2       NUMERIC      INPUTRI       3
+rmdtgl          NOLIMIT {DD-MM-YYYY} INPUTRI       3
+rmdtglawl       NOLIMIT {DD-MM-YYYY} INPUTRI       4
+rmdtglakh       NOLIMIT {DD-MM-YYYY} INPUTRI       5
+rmdusrcrt       ALLCAPS           INPUTRI       6
+rmdtotal1       ALLCAPS           INPUTRI       7
+rmdsts          ALLCAPS            INPUTRI       8
+
+DEFAULTS(transg3)
+rmdsts  	INIT_ADD    	INPG
+rmdtext1	DFALT_LIST	BULAN TAHUN
+
+
+EDITS(transg3)
+i.Mandatory rmdkode  MANDATORY
+isi reminder akan di jalankan dalam hari rmdtotal2 MANDATORY
+isi nip penanggung jawab rmdusrcrt MANDATORY
+
+CALCS()
+cgabrmd1         STRIP(rmdkode) + STRIP(rmdkode2)
+
+MAP(mgabrmd1)
+cgabrmd1         rmdgab          DO_CALC
+
+MAP(misikode2a)
+tbtkode         rmdkode         REPLACE
+
+HOOKS(transg3)
+BEFORE_INPUT    cur_field=rmdkode2      DO_MAP SHOW misikode2a
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW mgabrmd1
+
+CALCS()
+ctagihan          tbtkode == "TAGIHAN"
+
+SUBFILE(transg3)
+SFL_LINES(10)
+SFL_COND        ctagihan
+SFL_TITLE(transg3t)
+
+SFL_TARGET
+rmdstskodgab   gv_INPG tbtkode
+
+IMAGE(transbt) 
+/------------t------------t------------t----------t----------t-----------t-----------t----------t---------t---------\
+|i.Data	     | i.Kode     | i.Kode2    |i.Kode3   |i.Kode4   |  i.Bts1   | i.Bts2    | i.Bts3   |i.Hasil1 |i.text1  |           
+\------------.------------.------------.----------.----------.-----------.-----------.----------.---------.---------/             
+
+IMAGE(transb) 
+|____________|____________|____________|__________|__________|___________|___________|__________|_________|_________|               
+    
+FIELD(transb)
+rmddata		PROTECT SCROLL	  INPUTRI	1
+rmdkode		PROTECT SCROLL	  INPUTRI 	1
+rmdkode2	ALLCAPS SCROLL	  INPUTRI       1
+rmdkode3	ALLCAPS		  INPUTRI	2
+rmdkode4	ALLCAPS		  INPUTRI	3
+rmdbts1		NUMERIC		  INPUTRI	4
+rmdbts2		NUMERIC		  INPUTRI	5
+rmdbts3		NUMERIC		  INPUTRI	6
+rmdtotal1	NUMERIC		  INPUTRI 	7		
+rmdtext1	ALLCAPS SCROLL	  INPUTRI	8
+
+DEFAULTS(transb)
+rmdsts	INIT	INPG
+rmdbts1		DUP_INIT
+rmdbts2		DUP_INIT
+rmdbts3		DUP_INIT	
+rmdtext1	DUP_INIT
+rmdtext2	DUP_INIT
+ltools4w	INIT	TOOLS4WNEW
+ltools4w1	INIT	TOOLS4W
+ltools4w2	INIT 	4WSCORING
+ltools4w3	INIT	M4W2023
+rmdusrcrt	INIT_ADD	{g_usrkode}
+rmdtgl		INIT_ADD	{g_tgltrn}
+
+EDITS(transb)
+i.Mandatory rmdkode  MANDATORY
+
+CALCS()
+cltools4w	tbtkode == "MLTVM4W" || tbtkode =="MBGM4W" || tbtkode == "ADMINM4W" || tbtkode == "MASTERUPBUNGA"
+cltools4w1	tbtkode == "ABSAHM4W" || tbtkode=="PROVISIM4W" || tbtkode == "ABSAHM4W25"
+cltools4w2	tbtkode == "KARYAWAN" || tbtkode == "PROFESIONAL" || tbtkode == "WIRASWASTA"
+cltools4w3	tbtkode == "LTVM4W2023" || tbtkode == "MBGM4W2023" || tbtkode == "MUPBUNGA2023" || tbtkode == "LTVROM4W2023" || tbtkode =="ADMIN2023M4W"
+cgabb		STRIP(rmdkode) + STRIP(rmdkode2) + STRIP(rmdkode3) + STRIP(rmdkode4)
+
+MAP(mgabb)
+cgabb		rmdgab		DO_CALC
+
+MAP(misikode1b)
+tbtkode		rmdkode		REPLACE
+ltools4w	rmddata		REPLACE_IF cltools4w
+ltools4w1	rmddata		REPLACE_IF cltools4w1
+ltools4w2	rmddata		REPLACE_IF cltools4w2
+ltools4w3	rmddata		REPLACE_IF cltools4w3
+
+HOOKS(transb)
+BEFORE_INPUT	cur_field=rmdkode2 	DO_MAP SHOW misikode1b
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mgabb
+
+SUBFILE(transb)
+SFL_LINES(10) 
+SFL_COND	cnokas
+SFL_TITLE(transbt)
+SFL_TARGET
+rmdstskodgab   gv_INPG tbtkode 
+
+
+PERMIT(master)
+	PMT_DEL_COND    c0
+	PMT_ADD_COND    c0
+	PMT_UPDALL_COND    c0
+
+PERMIT(trans)
+	PMT_DEL_COND    c1027490
+	PMT_ADD_COND    c1027490
+	PMT_UPDALL_COND    c1027490
+
+PERMIT(trans2)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND c0
+        PMT_DEL_COND    c0
+
+END_SCREEN

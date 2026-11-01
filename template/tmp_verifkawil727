@@ -1,0 +1,62 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+|| t.Userinput     : __________        ||
+|| t.Nama          : __________________||
+|| t.Rekomendasi   : ______            ||
+|| t.Keterangan    : __________________||
+||                   ________          ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1        PROTECT           INPUTRI 1
+lnamakawil     PROTECT           INPUTRI 1
+svitype3       NOCHANGE          INPUTRI 2
+sviket3        TEXTAREA          INPUTRI 3
+lent           NOCHANGE          INPUTRI 4
+
+DEFAULTS(tmptranst)
+svistr1         INIT_UPDATE     {g_usrkode}
+svitype3        DFALT_SCAN BLANKS       ACC
+                                        TACC
+
+EDITS(tmptranst)
+e.Mandatory     svitype3                MANDATORY
+e.Mandatory     sviket3                 MANDATORY
+e.Validate      svistr1 VALIDATE psikodidx mpsiamkwl
+
+MAP(mpsiamkwl)
+psinama         lnamakawil              REPLACE
+
+CALCS()
+ckonaddkawil		 djoinsviverkawil==0 && btmsts=="727" && 
+			 ((djoinsgmkawil==1 && lnipkawil==g_usrkode) ||
+                         (btmdvsjl =="M2W4W" && (g_grpnam == "M2WAM" || g_grpnam=="CREDITHEAD" || g_grpnam =="BMMM2W")) ||
+                         g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RI")
+ckonupdtkawil		 djoinsviverkawil==1 && btmsts=="727" && btmflag1=="ACD4" &&
+			 ((djoinsgmkawil==1 && lnipkawil==g_usrkode) ||
+                         (btmdvsjl =="M2W4W" && (g_grpnam == "M2WAM" || g_grpnam=="CREDITHEAD" || g_grpnam =="BMMM2W")) ||
+                         g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RI")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk lverkawil
+SFL_MAP
+gv_datasurvey           svidata         REPLACE
+btmnobuk                svinobuk        REPLACE
+lverkawil             	svitype         REPLACE
+lverkawil             	svikode         REPLACE
+l1                      svinourt        REPLACE
+g_usrkode               svistr1         REPLACE
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ckonaddkawil
+        PMT_UPDALL_COND ckonupdtkawil
+        PMT_DEL_COND    c0
+

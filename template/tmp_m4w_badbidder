@@ -1,0 +1,59 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||                                      t.Approval                           ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.Ket                                                                      ||
+|| _________________________________________________________________________ ||
+||t.Approval ________  _____________________________________ ______ ________ ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdket		TEXTAREA ALLCAPS	INPUTRI		1
+tkdnoll		PROTECT			INPUTRI		2
+lnamaapr	PROTECT			INPUTRI		3
+tkdjenis	NOCHANGE		INPUTRI		4
+lENTER		ALLCAPS			INPUTRI		5
+
+DEFAULTS(tmptranst)
+tkdjenis	DFALT_SCAN_BLANKS	ACC TACC
+	
+EDITS(tmptranst)
+Nama TDK ADA	tkdnoll		VALIDATE psikodidx mpsi
+e.Mandatory	tkdket		MANDATORY
+
+CALCS()
+cskipapr	g_grpnam!="B.M4WDVH" && g_grpnam!="ADHDVH" && g_grpnam!="RI"
+cBAD		"BAD"
+caccxx		tkdjenis=="ACC" && psminstype==BLANKS
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjenis	DO_SKIP_IF cskipapr
+
+MAP(mupdpsm2)
+cBAD		psminstype	DO_CALC_IF caccxx
+g_usrkode	tkdnoll		REPLACE_IF caccx
+g_usrkode	tkdnoll		REPLACE_IF ctaccx
+
+SPCALCS(stmptrans)
+DO_LIB ap_dbclc(DNAME dupdpsm2,DCOMMAND UPDATE,DTARGET psmkodidx psmkode,DMAP mupdpsm2);
+
+POSTING(tmptrans)
+	PST_ADDCMD	stmptrans
+	PST_UPDCMD	stmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkddatbukll	lBADBIDDER psmkode
+SFL_MAP
+psmkode        tkdnobuk        REPLACE
+lBADBIDDER	tkddata		REPLACE
+gv_INPG		tkdsts		REPLACE	
+

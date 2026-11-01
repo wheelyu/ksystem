@@ -1,0 +1,150 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.UplDOCResume                  ||
+|\--------------------------------/|
+|/----------DOCUPLOAD-------------\|
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| t.NobukRsm : _________________ ||
+|| t.TglUpld1 : ___________       ||
+|| t.JnsUpld  : ___________       ||
+|| t.jmlUpld  : ____ ____         ||
+|| t.StsUpld  : ____              ||
+||		______		  ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| t.TglAcc   : ____________	  ||
+|| t.Acc Head : ____              ||
+|| t.KetTacc  : _________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk                        PROTECT                         INPUTRI         1
+tkdtgl                          PROTECT {DD-MM-YYYY}            INPUTRI         2
+tkdjenis                        PROTECT	                 	INPUTRI         3
+tkdnourt                        PROTECT                         INPUTRI         4
+tkdtype				PROTECT				INPUTRI		4
+tkdsts				PROTECT				INPUTRI 	5
+lenter                          ALLCAPS                         INPUTRI         6
+tkdtgl2				PROTECT	{DD-MM-YYYY}		INPUTRI		7
+tkdjwbstr1                      ALLCAPS SCROLL                  INPUTRI         8
+tkdket                          TEXTAREA                        INPUTRI         9
+
+CALCS()
+/*cubah2           g_grpnam == "SOPHEAD" || g_usrkode == "1901491" || g_usrkode == "1610666" || g_grpnam == "IT" || g_grpnam == "SOP" || g_grpnam =="RI"*/
+/*cisi2d          djoinketsop == 1 && tlmtothrg != BLANKS
+cblmisi2d       djoinketsop == 0*/
+/*cupldulu        tlmtothrg == BLANKS*/
+ctamurt         dscanatkd == 1 || dscanatkd == 0
+/*csdhaccsem      tlmperdis >= 2 && (dscantkdresum == 1 || dscantkdresum == 0) && lsudahacchead >= 1 && tlmsts == "RCLS" && tkdjwbstr1 == "ACC"  
+
+csudahisi2x     (tlmperdis >= 1 && ((tkdjwbstr1 == "" || ((dscantkdresum == 1 || dscantkdresum == 0) && lsudahacchead >= 1 && 
+		tkdjwbstr1 == "ACC")))) || tkdjwbstr1 == "TACC"
+*/
+ctambahrev      (g_curcmd == 1) || (tlmperdis >= 2 && (dscantkdresum == 1 || dscantkdresum == 0) && lsudahacchead >= 1 && tlmsts == "INPG" 
+		&& tkdjwbstr1 == "y")
+crestacc        tkdjwbstr1 == "T"
+cubahacc	g_curcmd == 2 && tkdjwbstr1 == "Y"
+cresumacc       (g_curcmd == 1 && tkdsts == "INPG") || (g_curcmd == 2 && tkdjwbstr1 == "Y") || tkdjwbstr1 == ""
+cblmclsd        g_curcmd == 1 && tkdsts == "INPG"
+/*ckondisiabk8d   tlmperdis >= 1 && (dscantkdresum == 1 || dscantkdresum == 0) && lsudahuplres >= 1  && tkdjwbstr1 == ""
+cdjoinabkfr2    ((djoinabk == 0 || (djoinabk == 1 && lkuncian == "CLSD")) && tlmplg != "" && djoinsvi1 == 1 && lsvistr5 != "" && lisiabk == 0
+ 		&& tlmsts == "RINP" && tkdjwbstr1 == "" ) || (tlmperdis >= 2 && (dscantkdresum == 1 || dscantkdresum == 0) && 
+		lsudahacchead >= 1 && tlmsts == "RINP" && tkdjwbstr1 == "ACC")
+cdjoinabkfr4    (djoinabk == 0 || (djoinabk == 1 && lkuncian == "CLSD")) && tlmplg != "" && djoinsvi1 == 1 && lsvistr5 != "" && lisiabk == 0 
+		&& (tlmsts == "RCLS" || tlmsts == "RINP") && tkdjwbstr1 == "TACC"
+*/
+cdri850	tlmscr == "850"
+cdri895	tlmscr == "895"
+
+DEFAULTS(tmptranst)
+IF cdri850 tkdjenis	INIT		RESUME
+IF cdri895 tkdjenis	INIT		BUK_PNYLSAIAN_TMUAN	
+tkdtgl          INIT                    {g_tgltrn}
+IF ctamurt      tkdnourt     INIT       {ctambahurt}
+tkdsts          INIT                    "INPG"
+lenter          INIT                    ENTER
+tkdjwbstr1      DFALT_SCAN_BLANKS       Y "ACC"
+                                        T "TACC"
+
+EDITS(tmptranst)
+e.Mandatory     tkdket          MANDATORY_IF crestacc
+
+
+MAP(maptlmupload)
+cjmlupl         tlmperdis               DO_CALC
+/*gv_RCLS         tlmsts                  REPLACE
+
+
+DBCALCS(dupdtlmupl)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tlmprmidx       tlmprm
+        DBC_MAP         mupdtlmupl
+*/
+
+
+MAP(mupdtkd1)
+lOK         tkdtype                  REPLACE
+
+DBCALCS(dupdtkd1)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx   tkdprm
+	DBC_MAP         mupdtkd1
+
+
+MAP(mupdtkd)
+gv_CLSD         tkdsts          REPLACE
+gv_CLSD         tkdtype2        REPLACE
+
+MAP(misitglacc)
+cBLANKS		tkdtgl2		DO_CALC
+g_tgltrn	tkdtgl2		REPLACE_IF cubahacc
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjwbstr1     DO_SKIP_IF cblmclsd
+BEFORE_INPUT    cur_field=tkdket         DO_SKIP_IF cresumacc
+BEFORE_INPUT	cur_field=lenter	 DO_SKIP_IF chhead
+AFTER_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW misitglacc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_DOCUPLFLD tkdoto 
+SFL_UPL_DIRFLD tlmtgl
+SFL_SORT_BY_FIELD tkdnourt
+SFL_SORT_UPDOWN DOWN
+/*SFL_DOCUPL_DELCOND c1aja*/
+SFL_DOCUPLFLD_DBCALCS   dupdtkd1
+/*SFL_COND        cubah2*/
+
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll   lRESUME tlmnobuk
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+lRESUME         tkddata         REPLACE
+tlmnobuk	tkdrek		REPLACE
+
+SPCALCS(spdet8)
+    /*  DO_LIB_IF csudahisi2x   ap_dbclc(DNAME dupdabkk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkhead);*/
+	DO_LIB_IF crsmok 	ap_dbclc(DNAME dmapmapket,DCOMMAND MAPMAP,DMAP mdum4);
+        DO_LIB_IF ctambahrev    ap_dbclc(DNAME dupdmaster,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP maptlmupload);
+	DO_LIB_IF ctkdok        ap_dbclc(DNAME dupdtlmmstr42,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtkd);
+
+POSTING(tmptrans)
+ PST_ADDCMD     spdet8
+ PST_UPDCMD     spdet8
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    ctamrsm
+PMT_UPDALL_COND cupdrsm
+PMT_DEL_COND    c0
+
+

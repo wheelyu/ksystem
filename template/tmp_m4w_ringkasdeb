@@ -1,0 +1,496 @@
+LOCAL
+PGM_FIELDS
+lindjun     		STRING      	21
+lPEKERJAAN211		STRING		21
+lgabseries		STRING		61
+l0			DFLOAT  	 8	
+lhasil1m        	DFLOAT       	 8
+lhasil2m        	DFLOAT       	 8
+lhasil3m        	DFLOAT       	 8
+lhasilok1       	STRING      	31
+lhasilok2       	STRING      	31
+lhasilok1_2     	STRING  	31
+lhasilok2_2     	STRING	      	31
+lgabltv			STRING		61
+lgabltv2		STRING		61
+lnamabpkb		STRING		21
+lastmerk		STRING		21
+lastth			STRING		11
+lasttype		STRING		21
+lrekomen		STRING		21
+lnotrekomen		STRING		21
+lbtmjnsdeb		STRING		21
+l701ADD			STRING		21
+l701y			STRING		11
+lsystime1		TIME	   	 4
+lSLA11			STRING		11
+lSLA21x			STRING		21
+lkatdeb1		STRING		 2
+lkatdeb2		STRING		 2
+lanbpkb			STRING		21
+lATASNAMA4W2		STRING		21
+lBKRLAMA1		STRING		21
+lBKR1			STRING		21
+lNEWINDUSTRI		STRING		21
+ltglnew2                DATE            12
+ltglold2                DATE            12
+
+CALCS()
+c701add		abktype=="701ADD"
+cunseen         g_grpnam != "B.M4WCOO" && g_grpnam != "COO" && g_grpnam != "B.M4WCM" && g_grpnam != "RASDVH" && g_grpnam != "RAS"
+cbkrlama1	btmtgl <= 20230104 || (nhmprogjl_3 == "DEVIASIDVHTOPUP" && (g_grpnam=="B.M4WMSPV" || g_grpnam=="B.M4WDVH" || g_grpnam=="IT" ||g_grpnam=="RI"))
+cbkrbaru1	btmtgl >= 20230105 && nhmprogjl_3 != "DEVIASIDVHTOPUP"
+
+DBCALCS(djoinrmdseries)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx gv_INPG lgabseries
+
+DBCALCS(djoinrmdltv)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx gv_INPG lgabltv
+
+DBCALCS(djoinrmdltv_2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx gv_INPG lgabltv2
+
+MAP(mjoinast)
+astmerk		lastmerk		REPLACE	
+astth		lastth			REPLACE
+asttype		lasttype		REPLACE
+
+DBCALCS(djoinast)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      astdatkodidx gv_dtassets btmplg gv_bpkb svitblkode
+	DBC_MAP		mjoinast
+
+DBCALCS(djoinakt701add)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx  btmnobuk lSLA11 lSLA21x 
+	DBC_SELECT	c701add
+
+
+
+
+IMAGE(tmptranst)
+/----------------------------------------\
+| /------------------------------------\ |
+| |t.Tanggal   : ______________________| |
+| |t.Pekerjaan : _____________________ | |
+| |t.Industri  : _____ 		       | |
+| |	         ______________________ | |
+| |t.Lamakerja : ___ t.Th     	       | |
+| |t.Asset     : _______               | |
+| |t.Merk      : __________________    | |
+| |t.Series    : ___________________   | |
+| |t.Tahun     : __________________    | |
+| |t.Type      : __________________    | |
+| |t.Induk     : ___________________   | |
+| |t.Kategori  : ________________ ___  | |
+| |t.SubMilik  : __________________    | |
+| |t.SubBkr    : __________________    | |	   
+| |              __________________    | |
+| |              __________________    | |
+| |              __________________    | |
+| |            	             _ _       | |
+| \------------------------------------/ |
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svitgl1		PROTECT NONE {DD-MM-YYYY}	INPUTRI 1 /*pekerjaan*/
+svistr1		ALLCAPS SCROLL 		   	INPUTRI 1 /*pekerjaan*/
+svistr4		ALLCAPS SCROLL			INPUTRI 1 /*kode industri*/
+svinama		SCROLL PROTECT			INPUTRI	2 /*ket. industri*/
+svidf7		NUMERIC				INPUTRI 3 /*lamakerja*/
+svitblkode	ALLCAPS 			INPUTRI 4
+svistr2		ALLCAPS 			INPUTRI 4 /*merk*/
+svistr3		PROTECT 			INPUTRI 5 /*Series*/
+svistr5		ALLCAPS 			INPUTRI 6 /*Tahun*/
+svistr6		ALLCAPS  			INPUTRI 7 /*Type*/
+svistr7		ALLCAPS 			INPUTRI 8 /*Induk*/
+svistr8		ALLCAPS 			INPUTRI 9 /*Kategori*/
+lOK		ALLCAPS				INPUTRI 12
+svistr10	ALLCAPS	SCROLL			INPUTRI 14
+svidtmkode	ALLCAPS				INPUTRI 16
+
+svistr9		PROTECT UNSEEN_IF cunseen 	INPUTRI 9 /*Kategori*/
+sviket 		PROTECT UNSEEN_IF cunseen 	INPUTRI 9 /*Kategori*/
+sviket2 	PROTECT UNSEEN_IF cunseen 	INPUTRI 9 /*Kategori*/
+svidata		PROTECT QPROTECT UNSEEN 	INPUTRI 10
+svitype		PROTECT	QPROTECT UNSEEN		INPUTRI 11
+
+DEFAULTS(tmptranst)
+lOK				INIT		"OK"
+lPEKERJAAN211    		INIT  		PEKERJAAN2
+lindjun				INIT            INDUSTRIM4W /*tbdtblkode industri lama*/
+svidata				INIT		{gv_dt1106}
+svitype				INIT		"SCORCMO"
+lnamabpkb			INIT		BLANKS
+lrekomen			INIT		REKOMEN
+lnotrekomen			INIT		NOTREKOMEN
+svitgl1				INIT		{g_tgltrn}
+l701ADD				INIT		701ADD
+l701y				INIT		701
+lsystime1			INIT		SYSTIME
+lSLA11				INIT		SLAM4W
+lSLA21x				INIT		SLAM4W
+lATASNAMA4W2			INIT		ATASNAMA4W2
+lBKRLAMA1			INIT		BKRLAMA
+lBKR1				INIT		BKR
+lNEWINDUSTRI			INIT		NEWINDUSTRI
+ltglnew2 	                INIT            21-03-2025
+ltglold2        	        INIT            20-03-2025
+
+
+CALCS()
+cgabseries	STRIP(svistr2)+STRIP(svistr6)
+cgabltvro	STRIP(svistr1)+STRIP(svistr4)+STRIP(svistr2)+STRIP(svistr3)+STRIP(lpikstsbad)+STRIP(btmcab)
+cgabltvnew	STRIP(svistr1)+STRIP(svistr4)+STRIP(svistr2)+STRIP(svistr3)+STRIP(lnamabpkb)+STRIP(btmtypdeb)+STRIP(btmcab)
+cgabltvronontu	STRIP(svistr1)+STRIP(svistr4)+STRIP(svistr2)+STRIP(svistr3)+STRIP(lnamabpkb)+STRIP(lbtmjnsdeb)+STRIP(btmcab)
+
+cgabltvro23		"SCP01M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+cgabltvnew23		"SCP01M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+cgabltvronontu23	"SCP01M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+
+cgabltvro23_3		"SCP02M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+cgabltvnew23_3		"SCP02M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+cgabltvronontu23_3	"SCP02M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+cgabltvtoplat23_3	"SCP02M4W2023"+STRIP(btmcab)+STRIP(svistr1)+STRIP(svistr4)
+
+cgabltvro23_2		"SCF01M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+STRIP(lkatdeb1)+STRIP(lkatdeb2)+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+cgabltvnew23_2		"SCF01M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+"0"+"0"+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+cgabltvronontu23_2	"SCF01M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+STRIP(lkatdeb1)+STRIP(lkatdeb2)+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+
+
+cgabltvro23_4		"SCF02M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+STRIP(lkatdeb1)+STRIP(lkatdeb2)+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+cgabltvnew23_4		"SCF02M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+"0"+"0"+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+cgabltvronontu23_4	"SCF02M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+STRIP(lkatdeb1)+STRIP(lkatdeb2)+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+cgabltvtoplat23_4	"SCF02M4W2023"+STRIP(btmcab)+STRIP(btmtypdeb)+"0"+"0"+STRIP(lnamabpkb)+STRIP(lhasilok1)+STRIP(svistr2)+STRIP(svistr6)
+
+
+cjoinrmdseries	djoinrmdseries == 1
+cjoinrmdltv	djoinrmdltv == 1 && btmtgl < 20230801
+cjoinrmdltv23	djoinrmdltv == 1 && btmtgl >= 20230801
+cjoinrmdltv23_2	djoinrmdltv_2 == 1 && btmtgl >= 20230801
+
+cjenisro	btmtypdeb == "RO" && btmjnsdeb == "TU" && btmtgl < 20230801
+cjenisnew	btmtypdeb == "NEW" && btmtgl < 20230801
+cjenisronontu	btmtypdeb == "RO" && btmjnsdeb != "TU" && btmtgl < 20230801
+
+cjenisro23	btmtypdeb == "RO" && btmjnsdeb == "TU" && btmtgl >= 20230801 && btmtgl <=20231005
+cjenisnew23	btmtypdeb == "NEW" && btmtgl >= 20230801 && btmtgl <=20231005
+cjenisronontu23	btmtypdeb == "RO" && btmjnsdeb != "TU" && btmtgl >= 20230801 && btmtgl <=20231005
+
+cjenisro23_2		btmtypdeb == "RO" && btmjnsdeb == "TU" && btmtgl >= 20231006
+cjenisnew23_2		btmtypdeb == "NEW" && btmtgl >= 20231006
+cjenisronontu23_2	btmtypdeb == "RO" && btmjnsdeb != "TU" && btmtgl >= 20231006
+cjenistoplat23_2	btmtypdeb == "TOPL" && btmtgl >= 20240828
+
+crotu		btmtypdeb == "RO" && btmjnsdeb == "TU" && svidf1 > 0 && btmtgl < 20230801
+cnotrotu	btmtypdeb == "RO" && btmjnsdeb == "TU" && svidf1 == 0 && btmtgl < 20230801
+crotu23		btmtypdeb == "RO" && btmjnsdeb == "TU" && svidf1 > 0 && btmtgl >= 20230801
+cnotrotu23	btmtypdeb == "RO" && btmjnsdeb == "TU" && svidf1 == 0 && btmtgl >= 20230801 
+ctoplat23	btmtypdeb == "TOPL" && svidf1 == 0 && btmtgl >= 20240828
+cbpkbbeda	(btmstr1 == "BEDA" || btmstr1 == "PASANGAN" || btmstr1 == "ANAK" || btmstr1 == "MERTUA" || btmstr1 == "ORANGLAIN" || 
+		btmstr1 == "ORANGTUA"  || btmstr1 == "SEGARIS") && btmtgl <01072023
+cbpkban		(btmstr1 == "PEMOHON" || btmstr1 == "SENDIRI") && btmtgl <01072023
+
+cbpkbbeda2	(btmstr1 == "BEDA" || btmstr1 == "ANAK" || btmstr1 == "MERTUA" || btmstr1 == "ORANGLAIN") && btmtgl >= 20230701
+cbpkban2	(btmstr1 == "PEMOHON" || btmstr1 == "SENDIRI" || btmstr1 == "PASANGAN" || btmstr1 == "SEGARIS") && btmtgl >= 20230701
+
+cplatinumx              djoinpik == 1 && lpikstsbad != "BAD" &&
+                        (
+                        (nhmprogjl_3=="TOPUP" && lpikke>=(lpiklama/2) &&
+                        ((djointopup==1 && lmaxnunggak<=15 && lusiamax3<=2) || (djointopup==0 && lpiktglbyrakh-lpiktgljtp<=15))) ||
+                        (nhmprogjl_3=="WINBACK" && ((djointopup==1 && lmaxnunggak<=15) || (djointopup==0 && lpiktglbyrakh-lpiktgljtp<=15))) ||
+                        (nhmprogjl_3=="WINBACK" && ((djointopup==1 && lmaxnunggak<=15) || (lpiktglbyrakh-lpiktgljtp<=15))) ||
+                        (nhmprogjl_3=="ROAO" && ((djointopup==1 && lmaxnunggak<=10) || (djointopup==0 && lpiktglbyrakh-lpiktgljtp<=10))) ||
+			(nhmprogjl_3!="TOPUP" && nhmprogjl_3!="WINBACK" && nhmprogjl_3!="ROAO" &&
+			((djointopup==1 && lmaxnunggak<=15) || (djointopup==0 && g_tgltrn-lpiktgljtp<=15)))
+                        )
+
+cnonplatinumx           djoinpik == 1 && /*lpikstsbad == "BAD" &&*/
+                        (
+                        (((djointopup==1 && lmaxnunggak>15) || g_tgltrn-lpiktgljtp>15) &&
+                        ((nhmprogjl_3=="TOPUP" && lpikke>=(lpiklama/2) && ((lusiamax3<=2 && lmaxnunggak > 15) || (lusiamax3>=3))) ||
+                          nhmprogjl_3=="WINBACK")) ||
+                          (nhmprogjl_3=="TOPUP" && lpikke<(lpiklama/2)) || 
+			(nhmprogjl_3!="TOPUP" && nhmprogjl_3!="WINBACK" && nhmprogjl_3!="ROAO" && lpikke<(lpiklama/2)) ||
+                        (nhmprogjl_3=="ROAO" && ((djointopup==1 && lmaxnunggak>10) || (djointopup==0 && lpiktglbyrakh-lpiktgljtp>10))) ||
+			(nhmprogjl_3!="TOPUP" && nhmprogjl_3!="WINBACK" && nhmprogjl_3!="ROAO" &&
+			((djointopup==1 && lmaxnunggak>15) || (djointopup==0 && g_tgltrn-lpiktgljtp>15)))
+                        )
+
+cbadx		djoinpik == 1 && ((djointopup==1 && lmaxnunggak>15) || g_tgltrn-lpiktgljtp>15)
+cnonbadx	djoinpik == 1 && lpikstsbad!="BAD" && ((djointopup==1 && lmaxnunggak<=15) || (djointopup==0 && lpiktglbyrakh-lpiktgljtp<=15))
+
+
+cAN		"AN"
+cBEDA		"BEDA"
+cjoinast	djoinast== 1
+cwinback	btmjnsdeb == "WINBACK"
+caoback		btmjnsdeb == "AO"
+croto		btmjnsdeb == "ROTO"
+cWB		"WB"
+cAO		"AO"
+cRT		"RT"
+cplat1		"1"
+cnonplat2	"2"
+ctglksg		svitgl1 == BLANKS
+cakt701add	djoinakt701add == 0 && djointbdakt == 1 && ltbdlv1akt == "BUKA"
+cmin5		nhmmaxcair - 5 
+cnotrekomen2	(lhasilok1 == "NOTREKOMEN" && ~svistr9 != lhasilok1 && btmtgl < 20230801) || 
+		(lhasilok1_2 == "NOTREKOMEN" && ~svistr9 != lhasilok1_2 && btmtgl >= 20230801)
+cscorelama	btmtgl < 20230801
+cscorebaru	btmtgl >= 20230801
+/*cunseen         g_grpnam != "B.M4WCOO" && g_grpnam != "COO" && g_grpnam != "B.M4WCM" && g_grpnam != "RASDVH" && g_grpnam != "RAS"
+cseen           g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "B.M4WCM" || g_grpnam == "RASDVH" || g_grpnam == "RAS"
+*/
+/*cadaisi		svikode != BLANKS
+cadaisibpkb	lanbpkb != BLANKS*/
+ctglnew2        btmtgl >= ltglnew2
+ctglold2        btmtgl <= ltglold2
+
+
+EDITS(tmptranst)
+e.Mandatory     	svistr1   	MANDATORY
+e.Mandatory		svistr4		MANDATORY
+e.Mandatory		svidf7		MANDATORY
+e.Mandatory		svistr2		MANDATORY
+e.Mandatory		svistr5		MANDATORY
+e.Mandatory		svistr6		MANDATORY
+e.Validate		svistr1		VALIDATE tbddatkodidx mtbdkerja2 stbdpekerjaan {Pgv_dttabel} {Pgv_infokredit} {PlPEKERJAAN211}
+
+e.Validateok 		svistr4         VALIDATE_IF ctglold2 tbddatkodidx mtbdindustri2 stbdindustri {Pgv_dttabel} {Pgv_infokredit} {Plindjun} /*list industri lama*/
+e.Validateok    	svistr4         VALIDATE_IF ctglnew2 tbddatkodidx mtbdindustri2 stbdindustri {Pgv_dttabel} {Pgv_infokredit} {PlNEWINDUSTRI} /*list industri baru*/
+
+e.Validatemerk  	svistr2         VALIDATE tbddatkodidx mtblmerk22 stbd {Pgv_dttabel} {Pgv_barang} {Pgv_MERK}
+e.Validateth    	svistr5         VALIDATE tbddatkodidx mtbdth22 stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+e.Validatetype  	svistr6         VALIDATE tbtdatkodtyp mtbttype22 stbt {Pgv_dttabel} {Pgv_barang} {Pgv_merk21} {Psvistr2} {Pgv_m4w21}
+
+/*e.Validatebpkb     	lanbpkb		VALIDATE tbldtdtmkod    mtblanbpkb  stblon  {Pgv_dttabel} {PlATASNAMA4W2}*/
+
+e.Validatesubbpkb 	svistr10     	VALIDATE tbddatkodidx   mtbdansbpkb  stbd   {Pgv_dttabel} {PlATASNAMA4W2} {Planbpkb}
+
+/*
+e.Validatebkrlm    	svikode   	VALIDATE_IF cbkrlama  tbldtdtmkod    mtblbkrlm   stblon  {Pgv_dttabel} {PlBKRLAMA1}
+e.Validatebkr      	svikode      	VALIDATE_IF cbkrbaru  tbldtdtmkod    mtblbkrbr   stblon  {Pgv_dttabel} {PlBKR}
+*/
+
+e.Validatebkrsublm svidtmkode 	VALIDATE_IF cbkrlama1  tbddatkodidx   mtbdbkrslama stbd   {Pgv_dttabel} {PlBKRLAMA1} {Pbtmnonnm}
+e.Validatebkrsubbr svidtmkode     VALIDATE_IF cbkrbaru1  tbddatkodidx   mtbdbkrsbaru stbd   {Pgv_dttabel} {PlBKR1} {Pbtmnonnm}
+
+MAP(mtbdkerja2)
+tbdkode         svistr1         REPLACE
+lpikstsbad	lpikstsbad	REPLACE_IF cjoinpik
+cAN		lnamabpkb	DO_CALC_IF cbpkban
+cBEDA		lnamabpkb	DO_CALC_IF cbpkbbeda
+cAN		lnamabpkb	DO_CALC_IF cbpkban2
+cBEDA		lnamabpkb	DO_CALC_IF cbpkbbeda2
+cBLANKS		lbtmjnsdeb	DO_CALC
+cWB		lbtmjnsdeb	DO_CALC_IF cwinback
+cAO		lbtmjnsdeb	DO_CALC_IF caoback
+cRT		lbtmjnsdeb	DO_CALC_IF croto
+cplat1		lkatdeb1	DO_CALC_IF cplatinumx
+cnonplat2	lkatdeb1	DO_CALC_IF cnonplatinumx
+cplat1		lkatdeb2	DO_CALC_IF cbadx
+cnonplat2	lkatdeb2	DO_CALC_IF cnonbadx
+lkatdeb1	svistr38	REPLACE
+lkatdeb2	svistr39	REPLACE
+btmstr1		lanbpkb		REPLACE
+
+MAP(mtbdindustri2)
+tbdkode         svistr4         REPLACE
+tbdket          svinama         REPLACE
+
+MAP(mtbttype22)
+tbtkode         svistr6         REPLACE
+
+MAP(mtbdth22)
+tbdkode         svistr5         REPLACE
+
+MAP(mtblmerk22)
+tbdkode         svistr2         REPLACE
+
+/*MAP(mtblanbpkb)
+tblkode		lanbpkb		REPLACE
+lanbpkb		svitype3	REPLACE
+*/
+
+MAP(mtbdansbpkb)
+tbdkode		svistr10	REPLACE
+
+/*MAP(mtblbkrlm)
+tblkode		svikode		REPLACE
+
+MAP(mtblbkrbr)
+tblkode		svikode		REPLACE
+*/
+
+MAP(mtbdbkrslama)
+tbdkode         svidtmkode        REPLACE
+
+MAP(mtbdbkrsbaru)
+tbdkode		svidtmkode	REPLACE
+
+
+MAP(mseries)
+cgabseries	lgabseries	DO_CALC
+g_tgltrn	svitgl1		REPLACE_IF ctglksg
+
+MAP(mrmdltv)
+cgabltvro	lgabltv		DO_CALC_IF cjenisro
+cgabltvnew	lgabltv		DO_CALC_IF cjenisnew
+cgabltvronontu	lgabltv		DO_CALC_IF cjenisronontu
+
+cgabltvro23		lgabltv		DO_CALC_IF cjenisro23
+cgabltvnew23		lgabltv		DO_CALC_IF cjenisnew23
+cgabltvronontu23	lgabltv		DO_CALC_IF cjenisronontu23
+cgabltvro23_3		lgabltv		DO_CALC_IF cjenisro23_2
+cgabltvnew23_3		lgabltv		DO_CALC_IF cjenisnew23_2
+cgabltvronontu23_3	lgabltv		DO_CALC_IF cjenisronontu23_2
+cgabltvtoplat23_3	lgabltv		DO_CALC_IF cjenistoplat23_2
+lgabltv                 sviket          REPLACE
+
+MAP(mrmdltv2)
+cgabltvro23_2		lgabltv2	DO_CALC_IF cjenisro23
+cgabltvnew23_2		lgabltv2	DO_CALC_IF cjenisnew23
+cgabltvronontu23_2	lgabltv2	DO_CALC_IF cjenisronontu23
+cgabltvro23_4		lgabltv2	DO_CALC_IF cjenisro23_2
+cgabltvnew23_4		lgabltv2	DO_CALC_IF cjenisnew23_2
+cgabltvronontu23_4	lgabltv2	DO_CALC_IF cjenisronontu23_2
+cgabltvtoplat23_4	lgabltv2	DO_CALC_IF cjenistoplat23_2
+lgabltv2                sviket2         REPLACE
+
+
+MAP(mupdsviseries)
+lhasiltxt1	svistr3		REPLACE
+
+MAP(mupdsviltv)
+lhasil1m	svidf1		REPLACE
+lhasilok1	svistr9		REPLACE_IF cscorelama
+lhasilok1_2	svistr9		REPLACE_IF cscorebaru
+lrekomen	svistr9		REPLACE_IF crotu
+lnotrekomen	svistr9		REPLACE_IF cnotrotu
+lrekomen	svistr9		REPLACE_IF crotu23
+lnotrekomen	svistr9		REPLACE_IF cnotrotu23
+lrekomen	svistr9		REPLACE_IF ctoplat23
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mbpkb)
+nhmjns_3	svitblkode	REPLACE
+lastmerk	svistr2		REPLACE_IF cjoinast
+lastth		svistr5		REPLACE_IF cjoinast
+lasttype	svistr6		REPLACE_IF cjoinast
+
+CALCS()
+caddhp		(btmflag1 == "SRVY" && djoinsviscor == 0 && (g_mobile == 1 || g_mobile == 2)) || g_grpnam == "RI" || g_grpnam == "IT" 
+cupdhp		(btmflag1 == "SRVY" && djoinsviscor == 1 && (g_mobile == 1 || g_mobile == 2)) || 
+		(btmflag1 == "BM" && djoinsviscor==1 && 
+		 (g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WRM" || g_grpnam=="B.M4WMSPV" || g_grpnam=="B.M4WDVH" || g_grpnam=="B.M4WCOO" || g_grpnam=="COO")) || 
+		g_grpnam == "RI" || g_grpnam == "IT"
+cisisubbpkb	(btmflag1 == "BM" && djoinsviscor==1 && 
+		(g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WRM" || g_grpnam=="B.M4WMSPV" || g_grpnam=="B.M4WDVH" || g_grpnam=="B.M4WCOO" || g_grpnam=="COO")) 
+		/*|| g_grpnam == "RI" || g_grpnam == "IT"*/
+
+/*MAP(mupdnhmltv)
+cmin5		nhmmaxcair	DO_CALC_IF cnotrekomen2
+DEBUG		ldum	ldum 	REPLACE
+
+DBCALCS(dupdnhmltv)
+	DBC_COMMAND     UPDATE
+	DBC_TARGET      nhmdatbukidx gv_bukutamu svinobuk
+	DBC_MAP         mupdnhmltv
+
+SPCALCS(supdnhmltv)
+	dupdnhmltv
+
+MAP(mupdbpkbbkr)
+svikode		btmnonnm 	REPLACE_IF cadaisi
+svitype3	btmstr1		REPLACE_IF cadaisibpkb
+
+
+DBCALCS(dupdbpkbbkr)
+	DBC_COMMAND     UPDATE
+	DBC_TARGET      btmdatstsbuk gv_bukutamu l701 svinobuk 
+	DBC_MAP         mupdbpkbbkr
+
+SPCALCS(supdbpkbbkr)
+dupdbpkbbkr
+
+*/
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svitblkode	DO_SKIP_IF caddhp
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF caddhp
+BEFORE_INPUT	cur_field=svistr5   	DO_SKIP_IF caddhp
+BEFORE_INPUT	cur_field=svistr6   	DO_SKIP_IF caddhp
+BEFORE_INPUT	cur_field=svistr7   	DO_SKIP_IF caddhp
+BEFORE_INPUT	cur_field=svistr8   	DO_SKIP_IF caddhp
+
+BEFORE_INPUT    cur_field=svistr1	DO_SKIP_IF cisisubbpkb
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF cisisubbpkb
+BEFORE_INPUT 	cur_field=svidf7	DO_SKIP_IF cisisubbpkb
+
+AFTER_INPUT	cur_field=svidf7	DO_MAP SHOW mbpkb
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mseries
+AFTER_INPUT	cur_keybd=EN	DO_LIB_IF cjoinrmdseries  ap_ambts(gv_INPG,lgabseries,l0,l0,l0,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mupdsviseries
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mrmdltv
+AFTER_INPUT	cur_keybd=EN	DO_LIB_IF cjoinrmdltv  ap_ambts(gv_INPG,lgabltv,l0,l0,l0,&lhasil1m,&lhasil2m,&lhasil3m,&lhasilok1,&lhasilok2);
+AFTER_INPUT	cur_keybd=EN	DO_LIB_IF cjoinrmdltv23  ap_ambts(gv_INPG,lgabltv,l0,l0,l0,&lhasil1m,&lhasil2m,&lhasil3m,&lhasilok1,&lhasilok2);
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mrmdltv2
+AFTER_INPUT	cur_keybd=EN	DO_LIB_IF cjoinrmdltv23_2  ap_ambts(gv_INPG,lgabltv2,l0,l0,l0,&lhasil1m,&lhasil2m,&lhasil3m,&lhasilok1_2,&lhasilok2_2);
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mupdsviltv
+/*AFTER_INPUT 	cur_keybd=EN	DO_SPCALCS supdnhmltv
+*/
+
+/*AFTER_INPUT     cur_field=svidtmkode    DO_SPCALCS supdbpkbbkr
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp   gv_dt1106 btmnobuk lSCORCMO
+
+SFL_MAP
+gv_dt1106               svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+lSCORCMO                svitype                 REPLACE
+lpikstsbad		svistr8			REPLACE
+btmcab			svistr7			REPLACE
+
+MAP(maddakt)
+l701ADD         aktkode2                REPLACE
+lSLA11          aktdata                 REPLACE
+btmnobuk        aktkode                 REPLACE
+btmnobuk        aktnobuk                REPLACE
+btmnobuk        aktbrg                  REPLACE
+g_tgltrn	akttgl			REPLACE
+lsystime1       aktjam                  REPLACE
+lSLA11          akttype                 REPLACE
+g_usrkode       aktcrtusr               REPLACE
+btmcab 	        aktcab                  REPLACE
+l701y            aktscr                  REPLACE
+cA		aktlok			DO_CALC
+
+MAP(mupdmaster)
+cmin5		nhmmaxcair	DO_CALC
+DEBUG		ldum	ldum	REPLACE
+
+SPCALCS(saddbuk701)
+DO_LIB_IF cakt701add ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cnotrekomen2 ap_dbclc(DNAME dupd1,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu svinobuk,DMAP mupdmaster);
+
+POSTING(tmptrans)
+PST_ADDCMD  saddbuk701
+PST_UPDCMD  saddbuk701
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND		caddhp
+	PMT_UPDALL_COND		cupdhp
+	PMT_DEL_COND		cupdhp

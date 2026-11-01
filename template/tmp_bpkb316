@@ -1,0 +1,81 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||spasi                           ||
+||i.Kat      : __________________ ||
+||i.NoPol    : __________________ ||
+||i.Rangka   : __________________ ||
+||i.Mesin    : __________________ ||
+||i.Mtr      : __________________ ||
+||i.NoBuk    : __________________ ||
+||i.Tahun    : __________________ ||
+||i.JtpStnk  : __________________ ||
+||t.JtpNotis : __________________ ||
+||t.Atsnm    : __________________ ||
+||i.Alamat   : __________________ ||
+||t.NoBPKB   : __________________ ||
+||t.LoksiBP  : _________________  ||
+||t.Upl0     : __________________ ||
+||             __________________ ||
+|\--------------------------------/|
+|   t.UplBpkb                      |
+|/---UPLOAD-----------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+jmnjnsikat  PROTECT           INPUTRI       1
+jmnnopol    NOCHANGE          INPUTRI       2
+jmnspec2    PROTECT           INPUTRI       3
+jmnspec1    PROTECT           INPUTRI       4
+btmtypmtr   PROTECT           INPUTRI       5
+jmnno       NOCHANGE          INPUTRI       5
+jmnth       PROTECT           INPUTRI       7
+jmntgl      PROTECT           INPUTRI       8
+jmntglklr   PROTECT           INPUTRI       9
+jmnnama     PROTECT           INPUTRI       10
+jmnalamat   PROTECT           INPUTRI       11
+jmnkota     ALLCAPS           INPUTRI       12
+jmnlok      ALLCAPS           INPUTRI       13
+jmnhrg1     PROTECT           INPUTRI       14
+lenter      NOCHANGE          INPUTRI       15
+
+DEFAULTS(tmptranst)
+lenter          INIT            ENTER
+
+EDITS(tmptranst)
+e.ValidateLokasi        jmnlok VALIDATE tbddtmstidx mtbdlok stbdcab {Pgv_dttabel} {Pgv_barang} {Pgv_lokjmn} {Pljm} {Pcabtwr}
+e.Validatebukutamu      jmnno VALIDATE btmbukidx mbtm2 0
+
+CALCS()
+ctransbg1       btmstr2_1 == "TRANSFER" && tlmsts != "CLSD"
+cplus1          jmnhrg1 + 1
+cuplbpkb	tmpkode == "UPLBPKB"
+
+MAP(mupdfotobpkb)
+cplus1           jmnhrg1       DO_CALC
+
+DBCALCS(dupdfotobpkb)
+DCOMMAND        UPDATE
+DTARGET         jmnnoidx tlmnoasal
+DMAP            mupdfotobpkb
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cuplbpkb
+SFL_UPLFLD jmnno
+SFL_UPLFLD_DBCALCS dupdfotobpkb
+SFL_UPL_COND    ctransbg1
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tlmtgl2
+SFL_TARGET jmnnoidx   tlmnoasal
+

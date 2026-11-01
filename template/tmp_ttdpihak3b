@@ -1,0 +1,79 @@
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||i.NoBuk  :____________________    ||
+||t.Nama   :____________________    ||
+||i.Ket    :________________________||
+||t.Nip    :__________ _________ ___||
+||i.GPS    :__._______ ___._______ _||
+|\----------------------------------/|
+|/--SIGNATURE-----------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode         PROTECT                 INPUTRI         1
+aktlok          ALLCAPS                 INPUTRI         2
+aktket          PROTECT                 INPUTRI         3
+aktcab		PROTECT			INPUTRI		4
+akttgl2		PROTECT {DD-MM-YYYY}	INPUTRI		4
+aktjml2		PROTECT			INPUTRI		5
+
+llat		PROTECT QPROTECT	INPUTRI         9
+llon		PROTECT QPROTECT	INPUTRI         9
+lgps		GPSINFO {llat,llon}	NONE            9
+
+EDIT(tmptranst)
+e.Mandatory     aktlok  MANDATORY
+
+CALCS()
+chitupdttd3	aktjml2 + 1
+
+MAP(mupdttdpihak3_b)
+g_tgltrn        akttgl2         REPLACE
+ljam            aktjam          REPLACE
+llon            akttotal        REPLACE
+llat            aktjml          REPLACE
+g_usrkode       aktcab          REPLACE
+cblanks		aktcrttgl	DO_CALC
+chitupdttd3	aktjml2		DO_CALC	
+
+DBCALCS(dupdttdpihak3_b)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdpihak3_b
+
+MAP(mupdttdpihak3hps_b)
+cblanks         akttgl2         DO_CALC
+cblanks         aktjam          DO_CALC
+cblanks         akttotal        DO_CALC
+cblanks         aktjml          DO_CALC
+g_usrkode       aktcab          REPLACE
+g_tgltrn	aktcrttgl	REPLACE
+
+DBCALCS(dupdttdpihak3hps_b)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      aktprmidx   aktprm
+        DBC_MAP         mupdttdpihak3hps_b
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cbolehubah_b
+SFL_UPL_DIRFLD btmtgl
+SFL_SGNFLD      aktbrg
+SFL_SGNFLD_DBCALCS dupdttdpihak3_b
+SFL_SGNFLD_DELDBCALCS dupdttdpihak3hps_b
+SFL_TARGET
+        aktkodtypidx    btmnobuk gv_datasurvey lttdpihak3
+

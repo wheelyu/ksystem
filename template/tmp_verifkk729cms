@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+   t.Acc        : __________
+   t.Nip        : __________
+   t.Nama       : ____________________
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjenis        NOCHANGE        INPUTRI 1
+tkdsisstr       PROTECT         INPUTRI 2
+tkdrek          PROTECT         INPUTRI 3
+
+DEFAULTS(tmptranst)
+tkdjenis        DFALT_SCAN BLANKS       SESUAI
+                                        TIDAK_SESUAI
+tkdsisstr       INIT_UPDATE     {g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjenis                MANDATORY
+e.Validate      tkdsisstr       VALIDATE psikodidx mpsisoh 0
+
+MAP(mpsisoh)
+psikode		tkdsisstr       REPLACE
+psinama		tkdrek		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll   lCEKKK tkmnobuk tkmnobuk
+SFL_MAP
+tkmnobuk	tkdnobuk	REPLACE
+gv_INPG		tkdsts		REPLACE
+tkmnobuk	tkdnoll		REPLACE
+lCEKKK		tkddata		REPLACE
+
+MAP(mupdtkmmaster1)
+c1	tkmnil1		DO_CALC
+ltotalkkd       tkmlocosj       REPLACE_IF cpemohonkosong
+ltotalkkd2      tkmfransj       REPLACE_IF cpenjaminkosong
+g_usrkode       tkmlok1         REPLACE
+
+SPCALCS(sphasil)
+dmapkosong
+IF cadanokk dbscankkd
+IF cadapenjamin19 dbscankkd2
+ DO_LIB ap_dbclc (DNAME dupdtkmmaster1,DCOMMAND UPDATE,DTARGET tkmbukidx tkdnobuk,DMAP mupdtkmmaster1);
+
+POSTING(tmptrans)
+        PST_UPDCMD sphasil
+
+CALCS()
+cbolehubahcms	tkmsts=="OPEN" && tkmnil3==0 && tkmnil4==0 && (g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode==tkmlok1 || (djoinsgbm==1 && lnipbm==g_usrkode) || (djoinsgcms==1 && lnipcms==g_usrkode) || (djoinsgam4w==1 && lnipam4w==g_usrkode))
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cIT
+        PMT_UPDALL_COND cbolehubahcms
+        PMT_DEL_COND    cIT
+

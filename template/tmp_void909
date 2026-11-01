@@ -1,0 +1,98 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.Void909                                                                |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               |                   |
+|       !t.User       : ___________ _______________________  !                   |
+|       !t.Pilihan    : ________                             !                   |
+|       !t.Ket        : ______________________________       !                   |
+|       !				  ____________       !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktnobuk        PROTECT SCROLL          INPUTRI 1
+aktkode2      	PROTECT SCROLL          INPUTRI 2
+lnamainput      PROTECT SCROLL          INPUTRI 3
+akttype      	NOCHANGE SCROLL         INPUTRI 4
+aktket          TEXTAREA ALLCAPS        INPUTRI 5
+ltomOK		TOMBOL			INPUTRI	6
+
+EDITS(tmptranst)
+t.Validate aktkode2 VALIDATE psikodidx mpsiubah 0
+t.Mandatory akttype MANDATORY
+t.Mandatory aktket MANDATORY
+
+MAP(mpsiubah)
+psikode         aktkode2        REPLACE
+psinama         lnamainput      REPLACE
+
+
+DEFAULTS(tmptranst)
+aktcrttgl       INIT_ADD        {g_tgltrn}
+aktkode2        INIT_ADD        {g_usrkode}
+
+akttype      DFALT_SCAN_BLANKS VOID
+
+CALCS()
+cabkreminddev		abktype == "REMINDVOID" && (tlmtype1 == g_usrkode || (tlmplg == g_usrkode && tlmtype1 == BLANKS))
+
+MAP(mbukareminddev)
+DEBUG gv_CLSD		abksts		REPLACE_IF cabkreminddev
+
+SPCALCS(sbukareminddev)
+DO_LIB		ap_dbclc(DNAME dbukareminddev,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mbukareminddev);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltomOK	DO_SPCALCS sbukareminddev
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        aktkodtypidx    tlmnobuk lVOID909
+
+SFL_MAP
+tlmnobuk        aktkode         REPLACE
+lVOID909        aktdata         REPLACE
+tlmnobuk        aktnobuk        REPLACE
+tlmnobuk        aktbrg          REPLACE
+
+
+MAP(mupdtlmv)
+DEBUG gv_VOID		tlmsts		REPLACE
+gv_VOID                 tlmbrdoto       REPLACE
+
+MAP(mupdabkvoid)
+DEBUG gv_VOID         abksts          REPLACE
+
+CALCS()
+cbesok			g_tgltrn + 1
+catsjam1630		SYSTIME > ljam1630
+cketkunci		"INFORMASI VOID"
+cREMINDDEV		"REMINDVOID"
+cadanippengaju          tlmtype1 != BLANKS
+ctadanippengaju         tlmtype1 == BLANKS
+
+MAP(maddreminderdev)
+gv_INPG            abksts          REPLACE
+gt_RINP            abksts          REPLACE_IF catsjam1630
+lKUNCIABSEN        abkdata         REPLACE
+tlmnobuk           abknobuk        REPLACE
+tlmtype1      	   abkkym          REPLACE_IF cadanippengaju
+tlmplg             abkkym          REPLACE_IF ctadanippengaju
+g_tgltrn           abktgl          REPLACE
+cbesok             abktgl          DO_CALC_IF catsjam1630
+l909               abkscr          REPLACE
+cketkunci	   abkkym2         DO_CALC
+DEBUG cREMINDDEV   abktype	   DO_CALC
+
+SPCALCS(stlm)
+DO_LIB  ap_dbclc(DNAME dupdbukv,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmv);
+/*DO_LIB  ap_dbclc(DNAME dupdtkdvoid,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll lITR tlmnobuk, DMAP mupdtkdvoid);*/
+DO_LIB  ap_dbclc(DNAME dupdabkvoid,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DMAP mupdabkvoid);
+DO_LIB	ap_dbclc(DNAME daddreminderdev,DCOMMAND ADD,DFILE abk,DMAP maddreminderdev);
+
+POSTING(tmptrans)
+        PST_ADDCMD stlm

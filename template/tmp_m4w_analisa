@@ -1,0 +1,93 @@
+LOCAL
+PGM_FIELDS
+lok2		STRING		3
+
+/*DBCALCS(djoinsvianalisa)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   gv_dt1106 btmnobuk svitype */
+
+IMAGE(tmptranst) 
+/----------------------------------\
+| t.TipeAnalisa  __________________|
+| t.Keterangan   __________________|
+|                __________________|
+|                __________________|
+|                        ___       |
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode			ALLCAPS SCROLL		INPUTRI 1
+sviket			TEXTAREA		INPUTRI 2
+sviket2			TEXTAREA		INPUTRI 2
+sviket3			TEXTAREA		INPUTRI 2
+lok2			ALLCAPS		INPUTRI 3
+
+DEFAULTS(tmptranst)
+lok2		INIT		"OK"
+
+EDITS(tmptranst)
+e.Mandatoryket		sviket MANDATORY
+e.Mandatorykode		svikode MANDATORY
+e.Validatekode		svikode	VALIDATE tbldtdtmkod   misianalisa stbl {Pgv_dttabel} {Pgv_analisa} 
+
+MAP(misianalisa)
+tblkode			svikode			REPLACE
+tblkode			svitype			REPLACE
+
+/*MAP(mdumal)
+ldumanalisa		ldumanalisa		REPLACE*/
+
+MAP(mlenket)
+clenket        llenket        DO_CALC
+
+MAP(mduma)
+ldum		ldum		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket    DO_MAP SHOW mlenket
+AFTER_INPUT             cur_field=sviket        DO_MAP
+                        IF clenket200 mduma
+                        ELSE HKCURSOR STAY
+                        HKMSG Panjang Ket harus 200 Karakter
+
+
+CALCS()
+canalisacmo		svitype == "COLATERAL" || 
+			svitype == "PURPOSE" ||
+			svitype == "KARAKTER" ||
+			svitype == "KAPITAL" ||
+			svitype == "ANALISA" ||
+			svitype == "KAPASITAS" ||
+			svitype == "KONDISI" ||
+			svitype == "STRENGHTS" ||
+			svitype == "WEAKNESS" ||
+			svitype == "ACC CMO" ||
+			svitype == "ACC BM" ||
+			svitype == "KESIMPULAN"
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_SELECT canalisacmo
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   gv_dt1106 btmnobuk 
+
+SFL_MAP
+gv_dt1106		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+
+CALCS()
+cadd_analisa		btmsts == "701" || btmsts == "3702"
+cupd_analisa		(((btmsts == "701" || btmsts == "3702") && g_usrkode == btmsurveyor ) || 
+                        ((btmsts == "701" && (btmflag1 == "SDVY"  || btmflag1 == "SRVY")) && g_grpnam == "B.M4WBM"))
+/*cdel_analisa		(btmsts == "701" || btmsts == "3702") && (svikode == "ANALISA" ||
+			svitype == "KAPASITAS" ||
+			svitype == "KONDISI" ||
+			svitype == "STRENGHTS" ||
+			svitype == "WEAKNESS") */
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_analisa	
+  	PMT_UPDALL_COND cupd_analisa
+  	PMT_DEL_COND  	c0

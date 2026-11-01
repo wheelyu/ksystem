@@ -1,0 +1,61 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD--------------------------------------------\/--------------------\|
+| |   | |                                                      ||t.WaktuMenit        ||
+| |___| |                                                      ||  ________          ||
+| \---/ |                                                      ||spasi               ||
+|       |                                                      || ___________________||
+|       |                                                      || ___________        ||
+|       |                                                      |\--------------------/|
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       \------------------------------------------------------/                      |
+\-------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   sgmurt       PROTECT                 INPUTRI          1
+   sgmhrg2	PROTECT			INPUTRI		 2
+   sgmstr4      ALLCAPS                 INPUTRI          3
+   lenter	NOCHANGE		INPUTRI		 4
+
+DEFAULTS(tmptranst)
+sgmstr4		DFALT_SCAN_BLANKS A B C D E
+
+EDITS(tmptranst)
+e.Mandatory    sgmstr4  MANDATORY
+
+CALCS()
+cdjoinsgm81      ((djoinsgm8 == 1 || g_grpnam=="RI" || g_grpnam=="HRDSPV" || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA") && btmstsdata=="OPEN") || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD" 
+clewat_jam8       (djoinsgmimatime == 1 && sgmjam <= lsgmjamimaA) || djoinpsd9ima==1 || djoinsgmimatime == 0
+cjoinsgmIMA       djoinsgmimatime==1
+ctambahjamima     lsgmjamima + l0010
+
+MAP(mwaktu_imajinasi)
+cSYSTIME	sgmjam	    DO_CALC
+ctambahjamima   lsgmjamimaA DO_CALC_IF cjoinsgmIMA
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sgmstr4   DO_MAP SHOW mwaktu_imajinasi
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW maddtgltes
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW 
+                IF clewat_jam8 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.WaktuTesSudahBerahkir
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     sgmstr2
+SFL_UPLREADONLY
+SFL_COND        cdjoinsgm81
+SFL_TARGET
+        sgmdabrplgtb   gv_testkry11   btmnobuk ltest_ima
+

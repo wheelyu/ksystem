@@ -1,0 +1,127 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------\
+ __________________  ____
+ ___________________________________
+ ___________________________________
+ t.Lantai : __________                
+ t.Fisik  : __________  t.AdaTidak
+ t.Kondisi: __________  t.BaikRusak
+ t.JmlBrg : __________                 
+ t.KenKonRusak 
+ ___________________________________
+ t.UploadFotoSesuaiJmlBarang
+ /-------UPLOAD--------------------\
+
+
+
+
+
+
+
+
+
+ \---------------------------------/
+ t.tglu      : ____________________
+ t.AccAm     : ______                   
+ t.KetTacc   : ____________________
+ t.AccHO     : ______  ____________     
+ t.KetTaccHO : ____________________
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	PROTECT		INPUTRI 1
+tldsisbrg	PROTECT		INPUTRI 2
+tldbrg 		PROTECT 	INPUTRI 3
+tldket2		PROTECT 	INPUTRI 3
+tldsat 		PROTECT 	INPUTRI 4 
+tldgrup		NOCHANGE	INPUTRI 5 
+tldgrup2	NOCHANGE	INPUTRI 6
+tldperdis7	NUMERIC		INPUTRI 7
+tldket		ALLCAPS SCROLL  INPUTRI 8
+tldtglfak	PROTECT	NOLIMIT {DD-MM-YY} INPUTRI 9
+tldjasbrg	NOCHANGE	INPUTRI 10
+tldkat		ALLCAPS SCROLL	INPUTRI	11
+tldlok		NOCHANGE	INPUTRI	12
+tldukrwrn	PROTECT		INPUTRI	13
+tldlok2		ALLCAPS SCROLL	INPUTRI	14
+
+CALCS()
+clampu		tldket2=="LAMPU"
+ccekkabel	tldket2=="INSTALASI KABEL"
+clancar		tldket2=="TALANG AIR" || tldket2=="SELOKAN/PARIT"
+ctoren		tldket2=="TOREN"
+cselainitu	tldket2!="LAMPU" && tldket2!="INSTALASI KABEL" && tldket2!="TALANG AIR" && tldket2!="SELOKAN/PARIT" && tldket2!="TOREN"
+
+DEFAULTS(tmptranst)
+tldsat		INIT_UPDATE	{tbetbtkode}
+tldgrup		DFALT_SCAN_BLANKS		ADA " "
+						TIDAK " "
+IF cselainitu tldgrup2	DFALT_SCAN_BLANKS		BAIK " "
+						RUSAK " "
+						KOTOR " "
+IF clampu tldgrup2	DFALT_SCAN_BLANKS	MENYALA_SEMUA " "
+						MATI_SEBAGIAN " "
+IF ccekkabel tldgrup2	DFALT_SCAN_BLANKS	RAPI " "
+						BERANTAKAN " "
+IF clancar tldgrup2	DFALT_SCAN_BLANKS	LANCAR " "
+						TERSUMBAT " "
+IF ctoren  tldgrup2	DFALT_SCAN_BLANKS	BERSIH " "
+						KOTOR " "
+tldsat		DFALT_SCAN_BLANKS		LANTAI1 " "
+						LANTAI2	" "
+						LANTAI3	" "
+						LANTAI4	" "
+						LANTAI5	" "
+tldjasbrg	DFALT_SCAN_BLANKS		Y " "	
+						T " "
+tldlok		DFALT_SCAN_BLANKS		Y " "	
+						T " "
+
+CALCS()
+cadabaru	tldgrup=="ADA" && (tmpkode == "HYDRANTINDOOR" || tmpkode == "SMOKEDETECTOR" || tmpkode == "SPRINKLE" || tmpkode == "HYDRANTOUTDOOR")
+
+EDITS(tmptranst)
+e.Mandatory	tldgrup		MANDATORY
+e.Mandatory	tldgrup2	MANDATORY_IF cADA
+e.Mandatory	tldket		MANDATORY_IF cADAR
+e.Mandatory	tldperdis7	MANDATORY_IF cadabaru
+
+CALCS()
+cbukanam	tlmplg!=g_usrkode 
+cbukanho	g_grpnam!="GAHEAD" && g_grpnam!="ADHDVH" && g_grpnam!="RAS" && g_grpnam!="RASDVH" && g_grpnam!="IT"
+cubahz		tlmsts=="RCLS" && g_curcmd==2
+
+MAP(mho)
+g_usrkode	tldukrwrn	REPLACE_IF cubahz
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF ctidak
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF ctidak2
+BEFORE_INPUT	cur_field=tldjasbrg 	DO_SKIP_IF cbukanam
+BEFORE_INPUT	cur_field=tldkat    	DO_SKIP_IF cbukanam
+BEFORE_INPUT	cur_field=tldlok    	DO_SKIP_IF cbukanho
+BEFORE_INPUT	cur_field=tldlok2    	DO_SKIP_IF cbukanho
+AFTER_INPUT	cur_field=tldgrup	DO_MAP SHOW mkosong
+AFTER_INPUT	cur_field=tldgrup2	DO_MAP SHOW mkosong2
+AFTER_INPUT	cur_field=tldlok 	DO_MAP SHOW mho      
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW mpanjangket30
+AFTER_INPUT     cur_field=tldket        DO_MAP
+                IF charuslebihdari20 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Keterangan Harus 20 Huruf Atau Lebih, Tolong Beri Penjelasan Yang Jelas
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD	tlmtgl
+SFL_UPLFLD 	tldoto
+SFL_UPLFLD_DBCALCS      dupdatedet1
+SFL_COND 	cnonraker
+SFL_TARGET
+tldbukbrglok	tlmnobuk tbekode
+SFL_MAP	
+	tlmnobuk	tldnobuk	REPLACE
+	tbekode		tldbrg		REPLACE
+	tbetbtkode	tldsat		REPLACE

@@ -1,0 +1,99 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+| spasi                                                                          |
+|/--------------------------------------\/--------------------------------------\|
+|| t.KetBeritaacara                     || t.ApprdanMengetahui                  ||
+||                      t.TglMengerjakan||                         t.TGLAcc     ||
+||                         ___________  ||                         ___________  ||
+||  spasi                               || t.AccLegalIr       _______           ||
+||  spasi                               || t.AlasanTacc       ________________  ||
+||  spasi                               || spasi                                ||
+|| t.AlasanPGJ   _____  ______________  || t.MengetahuiCMBNBANKING       ______ ||
+|| t.SkemaPGJ    ________________       || t.MengetahuiCMBNHEAD          ______ ||
+|| t.Upload ___                         ||                                      ||
+|\--------------------------------------/\--------------------------------------/|
+|/-----------------s.UPLOAD-------------\                                        |
+||                                      |                                        |
+||                                      |                                        |
+||                                      |                                        |
+||                                      |                                        |
+||                                      |                                        |
+||                                      |                                        |
+||                                      |                                        |
+|\--------------------------------------/                                        |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1     PROTECT {DD-MM-YYYY}    INPUTRI 1
+psdtgl2     PROTECT {DD-MM-YYYY}    INPUTRI 3
+psdtype2     NOCHANGE                INPUTRI 4
+psdket2     TEXTAREA                INPUTRI 5
+psdstr4     NOCHANGE                INPUTRI 2
+lalasanPGJ  PROTECT                 INPUTRI 2
+psdstr1     NOCHANGE                INPUTRI 6
+psdket      TEXTAREA                INPUTRI 3
+psdstr2     NOCHANGE                INPUTRI 7     
+psdstr3     NOCHANGE                INPUTRI 8
+
+DEFAULTS(tmptranst)
+psdtype2     DFALT_SCAN  BLANKS
+                        ACC
+                        TACC
+psdstr1     DFALT_SCAN  BLANKS
+                        Y
+psdstr2     DFALT_SCAN  BLANKS
+                        Y
+
+
+EDITS(tmptranst)
+t.Mandatory     psdket  MANDATORY
+t.Mandatory     psdstr4  MANDATORY
+t.Mandatory     psdket2 MANDATORY_IF ctacc
+t.Mandatory     psdtype2 MANDATORY_IF cInpgAppr
+t.Mandatory     psdstr1 MANDATORY_IF cInpgbanking
+t.Mandatory     psdstr2 MANDATORY_IF cInpgCmbn
+t.Validate psdstr4 VALIDATE tbddatkodidx mtbd stbd {Pgv_dttabel} {PlHRD} {PlALSPGJ}
+
+MAP(mtbd)
+tbdkode         psdstr4         REPLACE
+tbdket          lalasanPGJ      REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr4	DO_SKIP_IF cisiket
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cisiket
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cisiacc
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF cisiacc2
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cisibanking
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cisicmbn
+AFTER_INPUT     cur_keybd=EN            DO_MAP  SHOW misitgl2
+
+MAP(misitgl2)
+g_tgltrn        psdtgl1         REPLACE_IF ckondtambah
+g_tgltrn        psdtgl2         REPLACE_IF cisidetacc                 
+
+MAP(mupdpsdUPL)
+cY          psdstr3     DO_CALC
+
+DBCALCS(dupdpsdUPL)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      psdprmidx   psdprm  
+        DBC_MAP         mupdpsdUPL
+
+
+        
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_UPLFLD  hrmnobuk psdtype
+SFL_UPLFLD_DBCALCS dupdpsdUPL
+SFL_UPL_COND    cblhupldet
+SFL_TARGET
+psddatpsmkod   lPENDGAJI  hrmnobuk hrmnip1 lPENDING
+
+SFL_MAP
+hrmnobuk    psdpsmkode
+hrmdata     psddata
+hrmnip1     psdkode
+lPENDING    psdtype

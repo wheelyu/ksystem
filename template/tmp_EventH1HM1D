@@ -1,0 +1,62 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------------------------\
+ t.SDM JAGA PAMERAN
+/------------t--------t------t-----------t----------------t------------------t----------------t------------------\
+|t.Tanggal   |t.Hari  |t.NIP |t.Nama     |t.Shift 1       |t.Tugas 1         |t.Shift 2       |t.Tugas 2         |
+\------------.--------.------.-----------.----------------.------------------.----------------.------------------/
+\----------------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|____________|________|______|___________|________________|__________________|________________|__________________|
+
+FIELD(tmptrans)
+tldtglfak       PROTECT {DD-MM-YYYY}    INPUTRI	1
+tldgrup       PROTECT		        INPUTRI	1
+tldlok  	        ALLCAPS         INPUTRI	1
+lnamasdm 	PROTECT		        INPUTRI	1
+tldstr2        PROTECT                 INPUTRI 2
+tldstr3       PROTECT                 INPUTRI 2
+tldstr4         PROTECT                 INPUTRI 3
+tldstr5         PROTECT                 INPUTRI 4
+
+
+HOOKS(tmptrans)
+
+MAP(msdmjaga)
+cBLANKS                 lnamasdm        DO_CALC
+psinama                 lnamasdm        REPLACE
+psikode         tldlok          REPLACE
+
+DEFAULTS(tmptrans)
+lnamasdm        INIT                    ""
+
+EDITS(tmptrans)
+e.Mandatory             tldlok         MANDATORY
+t.KryNull               tldlok         VALIDATE psikodidx msdmjaga spsiinpgcab
+
+CALCS()
+csdmbertugas djoindetailahm1PIKS == 1 
+csdmsudahinput djoinsdmsudahinput == 0
+MAP(msdmjagatldbrg)
+tldlok tldbrg REPLACE
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldlok        DO_MAP SHOW mtldlok
+AFTER_INPUT	cur_field=tldlok        DO_MAP
+                IF csdmbertugas mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.BUKAN SDM BERTUGAS
+AFTER_INPUT	cur_field=tldlok        DO_MAP
+                IF csdmsudahinput mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SDM SUDAH DI INPUT
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW msdmjagatldbrg
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_COND cadasdmjaga
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldplgbrgidx lEVNH1DHM1 gv_INPG tlmnobuk
+SFL_MAP
+        lEVNH1DHM1 tlddata      
+        gv_INPG tldsts
+        tlmnobuk tldplg

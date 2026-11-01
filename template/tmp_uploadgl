@@ -1,0 +1,78 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+| t.Nip	       : ________ ____________ |
+| t.DtGln      : ________ 	       |
+| t.JmlFile    : ________ 	       |
+| t.Ket        : ____________________  |
+		 ___
+|/----s.UPLOAD------------------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+| _____________        	               |
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdkode		PROTECT        	INPUTRI 1
+lnamagl		PROTECT		INPUTRI 1
+psdtype		NOCHANGE	INPUTRI	2
+psdtot		DIGITS		INPUTRI	3
+psdket		TEXTAREA ALLCAPS 	INPUTRI 4
+ldum            NOCHANGE        INPUTRI 5
+psdstr1		PROTECT		INPUTRI 6
+
+CALCS()
+cOK2		"OK"
+cdtglksg	psdtype=="Y"
+caddtgl		psdtype=="T"
+cit		g_grpnam == "IT" || g_grpnam == "RI"
+
+DEFAULTS(tmptranst)
+psdkode		INIT_ADD	{g_usrkode}
+
+psdtype		DFALT_SCAN_BLANKS      Y
+                                       T
+
+EDITS(tmptranst)
+e.Mandatory     psdkode        MANDATORY
+e.Mandatory     psdtype        MANDATORY
+e.Mandatory     psdket         MANDATORY
+e.Mandatory     psdtot         MANDATORY_IF cdtglksg
+
+e.Validate   psdkode  VALIDATE psikodidx muplusrgl
+
+
+MAP(muplusrgl)
+psinama		lnamagl		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdtot        DO_SKIP_IF caddtgl
+
+MAP(mupdfotogl)
+cOK2            psdstr1        DO_CALC
+
+DBCALCS(dupdfotogl)
+DCOMMAND        UPDATE
+DTARGET         psdprmidx   psdprm
+DMAP            mupdfotogl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD  abktgltrn
+SFL_UPLFLD abknobuk
+SFL_UPLFLD_DBCALCS dupdfotogl
+SFL_UPL_DELCOND c0
+SFL_COND	cit
+SFL_TARGET
+psddatpsmkod   lUPLGLN abknobuk abkkym
+
+SFL_MAP
+lUPLGLN		psddata		REPLACE
+abknobuk	psdpsmkode	REPLACE

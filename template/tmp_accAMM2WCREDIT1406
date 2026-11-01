@@ -1,0 +1,68 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+   t.Acc       : ________
+   t.Nip       : ________
+   t.Nama      : ___________________
+spasi
+   t.ammktg    : ________  ____________
+   t.amcredit  : ________  ____________
+	   	
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1       NOCHANGE        INPUTRI 1
+tkdstr1          PROTECT         INPUTRI 2
+tkdstr2          PROTECT         INPUTRI 3
+lnipm2wam	PROTECT		INPUTRI	4
+lnamam2wam	PROTECT		INPUTRI	5
+lnipcreditam	PROTECT		INPUTRI	6
+lnamacreditam	PROTECT		INPUTRI	7
+
+DEFAULTS(tmptranst)
+tkdjwbstr1        DFALT_SCAN BLANKS       ACC
+                                        TACC
+
+tkdstr1         INIT_UPDATE {g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr1                MANDATORY
+e.Validatepsi   tkdstr1         VALIDATE psikodidx mpsiamcrdt 0
+
+
+MAP(mnipacc)
+g_usrkode	tkdstr1		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW mnipacc
+
+
+MAP(mpsiamcrdt)
+psikode	tkdstr1 REPLACE
+psinama tkdstr2 REPLACE
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll   lUSRACC mtsnobuk lnoll1
+
+CALCS()
+camcredit     (g_usrkode=="2102743" || 
+               (djoinsgmamm2w==1  && lnipm2wam == g_usrkode) || 
+               (djoinsgmcreditam==1 && lnipcreditam == g_usrkode) || 
+               (djoinsgmkawil==1 && lnipkawil==g_usrkode) || 
+               g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="IT2" || 
+               (djoinpsibmmm2w ==1  && lnipbmmm2w == g_usrkode) ||
+               (djoinpsihocrem2w4w ==1 && lnipcrehom2w4w == g_usrkode)
+               ) && mtsdari == "HARGAPSR" && mtsstsapr!="IN" && mtsstsapr!="TL"
+
+
+
+PERMIT(tmptrans)
+        PMT_ADD_COND  c0 
+        PMT_UPDALL_COND camcredit
+        PMT_DEL_COND    c0 
+

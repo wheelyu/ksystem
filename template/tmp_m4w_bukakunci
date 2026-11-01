@@ -1,0 +1,136 @@
+LOCAL
+PGM_FIELDS
+/*lsvinourtxx	INT2		2*/
+lBUKAKUNCI	STRING		11
+lBUKAKUNCI21	STRING		21
+lnamabuka	STRING		21
+lsvistr2xx	STRING		61
+lversi5		STRING		11
+ljmlbukakunci	INT2		2
+
+
+/*MAP(mjoinsvi)
+svinourt	lsvinourtxx	REPLACE
+
+DBCALCS(djoinsvi)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp lBKUNCIM4W btmnobuk lBKUNCIM4W
+	DBC_MAP		mjoinsvi
+
+
+DBCALCS(djoinabktgl)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsen btmnobuk
+
+*/
+
+MAP(mscansvibukakunci)
+c1	ljmlbukakunci		DO_CALC
+
+DBCALCS(dscansvibukakunci)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET      svidatbuktyp lBKUNCIM4W btmnobuk lBKUNCIM4W
+	DBC_SUM_MAP	mscansvibukakunci
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------\
+|t.Nobuk     :_________________  ______ _________ _____       |
+|t.Ket       :_________ _________________________             |
+|t.NipInput  :_________________ _________________          __ |
+|t.Enter     :_________________                               |
+\-------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk	PROTECT		INPUTRI 1
+svists		PROTECT		INPUTRI 2
+svitgl1		PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 2
+svistr1		PROTECT		INPUTRI 2
+svistr2		ALLCAPS SCROLL	INPUTRI 2
+lsvistr2xx		PROTECT		INPUTRI 2
+svistr3		PROTECT		INPUTRI 4
+lnamabuka	PROTECT		INPUTRI 5
+svinourt	PROTECT		INPUTRI 6
+lenter		ALLCAPS		INPUTRI 7
+
+DEFAULTS(tmptranst)
+svidata		INIT		BKUNCIM4W
+lBUKAKUNCI	INIT		BUKAKUNCI
+lBUKAKUNCI21	INIT		BUKAKUNCI
+svistr3		INIT		{g_usrkode}
+svists		INIT		"OPEN"
+svitgl1		INIT_ADD	{g_tgltrn}
+lversi5		INIT		060423v1
+
+
+EDITS(tmptranst)
+e.Mandatory	svistr2		MANDATORY
+e.Validate	svistr2		VALIDATE tbddatkodidx mtbdkunci stbd {PlDTTABEL} {PlINFOKREDIT} {PlBUKAKUNCI21}
+e.Validate	svistr3		VALIDATE psmkodidx mpsmket
+
+MAP(mtbdkunci)
+tbdkode		svistr2		REPLACE
+tbdket		lsvistr2xx		REPLACE
+
+CALCS()
+/*csvinourt0	djoinsvi == 0		
+csvinourt1	djoinsvi == 1
+csvi1		1
+csvi2		lsvinourtxx + 1
+*/
+
+cjadibesok	g_tgltrn + 1
+ckemaren	(abksts == "INPG" || abksts == "RINP") && abktgl <= g_tgltrn && abknobuk == btmnobuk
+cjoinabktgl	svistr2 != "BUKATACC"
+cho		(g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "B.M4WDVH")
+cbatasanextend	(dscansvibukakunci==0 || dscansvibukakunci==1) && 
+	((ljmlbukakunci == 0 && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "B.M4WDVH")) ||  
+	(ljmlbukakunci == 1 && (g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "B.M4WDVH")) || (ljmlbukakunci >= 2 &&
+        (g_grpnam == "B.M4WCM"|| g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "B.M4WDVH")))
+
+MAP(mpsmket)
+psmnama		lnamabuka	REPLACE
+
+/*MAP(msvinourt)
+csvi1		svinourt	DO_CALC_IF csvinourt0
+csvi2		svinourt	DO_CALC_IF csvinourt1
+svistr2		svistr4		REPLACE
+*/
+
+
+HOOKS(tmptranst)
+/*BEFORE_INPUT	cur_field=svistr2		DO_MAP SHOW msvinourt*/
+AFTER_INPUT	cur_keybd=EN     	 	DO_MAP SHOW 
+		IF cbatasanextend mdum
+		ELSE HKCURSOR STAY
+		HKMSG Untuk Extend 1 CA, 2 CM, Lebih 3 COO
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	svidatbuktyp lBKUNCIM4W btmnobuk lBKUNCIM4W
+SFL_MAP
+lBKUNCIM4W	svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lBKUNCIM4W	svitype		REPLACE
+
+MAP(mupdabktgl)
+lRINP		abksts		REPLACE_IF ckemaren
+cjadibesok	abktgl		DO_CALC_IF ckemaren
+
+SPCALCS(supdtransabk)
+	DO_LIB_IF cjoinabktgl ap_dbclc(DNAME dupdabktgl,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen btmnobuk,DMAP mupdabktgl);
+
+
+POSTING(tmptrans)
+	PST_ADDCMD	supdtransabk
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cho
+PMT_UPDALL_COND	cho
+PMT_DEL_COND	c0
+
+
+

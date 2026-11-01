@@ -1,0 +1,63 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+   t.Acc	: __________
+   t.Nip        : __________
+   t.Nama       : ____________________
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjenis	NOCHANGE	INPUTRI 1
+tkdsisstr       PROTECT         INPUTRI 2
+tkdrek          PROTECT         INPUTRI 3
+
+DEFAULTS(tmptranst)
+tkdjenis        DFALT_SCAN BLANKS       ACC
+                                        TACC
+tkdsisstr       INIT_UPDATE     {g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjenis                MANDATORY
+e.Validate      tkdsisstr       VALIDATE psikodidx mpsisoh 0
+
+MAP(mpsisoh)
+psikode	tkdsisstr	REPLACE
+psinama tkdrek  REPLACE
+
+CALCS()
+clihatsoh	tlmdari=="BL21" || tlmdari=="BL22"||tlmdari=="BL23" || tlmdari=="BL24" || tlmdari=="BL26"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND clihatsoh
+SFL_TARGET
+	tkddatbukll   lUSRACC tlmnobuk lnoll1 
+
+MAP(mjoinsgmnsohmc)
+sgmstr5         lnipnsoh         REPLACE
+
+DBCALCS(djoinsgmnsohmc)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth gv_dtpiccab tlmdvs tlmcab lthbl11 lNSOHEAD
+        DBC_MAP         mjoinsgmnsohmc
+
+MAP(mjoinsgmmsom2w)
+sgmstr5         lnipmsoh         REPLACE
+
+DBCALCS(djoinsgmsohm2w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth gv_dtpiccab tlmdvs tlmcab lthbl11 lMSOHEAD
+        DBC_MAP         mjoinsgmmsom2w
+
+CALCS()
+csoh 	((djoinsgmnsohmc==1 && lnipnsoh == g_usrkode) || (djoinsgmcreditam==1 && lnipcreditam == g_usrkode) || 
+	(djoinsgmsohm2w==1  && lnipmsoh == g_usrkode) || (djoinsgmkawil==1 && lnipkawil==g_usrkode) || (djoinsgmamm2w==1  && 
+	lnipamm2w == g_usrkode) || ((djoinsgmamhmc==1||djoinsgmamhmcm2w==1 ) && lnipamhmc == g_usrkode) || (djoinsgmbm == 1 && lnipbm == g_usrkode)
+	|| g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="IT2" ) && 
+	tkdjwbstr1==BLANKS && tkdjwbstr2==BLANKS && tlmstsapr!="OK" && tlmstsapr!="IN" && tlmsts=="OPEN"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+	PMT_UPDALL_COND	csoh
+	PMT_DEL_COND	c0

@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------\|
+||                              t.FotoDokumen                                 ||
+|\----------------------------------------------------------------------------/|
+|/--------s.UPLOAD----------\ /-----------------------------------------------\|
+||                          ! !t.Ket    ______________________________________!|
+||                          ! !t.TglFt  ________                              !|
+||                          ! !t.Status ________                              !|
+||                          ! !_________________                              !|
+||                          ! !                                               !|
+||                          ! \-----------------------------------------------/|
+||                          !                                                  |
+||                          !                                                  |
+||                          !                                                  |
+|\--------------------------/                                                  |
+\------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+docno           PROTECT                 INPUTRI 	1
+doctgljadi	PROTECT	{DD-MM-YYYY}		INPUTRI		2
+docsts		PROTECT			INPUTRI		3
+lUPLOAD		TOMBOL			INPUTRI		4
+
+
+MAP(mupdtmptrans)
+gv_INPG		docsts		REPLACE
+
+DBCALCS(dupdtmptrans)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	docprmidx docprm
+	DBC_MAP		mupdtmptrans
+
+CALCS()
+csdhupload	docsts=="INPG"
+
+MAP(mupload)
+g_fotodate1	doctgljadi	REPLACE
+gv_CLSD		docsts		REPLACE_IF csdhupload
+
+SPCALCS(supload)
+	DO_LIB	ap_dbclc(DNAME dupload,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupload);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=lUPLOAD	DO_SPCALCS supload
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(4)
+SFL_UPLFLD      docnobuk doctype
+SFL_UPLFLD_DBCALCS dupdtmptrans
+SFL_UPL_DIRFLD psmtgl
+SFL_UPL_DELCOND c0
+SFL_TARGET
+docdatbukidx lDOCBIDDER psmkode
+
+

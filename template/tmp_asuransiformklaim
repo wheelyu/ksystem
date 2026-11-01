@@ -1,0 +1,78 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|spasi                             |
+|/-----------UPLOAD---------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||________________________________||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.StsUplYT    __________________||
+||t.FisikTerima __________________||
+||t.AccBerkas   __________________||
+||t.Ket         __________________||
+||t.Ket2        __________________||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdket          PROTECT SCROLL          INPUTRI         1
+tkdjenis        PROTECT                 INPUTRI         2
+tkdsisstr       NOCHANGE                INPUTRI         5
+tkdjwbstr1      NOCHANGE                INPUTRI         6
+tkdjwbstr2      NONE                    INPUTRI         7
+tkdrek          NONE                    INPUTRI         8
+
+DEFAULTS(tmptranst)
+tkdsisstr       DFALT_LIST              Y T
+tkdjwbstr1      DFALT_LIST              Y T
+lY              INIT                    Y
+
+CALCS()
+c01FK    tmpkode=="01FORMKLAIM"
+cpil01   tkdnoll==tmpkode
+ctdkblhubhfk    g_grpnam != "FINASS" && g_grpnam != "FINASSCO"
+
+MAP(mupdtkdUPL01)
+lY              tkdjenis                REPLACE
+lY              tkdsisstr               REPLACE
+
+DBCALCS(dupdtkdUPL01)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx tkdprm
+        DBC_MAP         mupdtkdUPL01
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdsisstr     DO_SKIP_IF ctdkblhubhfk
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF ctdkblhubhfk
+BEFORE_INPUT    cur_field=tkdjwbstr2    DO_SKIP_IF ctdkblhubhfk
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND c01FK
+SFL_SELECT cpil01
+SFL_UPLFLD_DBCALCS dupdtkdUPL01
+SFL_UPLFLD tkdnoll tkdnobuk
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+        tkddatbukll     lclaimass tlmnobuk
+
+SFL_MAP
+        tlmdata         tkddata         REPLACE
+        tlmnobuk        tkdnobuk        REPLACE
+        tmpnourt        tkdnourt        REPLACE
+        tmpkode         tkdnoll         REPLACE
+        tmpket          tkdket          REPLACE
+

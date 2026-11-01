@@ -1,0 +1,129 @@
+LOCAL
+PGM_FIELDS
+lTDKHADIR       STRING 11
+lALSKEL		STRING 21
+lHSLFUKBA	STRING 21
+lKLIKNSC	STRING 21
+lket            STRING 61
+lket2           STRING 61
+lpsinamaats 	STRING 61
+lpsinamakba     STRING 61
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.Nobuk 	: _________________ ||
+||t.Tanngal	: ______	    ||
+||t.NipAts	: __________________||
+||t.NamAts	: __________________||
+||t.NipKba	: __________________||
+||t.NamKba	: __________________||
+||t.Cab		: __________________||
+||t.HslFu	: ___ ______________||
+||t.AlsMD	: ___ ______________||
+||t.UplBkt			    ||
+||/--s.UPLOAD----------------------\||
+|||		     		   |||
+|||                  		   |||
+|||                  		   |||
+|||                  		   |||
+|||                  		   |||
+|||                  		   |||
+||\--------------------------------/||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	PROTECT		INPUTRI 1	/* NOBUK */
+tldtgl2		PROTECT	{DD-MM-YYYY} QNONMANDATORY	INPUTRI 2	/* Tanngal */
+tldbrg		PROTECT		INPUTRI 3	/* NIP ATASAN YANG TERKUNCI */
+lpsinamaats	PROTECT		INPUTRI 4	/* NAMA ATASAN YANG TERKUNCI */
+tldlok		PROTECT		INPUTRI 5	/* Nip KBA tidak hadir */
+lpsinamakba	PROTECT		INPUTRI 6	/* Nama KBA tidak hadir */
+tldcab		PROTECT		INPUTRI 7	/* CAB */
+tldstr3		ALLCAPS		INPUTRI 8	/* HASIL FU */
+lket		PROTECT		INPUTRI 9	/* Ket HASIL FU */
+tldstr4		ALLCAPS		INPUTRI 10	/* ALASAN MD atau KELUAR */
+lket2		PROTECT		INPUTRI 11	/* KET ALASAN KELUAR*/
+
+DEFAULTS(tmptranst)
+tldtgl2		INIT_QUERY      {g_tgltrn}
+
+lTDKHADIR	INIT		"PICAKBA"
+lALSKEL		INIT		"ALSKELUARKBA"
+lHSLFUKBA	INIT		"HASILFUKBA"
+lKLIKNSC	INIT		"KLIKNSC"
+
+CALCS()
+csel		tlddata == lTDKHADIR && tldsts == "OPEN"
+cpindah		abknoll == "PICAKBA"
+caktv		tldstr3 != "4"
+calsmd		tldstr3 == "4"
+cOK		"ok"
+cisiket		tldstr3 != BLANKS
+
+EDITS(tmptranst)
+e.Mandatory		tldstr3		MANDATORY
+e.Mandatory		tldstr4		MANDATORY_IF calsmd
+e.ValidateFu		tldstr3         VALIDATE tbddatkodidx mtbd1 stbd {Pgv_dttabel} {PlKLIKNSC} {PlHSLFUKBA}
+e.ValidateRes		tldstr4		VALIDATE tbddatkodidx mtbd2 stbd {Pgv_dttabel} {PlKLIKNSC} {PlALSKEL}
+e.Validatenamaats	tldbrg		VALIDATE psikodidx mpsi1 spsi
+e.Validatenamakba       tldlok          VALIDATE psikodidx mpsi2 spsi
+
+MAP(mtbd1)
+tbdkode		tldstr3		REPLACE
+tbdket          lket            REPLACE
+
+MAP(mtbd2)
+tbdkode         tldstr4         REPLACE
+tbdket          lket2            REPLACE
+
+MAP(mpsi1)
+psikode		tldbrg		REPLACE
+psinama		lpsinamaats	REPLACE
+
+MAP(mpsi2)
+psikode         tldlok          REPLACE
+psinama         lpsinamakba     REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldstr4       DO_SKIP_IF caktv
+
+
+MAP(mupdfoto2)
+cOK		tldstr5		DO_CALC
+
+MAP(mupdketisi)
+lket	ketisi2	REPLACE
+
+DBCALCS(dupdfoto2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx   tldprm
+        DBC_MAP         mupdfoto2
+
+SPCALCS(sptmptrans)
+	DO_LIB_IF cisiket		ap_dbclc(DNAME dupdketisi, DCOMMAND UPDATE_RANGE, DTARGET ketdatbukkod gt_DTPS abkoto, DMAP mupdketisi);
+
+POSTING(tmptrans)
+        PST_UPDCMD     sptmptrans
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND   cpindah
+SFL_SELECT csel
+SFL_UPL_DIRFLD  abktgltrn
+SFL_UPLFLD tldnobuk
+SFL_UPLFLD_DBCALCS  dupdfoto2
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tldbukbrglok   abknobuk
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c0
+PMT_DEL_COND    c0

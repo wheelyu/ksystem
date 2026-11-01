@@ -1,0 +1,168 @@
+LOCAL
+PGM_FIELDS
+ltbtnourt       STRING  2
+lppsnobuk       STRING  21
+lppstype        STRING  21
+lRekPiuFincoy   STRING  21
+lRekHutFincoy   STRING  21
+
+CALCS()
+cfincoyx	ppstype==gv_biafincoy
+
+MAP(mjoinfincoy)
+ppstype		lppstype	REPLACE
+
+DBCALCS(djoinppsfincoy)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppsmstbukidx btmnobuk
+	DBC_MAP		mjoinfincoy
+	DBC_SELECT	cfincoyx
+
+CALCS()
+cfincoy0	djoinppsfincoy==0 && btmtype=="EX" 
+cfincoy1	djoinppsfincoy==1 && btmtype=="EX"
+
+
+IMAGE(tmptranst)
+/--------------------t-------------------------------t---------------------\
+|i.Kode              |i.Keterangan                   |  i.JmlRp            |
+\--------------------.-------------------------------.---------------------/
+
+
+IMAGE(tmptrans)
+|____________________|_______________________________|_____________________|
+
+FIELD(tmptrans)
+tmpkode		PROTECT		INPUTRI	1
+tmpket   	PROTECT		INPUTRI 2
+tmpisidf1	NUMERIC		INPUTRI 3
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_COND cfincoy0
+SFL_APP_TYPE
+
+SFL_TARGET
+tmpdatdvskod	gv_dttemplate gv_strbiafincoy btmdvsjl
+
+IMAGE(tmptransg1t)
+/-----------t---------------t---------t-------t-------t-------t-------\
+|i.Kode     |i.Keterangan   |i.Rp     |i.Dpp  |i.Ppn  |i.Pph  |i.Net  |
+\-----------.---------------.---------.-------.-------.-------.-------/
+
+
+IMAGE(tmptransg1)
+|___________|_______________|_________|_______|_______|_______|_______|
+
+FIELD(tmptransg1)
+ppskdpm         ALLCAPS         INPUTRI 1
+ppsket          PROTECT         INPUTRI 2
+ppshrg          PROTECT         INPUTRI 3
+ppsjml          PROTECT         INPUTRI 3
+ppscek          PROTECT         INPUTRI 3
+ppscair         PROTECT         INPUTRI 3
+ppstotal        PROTECT         INPUTRI 3
+
+CALCS()
+cfincoy		ppstype==gv_biafincoy
+
+SUBFILE(tmptransg1)
+SFL_LINES(10)
+SFL_TITLE(tmptransg1t)
+SFL_SELECT cfincoy
+SFL_COND cfincoy1
+
+SFL_TARGET
+        ppsmstbukidx   btmnobuk
+
+CALCS()
+cnomerpps               "FI" + STRIP(btmnobuk) + STRIP(ltbtnourt)
+cdppold			ppshrg / (111/100)
+cdppnew			ppshrg / ((100 + stsperppn)/100)
+cppnold			ppsjml * (11/100)
+cppnnew			ppsjml * (stsperppn/100)
+cpph			ppsjml * (2/100)
+cnet			ppsjml - ppscair
+ctbhpladis		nhmpladis + ppstotal
+ckrgpladis		nhmpladis - ppstotal
+ctbhinsentif		nhmpladis - nhmtotdis - nhmbiamklr - btmdf2
+cinsentifok		(djoinpsi==1 && (lpsijabatan=="COUNTER" || lpsijabatan=="SALES")) && btmtype=="EX"
+cRekPiuFincoy    	DO_LIB ap_amdvs(gv_dtdivisi21,gv_piufincoy,lRekPiuFincoy);
+cRekHutFincoy    	DO_LIB ap_amdvs(gv_dtdivisi21,gv_hutfincoy,lRekHutFincoy);
+cEX                     btmtype=="EX"
+cdpriilEX               nhmumasal_2 - nhmtotdis_2 - btmdf1
+cperppn_old		g_tgltrn <  20250101
+cperppn_new		g_tgltrn >= 20250101
+
+MAP(mmap)
+tmpnourt                ltbtnourt       REPLACE
+cnomerpps               lppsnobuk       DO_CALC
+
+MAP(maddpps)
+lppsnobuk               ppsnobuk                REPLACE
+cRekPiuFincoy           lRekPiuFincoy           DO_CALC
+cRekHutFincoy           lRekHutFincoy           DO_CALC
+btmnobuk                ppsnomst                REPLACE
+gv_OPEN                 ppssts                  REPLACE
+
+btmtgl                  ppstglbuk               REPLACE
+gv_biafincoy            ppstype                 REPLACE
+tmpket                  ppsket                  REPLACE
+tmpkode                 ppskdpm                 REPLACE
+tmpisidf1		ppshrg			REPLACE
+cdppold			ppsjml			DO_CALC_IF cperppn_old
+cdppnew			ppsjml			DO_CALC_IF cperppn_new
+cppnold			ppscek			DO_CALC_IF cperppn_old
+cppnnew			ppscek			DO_CALC_IF cperppn_new
+cpph			ppscair			DO_CALC
+cnet			ppstotal		DO_CALC
+cnet			ppssisa			DO_CALC
+cnet			ppssisprc		DO_CALC
+btmcab                  ppsplg                  REPLACE
+btmlokjual              ppscab                  REPLACE
+btmdvsjl                ppsdvs                  REPLACE
+gv_dtpiu                ppsdata                 REPLACE
+gv_F                    ppsfr                   REPLACE
+lRekPiuFincoy           ppsnobbm                REPLACE
+lRekHutFincoy           ppsnohpp                REPLACE
+
+MAP(mupdnhm)
+ctbhpladis		nhmpladis		DO_CALC_IF cEX
+ctbhinsentif		nhminsales		DO_CALC_IF cinsentifok
+cdpriilEX		nhmumriil		DO_CALC_IF cEX
+
+MAP(mdelnhm)
+ckrgpladis		nhmpladis		DO_CALC_IF cEX
+ctbhinsentif		nhminsales		DO_CALC_IF cinsentifok
+cdpriilEX		nhmumriil		DO_CALC_IF cEX
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmap);
+DO_LIB ap_dbclc(DNAME daddpps,DCOMMAND ADD,DFILE pps,DMAP maddpps);
+DO_LIB ap_dbclc(DNAME dupdnhm,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mupdnhm);
+
+SPCALCS(sptmptransg1)
+DO_LIB ap_dbclc(DNAME ddelnhm,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mdelnhm);
+
+
+POSTING(tmptrans)
+PST_COMMAND	sptmptrans
+
+POSTING(tmptransg1)
+PST_DELCMD	sptmptransg1
+
+CALCS()
+csts611         btmsts == "611" 
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND csts611
+PMT_DEL_COND c0
+
+PERMIT(tmptransg1)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND csts611
+
+

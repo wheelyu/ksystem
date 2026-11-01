@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+| /-------------------------------------------------------------------------------\ |
+| |  ____________________                                                         | |
+| |  t.SumberPC   : __________ ___________  _                                     | |
+| |  i.Alamat     : _____________________________________________________________ | |
+| |  i.Propinsi   : _______________ _____________________________________________ | |
+| |  i.Kota       : _______________ _____________________________________________ | |
+| |  i.Kec        : _______________ _____________________________________________ | |
+| |  i.Kel        : _______________ _____________________________________________ | |
+| |  i.RT         : ______                                                        | |
+| |  i.RW         : ______                                                        | |
+| |  i.KodePos    : ________                                                      | |
+| \-------------------------------------------------------------------------------/ |
+\-----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almdata                 PROTECT                         INPUTRI 1
+almnama                 NOCHANGE                        INPUTRI 1
+almnama2                NOCHANGE                        INPUTRI 1
+lalmbukoto6             NOCHANGE                        INPUTRI 2
+almjalan                PROTECT  ALLCAPS                INPUTRI 3
+almprop                 PROTECT SCROLL                  INPUTRI 4
+lpropinsi6              PROTECT QPROTECT                INPUTRI 5
+almkota                 PROTECT SCROLL                  INPUTRI 6
+lkota6                  PROTECT QPROTECT                INPUTRI 7
+almkec                  PROTECT SCROLL                  INPUTRI 8
+lkec6                   PROTECT QPROTECT                INPUTRI 9
+almkel                  PROTECT SCROLL                  INPUTRI 10
+lkel6                   PROTECT QPROTECT                INPUTRI 11
+almrt                   PROTECT                         INPUTRI 11
+almrw                   PROTECT                         INPUTRI 12
+almkdpos                PROTECT SCROLL                  INPUTRI 12
+
+DEFAULTS(tmptranst)
+lalmbukoto6     INIT            {pikplg}
+
+EDITS(tmptranst)
+e.validatePropinsi6     almprop VALIDATE dtmdtkodidx  mdtm6 sdtm {Pgv_dtkota}
+e.validateKota6         almkota VALIDATE tbldtdtmkod mtbl6 stbl {Pgv_dtkota} {Palmprop}
+e.validateKec6          almkec VALIDATE tbddatkodidx mtbdkec6 stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel6          almkel VALIDATE tbtdattypkod mtbt6 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(mdtm6)
+dtmkode                 almprop                 REPLACE
+dtmket                  lpropinsi6              REPLACE
+
+MAP(mtbl6)
+tblkode                 almkota                 REPLACE
+tblket                  lkota6                  REPLACE
+
+MAP(mtbdkec6)
+tbdkode                 almkec                  REPLACE
+tbdket                  lkec6                   REPLACE
+
+MAP(mtbt6)
+tbtkode                 almkel                  REPLACE
+tbtket                  lkel6                   REPLACE
+
+CALCS()
+cinitagihkirim          ((g_scrnumstr=="740" &&  almnobuk==piknobtm && (almdata=="ALMTAGIH" || almdata=="ALAMATKIRI")) ||
+                        (g_scrnumstr=="740"  && ((almdata=="ALMTAGIH" && almnobuk==piknobtm) || (almdata=="ALAMATKIRI" && almnobuk==piknobtm) || almdata=="ALMSURVEY" || (almdata=="KERJA" && (almnobuk==piknobtm || almnobuk=="")) || almdata=="PSMKTP" || almdata=="PSMTINGGAL")))
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cinitagihkirim
+SFL_TARGET
+almotodatidx     pikplg
+
+

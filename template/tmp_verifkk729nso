@@ -1,0 +1,57 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+   t.Acc        : __________
+   t.Nip        : __________
+   t.Nama       : ____________________
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1        NOCHANGE        INPUTRI 1
+tkdstr1           PROTECT         INPUTRI 2
+tkdstr2           PROTECT         INPUTRI 3
+
+
+DEFAULTS(tmptranst)
+tkdjwbstr1        DFALT_SCAN BLANKS       SESUAI
+                                        TIDAK_SESUAI
+tkdstr1           INIT_UPDATE   {g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr1                MANDATORY
+e.Validatepsi   tkdstr1 VALIDATE        psikodidx mpsiam 0
+
+MAP(mpsiam)
+psikode tkdstr1 REPLACE
+psinama tkdstr2 REPLACE
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll   lCEKKK	tkmnobuk	tkmnobuk
+
+MAP(mupdtkmmaster2)
+c1      	tkmnil2         DO_CALC
+ltotalkkd	tkmlocosj	REPLACE_IF cpemohonkosong
+ltotalkkd2	tkmfransj	REPLACE_IF cpenjaminkosong
+g_usrkode	tkmlok2		REPLACE
+
+SPCALCS(sphasil2)
+dmapkosong
+IF cadanokk dbscankkd
+IF cadapenjamin19 dbscankkd2
+ DO_LIB ap_dbclc (DNAME dupdtkmmaster2,DCOMMAND UPDATE,DTARGET tkmbukidx tkdnobuk,DMAP mupdtkmmaster2);
+
+POSTING(tmptrans)
+        PST_UPDCMD sphasil2
+
+CALCS()
+cbolehubahnso   tkmsts=="OPEN" && tkmnil5==0 && tkmnil6==0 && (g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode==tkmlok2 || (djoinsgbm==1 && lnipbm==g_usrkode) || (djoinsgbum==1 && lnipbum==g_usrkode) || (djoinsgmso==1 && lnipmso==g_usrkode) || (djoinsgam4w==1 && lnipam4w==g_usrkode) || (tkmdvs=="M2W4W" && g_grpnam=="BM" && djoinsgbmm4w==1 ))
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND cbolehubahnso
+        PMT_DEL_COND    c0
+

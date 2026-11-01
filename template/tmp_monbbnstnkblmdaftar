@@ -1,0 +1,81 @@
+LOCAL
+PGM_FIELDS
+
+ltgltgtstnkdaf  DATE            4
+
+/*----------JOIN---------------*/
+
+MAP(mmapssdstnkdaf)
+ssdtglbuk       ltgltgtstnkdaf   REPLACE
+
+DBCALCS(djoinssdstnkdaf)
+DBC_COMMAND     JOIN
+DBC_TARGET      ssddatnoidx ldstnk ssuoto lblanks ltrgt cabkode
+DBC_MAP         mmapssdstnkdaf
+
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||i.NoFak        : __________________||
+||t.TglTgtDftStnk: __________        ||
+||t.TglKrm       : __________        ||
+||i.Tgl          : __________        ||
+||i.Mesin        : _________________ ||
+||i.Rangka       : _________________ ||
+||t.AnStnk       : _________________ ||
+||t.CabLok       : ______            ||
+||t.CabBBN       : ______            ||
+||t.CabStok      : ______            ||
+||i.TglDafFak    : __________        ||
+||i.TglTrmFak    : __________        ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ssunobuk2         NOCHANGE SCROLL            INPUTRI         1
+   ltgltgtstnkdaf    PROTECT {DD-MM-YY}         INPUTRI         2
+   ltglkrm           PROTECT {DD-MM-YY}         INPUTRI         3
+   ltglpos           PROTECT {DD-MM-YY}         INPUTRI         4
+   ssumesin          NOCHANGE SCROLL            INPUTRI         5
+   ssurangka         NOCHANGE SCROLL            INPUTRI         6
+   lanstnk           NOCHANGE SCROLL            INPUTRI         7
+   lcabjual          NOCHANGE SCROLL            INPUTRI         8
+   lcabbbn           NOCHANGE SCROLL            INPUTRI         9
+   lcabbbn           NOCHANGE SCROLL            INPUTRI         10
+   ssutglmhnfk       PROTECT {DD-MM-YY}         INPUTRI         11
+   ssutgltrmfk       PROTECT {DD-MM-YY}         INPUTRI         12
+    
+
+CALCS()
+cstnkblmdaf      ssutglfak2 == ltglblanks && djoinssdstnkdaf == 1 && ltgltgtstnkdaf == g_tgltrn
+cdjoinppmjual3   djoinppmjual == 1
+catsnamastnk3    djoinbtpstnk == 1 && djoinpsmanstnk == 1
+cdjoinssdstnkdaf0        djoinssdstnkdaf == 0
+cdjoinssdstnkdaf1        djoinssdstnkdaf == 1
+ckosongtgtstnk   BLANKS
+
+
+EDITS(tmptranst)
+e.Validate  ssunobuk2  VALIDATE_IF cdjoinppmjual3 ppmbukidx mppm3 0
+
+MAP(mppm3)
+ppmnobuk        ppmnobuk        REPLACE
+ppmcabpos       lcabjual        REPLACE
+ppmtglbyrakh    ltglkrm         REPLACE
+ppmtglfak       ltglpos         REPLACE
+ppmcab          lcabbbn         REPLACE
+ppmnoll         lppmnoll        REPLACE
+lanstnk         lanstnk         REPLACE_IF catsnamastnk3
+ckosongtgtstnk  ltgltgtstnkdaf  DO_CALC_IF cdjoinssdstnkdaf0
+ltgltgtstnkdaf  ltgltgtstnkdaf  REPLACE_IF cdjoinssdstnkdaf1
+
+SUBFILE(tmptrans)
+SFL_LINES(6)
+SFL_SELECT cstnkblmdaf
+SFL_TITLE(tmptranst)
+SFL_TARGET ssucabfak2id cabkode
+
+

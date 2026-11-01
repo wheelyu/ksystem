@@ -1,0 +1,228 @@
+LOCAL
+PGM_FIELDS
+lsviotopurpose714	STRING	21
+lPURPOSEDANA            STRING  21
+lkegunaan               STRING  51
+/*
+lpekerjaancapacity	STRING	21
+lftmcab			STRING	21
+
+MAP(mjoinftmkerjacapacity)
+ftmdvs		lpekerjaancapacity	REPLACE		
+ftmcab		lftmcab			REPLACE
+
+DBCALCS(djoinftmkerjacapacity)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ftmdatbukidx	gv_capacityH1 btmnobuk  
+	DBC_MAP		mjoinftmkerjacapacity
+*/
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   t.Purpose
+   spasi
+   t.TujuanPembiayaan : ___________________
+   i.Digunakanoleh    : ___________________
+   t.KegunaanPembia   : ___________________
+                        ________________________________
+   spasi
+   t.CMSSesuai        : __  ______
+   t.AnalisaCMS       : _________________________________________________________________________
+                        ______
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+ftmcab			NOCHANGE SCROLL			INPUTRI 1
+ftmdvs			ALLCAPS SCROLL			INPUTRI 2
+ftmkat			NOCHANGE SCROLL			INPUTRI 4
+lkegunaan               PROTECT                         INPUTRI 4
+ftmtype4                ALLCAPS SCROLL                  INPUTRI 5 
+lftmtype4               NOCHANGE                        INPUTRI 6 
+ftmalamat2              TEXTAREA SCROLL                 INPUTRI 33
+lenter                  NOCHANGE                        INPUTRI 34
+
+IMAGE(tmptrans)
+
+CALCS()
+cpps713			g_scrnumstr=="687"
+cpekerjaan		djoinftmcapacity == 1 && btmdvs=="M2W" && g_scrnumstr=="687" && lftmcab2 == "PEMOHON" && 
+			(lftmdvs2 == "W1" || lftmdvs2 == "W2" || lftmdvs2 == "D1" || lftmdvs2 == "D2")   
+cselainpekerjaan        (djoinftmcapacity == 1 || djoinftmcapacity == 0) && btmdvs == "HMC" || (btmdvs == "M2W" && lftmdvs2 !="W1"
+			&& lftmdvs2 != "W2" && lftmdvs2 != "D1" && lftmdvs2 != "D2")
+cmodalkerja		(djoinftmcapacity ==  1 && btmdvs=="M2W" && (lftmcab2 == "PEMOHON" && lftmdvs2 == "W1" 
+			|| lftmdvs2 == "W2" || lftmdvs2 == "D1" || lftmdvs2 == "D2") && ftmcab == "MODAL_KERJA") 
+			|| btmdvs=="M2W" && (lftmcab2 == "PEMOHON" && lftmdvs2 != "W1" || lftmdvs2 != "W2" || lftmdvs2 != "D1" || lftmdvs2 != "D2") 
+			|| btmdvs =="HMC" 
+
+DEFAULTS(tmptranst)
+/*ftmkat          	DFALT_SCAN BLANKS	KEPERLUAN_KELUARGA MODAL_DAGANG TRANSPORTASI*/
+ljaminput1      	INIT_ADD        	SYSTIME
+ljaminput1      	INIT_UPDATE     	SYSTIME
+ftmtype4        	DFALT_SCAN_BLANKS       Y " "
+			                        T " "
+IF cpekerjaan		ftmcab			DFALT_SCAN BLANKS	MODAL_KERJA "PRODUKTIF MODAL KERJA"	
+IF cselainpekerjaan	ftmcab          	DFALT_SCAN      BLANKS 	
+                                                                KONSUMTIF "KONSUMTIF" 
+                                                                MODAL_KERJA "PRODUKTIF MODAL KERJA" 
+                                                                INVESTASI "PRODUKTIF INVESTASI"
+lPURPOSEH1713           INIT            "PURPOSEH1713"
+lPURPOSEDANA            INIT            PURPOSEDANA
+
+EDITS(tmptranst)
+e.validate ftmdvs VALIDATE tbddatkodidx mtbd10_1 stbd {Pgv_dttabel} {Pgv_survey21} {Pgv_pemakai} /* ok */
+e.Mandatory             ftmcab         		MANDATORY_IF cpps713
+e.Mandatory             ftmdvs         		MANDATORY_IF cpps713
+e.Mandatory             ftmkat         		MANDATORY_IF cpps713
+e.Mandatory             ftmtype4        	MANDATORY_IF cdi714ok
+e.Mandatory             ftmalamat2      	MANDATORY_IF cdi714ok
+e.validate              ftmkat                  VALIDATE_IF cpps713 tbtdatkodtyp mtbdpur01 stbt {Pgv_dttabel} {Pgv_survey21} {PlPURPOSEDANA} {Pftmcab} {Pgv_dttabel21}
+
+MAP(mtbdpur01)
+tbtkode         ftmkat          REPLACE
+tbtket          lkegunaan       REPLACE
+
+MAP(mtbd10_1)
+tbdkode	ftmdvs		REPLACE
+
+CALCS()
+/* cdjoinftmcapacity       djoinftmcapacity == 1 */
+
+cdjoinftmcapacity2      (djoinftmcapacity == 1 && lftmtype4c != BLANKS) || g_scrnumstr=="687"
+cdjoinftmcapacity3      (djoinftmcapacity == 1 && ((ftmtype4 == "T" && lftmtype4c == "T") || (ftmtype4 == "Y" && lftmtype4c == "Y"))) || g_scrnumstr=="687"
+cdjoinftmcapacity713	(djoinftmcapacity == 1 && g_scrnumstr=="687") || g_usrkode=="2571073"
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=ftmcab 		DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmdvs 		DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmkat 		DO_SKIP_IF cdi714
+
+BEFORE_INPUT cur_field=ftmtype4 	DO_SKIP_IF cmasih713
+BEFORE_INPUT cur_field=ftmalamat2 	DO_SKIP_IF cmasih713
+BEFORE_INPUT cur_field=ftmcab DO_MAP SHOW
+        	IF cdjoinftmcapacity713   mdum714
+        	ELSE HKCURSOR STAY
+        	HKMSG t.IsiCapacityDahulu
+
+
+AFTER_INPUT  cur_field=ftmalamat2 	DO_MAP SHOW mhitunganalisa
+AFTER_INPUT cur_field=ftmtype4 		DO_MAP SHOW
+        IF cdjointkmvertelOPENdi7141     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjointkmvertelOPENdi7141    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+/*
+AFTER_INPUT cur_field=ftmcab DO_MAP SHOW
+	IF cdjoinftmcapacity	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.IsiCapacityDulu
+*/
+
+BEFORE_INPUT cur_field=ftmtype4 DO_MAP SHOW
+	IF cdjoinftmcapacity2	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.VerivikasiYTDuluDiCapacity4d
+
+AFTER_INPUT cur_field=ftmtype4 DO_MAP SHOW
+	IF cdjoinftmcapacity3	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.VerivikasiTPurposeT
+
+AFTER_INPUT cur_field=ftmalamat2 DO_MAP SHOW
+        IF canalisa50   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF canalisa50    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_field=ftmtype4 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_field=ftmcab DO_MAP SHOW
+	IF cmodalkerja	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.Tidakdapatdipilih
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+	IF cmodalkerja mdum714
+	ELSE HKCURSOR STAY
+	HKMSG t.Tidakdapatdipilih
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+	ftmdatbukidx   gv_purposeH1 btmnobuk
+
+SFL_MAP
+gv_datasurvey  		ftmno1			REPLACE
+btmnobuk		ftmnofak		REPLACE
+gv_purposeH1		ftmdata			REPLACE
+gv_purposeH1		ftmno2			REPLACE
+gv_INPG			ftmsts			REPLACE
+
+MAP(mjoinsvipurpose714)
+svioto		lsviotopurpose714	REPLACE
+
+DBCALCS(djoinsvipurpose714)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey btmnobuk gv_purposeH1
+	DBC_MAP		mjoinsvipurpose714
+
+MAP(mmapmappurpose724)
+ftmtype4        ljawaban        REPLACE
+lPURPOSEH1713   l724DETAIL3     REPLACE
+
+CALCS()
+cdjoinsvipurpose7140  djoinsvipurpose714==0 && ljawaban=="Y"
+cdjoinsvipurpose7141  djoinsvipurpose714==1 && (ljawaban=="T" || ljawaban=="Y")
+
+MAP(maddsvipurpose714)
+gv_datasurvey         	svidata                 REPLACE
+btmnobuk              	svinobuk                REPLACE
+gv_purposeH1          	svitype                 REPLACE
+gv_purposeH1          	svikode                 REPLACE
+
+ftmcab			svistr1			REPLACE
+ftmdvs			svistr2			REPLACE
+ftmkat			svistr3			REPLACE
+
+SPCALCS(sppurpose714)
+        DO_LIB ap_dbclc (DNAME dmappurpose724,DCOMMAND MAPMAP,DMAP mmapmappurpose724);
+	DO_LIB_IF cdjoinsvipurpose7141 ap_dbclc (DNAME ddelsvipurpose714,DCOMMAND DELETE,DTARGET sviotoidx lsviotopurpose714);
+        DO_LIB_IF cdjoinsvipurpose7140 ap_dbclc (DNAME daddsvipurpose714,DCOMMAND ADD,DFILE svi,DMAP maddsvipurpose714);
+        DO_LIB ap_nxpst(l4461,lm4461det3);
+
+        
+POSTING(tmptrans)
+        PST_UPDCMD sppurpose714
+
+
+CALCS()
+ctambah_purpose713 btmsts == "713" && djoinftmpurpose==0 && g_scrnumstr=="687" && btmbichek!="SO" && btmbichek!="SH"
+cubah_purpose713   ((btmsts=="713" && g_scrnumstr=="687") || (btmsts == "714" && g_scrnumstr=="714") || (btmsts == "714" && g_scrnumstr=="724")) 
+		   && djoinftmpurpose==1
+chapus_purpose713  btmsts == "713" && djoinftmpurpose==1 && g_scrnumstr=="687"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ctambah_purpose713
+        PMT_UPDALL_COND cubah_purpose713
+        PMT_DEL_COND    chapus_purpose713
+
+

@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+|| t.NoFak     : ________________ ||
+|| t.NoPK      : ________________ ||
+|| t.TglByrAkh : ________________ ||
+|| t.Usia      : ________________ ||
+|| t.KTP       : ________________ ||
+|| t.NamaKons  : ________________ ||
+|| t.CairDp    : ________________ ||
+|| t.TypMtr    : ________________ ||
+|| t.Ke        : ________________ ||
+|| t.Tenor     : ________________ ||
+|| t.TglJtp    : ________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   mntnobuk             PROTECT SCROLL  INPUTRI         1
+   lpiknobtm            PROTECT SCROLL  INPUTRI         2
+   lpiktglbyrakh        PROTECT SCROLL  INPUTRI         3
+   lpikstspiubli        PROTECT SCROLL  INPUTRI         4
+   lpikplg              PROTECT SCROLL  INPUTRI         5
+   lnamakons            PROTECT SCROLL  INPUTRI         6
+   lnhmumasal           PROTECT SCROLL  INPUTRI         7
+   lppdbrg              PROTECT SCROLL  INPUTRI         8
+   lpikke               PROTECT SCROLL  INPUTRI         9
+   lpiklama             PROTECT SCROLL  INPUTRI        10
+   lpiktgljtp           PROTECT SCROLL  INPUTRI         11
+
+EDITS(tmptranst)
+e.Validatepik   mntnobuk VALIDATE pikdatbukidx   mpik 0 {Pgv_dtpiu}
+e.Validatepsm   lpikplg VALIDATE psmktpidx  mpsm
+e.ValidatePpd   mntnobuk VALIDATE ppdbukurtidx mppd 0 {Sgv_int1} {Sgv_int1}
+e.validate      lpiknobtm  VALIDATE nhmdatbukidx mnhm {Pgv_dtbukutamu}
+
+MAP(mpik)
+piknobuk        mntnobuk        REPLACE
+piknobtm        lpiknobtm       REPLACE
+piktglbyrakh    lpiktglbyrakh   REPLACE
+pikstspiubli    lpikstspiubli   REPLACE
+pikplg          lpikplg         REPLACE
+pikke           lpikke          REPLACE
+piklama         lpiklama        REPLACE
+piktgljtp       lpiktgljtp      REPLACE
+MAP(mpsm)
+psmktp          lpikplg         REPLACE
+psmnama         lnamakons       REPLACE
+
+MAP(mppd)
+ppdnobuk        mntnobuk        REPLACE
+ppdbrg          lppdbrg         REPLACE
+
+MAP(mnhm)
+nhmumasal       lnhmumasal      REPLACE
+
+CALCS()
+chanyamnt       (djoinpikmnt==1 && lpiktglfak>=ltglfid30b && lpiktglfak<=ltglfid30c && lpiktgljtp!=0 && lpiklama>0 && (lpikdvs=="HMC" || lpikdvs=="H1" || lpikdvs=="M2W") && ( lpiksts=="TRK1"  || (lpiksts=="INPG" && tkmtgl-lpiktgljtp>30 && (100-((lpikke/lpiklama)*100)) > 0)) && lpikstspiubli!="ZASS" && lpikstspiubli!="ZDEN" && lpikstspiubli!="ZFIN") 
+
+cuntukstpapv	tkmlok2=="STPAPV"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       /* Rumusnya : 22 - base_row trans */
+SFL_SELECT chanyamnt
+SFL_COND   cuntukstpapv
+SFL_TITLE(tmptranst)
+
+SFL_TARGET_GTE
+        mntdatkodtgl lDTCMS tkmkode ltglfid30b {lDTCMS} {tkmkode} {ltglfid30c}
+
+

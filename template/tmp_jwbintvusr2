@@ -1,0 +1,104 @@
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/-----------------------------------------------\|
+  t.UserIntv    : ________ __________________
+  t.Pil1        : ___________________________
+  t.TglIntv     : ___________________________
+  t.Pil2        : ___________________________
+  t.JamIntv     : ___________________________
+  t.SdmInput    : ________ __________________
+|\-----------------------------------------------/|
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktkode2        PROTECT                 INPUTRI 1
+lnmusr1         PROTECT                 INPUTRI 2
+akttype         NOCHANGE                INPUTRI 3
+akttgl          NOCHANGE NOLIMIT {DD-MM-YY} INPUTRI 4
+aktlok          NOCHANGE                INPUTRI 5
+aktjam          ALLCAPS                 INPUTRI 6
+aktcrtusr       PROTECT                 INPUTRI 7
+lnminput        PROTECT                 INPUTRI 8
+
+DEFAULTS(tmptranst)
+IF cuserisi     akttype          DFALT_SCAN_BLANKS      INTVU2  "INTERVIEW USER 2"
+                                                        MD      "MENGUNDURKAN DIRI"
+                                                        NO_RESPON "TIDAK RESPON"
+
+IF cbknuserisi  akttype          DFALT_SCAN_BLANKS      RESCU2  "RESCHEDULE USER 2"
+                                                        RESCK1  "RESCHEDULE KANDIDAT USER 2"
+
+IF cuserisi  aktlok             DFALT_SCAN_BLANKS       ACC
+                                                        RESC
+
+IF cbknuserisi  aktlok          DFALT_SCAN_BLANKS       ACC
+                                                        TACC
+
+
+CALCS()
+cresc2          akttype=="RESCU2" || akttype=="RESCK2"
+clnjtintvu2     akttype=="INTVU2"
+cresudh2x       ((dscanaktintv2==0 || dscanaktintv2!=0) && ljmlresc2<2) || akttype=="INTVU2" || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT" 
+cresudh2xz	((dscanaktintv2x==0 || dscanaktintv2x!=0) && ljmlrescx<2) || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT" || akttype=="INTVU2" || akttype=="MD" || akttype=="NO_RESPON"
+
+
+
+EDITS(tmptranst)
+e.Mandatory     aktkode2   MANDATORY
+e.Mandatory     akttgl     MANDATORY_IF clnjtintvu2
+e.Mandatory     akttype    MANDATORY
+e.Mandatory     aktlok     MANDATORY_IF clnjtintvu2
+e.Mandatory     aktcrtusr  MANDATORY_IF clnjtintvu2
+
+e.Validate   aktkode2  VALIDATE psikodidx musrintv1
+e.Validate   aktcrtusr VALIDATE psikodidx musrinpt
+
+MAP(misiuser2)
+lusr2           aktkode2        REPLACE
+lusrisi2        aktcrtusr       REPLACE
+lJWBUSR2        aktdata         REPLACE
+btmnobuk        aktkode         REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=aktlok        DO_SKIP_IF cresc2
+BEFORE_INPUT    cur_field=aktjam        DO_SKIP_IF cresc2
+BEFORE_INPUT    cur_field=akttype       DO_MAP SHOW IF ctambah1 misiuser2
+AFTER_INPUT     cur_field=akttype        DO_MAP SHOW
+                IF cresudh2x mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBln>2
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF cresudh2x mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBln>2
+
+AFTER_INPUT     cur_field=aktlok        DO_MAP SHOW
+                IF cresudh2xz mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBln>2
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF cresudh2xz mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RescheduleTdkBln>2
+
+
+AFTER_INPUT     cur_field=akttgl        DO_MAP SHOW
+                IF ctdkblhlewat mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBlhLwtTglKuncian
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF ctdkblhlewat mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBlhLwtTglKuncian
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+
+SFL_TARGET
+aktkodtypidx    btmnobuk lJWBUSR2

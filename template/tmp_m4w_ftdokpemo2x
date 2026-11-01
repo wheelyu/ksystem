@@ -1,0 +1,224 @@
+LOCAL
+PGM_FIELDS
+lyes		STRING		5
+lfotodokp	STRING		11
+lARSIP		STRING		21
+lTOLAKANM4W	STRING		21 
+lkettolak  	STRING		31
+lnobukkunci	STRING		21
+lKUNCIABSEN	STRING		11
+lnipbm		STRING		21
+lnipadhh	STRING		21
+lADHX		STRING		21
+lthblx		STRING		21
+lenterxx	STRING		11
+lnamauserxxx	STRING		21
+lblank		STRING		21
+lkode2		STRING		21
+lkode2x		STRING		3
+lversi9		STRING		11
+
+MAP(mjoinbm)
+sgmstr5         lnipbm    REPLACE
+
+DBCALCS(djoinbm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab gv_m4w21 gt_bm21 lthblx btmcab btmcab
+        DBC_MAP         mjoinbm
+
+MAP(mjoinadhh)
+sgmstr5         lnipadhh   REPLACE
+
+DBCALCS(djoinadhh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab gv_m4w21 lADHX lthblx btmcab btmcab
+        DBC_MAP         mjoinadhh
+
+
+DBCALCS(djoinbtdxx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btdbukurtidx btmnobuk
+
+
+
+CALCS()
+cubahxxx	g_curcmd==2
+cver0		sviyt1=="T"
+cadauser	svistr3!=BLANKS
+/*cfotkod		STRIP(svikode) + "P" */
+cnobukkunci	STRIP(btmnobuk) + STRIP(svikode)
+caddkuncixx	sviyt1=="T" 
+cjoinbm		djoinbm==1
+cjoinadhh	djoinadhh==1
+cthblx		THBLS(g_tgltrn)
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}   
+/----------------------------------\
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!               
+| \-------------------------------/|
+| /-------------------------------\|
+| |i.Ket _________________________||
+| |t.UplodOk    __________________||
+| |t.Wajib      __________________||
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.Verifikasi __________________||
+| |t.Tolakan    __________________||
+| |_______________________________||
+| |t.Ket  ________________________||
+| |t.User       __________________||
+| |_______________________________||
+| |t.Tanggal    _________________ ||
+| |             ________          ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        svinama		PROTECT         	INPUTRI 1
+	svistr1		PROTECT			INPUTRI 2
+	svists		PROTECT			INPUTRI 3
+	sviyt1		NOCHANGE		INPUTRI 4
+	svistr2		ALLCAPS			INPUTRI	5
+	lkettolak	PROTECT			INPUTRI	6
+	sviket2		TEXTAREA ALLCAPS	INPUTRI 7	
+	svistr3		PROTECT			INPUTRI 8
+	lnamauserxxx	PROTECT			INPUTRI	9
+	svitgl1		PROTECT			INPUTRI	10
+	lenterxx	ALLCAPS			INPUTRI 11
+
+DEFAULTS(tmptranst)
+lyes			INIT		"OK"
+lfotodokp		INIT		"FOTODOKP"
+IF cubahxxx sviyt1		DFALT_SCAN_BLANKS Y T
+svistr3			INIT_UPDATE	{g_usrkode}
+svitgl1			INIT_UPDATE	{g_tgltrn}
+lARSIP			INIT		ARSIP
+lTOLAKANM4W		INIT		TOLAKANM4W
+lnamauserxxx		INIT		BLANKS
+lKUNCIABSEN		INIT		KUNCIABSEN
+lADHX			INIT		ADH
+lenterxx		INIT		ENTER
+lversi9			INIT		110822v1
+
+EDITS(tmptranst)
+e.Mandatory		sviyt1		MANDATORY
+e.Mandatory		svistr2		MANDATORY_IF cver0
+e.JenisTolakan		svistr2		VALIDATE_IF cver0 tbddtmstidx mtbdver stbd1 {Pgv_dttabel} {PlARSIP} {PlTOLAKANM4W} {Plblank} {Plkode2}
+e.Validateuser		svistr3		VALIDATE_IF cadauser psikodidx mpsiver 0
+e.Mandatory		sviket2		MANDATORY
+
+MAP(mtbdver)
+tbdkode		svistr2		REPLACE
+cBLANKS         lkettolak       DO_CALC
+tbdket		lkettolak	REPLACE
+/*cfotkod		svitype2	DO_CALC */
+cnobukkunci	lnobukkunci	DO_CALC
+cthblx		lthblx		DO_CALC
+
+MAP(mpsiver)
+psinama		lnamauserxxx	REPLACE
+svinourt	lkode2x		REPLACE
+lkode2x		lkode2		REPLACE
+
+MAP(mupdsviftmand)
+lyes	svistr1		REPLACE
+
+DBCALCS(dbftmand)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmand
+
+CALCS()
+chanyasdvy	((btmflag1 == "SDVY" && svists != "OPEN") || btmflag1 != "SDVY") && svikode != "MTR01" && svikode != "MTR02"
+/*cupdtmptrans	sviyt1==BLANKS && (g_grpnam=="FINARSIP" || g_grpnam=="B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam=="B.M4WADHDVH" || g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="FINARSIPCO") */
+cketkuncixx	"PERBAIKI BERKAS 705"
+c705		"705"
+clusa		g_tgltrn + 2
+cupdbtdxx	svinourt==21 && djoinbtdxx==1
+csemua		svistr2 != "H1" && svistr2 != "H2"
+cpemohon	svistr2 == "H1"
+cpenjamin	svistr2 == "H2"
+cPEMOHON	"PEMOHON"
+cPENJAMIN	"PENJAMIN"
+cTOLAKAN721	"TOLAKAN 721"
+c2tolak		"2"
+c3tolak		"3"
+
+MAP(misikode)
+svinourt	lkode2x		REPLACE
+lkode2x		lkode2		REPLACE
+l1              svidf1          REPLACE_IF cver0 
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=sviyt1	DO_MAP SHOW misikode
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftmand
+SFL_SELECT chanyasdvy
+SFL_UPLFLD btmnobuk svikode
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOSVY btmnobuk lfotodokp
+
+MAP(maddkuncixx)
+lnipbm  	abkkym          REPLACE_IF cjoinbm
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+clusa           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+MAP(maddkuncix2)
+lnipadhh         abkkym          REPLACE_IF cjoinadhh
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+clusa           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+MAP(maddkuncicmo)
+btmsurveyor     abkkym          REPLACE
+lnobukkunci     abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+cketkuncixx     abkkym2         DO_CALC
+c705            abkscr          DO_CALC
+clusa           abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+
+
+MAP(mupdbtdxx)
+gv_OPEN		btdsts		REPLACE
+cBLANKS		btdhrg		DO_CALC
+cTOLAKAN721	btdukrwrn	DO_CALC_IF csemua
+c3tolak		btdsisbrg	DO_CALC_IF cpemohon
+c2tolak		btdsisbrg	DO_CALC_IF cpenjamin
+cPEMOHON	btdjaba		DO_CALC_IF cpenjamin
+cPENJAMIN	btdjaba		DO_CALC_IF cpemohon
+ 
+
+SPCALCS(stmptrans)
+DO_LIB_IF cupdbtdxx ap_dbclc(DNAME dupdbtdxx,DCOMMAND UPDATE_RANGE,DTARGET btdbukurtidx btmnobuk,DMAP mupdbtdxx);
+DO_LIB_IF caddkuncixx ap_dbclc(DNAME daddkuncixx,DCOMMAND ADD,DFILE abk,DMAP maddkuncixx);
+DO_LIB_IF caddkuncixx ap_dbclc(DNAME daddkuncix2,DCOMMAND ADD,DFILE abk,DMAP maddkuncix2);
+DO_LIB_IF caddkuncixx ap_dbclc(DNAME daddkuncicmo,DCOMMAND ADD,DFILE abk,DMAP maddkuncicmo);
+
+POSTING(tmptrans)
+	PST_UPDCMD	stmptrans
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0          
+  PMT_DEL_COND  c0
+

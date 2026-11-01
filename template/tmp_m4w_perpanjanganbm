@@ -1,0 +1,281 @@
+LOCAL
+PGM_FIELDS
+ltombolaprx	STRING	100
+
+ltglkuncmou	DATE	4
+ltglakhir	DATE	4
+ltglreminderx	DATE	4
+
+l11		INT2	2
+l12		INT2	2
+lspkkat        INT2    2
+
+CALCS()
+cabkdvhmou	abktype == "MOUDVH" && (abksts == gt_RINP || abksts == gv_INPG) 
+cabkdvhdok	abktype == "ACCMOU" && (abksts == gt_RINP || abksts == gv_INPG) 
+cabkbmmou       abktype == "MOUBM" && (abksts == gt_RINP || abksts == gv_INPG)
+
+MAP(mjoinabkbmmou)
+abktgl          ltglkuncmou     REPLACE
+DBCALCS(djoinabkbmmou)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx	lkunciabsen tlmnobuk
+DBC_SELECT      cabkbmmou
+DBC_MAP         mjoinabkbmmou
+
+DBCALCS(djoinabkdvhmou)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx    lkunciabsen tlmnobuk
+DBC_SELECT	cabkdvhmou
+
+DBCALCS(djoinabkdvhdok)
+DBC_COMMAND     JOIN
+DBC_TARGET      abkdatbukidx    lkunciabsen tlmnobuk
+DBC_SELECT	cabkdvhdok
+
+MAP(mupdspkmou)
+gv_Y		spkfoto		REPLACE
+DBCALCS(dupdspkmou)
+DBC_COMMAND     UPDATE
+DBC_TARGET      spkprmidx       spkprm
+DBC_MAP         mupdspkmou
+
+MAP(mjoinspkperpanjang)
+spkkat         lspkkat          REPLACE
+DBCALCS(djoinspkperpanjang)
+DBC_COMMAND     JOIN_LAST_SFL
+DBC_TARGET      spkdatbuktyp lEXTERNAL tlmnobuk lBERKASMOU
+DBC_MAP         mjoinspkperpanjang
+
+IMAGE(tmptranst)
+/-------------------------------------------\
+|/-----------------------------------------\|
+||            t.PerpanjanganBM             ||
+|\-----------------------------------------/|
+|/-----------------------------------------\|
+||t.Pengajuan	   : _____________________ !|
+||t.PerpanjanganKe : ____		   !|
+||t.Tanggal	   : _____________________ !|
+|\-----------------------------------------/|
+|/-----------------------------------------\|
+||t.AprDvh	   : _____________________ !|
+||t.TanggalMou	   : _____________________ !|
+||t.Ket		   : _____________________ !|
+|\-----------------------------------------/|
+|/---------------s.DOCUPLOAD---------------\|
+||					   ||
+||					   ||
+||					   ||
+||					   ||
+||					   ||
+||					   ||
+|\-----------------------------------------/|
+|  _______________________________________  |
+|/-----------------------------------------\|
+||t.AprDvh	   : _____________________ !|
+|\-----------------------------------------/|
+\-------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spkkode		NOCHANGE			INPUTRI 1
+spkkat		PROTECT				INPUTRI	2
+spktgl		NOCHANGE NOLIMIT {DD-MM-YYYY}	INPUTRI 3
+spkkode2	NOCHANGE			INPUTRI 4
+spktglft	NOCHANGE NOLIMIT {DD-MM-YYYY}	INPUTRI 5
+spkket		ALLCAPS	SCROLL			INPUTRI	6
+ltombolaprx	TOMBOL				INPUTRI	7
+spkkode3	NOCHANGE			INPUTRI 8
+
+DEFAULTS(tmptranst)
+l3251		INIT		3251
+l11		INIT		11
+l12		INIT		12
+ltombolaprx	INIT		"AJUKAN APPROVAL DOKUMEN MOU"
+spkkode		DFALT_SCAN	BLANKS
+				PERPANJANGANWAKTU " "
+spkkode2	DFALT_SCAN	BLANKS
+				Y " "
+				T " "
+spkkode3	DFALT_SCAN	BLANKS
+				Y " "
+				T " "
+
+CALCS()
+caddtrans2g10           (g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WCSPV") && 
+                        (spkkat == BLANKS || (spkkat != BLANKS && (spkkode2 == "Y" || (spkkode2 == "T" && spkkode3 == "Y")))) 
+cupdtrans2g10           ((g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WCSPV") && spkkode3 == BLANKS && 
+                        spkkat != BLANKS) || g_grpnam == "RI" || g_grpnam == "IT"
+
+cbukakuncibmmou         djoinabkbmmou == 1 && spkkode2 != BLANKS
+
+ctglmou                 djoinabkbmmou == 1 && ((spktgl - ltglkuncmou) <= 7 && (spktgl - ltglkuncmou) > 0) 
+cblmupload              spkfoto != "Y" || (g_grpnam != "B.M4WCSPV" && g_grpnam != "B.M4WDPH")
+csdhupload              spkfoto == "Y"
+cuploadacc              spkkode3 == "Y" && spkfoto == "Y"
+ctglsama                spktgl == g_tgltrn
+cselesai                spkkode3 != BLANKS
+ctambah1hari            g_tgltrn + 1
+ctacc                   djoinabkbmmou == 1 && ltglkuncmou != BLANKS && spkkode2 == "T"
+
+cgrpbm                  g_grpnam == "B.M4WBM"
+cgrpdvh                 g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WCSPV" || spkkode2 != BLANKS
+
+caddabkbmmou            spkkode == "PERPANJANGANWAKTU" && spktgl != BLANKS && djoinabkbmmou == 0
+
+caddabkdvhmou           spkkode != BLANKS && djoinspvhom4w == 1 && djoinabkdvhmou == 0 && spkkode3 == BLANKS
+cclsdabkdvhmou          spkkode2 != BLANKS && spkket != BLANKS && spkfoto != "Y" && djoinabkdvhmou == 1
+
+caddabkdvhdok           spkfoto == "Y" && djoinabkdvhdok == 0 
+cclsdabkdvhdok          spkkode3 != BLANKS && djoinabkdvhdok == 1
+
+ctglakhir               DO_LIB ap_tambl(tlmtgl2,l12,&ltglakhir);
+ctglreminderx           DO_LIB ap_tambl(tlmtgl2,l11,&ltglreminderx);
+
+cjoinspkperpanjang      djoinspkperpanjang == 1
+ctambah1                lspkkat + 1
+
+MAP(maddabkbmmou)
+lkunciabsen     abkdata         REPLACE
+lnipbm	        abkkym          REPLACE_IF cdjoinsgmnipbm
+spktgl	        abktgl          REPLACE
+l3251           abkscr          REPLACE
+gt_RINP		abksts		REPLACE
+gv_INPG         abksts          REPLACE_IF ctglsama
+tlmnobuk        abknobuk        REPLACE
+lketkunci3	abkkym2         REPLACE
+lmoubm          abktype         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(maddabkdvhmou)
+lkunciabsen     abkdata         REPLACE
+lnipspvhom4w    abkkym          REPLACE_IF cjoinspvhom4w
+ctambah1hari	abktgl          DO_CALC
+spktgl		abktgl		REPLACE_IF ctglsama
+l3251           abkscr          REPLACE
+gt_RINP		abksts		REPLACE
+gv_INPG		abksts		REPLACE_IF ctglsama
+tlmnobuk        abknobuk        REPLACE
+lketkunci4      abkkym2         REPLACE
+lmoudvh         abktype         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mupdabkclsdx)
+gv_CLSD         abksts          REPLACE
+
+MAP(mupdabkbmmou)
+spktgl		abktgl		REPLACE
+ltglkuncmou	abktgl		REPLACE_IF ctacc
+gt_RINP		abksts		REPLACE
+gv_INPG		abksts		REPLACE_IF ctglsama
+gv_CLSD		abksts		REPLACE_IF cuploadacc
+
+MAP(maddabkdvhdok)
+lkunciabsen     abkdata         REPLACE
+lnipspvhom4w    abkkym          REPLACE_IF cjoinspvhom4w
+ctambah1hari    abktgl          DO_CALC
+spktgl		abktgl		REPLACE_IF ctglsama
+l3251           abkscr          REPLACE
+gt_RINP         abksts          REPLACE
+gv_INPG		abksts		REPLACE_IF ctglsama
+tlmnobuk        abknobuk        REPLACE
+lketkunci5      abkkym2         REPLACE
+laccmou         abktype         REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mmaptgl)
+cBLANKS		ltglakhir	DO_CALC
+cBLANKS		ltglreminderx	DO_CALC
+
+ctglakhir       ltglakhir       DO_CALC
+ctglreminderx   ltglreminderx   DO_CALC
+
+MAP(mupdtlmmaster)
+ltglakhir	tlmtgl2		REPLACE
+
+MAP(maddabkreminder2)
+lkunciabsen     abkdata         REPLACE
+lnipbm          abkkym          REPLACE_IF cdjoinsgmnipbm
+ltglreminderx	abktgl          REPLACE
+l3251           abkscr          REPLACE
+gt_RINP         abksts          REPLACE
+tlmnobuk        abknobuk        REPLACE
+lketkunci       abkkym2         REPLACE
+lreminder1      abktype         REPLACE
+
+SPCALCS(spenter2)
+DO_LIB_IF caddabkbmmou	        ap_dbclc(DNAME daddabkbmmou,DCOMMAND ADD,DFILE abk,DMAP maddabkbmmou);
+
+DO_LIB_IF caddabkdvhmou	        ap_dbclc(DNAME daddabkdvhmou,DCOMMAND ADD,DFILE abk,DMAP maddabkdvhmou);
+DO_LIB_IF cclsdabkdvhmou	ap_dbclc(DNAME dupdabkdvhmou,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DBC_COND cabkdvhmou,DMAP mupdabkclsdx);
+
+DO_LIB_IF cbukakuncibmmou	ap_dbclc(DNAME dupdabkbmmou,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DBC_COND cabkbmmou,DMAP mupdabkbmmou);
+
+DO_LIB_IF cclsdabkdvhdok	ap_dbclc(DNAME dupdabkdvhdokx,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DBC_COND cabkdvhdok,DMAP mupdabkclsdx);
+
+DO_LIB_IF cselesai	        ap_dbclc(DNAME dupdabksemua,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tlmnobuk,DMAP mupdabkclsdx);
+
+DO_LIB_IF cuploadacc            ap_dbclc(DNAME dmaptgl,DCOMMAND MAPMAP,DMAP mmaptgl);
+DO_LIB_IF cuploadacc            ap_dbclc(DNAME dupdtlmmaster,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmaster);
+DO_LIB_IF cuploadacc            ap_dbclc(DNAME daddabkreminder2,DCOMMAND ADD,DFILE abk,DMAP maddabkreminder2);
+
+SPCALCS(sptombol2)
+DO_LIB_IF caddabkdvhdok	        ap_dbclc(DNAME daddabkdvhdokx,DCOMMAND ADD,DFILE abk,DMAP maddabkdvhdok);
+
+MAP(misinomor)
+lspkkat         lspkkat         REPLACE_IF cjoinspkperpanjang
+ctambah1	spkkat		DO_CALC_IF ctambah
+
+MAP(misitgl)
+spktgl		spktglft	REPLACE
+cBLANKS		spktglft	DO_CALC_IF ctacc
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkkode	DO_SKIP_IF cgrpdvh
+BEFORE_INPUT	cur_field=spkkode 	DO_SKIP_IF csdhupload
+
+BEFORE_INPUT	cur_field=spktgl	DO_SKIP_IF cgrpdvh
+BEFORE_INPUT	cur_field=spktgl  	DO_SKIP_IF csdhupload
+AFTER_INPUT	cur_field=spktgl 	DO_MAP SHOW
+		IF ctglmou mdum
+		ELSE HKCURSOR STAY
+		HKMSG PERPANJANGAN MAKSIMAL 7 HARI
+
+BEFORE_INPUT	cur_field=spkkode2	DO_SKIP_IF cgrpbm
+BEFORE_INPUT	cur_field=spkkode2	DO_SKIP_IF csdhupload
+AFTER_INPUT	cur_field=spkkode2	DO_MAP SHOW misitgl
+
+BEFORE_INPUT	cur_field=spktglft	DO_SKIP_IF cgrpbm
+BEFORE_INPUT	cur_field=spktglft	DO_SKIP_IF csdhupload
+BEFORE_INPUT	cur_field=spktglft	DO_SKIP_IF ctacc
+
+BEFORE_INPUT	cur_field=spkket	DO_SKIP_IF cgrpbm
+BEFORE_INPUT	cur_field=spkket	DO_SKIP_IF csdhupload
+
+BEFORE_INPUT	cur_field=spkkode3	DO_SKIP_IF cblmupload
+
+CLICKED		cur_field=ltombolaprx	DO_SPCALCS sptombol2
+
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW misinomor
+AFTER_INPUT	cur_keybd=EN		DO_SPCALCS spenter2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD spknobuk spkkat
+SFL_DOCUPLFLD_DBCALCS dupdspkmou
+SFL_DOCUPL_DELCOND c0
+SFL_UPL_DIRFLD tlmdata
+SFL_TARGET
+spkdatbuktyp    lEXTERNAL tlmnobuk lBERKASMOU
+
+SFL_MAP
+lEXTERNAL       spkdata         REPLACE
+tlmnobuk        spknobuk        REPLACE
+lBERKASMOU      spktype         REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND	caddtrans2g10
+PMT_UPDALL_COND	cupdtrans2g10
+PMT_DEL_COND	c0

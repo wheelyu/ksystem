@@ -1,0 +1,63 @@
+LOCAL
+PGM_FIELDS
+lnamabrg2        STRING          31
+
+MAP(mscanstokfast)
+brdsisa		lstokbarangfast		REPLACE_IF cadastokfast
+
+DBCALCS(dscanstokfast)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brdstscabbrg    gv_INPG	tlmcab tldbrg
+        DBC_SUM_MAP     mscanstokfast
+
+IMAGE(tmptranst)
+/------t------------t----------------------t-----------------t---------t---------\
+|t.No  |t.User      |t.Brg2                |t.NamaBrg        |t.Jumlah |t.Ket    |
+\------.------------.----------------------.-----------------.---------.---------/
+IMAGE(tmptrans)
+|______|____________|______________________|_________________|_________|_________|
+
+FIELDS(tmptrans)
+tldnourt                PROTECT                 INPUTRI         1
+tldlok2                 PROTECT                 INPUTRI         2
+tldbrg                  PROTECT                 INPUTRI         2
+lnamabrg2               PROTECT                 INPUTRI         3
+tldjml                  NUMERIC                 INPUTRI         4
+tldkat                  PROTECT                 INPUTRI         5
+
+DEFAULTS(tmptrans)
+tldtglfak               INIT_ADD        {g_tgltrn}
+tldlok2                 INIT_ADD        {g_usrkode}
+tldlok2                 INIT_UPDATE     {g_usrkode}
+
+EDITS(tmptrans)
+e.ValidateppdBrg2 tldbrg VALIDATE brgstsdatbrg mbrg2 {Pgv_INPG} {Pgv_dtbarang}
+
+MAP(mbrg2)
+brgkode         tldbrg          REPLACE
+brgnama         lnamabrg2       REPLACE
+
+MAP(mmaptldstokfast)
+lstokbarangfast	tldperdis7	REPLACE
+DEBUG	ldum	ldum		REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldjml	DO_SCAN	dscanstokfast
+AFTER_INPUT	cur_field=tldjml	DO_MAP SHOW	mmaptldstokfast
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW	mmaptldstokfast
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(15)
+SFL_SORT_BY_FIELD  tldnourt
+SFL_COND        cahassfast 
+SFL_TARGET
+tldbukbrgoto    tlmnobuk  lAHS1
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+
+

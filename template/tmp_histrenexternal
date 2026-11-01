@@ -1,0 +1,62 @@
+IMAGE(tmptranst)
+/----------------t------------t-------------t------------------------t--------t------------t-------t--------------------\
+| i.NoBuk        | t.Tgl      | t.NoModulSop| t.NamModulSop          | t.Nilai| t.Ket      |t.Ke   | t.Kesimpulan       |
+\----------------.------------.-------------.------------------------.--------.------------.-------.--------------------/
+
+
+
+IMAGE(tmptrans)
+|________________|____________|_____________|________________________|________|____________|_______|____________________|
+
+
+FIELD(tmptrans)
+tlmnobuk        PROTECT                 INPUTRI         1
+tlmtgl          PROTECT {DD-MM-YY}      INPUTRI         2
+tlmnoasal       PROTECT                 INPUTRI         3
+tlmket          PROTECT                 INPUTRI         3
+tlmtotal	PROTECT			INPUTRI		4
+tlmsts2	        PROTECT			INPUTRI		5
+tlmjml		PROTECT			INPUTRI		6
+lkesimpulan     PROTECT                 INPUTRI         7
+
+MAP(mjointlm908)
+tlmperppn		ltlmperppn	REPLACE
+
+MAP(mjointlm907)
+tlmtotal		ltlmtotal	REPLACE
+
+DBCALCS(djointlm908)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmstsbbmcab   gv_INPG lMODULTRN lPST30 tlmnoasal
+	DBC_MAP		mjointlm908
+
+DBCALCS(djointlm907)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmbukidx	tlmnoasal
+	DBC_MAP		mjointlm907
+
+CALCS()
+cHisTestEx		tlmsts2 == "TRN"
+cjika_lolos		((djointlm908==1 && tlmtotal >= ltlmperppn) || (djointlm907==1 && tlmtotal >= ltlmtotal)) && tlmsts2=="TRN"
+cjika_tdklolos		((djointlm908==1 && tlmtotal < ltlmperppn) || (djointlm907==1 && tlmtotal < ltlmtotal)) && tlmsts2=="TRN"
+cLOLOS			"LOLOS"
+cTDK_LOLOS		"TDK LOLOS"
+
+EDITS(tmptrans)
+e.ValidateNama tlmnobuk VALIDATE tlmbukidx mpsinamex 0
+
+MAP(mpsinamex)
+tlmnobuk	tlmnobuk	REPLACE
+cBLANKS		lkesimpulan	DO_CALC
+cLOLOS		lkesimpulan	DO_CALC_IF cjika_lolos
+cTDK_LOLOS	lkesimpulan	DO_CALC_IF cjika_tdklolos
+
+SUBFILE(tmptrans)
+        SFL_LINES(8)
+        SFL_TITLE(tmptranst)
+	SFL_SELECT cHisTestEx
+        SFL_TARGET
+        tlmstsplgbuk    gv_CLSD lTESTSOP psikode
+
+
+

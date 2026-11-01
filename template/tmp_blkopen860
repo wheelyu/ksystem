@@ -1,0 +1,64 @@
+IMAGE(tmptranst)
+/-------t--------------t--------------\
+|t.No   |t.NoFak       |t.NoBPKB      |
+\-------.--------------.--------------/
+
+IMAGE(tmptrans)
+|_______|______________|______________|
+
+FIELD(tmptrans)
+tldnourt        PROTECT SCROLL         INPUTRI         1          /* No Urut      */
+tldnoll         NOCHANGE               INPUTRI         2          /* No Faktur    */
+tldbrg          PROTECT SCROLL         INPUTRI         3          /* No BPKB      */
+
+CALCS()
+cbalikho        tlmtype1 == "BPKB" && tlmsts == "INPG" && tlmnobbm == BLANKS && (g_grpnam == "ADHSPV" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "ADHDVH" || g_grpnam == "RI" || g_grpnam == "IT"  || g_grpnam == "B.M4WADHDVH" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "FINBPKBCO")
+
+cnobukP         "P-"+STRIP(tlmnobuk)
+cnobukTC        "TC-"+STRIP(tlmnobuk)
+
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND cbalikho
+SFL_SHOW_NEXT
+SFL_TARGET tldbukurtidx tlmnobuk
+
+
+CALCS()
+cdjoinabk860a    djoinabk860a == 1
+cdjoinabk860b    djoinabk860b == 1
+
+
+MAP(mmapabk)
+lblanks         lnoabk862       REPLACE
+cnobukP         lnoabk862       DO_CALC
+lblanks         lnoabktrmbpkb   REPLACE
+cnobukTC        lnoabktrmbpkb   DO_CALC
+
+MAP(mupdssulokbpkb)
+tldbisnis       ssulokbpkb      REPLACE
+
+MAP(mupdtlm860)
+gv_OPEN         tlmsts          REPLACE
+
+MAP(mupdtld860)
+gv_OPEN         tldsts          REPLACE
+
+MAP(mupdabk860)
+gv_VOID         abksts          REPLACE
+
+
+SPCALCS(sblkopen)
+DO_LIB  ap_dbclc(DNAME dmapabk,DCOMMAND MAPMAP,DMAP mmapabk);
+DO_LIB ap_dbclc(DNAME dupdssulokbpkb, DCOMMAND UPDATE_RANGE, DTARGET ssubuk2idx tldnoll, DMAP mupdssulokbpkb);
+DO_LIB ap_dbclc(DNAME dupdtlm860, DCOMMAND UPDATE, DTARGET tlmbukidx tlmnobuk, DMAP mupdtlm860);
+DO_LIB ap_dbclc(DNAME dupdtld860, DCOMMAND UPDATE, DTARGET tldprmidx tldprm, DMAP mupdtld860);
+DO_LIB_IF cdjoinabk860a  ap_dbclc(DNAME dupdabk860a, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnoabk862, DMAP mupdabk860);
+DO_LIB_IF cdjoinabk860b  ap_dbclc(DNAME dupdabk860b, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnoabktrmbpkb, DMAP mupdabk860);
+DO_LIB ap_dbclc(DNAME ddelakt860, DCOMMAND DELETE_RANGE, DTARGET aktkodtypidx tlmnobuk);
+
+POSTING(tmptrans)
+PST_COMMAND sblkopen

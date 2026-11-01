@@ -1,0 +1,237 @@
+LOCAL
+PGM_FIELDS
+ldigit1d                 STRING  2
+ldigit2d                 STRING  2
+ln1id                    INT2    2
+ln2id                    INT2    2
+ln1d                     INT2    2
+
+ljumlahnomord		INT2	2
+lnohpd		        STRING	21
+
+IMAGE(tmptranst)
+/--------------------------------------------------------\
+|/------------------------------------------------------\|
+||t.IsiHslCMO			                        ||
+||i.Handphone    ______________                         ||
+||t.HslCek       ___________                            ||
+||t.NoTelpAktf   ______________                         ||__
+||t.HslCekLing                                          ||
+|| __ t.indk1                                           ||
+|| __ t.indk2                                           ||
+|| __ t.indk3                                           ||
+|| __ t.indk4                                           ||
+||t.KetCMO                                              ||
+||  _____________________________                       ||
+|\------------------------------------------------------/|
+|/-------s.UPLOAD---------------------------------------\|
+||                                                      ||
+||                                                      ||
+||                                                      ||
+||                                                      ||
+||                                                      ||
+|\------------------------------------------------------/|
+|/------------------------------------------------------\|
+||t.RekFotoYgDiupload                                   ||
+|| _____________________________                        ||
+|| __ _______                                           ||
+|\------------------------------------------------------/|
+|       spasi                                            |
+|       spasi                                            |
+|       spasi                                            |
+\--------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1		PROTECT		INPUTRI		1
+svistr3	        ALLCAPS		INPUTRI		2
+svistr2		ALLCAPS		INPUTRI		3
+svinobuk        ALLCAPS         INPUTRI         8 		/*7 Tambah inputan ini, jadi nomor berubah*/
+
+svistr32          CHECKBOX        INPUTRI           9
+svistr33          CHECKBOX        INPUTRI           10
+svistr35          CHECKBOX        INPUTRI           11
+svistr36          CHECKBOX        INPUTRI           12
+
+/*svistr9         ALLCAPS         INPUTRI         12 */		/*11 keterangan survei */
+/*lketerangancmo  NOCHANGE SCROLL INPUTRI         13*/ 		/*12*/
+/*svistr35        PROTECT         INPUTRI         14*/ 		/*13*/
+/*sviket2         PROTECT         INPUTRI         15*/ 		/*14*/
+/*svistr6	ALLCAPS		INPUTRI		15      */ 	/*14*/
+/*svistr32      PROTECT         INPUTRI         16 	*/	/*15 keterangan tolak1 */
+/*lsvistr32     PROTECT         INPUTRI         17 	*/	/*16 keterangan tolak1 */
+/*svistr7       ALLCAPS	        INPUTRI		17      */	/*16*/
+/*svistr33      ALLCAPS         INPUTRI         18 	*/	/*17 keterangan tolak2 */
+/*lsvistr33     PROTECT         INPUTRI         19 	*/	/*18 keterangan tolak2 */
+sviket		TEXTAREA	INPUTRI		20		/*19 keterangan CMO	*/
+lsvistr33a      TEXTAREA        PROTECT         INPUTRI 21 	/*20 keterangan tolak2 */
+sviyt1          PROTECT         INPUTRI         21		/*21*/
+lenter          NOCHANGE        INPUTRI         22		/*22*/
+
+CALCS()
+ctelpd           condata=="TELP"
+
+MAP(mjoincond)
+conhp           lnohpd          REPLACE
+
+DBCALCS(djoincond)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    btmplg gv_INPG
+        DBC_SELECT      ctelpd
+        DBC_MAP         mjoincond
+
+CALCS()
+cdjoincond1      djoincond==1
+
+
+DEFAULT(tmptranst)
+ln1id           INIT            1
+ln2id           INIT            2
+ln1d            INIT            1
+
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+svistr34        DFALT_SCAN_BLANKS       Y " "
+                                        T " "
+
+/*svistr9         DFALT_SCAN_BLANKS       ACC ""
+                                        TACC "" */
+
+svistr3	DFALT_SCAN BLANKS	SESUAI
+					T_SESUAI
+
+CALCS()
+/*cacccmo         svistr9=="ACC"
+ctacccmo        svistr9=="TACC"
+cdiacc3          svistr9=="ACC"
+cditolak3        svistr9=="TACC"*/
+cket7whycmo     "KET7WHYCMO"
+ctelptdksesuai	svistr3=="T_SESUAI"
+ctelpsesuai	svistr3=="SESUAI"
+
+EDITS(tmptranst)
+/*e.Mandatory     	svistr9  	MANDATORY
+e.Mandatory 		svistr6 	MANDATORY_IF ctacccmo
+e.Mandatory 		svistr7 	MANDATORY_IF ctacccmo
+e.Mandatory 		sviket2 	MANDATORY
+e.Mandatory 		svistr35 	MANDATORY*/
+e.Mandatory		sviket		MANDATORY
+e.Mandatory 		svistr2 	MANDATORY_IF ctelptdksesuai
+
+/*e.Validate svistr6 VALIDATE tbddatkodidx  mtbd1_12 stbd5000 {Pgv_dttabel} {Pgv_survey21} {Plket7whycmo}
+e.Validate svistr7  VALIDATE tbtdattypkod  mtbt1_13 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {Plket7whycmo} {Plsvistr32x}*/
+
+/*e.Validate      lketerangancmo  VALIDATE tbddatkodidx  mtbd7_13 stbd5000 {Pgv_dttabel} {Pgv_survey21} {Pgv_ketsurvey}*/
+/*e.Validate      lketerangancmo  VALIDATE_IF cditolak3 tbddatkodidx  mtbd7_13 stbd5000 {Pgv_dttabel} {Pgv_survey21} {PlKETTOLAKSURVEY}*/
+e.Validate	svinobuk	VALIDATE btmbukidx mbtmjawabcmo
+
+MAP(mbtmjawabcmo)
+cket7whycmo     svitype3        DO_CALC
+lnohpd		svistr1		REPLACE_IF cdjoincond1
+
+/*MAP(mtbd7_13)
+tbdkode         svistr35        REPLACE
+tbdkode         lketerangancmo  REPLACE
+tbdket          sviket2         REPLACE*/
+
+/*MAP(mtbd1_12)
+tbdkode		svistr6		REPLACE
+tbdkode         svistr32        REPLACE
+tbdkode         lsvistr32x      REPLACE
+tbdket          lsvistr32       REPLACE
+
+cket7whycmo     svitype3        DO_CALC
+
+MAP(mtbt1_13)
+tbtkode		svistr7		REPLACE
+tbtkode         svistr33        REPLACE
+tbtket          lsvistr33       REPLACE
+tbttbdket       lsvistr33a      REPLACE*/
+
+/*MAP(mkosongketerangan)
+cBLANKS         lketerangancmo  DO_CALC
+cBLANKS         svistr35                DO_CALC
+cBLANKS         sviket2         DO_CALC*/
+
+CALCS()
+cpanjangnomd   	DO_LIB ap_strln(svistr2,&ljumlahnomord);
+
+cbukan08d	(ldigit1d=="0" && ldigit2d=="8" && ljumlahnomord>=11 && ljumlahnomord<=13 && svistr3=="T_SESUAI") || svistr3=="SESUAI"
+cdr727ctrl	btmflag1=="CTRL"
+
+MAP(mpanjangnomd)
+cpanjangnomd	ljumlahnomord	DO_CALC
+
+/*MAP(mkosongsetelahnya)
+cBLANKS	svistr35	DO_CALC
+cBLANKS		sviket2		DO_CALC
+cBLANKS	        svistr6		DO_CALC
+cBLANKS		svistr32	DO_CALC
+cBLANKS		svistr7		DO_CALC
+cBLANKS		svistr33	DO_CALC*/
+
+MAP(misictrl)
+gv_Y		svistr39	REPLACE_IF cdr727ctrl
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF ctelpsesuai
+
+AFTER_INPUT     cur_field=svistr2       DO_LIB ap_amstr(svistr2,ln1id,ln1d,&ldigit1d);
+AFTER_INPUT     cur_field=svistr2       DO_LIB ap_amstr(svistr2,ln2id,ln1d,&ldigit2d);
+AFTER_INPUT 	cur_field=svistr2       DO_MAP SHOW mpanjangnomd
+AFTER_INPUT 	cur_field=svistr2 	DO_MAP SHOW
+                  IF cbukan08d mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+/*AFTER_INPUT     cur_field=svistr9       DO_MAP SHOW mmapjaminput*/
+
+/*BEFORE_INPUT    cur_field=svistr6      DO_SKIP_IF cacccmo*/
+/*BEFORE_INPUT    cur_field=svistr7       DO_SKIP_IF cacccmo*/
+/*AFTER_INPUT	cur_field=svistr3	DO_MAP SHOW mkosongsetelahnya*/
+
+/*BEFORE_INPUT    cur_field=svistr9      DO_MAP SHOW mkosongketerangan
+AFTER_INPUT    cur_field=svistr9      DO_MAP SHOW mkosongketerangan*/
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW misictrl
+
+MAP(mupdfototacc)
+cY              sviyt1          DO_CALC
+
+DBCALCS(dupdfototacc)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdfototacc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND cfototacc
+SFL_UPLFLD_DBCALCS dupdfototacc
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svitype3
+SFL_COND	cadarecord
+SFL_SHOW_NEXT
+SFL_TARGET_IF cbukancmo
+svidatbuktyp   gv_datasurvey btmnobuk gv_713
+SFL_TARGET_IF ccmo
+svidatbuktyp   gv_datasurvey btmnobuk gv_datasurvey
+
+
+SPCALCS(spjawabcmo)
+DO_LIB ap_nxpst(l4461,lm4461det3);
+
+POSTING(tmptrans)
+        PST_ADDCMD spjawabcmo
+        PST_UPDCMD spjawabcmo
+
+CALCS()
+cini713		(btmsts=="713" && btmbichek!="SO" && btmbichek!="SH") || (btmsts=="714" && btmflag1=="CMO") || (btmsts=="714" && svistr34==BLANKS) || (btmsts=="713" && btmflag1=="CTRL")
+ctertentu	btmsts=="713" && (g_grpnam=="ANSYSUAT" || g_grpnam=="IT" || g_grpnam=="RI"|| g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV")
+
+PERMIT(tmptrans)
+  /*PMT_ADD_COND  c0*/
+  PMT_UPDALL_COND cini713
+  PMT_DEL_COND  ctertentu
+
+

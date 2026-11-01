@@ -1,0 +1,68 @@
+LOCAL
+PGM_FIELDS
+l301		STRING	11
+ljam		TIME	4
+
+/*-----JOIN------*/
+
+MAP(mamtjam)
+amtjam		ljam		REPLACE
+
+DBCALCS(djoinamtjam)
+DBC_COMMAND	JOIN
+DBC_TARGET	amtdatotoidx     gv_dtkkumum   bkmnobuk
+DBC_MAP		mamtjam
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.NoBuk301     : __________________||
+||i.Sts          : __________        ||
+||i.Tgl          : __________        ||
+||t.JamSetor     : _________________ ||
+||t.Nominal      : _________________ ||
+||t.Bank         : _________________ ||
+||t.NoRek        : __________        ||
+||t.StsUplAdh    : ______            ||
+||t.StsAccBm     : ______            ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   bkmnobuk         NOCHANGE SCROLL            INPUTRI         1
+   bkmsts           NOCHANGE SCROLL            INPUTRI         2
+   bkmtgl           PROTECT {DD-MM-YY}         INPUTRI         3
+   ljam             NOCHANGE SCROLL            INPUTRI         4
+   bkmjmld          NOCHANGE SCROLL            INPUTRI         5
+   bkmkb            NOCHANGE SCROLL            INPUTRI         6
+   bkmnobbm         NOCHANGE SCROLL            INPUTRI         7
+   bkmkebyr         NOCHANGE SCROLL            INPUTRI         8
+   bkmtype          NOCHANGE SCROLL            INPUTRI         9
+   
+
+DEFAULTS(tmptranst)
+l301		INIT		301
+
+CALCS()
+ctypSB		bkmjns == "SB" && bkmsts == "INPG"
+cblankssb	BLANKS
+cdjoinamtjam0	djoinamtjam == 0
+cdjoinamtjam1	djoinamtjam == 1
+
+EDITS(tmptranst)
+e.Validate bkmnobuk  VALIDATE bkmbukidx mbkmsb 0
+
+MAP(mbkmsb)
+bkmnobuk	bkmnobuk	REPLACE
+cblankssb	ljam		DO_CALC_IF cdjoinamtjam0
+ljam		ljam		REPLACE_IF cdjoinamtjam1
+
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT ctypSB
+SFL_TARGET bkmscrcabsts l301 cabkode
+
+

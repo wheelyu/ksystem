@@ -1,0 +1,131 @@
+LOCAL
+PGM_FIELDS
+lbtmplgveralmkerja2   STRING   21
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+   t.VerifikasiAlamatKerja
+   t.AlmKerjaSamaDgnTinggal : _____________  _    /*tanya sama dengan alamat tinggal/*/
+   i.Alamat     : _______________
+   i.Propinsi   : _______________ 
+   i.Kota       : _______________ 
+   i.Kec        : _______________ 
+   i.Kel        : _______________ 
+
+|/---------------------------------\|
+    t.VerifikasiCMO
+    i.Jaraktempuh  : ______
+    i.Menittempuh  : ______
+    t.Enter        : ______
+    spasi
+    spasi
+    t.UploadGMAPS
+   /-------s.UPLOAD--------------\
+   |                             |
+   |                             |
+   |                             |
+   |                             |
+   |                             |
+   \-----------------------------/
+|\---------------------------------/|
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 NOCHANGE                         INPUTRI  1
+lbtmplgveralmkerja2      NOCHANGE                         INPUTRI  2
+sviket                  TEXTAREA ALLCAPS                 INPUTRI  3
+svistr1                 ALLCAPS SCROLL                   INPUTRI  4
+svistr2                 ALLCAPS SCROLL                   INPUTRI  6
+svistr3                 ALLCAPS SCROLL                   INPUTRI  8
+svistr4                 ALLCAPS SCROLL                   INPUTRI  10
+svistr7			         ALLCAPS         				 INPUTRI	14
+svistr8			         ALLCAPS         				 INPUTRI	15
+lenter                  NOCHANGE                         INPUTRI  16
+
+DEFAULTS(tmptranst)
+svinama         DFALT_SCAN_BLANKS	Y " "
+                  			         T " "
+lbtmplgveralmkerja2      INIT            {btmplg}
+lPSMKTP         INIT            PSMKTP
+lALMSURVEY      INIT            PSMTINGGAL
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+
+CALCS()
+cbukancmoveralmkrj       g_grpnam != "CMO" && g_grpnam != "IT"
+
+EDITS(tmptranst)
+/*
+e.validatePropinsi3     svistr1 VALIDATE dtmdtkodidx  mdtm52 0 {Pgv_dtkota}
+e.validateKota3         svistr2 VALIDATE tbldtdtmkod mtbl52 0 {Pgv_dtkota} {Psvistr1}
+e.validateKec3          svistr3 VALIDATE tbddatkodidx mtbd52 0 {Pgv_dtkota} {Psvistr1} {Psvistr2}
+e.validateKel3          svistr4 VALIDATE tbtdattypkod mtbt52 0 {Pgv_dtkota} {Pgv_dtkota21} {Psvistr1} {Psvistr2} {Psvistr3}
+e.Validate              lbtmplgveralmkerja2      VALIDATE_BUF3_IF cdaritinggal2	almdatotobuk malmkerjasmdgtinggal2  0 {PlALMTINGGAL}
+*/
+t.Mandatory          svinama     MANDATORY
+t.mandatoryJalan	   sviket	   MANDATORY
+t.mandatoryProp      svistr1		MANDATORY
+e.mandatoryKota1	   svistr2		MANDATORY
+e.mandatoryKec1		svistr3		MANDATORY
+e.mandatoryKel1		svistr4		MANDATORY
+/*
+MAP(malmkerjasmdgtinggal2)
+#almjalan                       sviket                REPLACE
+#almprop                        svistr1                 REPLACE
+#almkota                        svistr2                 REPLACE
+#almkec                         svistr3                  REPLACE
+#almkel                         svistr4                  REPLACE
+
+
+MAP(mtbt52)
+tbtkode                 svistr4                 REPLACE
+
+MAP(mtbd52)
+tbdkode                 svistr3                 REPLACE
+
+MAP(mtbl52)
+tblkode                 svistr2                 REPLACE
+
+MAP(mdtm52)
+dtmkode                 svistr1                 REPLACE
+*/
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=svinama          DO_MAP SHOW mmapjaminput
+BEFORE_INPUT cur_field=svistr7		   DO_SKIP_IF cbukancmoveralmkrj
+BEFORE_INPUT cur_field=svistr8		   DO_SKIP_IF cbukancmoveralmkrj
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_COND    cfldbtn_ada
+SFL_UPLFLD_DBCALCS dupdfototg
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk lvcmoalmkerja
+SFL_TARGET	svidatbuktyp   gv_datasurvey btmnobuk lvcmoalmkerja
+
+SFL_MAP
+gv_datasurvey  	svidata			REPLACE
+btmnobuk	    	   svinobuk		   REPLACE
+lvcmoalmkerja		svitype			REPLACE
+lvcmoalmkerja		svikode			REPLACE
+c1			         svinourt		   DO_CALC
+
+DBCALCS(djoinsvivcmoalamatkerja)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey btmnobuk lvcmoalmkerja
+
+CALCS()
+caddvcmoalmkrj	btmsts=="713" && djoinsvivcmoalamatkerja == 0 
+cupdvcmoalmkrj	btmsts=="713" && djoinsvivcmoalamatkerja == 1 
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddvcmoalmkrj
+        PMT_UPDALL_COND cupdvcmoalmkrj
+        PMT_DEL_COND    c0
+

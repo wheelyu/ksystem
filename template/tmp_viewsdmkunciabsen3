@@ -1,0 +1,57 @@
+LOCAL
+PGM_FIELDS
+lbtmplat4		STRING	21
+lbtmdvs4			STRING	21
+
+MAP(mjoinbtmabk4)
+btmplat			lbtmplat4		REPLACE
+btmdvs			lbtmdvs4		REPLACE
+
+DBCALCS(djoinbtmabk4)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx abknobuk
+	DBC_MAP		mjoinbtmabk4
+
+IMAGE(tmptranst)
+/-----t-----t-------------------t------------------------\
+|t.Scr|t.Sts|     t.NoBuk       | t.Ket                  |
+\-----.-----.-------------------.------------------------/
+IMAGE(tmptrans)
+|_____|_____|___________________|________________________|_
+
+FIELD(tmptrans)
+abkscr 		FLDBUTTON SCROLL	MEDIUM  1
+abksts 		PROTECT SCROLL  MEDIUM  2
+abknobuk	PROTECT SCROLL  MEDIUM  3
+labkkym2 	PROTECT SCROLL  MEDIUM  4
+abkkym	 	UNSEEN	INPUTRI	5
+
+CALCS()
+ckon4		abkscr == "801" || abkscr == "808" || abkscr == "919"
+cpunyanip4	abkkym==psmkode
+ckuncpk4	STRIP(abkkym2) + " " + STRIP(lbtmplat4)
+cdrkuncpk4	abkscr=="727" && djoinbtmabk4==1 && (lbtmdvs4=="HMC" || lbtmdvs4=="M2W") && lbtmplat4!=BLANKS
+
+EDIT(tmptrans)
+e.Validate      abkkym		VALIDATE        psikodidx       mpsiabk4
+
+MAP(mpsiabk4)
+cblanks		labkkym2	DO_CALC
+abkkym2		labkkym2	REPLACE
+ckuncpk4	labkkym2	DO_CALC_IF cdrkuncpk4
+
+HOOKS(tmptrans)
+CLICKED	        cur_field=abkscr 	DO_FLY {abkscr} mmapabk4
+  
+MAP(mmapabk4)
+abknobuk     r_string1   REPLACE
+abknoll	     r_string1	 REPLACE_IF ckon4
+abkscr       r_string2   REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(20)      
+SFL_TITLE(tmptranst)
+SFL_SELECT cpunyanip4
+SFL_TARGET
+abkdatstskym  lkunciabsen lINPH 
+

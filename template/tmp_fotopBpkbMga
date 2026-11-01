@@ -1,0 +1,79 @@
+LOCAL
+PGM_FIELDS
+lbukabkftomga11		STRING		21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		NOCHANGE		INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+ltombol			TOMBOL			INPUTRI		99
+
+CALCS()
+ctgluplisi11	doctgljadi!=BLANKS
+cstsuplisi11	doclok=="OK"
+cbukabkftomga11	STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddocktp11)
+g_tgltrn        doctgljadi      REPLACE
+
+
+DBCALCS(dupddocktp11)
+        DCOMMAND UPDATE
+        DTARGET docprmidx docprm
+        DMAP mupddocktp11
+
+MAP(mupddocktp_11)
+cY		doclok		DO_CALC_IF ctgluplisi11
+cbukabkftomga11	lbukabkftomga11	DO_CALC
+
+CALCS()
+cbpkbMga	tmpkode == "UPLOADBPKB"
+
+MAP(mupdabkftomga11)
+gv_CLSD		abksts		REPLACE
+
+SPCALCS(spuplftomga11)
+DO_LIB			ap_dbclc(DNAME dupddocktp_11, DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocktp_11);
+DO_LIB_IF cstsuplisi11	ap_dbclc(DNAME dupdabkftomga11,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga11,DMAP mupdabkftomga11);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombol		DO_SPCALCS spuplftomga11
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbpkbMga
+SFL_UPLFLD_DBCALCS dupddocktp11
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+	docdatbukidx lUPGAD  btmnobuk lUPLOADBPKB l13 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

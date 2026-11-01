@@ -1,0 +1,183 @@
+LOCAL
+PGM_FIELDS
+ltanggallahir	DATE	4
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------\
+|/-------------------------------------------------------------------\|
+||i.Ktp       : ________________                                     ||
+||i.Nama      : _________________________                            ||
+||i.Tgllahir  : ___________                                          ||
+||t.AdaData   : ______                                               ||
+||t.IsiPefindo: ___                                                  ||
+||t.ScorePS   : _______   ________                                   ||
+|\-------------------------------------------------------------------/|
+|/-------------------------------------------------------------------\|
+||t.JumlahNomTunggakan        : ___________________                  ||
+||t.MaksUsiaTunggakan         : ___________________                  ||
+||t.MaksUsiaTunggakan12Bulan  : ___________________                  ||
+||t.JumlahKreditur            : ___________________                  ||
+||t.JumlahPlafon              : ___________________                  ||
+||t.JumlahBakiDebet           : ___________________                  ||
+|\-------------------------------------------------------------------/|
+|/-------------------------------------------------------------------\|
+||t.JenisKreditur                                                    ||
+||t.Perbankan            : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+||t.NonLembagaKeuagan    : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+||t.Multifinance         : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+||t.KoperasiSimpanPinjam : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+||t.Bpr                  : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+||t.Fintechp2plending    : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+||t.LembagaKeuanganLain  : ____ t.lunas ____ t.Aktif ____ t.Ditutup  ||
+|\-------------------------------------------------------------------/|
+\---------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldcab		PROTECT		INPUTRI		1
+ltldcab		PROTECT		INPUTRI		2
+ltanggallahir	PROTECT {YYYY-MM-DD}	INPUTRI	3
+tlddvs		NOCHANGE	INPUTRI		4
+tldnobbm	NOCHANGE	INPUTRI		5
+tldjml		ALLCAPS		INPUTRI		6
+
+lENTAR		NOCHANGE	INPUTRI		7
+
+tldlok		DIGITS		INPUTRI		8
+tldkat		DIGITS          INPUTRI         9
+tldppdoto	DIGITS          INPUTRI         10
+tldgrup		DIGITS          INPUTRI         11
+tldgrup2	DIGITS          INPUTRI         12
+tldlok2		DIGITS          INPUTRI         13
+
+tldhrg		PROTECT         INPUTRI         14
+tldsubtot	PROTECT         INPUTRI         15
+tldperdis	PROTECT         INPUTRI         16
+
+tldtotdis	PROTECT         INPUTRI         17
+tldsatbsr	PROTECT         INPUTRI         18
+tldjmlren	PROTECT         INPUTRI         19
+
+tldjmlpos	PROTECT         INPUTRI         20
+tldhrgnet	PROTECT         INPUTRI         21
+tldtmp1		PROTECT         INPUTRI         22
+
+tldtmp2		PROTECT         INPUTRI         23
+tldjml2		PROTECT         INPUTRI         24
+tldjml3		PROTECT         INPUTRI         25
+
+tldperdism	PROTECT         INPUTRI         26
+tldtotdism	PROTECT         INPUTRI         27
+tldperdis1	PROTECT         INPUTRI         28
+
+tldperdis2	PROTECT         INPUTRI         29
+tldperdis3	PROTECT         INPUTRI         30
+tldperdis4	PROTECT         INPUTRI         31
+
+tldperdis5	PROTECT         INPUTRI         32
+tldperdis6	PROTECT         INPUTRI         33
+tldperdis7	PROTECT         INPUTRI         34
+
+
+DEFAULT(tmptranst)
+tlddvs	DFALT_SCAN	BLANKS
+			ADA
+			TIDAK
+tldnobbm	DFALT_SCAN	YA
+				TIDAK
+				
+
+CALCS()
+cadapefindo     tlddvs=="ADA"
+
+EDITS(tmptranst)
+e.Mandatory     tlddvs  MANDATORY
+e.Mandatory	tldnobbm	MANDATORY
+e.Mandatory	tldlok		MANDATORY_IF cadapefindo
+e.Mandatory	tldkat		MANDATORY_IF cadapefindo
+e.Mandatory	tldppdoto	MANDATORY_IF cadapefindo
+e.Mandatory	tldgrup		MANDATORY_IF cadapefindo
+e.Mandatory	tldgrup2	MANDATORY_IF cadapefindo
+e.Mandatory	tldlok2		MANDATORY_IF cadapefindo
+
+
+e.Validate	tldcab	VALIDATE	psmktpidx   mpsmrekap
+
+MAP(mpsmrekap)
+psmktp		tldcab		REPLACE
+psmnama		ltldcab		REPLACE
+psmtgllahir	ltanggallahir	REPLACE
+
+MAP(mscansvidetailrekap)
+c11	ladadetail	DO_CALC
+
+DBCALCS(dbscansvidetailrekap)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	svidatbuktyp   lDTPEFINDO btmnobuk ltldukrwrn
+	DBC_LAST_TARGET	svidatbuktyp   lDTPEFINDO btmnobuk ltldukrwrn
+	DBC_SUM_MAP	mscansvidetailrekap
+
+CALCS()
+cangkaboleh	(tldjml>=250 && tldjml<=900 && tlddvs=="ADA") || tlddvs=="TIDAK"
+ctdkadapefindo	tlddvs=="TIDAK"
+cdebituradadetail	(tldukrwrn=="DEBITUR" && tlddvs=="TIDAK" && ladadetail==0) || tldukrwrn!="DEBITUR" || tlddvs!="TIDAK"
+cpenjaminadadetail	(tldukrwrn=="PENJAMIN" && tlddvs=="TIDAK" && ladadetail==0) || tldukrwrn!="PENJAMIN" || tlddvs!="TIDAK"
+
+MAP(mkosongrekap)
+cBLANKS		tldjml		DO_CALC
+cBLANKS		ladadetail	DO_CALC
+tldukrwrn	ltldukrwrn	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tlddvs	DO_MAP mkosongrekap
+AFTER_INPUT     cur_field=tlddvs        DO_SCAN dbscansvidetailrekap
+
+BEFORE_INPUT    cur_field=tldjml       DO_SKIP_IF ctdkadapefindo
+
+BEFORE_INPUT    cur_field=tldlok	DO_SKIP_IF ctdkadapefindo
+BEFORE_INPUT    cur_field=tldkat	DO_SKIP_IF ctdkadapefindo
+BEFORE_INPUT    cur_field=tldppdoto	DO_SKIP_IF ctdkadapefindo
+BEFORE_INPUT    cur_field=tldgrup	DO_SKIP_IF ctdkadapefindo
+BEFORE_INPUT    cur_field=tldgrup2	DO_SKIP_IF ctdkadapefindo
+BEFORE_INPUT    cur_field=tldlok2	DO_SKIP_IF ctdkadapefindo
+
+
+
+AFTER_INPUT     cur_field=tlddvs DO_MAP SHOW
+                IF cdebituradadetail mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DebiturAdaDetailPefindo
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF cdebituradadetail mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DebiturAdaDetailPefindo
+
+AFTER_INPUT     cur_field=tlddvs DO_MAP SHOW
+                IF cpenjaminadadetail mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PemohonAdaDetailPefindo
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF cpenjaminadadetail mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PemohonAdaDetailPefindo
+
+
+AFTER_INPUT 	cur_field=tldjml DO_MAP SHOW
+		IF cangkaboleh mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Isiatas250sd900
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+               IF cangkaboleh mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Isiatas250sd900
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tldbukbrgoto   btmnobuk gv_INPG lDTPEFINDO21
+

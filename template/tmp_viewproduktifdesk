@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+ltbdkodexx	STRING		21
+lversidesk	STRING		11
+ltotal858	DFLOAT		8
+lVALID840	STRING		21
+lket     	STRING		61
+
+DBCALCS(djointbdbobotxx)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel lit ldtbobot ltbdkodexx
+        DBC_MAP         mjointbdbobot
+
+
+IMAGE(tmptranst)
+/---------t---------------t----------t------t----------t-------t--------------\
+|t.Tgl    |i.NoBuk        |i.Scr     |t.Tipe|i.Jam     |i.Nilai|t.Ket         |
+\---------.---------------.----------.------.----------.-------.--------------/
+IMAGE(tmptrans)
+|_________|_______________|__________|______|__________| ___._ | _____________|
+
+FIELD(tmptrans)
+logtgl		PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+lognobuk	PROTECT                    INPUTRI 2
+logscr		PROTECT SCROLL		   INPUTRI 3
+logtype		PROTECT	SCROLL		   INPUTRI 4
+logjam		PROTECT SCROLL		   INPUTRI 4
+lnilai    	PROTECT SCROLL		   INPUTRI 6 
+lket		PROTECT	SCROLL		   INPUTRI 7
+
+
+DEFAULTS(tmptrans)
+lit		INIT	IT
+ldtbobot	INIT	BOBOTDESK
+lversidesk	INIT	240622v1
+
+EDITS(tmptrans)
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfiletlm tlmbukidx mfiletlmxx 0
+e.ValidateNoBuk lognobuk  VALIDATE_IF cfiletkm tkmbukidx mfiletkmxx 0
+e.ValidateNoBuk lognobuk  VALIDATE_DUP_IF cfiletld tldbukurtidx mfiletldxx 0
+
+
+CALCS()
+ctlmstripxx	STRIP(logscr)+STRIP(logtype)+"XX"
+cdjointbdbobotxx	djointbdbobotxx == 1
+c420dtk		420
+c180dtk		180
+c1800dtk	1800
+ctotal858	(ltotal858 * 45)
+c840		logscr == "840" 
+c858		logscr == "858" 
+c850		logscr == "850" 
+cVALID		logscr == "840" && lVALID840 == "VALID"
+cUNVALID	logscr == "840" && lVALID840 == "TDK_VALID"
+cket850		"INVESTIGASI LANJUTAN"
+
+MAP(mfiletlmxx)
+tlmjml2		ltotal858	REPLACE
+tlmbisnis	lVALID840	REPLACE_IF c840
+c420dtk		lnilai   	DO_CALC_IF cVALID
+c180dtk		lnilai   	DO_CALC_IF cUNVALID
+ctotal858	lnilai		DO_CALC_IF c858
+c1800dtk	lnilai   	DO_CALC_IF c850
+cBLANKS		lket		DO_CALC
+lVALID840	lket		REPLACE_IF c840
+ltotal858	lket		REPLACE_IF c858
+cket850   	lket		DO_CALC_IF c850
+
+
+
+
+MAP(mfiletkmxx)
+ctkmstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+ctlmstripxx	ltbdkodexx	DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobotxx
+
+MAP(mfiletldxx)
+ctldstrip       ltbdkode        DO_CALC
+csatu1          lnilai          DO_CALC
+ltbddf1         lnilai          REPLACE_IF cdjointbdbobot
+
+
+
+CALCS()
+cadabobotdesk  	lognobuk != BLANKS && 
+		(logtype=="P" && (logfile == "tlm" || logfile == "tkm" || logfile == "tld")
+		&& logscr == "840" || logscr == "858" || logscr == "850")
+
+SUBFILE(tmptrans)
+SFL_LINES(20)      
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD logjam
+SFL_SORT_UPDOWN UP
+SFL_SELECT cadabobotdesk
+SFL_TARGET
+logusrtgltyp	psmkode ltglhariini 
+

@@ -1,0 +1,84 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+| t.Upload Koreksi Foto CMO        |
+| t.NoBuk ________________         |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.StsUpld  __________________   ||
+||t.TglFt    __________________   ||
+||t.lat      _________.________   ||
+||t.long     _________.________   ||
+||t.Acctacc  ______               ||
+||                       ______   ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk                PROTECT                 INPUTRI         1
+svistr31		PROTECT			INPUTRI 	2
+svitgl2			PROTECT			INPUTRI		3
+svidf1			PROTECT			INPUTRI 	4
+svidf2			PROTECT			INPUTRI		5
+svistr10		NOCHANGE		INPUTRI		6
+lENTER			ALLCAPS			INPUTRI		7
+
+DEFAULTS(tmptranst)
+lresurvey10             INIT            RESURVEY10
+lKORFTCMO		INIT		KORFTCMO
+lresurvey7		INIT		RESURVEY7
+lENTER			INIT		ENTER
+svistr10		DFALT_SCAN_BLANKS ACC
+                                          TACC
+
+EDITS(tmptranst)
+e.Mandatory     svistr10        MANDATORY
+
+MAP(mkosong1)
+cBLANKS                 svistr31                DO_CALC_IF ctacc
+cBLANKS                 svitgl2                 DO_CALC_IF ctacc
+cBLANKS                 svidf1                  DO_CALC_IF ctacc
+cBLANKS                 svidf2                  DO_CALC_IF ctacc
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=svistr10      DO_MAP SHOW mkosong1
+
+
+MAP(mupdsviuplkorcmo)
+cOK             svistr31        DO_CALC
+g_fotodate1	svitgl2		REPLACE
+g_fotolon1	svidf1		REPLACE
+g_fotolat1	svidf2		REPLACE
+
+DBCALCS(dupdsviuplkorcmo)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx   sviprm
+        DBC_MAP         mupdsviuplkorcmo
+
+CALCS()
+cjikacmo	/* (djoinsgmCMS==1 && lsgmstrCMS==g_usrkode) || */ (djoinpsiHo==1 && lpsicabskr=="PST30") || /* (djoinsgmCMS2==1 && lsgmstrCMS2==g_usrkode) */ mtshcin==g_usrkode || mtsbisnis==g_usrkode || g_grpnam == "B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="RI" || g_grpnam=="IT"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cjikacmo
+SFL_UPLFLD      svinobuk svitblkode
+SFL_UPL_DIRFLD  mtstgl
+SFL_UPL_DELCOND chapusfoto
+SFL_UPLFLD_DBCALCS dupdsviuplkorcmo
+SFL_SHOW_NEXT
+SFL_TARGET
+svidatbuktyp gv_resurvey11 mtsnobuk lresurvey10 
+
+

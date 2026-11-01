@@ -1,0 +1,84 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.UplKoreksi                      ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.Tanggal    : ___________________ ||
+||t.JdlMeet    : ___________________ ||
+||t.KetKor     : ___________________ ||
+||t.LinkDrive  : ___________________ ||
+||		 	  __________ ||
+||spasi				     ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.StsUpl     : ___________________ ||
+|\-----------------------------------/|
+|/----------DOCUPLOAD----------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||		          __________ ||
+|\-----------------------------------/|
+\-------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tlmtgl2			PROTECT {DD-MM-YYYY}		INPUTRI 1	/*tanggal meeting*/
+tlmdari			PROTECT				INPUTRI 2	/*judul meeting*/
+lketkorbhn		TEXTAREA			INPUTRI 3	/*keterangan koreksi dari pdca*/
+tkdket			TEXTAREA			INPUTRI 4	/*link drive*/
+lenter			NOCHANGE			INPUTRI 5	/*enter*/
+tkdtype2		PROTECT				INPUTRI 6	/*status upload*/
+ltombupload		TOMBOL				INPUTRI 7	/*tombol upload*/
+
+CALCS()
+cabkkoreksi1		djoinabkkoreksi == 1
+cabkuplulang		djoinabkuplulang == 1
+cupdkoreksi		g_curcmd == 2
+
+MAP(mupdabkkoreksi)
+gv_CLSD			abksts		REPLACE_IF ctipekoreksi
+
+MAP(mupdabkuplulang)
+gv_CLSD			abksts		REPLACE_IF ctipeuplulang
+DEBUG ldum		ldum		REPLACE
+
+MAP(mtandakoreksi)
+lOK			tkdtype2	REPLACE
+DEBUG ldum		ldum		REPLACE
+
+SPCALCS(sp935koreksi)
+DO_LIB_IF cabkkoreksi1			ap_dbclc(DNAME dupdabkkoreksi,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkkoreksi);     /*CLSD kuncian koreksi dari PDCA*/
+DO_LIB_IF cabkuplulang 			ap_dbclc(DNAME dupdabuplulang,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabkuplulang);	/*CLSD kuncian upload ulang jika TACC HDEV*/
+DO_LIB					ap_dbclc(DNAME dtandakoreksi,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm,DMAP mtandakoreksi);
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=lketkorbhn	DO_SKIP_IF cupdkoreksi
+CLICKED			cur_field=ltombupload 	DO_SPCALCS sp935koreksi
+
+MAP(mupdtkd5)
+c1			tkdjml3		DO_CALC
+DBCALCS(dupdtkd5)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx tkdprm
+	DBC_MAP		mupdtkd5
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cjoinkorbhnmeet
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD tkdoto tkdnoll
+SFL_DOCUPLFLD_DBCALCS dupdtkd5
+SFL_TARGET	
+	tkddatbukll lBHNMEET tlmnobuk
+

@@ -1,0 +1,64 @@
+LOCAL
+PGM_FIELDS
+
+lterima		INT4		4
+lblmterima      INT4		4
+
+/*------------------Menghitung Jumlah Barang Terima-----------------------*/
+
+CALCS()
+csamado		mtdnoll == pmbnobuk
+
+MAP(mmtd)
+mtdjml	        lterima       REPLACE
+
+DBCALCS(dscanmtd)
+    DBC_COMMAND     SCANSCAN
+    DBC_SELECT	    csamado
+    DBC_TARGET      mtdstskodbrg   gv_trmpiubrg gv_CLSD pmbsup
+    DBC_SUM_MAP     mmtd
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.NoDo         : __________        ||
+||t.TglDo        : __________        ||
+||t.Dvs          : __________        ||
+||t.Type         : __________        ||
+||t.Jumlah       : ____              ||
+||t.JmlTrm       : ____              ||
+||t.JmlBlmTrm    : ____              ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   pmbnobuk         NOCHANGE SCROLL            INPUTRI         2
+   pmbtglganbg      PROTECT {DD-MM-YY}         INPUTRI         1
+   pmbdvs           NOCHANGE SCROLL            INPUTRI         3
+   pmbgrup          NOCHANGE SCROLL            INPUTRI         4
+   pmbsishutas2     NOCHANGE SCROLL            INPUTRI         9
+   lterima          NOCHANGE SCROLL            INPUTRI         10
+   lblmterima       NOCHANGE SCROLL            INPUTRI         11
+   
+
+CALCS()
+ctypebrg		pmbcab == cabkode && pmbscr == "503" && pmbstsbrg == "PIUB" && ( pmbgrup == "PARTSPM" || pmbgrup == "SPM" )
+cdscanmtd               gv_trmpiubrg != BLANKS && dscanmtd >= 0
+chitungsls		pmbsishutas2 - lterima
+
+EDITS(tmptranst)
+e.Validate pmbnobuk  VALIDATE pmbbukidx mpmbdo 0
+
+MAP(mpmbdo)
+pmbnobuk        pmbnobuk        REPLACE
+lterima		lterima		REPLACE_IF cdscanmtd
+chitungsls	lblmterima	DO_CALC
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT ctypebrg
+SFL_TARGET_GTE pmbdatbukidx  gv_dthut gv_CLSD  {gv_dthut} {gv_INPG}
+

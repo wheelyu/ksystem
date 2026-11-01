@@ -1,0 +1,116 @@
+LOCAL
+PGM_FIELDS
+lSUPERMTR               STRING          11
+
+DBCALCS(djoinsendiri)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp lSUPERMTR psmktp lSUPERMTR
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+|  ___________________________                                                                     |
+| /--------------------------------------------\/------------------------------------------------\ |
+   t.NoBukti     : ___________________________   spasi                                             
+   t.Cabang      : ___________________________   t.Tanggal       : ________
+   t.Idmitra     : __________________________    t.Jenismitra    : __________________
+   t.Nama        : ___________________________   t.Statuskontrak : ________                       	
+| \--------------------------------------------/\------------------------------------------------/ |
+| /--------------------------------------------\/------------------------------------------------\ |
+   t.RpJual      : ___________________________   t.Userinput     : ____________________________
+   t.Kat         : __________________________    t.SuperMitra    : ______ _                                                         
+   t.AsalMitra   : _____________                 t.Enter       : _________                
+| \--------------------------------------------/\------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svidata              PROTECT              INPUTRI     1
+svinobuk             PROTECT              INPUTRI     1
+
+svitblkode           PROTECT              INPUTRI     2
+svitgl1              NONE {DD-MM-YYYY}      INPUTRI     3
+
+svikode              PROTECT              INPUTRI     4
+svistr1              PROTECT              INPUTRI     5
+svinama              PROTECT              INPUTRI     6
+
+svistr2              PROTECT              INPUTRI     7
+svidf1               NUMERIC                      INPUTRI    8
+svidtmkode           PROTECT                      INPUTRI    9
+svistr3              ALLCAPS SCROLL               INPUTRI    9
+svistr5		     ALLCAPS SCROLL	INPUTRI 10
+svidf2		PROTECT			INPUTRI		10
+svistr6		     ALLCAPS SCROLL	INPUTRI 10
+lenter			ALLCAPS		INPUTRI 11
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+lSUPERMTR               INIT            SPRMITRA
+svitgl1			INIT		{g_tgltrn}
+svitgl1			INIT_UPDATE	{g_tgltrn}
+svidtmkode		INIT		{g_usrkode}
+svistr3			DFALT_SCAN	KOMITMEN
+					NONKOMITMEN
+svistr5			DFALT_SCAN	BLANKS
+					SUPERMITRA
+svistr6			DFALT_SCAN	BLANKS
+					TELEMARKETING
+					SMSBLAST
+					TELESMS
+					KLIKNSS
+
+EDITS(tmptranst)
+e.Mandatory     svikode         MANDATORY
+e.Mandatory     svidf1          MANDATORY
+e.Validate	svikode		VALIDATE  psmktpidx mpsmmtr
+
+
+MAP(mpsmmtr)
+psmktp		svikode		REPLACE
+psmstssup	svistr2   	REPLACE
+psmktp		svinobuk	REPLACE
+psmnama		svinama		REPLACE
+psmkdtmp1	svistr1		REPLACE
+psmcab		svitblkode	REPLACE
+psmktp		svistr4		REPLACE
+
+MAP(misikode)
+psmktp		svikode		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svitgl1	DO_MAP SHOW misikode
+AFTER_INPUT	cur_field=svikode	DO_MAP SHOW mpsmmtr
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cm4w
+SFL_TARGET
+        svidatbuktyp   lSUPERMTR psmktp lSUPERMTR
+
+SFL_MAP
+psmktp			svikode			REPLACE
+lSUPERMTR               svidata                 REPLACE
+psmktp                 svinobuk                REPLACE
+lSUPERMTR               svitype                 REPLACE
+/*
+MAP(mupdpsm)
+svistr3		psmkdtmp2		REPLACE
+
+SPCALCS(sptrans)
+	DO_LIB ap_dbclc (DNAME dupdpsm,DCOMMAND UPDATE,DTARGET psmktpidx psmktp,DMAP mupdpsm);
+
+POSTING(tmptrans)
+        PST_ADDCMD             sptrans
+        PST_UPDCMD             sptrans
+*/
+CALCS()
+ctambah		(g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WMHEAD" || g_grpnam == "B.M4WDVH" || g_grpnam == "RI" || g_grpnam == "IT") && djoinsendiri == 0
+                     
+cubah		(g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WMHEAD" || g_grpnam == "B.M4WDVH" || g_grpnam == "RI" || g_grpnam == "IT") && djoinsendiri == 1                                         
+
+PERMIT(tmptrans)
+PMT_ADD_COND	ctambah
+PMT_UPDALL_COND cubah
+PMT_DEL_COND	c0
+

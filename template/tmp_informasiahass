@@ -1,0 +1,155 @@
+LOCAL
+PGM_FIELDS
+lh2		STRING	21
+ldcoohmc	STRING	21
+lthbl21         STRING  21
+lniphmc		STRING	21
+lkawil          STRING  21
+lnipkawil       STRING  21
+lheadhass	STRING	21
+lnipheadahass	STRING	21
+lnipSPVahass	STRING	21
+lspvahass	STRING	21
+lnipGAhead	STRING	21
+lgahead		STRING	21
+
+
+
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+|| t.Tanggal    : _____________        ||
+|| t.KelasAHASS : _____________        ||
+|| t.DCOOBisnis : _____________        ||
+|| t.DCOOArea   : _____________        ||
+|| t.Kawil      : _____________        ||
+|| t.HeadSales  : _____________        ||
+|| t.AHASSHead  : _____________        ||
+|| t.AHASSSpv   : _____________        ||
+|| t.GAHead     : _____________        ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldtgl2	        PROTECT {DD-MM-YYYY} NOLIMIT	INPUTRI 1        /*Tgl*/
+tldgrup         ALLCAPS SCROLL          	INPUTRI 2        /*Kelas AHASS*/
+/*tldcab          PROTECT                 	INPUTRI 3 */       /*Cabang*/
+tldbisnis       PROTECT                 	INPUTRI 4        /*DCOO Bisnis */
+tldgrup2        ALLCAPS                 	INPUTRI 5        /*DCOO Area*/
+tldlok          PROTECT                 	INPUTRI 6        /*KAWIL*/
+tldbrg          ALLCAPS                 	INPUTRI 7        /*HEAD Sales*/
+tldsat          PROTECT                 	INPUTRI 8        /*AHASS HEAD*/
+tldnoll         PROTECT                	 	INPUTRI 9        /*AHASS SPV*/
+tldplg          PROTECT                 	INPUTRI 10       /*GA Head*/
+
+
+CALCS()
+cthbl                   THBLS(g_tgltrn)
+
+
+DEFAULTS(tmptranst)
+tldtgl2		INIT		{g_tgltrn}
+lh2		INIT		H2
+ldcoohmc	INIT		DCOOHMC
+lkawil		INIT		KAWIL
+lheadhass	INIT		AHASSHEAD
+lspvahass	INIT		AHASSSPV
+lgahead		INIT		GAHEAD
+lthbl21         INIT            {cthbl}
+tldgrup		DFALT_SCAN	BLANKS
+				SMALL
+				MEDIUM
+				LARGE
+
+MAP(mjoinsgmdcooh)
+sgmstr5         lniphmc        REPLACE
+
+
+DBCALCS(djoinsgmdcooh)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 ldcoohmc lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmdcooh
+
+MAP(mjoinsgmkawil)
+sgmstr5          lnipkawil       REPLACE
+
+DBCALCS(djoinsgmkawil)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lkawil lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmkawil
+
+
+MAP(mjoinsgmheadahass)
+sgmstr5          lnipheadahass       REPLACE
+
+DBCALCS(djoisgmheadahass)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lheadhass lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmheadahass
+
+MAP(mjoinsgmspvahass)
+sgmstr5          lnipSPVahass       REPLACE
+
+DBCALCS(djoisgmspvahass)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lspvahass lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmspvahass
+
+
+MAP(mjoinsgmgahead)
+sgmstr5          lnipGAhead       REPLACE
+
+DBCALCS(djoisgmgahead)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lgahead lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmgahead
+
+
+CALCS()
+cdcoohmc	djoinsgmdcooh == 1
+ckawil          djoinsgmkawil == 1
+cheadahass	djoisgmheadahass == 1
+cspvahass	djoisgmspvahass == 1
+cgahead		djoisgmgahead == 1
+
+MAP(maddtldahass)
+lniphmc		tldbisnis	REPLACE_IF cdcoohmc
+lnipkawil       tldlok          REPLACE_IF ckawil
+lnipheadahass	tldsat		REPLACE_IF cheadahass
+lnipSPVahass	tldnoll		REPLACE_IF cspvahass
+lnipGAhead	tldplg		REPLACE_IF cgahead
+DEBUG		ldum	ldum	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW maddtldahass
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_TARGET
+        tldbukbbmidx    tlmnobuk  lINFORAHASS21
+
+SFL_MAP
+tlmnobuk        tldnobuk
+lINFORAHASS21   tldnobbm
+lINFORAHASS11   tlddata
+
+
+PERMIT(tmptrans)
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    cOPEN
+PMT_DEL_COND	cIT
+
+
+/*
+SPCALCS(spadd3d)
+DO_LIB 		ap_dbclc(DNAME dadd3d, DCOMMAND ADD, DFILE tld, DMAP maddtld3d);
+
+
+POSTING(tmptranst)
+ PST_ADDCMD	spadd3d
+*/

@@ -1,0 +1,81 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.NamaAktiva :__________________|
+ |t.KodeAktiva :__________________|
+ |t.HasilSensus:______  __________|
+ |t.KodeScan   :__________________|
+ |t.Ket        :__________________|
+ |t.Ruangan    :__________________|
+ |t.KodeRuangan:__________________|
+ |             :__________________|
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tldsat          PROTECT                         INPUTRI         1
+        tldbrg          PROTECT                         INPUTRI         2
+        tldjasbrg       NOCHANGE                        INPUTRI         3
+        tldkat          PROTECT                         INPUTRI         4
+        tldplg          ALLCAPS                         INPUTRI         5
+        tldket          TEXTAREA ALLCAPS SCROLL         INPUTRI         6
+        tldgrup         ALLCAPS                         INPUTRI         7
+        tldgrup2        ALLCAPS                         INPUTRI         8
+        lenter          ALLCAPS                         INPUTRI         9
+
+DEFAULTS(tmptranst)
+tldsts          INIT                    SNSS
+tldjasbrg       DFALT_SCAN_BLANKS       A "FISIK ADA TAPI BEDA SERIAL NUMBER/MERK"
+                                        B "FISIK ADA TAPI RUSAK"
+                                        C "FISIK TIDAK ADA"
+                                        D "FISIK SAMA DENGAN SYSTEM"
+                                        E "BELUM CETAK BARCODE"
+
+EDITS(tmptranst)
+e.Mandatory     tldjasbrg       MANDATORY
+e.Mandatory     tldket          MANDATORY_IF cAC
+
+e.Validate	tldgrup		VALIDATE tbddatkodidx mtbd stbd {Pgv_dttabel} {PlGA} {PlRUANGAN}
+e.Validate	tldgrup2	VALIDATE tbtdattypkod mtbt stbt {Pgv_dttabel} {Pgv_dttabel21} {PlGA} {PlRUANGAN} {Ptldgrup}
+
+MAP(mtbd)
+tbdkode		tldgrup		REPLACE
+
+MAP(mtbt)
+tbtkode		tldgrup2	REPLACE
+
+MAP(mket)
+cfisika         tldkat          DO_CALC_IF cfisikax
+cfisikb         tldkat          DO_CALC_IF cfisikbx
+cfisikc         tldkat          DO_CALC_IF cfisikcx
+cfisikd         tldkat          DO_CALC_IF cfisikdx
+cfisike         tldkat          DO_CALC_IF cfisikex
+
+MAP(mpanjangket)
+cpanjangket     lpanjangket     DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cBD
+AFTER_INPUT     cur_field=tldjasbrg     DO_MAP SHOW mket
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW mpanjangket
+AFTER_INPUT     cur_field=tldket        DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cmasukx
+SFL_TARGET
+        tldbukbrgoto tlmnobuk lSENS
+SFL_MAP
+        tlmnobuk        tldnobuk        REPLACE
+        tlmdata         tlddata         REPLACE
+	lSENS		tldsts		REPLACE

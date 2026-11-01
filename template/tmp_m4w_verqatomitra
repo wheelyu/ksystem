@@ -1,0 +1,96 @@
+LOCAL
+PGM_FIELDS 
+lurut_verqamitra        INT2            2
+
+MAP(mjoinsviverqamitra)
+svinourt                lurut_verqamitra              REPLACE
+
+DBCALCS(djoinsviverqamitra)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp   lVERQAMITRA btmnobuk lVERQAMITRA
+        DBC_MAP         mjoinsviverqamitra 
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------\|
+||                                     t.Detailverifikasiadh                             ||
+|\---------------------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------------------\|
+||t.NoBuk                                                            : ________________  ||
+||t.qamit1                                                           : _________         ||
+||t.qamit2                                                           : _________         ||
+||t.qamit3                                                           : _________         ||
+||t.qamit4                                                           : _________         ||
+||t.qamit5                                                           : _________         ||
+||t.qamit6                                                           : _________         ||
+||t.qamit7                                                           : _________         ||
+||t.qamit8                                                           : _________         ||
+||                                                                                       ||
+||                                          ___                                          ||
+|\---------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk                NOCHANGE                INPUTRI         1       /*Nobuk                                 */
+svistr1                 NOCHANGE                INPUTRI         1       /*Konsumen Mengambil Kredit di NSC      */
+svistr2                 NOCHANGE                INPUTRI         2       /*Apakah Unit Benar                     */
+svistr3                 ALLCAPS                 INPUTRI         3       /*Sudah Berapa Lama Konsumen            */
+svistr4                 NUMERIC                 INPUTRI         4       /*Berapa Besar DP                       */
+svistr5                 NUMERIC                 INPUTRI         5       /*Berapa Besar Pembelian                */
+svistr6                 NUMERIC                 INPUTRI         6       /*Besar Nilai Pencairan                 */
+svistr7                 NOCHANGE                INPUTRI         7       /*Benar Take Over                       */
+svistr8                 NOCHANGE                INPUTRI         8       /*Nomor Rekening                        */
+lok                             NOCHANGE                INPUTRI        12
+
+
+DEFAULTS(tmptranst)
+svinourt                INIT                    1
+lok			INIT			OK
+svistr1                 DFALT_LIST              OK TIDAK
+svistr2                 DFALT_LIST              OK TIDAK
+svistr3                 DFALT_LIST              OK TIDAK
+svistr4                 DFALT_LIST              OK TIDAK
+svistr5                 DFALT_LIST              OK TIDAK
+svistr6                 DFALT_LIST              OK TIDAK
+svistr7                 DFALT_LIST              OK TIDAK
+svistr8                 DFALT_LIST              OK TIDAK
+
+
+EDITS(tmptranst)
+e.Mandatory             svistr1                 MANDATORY
+e.Mandatory             svistr2                 MANDATORY
+e.Mandatory             svistr3                 MANDATORY
+e.Mandatory             svistr4                 MANDATORY
+e.Mandatory             svistr5                 MANDATORY
+e.Mandatory             svistr6                 MANDATORY
+e.Mandatory             svistr7                 MANDATORY
+e.Mandatory             svistr8                 MANDATORY
+
+
+CALCS()
+cverqamitra0              g_curcmd == 1 && djoinsviverqamitra == 0
+cverqamitra1             g_curcmd == 1 && djoinsviverqamitra == 1
+curutverqamitra          lurut_verqamitra + 1
+cverqamitrax            1
+
+MAP(murut_verqamitra)
+cverqamitrax             svinourt                DO_CALC_IF cverqamitra0
+curutverqamitra          svinourt                DO_CALC_IF cverqamitra1
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW murut_verqamitra
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	   svidatbuktyp   lVERQAMITRA btmnobuk  lVERQAMITRA    
+
+SFL_MAP
+lVERQAMITRA           svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+lVERQAMITRA           svitype                 REPLACE
+lPENCAIRAN            svikode                 REPLACE
+

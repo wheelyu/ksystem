@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+        ljmlnomor    INT2            2
+        lm1i            INT2            2
+        lm2i            INT2            2
+        lm1             INT2            2
+        lm2             INT2            2
+        ldig1         STRING          2
+        ldig2         STRING          2
+
+
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|t.UpdateSosmedSdm 					     |                          
+|/----------------------------------------------------------\|
+|| t.NoWa       : ___ ________________________              ||
+|| t.Instagram  : ___ ________________________              ||
+|| t.Facebook   : ___ ________________________              ||
+|| t.Tiktok     : ___ ________________________              ||
+|\----------------------------------------------------------/|
+\------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketyt1 			PROTECT			INPUTRI	1
+ketstr1			DIGITS INPUTRI	2
+ketyt2 			NOCHANGE		INPUTRI	3
+ketstr2			ALLCAPS			INPUTRI	4
+ketyt3			NOCHANGE                INPUTRI	5
+ketstr3			ALLCAPS			INPUTRI	6
+ketyt4			NOCHANGE                INPUTRI	7
+ketstr4			ALLCAPS			INPUTRI	8
+
+DEFAULTS(tmptranst)
+ketyt2			DFALT_SCAN		BLANKS	
+						Y
+						T
+ketyt3			DFALT_SCAN		BLANKS	
+						Y
+						T
+ketyt4			DFALT_SCAN		BLANKS	
+						Y
+						T
+lm1i      INIT          1
+lm2i      INIT          2
+lm1       INIT          1
+lm2       INIT          16
+
+
+
+CALCS()
+ctdY2			ketyt2!="Y"
+ctdY3			ketyt3!="Y"
+ctdY4			ketyt4!="Y"
+cnot08                ldig1=="0" && ldig2=="8" && ljmlnomor>=11 && ljmlnomor<=13
+cpanjangnomor             DO_LIB ap_strln(ketstr1,&ljmlnomor);
+
+MAP(mkosong2)
+cblanks			ketstr2		DO_CALC_IF ctdY2
+MAP(mkosong3)
+cblanks			ketstr3		DO_CALC_IF ctdY3
+MAP(mkosong4)
+cblanks			ketstr4		DO_CALC_IF ctdY4
+MAP(mhitungpanjang)
+cpanjangnomor             ljmlnomor            DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ketstr2        DO_SKIP_IF ctdY2
+BEFORE_INPUT    cur_field=ketstr3        DO_SKIP_IF ctdY3
+BEFORE_INPUT    cur_field=ketstr4        DO_SKIP_IF ctdY4
+AFTER_INPUT    cur_field=ketstr1     DO_MAP SHOW mhitungpanjang
+AFTER_INPUT    cur_field=ketyt2      DO_MAP SHOW mkosong2
+AFTER_INPUT    cur_field=ketyt3      DO_MAP SHOW mkosong3
+AFTER_INPUT    cur_field=ketyt4      DO_MAP SHOW mkosong4
+AFTER_INPUT             cur_field=ketstr1 DO_LIB ap_amstr(ketstr1,lm1i,lm1,&ldig1);
+AFTER_INPUT             cur_field=ketstr1 DO_LIB ap_amstr(ketstr1,lm2i,lm1,&ldig2);
+AFTER_INPUT             cur_field=ketstr1 DO_MAP SHOW
+                        IF cnot08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+
+CALCS()
+cY1			ketyt2=="Y"
+cY2			ketyt3=="Y"
+cY3			ketyt4=="Y"
+
+EDITS(tmptranst)
+t.Mandatory ketyt2  MANDATORY
+t.Mandatory ketyt3  MANDATORY
+t.Mandatory ketyt4  MANDATORY
+t.Mandatory ketstr1 MANDATORY
+t.Mandatory ketstr2 MANDATORY_IF cY1
+t.Mandatory ketstr3 MANDATORY_IF cY2
+t.Mandatory ketstr4 MANDATORY_IF cY3
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_TARGET
+	ketdatbukkod      hrmdata    hrmnobuk 
+

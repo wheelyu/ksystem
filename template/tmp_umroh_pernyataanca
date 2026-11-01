@@ -1,0 +1,115 @@
+LOCAL
+PGM_FIELDS
+labdtype		STRING			11
+
+MAP(mjoinabd)
+abdtype			labdtype 		REPLACE
+
+DBCALCS(djoinabdDTG)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	abdkymststgl	g_usrkode gv_INPG g_tgltrn 
+	DBC_MAP		mjoinabd
+
+IMAGE(tmptranst) 
+/-----------------------------------------------------------------------------------------------------------------\
+|  i.Suratpernyataanca           : _________________________                                                      |
+|  t.t                                                                                                            |
+|  i.Bahwasaya                   : _________________________                                                      |
+|  i.Nip                         : _________________________                                                      |
+|  i.SDep                        : _________________________                                                      |
+|  i.Grup                        : _________________________                                                      |
+|  t.Pernyataan1ca                                                                                                |
+|          _______________________   i.Atasnama: _____________________________                                    |   
+|  t.Pernyataan2ca                                                                                                |
+|  t.Pernyataan3ca                                                                                                |
+|  t.Pernyataan4ca                                                                                                |
+|  t.Pernyataan5ca                                                                                                |
+|  t.Pernyataan6ca                                                                                                |
+|  t.Pernyataan7ca                                                                                                |
+|  t.Pernyataan8ca                                                                                                |
+|  t.Pernyataan10ca                                                                                               |
+|  t.Pernyataan11ca                                                                                               |
+|  t.Pernyataan12ca                                                                                               |
+|  t.Pernyataan13ca                                                                                               |
+|                                                  t.MENYATAKAN       : ____                                      |
+|                                                                                                                 |
+\-----------------------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			PROTECT SCROLL		INPUTRI 1
+svistr2			PROTECT SCROLL		INPUTRI 2
+svikode			PROTECT SCROLL		INPUTRI 3
+svistr4			PROTECT SCROLL 		INPUTRI 4
+svistr5			PROTECT SCROLL 		INPUTRI 5
+svistr6			PROTECT SCROLL 		INPUTRI 6
+svinama			PROTECT SCROLL 		INPUTRI	7
+sviyt1			NOCHANGE		INPUTRI 8
+
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+svistr2			INIT			{g_usrnam}
+svistr2			INIT_UPDATE		{g_usrnam}
+svikode			INIT			{g_usrkode}
+svikode			INIT_UPDATE		{g_usrkode}
+svinama			INIT			{psmnama_1}
+svinama			INIT_UPDATE		{psmnama_1}
+svistr4                 INIT                    {g_grpnam}
+svistr4                 INIT_UPDATE             {g_grpnam}
+svistr5                 INIT                    {g_grpnam}
+svistr5                 INIT_UPDATE             {g_grpnam}
+
+
+sviyt1			DFALT_LIST		Y T
+/*
+
+EDITS(tmptranst)
+e.Validatesdep		svikode		VALIDATE psikodidx mpsi spsi
+
+MAP(mpsi)
+psikode			svikode		REPLACE
+psisdep			svistr4		REPLACE
+psidep			svistr5		REPLACE
+*/
+
+CALCS()
+cnourt1         	1
+cnourt2         	svinourt + 1
+cjoinsvisrt1		djoinsvipernyataan == 0
+cjoinsvisrt2		djoinsvipernyataan == 1
+cSidikJari		djoinabdDTG == 1 && labdtype == "DATANG"
+
+MAP(mnourtsvi)
+cnourt1                 svinourt        DO_CALC_IF cjoinsvisrt1
+cnourt2                 svinourt        DO_CALC_IF cjoinsvisrt2
+
+MAP(misikok2)
+ldtca			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+btmnobuk		svistr1			REPLACE
+btmnobuk		svistr6			REPLACE
+gv_pernyataan		svitype			REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW misikok2 
+BEFORE_INPUT            cur_field=sviyt1        DO_MAP SHOW mnourtsvi
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mnourtsvi
+AFTER_INPUT  			cur_keybd=EN 			DO_MAP SHOW
+						IF 						cSidikJari  mdum
+						ELSE
+						HKCURSOR  				STAY
+						HKMSG     				CA Belum absen "DATANG"
+AFTER_INPUT				cur_keybd=EN			DO_LIB ap_ceksj(svikode);
+
+
+						
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_COND	csdmho
+SFL_TARGET
+	svidatbuktyp   ldtca btmnobuk gv_pernyataan
+
+SFL_MAP
+

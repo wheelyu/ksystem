@@ -1,0 +1,128 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Matprom Cetak
+||i.PerluApparel : ____________________    ||
+  t.UplSpanduk           t.UplBanner
+  /--s.UPLOAD------\     /--s.UPLOAD2-----\
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  |                |     |                |
+  \----------------/     \----------------/
+   ________________       ________________
+
+  t.UplBrosur       
+  /--s.UPLOAD3-----\
+  |                |
+  |                |
+  |                |
+  |                |
+  |                |
+  |                |
+  \----------------/
+   ________________ 
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc: ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      ALLCAPS NOCHANGE                        INPUTRI 1
+lSPANDUKCETAK   ALLCAPS NOCHANGE		        INPUTRI	1
+lBANNERCETAK    ALLCAPS NOCHANGE		        INPUTRI	2
+lBROSURCETAK 	ALLCAPS NOCHANGE                        INPUTRI	3
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts          PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 2
+tkdket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhm3ok    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+tkdtotsj        INIT_UPDATE     0
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+ltkdnoll 	INIT            {ctipedetail}
+tkdjwbstr1      DFALT_LIST      YA TIDAK
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+CALCS()
+cdetailhm3ok            tlmkode == g_usrkode && tkdnourt > 0 && tkdjml > 0 && tkdjml2 > 0 && tkdjml3 > 0
+
+
+EDITS(tmptranst)
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjwbstr1 DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=lSPANDUKCETAK DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=lBANNERCETAK DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=lBROSURCETAK DO_SKIP_IF camkawil
+
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+CLICKED         cur_field=ltombolhm3ok  DO_SPCALCS spdetailokhm3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl 
+SFL_UPL_DIRFLD3 tlmtgl 
+SFL_UPLFLD  tkdnobuk lSPANDUKCETAK
+SFL_UPLFLD2 tkdnobuk lBANNERCETAK
+SFL_UPLFLD3 tkdnobuk lBROSURCETAK
+SFL_UPLFLD_DBCALCS dtambahuploadfoto1
+SFL_UPLFLD2_DBCALCS dtambahuploadfoto2
+SFL_UPLFLD3_DBCALCS dtambahuploadfoto3
+SFL_UPL_COND cuploadfotook
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNBTLHM3 tlmnobuk
+
+
+MAP(mupdinfodetailhm3) /*
+lSELESAIKANMUTASI       tkdrek          REPLACE_IF cadaadhbelumacc2
+lISIPERLUAPPAREL        tkdrek          REPLACE_IF cperluaparel
+cketdetailsosmed        tkdrek          DO_CALC_IF cjumlahlikekosong
+cketuploadsosmed        tkdrek          DO_CALC_IF cfotososmedkosong
+ckettambahsosmed        tkdrek          DO_CALC_IF cbelumtambahsosmed
+cketdetailblast         tkdrek          DO_CALC_IF cjumlahkontakkosong
+cketuploadblast         tkdrek          DO_CALC_IF cfotoblastkosong
+ckettambahblast         tkdrek          DO_CALC_IF cbelumtambahblast */
+lUPLOADBROSURDULU       tkdrek          REPLACE_IF cfoto3kosong
+lUPLOADBANNERDULU       tkdrek          REPLACE_IF cfoto2kosong
+lUPLOADSPANDUKDULU      tkdrek          REPLACE_IF cfoto1kosong
+lSELESAIKANHMIN7DULU    tkdrek          REPLACE_IF cdjoindetailhm7apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm3)
+/*
+        DO_LIB			        ap_dbclc(DNAME dmapmapAdd, DCOMMAND MAPMAP, DMAP mmapmapAdd);
+         DO_LIB_IF cadaadhbelumacc	ap_dbclc(DNAME daddmts,DCOMMAND ADD,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+        DO_LIB_IF cadaaddmts       ap_dbclc(DNAME daddabkreviewadhm3, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewadh);
+        DO_LIB_IF cadaaddmts       ap_dbclc(DNAME dupddetailreqhm3mts,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdnobukmts);
+        */
+        DO_LIB_IF cdetailhm3ok          ap_dbclc(DNAME dupddetailreqhm3,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm3, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm3, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+       
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm3,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm3);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

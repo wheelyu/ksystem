@@ -1,0 +1,74 @@
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|						  t.FotoHarusHorizontal        |
+|/--------------------------------------------\/-----------s.UPLOAD-----------\|
+|| t.Lantai     : ___ ________	   	      ||                              ||
+|| t.Ruang 	: ___ _______________________ ||                              ||
+|| t.Keterangan : ___________________________ ||                              ||
+||                                     	      ||                              ||
+||                                     	      ||                              ||
+||                                     	      ||                              ||
+|\--------------------------------------------/\------------------------------/|
+\------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tldsat		ALLCAPS			INPUTRI 1
+tldgrup		PROTECT			INPUTRI 1
+tldkat		ALLCAPS			INPUTRI 2
+tldket          PROTECT	                INPUTRI 2
+tldket2         TEXTAREA                INPUTRI 3
+
+CALCS()
+cketpjg        DO_LIB ap_strln (tldket2,&lpanjangket);
+cpanjangket 	lpanjangket >= 20 
+
+EDITS(tmptranst)
+e.Validatelantai      tldsat       VALIDATE tbddatkodidx mtbd3_3 stbd {Pgv_dttabel} {Plaudit} {Plbagianint}
+e.Validateruang       tldkat       VALIDATE tbtdattypkod mtbt4_4 stbt1 {Pgv_dttabel} {Pgv_dttabel21} {Plaudit} {Plbagianint} {Ptldsat}
+
+MAP(mtbd3_3)
+tbdkode               tldsat       REPLACE
+tbdket                tldgrup      REPLACE
+
+MAP(mtbt4_4)
+tbtkode               tldkat       REPLACE
+tbtket 		      tldket	   REPLACE
+
+MAP(mcek20)
+cketpjg    	lpanjangket  DO_CALC
+
+MAP(mdumtld)
+lpanjangket	lpanjangket	REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldket2      DO_MAP  SHOW    mcek20
+AFTER_INPUT	cur_field=tldket2      DO_MAP  SHOW 
+				    IF cpanjangket mdumtld
+				    ELSE HKCURSOR STAY
+				    HKMSG t.Minimal20Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD tldoto
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        tldbukbbmidx    tlmnobuk  ldokinter
+
+SFL_MAP
+tlmnobuk        tldnobuk
+ldokinter       tldnobbm
+lkgedung        tlddata 
+
+PERMIT(tmptrans)
+PMT_DEL_COND    cIT
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    cOPEN
+

@@ -1,0 +1,181 @@
+LOCAL
+PGM_FIELDS
+    l1630               TIME    4
+    lSUPL               STRING  5
+    lketenter           STRING  21
+    lTACC               STRING  21
+    lBUKUTAMU           STRING  21
+    lTAC2               STRING  11
+    laprbtlpstm4w701    STRING  21
+    l3502               STRING  21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7} 
+/---------------------------------------\
+|/-------------------------------------\|
+||  t.KetSlikAll ____________________  ||
+||  t.AccBm      ____________________  ||
+||  t.accrm      ____________________  ||
+||  t.AccHO      ____________________  ||
+|\-------------------------------------/|
+|/-------------s.UPLOAD----------------\|
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+|\-------------------------------------/|
+|/-------------------------------------\|
+||  t.Problem                          ||
+||  _________________________________  ||
+||  t.Penyelesaian                     ||     
+||  _________________________________  ||
+|\-------------------------------------/|
+|                             _______   |
+\---------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+    svistr1     PROTECT                 INPUTRI 1
+    svistr2     NOCHANGE        ALLCAPS INPUTRI 2
+    svistr3     NOCHANGE        ALLCAPS INPUTRI 3
+    svistr4     NOCHANGE        ALLCAPS INPUTRI 3
+    sviket      TEXTAREA        ALLCAPS INPUTRI 4
+    sviket2     TEXTAREA        ALLCAPS INPUTRI 5
+    lketenter   ALLCAPS                 INPUTRI 6
+
+DEFAULTS(tmptranst)
+    lketenter           INIT    ENTER
+    lSUPL               INIT    SUPL
+    l1630               INIT    1630
+    lTACC               INIT    TACC
+    lBUKUTAMU           INIT    BUKUTAMU
+    lTAC2               INIT    TAC2
+    laprbtlpstm4w701    INIT    APR_BTLPSTM4W701
+    l3502               INIT    3502
+
+    svistr2             DFALT_SCAN_BLANKS       OK      NOTOK
+    svistr3             DFALT_SCAN_BLANKS       ACC     TACC
+    svistr4             DFALT_SCAN_BLANKS       ACC     TACC
+
+CALCS()
+    cupdtmp             btmsts == "701" && btmflag1 == "SLIK" && svistr1 == "NOT OK" && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WRM" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WDVH" || g_grpnam == "RI" || g_grpnam == "IT")
+    caksestmp           g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WRM" || g_grpnam == "B.M4WDVH" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WCA" || g_grpnam == "RAS"
+    
+    caccbmisi           svistr3 != BLANKS || svistr4 != BLANKS
+
+    cbknrm              g_grpnam != "B.M4WRM"
+    cbknho              g_grpnam != "B.M4WCM"
+
+    cbesok              lsystime2 >= l1630 
+    chariesok           g_tgltrn + 1
+
+    /* KALO NOT OK ISI DULU BARU KE SRVY, KALO OK UDH AUTO SRVY DI 2918 PIL 42 */
+    ckeSRVY             svistr1 == "NOT OK" && svistr2 == "OK" && svistr4 == "ACC"
+
+    cnobuk3502          "BTLPK" + THBLS(g_tgltrn)
+    cketabk             "DETAIL KET SLIK"
+    cbadslik            "SLIK NOT OK"
+
+MAP(maddabkketslik)
+    lkunciabsen         abkdata                 REPLACE
+    lKETSLIK            abktype                 REPLACE
+    lniprmsgm           abkkym                  REPLACE_IF cjoinrm
+    lnipho              abkkym                  REPLACE_IF cjoinho
+    btmnobuk            abknobuk                REPLACE
+    gv_INPG             abksts                  REPLACE
+    g_tgltrn            abktgl                  REPLACE
+    gt_RINP             abksts                  REPLACE_IF cbesok
+    chariesok           abktgl                  DO_CALC_IF cbesok
+    cketabk             abkkym2                 DO_CALC
+    l701                abkscr                  REPLACE
+
+MAP(mupdabkketslik)
+    gv_CLSD             abksts                  REPLACE
+
+MAP(mnobuk3502)
+    cnobuk3502          tlmnobuk                DO_CALC
+
+MAP(maddtlmbentuk3502)
+    tlmnobuk            tlmnobuk                REPLACE
+    lBUKUTAMU           tlmdata                 REPLACE
+    g_tgltrn            tlmtgl                  REPLACE
+    btmlokjual          tlmcab                  REPLACE            
+    btmdvs              tlmdvs                  REPLACE
+    l701                tlmdari                 REPLACE
+    lTACC               tlmuntuk                REPLACE
+    btmnobuk            tlmnoasal               REPLACE
+    gv_OPEN             tlmsts                  REPLACE
+    lsgmstr5bm          tlmkode                 REPLACE_IF cjoinsgmbm
+    l3502               tlmscr                  REPLACE
+    btmplg              tlmplg                  REPLACE
+    lpsmnama            tlmbisnis               REPLACE_IF cdjoinpsmnama
+    lTAC2               tlmbrdoto               REPLACE
+    cbadslik            tlmket                  DO_CALC
+    laprbtlpstm4w701    tlmkodeapr              REPLACE
+    cOK                 tlmstsapr               DO_CALC
+   
+MAP(maddabkbentuk3502x)                                                                                                                                                                  
+    ltlmnobuk           abknobuk                REPLACE_IF cdjointlmcek3502
+    lkunciabsen         abkdata                 REPLACE
+    lsgmstr5bm          abkkym                  REPLACE_IF cjoinsgmbm
+    l3502               abkkym2                 REPLACE
+    gv_INPG             abksts                  REPLACE
+    g_tgltrn            abktgl                  REPLACE
+    gt_RINP             abksts                  REPLACE_IF cbesok
+    chariesok           abktgl                  DO_CALC_IF cbesok
+    l3502               abkscr                  REPLACE
+
+MAP(mupdketslik)
+    lSRVY               btmflag1                REPLACE
+                        
+SPCALCS(sptmpketslik)
+    DO_LIB_IF ckeSRVY                           ap_dbclc(DNAME dupdbtmketslik,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdketslik);
+    DO_LIB                                      ap_dbclc(DNAME daddnobuk3502,DCOMMAND MAPMAP,DMAP mnobuk3502);
+    DO_LIB_IF cjoinabkketslikrm                 ap_dbclc(DNAME daddabktmpketslikrm,DCOMMAND ADD,DFILE abk,DMAP maddabkketslik);
+    DO_LIB_IF cbukakuncirm                      ap_dbclc(DNAME dupdabkketslikrm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen btmnobuk,DBC_COND cabkketslikrm,DBC_MAP mupdabkketslik);
+    DO_LIB_IF cjoinabkketslikho                 ap_dbclc(DNAME daddabktmpketslikho,DCOMMAND ADD,DFILE abk,DMAP maddabkketslik);
+    DO_LIB_IF cbukakunciho                      ap_dbclc(DNAME dupdabkketslikho,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen btmnobuk,DBC_COND cabkketslikho,DBC_MAP mupdabkketslik);
+    DO_LIB_IF cbentuk3502                       ap_dbclc(DNAME daddbentuk3502,DCOMMAND ADD,DFILE tlm,DLTARGET tlmbukidx tlmnobuk,DLLEN {stspjbuk},DMAP maddtlmbentuk3502);
+    DO_LIB_IF cbentuk3502x                      ap_dbclc(DNAME daddbentuk3502x,DCOMMAND ADD,DFILE abk,DMAP maddabkbentuk3502x);
+
+HOOKS(tmptranst)
+    BEFORE_INPUT        cur_field=svistr2       DO_SKIP_IF      caccbmisi
+    BEFORE_INPUT        cur_field=svistr3       DO_SKIP_IF      cbknrm
+    BEFORE_INPUT        cur_field=svistr4       DO_SKIP_IF      cbknho
+    
+MAP(mupdsviketslik)
+    lSUPL               svitype2                REPLACE
+
+DBCALCS(dbftketslik)
+    DBC_COMMAND         UPDATE
+    DBC_TARGET          sviprmidx sviprm
+    DBC_MAP             mupdsviketslik
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND                caksestmp
+SFL_UPLFLD              btmnobuk svitype
+SFL_UPLFLD_DBCALCS      dbftketslik
+SFL_UPL_DELCOND         c0
+SFL_TARGET
+    svidatbuktyp        lKETSLIK btmnobuk lKETSLIK
+
+SFL_MAP
+    lKETSLIK            svidata         REPLACE
+    btmnobuk            svinobuk        REPLACE
+    lKETSLIK            svitype         REPLACE
+
+PERMIT(tmptrans)
+    PMT_ADD_COND        c0
+    PMT_UPDALL_COND     cupdtmp     
+    PMT_DEL_COND        c0
+
+POSTING(tmptrans)
+    PST_UPDCMD          sptmpketslik

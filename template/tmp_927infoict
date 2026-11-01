@@ -1,0 +1,67 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------\
+|____________________                           		   	                     |
+|t.NilAkhir  _____.__ 					  	     	          	     |	
+|-------t------------t------t--------t-----------t-------t-----------t------------t----------|
+| t.Tgl | t.Nobuk914 |t.Sts |t.Trn   | t.Materi  |t.Hadir|t.Nobuk905 | t.nilai905 |t.nilaiict|
+\-------.------------.------.--------.-----------.-------.-----------.------------.----------/
+
+
+FIELD(tmptranst)
+ltomdet         TOMBOL          INPUTRI 1
+tlmjml		PROTECT		INPUTRI 1
+
+DEFAULTS(tmptranst)
+ltomdet         INIT            "d.UntukMelihatDetil"
+
+IMAGE(tmptrans)
+|_____|________________|____|_______|__________________|_____|_____________|___.__|___.__|
+
+
+FIELD(tmptrans)
+tldtgl5		PROTECT NOLIMIT {DD-MM-YYYY} 	INPUTRI 1
+tldnobuk        PROTECT				INPUTRI 2
+lsts914		PROTECT				INPUTRI 3
+ltrainer914	PROTECT				INPUTRI 4
+lmateri914	PROTECT SCROLL			INPUTRI 5
+tldsat		PROTECT				INPUTRI 6
+tldstr5		PROTECT				INPUTRI 7
+tldperdis7	PROTECT				INPUTRI 8
+tldperdis6	PROTECT				INPUTRI 9
+
+CALCS()
+cseltlm905post	tlmpst == "POSTTEST" && tlmnobbm == tldnobuk
+
+MAP(mjointlm905)
+tlmnobuk	lnobuk905	REPLACE
+tlmsts		lsts905		REPLACE
+tlmtotal	lnilai905	REPLACE
+
+DBCALCS(djointlm905)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmdatplgtgl lTESTSOP tlmplg tldtgl5
+	DBC_SELECT	cseltlm905post
+	DBC_MAP		mjointlm905	
+
+CALCS()
+cjointlm905	lsts914 == "CLSD" && djointlm905 == 1
+
+EDITS(tmptrans)
+e.Validate	tldnobuk	VALIDATE_BUF3 tlmbukidx mtlm914 0
+e.Validate	tldnobuk	VALIDATE_DUP tkddatbukll mtkd914 0 {PlDTTRAINER} 
+
+MAP(mtlm914)
+#tlmnobuk	tldnobuk	REPLACE
+#tlmsts		lsts914		REPLACE
+lnobuk905	lnobuk905	REPLACE_IF cjointlm905
+
+MAP(mtkd914)
+tkdket		lmateri914	REPLACE
+tkdnoll		ltrainer914	REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tldtgl5
+SFL_TARGET
+	tldllbrgurt	tlmnobuk lDTLISTRN21 

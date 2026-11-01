@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/------------------------t-----------t-----------t------------t-------------------t--------------------------------\            
+|t.Berkas                |   t.Jwb   | t.TglJwb  | t.Jwb      |   t.TglJwb        |         t.Ket                  |        
+\------------------------.-----------.-----------.------------.-------------------.--------------------------------/           
+
+IMAGE(tmptrans)
+! _______________________|   ______  | __________|     ___    |   _______________ !________________________________!               
+FIELD(tmptrans)
+   psdkode      PROTECT                 INPUTRI          1
+   psdtype3      NOCHANGE                INPUTRI          2
+   psdtgl1      PROTECT {DD-MM-YY}      INPUTRI          3
+   psdtype2     NOCHANGE                INPUTRI          4
+   psdtgl2      PROTECT {DD-MM-YY}      INPUTRI          5
+   psdket	ALLCAPS SCROLL		INPUTRI		 6
+
+DEFAULTS(tmptrans)
+psdtype3         DFALT_LIST      YA TIDAK                          
+psdtype2         DFALT_LIST      YA TIDAK                          
+
+CALCS()
+cberkas		hrmket2=="BERKAS"
+caccberkas	hrmket2=="KONF_BERKAS"
+ctacc		psdtype2=="TIDAK"
+cjawabya1	psdtype3=="YA"
+cjawabya	psdtype2=="YA"
+
+EDITS(tmptrans)
+t.Mandatory psdtype3 MANDATORY_IF cberkas
+t.Mandatory psdtype2 MANDATORY_IF caccberkas
+t.Mandatory psdket MANDATORY_IF ctacc
+
+CALCS()
+cada		psdtype3!=""
+cada2		psdtype2!=""
+cbukan_berkas   hrmket2!="BERKAS" && hrmcab2!="PEMINJAMAN" 
+cbukan_accberkas        hrmket2!="KONF_BERKAS"
+
+MAP(mjawab1)
+g_tgltrn	psdtgl1		REPLACE_IF cada
+cBLANKS		psdtype2	DO_CALC_IF cjawabya1
+
+MAP(mjawab2)
+g_tgltrn	psdtgl2		REPLACE_IF cada2
+cBLANKS		psdtype3	DO_CALC_IF ctacc
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=psdtype3	DO_SKIP_IF cbukan_berkas
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cbukan_accberkas
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cjawabya
+AFTER_INPUT	cur_field=psdtype3	DO_MAP SHOW mjawab1
+AFTER_INPUT	cur_field=psdtype2	DO_MAP SHOW mjawab2
+/*
+AFTER_INPUT     cur_field=psdket  DO_MAP SHOW
+                IF cjawabya mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaIsiKetJikaTdk
+
+AFTER_INPUT     cur_keybd=EN  DO_MAP SHOW
+                IF cjawabya mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaIsiKetJikaTdk
+*/
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+psddatpsmkod   lCEK_BERKAS hrmnobuk
+
+SFL_MAP
+lCEK_BERKAS    psddata   REPLACE
+hrmnobuk       psdpsmkode REPLACE
+

@@ -1,0 +1,69 @@
+/**************************************************************************/
+IMAGE(tmptranst) 
+/----------------------------------\
+|  t.FotoKunjunganWatermark        |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|t.StsUpl   ________________       |
+|t.TglFt    ________________       |
+|                                  |_
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr1                 NOCHANGE        	INPUTRI         2
+svitgl1			PROTECT			INPUTRI		3
+svidtmkode              PROTECT UNSEEN          INPUTRI         6
+
+DEFAULTS(tmptranst)
+svidata			INIT		KUNJUNGAN
+svitype			INIT		KUNJKOL39
+svinourt		INIT		1
+
+MAP(mupduplfttmptrans)
+cUPLOADOK               svistr1        DO_CALC
+g_fotodate1             svitgl1        REPLACE
+
+DBCALCS(dupduplfttmptrans)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviotoidx svioto
+        DBC_MAP         mupduplfttmptrans
+
+
+EDITS(tmptranst)
+t.ValidateFak   svidtmkode      VALIDATE pikdatbukidx mpik3 0 {Pgv_dtpiu}
+
+CALCS()
+condtmptrans    djointrans==1 /*&& (lsvistr31=="1" || lsvistr31=="3")*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPLFLD      svitype svinobuk
+SFL_UPL_DELCOND chapusfoto
+SFL_UPLFLD_DBCALCS dupduplfttmptrans
+SFL_UPL_DIRFLD mtstgl
+SFL_COND	condtmptrans
+SFL_UPLREADONLY
+SFL_TARGET
+svidatbuktyp    gv_kunjungan11 mtsnobuk lKUNJKOL39
+
+SFL_MAP
+mtsnobuk	svinobuk	REPLACE
+mtsnoasal	svidtmkode	REPLACE
+gv_kunjungan11	svidata         REPLACE
+lKUNJKOL39	svitype         REPLACE
+l1		svinourt        REPLACE
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cIT
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

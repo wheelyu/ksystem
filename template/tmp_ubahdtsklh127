@@ -1,0 +1,85 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.UbahDtSklh                                        !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.NipUbah    : ___________                          !                   |
+|       !t.Ubah       : ___________                          !                   |
+|       !t.NamaSklh   : _______________________              !                   |
+|       !t.NamaYysn   : _______________________              !                   |
+|       !t.TlpSklh    : _______________________              !                   |
+|       !t.Akreditasi : _______________________              !                   |
+|       !t.AccHrd     : _______                              !                   |
+|       !t.Ket        : _____________________________________!                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1         PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+psdstr1         PROTECT                 INPUTRI 2
+psdstr2         NOCHANGE                INPUTRI 3
+psdket          ALLCAPS                 INPUTRI 4
+psdket2         ALLCAPS SCROLL          INPUTRI 4
+psdstr3         DIGITS                 INPUTRI 4
+psdstr4         ALLCAPS                 INPUTRI 4
+psdtype3        NOCHANGE                 INPUTRI 5
+psdstr5         ALLCAPS SCROLL          INPUTRI 6
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD                {g_tgltrn}
+psdstr1         INIT_ADD                {g_usrkode}
+psdstr2         DFALT_SCAN_BLANKS 	SEKOLAH 
+					YAYASAN
+					TLP_SEKOLAH
+					AKREDITASI
+psdtype3        DFALT_SCAN_BLANKS 	ACC TACC
+
+CALCS()
+csklh	        psdstr2=="SEKOLAH"
+cyysn	        psdstr2=="YAYASAN"
+ctlpsklh	psdstr2=="TLP_SEKOLAH"
+cakreditasi     psdstr2=="AKREDITASI"
+cbknsklh	psdstr2!="SEKOLAH"
+cbknyysn	psdstr2!="YAYASAN"
+cbkntlpsklh	psdstr2!="TLP_SEKOLAH"
+cbknakr		psdstr2!="AKREDITASI"
+ckodep		STRIP(psdket) + THBLS(hrmtgl)
+
+EDITS(tmptranst)
+t.Mandatory  psdtgl1   MANDATORY
+t.Mandatory  psdstr1   MANDATORY
+t.Mandatory  psdstr2   MANDATORY
+t.Mandatory  psdket    MANDATORY_IF csklh
+t.Mandatory  psdket2   MANDATORY_IF cyysn
+t.Mandatory  psdstr3   MANDATORY_IF ctlpsklh
+t.Mandatory  psdstr4   MANDATORY_IF cakreditasi
+t.Mandatory  psdtype3   MANDATORY
+t.Mandatory  psdstr5   MANDATORY
+
+MAP(mnomor)
+ckodep                  psdkode         DO_CALC_IF csklh
+psdket2                 psdkode         REPLACE_IF cyysn
+psdstr3                 psdkode         REPLACE_IF ctlpsklh
+psdstr4                 psdkode         REPLACE_IF cakreditasi
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdtype3      DO_MAP SHOW     mnomor
+BEFORE_INPUT    cur_field=psdket       DO_SKIP_IF cbknsklh
+BEFORE_INPUT    cur_field=psdket2      DO_SKIP_IF cbknyysn
+BEFORE_INPUT    cur_field=psdstr3      DO_SKIP_IF cbkntlpsklh
+BEFORE_INPUT    cur_field=psdstr4      DO_SKIP_IF cbknakr
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psddatpsmkod lUBAHSKLH127 hrmnobuk
+
+SFL_MAP
+lUBAHSKLH127            psddata         REPLACE
+hrmnobuk		psdpsmkode      REPLACE
+
+
+

@@ -1,0 +1,77 @@
+LOCAL
+PGM_FIELDS
+	lhp_enter	STRING		11
+	lTELP		STRING		11
+	ljumlahnomor	INT2		2
+	ln1i		INT2		2
+	ln2i		INT2		2
+	ln1             INT2            2
+	ln2             INT2            2
+	ldigit1         STRING          2
+	ldigit2         STRING          2
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|i.Data       : ___________________ |
+|t.Kode       : ___________________ |
+|i.Handphone  : ___________________ |
+|i.Sts        : ___________________ |
+ spasi
+|               ___________________ |
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+condata		PROTECT	SCROLL		INPUTRI	3
+conkode         PROTECT SCROLL          INPUTRI 2
+conhp           ALLCAPS SCROLL          INPUTRI 1
+consts		PROTECT SCROLL		INPUTRI 4
+lhp_enter	NOCHANGE		INPUTRI	5
+
+EDITS(tmptranst)
+e.Dupkeyhp              conhp DUPKEY condathpidx {PlTELP}
+/*e.Dupkeyhp            conhp DUPKEY condathpidx {PlDTHP}*/
+
+DEFAULTS(tmptranst)
+condata   INIT   	TELP
+condata   INIT_UPDATE   TELP
+lhp_enter INIT		ENTER
+lTELP	  INIT		TELP
+ln1i      INIT          1
+ln2i      INIT          2
+ln1       INIT          1
+ln2       INIT          16
+
+
+CALCS()
+cpanjangnom             DO_LIB ap_strln(conhp,&ljumlahnomor);
+cHP			condata==lTELP || condata==BLANKS
+cbukan08                ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=11 && ljumlahnomor<=13
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln1i,ln1,&ldigit1);
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=conhp       DO_MAP SHOW mpanjangnom
+AFTER_INPUT             cur_field=conhp DO_MAP SHOW
+                        IF cbukan08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_SELECT cHP
+
+SFL_TARGET
+conkodstsidx   psmktp  gv_INPG
+
+SFL_MAP
+psmktp          conkode                 REPLACE
+gv_INPG         consts                  REPLACE
+lTELP           condata                 REPLACE
+

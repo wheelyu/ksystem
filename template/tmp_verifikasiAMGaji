@@ -1,0 +1,109 @@
+LOCAL
+PGM_FIELDS
+lketkerja           STRING  21
+lketdetkerja        STRING  21
+lketsubkerja        STRING  21
+lketindustri        STRING  21
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------------\|
+|| t.VerifikasiAMCreditGaji                                                         ||
+|| i.Pekerjaan      : ___ _____________      t.Subkerja       : ___ _____________   ||
+|| t.DetKerja       : ___ _____________      t.Industri       : ___ _____________   ||
+|| t.StatusKaryawan : _______________        t.NamaPT         : _________________   ||
+|| t.LamaKerja      : ____ i.Th  ____ i.Bln  t.PenghasilanKtr : _________________   ||
+|| t.HslVerAM       : ____________           t.JmlRevisi      : ______              ||
+||                  : ____________                                                  ||
+|| t.BrksBukti                                                                      ||
+|| /---------s.UPLOAD-----------\                                                   ||
+|| |						    |                                                   ||
+|| |						    |                                                   ||
+|| |						    |                                                   ||
+|| |						    |                                                   ||
+|| |						    |                                                   ||
+|| |						    |                                                   ||
+|| |						    |                                                   ||
+|| \----------------------------/                                                   ||
+|\----------------------------------------------------------------------------------/|
+\------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lkerjaanpm              PROTECT         INPUTRI     1
+lketkerja               PROTECT         INPUTRI     1
+lsubkerjapm             PROTECT         INPUTRI     2
+lketsubkerja            PROTECT         INPUTRI     2
+ldetkerjapm             PROTECT         INPUTRI     3
+lketdetkerja            PROTECT         INPUTRI     3
+lindustripm             PROTECT         INPUTRI     4
+lketindustri            PROTECT         INPUTRI     4
+lstskrypm               PROTECT         INPUTRI     5
+lnamaPTpm               PROTECT         INPUTRI     6
+lthnlamakrjpm           PROTECT         INPUTRI     7
+lblnlamakrjpm           PROTECT         INPUTRI     8
+lpenghasilanpm          PROTECT         INPUTRI     9
+sviyt1                  ALLCAPS         INPUTRI     10
+svidf1                  PROTECT         INPUTRI     11
+sviket                  TEXTAREA        INPUTRI     12
+
+DEFAULT(tmptranst)
+sviyt1              DFALT_SCAN      BLANKS Y T
+
+CALCS()
+clsubpekerjaan2		"SUBPEKERJAAN2"+STRIP(lkerjaanpm)
+cdetpekerjaan13x    "DETPEKERJAAN"+STRIP(lkerjaanpm)+STRIP(lsubkerjapm)
+cabkverifam         abkkym2=="VER_STD_GAJI"
+
+
+EDIT(tmptranst)
+e.Mandatory     sviyt1          MANDATORY
+e.Mandatory     sviket          MANDATORY
+e.validate 		lkerjaanpm 	    VALIDATE tbldtdtmkod mtbd2_1x  stbl {Pgv_dttabel} {Pgv_pekerjaan21}
+e.validate		lsubkerjapm	    VALIDATE tbddatkodidx mtbd2_2x stbdLIT {Pgv_dttabel} {Pgv_survey21} {Plsubpekerjaan}
+e.validate      ldetkerjapm     VALIDATE tbddatkodidx mtbd2_31x stbdLIT {Pgv_dttabel} {PlDETPEKERJAAN} {Pldetpekerjaan13hp}
+e.validate      lindustripm     VALIDATE tbtdattypkod mtbt2_1x stbt {Pgv_dttabel} {Pgv_dttabel21} {PlDETPEKERJAAN} {Pldetpekerjaan13hp} {Pldetkerjapm}
+
+
+MAP(mtbd2_1x)
+tblket		    lketkerja       REPLACE
+clsubpekerjaan2	lsubpekerjaan	DO_CALC
+
+MAP(mtbd2_2x)
+tbdket		            lketsubkerja            REPLACE
+cdetpekerjaan13x        ldetpekerjaan13hp       DO_CALC
+
+MAP(mtbd2_31x)
+tbdket      lketdetkerja    REPLACE
+
+MAP(mtbt2_1x)
+tbtket      lketindustri    REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD  btmnobuk    svitype
+SFL_TARGET svidatbuktyp   gv_datasurvey btmnobuk lVERIFGAJIAM
+SFL_MAP
+gv_datasurvey		svidata			REPLACE
+btmnobuk		    svinobuk		REPLACE
+lVERIFGAJIAM		svitype			REPLACE
+lVERIFGAJIAM		svikode			REPLACE
+
+MAP(mupdabkveriggaji)
+gv_CLSD     abksts      REPLACE_IF cabkverifam
+DEBUG   ldum    ldum    REPLACE
+
+MAP(mmapmapver)
+DEBUG   ldum    ldum    REPLACE
+
+SPCALCS(spverifamgaji)
+/*buka kuncian am*/
+DO_LIB  ap_dbclc(DNAME dmamapver,DCOMMAND MAPMAP,DMAP mmapmapver);
+DO_LIB ap_dbclc(DNAME dupdabkverifgaji,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabkveriggaji);
+
+POSTING(tmptrans)
+    PST_ADDCMD  spverifamgaji
+    PST_UPDCMD  spverifamgaji

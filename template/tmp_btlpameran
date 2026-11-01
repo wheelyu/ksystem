@@ -1,0 +1,277 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------\
+|_/-----------------------------------------------------------------------------\  |
+| | t.ActivityBtl       : _______________________                               |  |
+| | t.PeriodLap         : _______________________                               |  |
+| | t.TgtActivity       : _______________________                               |  |
+| | t.RecordNo          : _______________________                               |  |
+| | t.AdaNobuk          : _______________________                               |  |
+| | t.AlasanTdkAdaNobuk : _______________________                               |  |
+| | t.PilNobuk821       : _______________________                               |  |
+| | t.TglPelaksanaan    : _______________________  t.sd _______________________ |  |
+| | t.LokPelaksanaan    : _______________________                               |  |
+| | t.UnitTerjual       : _______________________                               |  |
+| | t.TglInpLapMD       : _______________________                               |  |
+| \-----------------------------------------------------------------------------/  |
+| /-----------------------------------------------------------------------------\  |
+| | t.UplFotBukLapMD                                                            |  |
+| \-----------------------------------------------------------------------------/  |
+| /---------------s.UPLOAD------------------------------------------------------\  |
+| |                                                                             |  |
+| |                                                                             |  |
+| |                                                                             |  |
+| |                                                                             |  |
+| |                                                                             |  |
+| |                                                                             |  |
+| \-----------------------------------------------------------------------------/  |
+| /-----------------------------------------------------------------------------\  |
+| | 				t.TglUpl : __________ t.StsUpl : ____ _________ |  |
+| \-----------------------------------------------------------------------------/  |
+| /-----------------------------------------------------------------------------\  |
+| | t.HOCek             : _______________________                               |  |
+| | t.KeteranganHO      : _______________________                               |  |
+| \-----------------------------------------------------------------------------/  |
+|                                                                           __     |
+\----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldprm		PROTECT UNSEEN			INPUTRI	1	/* validate */
+tldgrup         PROTECT                         INPUTRI 1       /* activity btl */
+tldsat          PROTECT                         INPUTRI 2       /* periode laporan */
+tldjml          PROTECT                         INPUTRI 3       /* tgt activity */
+tldnourt        PROTECT                         INPUTRI 4       /* record no */
+tldgrup2        NOCHANGE                        INPUTRI 5       /* ada nobuk */
+lketdetail     	TEXTAREA                       	INPUTRI 6       /* alasan tdk ada nobuk */
+tldnoll         ALLCAPS                         INPUTRI 7       /* pilih nobuk 821 */
+tldtglfak       NOLIMIT {DD-MM-YY}      	INPUTRI 8       /* tanggal pelaksanaan */
+tldtgl2         NOLIMIT {DD-MM-YY}      	INPUTRI 9       /* tanggal pelaksanaan */
+tldket2         ALLCAPS                         INPUTRI 10       /* lokasi pelaksanaan */
+tldjml2         NUMERIC                         INPUTRI 11       /* unit terjual */
+tldtgl4         NOLIMIT {DD-MM-YY}              INPUTRI 12      /* tgl inp lap ke md */
+tldtgl3         PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 13      /* tgl upload */
+tldsisbrg       PROTECT                         INPUTRI 14      /* status upload */
+ltombolhpsdata  TOMBOL                         	INPUTRI 15      /* status upload */
+tlddvs          NOCHANGE                        INPUTRI 16      /* ho cek */
+tldket          TEXTAREA                        INPUTRI 17      /* keterangan ho */
+lblanks         NOCHANGE                        INPUTRI 18
+
+DEFAULT(tmptranst)
+tlddvs          DFALT_SCAN_BLANKS	OK      NOT_OK
+tldgrup2	DFALT_SCAN_BLANKS	ADA	TIDAK
+
+MAP(maptldoto)
+	tldoto		ltldoto		REPLACE
+
+CALCS()
+cselnobuksudah          tldnobuk == mtsnobuk
+DBCALCS(dceknobuksudah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldllbrgurt     tlmnobuk
+        DBC_SELECT      cselnobuksudah
+	DBC_MAP		maptldoto
+
+CALCS()
+cNOTOK			tlddvs == "NOT_OK" && g_usrkode != mtsdari
+cSDHOK			tlddvs == "OK" && g_usrkode == mtsdari
+csdhok			tlddvs == "OK"
+cnobuk821blmada		dceknobuksudah == 0 || (dceknobuksudah == 1 && ltldoto == tldoto) || tldgrup2 == "TIDAK"
+
+ctdkadanobuk		tldgrup2 == "TIDAK"
+ctdkadanobuk2		tldgrup2 == "TIDAK" && tldgrup2 != ~tldgrup2
+cadanobuk		tldgrup2 == "ADA" && g_usrkode == mtsdari
+cisi			tldgrup2 != BLANKS
+cdonothing		g_curcmd == 0
+
+EDIT(tmptranst)
+e.ValidateNobuk821   	tldnoll 	VALIDATE_IF  cloginpengisi        tlmdatstsbuk	m821 stlmemd  {PlEVENT} {Pgv_CLSD}
+e.Validate		tldprm		VALIDATE_IF cdonothing	tldprmidx mketdetail 0
+e.IsiKeteranganHO	tldket		MANDATORY_IF cNOTOK
+e.IsiNobuk821           tldnoll         MANDATORY_IF cadanobuk
+e.IsiTglLapMd		tldtgl4		MANDATORY_IF cisi
+e.IsiHOCEK		tlddvs		MANDATORY_IF cbknpengisi
+e.WajibIsiKetTdkAdaNobuk lketdetail	MANDATORY_IF ctdkadanobuk
+e.WajibIsiAdaNobuk	tldgrup2	MANDATORY_IF cloginpengisi
+e.Mandatory     	tldjml2         MAND_ZERO_PLUS
+e.WajibIsiTglPelaksanaan tldtglfak	MANDATORY_IF ctdkadanobuk
+e.WajibIsiTglPelaksanaan tldtgl2	MANDATORY_IF ctdkadanobuk
+e.WajibIsiLokasiPelaksanaan tldket2	MANDATORY_IF ctdkadanobuk
+
+CALCS()
+cnorutsama		ketnourt == tldnourt
+
+MAP(mambilketdetail)
+	ketisi		lketdetail	REPLACE
+
+DBCALCS(dambilketdetail)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ketdatbukkod tlddata tldnobuk tldbrg
+        DBC_SELECT      cnorutsama
+	DBC_MAP		mambilketdetail
+
+CALCS()
+cambilketdetail		dambilketdetail == 1	
+
+MAP(mketdetail)
+	cblanks		lketdetail	DO_CALC
+	lketdetail	lketdetail	REPLACE_IF cambilketdetail
+
+MAP(mhpsket)
+	cblanks		tldket		DO_CALC_IF csdhok
+
+CALCS()
+cloginpengisi2	g_usrkode == mtsdari && mtssts != "CLSD"
+
+MAP(mhpsdata)
+	cblanks		tldgrup2	DO_CALC_IF cloginpengisi2
+	cblanks		lketdetail	DO_CALC_IF cloginpengisi2
+	cblanks		tldnoll		DO_CALC_IF cloginpengisi2
+	cblanks		tldtglfak	DO_CALC_IF cloginpengisi2
+	cblanks		tldtgl2		DO_CALC_IF cloginpengisi2
+	cblanks		tldket2		DO_CALC_IF cloginpengisi2
+	cblanks		tldjml2		DO_CALC_IF cloginpengisi2
+	cblanks		tldtgl4		DO_CALC_IF cloginpengisi2
+	cblanks		tldtgl3		DO_CALC_IF cloginpengisi2
+	cblanks		tldsisbrg	DO_CALC_IF cloginpengisi2
+
+SPCALCS(shpsdata)
+DO_LIB	ap_dbclc(DNAME dhpsdata,DCOMMAND UPDATE,DTARGET tldprmidx tldprm,DMAP mhpsdata);
+
+MAP(mclear)
+	cblanks		tldnoll		DO_CALC_IF ctdkadanobuk2
+	cblanks		tldtglfak	DO_CALC_IF ctdkadanobuk2
+	cblanks		tldtgl2		DO_CALC_IF ctdkadanobuk2
+	cblanks		tldket2		DO_CALC_IF ctdkadanobuk2
+	cblanks		tldjml2		DO_CALC_IF ctdkadanobuk2
+	cblanks		tldtgl4		DO_CALC_IF ctdkadanobuk2
+	cblanks		lketdetail	DO_CALC_IF cadanobuk
+
+CALCS()
+cselperiode		tgmth == mtstype1 || (tgmth == mtsthbl && tldtgl4 <= g_tgltrn)
+
+DBCALCS(dcekperiode1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx	gv_TGL	tldtglfak
+	DBC_SELECT	cselperiode
+
+DBCALCS(dcekperiode2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tgmdattglidx    gv_TGL  tldtgl2
+        DBC_SELECT      cselperiode
+
+DBCALCS(dcekperiode3)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tgmdattglidx    gv_TGL  tldtgl4
+        DBC_SELECT      cselperiode
+
+CALCS()
+csesuaiperiode1		dcekperiode1 == 1 || g_usrkode != mtsdari
+csesuaiperiode2		dcekperiode2 == 1 || g_usrkode != mtsdari
+csesuaiperiode3		dcekperiode3 == 1 || g_usrkode != mtsdari
+ctambahnorutd1		ljmldetail1 + 1
+ctambahnorutd2		ljmldetail2 + 1
+ctambahnorutd3		ljmldetail3 + 1
+
+MAP(mtambahd1)
+	cblanks		lketdetail	DO_CALC
+	mtsdata		tlddata		REPLACE
+	mtsnobuk	tldnobuk	REPLACE
+	lBTLPAMERAN	tldbrg		REPLACE
+	lBTLPAMERAN	tldgrup		REPLACE
+	mtstype1	tldsat		REPLACE
+	mtsjml		tldjml		REPLACE
+	mtscab		tldcab		REPLACE
+	ctambahnorutd1	tldnourt	DO_CALC	
+	
+	
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldgrup2	DO_MAP SHOW IF cjktambah mtambahd1
+AFTER_INPUT	cur_field=tldgrup2	DO_MAP SHOW mclear
+AFTER_INPUT	cur_field=tlddvs	DO_MAP SHOW mhpsket
+AFTER_INPUT	cur_field=tldnoll	DO_MAP SHOW
+			IF	cnobuk821blmada	mdum
+			ELSE HKCURSOR STAY
+                        HKMSG Nobuk sudah dipilih		
+BEFORE_INPUT	cur_field=tlddvs	DO_SKIP_IF cloginpengisi
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF cloginpengisi
+
+BEFORE_INPUT	cur_field=tldnoll	DO_SKIP_IF cbknpengisi
+BEFORE_INPUT	cur_field=tldjml2	DO_SKIP_IF cbknpengisi
+BEFORE_INPUT	cur_field=tldtgl4	DO_SKIP_IF cbknpengisi
+
+BEFORE_INPUT    cur_field=tldnoll       DO_SKIP_IF cSDHOK
+BEFORE_INPUT    cur_field=tldjml2       DO_SKIP_IF cSDHOK
+
+BEFORE_INPUT    cur_field=tldgrup2      DO_SKIP_IF cbknpengisi
+BEFORE_INPUT    cur_field=lketdetail    DO_SKIP_IF cbknpengisi
+BEFORE_INPUT    cur_field=lketdetail    DO_SKIP_IF cadanobuk
+BEFORE_INPUT    cur_field=tldnoll      	DO_SKIP_IF ctdkadanobuk
+
+BEFORE_INPUT    cur_field=tldtglfak    	DO_SKIP_IF cbknpengisi
+BEFORE_INPUT    cur_field=tldtgl2      	DO_SKIP_IF cbknpengisi
+BEFORE_INPUT    cur_field=tldket2      	DO_SKIP_IF cbknpengisi
+BEFORE_INPUT    cur_field=tldtglfak    	DO_SKIP_IF cadanobuk
+BEFORE_INPUT    cur_field=tldtgl2      	DO_SKIP_IF cadanobuk
+BEFORE_INPUT    cur_field=tldket2      	DO_SKIP_IF cadanobuk
+
+AFTER_INPUT     cur_field=tldtglfak       DO_MAP SHOW
+                        IF      csesuaiperiode1 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Hanya bisa tanggal di periode laporan
+
+AFTER_INPUT     cur_field=tldtgl2       DO_MAP SHOW
+                        IF      csesuaiperiode2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Hanya bisa tanggal di periode laporan
+
+AFTER_INPUT     cur_field=tldtgl4       DO_MAP SHOW
+                        IF      csesuaiperiode3 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Hanya bisa tanggal di periode laporan
+
+CLICKED		cur_field=ltombolhpsdata DO_SPCALCS shpsdata
+
+
+
+CALCS()
+clokasi		tlmuntuk + ", " + tlmbisnis + ", " + tlmbrdoto
+cblmclsd	mtssts != "CLSD"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD mtstgl
+SFL_UPLFLD  tldnobuk tldoto
+SFL_UPLFLD_DBCALCS dupddetail
+SFL_UPL_DELCOND cblmclsd
+SFL_TARGET
+        tldbukbrglok    mtsnobuk lBTLPAMERAN
+
+
+DBCALCS(dketdetail)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketdatbukkod tlddata tldnobuk tldbrg
+	DBC_SELECT	cnorutsama
+CALCS()
+csdhada			dketdetail == 1
+cblmada			dketdetail == 0
+
+MAP(mupdketdetail)
+DEBUG	lketdetail	ketisi		REPLACE_IF cnorutsama
+
+MAP(maddketdetail)
+	tlddata		ketdata		REPLACE
+	tldnobuk	ketnobuk	REPLACE
+	tldbrg		ketkode		REPLACE
+	tldnourt	ketnourt	REPLACE
+DEBUG	lketdetail	ketisi		REPLACE
+
+SPCALCS(spupddetail)
+DO_LIB_IF csdhada	ap_dbclc(DNAME dupdketdetail,DCOMMAND UPDATE_RANGE,DTARGET ketdatbukkod tlddata tldnobuk tldbrg,DMAP mupdketdetail);
+DO_LIB_IF cblmada	ap_dbclc(DNAME daddketdetail,DCOMMAND ADD,DFILE ket,DMAP maddketdetail);
+
+POSTING(tmptrans)
+	PST_UPDCMD	spupddetail
+	PST_ADDCMD	spupddetail

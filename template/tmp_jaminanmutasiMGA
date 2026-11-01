@@ -1,0 +1,139 @@
+IMAGE(tmptranst)
+/-------------t-----------------t-------------t-----------------t----------t----------------t---------t-------------\
+|t.Jaminan	  | t.KodeBarang    |t.JenisJmn   |t.LokLama        | t.CabTjn | t.LokBaru      |t.Trlmbt |t.TrmTdk     |
+\-------------.-----------------.-------------.-----------------.----------.----------------.---------.-------------/
+IMAGE(tmptrans)
+|_____________|_________________|_____________|_________________|__________|________________|_________|_____________|
+
+
+FIELD(tmptrans)
+tldbrg      	ALLCAPS        	INPUTRI 2
+tldsat      	NOCHANGE        INPUTRI 3
+tldnoll     	NOCHANGE        INPUTRI 4
+tldkat			NOCHANGE	    INPUTRI 5
+tldcab      	ALLCAPS SCROLL  INPUTRI 6
+tldlok			ALLCAPS SCROLL  INPUTRI 7
+lhariselisih	PROTECT			INPUTRI	8
+tldlok2			ALLCAPS SCROLL	INPUTRI 9
+
+DEFAULTS(tmptrans)
+tldnoll	DFALT_SCAN_BLANKS
+				ELEKTRONIK
+				MOTOR
+				KUNCI
+				STNK
+				BPKB
+				EMAS
+tldlok2	DFALT_SCAN_BLANKS		TERIMA
+								TIDAK
+
+EDITS(tmptrans)
+e.Mandatory     tldbrg          MANDATORY
+e.Mandatory     tldnoll         MANDATORY
+e.Mandatory     tldcab          MANDATORY
+e.Mandatory     tldlok          MANDATORY
+e.Mandatory		tldlok2			MANDATORY_IF ckirimRESI
+
+e.ValidateJmn			tldbrg			VALIDATE_IF cjmncabsama		jmncabnoidx mjmngd	sjmnGad {Ptlmcab}
+e.ValidateJmn           tldbrg          VALIDATE_IF cjmnnoasal    jmnplgnoidx mjmngd sjmnGad {Ptlmnoasal}
+e.ValidateJmn           tldbrg          VALIDATE_IF cjmnbrankas    jmnplgnoidx mjmngd sjmnGad {Ptlmnoasal}
+e.ValidateCabTjn        tldcab          VALIDATE_IF cjkgadai    caddatkodidx mcadgdtld scadLokgd {Pgv_cabbis} {Stlmdvs} {Slcadareatjn}
+e.ValidateCabTjn        tldcab          VALIDATE cabkodidx mcabgdtjn 0
+e.ValidateKat           tldlok        VALIDATE_IF cjkgadai    tbddatkodidx     mtbdLoktld stbd1 {Pgv_dttabel} {Pgv_barang} {Pllokgadai}
+e.ValidateKat			tldlok			VALIDATE_IF cjkemas	tbddatkodidx mtbdLoktld stbd1 {Pgv_dttabel} {Pgv_barang} {PllokLM}
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldlok2		DO_SKIP_IF copentacc
+BEFORE_INPUT	cur_field=tldbrg		DO_SKIP_IF cRESI
+BEFORE_INPUT	cur_field=tldsat		DO_SKIP_IF cRESI
+BEFORE_INPUT	cur_field=tldnoll		DO_SKIP_IF cRESI
+BEFORE_INPUT	cur_field=tldkat		DO_SKIP_IF cRESI
+BEFORE_INPUT	cur_field=tldcab		DO_SKIP_IF cRESI
+BEFORE_INPUT	cur_field=tldlok		DO_SKIP_IF cRESI
+AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW IF cOPEN misiloklama
+AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW IF cproskrm mcekpik
+AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW IF ckonsplng mcekpik
+AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW
+				IF cFKTLELANG mdum
+				ELSE HKCURSOR STAY
+				HKMSG Bukan Faktur Lelang
+AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW
+				IF cFKTPLNG	mdum
+				ELSE HKCURSOR STAY
+				HKMSG Bukan Faktur PLNG
+AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW
+				IF cPLNGKONSSIMPAN mdum
+				ELSE HKCURSOR STAY
+				HKMSG Bukan Faktur PLNG
+/*AFTER_INPUT		cur_field=tldbrg		DO_MAP SHOW
+				IF ctdkinpg mdum
+				ELSE HKCURSOR STAY
+				HKMSG No Jaminan Yang Sama Masih Ada Yang INPG*/
+AFTER_INPUT     cur_field=tldbrg            DO_MAP SHOW
+                IF clokasalbknknsm mdum
+                ELSE HKCURSOR STAY
+                HKMSG lokasi sudah di KONSUMEN tidak bisa dipindah
+AFTER_INPUT		cur_field=tldbrg			DO_MAP SHOW
+				IF cfktblmkirim	mdum
+				ELSE HKCURSOR STAY
+				HKMSG Faktur ini Sudah ada di Nobuk Lain
+AFTER_INPUT		cur_field=tldkat			DO_MAP SHOW
+				IF clokbkntransit mdum
+				ELSE HKCURSOR STAY
+				HKMSG Lokasi Sudah TRANSIT
+AFTER_INPUT     cur_field=tldlok            DO_MAP SHOW
+				IF clokasalbkntrot mdum
+                ELSE HKCURSOR STAY
+                HKMSG lokasi TRAN_OUT hanya bisa mutasi ke TRAN-OUT Juga
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF cloktjnkons mdum
+				ELSE HKCURSOR STAY
+				HKMSG lokasi KONSUMEN untuk KONSUMEN_AMBIL, lokasi GUDANG untuk KONSUMEN_SIMPAN
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF clokcocok mdum
+				ELSE HKCURSOR STAY
+				HKMSG kode lok baru tidak ada di cabang tujuan
+AFTER_INPUT		cur_field=tldlok            DO_MAP SHOW 
+				IF clokcocok mdum 
+				ELSE HKCURSOR STAY 
+				HKMSG kode lok baru tidak ada di cabang tujuan
+/*AFTER_INPUT		cur_field=tldnoll		DO_MAP SHOW
+				IF ctdkopen mdum
+				ELSE HKCURSOR STAY
+				HKMSG No Jaminan Yang Sama Masih Ada Yang OPEN*/
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF cblmpernahsimpan mdum
+				ELSE HKCURSOR STAY
+				HKMSG KONSUMEN_SIMPAN hanya boleh 1x
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF cproskrm_tranout mdum
+				ELSE HKCURSOR STAY
+				HKMSG Tujuan PROSES_KIRIM lok wajib SMG/PST_TRAN-OUT
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF cfktlelang_tranout mdum
+				ELSE HKCURSOR STAY
+				HKMSG Faktur Lelang Hanya Boleh TRAN-OUT
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF cmutasibrankas mdum
+				ELSE HKCURSOR STAY
+				HKMSG Lokasi Baru Wajib Lokasi Brankas
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF crencanatebus mdum
+				ELSE HKCURSOR STAY
+				HKMSG Hanya Boleh Lokasi Brankas dan Cabang yang sama
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW
+				IF ckondisisimpan mdum
+				ELSE HKCURSOR STAY
+				HKMSG Hanya Boleh Cabang yg Sama dan Lokasi Harus Brankas
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+tldbukurtidx    tlmnobuk
+
+SFL_MAP
+tlmnobuk        tldnobuk    REPLACE
+lMTSJMN         tlddata     REPLACE
+tlmuntuk		tldplg		REPLACE

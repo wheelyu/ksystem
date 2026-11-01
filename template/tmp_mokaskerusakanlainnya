@@ -1,0 +1,67 @@
+IMAGE(tmptranst)
+/-----t--------------------------------------------t--------------------t-------------------\
+|t.No | t.ItemKerusakan                            | t.EstimasiBiayaCab | t.EstimasiBiayaHO |
+\-----.--------------------------------------------.--------------------.-------------------/
+
+IMAGE(tmptrans)
+______|____________________________________________|____________________|____________________
+
+FIELDS(tmptrans)
+svinourt		PROTECT			INPUTRI		1
+sviket			ALLCAPS SCROLL		INPUTRI		2
+svidf1			NUMERIC			INPUTRI		3
+svidf2			NUMERIC			INPUTRI		4
+
+EDITS(tmptrans)
+e.Mandatory		sviket		MANDATORY
+e.Mandatory		svidf1		MANDATORY_IF cmandopen
+
+CALCS()
+crusaklain0	djoinrusaklain==0 && g_curcmd==1
+crusaklain1	djoinrusaklain==1 && g_curcmd==1
+ctambahkl         g_curcmd == 1
+cupdatekl         g_curcmd == 2
+chpskl            g_curcmd == 4
+
+chitestimasi3add	tldhrg + svidf1
+chitestimasi3upd	tldhrg + (svidf1 - ~svidf1)
+chitestimasi3hps	tldhrg - svidf1
+chitestimasi4add	tldsubtot + svidf2
+chitestimasi4upd	tldsubtot + (svidf2 - ~svidf2)
+chitestimasi4hps	tldsubtot - svidf2
+
+MAP(murut2)
+l1		svinourt	REPLACE_IF crusaklain0
+curut		svinourt	DO_CALC_IF crusaklain1
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=sviket	DO_MAP SHOW murut2
+BEFORE_INPUT	cur_field=svidf1	DO_SKIP_IF cskipopen
+BEFORE_INPUT	cur_field=svidf2	DO_SKIP_IF cskipinp3
+
+MAP(mupdtmptrans1)
+chitestimasi3add	tldhrg          DO_CALC_IF ctambahkl
+chitestimasi3upd	tldhrg		DO_CALC_IF cupdatekl
+chitestimasi3hps	tldhrg		DO_CALC_IF chpskl
+chitestimasi4add        tldsubtot          DO_CALC_IF ctambahkl
+chitestimasi4upd        tldsubtot          DO_CALC_IF cupdatekl
+chitestimasi4hps        tldsubtot          DO_CALC_IF chpskl
+chithrgpasar    tldsatbsr       DO_CALC
+
+SPCALCS(sptmptrans)
+	DO_LIB ap_dbclc(DNAME dupdtmptrans1,DCOMMAND UPDATE,DTARGET tldbukurtidx tlmnobuk l1,DMAP mupdtmptrans1);
+
+POSTING(tmptrans)
+	PST_ADDCMD 	sptmptrans
+	PST_UPDCMD 	sptmptrans
+	PST_DELCMD	sptmptrans
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_TARGET
+svidatbuktyp tlmdata tlmnobuk lRUSAKLAIN
+SFL_MAP
+tlmdata		svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lRUSAKLAIN	svitype		REPLACE

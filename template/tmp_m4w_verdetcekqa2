@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+lket		STRING	251
+labknoll2	STRING	21
+
+DBCALCS(djoinceksviqa) 
+        DBC_COMMAND     JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   lCEKQA btmnobuk 
+
+CALCS()
+cabksama   abknoll == svitype
+
+MAP(mabknoll)
+abknoll		labknoll2	REPLACE
+
+DBCALCS(djoinabk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx   lkunciabsenx btmnobuk
+	DBC_MAP		mabknoll
+	DBC_SELECT      cabksama
+
+MAP(mtkdket)
+tkdket		lket		REPLACE
+
+DBCALCS(djoinsvitkd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll lPDOK btmnobuk
+	DBC_MAP		mtkdket
+
+CALCS()
+cOK2              svistr1 == "OK"   
+cTIDAK2           svistr1 == "TIDAK"
+
+IMAGE(tmptranst)
+/--------t------------------------------------------------------------------------------t------------------\
+|i.No    | i.Ket                                                                        |  i.Yt
+\--------.------------------------------------------------------------------------------.------------------/
+
+
+IMAGE(tmptrans)
+|________|______________________________________________________________________________|  __________      |
+
+
+FIELD(tmptrans)
+svinourt                PROTECT                 INPUTRI 1
+sviket                  PROTECT SCROLL          INPUTRI 2
+svistr1                 NOCHANGE                INPUTRI 3
+
+
+DEFAULTS(tmptrans)
+IF cOK2 svistr1		DFALT_SCAN		OK "OK"
+						TIDAK "TIDAK OK"
+
+IF cTIDAK2  svistr1	DFALT_SCAN              TIDAK "TIDAK OK"
+
+CALCS()
+cjoindetbtdcekqa           djoinceksviqa == 1
+
+SUBFILE(tmptrans)
+SFL_LINES(15)
+SFL_COND cjoindetbtdcekqa
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   lCEKQA btmnobuk 
+
+CALCS()
+cdetqa0		0
+cketsama	djoinsvitkd==1 && lket==sviket
+cfltabk		djoinabk==1   
+
+SPCALCS(spdel)
+	DO_LIB_IF cketsama      ap_dbclc(DNAME deltkd, DCOMMAND DELETE_RANGE, DTARGET tkddatbukll lPDOK btmnobuk);
+	DO_LIB_IF cfltabk	ap_dbclc(DNAME updsts, DCOMMAND DELETE, DTARGET abkdatbukidx lkunciabsenx btmnobuk);
+
+POSTING(tmptrans)
+PST_DELCMD      spdel
+
+PERMIT(tmptrans)
+  PMT_UPDALL_COND  cdetqa0

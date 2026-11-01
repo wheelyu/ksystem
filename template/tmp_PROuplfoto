@@ -1,0 +1,94 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------\
+|t.UplPkt                                                   |
+|__ _____________________________                           |                          
+|/--s.UPLOAD----------------------\/-----------------------\|
+||                                ||t.Tgl     : __________ ||
+||                                ||t.NipPic  : __________ ||
+||                                ||t.Niphrd  : __________ ||
+||                                ||t.OkUp    : __________ ||
+||                                ||t.AccHrd  : __________ ||
+||                                || ______ ______         ||
+||                                |\-----------------------/|
+||                                |                         |
+|\--------------------------------/                         |
+|i.Ket : ___________________________________________________|
+\-----------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt		PROTECT			INPUTRI 1
+psdket			PROTECT			INPUTRI 2
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 3
+psdstr1			PROTECT			INPUTRI	4
+psdstr2			PROTECT			INPUTRI 5
+psdtype			PROTECT			INPUTRI	6
+psdtype2		PROTECT			INPUTRI 7
+luploadtacc		TOMBOL			INPUTRI 8
+luploadacc		TOMBOL			INPUTRI 9
+psdket2  		ALLCAPS SCROLL		INPUTRI 10 
+
+DEFAULTS(tmptranst)
+luploadtacc	INIT		TACC
+luploadacc	INIT		ACC
+l_count3	INIT		1
+
+CALCS()
+cadafoto3x	(UPLEXIST(l_count3) == 1  || UPLEXIST(l_count3) == 0) && hrmdvs2=="ACC_FOTO" && 
+		(g_grpnam=="HRDODTM" || g_usrkode=="2371221" || g_grpnam=="HRDDVH" || g_grpnam=="SUPPORT" || g_grpnam=="B.IVAROHRD" || g_grpnam=="B.PARTHRD")
+cOK		"OK"
+ctacc1		"TACC"
+cacc1		"ACC"
+cbkn_accfoto	psdtype!="TACC"
+caccblanks	psdtype==BLANKS
+
+MAP(mupdpsdsdm21)
+cOK		psdtype		DO_CALC
+g_usrkode	psdstr1		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+DBCALCS(dupdpsdsdm21)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdpsdsdm21
+
+MAP(mupdpsdsdm2)
+ctacc1		psdtype2 	DO_CALC
+cBLANKS		psdtype		DO_CALC
+g_usrkode	psdstr2		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+MAP(mupdpsdsdm3)
+cacc1		psdtype2 	DO_CALC
+cacc1		psdtype		DO_CALC
+g_usrkode	psdstr2		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+SPCALCS(supdpsd2psd)
+	DO_LIB_IF cadafoto3x ap_dbclc(DNAME dupdpsdsdm2,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdsdm2);
+
+SPCALCS(supdpsd3psd)
+	DO_LIB_IF cadafoto3x ap_dbclc(DNAME dupdpsdsdm3,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdsdm3);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtacc	DO_SPCALCS supdpsd2psd
+CLICKED		cur_field=luploadacc	DO_SPCALCS supdpsd3psd
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF cbkn_accfoto
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  gt_promosi11 psdpsmkode  lFOTOPROM
+SFL_UPLFLD_DBCALCS dupdpsdsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+	psddatpsmkod  gt_promosi11 hrmnobuk lFOTOPROM                     
+
+SFL_MAP
+gt_promosi11   		psddata		REPLACE
+hrmnobuk		psdpsmkode	REPLACE
+lFOTOPROM		psdkode		REPLACE
+g_usrkode		psdstr5		REPLACE
+

@@ -1,0 +1,82 @@
+IMAGE(tmptranst)
+/----------------------------------------------\
+|/--------------------------------------------\|
+||                t.PemutusanPCA              ||
+|\--------------------------------------------/|
+|/--------------------------------------------\|
+||t.NoBuk          :_________________________ ||
+||t.IDEksternal    :_________________________ ||
+||t.NamaEksternal  :_________________________ ||  
+||t.NamaPenanggung :_________________________ ||
+||t.TipePemutusan  :_________________________ ||  
+||t.Ket            :_________________________ || 
+||t.user           :________ __________       || 
+|\--------------------------------------------/|
+\----------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svikode 	PROTECT			INPUTRI	1
+svinobuk	PROTECT			INPUTRI 2
+psmnama_1	PROTECT			INPUTRI 3
+tlmket		PROTECT			INPUTRI	4
+svinama		NOCHANGE		INPUTRI	5
+sviket		TEXTAREA ALLCAPS	INPUTRI 6
+svistr1		PROTECT			INPUTRI	7
+svitgl1		PROTECT			INPUTRI 8
+
+DEFAULTS(tmptranst)
+svinama		DFALT_SCAN_BLANKS	KINERJA_BURUK PELANGGARAN_PERJANJIAN
+svistr1		INIT		{g_usrkode}
+svistr1		INIT_UPDATE	{g_usrkode}
+svitgl1		INIT		{g_tgltrn}
+svitgl1		INIT_UPDATE	{g_tgltrn}
+
+MAP(mjoinputuspca)
+svinourt	lurut		REPLACE
+
+DBCALCS(djoinputuspca)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp lPUTUSANPCA tlmnobuk lPUTUSANPCA
+	DBC_MAP		mjoinputuspca
+
+CALCS()
+cjoinputuspca1	djoinputuspca==1 && g_curcmd==1
+cjoinputuspca0	djoinputuspca==0 && g_curcmd==1
+ckode1		"B" + STRIP(tlmnobuk) + STRIP(lurutstr)
+curut		lurut + 1
+cstsINPG	tlmsts=="INPG"
+
+EDITS(tmptranst)
+e.Validate	sviket		MANDATORY
+
+MAP(mmapsubpca1)
+c1		svinourt	DO_CALC_IF cjoinputuspca0
+curut		svinourt	DO_CALC_IF cjoinputuspca1
+svinourt	lurutstr	REPLACE_IF ctambah
+ckode1		svikode		DO_CALC_IF ctambah
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mmapsubpca1
+
+MAP(mupdmaster1)
+gv_CLSD		tlmsts		REPLACE
+
+SPCALCS(saddsubpca1)
+	DO_LIB ap_dbclc(DNAME dupdmaster1,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdmaster1);
+
+POSTING(tmptrans)
+	PST_ADDCMD	saddsubpca1
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cstsINPG
+SFL_TARGET
+svidatbuktyp lPUTUSANPCA tlmnobuk lPUTUSANPCA
+SFL_MAP
+lPUTUSANPCA	svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lPUTUSANPCA	svitype		REPLACE
+

@@ -1,0 +1,102 @@
+ DBCALCS(djoinsvisurtabm)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp	btmdata    btmnobuk lSURTABM
+
+IMAGE(tmptranst) 
+/----------------------------------------------------------------------------------------------------------------\
+ /--------------------------------------------------------------------------------------------------------------\
+  t.surta01
+  t.surta34    
+  i.Suratpernyataanbm           : _________________________
+  t.t
+  i.Bahwasaya                   : _________________________
+  i.Nip                         : _________________________
+  i.SDep                        : _________________________
+  i.Grup                        : _________________________
+                                : _______________________ i.Atasnama : _________________
+  t.surta35    
+  t.surta36    
+  t.surta37    
+  t.surta38    
+  t.surta39    
+  t.surta40    
+  t.surta41    
+  t.surta42    
+  t.surta43    
+  t.surta44    
+  t.surta45    
+  t.surta46    
+  t.surta47    
+  t.surta48    
+  t.surta49    
+  t.surta50    
+                                                        t.MENYATAKAN   : ____
+ \--------------------------------------------------------------------------------------------------------------/
+\----------------------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			PROTECT SCROLL		INPUTRI 1
+svistr2			PROTECT SCROLL		INPUTRI 2
+svikode			PROTECT SCROLL		INPUTRI 3
+svistr4			PROTECT SCROLL 		INPUTRI 4
+svistr5			PROTECT SCROLL 		INPUTRI 5
+svistr6			PROTECT SCROLL 		INPUTRI 6
+svinama			PROTECT SCROLL 		INPUTRI	7
+sviyt1			NOCHANGE		INPUTRI 8
+
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+svistr2			INIT_UPDATE		{g_usrnam}
+svikode			INIT_UPDATE		{g_usrkode}
+svikode			INIT			{g_usrkode}
+svinama			INIT_UPDATE		{psmnama_2}
+svistr4                 INIT_UPDATE             {g_grpnam}
+svistr5                 INIT_UPDATE             {g_grpnam}
+lSURTABM		INIT			SURTABM
+
+
+sviyt1			DFALT_LIST		Y T
+
+
+MAP(misirekomenbm)
+btmdata  		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+btmnobuk		svistr1			REPLACE
+g_usrnam 		svistr2			REPLACE
+g_usrkode		svikode			REPLACE
+btmnobuk		svistr6			REPLACE
+psmnama_2		svinama			REPLACE
+g_grpnam		svistr4                 REPLACE
+g_grpnam		svistr5                 REPLACE 
+
+CALCS()
+cmansjbm          g_grpnam!="RI" && g_usrkode != "1711158" /* memo tata*/
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW misirekomenbm
+AFTER_INPUT     	cur_keybd=EN       DO_LIB_IF cmansjbm  ap_ceksj(svikode);
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	svidatbuktyp   btmdata   btmnobuk lSURTABM
+SFL_MAP
+btmdata         svidata         REPLACE
+btmnobuk        svinobuk        REPLACE
+lSURTABM      svitype         REPLACE
+
+
+CALCS()
+cadd_pernyataanbm		btmsts == "704" && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WADH" ||  g_grpnam == "B.M4WRM" || g_grpnam == "RI" || g_grpnam == "IT") && djoinsvisurtabm == 0
+cupd_pernyataanbm		btmsts == "704"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_pernyataanbm	
+  	PMT_UPDALL_COND cupd_pernyataanbm
+  	PMT_DEL_COND  	cupd_pernyataanbm
+
+

@@ -1,0 +1,106 @@
+LOCAL
+PGM_FIELDS
+ltbtkodee		STRING		21
+
+DBCALCS(djoinsvidok2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatkodtyp gv_dt1106 ltbtkodee gv_dokumen
+
+DBCALCS(djoinsvidok)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp gv_dt1106 btmnobuk gv_dokumen
+
+CALCS()
+csudah		svinourt == 1 && svistr2 == BLANKS
+
+DBCALCS(djoinsvidoksudah)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp gv_dt1106 btmnobuk gv_dokumen
+	DBC_SELECT	csudah
+
+/*MAP(mjoinsvipksurvey1)
+svitgl1         lsvitgl1js   REPLACE
+DBCALCS(djoinsvipksurvey1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lJNJSVY1   btmnobuk lJNJSVY1
+        DBC_MAP         mjoinsvipksurvey1*/
+
+IMAGE(tmptranst)
+/--------t-----------------------------------------------------t--------------\
+\--------.-----------------------------------------------------.--------------/
+
+IMAGE(tmptrans)
+|________|_____________________________________________________|___________.__|
+
+FIELD(tmptrans)
+tbtnourt                PROTECT                 INPUTRI 1
+tbtket                  PROTECT SCROLL          INPUTRI 2
+tbtkolek              ALLCAPS                 INPUTRI 5
+
+CALCS()
+cjoinsvidok		((djoinsvidok == 0 || (djoinsvidok == 1 && btmnoantri == BLANKS)) && (btmsts == "701" || btmsts == "643" || btmsts == "706") && (g_usrkode == btmlok || g_grpnam == "B.M4WADH"))
+cjoinsvidok0 		djoinsvidok2 == 0
+cjoinsvidok1 		djoinsvidok2 == 1
+ctbtkode		STRIP(btmnobuk) + STRIP(tbtkode)
+csvipen			tbtnourt == 3
+csvipen2		tbtnourt != 3
+cpk1			tbtnourt == 10 && tbtkolek != BLANKS
+
+
+DEFAULTS(tmptrans)
+IF csvipen tbtkolek                DFALT_SCAN      
+					BLANKS
+					TIDAK_ADA ""
+                                        ADA ""
+IF csvipen2 tbtkolek                DFALT_SCAN      
+					BLANKS
+                                        ADA ""
+
+CALCS()
+cwajib		((djoinsvidok == 0 || djoinsvidoksudah == 1) && tbtdf1 == 2) || (g_grpnam == "B.M4WCMO" && (tbtdf1 == 1 || tbtdf2 == 2))
+c1z		1
+cnipinput	g_usrkode == btmlok
+cnipadh		g_grpnam == "B.M4WADH"
+
+EDITS(tmptrans)
+e.Mandatory		tbtkolek	MANDATORY_IF cwajib
+
+SUBFILE(tmptrans)
+SFL_LINES(19)
+SFL_TITLE(tmptranst)
+SFL_COND	cjoinsvidok
+SFL_APP_TYPE
+
+SFL_TARGET
+        tbtdattypkod  gv_dttemplate btmdvs gv_tmpverifikasi gv_dokumen21
+
+MAP(maddsvidok)
+gv_dt1106	svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+gv_dokumen	svitype		REPLACE
+tbtket		sviket		REPLACE
+tbtnourt	svinourt	REPLACE
+tbtkolek	svistr1		REPLACE_IF cnipinput
+tbtkolek	svistr5		REPLACE_IF cnipadh
+ltbtkodee	svikode		REPLACE
+gv_INPG		svists		REPLACE
+tbtdf1		svidf1		REPLACE
+
+MAP(mupdsvidok)
+tbtkolek	svistr1		REPLACE
+
+MAP(mupdbtmtglpk0)
+c1z		btmnoantri	DO_CALC_IF cpk1
+
+MAP(mtgljs)
+ctbtkode		ltbtkodee	DO_CALC
+ltbtkodee		ltbtkodee	REPLACE
+
+
+SPCALCS(sptransdok)
+	DO_LIB ap_dbclc(DNAME dmaptgljs,DCOMMAND MAPMAP,DMAP mtgljs);
+	DO_LIB_IF cjoinsvidok0 ap_dbclc(DNAME daddsvidok,DCOMMAND ADD,DFILE svi,DMAP maddsvidok);
+	DO_LIB_IF cjoinsvidok1 ap_dbclc(DNAME dupdsvidok,DCOMMAND UPDATE_RANGE,DTARGET svidatkodtyp gv_dt1106 ltbtkodee gv_dokumen,DMAP mupdsvidok);
+	DO_LIB ap_dbclc(DNAME dupdbtmtglpk0,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmtglpk0);
+POSTING(tmptrans)
+        PST_COMMAND             sptransdok

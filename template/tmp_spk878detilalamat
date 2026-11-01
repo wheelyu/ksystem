@@ -1,0 +1,142 @@
+LOCAL
+PGM_FIELDS
+lpropx          STRING  21
+lkotax          STRING  21
+lkecax          STRING  21
+lkelux          STRING  21
+lrtx            STRING  4
+lrwx            STRING  4
+lalmketx	STRING	61
+lnamakend	STRING	61
+lpsmnama	STRING	21
+
+MAP(mjoinconx)
+conhp           lconhpx         REPLACE
+DBCALCS(djoinconx)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    pikplg gv_INPG
+        DBC_MAP         mjoinconx
+
+MAP(mjoinsvirmh)
+svistr1         lstsrmh         REPLACE
+
+DBCALCS(djoinsvirmh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp    lDATASURVEY piknobtm lCAPITAL
+        DBC_MAP         mjoinsvirmh
+
+MAP(mjoinbrg)
+brgnama		lnamakend	REPLACE
+
+DBCALCS(djoinbrg)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brgdatkodidx	gv_dtbarang pikbrg
+	DBC_MAP		mjoinbrg
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.FktRo     _______________ ____   ||
+||t.FktRo     ____________________   ||
+||t.Ktp       ____________________   ||
+||t.Nama      ____________________   ||
+||t.Telp      ____________________   ||
+||t.Alamat    ____________________   ||
+||t.RtRw      ____  ____   	     ||
+||t.Prop      ____________________   ||
+||t.Kota      ____________________   ||
+||t.Kec       ____________________   ||
+||t.Kel       ____________________   ||
+||t.StsRmh    ___________            ||
+||t.Pekerjaan ___________            ||
+||t.InformasiRo                      ||
+||i.Tgl       ___________            ||
+||i.Sts       ___________            ||
+||t.Tenor     ___________            ||
+||t.Anke      ___________            ||
+||t.Sispok    ________________.___   ||
+||t.Kategori  ____________________   ||
+||t.TypKend   ____________________   ||
+||t.NamaKend  ____________________   ||
+||i.Thn       ____________________   ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tkmbuk1                 NOCHANGE SCROLL UNSEEN          INPUTRI         1  /* No Buk */
+        piksts                 PROTECT SCROLL                   INPUTRI         1  /* No Buk */
+        piknobtm               PROTECT SCROLL                   INPUTRI         2  /* No Buk */
+        pikplg                 PROTECT SCROLL                   INPUTRI         3  /* No Buk */
+	lpsmnama		NOCHANGE SCROLL			INPUTRI		3
+	lconhpx			PROTECT SCROLL			INPUTRI		4
+	lalmketx		NOCHANGE			INPUTRI		5
+	lrtx			PROTECT SCROLL			INPUTRI		6
+	lrwx			PROTECT SCROLL			INPUTRI		7	
+
+	lpropx			PROTECT SCROLL			INPUTRI		7
+	lkotax			NOCHANGE SCROLL			INPUTRI		8
+	lkecax			NOCHANGE SCROLL			INPUTRI		9
+	lkelux			NOCHANGE SCROLL			INPUTRI		10
+	lstsrmh                 PROTECT                         INPUTRI         12
+        psmpend                 PROTECT                         INPUTRI         13
+
+	piktglfak		PROTECT {DD-MM-YYYY}		INPUTRI		14
+	piksts			PROTECT				INPUTRI		15
+	piklama			PROTECT				INPUTRI		16
+	pikke			PROTECT				INPUTRI		17
+	piksispok		PROTECT				INPUTRI		18
+	pikketkon		PROTECT				INPUTRI		19
+	pikbrg			PROTECT				INPUTRI		19
+	lnamakend		PROTECT				INPUTRI		20
+	pikth			PROTECT				INPUTRI		21	
+
+
+
+CALCS()
+cRoInpsm	pikplg!= BLANKS && (tkmkode == "FUTUGCI" || tkmkode =="FU_WB" || tkmkode == "FU_TOPUP") 
+cRoIn		piksts == "INPG" && pikplg!= BLANKS && (tkmkode == "FUTUGCI" || tkmkode =="FU_WB" || tkmkode == "FU_TOPUP") 
+cblanksx	BLANKS
+cdjoinsvirmh	djoinsvirmh == 1
+cdjoinbrg	djoinbrg == 1
+cdjoincon1	djoinconx==1
+
+EDITS(tmptranst)
+e.ValidateKtp		pikplg		VALIDATE_IF cRoInpsm psmktpidx mpsmRo 0
+e.Validate		pikplg		VALIDATE_IF cRoInpsm almdatotobuk malmktp 0 {Pgv_psmktp}
+e.Validate		pikplg		VALIDATE_IF cRoIn  almdatbukidx malmktpx 0 {PlALMTAGIH}
+
+MAP(mpsmRo)
+cblanksx	lpsmnama	DO_CALC	
+cblanksx	lconhpx		DO_CALC
+
+psmnama		lpsmnama	REPLACE
+lstsrmh		lstsrmh		REPLACE_IF cdjoinsvirmh
+lnamakend	lnamakend	REPLACE_IF cdjoinbrg
+lconhpx		lconhpx		REPLACE_IF cdjoincon1
+
+MAP(malmktp)
+almprop         lpropx          REPLACE
+almkota         lkotax          REPLACE
+almkec          lkecax          REPLACE
+almkel          lkelux          REPLACE
+almrt           lrtx            REPLACE
+almrw           lrwx            REPLACE
+almjalan	lalmketx	REPLACE
+
+MAP(malmktpx)
+almprop         lpropx          REPLACE
+almkota         lkotax          REPLACE
+almkec          lkecax          REPLACE
+almkel          lkelux          REPLACE
+almrt           lrtx            REPLACE
+almrw           lrwx            REPLACE
+almjalan	lalmketx	REPLACE
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cWBTU
+SFL_TARGET
+        pikdatbukidx	gv_dtpiu tkmbuk1

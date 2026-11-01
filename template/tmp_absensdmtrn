@@ -1,0 +1,83 @@
+IMAGE(tmptranst)
+/-------t----------------t---------t--------------t---------t--------------t----------------t---------t----------\
+| t.Nip | t.Nama         | t.Divisi| t.Jabatan    | t.Ceklis| t.KonfHadir  | t.Keteranagn   |t.Pretest|t.Posttest|
+\-------.----------------.---------.--------------.---------.--------------.----------------.---------.----------/
+
+IMAGE(tmptrans)
+|_______|________________|_________|______________|_________|______________|________________|_________|__________|
+
+
+FIELD(tmptrans)
+tldplg          NOCHANGE                INPUTRI         1
+lsdmtr          PROTECT                 INPUTRI         2
+ldvstr          PROTECT                 INPUTRI         3
+ljabtr          PROTECT                 INPUTRI         4
+tldsat          NOCHANGE                INPUTRI         5
+tldnobbm        PROTECT                 INPUTRI         6
+tldbisnis       ALLCAPS                 INPUTRI         7
+lstspretest	PROTECT			INPUTRI		8
+lstsposttest 	PROTECT			INPUTRI		9
+
+DEFAULTS(tmptrans)
+tldsat           DFALT_SCAN_BLANKS      Y
+                                        T
+
+EDITS(tmptrans)
+e.Mandatory     tldplg        MANDATORY
+e.Mandatory     tldsat        MANDATORY_IF cinpg
+e.Mandatory     tldbisnis     MANDATORY_IF cya
+e.Validate      tldplg        VALIDATE psikodidx mpsitld1
+
+CALCS()
+csel905pre	tlmkode == ltkdjenis && tlmsts != gv_VOID && tlmpst == "PRETEST"
+csel905post	tlmkode == ltkdjenis && tlmsts != gv_VOID && tlmpst == "POSTTEST"
+
+MAP(mjointlm905pre)
+tlmsts		lstspretest	REPLACE
+
+DBCALCS(djointlm905pre)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmdatsts2pl ltestsop11 lTRN tldplg
+	DBC_SELECT	csel905pre
+	DBC_MAP		mjointlm905pre
+
+MAP(mjointlm905post)
+tlmsts		lstsposttest	REPLACE
+
+DBCALCS(djointlm905post)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmdatsts2pl ltestsop11 lTRN tldplg
+	DBC_SELECT	csel905post
+	DBC_MAP		mjointlm905post
+
+CALCS()
+cskip2          tlmsts=="OPEN" || (tlmsts=="INPG" &&  (tldsat=="Y" || tldsat==BLANKS))
+chadir          "HADIR"
+ctdkhdr         "TDK HADIR"
+cpily           tldsat=="Y"
+cpilt           tldsat=="T"
+ckonfhdr        tldbrg == "DTLISTRN" && tldlok2=="Y" && (tldsts == "INPG" || tldsts == "CLSD")
+cjointlm905pre	djointkd == 1 && djointlm905pre == 1
+cjointlm905post	djointkd == 1 && djointlm905post == 1
+
+
+MAP(mpsitld1)
+psinama         lsdmtr          REPLACE
+psidvs          ldvstr          REPLACE
+psijabatan      ljabtr          REPLACE
+chadir          tldnobbm        DO_CALC_IF cpily
+ctdkhdr         tldnobbm        DO_CALC_IF cpilt
+lstspretest	lstspretest	REPLACE_IF cjointlm905pre
+lstsposttest	lstsposttest	REPLACE_IF cjointlm905post
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tldsat        DO_SKIP_IF copen1
+BEFORE_INPUT    cur_field=tldbisnis     DO_SKIP_IF cskip2
+BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF cinpg
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_SELECT      ckonfhdr
+SFL_TARGET
+        tldbukbrgoto   tlmnobuk

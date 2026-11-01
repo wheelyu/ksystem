@@ -1,0 +1,80 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------\
+ /-------s.UPLOAD------------------\
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ |                                 |
+ \---------------------------------/
+ /---------------------------------\
+ |i.Ket      : ______________  ____|
+ |t.TglFoto  : _____________       |
+ |t.Latitude : ________.____       |
+ |t.Longitude: ________.____       |
+ |t.Jam      : __.__               |
+ |t.LongLatDeb                     |
+ |______________ __________________|
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2
+svitgl2			PROTECT {DD-MM-YYYY}	INPUTRI		3
+svidf6			PROTECT NUMERIC		INPUTRI		3
+svidf7			PROTECT NUMERIC		INPUTRI		3
+svidf8			PROTECT			INPUTRI		4
+svinobuk                PROTECT SCROLL          INPUTRI         7
+luploadOK5		TOMBOL			INPUTRI		7
+
+
+CALCS()
+cnametag5	(tmpkode == "FOTOTELP" && tkmkode != "FU_CAGEN" && djoinsvidcagen == 1 && lRING != "RING_0") || (tmpkode == "FOTOTELP" && tkmkode == "FU_CAGEN" && djoinsvicagen == 1 && lsvistr2_cagen != BLANKS)
+cnametag5a	sviyt1 == "T"
+
+EDITS(tmptranst)
+e.Validate svinobuk	VALIDATE tkmbukidx mtkm5 0
+
+MAP(mtkm5)
+tkmnobuk	svinobuk	REPLACE
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+
+MAP(mupdsvinametag5)
+cY             sviyt1          DO_CALC
+
+MAP(mupdtldinfo5)
+c1              tldperdis3      DO_CALC
+
+SPCALCS(supdnametag5)
+	DO_LIB		ap_dbclc(DNAME dupdsvinametag5,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdsvinametag5);
+	DO_LIB_IF ckba  ap_dbclc(DNAME dupdtld5, DCOMMAND UPDATE_RANGE, DTARGET  tldbukbrgoto svinobuk gv_OPEN lINFOALAMAT, DMAP mupdtldinfo5);
+HOOKS(tmptranst)
+   CLICKED      cur_field=luploadOK5	DO_SPCALCS supdnametag5
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_COND cnametag5
+SFL_UPL_DELCOND	cnametag5a
+SFL_UPLFLD tkmnobuk svikode
+
+SFL_TARGET
+	svidatbuktyp   ldtspk tkmnobuk lfotospk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

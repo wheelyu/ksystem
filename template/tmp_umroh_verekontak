@@ -1,0 +1,109 @@
+LOCAL 
+PGM_FIELDS
+lurut_verekontak	INT2		2
+lFOTOGETCONTACT      	STRING		21
+lyes4			STRING		5  
+
+MAP(mjoinsviverekontak)
+svinourt		lurut_verekontak		REPLACE
+
+DBCALCS(djoinsviverekontak)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   ldtca btmnobuk gv_verekontak 
+	DBC_MAP		mjoinsviverekontak
+
+IMAGE(tmptranst) 
+ /------------------------------------------------------------------------------------------------\
+ |i.Notelpdihub       			  	: ____________________                            |
+ |i.Bisadihubungi     			  	: ____                                            |
+ |i.Namasumberinformasi                   	: ____________________                            |
+ |i.Apasumberkenalcadeb			  	: ____                                            |
+ |i.Apasumbertahucadebkredit		  	: ____                                            |
+ |i.Apasumbertahutmptglcadeb              	: ____                                            |
+ |i.Apasumbertahutmpkerja                 	: ____                                            |
+ |i.Apasumbertahujabatancadeb             	: ____                                            |
+ |i.Sudahbrplamacadebkerjausaha           	: ____ i.Th                                       |
+ |i.Profil                                	: ____________________                            |
+ |i.Hasilverifikasi                       	: _______________________________________________ |
+ |						/------------UPLOAD----------------\		  |
+ |						|				   |		  |
+ |						|				   |		  |
+ |						| 				   |		  |
+ |						|				   |		  |
+ |						|				   |		  |
+ |						\----------------------------------/		  |
+ |						t.Ket     ______________________ 		  |
+ |						t.UplodOk ____					  |
+ \------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+sviyt1			NOCHANGE			INPUTRI 2
+svistr2			ALLCAPS SCROLL			INPUTRI 3
+sviyt2			NOCHANGE			INPUTRI 4
+svitype2		NOCHANGE			INPUTRI 5
+svitype3		NOCHANGE			INPUTRI 6
+svistr3			NOCHANGE			INPUTRI 7
+svistr4			NOCHANGE			INPUTRI 8
+svidf1			NUMERIC				INPUTRI 9
+svistr5			ALLCAPS SCROLL			INPUTRI 10
+sviket			TEXTAREA                        INPUTRI 11
+svikode			PROTECT				INPUTRI 12
+svistr31		PROTECT				INPUTRI	13
+
+DEFAULTS(tmptranst)
+sviyt1			DFALT_LIST 		Y T
+sviyt2			DFALT_LIST		Y T
+svitype2		DFALT_LIST		Y T
+svitype3		DFALT_LIST		Y T
+svistr3			DFALT_LIST		Y T
+svistr4			DFALT_LIST		Y T
+lFOTOGETCONTACT		INIT			FOTOGETCONTACT
+lyes4			INIT			OK
+
+CALCS()
+cverkerja0		g_curcmd == 1 && djoinsviverekontak == 0
+cverkerja1		g_curcmd == 1 && djoinsviverekontak == 1
+curutverkontak		lurut_verekontak + 1
+cverkontak1		1
+
+MAP(murut_verekontak)
+cverkontak1		svinourt		DO_CALC_IF cverkerja0
+curutverkontak		svinourt		DO_CALC_IF cverkerja1
+
+
+MAP(mupdsviftgetecall)
+lyes4    svistr31         REPLACE
+DBCALCS(dbftgetcontacecall)
+	DCOMMAND	UPDATE
+	DTARGET         sviotoidx svioto
+	DMAP            mupdsviftgetecall
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW murut_verekontak
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_COND	csdmho
+SFL_UPLFLD_DBCALCS      dbftgetcontacecall
+SFL_UPL_DIRFLD          btmtgl
+SFL_UPLFLD btmnobuk     svitype
+SFL_UPL_DELCOND c0
+SFL_TARGET
+	svidatbuktyp   ldtca btmnobuk gv_verekontak
+
+SFL_MAP
+ldtca			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_verekontak		svitype			REPLACE
+lFOTOGETCONTACT         svikode                 REPLACE
+
+CALCS()
+cupd_verekontak		(btmflag1=="CA" || btmflag1=="CAA") && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV")
+
+PERMIT(tmptrans)
+  	PMT_UPDALL_COND cupd_verekontak
+  	PMT_DEL_COND  	cupd_verekontak

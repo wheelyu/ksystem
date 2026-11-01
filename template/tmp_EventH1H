@@ -1,0 +1,110 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+  t.Briefing Pagi         
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+   ________________________________________
+
+  t.Tim Lengkap          
+  /--s.UPLOAD2----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+   ________________________________________
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc: ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lBRIEFINGPAGI           ALLCAPS NOCHANGE		        INPUTRI	1
+lTIMLENGKAP             ALLCAPS NOCHANGE		        INPUTRI	2
+tkdrek                  PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts                  PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1                 PROTECT                                 INPUTRI 2
+tkdket                  TEXTAREA                                INPUTRI 3
+lenter                  NOCHANGE                                INPUTRI 4
+ltombolhok              TOMBOL UNSEEN_IF chidetomdetailok      INPUTRI 40
+
+DEFAULTS(tmptranst)
+tkdtotsj        INIT_UPDATE     0
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+ltkdnoll 	INIT            {ctipedetail}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+
+CALCS()
+cdetailhok              tlmkode == g_usrkode && tkdnourt > 0 && tkdjml > 0 && tkdjml2 > 0 &&
+                        (tkdsts == gv_OPEN || tkdsts == gv_TACC) 
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolhok    DO_SPCALCS spdetailokh
+
+BEFORE_INPUT    cur_field=lBRIEFINGPAGI        DO_SKIP_IF camkawil
+
+BEFORE_INPUT    cur_field=lTIMLENGKAP        DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl 
+SFL_UPLFLD  tkdnobuk lBRIEFINGPAGI
+SFL_UPLFLD2 tkdnobuk lTIMLENGKAP
+SFL_UPLFLD_DBCALCS dtambahuploadfoto1
+SFL_UPLFLD2_DBCALCS dtambahuploadfoto2
+SFL_UPL_COND cuploadfotook
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNBTLH tlmnobuk
+        
+MAP(mupdinfodetailh)
+/*
+cketdetailsosmed        tkdrek          DO_CALC_IF cjumlahlikekosong
+cketuploadsosmed        tkdrek          DO_CALC_IF cfotososmedkosong
+ckettambahsosmed        tkdrek          DO_CALC_IF cbelumtambahsosmed
+cketdetailblast         tkdrek          DO_CALC_IF cjumlahkontakkosong
+cketuploadblast         tkdrek          DO_CALC_IF cfotoblastkosong
+ckettambahblast         tkdrek          DO_CALC_IF cbelumtambahblast
+lUPLOADFOTOKEGIATAN     tkdrek          REPLACE_IF cfoto3kosong
+*/
+lUPLOADTIMDULU          tkdrek          REPLACE_IF cfoto2kosong
+lUPLOADBRIEFINGDULU     tkdrek          REPLACE_IF cfoto1kosong
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokh)
+        DO_LIB_IF cdetailhok            ap_dbclc(DNAME dupddetailreqh,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilh, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamh, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailh,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailh);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

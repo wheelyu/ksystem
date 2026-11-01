@@ -1,0 +1,182 @@
+LOCAL
+PGM_FIELDS
+
+ltipemotor	STRING		21
+lnobpkb		STRING		21
+lrangka		STRING		21
+lmesin		STRING		21
+lnhmhrgpasar	DFLOAT		8
+lnhmperbg	DFLOAT		8
+lnhmtenor	DFLOAT		8
+lnhmtotpok	DFLOAT		8
+lnhmumasal	DFLOAT		8
+lmerk		STRING		21
+lmerkm2w	STRING		21
+lmerkm4w	STRING		21
+lnhmjns		STRING		21
+lbtmplg		STRING		21
+lasset		STRING		11
+lnhmhrgotr	DFLOAT		8
+lnhmtotdis	DFLOAT		8
+lbtmdf1		DFLOAT		8
+lhargaotr	DFLOAT		8
+
+/*-------------JOIN----------------*/
+
+MAP(mjoinssu)
+ssubpkb		lnobpkb		REPLACE
+ssurangka	lrangka		REPLACE
+ssumesin	lmesin		REPLACE
+
+DBCALCS(djoinssu)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ssubuk2idx tlmplg
+        DBC_MAP         mjoinssu
+
+
+MAP(mjoinnhm)
+nhmhrgpasar	lnhmhrgpasar	REPLACE
+nhmjns		lnhmjns		REPLACE
+nhmhrgotr	lnhmhrgotr	REPLACE
+nhmtotdis	lnhmtotdis	REPLACE
+nhmperbg	lnhmperbg	REPLACE
+nhmtenor	lnhmtenor	REPLACE
+nhmtotpok	lnhmtotpok	REPLACE
+nhmumasal	lnhmumasal	REPLACE
+
+DBCALCS(djoinnhm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhmdatbukidx    gv_bukutamu tlmbisnis
+        DBC_MAP         mjoinnhm
+
+MAP(mjoinbtm)
+btmtypmtr	ltipemotor	REPLACE
+btmplg		lbtmplg		REPLACE
+btmdf1		lbtmdf1		REPLACE
+
+DBCALCS(djoinbtm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx tlmbisnis
+        DBC_MAP         mjoinbtm
+
+MAP(mjoinbrg)
+brgkat2		lmerkm2w	REPLACE
+
+DBCALCS(djoinbrg)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      brgdatkodidx gt_dtmodel ltipemotor
+        DBC_MAP         mjoinbrg
+
+MAP(mjoinast)
+astmerk         lmerkm4w        REPLACE
+
+DBCALCS(djoinast)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      astdatkodidx    lasset lbtmplg gv_bpkb lnhmjns
+        DBC_MAP         mjoinast
+
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.NoFak     : _______________ _____||
+||t.TanggalPk : _______________      ||
+||t.TotHut    : _______________      ||
+||t.TglAkhAng : _______________      ||
+||t.Merk      : _______________      ||
+||t.Tipe      : _______________      ||
+||i.Rangka    : _______________      ||
+||i.Mesin     : _______________      ||
+||t.NoBPKB    : _______________      ||
+||t.Otr	      : _______________      ||
+||t.NilJmn    : _______________      ||
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+piknobuk	ALLCAPS            	INPUTRI      	1
+pikcab		NOCHANGE            	INPUTRI      	2
+piktglfak	PROTECT {DD-MM-YY}	INPUTRI		3
+ltothut		PROTECT			INPUTRI		4
+piktgljtpakh	PROTECT	{DD-MM-YY}	INPUTRI		6
+lmerk		PROTECT			INPUTRI		7
+ltipemotor	PROTECT			INPUTRI		8
+lrangka		PROTECT			INPUTRI		9
+lmesin		PROTECT			INPUTRI		10
+lnobpkb		PROTECT			INPUTRI		11
+lhargaotr	PROTECT			INPUTRI		12
+tlmjml2		PROTECT			INPUTRI		13
+
+
+DEFAULTS(tmptranst)
+lasset		INIT		ASSET
+
+CALCS()
+cnol		0
+ckosong		BLANKS
+ctothut         piklama * pikangbl
+ctothutbungm	((((lnhmperbg / 12 / 100) * lnhmtenor) * (lnhmtotpok - lnhmumasal)) + (lnhmtotpok - lnhmumasal))
+cflat		piktybg != "M"
+cbungam		piktybg == "M"
+cdjoinssu	djoinssu  == 1
+cdjoinnhm	djoinnhm == 1
+cdjoinbtm	djoinbtm == 1
+cHONDA		"HONDA"
+cjikaHMC	pikdvs == "HMC"
+cjikaM2W	pikdvs == "M2W" && djoinbrg == 1
+cjikaM4W	pikdvs == "M4W" && djoinast == 1
+cotrhmc		lnhmhrgotr - (lnhmtotdis + lbtmdf1)
+cotrjkHMC	pikdvs == "HMC"
+cotrbknHMC	pikdvs == "M2W" || pikdvs == "M4W"
+
+EDITS(tmptranst)
+e.validateCab pikcab VALIDATE cabkodidx mcabinfo 0
+
+MAP(mcabinfo)
+pikcab		pikcab		REPLACE
+ckosong		lnobpkb		DO_CALC
+lnobpkb		lnobpkb		REPLACE_IF cdjoinssu
+ckosong		lrangka		DO_CALC
+lrangka		lrangka		REPLACE_IF cdjoinssu
+ckosong		lmesin		DO_CALC
+lmesin		lmesin		REPLACE_IF cdjoinssu
+ckosong		lnhmhrgpasar	DO_CALC
+lnhmhrgpasar	lnhmhrgpasar	REPLACE_IF cdjoinnhm
+ckosong		lnhmhrgotr	DO_CALC
+lnhmhrgotr      lnhmhrgotr      REPLACE_IF cdjoinnhm
+ckosong		lnhmtotdis	DO_CALC
+lnhmtotdis      lnhmtotdis      REPLACE_IF cdjoinnhm
+ckosong		lnhmjns		DO_CALC
+lnhmjns 	lnhmjns		REPLACE_IF cdjoinnhm
+ckosong         lnhmperbg       DO_CALC
+lnhmperbg       lnhmperbg       REPLACE_IF cdjoinnhm
+ckosong		lnhmtenor	DO_CALC
+lnhmtenor	lnhmtenor	REPLACE_IF cdjoinnhm
+ckosong		lnhmtotpok	DO_CALC
+lnhmtotpok	lnhmtotpok	REPLACE_IF cdjoinnhm
+ckosong		lnhmumasal	DO_CALC
+lnhmumasal	lnhmumasal	REPLACE_IF cdjoinnhm
+ckosong		ltipemotor	DO_CALC
+ltipemotor	ltipemotor	REPLACE_IF cdjoinbtm
+ckosong		lbtmplg		DO_CALC
+lbtmplg		lbtmplg		REPLACE_IF cdjoinbtm
+ckosong		lmerk		DO_CALC
+cHONDA		lmerk		DO_CALC_IF cjikaHMC
+lmerkm2w	lmerk		REPLACE_IF cjikaM2W
+lmerkm4w	lmerk		REPLACE_IF cjikaM4W
+ckosong		lhargaotr	DO_CALC
+cotrhmc		lhargaotr	DO_CALC_IF cotrjkHMC
+lnhmhrgpasar	lhargaotr	REPLACE_IF cotrbknHMC
+cnol            ltothut         DO_CALC
+ctothut         ltothut         DO_CALC_IF cflat
+ctothutbungm	ltothut		DO_CALC_IF cbungam
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET pikdatbukidx gv_dtpiu tlmplg
+
+

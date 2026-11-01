@@ -1,0 +1,94 @@
+LOCAL
+PGM_FIELDS
+langke71		INT2	2
+
+CALCS()
+ctagihtanganM    mtssts=="OPEN" && (djointrans7d==1 || djointrans8d==1) && lsvidf2==1 && piktybg == "M"
+
+IMAGE(tmptranst)
+/-------------------------------------------------------\
+|                      t.RinciAng                       |
+|/-----------------------------------------------------\|
+||i.NoFak    : ______________ ___  t.Jtp : ___________ ||
+||t.ByrAng   : ________       t.BsrAngs    : _________ ||
+||t.ByrBg    : ________       t.ByrBg      : _________ ||
+||i.ByrAdm   : ________       t.SisaAdm    : _________ ||
+||i.ByrDenda : ________       t.SisaDenda  : _________ ||
+|\-----------------------------------------------------/|
+\-------------------------------------------------------/
+__
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   angnobuk       PROTECT            INPUTRI       2 /* Kode Rekening */
+   angoto         PROTECT SCROLL     INPUTRI       3 /* Kode Rekening */
+   angtgljtp      PROTECT {DD-MM-YY} INPUTRI       6 /* Kode Rekening */
+   angbyrpok      NUMERIC            INPUTRI       6 /* Kode Rekening */
+   angbsr         PROTECT            INPUTRI       6 /* Kode Rekening */
+   angbyrbg       PROTECT            INPUTRI       7 /* Kode Rekening */
+   angsisbg       PROTECT            INPUTRI       7 /* Kode Rekening */
+   angbyradm      PROTECT            INPUTRI       7 /* Kode Rekening */
+   angsisadm      PROTECT            INPUTRI       7 /* Kode Rekening */
+   angbyrden      NUMERIC            INPUTRI       8 /* Kode Rekening */
+   angsisden      PROTECT            INPUTRI       8 /* Kode Rekening */
+   lbkmtype	  PROTECT	     INPUTRI	   9
+
+DEFAULTS(tmptranst)
+ldd             INIT            DENDA
+lbisnis		INIT		LEASING
+langke71	INIT		1
+langke71	INIT_UPDATE	1
+
+EDITS(tmptranst)
+e.Validate angnobuk VALIDATE pikdatbukidx   mpikg1 0 {Pgv_dtpiu}
+
+MAP(mpikg1)
+piknobuk        piknobuk        REPLACE
+
+MAP(mdum2a)
+ldum2           ldum2           REPLACE
+
+CALCS()
+cminimalbali	angbyrpok > angbsr / 2
+cmindenda	angbyrden >= 0
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=angtgljtp         DO_SCAN dbscanangHit
+AFTER_INPUT     cur_field=angbyrpok     DO_MAP SHOW
+                IF cminimalbali mdum2a
+                ELSE HKCURSOR STAY
+                     HKMSG Pokok Minimal setengah
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cminimalbali mdum2a
+                ELSE HKCURSOR STAY
+                     HKMSG h.UrutDrAngTerkecil
+AFTER_INPUT     cur_field=angbyrpok     DO_MAP SHOW
+                IF cmindenda mdum2a
+                ELSE HKCURSOR STAY
+                     HKMSG Tidak boleh minus
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cmindenda mdum2a
+                ELSE HKCURSOR STAY
+                     HKMSG Tidak boleh minus
+
+CALCS()
+cbkmokm      angsts == "INPG" 
+
+SUBFILE(tmptrans)
+SFL_COND        ctagihtanganM
+SFL_SELECT      cbkmokm
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+angdatbukidx   gv_ANG mtsnoasal langke71   
+
+CALCS()
+cupdtransg5h            mtssts=="OPEN" && (g_grpnam=="RI" || g_grpnam=="IT" || mtstype1==g_usrkode || mtsplg==g_usrkode || (djoinpsiUsr==1 && lpsicabskrUsr=="PST30"))
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cupdtransg5h
+PMT_DEL_COND    c0
+

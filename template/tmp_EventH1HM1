@@ -1,0 +1,128 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Final Check
+  t.UplMeetingKoordinasi           
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+   ________________________________________
+
+  t.UplLoadingBarang          
+  /--s.UPLOAD2----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+   ________________________________________
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc : ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lMEETINGKOORDINASI      ALLCAPS NOCHANGE		        INPUTRI	1
+lLOADINGBARANG          ALLCAPS NOCHANGE		        INPUTRI	2
+tkdrek                  PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts                  PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1                 PROTECT                                 INPUTRI 2
+tkdket                  TEXTAREA                                INPUTRI 3
+lenter                  NOCHANGE                                INPUTRI 4
+ltombolhm1ok            TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+tkdtotsj        INIT_UPDATE     0
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+ltkdnoll 	INIT            {ctipedetail}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+CALCS()
+cdetailhm1ok            tlmkode == g_usrkode && tkdnourt > 0 && tkdjml > 0 && tkdjml2 > 0 &&
+                        (tkdsts == gv_OPEN || tkdsts == gv_TACC) /*
+                        && djoindetailhm7 == 1 && lstatusdetail == gv_ok && 
+                        (((tlmuntuk == lSHOWEVENT || tlmuntuk == lPPRT || tlmuntuk == lPAMERAN) && 
+                        ((ltkdtype == "ADA" && tkdjml3 > 0 && tkdsisstr != "") || (ltkdtype2 == "ADA" && tkdjml4 > 0 && tkdjenisaw != ""))) || 
+                        (tlmuntuk != lSHOWEVENT && tlmuntuk != lPPRT && tlmuntuk != lPAMERAN)) && lstatusdetail == gv_ok && djoindetailhm8 == 1 && lstatusdetail == gv_ok && 
+                        (ltkdjenis == "TIDAK" || ltkdjenis == "YA" && djoindetailahm1ahassfix == 1) && djoindetailahm1pjfix == 1 && 
+                        (tlmuntuk != lPPRT || (tlmuntuk == lPPRT && ((tkdjml5 > 0 && tkdjwbstr1 != "") || (tkdnil > 0 && tkdjwbstr2 != "")))) && 
+                        djoindetailahm3 == 1 && ltkdnourt > 0 && ltkdnildmke != 0 && djoindetailbhm3 == 1 && ltkdnourt > 0 && ltkdnildmke != 0 && tkdtotjsa == 1
+
+                        cbelumadapjfix          djoindetailahm1pjfix == 0
+cbelumadaahassfix       djoindetailhm8 == 1 && ltkdjenis == "YA" && djoindetailahm1ahassfix == 0
+
+*/
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=lMEETINGKOORDINASI        DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=lLOADINGBARANG        DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+CLICKED         cur_field=ltombolhm1ok  DO_SPCALCS spdetailokhm1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl 
+SFL_UPLFLD  tkdnobuk lMEETINGKOORDINASI
+SFL_UPLFLD2 tkdnobuk lLOADINGBARANG
+SFL_UPLFLD_DBCALCS dtambahuploadfoto1
+SFL_UPLFLD2_DBCALCS dtambahuploadfoto2
+SFL_UPL_COND cuploadfotook
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNBTLHM1 tlmnobuk
+        
+MAP(mupdinfodetailhm1) /*
+cketdetailsosmed        tkdrek          DO_CALC_IF cjumlahlikekosong
+cketuploadsosmed        tkdrek          DO_CALC_IF cfotososmedkosong
+ckettambahsosmed        tkdrek          DO_CALC_IF cbelumtambahsosmed
+cketdetailblast         tkdrek          DO_CALC_IF cjumlahkontakkosong
+cketuploadblast         tkdrek          DO_CALC_IF cfotoblastkosong
+ckettambahblast         tkdrek          DO_CALC_IF cbelumtambahblast
+lISIDETCHECKPOINTENDA   tkdrek          REPLACE_IF cdetailcheckpointtendabelumok
+lUPLCHECKPOINTTENDA     tkdrek          REPLACE_IF cuploadcheckpointtendabelumok
+lISISERIESDISPLAY       tkdrek          REPLACE_IF cdetaildisplaycheckbelumok
+lUPLOADFOTODISPLAY      tkdrek          REPLACE_IF cfotodisplaycheckbelumok
+lISISERIESRIDING        tkdrek          REPLACE_IF cdetailridingcheckbelumok
+lUPLOADFOTORIDING       tkdrek          REPLACE_IF cfotoridingcheckbelumok
+lMINIMAL1RIDEDISPLAY    tkdrek          REPLACE_IF cridingdisplaycheckbelumok
+lTAMBAHPJDULU           tkdrek          REPLACE_IF cbelumadapjfix
+lTAMBAHAHASSDULU        tkdrek          REPLACE_IF cbelumadaahassfix */
+lUPLOADLOADINGBRG       tkdrek          REPLACE_IF cfoto2kosong
+lUPLOADMEETINGDULU      tkdrek          REPLACE_IF cfoto1kosong
+lSELESAIKANHMIN8DULU    tkdrek          REPLACE_IF cdjoindetailhm8apr
+lSELESAIKANHMIN7DULU    tkdrek          REPLACE_IF cdjoindetailhm7apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm1)
+        DO_LIB_IF cdetailhm1ok          ap_dbclc(DNAME dupddetailreqhm1,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm1,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm1);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

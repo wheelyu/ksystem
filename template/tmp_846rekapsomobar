@@ -1,0 +1,241 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------------------------\
+ /---------------------------------------------------------\/-----------------------------------------------------\
+  t.TglSO                       : ___________                   t.JmlUnitSis            : _______
+  t.JmlUHslSo                   : _______                       t.JmlUAdBcd             : _______
+  t.JmlUTAdBcd                  : _______                       t.JmlUKlop              : _______
+  t.SelisihKrg                  : _______                       t.NomHppSKrg            : _______________________
+  t.StokRsk                     : _______                       t.NomHppUSRsk           : _______________________     
+  t.NomHppPartRsk               : _______________________       t.DoBlmMsk              : _______
+  t.TemuanLain                  : _______                       t.MtsAntarCab           : _______
+  t.NomHppSKrgNoEv              : _______________________       t.MtrBlmKr              : _______
+  spasi                                                         t.MtrRetur              : _______
+ \---------------------------------------------------------/\-----------------------------------------------------/
+ /---------------------------------------------------------\/-----------------------------------------------------\
+  t.UHilangSTPL    : _______                                    t.NomHppUHlgSTPL        : _______________________
+  t.UHilangTSTPL   : _______                                    t.NomHppUHlgTSTPL       : _______________________
+  t.PenjManual     : _______                                    t.NomHppJManual         : _______________________                     
+  t.UnitKrmKons    : _______                                    t.NomHppUkrmKons        : _______________________
+  t.UnitEvPam      : _______                                    t.NomHppUEvPam          : _______________________
+ \---------------------------------------------------------/\-----------------------------------------------------/
+     ________
+\------------------------------------------------------------------------------------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldtgl2             PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 1
+tldjml              PROTECT                         INPUTRI 2
+
+tldsubtot           PROTECT                         INPUTRI 3
+tldhrg              PROTECT                         INPUTRI 4
+
+tldperdis           PROTECT                         INPUTRI 5
+tldtotdis           PROTECT                         INPUTRI 6
+
+tldsatbsr           PROTECT                         INPUTRI 7
+tldjmlren           PROTECT                         INPUTRI 8
+
+tldjmlpos           PROTECT                         INPUTRI 9
+tldhrgnet           PROTECT                         INPUTRI 10
+
+tldtmp1             PROTECT                         INPUTRI 11
+tldtmp2             PROTECT                         INPUTRI 12
+
+tldjml2             PROTECT                         INPUTRI 13
+tldjml3             PROTECT                         INPUTRI 14
+
+tldtotdism          PROTECT                         INPUTRI 15
+ltotaljualblmkr     PROTECT                         INPUTRI 16
+
+ltotalmotorretur    PROTECT                         INPUTRI 17
+
+tldperdism          PROTECT                         INPUTRI 18
+tldperdis1          PROTECT                         INPUTRI 19
+
+ltothlgtstpl        PROTECT                         INPUTRI 19
+lhpphlgtstpl     PROTECT                         INPUTRI 19 
+
+tldperdis2          PROTECT                         INPUTRI 20
+tldperdis3          PROTECT                         INPUTRI 21
+
+tldperdis4          PROTECT                         INPUTRI 22
+tldperdis5          PROTECT                         INPUTRI 23
+
+tldperdis6          PROTECT                         INPUTRI 24
+tldperdis7          PROTECT                         INPUTRI 25
+lgomobar            TOMBOL                          INPUTRI 26
+
+DEFAULTS(tmptranst)
+lgomobar             INIT    "GO"
+
+CALCS()
+cmotor		        brdkat == "SPM" && brdnomesin != BLANKS
+cscanppm                ppmsts == "INPG" && ppmstskrm != "KR" /*&& ppmdvs == "BARU" */
+cscanadbcd              svistr31 == "SC"
+cscanTadbcd             svistr31 == "MN"
+cklop                   svistr9 != "TEMUAN_LAIN"
+cscantmlain             svistr9 == "TEMUAN_LAIN"
+cscanrusak              svistr9 == "RUSAK"
+cscantothlg             tkdtmp1 == "HILANG_ADA_STPL"
+cscantothlgtstpl        tkdtmp1 == "HILANG_T_ADA_STPL"
+cscantotpmn             tkdtmp1 == "PENJUALAN_MANUAL"
+cscantotkrkon           tkdtmp1 == "KIRIM_KE_KONSUMEN"
+cscantotEv              tkdtmp1 == "EVENT/PAMERAN"
+cscanselev              tkdtmp1 != "EVENT/PAMERAN"
+ctotmutasi              aktlok  == "MUTASI_BLM_PROSES"
+ctotdoblminp            aktlok  == "DO_BLM_INPUT"
+ctotjualblmkr           aktlok  == "MTR_JUAL_BLM_KR"
+ctotmotorrretur         aktlok  == "MOTOR_RETUR"
+/*cadaharga       tkdjml!= BLANKS*/
+
+MAP(mscanstokbrd)
+c1   ltotal1490        DO_CALC_IF cmotor
+
+DBCALCS(dbscanstok1490)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brdstscabbrg	gv_INPG tlmcab
+        DBC_SUM_MAP     mscanstokbrd
+
+MAP(mscanstokppm)
+c1   ltotal614         DO_CALC_IF cscanppm
+
+DBCALCS(dbscanstok614)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      ppmstscabslm   lDATAPIU gv_INPG tlmcab
+        DBC_SUM_MAP     mscanstokppm
+
+MAP(mscansviso)
+c1      ltotalsvi         DO_CALC
+c1      ltotalklop        DO_CALC_IF cklop
+c1      ltotaladbcd       DO_CALC_IF cscanadbcd
+c1      ltotaltadbcd      DO_CALC_IF cscanTadbcd
+c1      ltottmlain        DO_CALC_IF cscantmlain
+c1      ltotrusak         DO_CALC_IF cscanrusak
+svidf1  lhppursk          REPLACE_IF cscanrusak
+
+DBCALCS(dbscansviso)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp   lRINCISO tlmnobuk
+        DBC_SUM_MAP     mscansviso
+
+/*DBCALCS(djointkdso)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkddatllidx   lTDKKTEMU tlmnobuk
+        DBC_SELECT      cadaharga */
+
+MAP(mscantkdso)
+c1      ltotalhilang      DO_CALC_IF cscantothlg
+c1      ltothlgtstpl      DO_CALC_IF cscantothlgtstpl
+c1      ltotalpmanual     DO_CALC_IF cscantotpmn
+c1      ltotalkrkon       DO_CALC_IF cscantotkrkon
+c1      ltotalEv          DO_CALC_IF cscantotEv
+tkdjml  lhppselkrg        REPLACE
+tkdjml  lhpphlg           REPLACE_IF cscantothlg
+tkdjml  lhpphlgtstpl      REPLACE_IF cscantothlgtstpl
+tkdjml  lhppselev         REPLACE_IF cscanselev
+tkdjml  lhpppenjmanual    REPLACE_IF cscantotpmn
+tkdjml  lhppkrkon         REPLACE_IF cscantotkrkon
+tkdjml  lhppev            REPLACE_IF cscantotEv
+
+DBCALCS(dbscantkdso)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tkddatllidx   lTDKKTEMU tlmnobuk
+        DBC_SUM_MAP     mscantkdso
+
+MAP(mscantkmso)
+tkmdf3  lhpppartrsk     REPLACE
+
+DBCALCS(dbscantkmso)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tkmdtkdstlok   lUNITRUSAK tlmnobuk gv_OPEN  
+        DBC_SUM_MAP     mscantkmso
+
+MAP(mscanaktso)
+c1     ltotalmutasi      DO_CALC_IF ctotmutasi
+c1     ltotaldoblminp    DO_CALC_IF ctotdoblminp
+c1     ltotaljualblmkr   DO_CALC_IF ctotjualblmkr  
+c1     ltotalmotorretur  DO_CALC_IF ctotmotorrretur
+
+DBCALCS(dbscanaktso)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      aktbrgtglidx   tlmnobuk lTEMULAIN lMOBAR
+        DBC_SUM_MAP     mscanaktso
+
+CALCS()
+ctotalrkp       ltotal1490 + ltotal614
+cdbscan         (dbscanstok1490 == 0 || dbscanstok1490 == 1) && (dbscanstok614 == 0 || dbscanstok614 == 1)
+ctotalso        ltotalsvi
+ctotalklop      ltotalklop
+/*cjointkdso      djointkdso == 1 */
+cscansvi        dbscansviso == 0 || dbscansviso == 1
+ctotadbcd       ltotaladbcd
+ctottadbcd      ltotaltadbcd
+ctotaltmlain    ltottmlain
+ctotalrusak     ltotrusak 
+cselkrg         tldjml - tldtotdis
+ctothlg         ltotalhilang
+ctotjmn         ltotalpmanual   
+ctotkrkon       ltotalkrkon     
+ctotev          ltotalEv
+/*ctothppselkrg   tldsatbsr * tkdjml 
+ctothppursk     tldjmlpos * tkdjml 
+ctothppselev    (tldsatbsr - tldperdis6) * tkdjml
+ctothppuhlg     tldperdism * tkdjml 
+ctothppjmn      tldperdis2 * tkdjml
+ctothppkrkons   tldperdis4 * tkdjml
+ctothppev       tldperdis6 * tkdjml*/
+ctotalmutasi    ltotalmutasi
+ctotaldoblminp  ltotaldoblminp        
+cscantkd        dbscantkdso == 0 || dbscantkdso == 1
+cscanakt        dbscanaktso == 0 || dbscanaktso == 1
+cscantkm        dbscantkmso == 0 || dbscantkmso == 1
+
+
+MAP(mupdtldrkp)
+ctotalrkp               tldjml                  DO_CALC_IF cdbscan
+tlmtgl                  tldtgl2                 REPLACE
+ctotalso                tldsubtot               DO_CALC_IF cscansvi
+ctotadbcd               tldhrg                  DO_CALC_IF cscansvi
+ctottadbcd              tldperdis               DO_CALC_IF cscansvi
+ctotalklop              tldtotdis               DO_CALC_IF cscansvi
+ctotaltmlain            tldjml2                 DO_CALC_IF cscansvi
+cselkrg                 tldsatbsr               DO_CALC   
+lhppselkrg              tldjmlren               REPLACE
+ctotalrusak             tldjmlpos               DO_CALC_IF cscansvi
+lhppursk                tldhrgnet               REPLACE
+lhpppartrsk             tldtmp1                 REPLACE_IF cscantkm
+ctothlg                 tldperdism              DO_CALC_IF cscantkd
+lhpphlg                 tldperdis1              REPLACE
+ctotjmn                 tldperdis2              DO_CALC_IF cscantkd
+lhpppenjmanual          tldperdis3              REPLACE
+ctotkrkon               tldperdis4              DO_CALC_IF cscantkd
+lhppkrkon               tldperdis5              REPLACE
+ctotev                  tldperdis6              DO_CALC_IF cscantkd
+lhppev                  tldperdis7              REPLACE
+lhppselev               tldtotdism              REPLACE
+ctotalmutasi            tldjml3                 DO_CALC_IF cscanakt
+ctotaldoblminp          tldtmp2                 DO_CALC_IF cscanakt
+ltotaljualblmkr         ltotaljualblmkr         REPLACE
+ltotalmotorretur        ltotalmotorretur        REPLACE
+DEBUG   ldum    ldum     REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tldbukbrglok   tlmnobuk  lREKAPSO
+
+SFL_MAP
+tlmnobuk    tldnobuk    REPLACE
+lREKAPSO    tldbrg      REPLACE
+
+SPCALCS(spshow)
+	DO_LIB			ap_dbclc(DNAME dupdtldrkp,DCOMMAND ADD,DFILE tld, DMAP mupdtldrkp);
+
+
+HOOKS(tmptranst)
+CLICKED	         cur_field=lgomobar	  DO_SPCALCS spshow
+

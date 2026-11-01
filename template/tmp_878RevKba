@@ -1,0 +1,218 @@
+LOCAL
+PGM_FIELDS
+l4694z2         INT2    2
+lm4694z2        STRING  15
+ltime2		TIME	4
+lsvitglfu2	DATE	4
+lnamanip2	STRING	31
+lsystimeR2	TIME	4
+ltglbesok2      DATE    4
+lINFOALAMATx	STRING	21
+lnoktp		STRING	21
+
+MAP(mjoinsvifu2)
+svitgl2         lsvitglfu2	REPLACE
+DBCALCS(djoinsvifu2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp    tkmdata tkmnobuk lFOLLOWUP
+        DBC_MAP         mjoinsvifu2
+
+DBCALCS(djoinabkkbaa2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lKUNCIABSEN svinobuk
+
+MAP(mjointldsvi)
+tldplg		lnoktp		REPLACE
+
+DBCALCS(djointldsvi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrglok svinobuk lINFOALAMATx
+	DBC_MAP		mjointldsvi
+
+CALCS()
+cbesok2          svitgl1 + 1
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------------\
+|t.NipReview     : __________                t.TlpV    t.TelpValid      t.Notif t.BeriSdmNotif       |
+|t.Nama          : _______________________   t.L       t.LonglatSesuai  t.AgenV t.AgenValid          |
+|t.jabatan       : __________                t.AgenV   t.AgenValid      t.SdmJ  t.SdmJwb             |
+|t.TglReview     : __________                t.A       t.AlsnTdkJd                                   |
+|t.JamReview     : __________                t.Kes     t.Kesimpulan                                  |
+|t.Telp          : __________                t.SdmJ    t.SdmJwb                                      |
+|t.t.AlsnTdkJd   : ________                                                                          |
+|------t-------t------t---t-------t-------------t------------t--------------t---------t-------t------|        
+|t.No  |t.TlpV |t.Foto|t.L|t.AgenV|t.A          |t.Kor       |t.KorBwh      |t.Kes    |t.Notif|t.SdmJ|
+\------.-------.------.---.---------------------.------------.--------------.---------.-------.------/
+IMAGE(tmptrans)
+|______|_______|______|___|_______|_____________|____________|______________|_________|_______|______|___|   
+
+FIELD(tmptranst)
+svistr1		PROTECT 		INPUTRI	1	/* nip */
+lnamanip2	PROTECT			INPUTRI	2	/* nama */
+svistr3		PROTECT			INPUTRI	3	/* jabatan */
+svitgl1		PROTECT	{DD-MM-YYYY}	INPUTRI	4	/* tgl */
+lsystimeR2	PROTECT			INPUTRI	5	/* Jam Review */
+svistr10	PROTECT			INPUTRI	6	/* No Telp */
+svistr5	PROTECT			INPUTRI	7	/* Alasan Tdk Jdpk */
+
+FIELD(tmptrans)
+svinourt	PROTECT				INPUTRI	101	/* 10. No Urut */
+sviyt1   	NOCHANGE			INPUTRI	11	/* 11. Telp Valid */
+sviyt2		NOCHANGE			INPUTRI	12	/* 12. Foto Sesuai */
+svistr31	NOCHANGE			INPUTRI	13	/* 13. Longlat Sesuai */
+svistr9 	NOCHANGE			INPUTRI	14	/* 14. Agen Valid */
+svistr5		NOCHANGE        		INPUTRI	15	/* 15. Alasan Tdk Jd Pk */
+sviket          TEXTAREA ALLCAPS                INPUTRI 16      /* 16. Koreksi  */
+sviket2         TEXTAREA ALLCAPS                INPUTRI 17      /* 17. Koreksi Atasan */
+svistr2		PROTECT				INPUTRI	18	/* 18. Kesimpulan */
+svitype2	PROTECT 			INPUTRI 18	/* 18. Notif ke SDM */
+svitype3	NOCHANGE			INPUTRI 19	/* 19. SDM Jawab */
+svistr1         PROTECT QPROTECT                INPUTRI 20      /* 20. Hasil */
+
+CALCS()
+csystimeR2	SYSTIME
+
+DEFAULTS(tmptrans)
+l4694z2		INIT		4694
+lm4694z2	INIT		m4694z2
+ltglbesok2	INIT		{cbesok2}
+lINFOALAMATx	INIT		INFOALAMAT
+
+sviyt1   DFALT_SCAN	BLANKS	
+				Y1	"DIANGKAT-TERHUBUNG"
+				Y2	"TIDAK DIANGKAT" 
+				T	"TDK TERHUBUNG-TDK TERDAFTAR"
+sviyt2 		DFALT_LIST	BLANKS	Y T
+svistr31	DFALT_LIST	BLANKS	Y T
+svistr9 	DFALT_LIST	BLANKS	Y T
+svitype3	DFALT_LIST	BLANKS	Y T
+svistr5	DFALT_SCAN	BLANKS
+				MINAT_BLN_DPN
+				MINAT_BLN_INI
+				MINGGU_INI
+
+CALCS()
+cdjoinsvifu2	djoinsvifu2 == 1
+cagenvT		svistr9 == "T" && svistr3 == "PICMKT"
+cbknpic		svistr3 != "PICMKT" 
+cinikba2        g_usrkode == svitblkode
+
+EDITS(tmptrans)
+t.Mandatory	sviyt1		MANDATORY
+t.Mandatory	sviyt2		MANDATORY
+t.Mandatory	svistr31	MANDATORY
+t.Mandatory	svistr9 	MANDATORY
+t.Mandatory	svistr5		MANDATORY
+t.Mandatory	sviket		MANDATORY_IF cagenvT
+t.Mandatory	sviket2		MANDATORY_IF cbknpic
+t.Mandatory	svitype3	MANDATORY_IF cinikba2
+
+t.Validate	svistr1		VALIDATE psikodidx mpsirev2 0
+
+MAP(mpsirev2)
+psikode		svistr1		REPLACE
+psinama		lnamanip2	REPLACE
+svidf1		ltime2		REPLACE
+lsvitglfu2	lsvitglfu2	REPLACE_IF cdjoinsvifu2
+
+MAP(mjam2)
+csystimeR2      svidf1          DO_CALC
+svidf1		lsystimeR2	REPLACE
+
+CALCS()
+cjkspic		svistr3 == "PICMKT"
+chasilY2        (sviyt1 == "Y1" || sviyt1 == "Y2") && svistr9 == "Y"
+chasilT2        sviyt1 == "T" || svistr9 == "T"
+csesuai2        "VALID"
+ctdksesuai2     "TDK_VALID"
+ckesimpulanY	svistr2 == "VALID"
+ckesimpulanT	svistr2 == "TDK_VALID"
+cjkkba		g_usrkode != svitblkode
+cdjoinabkkbaa2  djoinabkkbaa2 == 1 && svitype3 == "Y" && svistr3 == "PICMKT" 
+/* cdjoinabkkbab2  djoinabkkbab2 == 1 && svitype3 == "Y"  */
+ctdkV2          svistr3 == "PICMKT" && svitype2 == "Y" && svitype3 == BLANKS
+cketkbaY2       "JWB NOTIF SDM 6D 878"
+cblanksb	BLANKS	
+
+MAP(mhasilpic2)
+csesuai2        svistr2         DO_CALC_IF chasilY2
+ctdksesuai2     svistr2         DO_CALC_IF chasilT2
+
+MAP(mnotif)
+cY		svitype2	DO_CALC_IF ckesimpulanT
+cblanksb	svitype2	DO_CALC_IF ckesimpulanY
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=svistr9	DO_MAP SHOW mhasilpic2
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mnotif 
+BEFORE_INPUT	cur_field=sviket 	DO_SKIP_IF cbknpic
+BEFORE_INPUT	cur_field=sviket2	DO_SKIP_IF cjkspic
+BEFORE_INPUT	cur_field=svitype3	DO_SKIP_IF cjkkba
+AFTER_INPUT     cur_keybd=EN 		DO_MAP SHOW mjam2
+
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cinikba2
+BEFORE_INPUT    cur_field=sviyt2        DO_SKIP_IF cinikba2
+BEFORE_INPUT    cur_field=svistr31      DO_SKIP_IF cinikba2
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF cinikba2
+BEFORE_INPUT    cur_field=svistr9       DO_SKIP_IF cinikba2
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cinikba2
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cinikba2
+
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svinourt
+SFL_TARGET
+        svidatbuktyp    lreviewspk tkmnobuk
+
+MAP(mupdabkmmsls2)
+gv_CLSD         abksts          REPLACE
+
+MAP(m4694z2)
+tkmnobuk        r_string20      REPLACE
+
+MAP(mdumc2)
+DEBUG ldum	ldum		REPLACE
+
+MAP(maddabkKBA2)
+lKUNCIABSEN     abkdata         REPLACE
+svitblkode      abkkym          REPLACE
+svinobuk        abknobuk        REPLACE
+cbesok2         abktgl          DO_CALC
+cketkbaY2       abkkym2         DO_CALC
+l878            abkscr          REPLACE
+DEBUG gt_RINP   abksts          REPLACE
+
+MAP(mupdpsm)
+gv_CLSD 	psmstssup	REPLACE
+
+CALCS()
+cpicmm2		g_grpnam == "TUTUP DULU GAN" && (tkmscr == "PICM" || tkmscr == "BUM" || tkmscr == "BMM" || tkmscr == "GM")
+crevgab2a       (sviyt1 == BLANKS && (g_usrkode == svistr1 || g_grpnam == "RI" || g_grpnam == "RAS"))
+                ||
+                (sviyt1 != BLANKS && (g_usrkode == svitblkode || g_grpnam == "IT"))
+cnotelpTV	djointldsvi == 1 && sviyt1 == "T"
+
+SPCALCS(sptmprevmm2)
+        DO_LIB                  ap_dbclc(DNAME dupdtkmmm2,DCOMMAND UPDATE,DTARGET tkmbukidx svinobuk,DMAP mupdtkmrev);
+        DO_LIB_IF cpicmm2	ap_nxpst(l4694z2,lm4694z2);
+	DO_LIB_IF cnotelpTV	ap_dbclc(DNAME dupdpsm,DCOMMAND UPDATE,DTARGET psmktpidx lnoktp, DMAP mupdpsm);
+
+	DO_LIB_IF cdjoinabkkbaa2 ap_dbclc(DNAME dupdabkkbaa2,DCOMMAND UPDATE_RANGE ,DTARGET abkdatbukidx lKUNCIABSEN svinobuk,DMAP mupdabkmmsls2);
+     /* DO_LIB_IF cdjoinabkkbab2 ap_dbclc(DNAME dupdabkkbab2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gt_RINP svitblkode l878a ltglbesok2 svinobuk,DMAP mupdabkmmsls2); */
+
+        DO_LIB_IF cdjoinabkreva	ap_dbclc(DNAME dupdabka2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG svistr1 l878a svitgl1 svinobuk,DMAP mupdabkmmsls2);
+	DO_LIB_IF cdjoinabkrevb	ap_dbclc(DNAME dupdabkb2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gt_RINP svistr1 l878a svitgl1 svinobuk,DMAP mupdabkmmsls2);
+	DO_LIB			ap_dbclc(DNAME dmapmapc2,DCOMMAND MAPMAP,DMAP mdumc2);
+	DO_LIB_IF ctdkV2        ap_dbclc(DNAME daddabkKBA2, DCOMMAND ADD, DFILE abk, DMAP maddabkKBA2);
+
+POSTING(tmptrans)
+PST_UPDCMD      sptmprevmm2
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	crevgab2a
+	PMT_DEL_COND	c0

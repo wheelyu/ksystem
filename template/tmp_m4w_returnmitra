@@ -1,0 +1,106 @@
+LOCAL
+PGM_FIELDS
+lreturnmitra		STRING		11
+ltes			STRING		21
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+ /------------------------------------------------------------------------------------------------\
+                                   t.Returnberkasmitra
+ \------------------------------------------------------------------------------------------------/
+ /------------------------------------------------------------------------------------------------\
+  t.Approval         : ___                                                      t.Tgl ___________
+  t.Nip              : __________________
+  t.Nama             : _________________________________
+  t.Faktorreturn     : ___________________
+  t.Ket              : ___________________________________________________ 
+ \------------------------------------------------------------------------------------------------/
+\--------------------------------------------------------------------------------------------------/
+
+
+IMAGE(tmptrans)
+
+    
+FIELD(tmptranst)
+aktdk			NOCHANGE		INPUTRI 1
+akttgl			PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 2
+aktcrtusr		PROTECT SCROLL		INPUTRI 4
+ltes			PROTECT SCROLL		INPUTRI 5
+aktlok			NOCHANGE		INPUTRI 6
+aktket			ALLCAPS SCROLL		INPUTRI 7
+
+
+DEFAULTS(tmptranst)
+lreturnmitra			INIT		"RETURNMIT"
+aktdk			DFALT_SCAN		BLANKS
+						Y
+						T
+aktlok			DFALT_SCAN		BLANKS
+						FOTO
+						INPUTAN
+aktcrtusr		INIT			{g_usrkode}
+aktcrtusr		INIT_UPDATE		{g_usrkode}
+
+ltes			INIT			{g_usrkode}
+ltes			INIT_UPDATE		{g_usrkode}
+akttgl			INIT			{g_tgltrn}
+
+EDITS(tmptranst)
+e.MandatoryYT		aktdk	MANDATORY
+e.MandatoryKet		aktket	MANDATORY
+
+
+CALCS()
+cpilihY			aktdk == "Y"
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=aktlok		DO_SKIP_IF cpilihY
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	aktkodtypidx   psmkode lreturnmitra
+
+SFL_MAP	
+lreturnmitra		aktdata			REPLACE
+psmkode			aktkode			REPLACE
+
+
+
+
+
+CALCS()
+crtn0			0
+cstscls2		psmstssup == "OPE3"
+caktdkY			aktdk == "Y"
+caktdkT			aktdk == "T"
+cCLSY			"OPEY"
+cCLST			"OPET"
+
+MAP(mupdpsmretmit)
+/*cCLSY			psmsts		DO_CALC_IF caktdkY */
+cCLSY			psmstssup	DO_CALC_IF caktdkY
+
+/* cCLST			psmsts		DO_CALC_IF caktdkT			*/
+cCLST			psmstssup	DO_CALC_IF caktdkT			
+
+
+SPCALCS(spaddretmit)
+	DO_LIB 	ap_dbclc(DNAME dupdpsmretmi,DCOMMAND UPDATE,DTARGET psmprmidx psmprm,DMAP mupdpsmretmit);
+
+SPCALCS(spupdretmit)
+	DO_LIB 	ap_dbclc(DNAME dupdpsmretmi2,DCOMMAND UPDATE,DTARGET psmprmidx psmprm,DMAP mupdpsmretmit);
+
+POSTING(tmptrans)
+   	PST_ADDCMD  spaddretmit
+	PST_UPDCMD	spupdretmit
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  	cstscls2
+  PMT_UPDALL_COND 	cstscls2
+  PMT_DEL_COND  	crtn0
+

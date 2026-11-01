@@ -1,0 +1,405 @@
+LOCAL
+PGM_FIELDS
+lke		INT2	2
+ljmlspk		INT2	2
+lrumah		STRING	31
+lpekerjaan	STRING	31
+lrmdgabminat	STRING	61
+lhasiltext	STRING	21
+ldataSPK	STRING	11
+lsalesspk	STRING	21
+lusiamotor	STRING	21
+lthnini		DFLOAT	8
+ltahunmtr	DFLOAT	8
+lthnhsl		DFLOAT	8
+ltglakhblx	DATE    4
+ltgl1thnx	DATE    4
+lKAPANMINAT	STRING	21
+l3x		INT2	2
+lSPKx		STRING	21
+lpjgtelp3       INT2    2
+ltgmHK_2	STRING	11
+ltglplus_2	DATE	4
+
+MAP(mjoinrmdminat)
+rmdtext1	lhasiltext	REPLACE
+
+DBCALCS(djoinrmdminat)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx	gv_INPG lrmdgabminat
+	DBC_MAP		mjoinrmdminat
+
+MAP(mjointgm)
+tgmke		lke		REPLACE
+
+DBCALCS(djointgm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx	gv_TGL spktglft
+	DBC_MAP		mjointgm
+
+MAP(mjointgmHK_2)
+tgmtype         ltgmHK_2          REPLACE
+
+DBCALCS(djointgmHK_2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tgmdattglidx    gv_TGL ltglplus_2
+        DBC_MAP         mjointgmHK_2
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|-------------------------------------|
+|            __                       |
+|t.BeriReff  ___                      |
+|t.Type      ___________________      |
+|t.Nama      ____________________     |
+|t.Usia      ___________________      |
+|t.Telp      ____________________     |
+|t.Kebutuhan ___________________      |
+|t.Pekerjaan ______  ____________     |
+|t.StsRumah  ______  ____________     |
+|t.PnyMtr    ______  ___________      |
+|t.Alamat    ____________________     |
+|t.Prop      ___________________      |
+|t.Kota      ___________________      |
+|t.Kec       ___________________      |
+|t.Kel       ___________________      |
+|t.KpnMinat  ___________________      |
+|t.TglFU     ____________________     |
+|t.HasilReff ____________________     |
+|                                     |
+|-------------------------------------|
+\-------------------------------------/
+__
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spknobuk	PROTECT UNSEEN                  INPUTRI	2   /* No Buk */
+spkkode2	ALLCAPS				INPUTRI	3
+spkkat  	NOCHANGE SCROLL                 INPUTRI	4   /* Nama */
+spknama 	ALLCAPS SCROLL                  INPUTRI	5   /* Nama */
+spkhasil	NOCHANGE 			INPUTRI	6   /* Usia */	
+spkkat2 	DIGITS SCROLL                   INPUTRI	7   /* Telp */
+spkkat3		ALLCAPS SCROLL			INPUTRI	8   /* Kebutuhan */ 
+spkkat4		ALLCAPS	SCROLL			INPUTRI	9   /* Pekerjaan */
+lpekerjaan	PROTECT				INPUTRI	10  /* Pekerjaan */
+spkkat5		ALLCAPS	SCROLL			INPUTRI	11  /* Rumah */
+lrumah		PROTECT	SCROLL			INPUTRI	12  /* Ket Rumah */
+spkhasil2	NOCHANGE			INPUTRI	13  /* Ada motor */
+spkkat6		ALLCAPS  			INPUTRI	14  /* Tahun motor */
+spkket  	ALLCAPS SCROLL                  INPUTRI	15  /* Alamat */
+spkkat7 	ALLCAPS SCROLL                  INPUTRI	16  /* Prop */
+spkkat8 	ALLCAPS SCROLL                  INPUTRI	17  /* kota */
+spkkat9 	ALLCAPS SCROLL                  INPUTRI	18  /* Kecamatan */
+spkkat10	ALLCAPS SCROLL                  INPUTRI	19  /* Kelurahan */
+spkkode		ALLCAPS				INPUTRI	20  /* Kapan Minat */
+spktglft	NONE NOLIMIT {DD-MM-YYYY}       INPUTRI	21  /* Tanggal fu*/
+spkket2		PROTECT				INPUTRI	22  /* Hasil Refrensi */ 
+spkdata		PROTECT UNSEEN                  INPUTRI	23  /* ket data */
+
+CALCS()
+ctgllebihx      (spktglft > g_tgltrn && spkkode2 == "Y") || (spkkode2 == "T") || (spkkode2 == "Y" && spkkode == "TIDAK_MINAT")
+ctglblninix     (spkkode == "BULAN_DEPAN" && spktglft > tkmtgl && spktglft <= g_tgltrn + 30) || (spkkode != "BULAN_DEPAN") || g_usrkode != BLANKS
+ctglblnlainx    (spkkode == "DUA_BLN_LAGI" && spktglft > ltglakhblx && spktglft <= g_tgltrn +60) || (spkkode != "DUA_BLN_LAGI") || g_usrkode != BLANKS
+ctglminggulain  (spkkode == "BULAN_INI" && spktglft > g_tgltrn && spktglft <= ltglakhblx) || (spkkode != "BULAN_INI")
+
+cminggu		(djointgm == 1 && lke != BLANKS && spkkode2 == "Y") || spkkode2 == "T" || (spkkode2 == "Y" && spkkode=="TIDAK_MINAT")
+crmdgabminat	"SPKMINAT" + STRIP(spkkat4) + STRIP(spkkat5) + STRIP(spkkode) + STRIP(spkhasil2) + STRIP(lusiamotor) + STRIP(spkhasil) + STRIP(spkkat3)
+cjoinrmdgab1	lrmdgabminat != BLANKS && djoinrmdminat == 1
+cisiYA		spkhasil2 == "YA"
+cthnini		THBLS_YYYY(g_tgltrn)
+cselthn		lthnini - ltahunmtr
+clwtthn		(ltahunmtr <= lthnini) || spkhasil2 == "TIDAK"
+cdanax		ltahunmtr != BLANKS && spkkat3 == "BUTUH_DANA" && lthnhsl <=10
+cmotorx         ltahunmtr != BLANKS && spkkat3 == "MOTOR_BARU" && lthnhsl >=2
+c2thnx          ">=2TAHUN"
+c10thnx         "<=10TAHUN"
+cblnplus1x	DO_LIB  ap_akhbl(g_tgltrn,&ltglakhblx);
+cblnplus3x	DO_LIB  ap_tambl(ltglakhblx,l3x,&ltgl1thnx);
+cpilYA		spkhasil2 == "YA" && spkkode2 == "Y"
+cpilTDK		spkhasil2 == "TIDAK"
+ctipereff	tkmkode == "FU_REFF" || tkmkode == "FU_GCI"
+cpanjangtlp8    DO_LIB ap_strln(spkkat2,&lpjgtelp3);
+cpjgtlp3        lpjgtelp3 == 10 || lpjgtelp3==11 || lpjgtelp3==12 || lpjgtelp3==13 || lpjgtelp3==14 || spkkode2 == "T"
+cNoReff		spkkode2 == "T"
+cAdaReff	spkkode2 == "Y"
+cAdaReffMnt	spkkode2 == "Y"	&& spkkode !="TIDAK_MINAT"
+cTglHarusSama_3 ((tkmkode == "ONLINE" && tkmtgl == g_tgltrn) || tkmkode != "ONLINE")
+
+
+DEFAULT(tmptranst)
+spkkat          DFALT_SCAN_BLANKS
+                                SAUDARA  ""
+                                KELUARGA ""
+                                TEMAN    ""
+spkhasil2	DFALT_SCAN_BLANKS
+                                YA    ""
+                                TIDAK ""
+spkhasil	DFALT_SCAN_BLANKS
+				<17TH
+                                17-21TH
+                                21-55TH
+                                >55TH
+spkkat3		DFALT_SCAN_BLANKS
+                                MOTOR_BARU  "MOTOR BARU"
+                                BUTUH_DANA  "BUTUH DANA"
+spkkode2	DFALT_SCAN_BLANKS Y 
+				  T 
+
+
+lSPKx		INIT		SPK
+lKAPANMINAT	INIT		KAPANMINAT
+ldataSPK	INIT		SPK
+lsalesspk	INIT		{tkmplg}
+l3x		INIT		3
+lthnini		INIT		{cthnini}
+lversi		INIT		2709221811
+
+EDITS(tmptranst)
+e.Mandatory		spkkode2	MANDATORY
+e.Mandatory             spkkat          MANDATORY_IF cAdaReff
+e.Mandatory             spknama         MANDATORY_IF cAdaReff
+e.Mandatory             spkkat2         MANDATORY_IF cAdaReff
+e.Mandatory             spkket          MANDATORY_IF cAdaReff
+e.Mandatory             spkkat7      	MANDATORY_IF cAdaReff
+e.Mandatory             spkkat8      	MANDATORY_IF cAdaReff
+e.Mandatory             spkkat9         MANDATORY_IF cAdaReff
+e.Mandatory             spkkat10        MANDATORY_IF cAdaReff
+e.Mandatory             spktglft        MANDATORY_IF cAdaReffMnt
+e.Mandatory		spkhasil	MANDATORY_IF cAdaReff
+e.Mandatory		spkkat3		MANDATORY_IF cAdaReff
+e.Mandatory		spkkat4		MANDATORY_IF cAdaReff
+e.Mandatory		spkkat5		MANDATORY_IF cAdaReff
+e.Mandatory		spkhasil2	MANDATORY_IF cAdaReff
+e.Mandatory		spkkat6		MANDATORY_IF cpilYA
+e.Mandatory		spkkode		MANDATORY_IF cAdaReff
+e.validatePropinsi1     spkkat7        	VALIDATE dtmdtkodidx  mdtm_tmp sdtm {Pgv_dtkota}
+e.validateKota1         spkkat8       	VALIDATE tbldtdtmkod mtbl_tmp stbl {Pgv_dtkota} {Pspkkat7}
+e.validateKec1          spkkat9        	VALIDATE tbddatkodidx mtbd_tmp stbd {Pgv_dtkota} {Pspkkat7} {Pspkkat8}
+e.validateKel1          spkkat10        VALIDATE tbtdattypkod mtbt_tmp stbt {Pgv_dtkota} {Pgv_dtkota21} {Pspkkat7} {Pspkkat8} {Pspkkat9}
+e.validate              spkkat4         VALIDATE tbldtdtmkod mtbl1_1 stbl  {Pgv_dttabel} {Pgv_pekerjaan21}
+e.validate              spkkat5         VALIDATE tbddatkodidx mtbd1_1 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah}
+e.validate		spkkode		VALIDATE tbddatkodidx mtbd1_a stbd {Pgv_dttabel} {PlSPKx} {PlKAPANMINAT}
+e.Validate              spkkat6		VALIDATE_IF cisiYA tbddatkodidx mtbdth1 stbdon {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+
+MAP(mtbl1_1)
+tblkode		spkkat4		REPLACE
+tblket		lpekerjaan	REPLACE
+
+MAP(mtbd1_1)
+tbdkode		spkkat5		REPLACE
+tbdket		lrumah		REPLACE
+
+MAP(mtbt_tmp)
+tbtkode         spkkat10        REPLACE
+tbtkode2	spkkode3	REPLACE
+
+MAP(mtbd_tmp)
+tbdkode         spkkat9         REPLACE
+
+MAP(mtbl_tmp)
+tblkode         spkkat8		REPLACE
+
+MAP(mdtm_tmp)
+dtmkode         spkkat7		REPLACE
+
+MAP(mtbd1_a)
+tbdkode		spkkode		REPLACE
+
+MAP(mtbdth1)
+tbdkode		spkkat6		REPLACE
+spkkat6		ltahunmtr	REPLACE
+
+MAP(mkodermd)
+cblanks		lrmdgabminat	DO_CALC
+
+cblanks		spkket2		DO_CALC
+
+cselthn		lthnhsl		DO_CALC
+c2thnx          lusiamotor	DO_CALC_IF cmotorx
+c10thnx         lusiamotor	DO_CALC_IF cdanax
+crmdgabminat	lrmdgabminat	DO_CALC
+lhasiltext	spkket2		REPLACE_IF cjoinrmdgab1
+
+MAP(mtgl)
+cblnplus1x	ltglakhblx	DO_CALC
+cblnplus3x	ltgl1thnx	DO_CALC
+
+MAP(mtahun)
+cblanks		spkkat6		DO_CALC_IF cpilTDK
+
+MAP(mpanjangtlp8)
+cpanjangtlp8    lpjgtelp3       DO_CALC
+
+MAP(mscantkmtgl)
+gv_int1		ljmlspk		REPLACE_IF ctipereff
+
+DBCALCS(dbscantkmtgl)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tkmdatplgtgl	ldataSPK lsalesspk spktglft
+	DBC_SUM_MAP	mscantkmtgl
+
+DBCALCS(djointldspkreff)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbbmidx	tkmnobuk spkkat2
+
+CALCS()
+csdh5		(dbscantkmtgl != 0 || dbscantkmtgl == 0) && ljmlspk < 4
+ctelpsama3a	djointldspkreff == 0
+ctglblndpn_2 	g_tgltrn + 30
+ctglblndpn1_2	g_tgltrn + 31
+ctgl2blnlg_2 	g_tgltrn + 60
+ctgl2blnlg1_2	g_tgltrn + 61
+cfublndpn_2  	spkkode2 == "Y" && spkkode == "BULAN_DEPAN"  
+cfu2blnlg_2  	spkkode2 == "Y" && spkkode == "DUA_BLN_LAGI"
+cfublndpn1_2 	spkkode2 == "Y" && spkkode == "BULAN_DEPAN" && djointgmHK_2 == 1 && ltgmHK_2 == "HL"
+cfu2blnlg1_2 	spkkode2 == "Y" && spkkode == "DUA_BLN_LAGI" && djointgmHK_2 == 1 && ltgmHK_2 == "HL"
+cgaminat	spkkode =="TIDAK_MINAT"
+
+MAP(mtanggalfu2)
+cblanks		spkkat         	DO_CALC_IF cNoReff                                                  
+cblanks	       	spknama        	DO_CALC_IF cNoReff 
+cblanks        	spkhasil       	DO_CALC_IF cNoReff 
+cblanks        	spkkat2        	DO_CALC_IF cNoReff
+cblanks		spkkat3        	DO_CALC_IF cNoReff
+cblanks        	spkkat4        	DO_CALC_IF cNoReff
+cblanks		spkkat5        	DO_CALC_IF cNoReff
+cblanks        	spkhasil2       DO_CALC_IF cNoReff
+cblanks        	spkkat6	       	DO_CALC_IF cNoReff
+cblanks        	spkket          DO_CALC_IF cNoReff
+cblanks        	spkkat7         DO_CALC_IF cNoReff
+cblanks        	spkkat8         DO_CALC_IF cNoReff
+cblanks        	spkkat9         DO_CALC_IF cNoReff
+cblanks        	spkkat10        DO_CALC_IF cNoReff
+cblanks        	spkkode         DO_CALC_IF cNoReff
+cblanks         ltglplus_2	DO_CALC
+cblanks        	spktglft        DO_CALC_IF cgaminat
+
+ctglblndpn_2	ltglplus_2	DO_CALC_IF cfublndpn_2
+ctgl2blnlg_2	ltglplus_2	DO_CALC_IF cfu2blnlg_2
+
+ctglblndpn_2	spktglft	DO_CALC_IF cfublndpn_2
+ctgl2blnlg_2	spktglft	DO_CALC_IF cfu2blnlg_2
+
+ctglblndpn1_2	spktglft	DO_CALC_IF cfublndpn1_2
+ctgl2blnlg1_2	spktglft	DO_CALC_IF cfu2blnlg1_2
+
+MAP(mblanktglfu)
+cblanks		spktglft	DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkkat6	DO_SKIP_IF cpilTDK
+BEFORE_INPUT	cur_field=spkkat	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat3	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat4 	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spknama	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkhasil	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat2	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat5	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkhasil2	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat6	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkket	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat7	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat8	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat9	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkat10	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spkkode	DO_SKIP_IF cNoReff
+BEFORE_INPUT	cur_field=spktglft	DO_SKIP_IF cNoReff
+
+AFTER_INPUT	cur_field=spkkode2	DO_MAP SHOW mblanktglfu
+AFTER_INPUT	cur_field=spktglft	DO_MAP SHOW IF cjoinrmdgab1 mkodermd
+AFTER_INPUT	cur_field=spktglft	DO_MAP SHOW mtgl
+AFTER_INPUT 	cur_field=spkhasil2	DO_MAP SHOW mtahun
+AFTER_INPUT	cur_field=spkkode       DO_MAP SHOW mtanggalfu2
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW mtanggalfu2
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW mkodermd
+AFTER_INPUT	cur_field=spkkat2       DO_LIB ap_amstr(spkkat2,ln1,ln4,&l4digitnohp);
+AFTER_INPUT    	cur_field=spkkat2       DO_MAP SHOW mpanjangtlp8
+AFTER_INPUT     cur_field=spkkat2       DO_MAP SHOW
+                IF cpjgtlp3 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PanjangNoTelpHarusBenar
+AFTER_INPUT	cur_field=spkkat2       DO_MAP SHOW
+                IF ctelpsama3a  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TdkBlhNoTelpSamaDgnInfoMitra
+AFTER_INPUT	cur_field=spkkat2       DO_MAP  SHOW
+                IF cnovalid     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NomorTeleponTidakValid
+		t.SilahkanPeriksaKembali
+AFTER_INPUT	cur_field=spktglft	DO_SCAN dbscantkmtgl
+AFTER_INPUT	cur_field=spktglft	DO_MAP SHOW
+		IF csdh5	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Max1tgl2SpkReff
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF csdh5	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Max1tgl2SpkReff
+AFTER_INPUT	cur_field=spktglft      DO_MAP SHOW
+                IF cminggu   mdum
+                ELSE HKCURSOR STAY
+		HKMSG Tidak Boleh Hari Libur
+AFTER_INPUT	cur_field=spktglft      DO_MAP SHOW
+                IF ctgllebihx   mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHrsLbhDrHariIni
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctgllebihx	mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglHrsLbhDrHariIni
+AFTER_INPUT	cur_field=spktglft      DO_MAP SHOW
+                IF ctglblninix	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnIniMaxAkhBulan
+AFTER_INPUT     cur_field=spktglft      DO_MAP SHOW
+                IF ctglblnlainx	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnDpnMax3Bulan
+AFTER_INPUT     cur_field=spktglft      DO_MAP SHOW
+                IF ctglminggulain	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBulanIniMaxAkhBulan
+AFTER_INPUT	cur_field=spkkat6	 DO_MAP SHOW
+                IF clwtthn	         mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ThnMtrLebihDariThnIni
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW
+                IF ctglblninix	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnIniMaxAkhBulan
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ctglblnlainx	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MinatBlnLainMax3Bulan
+AFTER_INPUT	cur_keybd=EN    DO_MAP SHOW
+                IF clwtthn               mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ThnMtrLebihDariThnIni
+AFTER_INPUT	cur_field=spkkode2    DO_MAP SHOW
+                IF cTglHarusSama_3    mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHarusSama
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW
+                IF cTglHarusSama_3  	mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglHarusSama
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbknudgse
+SFL_TARGET	spkdatbuktyp   lDTREFF tkmnobuk lDTREFF
+SFL_MAP
+tkmnobuk        spknobuk        REPLACE
+lDTREFF		spkdata		REPLACE
+lDTREFF		spktype		REPLACE
+tkmtgl		spktglft	REPLACE
+
+CALCS()
+cupdtransx      tkmsts=="OPEN" && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    c0
+	PMT_UPDALL_COND cupdtransx
+	PMT_DEL_COND    c0

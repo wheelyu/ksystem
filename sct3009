@@ -1,0 +1,54 @@
+SCREEN 3009 QUERY_TYPE s.WarnaBhs       
+SCR_FILE ket
+SCR_LOGFLD ketnobuk 
+
+LOCAL
+PGM_FIELDS
+   ldum		    STRING		  4
+
+/* ------------------ djoinket --------------*/
+DBCALCS(djoinket)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	ketdatbukkod   gv_warnabhs gv_warnabhs21 ketkode
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------\
+|/------------------------------------------------------------------------------------------\|
+||i.Kode : _______________                                                                  ||
+||i.ScriptAwl:                                                                              ||
+||__________________________________________________________________________________________||
+||i.ScriptAkh:                                                                              ||
+||__________________________________________________                                        ||
+|\------------------------------------------------------------------------------------------/|
+ ____________
+\--------------------------------------------------------------------------------------------/
+
+FIELD(master)
+ketkode              ALLCAPS              INPUTRI     1
+ketisi               NONE                 INPUTRI     2
+ketisi2              NONE                 INPUTRI     3
+ketdata              PROTECT QPROTECT     INPUTRI     3
+
+DEFAULTS(master)
+ketdata		INIT		{gv_warnabhs}
+ketdata		INIT_QUERY  	{gv_warnabhs}
+ketnobuk	INIT		{gv_warnabhs}
+
+EDITS(master)
+e.Mandatory ketkode MANDATORY
+e.Mandatory ketisi MANDATORY
+e.Mandatory ketisi2 MANDATORY
+
+CALCS()
+cok	(g_curcmd == 1 && djoinket == 0) || (g_curcmd ==2 && (djoinket == 0 || ketkode == ~ketkode))
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+HOOKS(master)
+AFTER_INPUT	cur_field=ketkode	DO_MAP SHOW
+		IF cok mdum
+		ELSE HKCURSOR	STAY
+		HKMSG Kode ini sudah ada
+
+END_SCREEN

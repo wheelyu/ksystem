@@ -1,0 +1,72 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|t.uplfotosdmdanhr                                           |                          
+|/--s.UPLOAD----------------------\/------------------------\|
+||                                ||t.Tanggal : __________  ||
+||                                ||t.NipHRD  : __________  ||
+||                                ||t.Jabatan : __________  ||
+||                                ||t.VERHR   : __________  ||
+||                                ||t.UplOK   : ____        ||
+||                                ||t.Ket     : __________  ||
+||                                ||                 	    ||
+||                                ||                        ||
+||                   		  ||		            ||
+||			          ||		            ||
+||                                ||                        ||
+|\--------------------------------/\------------------------/|
+\------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1			PROTECT {DD-MM-YYYY}    INPUTRI	1
+psdstr3			PROTECT			        INPUTRI 2
+ljabatanhr      PROTECT                 INPUTRI 3
+psdstr1			NOCHANGE			    INPUTRI 4
+psdstr4         PROTECT                 INPUTRI 5
+psdket			TEXTAREA			    INPUTRI 6
+
+
+DEFAULTS(tmptranst)
+psdstr1         DFALT_SCAN_BLANKS	YA
+                                    TIDAK
+psdstr3         INIT_UPDATE         {g_usrkode}
+
+CALCS()
+ctacchrd      psdstr1 == "TIDAK"
+cbolehverhr   	g_usrkode == amtstr3_1 ||  g_grpnam == "HRDHEAD" || g_grpnam == "HRDREC" || g_grpnam == "HRDRECAREA" || g_usrkode == "2581460" || g_usrkode=="2221048" || g_usrkode=="1604848" || 
+		g_usrkode==hrmnip2 || g_usrkode=="hrmdvs2"
+cOK		      "OK"
+
+EDITS(tmptranst)
+t.ValidatePsi psdstr3 VALIDATE psikodidx mpsiverhr 0
+t.IsiKeteranganTACC psdket  MANDATORY_IF ctacchrd
+
+MAP(mpsiverhr)
+psikode         psdstr3         REPLACE
+psijabatan      ljabatanhr        REPLACE
+
+MAP(mupdpsdhrd)
+g_tgltrn	psdtgl1		REPLACE
+cOK  		psdstr4		DO_CALC
+g_usrkode	psdstr3		REPLACE
+
+DBCALCS(dupdpsdhrd)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psdprmidx	psdprm
+	DBC_MAP		mupdpsdhrd
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPLFLD  lHR3031  hrmnobuk
+SFL_UPLFLD_DBCALCS dupdpsdhrd
+SFL_UPL_DIRFLD hrmdvs
+SFL_COND        cbolehverhr
+SFL_TARGET
+	psddatpsmkod  lHR3031 hrmnobuk lHR3031_21
+
+
+SFL_MAP
+lHR3031    		    psddata		REPLACE
+lHR3031_21   		psdkode		REPLACE
+hrmnobuk  		    psdpsmkode	REPLACE

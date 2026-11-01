@@ -1,0 +1,56 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoResi  : ____________       __||
+||t.Berat   : _________.__ t.Kg    ||
+||t.TypByr  : ___________          ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tlmplg          ALLCAPS         INPUTRI 1
+tlmjmlctk       PROTECT         INPUTRI 2
+tlmperdisd      NUMERIC         INPUTRI 3
+tlmkode         ALLCAPS         INPUTRI 4
+
+CALCS()
+cubah           tlmsts != "OPEN" && tlmjmlctk < 2
+cbknsemarang    g_grpnam != "RI" && g_grpnam != "FINSUB" && g_grpnam != "FINARSIP" && g_grpnam != "FINARSIPCO" && g_grpnam != "FINBPKB" && g_grpnam != "FINBPKBCO"
+cnilubh         tlmjmlctk + 1
+cblhmsk         tlmsts != "OPEN" && tlmsts != "RINP"
+
+DEFAULTS(tmptranst)
+tlmkode         DFALT_LIST              TUNAI
+                                        SINGLE_BILLING
+
+MAP(mupdnilubh)
+cnilubh         tlmjmlctk       DO_CALC_IF cubah
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tlmperdisd    DO_SKIP_IF cbknsemarang
+BEFORE_INPUT    cur_field=tlmkode       DO_SKIP_IF cbknsemarang
+AFTER_INPUT     cur_field=tlmplg        DO_MAP SHOW mpanjangresi
+AFTER_INPUT     cur_field=tlmplg        DO_MAP SHOW
+                IF cpjgresi mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Resi Min 6 Digit & Max 13 Digit
+AFTER_INPUT    cur_field=tlmplg        DO_MAP SHOW maturanresi
+AFTER_INPUT    cur_keybd=EN            DO_MAP SHOW mupdnilubh
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cblhmsk
+SFL_SHOW_NEXT
+SFL_TARGET tlmbukidx tlmnobuk
+
+
+SPCALCS(spubnoresi)
+DO_LIB_IF cubhresi ap_dbclc(DNAME daddakthis862ubhresi, DCOMMAND ADD,DFILE akt,DMAP maddakthis862ubhresi);
+
+POSTING(tmptrans)
+PST_UPDCMD spubnoresi
+

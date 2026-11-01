@@ -1,0 +1,340 @@
+SCREEN 101 QUERY_TYPE s.JurnalMemorial
+SCR_TGLTRN_PASS_OK 
+SCR_FILE bkm
+SCR_JRNFLD bkmnobuk bkmtgl
+SCR_LOGFLD bkmnobuk 
+SCR_NXT_POSTING 4203
+SCR_NXT_MAP mnext
+SCR_NXT_COND cnxtOK
+SCR_GRPMENU s.MenuAcc
+
+MAP(mnext)
+bkmnobuk    	r_string1     REPLACE
+bkmtgl    	r_date1       REPLACE
+
+LOCAL
+PGM_FIELDS
+lthbl           STRING          5
+lno    		INT2   		2
+lurt    	INT2   		2
+lbkmnobuk   	STRING		{g_len_xl}
+lbkmtgl  	DATE		4
+ltomdet_d    	STRING		30
+lkodebukti		STRING		{g_len_xl}
+
+CALCS()
+cDPTT	bkdtype == "D" && bkdnobbm == "133.00.2001"
+cKPTT	bkdtype == "K" && bkdnobbm == "133.00.2001"
+cDnoPTT	bkdtype == "D" && bkdnobbm != "133.00.2001"
+cKnoPTT	bkdtype == "K" && bkdnobbm != "133.00.2001"
+
+DBCALCS(djoinbkdDPTT)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	bkdbukurtidx	bkmnobuk
+	DBC_SELECT	cDPTT
+
+DBCALCS(djoinbkdKPTT)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	bkdbukurtidx	bkmnobuk
+	DBC_SELECT	cKPTT
+
+DBCALCS(dscanbkdD)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	bkdbukurtidx	bkmnobuk
+	DBC_SELECT	cDnoPTT
+	DBC_SUM_FIELD	bkdjml
+
+DBCALCS(dscanbkdK)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	bkdbukurtidx	bkmnobuk
+	DBC_SELECT	cKnoPTT
+	DBC_SUM_FIELD	bkdjml
+
+CALCS()
+cnxtOK 		bkmsts =="OPEN" && 
+		(
+		(djoinbkdDPTT == 0 && djoinbkdKPTT == 0 && bkmjmld == bkmjmlk) ||
+		(djoinbkdDPTT == 1 && djoinbkdKPTT == 0 && dscanbkdD == bkmjmlk) ||
+		(djoinbkdDPTT == 0 && djoinbkdKPTT == 1 && bkmjmld == dscanbkdK) ||
+		(djoinbkdDPTT == 1 && djoinbkdKPTT == 1 && dscanbkdD == dscanbkdK)
+		)
+
+/* ------------------ djoinbkdu --------------*/
+MAP(mjoinbkdu)
+bkdurt    lurt    REPLACE
+
+DBCALCS(djoinbkdu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET      bkdbukurtidx   bkmnobuk	
+        DBC_MAP         mjoinbkdu
+
+CALCS(master)
+cgsglbisdvs1	g_sglbisdvs == 1 && g_sglcab == 1
+cgsglcabbisdvs1	g_sglcabbisdvs == 1 
+cgsglcab1	g_sglcab == 1 
+
+
+IMAGE(master) 
+/------------------------------------------------------------------------------------------------------\
+| /--------------------------------------------------------\ /-------------------\ /-----------------\ |
+| |i.Tgk : __________     i.NoBuk   : ____________________ | |i.Sts: __________  | |i.Cab :_________ | | 
+| |i.Ket     : ___________________________________________ | |i.Bis  :______     | |i.Dvs :_________ | |
+   i.Nobatal : ____________________
+| \--------------------------------------------------------/ \-------------------/ \-----------------/ |
+|   ___________________                      ____                                                      |
+|                                                                                                      |
+|                                                                                                      |
+|                                                                                                      |
+|                                                                                                      |
+| /-----------------------------------------------\ /------------------------------------------------\ |
+| |          i.TotDeb                             | |                 i.TotKre                       | |
+| | ________________________________________._____| | ________________________________________._____ | |
+| |                                               | |                                                | |
+| \-----------------------------------------------/ \------------------------------------------------/ |
+\------------------------------------------------------------------------------------------------------/
+
+FIELDS(master)
+   bkmtgl           NOCHANGE {DD-MM-YY}   INPUTRI             1
+   bkmnobuk         ALLCAPS           INPUTRI          4 
+   bkmsts           PROTECT           NONE             2   /* Kredit*/
+   bkmcab           ALLCAPS           INPUTRI                4   /* Dvs */
+
+   bkmket           ALLCAPS SCROLL    INPUTRI          6 
+   bkmbisnis        PROTECT           NONE                6   /* Kredit*/
+   bkmdvs           ALLCAPS           INPUTRI                   5   /* Dvs */
+   bkmnobs	    ALLCAPS SCROLL	INPUTRI 	7
+   ltomdet_d  	    TOMBOL	      INPUTRI	        16  /* Tombol Detil d*/
+   bkmdata          PROTECT QPROTECT  UNSEEN  	NONE    17 
+
+   bkmjmld          PROTECT           BIG              13    /* Debet */
+   bkmjmlk          PROTECT           BIG              14   /* Kredit*/
+
+DEFAULTS(master)
+ltomdet_d    INIT   	     "1d.Isi Rek.Yg Di Jurnal"
+bkmscr       INIT            {g_scrnumstr}
+bkmdata      INIT            JM
+bkmdata      INIT_QUERY      JM
+lno          INIT             3
+lno          INIT_UPDATE      3
+bkmsts       INIT            OPEN
+bkmtgl       INIT            {g_tgltrn}
+bkmtgl       INIT_UPDATE     {g_tgltrn}
+lbkmnobuk    INIT_UPDATE     {bkmnobuk}
+lbkmtgl      INIT_UPDATE     {bkmtgl}
+IF cgsglbisdvs1 bkmdvs INIT  {g_grpbisdvs}
+IF cgsglcab1 bkmcab    INIT  {g_grpcab}
+
+EDITS(master)
+Tombol d tidak ltomdet_d SHOW_SFL trans
+No. Mutasi harus diisi        bkmnobuk  MANDATORY
+Tanggal Mutasi harus diisi    bkmtgl MANDATORY
+Keterangan Mutasi harus diisi bkmket MANDATORY
+Kode Cabang harus diisi bkmcab MANDATORY
+Kode Divisi harus diisi bkmdvs MANDATORY
+Kode Cabang tidak ada bkmcab VALIDATE cabkodidx mcab scab 
+/* Kode Cabang tidak ada bkmcab VALIDATE cabstskodidx mcab scab {Pgv_INPG} */
+e.ValidateDvs bkmdvs VALIDATE cadcabdtidx mcadDV scad {Pbkmcab} {Pgv_cabbis} {Pbkmcab}
+e.ValidateDvs bkmdvs VALIDATE dtmkodidx mdtmDV 0
+
+MAP(mcab)
+cabkode		bkmcab		REPLACE
+g_cabbisdvs	bkmdvs		REPLACE_IF cgsglcabbisdvs1
+
+MAP(mcadDV)
+cadkode		bkmdvs		REPLACE
+
+MAP(mdtmDV)
+dtmcab   	bkmbisnis	REPLACE
+
+CALCS()
+cnomer          STRIP(lkodebukti) + STRIP(cabkdfak) + THBLS(bkmtgl) + "-"
+ctypadd         g_curcmd == 1 && stsotobukti == "Y"
+ckodebukti	DO_LIB ap_amdvs(bkmdvs,bkmscr,lkodebukti); 
+cadd_otY	g_curcmd == 1 && stsotobukti == "Y" && bkmdvs != BLANKS
+cotY            stsotobukti == "Y"
+cthbls		THBLS(bkmtgl)
+
+MAP(mnomer)
+ckodebukti	lkodebukti	DO_CALC_IF cadd_otY
+cnomer         	bkmnobuk   	DO_CALC_IF ctypadd
+cthbls	       	lthbl		DO_CALC
+
+HOOKS(master)
+BEFORE_INPUT    cur_field=bkmcab   	DO_SKIP_IF cgsglcab1  
+BEFORE_INPUT    cur_field=bkmdvs   	DO_SKIP_IF cgsglcabbisdvs1  
+BEFORE_INPUT	 cur_field=bkmnobuk   	DO_SKIP_IF cotY  
+AFTER_INPUT	 cur_field=bkmtgl   	DO_MAP SHOW mnomer
+AFTER_INPUT	 cur_field=bkmcab   	DO_MAP SHOW mnomer
+AFTER_INPUT	 cur_field=bkmdvs   	DO_MAP SHOW mnomer
+BEFORE_INPUT	 cur_field=bkmket   	DO_MAP SHOW mnomer
+
+IMAGE(transt) 
+/-----t-----t-----t------------t-----------------t----t----------------\
+|i.Urt|i.Cab|i.Dvs|i.Rek       |i.KetRek         |i.Dk|i.Jml           |
+\-----.-----.-----.------------.-----------------.----.----------------/
+
+IMAGE(trans) 
+|_____|_____|_____|____________|_________________|____|___________.____|
+     
+FIELD(trans)
+   bkdurt            NUMERIC             INPUTRI           1 
+   bkdcab            ALLCAPS SCROLL      INPUTRI           2
+   bkddvs            ALLCAPS SCROLL      INPUTRI           3
+   bkdnobbm          ALLCAPS SCROLL      INPUTRI           4 
+   bbgket      	     PROTECT	         NONE		   5
+   bkdtype           NOCHANGE            INPUTRI           6 
+   bkdjml            NUMERIC             INPUTRI           7 
+
+DEFAULTS(trans)
+bbgket		INIT		BLANKS
+bkdtype        	DFALT_LIST      D K
+
+CALCS()
+cjoinbkdu0      djoinbkdu == 0 && g_curcmd == 1
+cjoinbkdu1      djoinbkdu == 1 && g_curcmd == 1
+curut           lurt + 1
+csatu           1
+
+
+EDITS(trans)
+e.MandatoryUrt bkdurt MANDATORY
+e.MandatoryCab bkdcab MANDATORY
+e.MandatoryDvs bkddvs MANDATORY
+e.MandatoryBbm bkdnobbm MANDATORY
+e.MandatoryTyp bkdtype  MANDATORY
+e.MandatoryJml bkdjml   MANDATORY
+e.DupkeyBbm bkdnobbm DUPKEY bkdbukurtidx {Pbkmnobuk} {Pbkdurt} {Sbkdbukll}
+/* e.DupkeyUrt bkdurt DUPKEY bkdbukurtidx  {Pbkdnobuk} {Sbkdnobbm} {Sbkdbukll}*/
+e.ValidateCab bkdcab VALIDATE cabkodidx mcab2 scab
+/* e.ValidateCab bkdcab VALIDATE cabstskodidx mcab2 scab {Pgv_INPG}  */
+e.ValidateDvs bkddvs VALIDATE cadcabdtidx mcadDV2 scad {Pbkdcab} {Pgv_cabbis} {Pbkdcab}
+e.ValidateDvs bkddvs VALIDATE dtmkodidx mdtmDV2 0
+e.ValidateBbm bkdnobbm VALIDATE bbgnoidx mbbg sbbg
+
+MAP(mcab2)
+cabkode		bkdcab		REPLACE
+
+MAP(mcadDV2)
+cadkode		bkddvs		REPLACE
+
+MAP(mdtmDV2)
+dtmcab		bkdbisnis	REPLACE
+
+MAP(mbbg)
+bbgno		bkdnobbm	REPLACE
+bbgket		bbgket 		REPLACE
+bbgytbbantu 	bbgytbbantu 	REPLACE
+bbgbbantu  	bbgbbantu  	REPLACE
+
+MAP(murut)
+csatu         	bkdurt     	DO_CALC_IF cjoinbkdu0
+curut         	bkdurt     	DO_CALC_IF cjoinbkdu1
+bkmket		bkdket		REPLACE
+
+HOOKS(trans)
+BEFORE_INPUT 	cur_field=bkdurt  	DO_MAP SHOW murut
+
+
+SUBFILE(trans)
+SFL_LINES(8)  
+SFL_TITLE(transt)
+SFL_TARGET
+bkdbukurtidx   bkmnobuk	
+
+SFL_MAP
+    bkmnobuk               bkdnobuk
+    bkmtgl		   bkdtgl
+    bkmsts		   bkdsts
+    bkmdata		   bkddata  
+    bkmscr  		   bkdscr   
+
+CALCS()
+cdeb        	bkdtype == "D"
+ckre        	bkdtype == "K"
+cdebu          ~bkdtype == "D" 
+ckreu          ~bkdtype == "K"
+cabkmjmld     	bkmjmld + bkdjml
+cabkmjmlk     	bkmjmlk + bkdjml
+cubkmjmld     	bkmjmld - ~bkdjml
+cubkmjmlk    	bkmjmlk - ~bkdjml
+cdbkmjmld     	bkmjmld - bkdjml
+cdbkmjmlk    	bkmjmlk - bkdjml
+cnoubah         bkmnobuk != ~bkmnobuk || bkmtgl != ~bkmtgl
+
+MAP(mupdbkma)
+cabkmjmld	bkmjmld	   DO_CALC_IF cdeb
+cabkmjmlk	bkmjmlk	   DO_CALC_IF ckre
+
+MAP(mupdbkmu)
+cubkmjmld	bkmjmld	   DO_CALC_IF cdebu
+cubkmjmlk	bkmjmlk	   DO_CALC_IF ckreu
+cabkmjmld	bkmjmld	   DO_CALC_IF cdeb
+cabkmjmlk	bkmjmlk	   DO_CALC_IF ckre
+
+MAP(mupdbkmd)
+cdbkmjmld	bkmjmld	   DO_CALC_IF cdeb
+cdbkmjmlk	bkmjmlk	   DO_CALC_IF ckre
+
+/********************PENAMBAHAN NOMOR OTOMATIS ****************/
+MAP(maddbuk)
+bkmnobuk   bkmnobuk  REPLACE
+
+SPCALCS(saddbuk)
+DO_LIB_IF cotY	 ap_dbclc(DNAME daddbuk,DCOMMAND ADD_SUB,DFILE bkm,DLTARGET bkmbukidx bkmnobuk,DLLEN {stspjbuk},DMAP maddbuk);
+
+SPCALCS(spaddtrn)
+DO_LIB  ap_dbclc(DNAME dupdbkma,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma);
+
+SPCALCS(spupdtrn)
+DO_LIB  ap_dbclc(DNAME dupdbkmu,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmu);
+
+SPCALCS(spdeltrn)
+DO_LIB 	ap_dbclc(DNAME dupdbkmd,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd);
+
+POSTING(master)
+   PST_SUB_ADDCMD 	saddbuk
+   PST_UPD_DET_COND    	cnoubah
+				
+POSTING(trans)
+	PST_ADDCMD spaddtrn
+	PST_UPDCMD spupdtrn
+	PST_DELCMD spdeltrn
+
+CALCS()
+cstsOPEN      bkmsts == "OPEN"
+csama         	(
+		(djoinbkdDPTT == 0 && djoinbkdKPTT == 0 && bkmjmld - bkmjmlk == 0.0) ||
+		(djoinbkdDPTT == 1 && djoinbkdKPTT == 0 && dscanbkdD - bkmjmlk == 0.0) ||
+		(djoinbkdDPTT == 0 && djoinbkdKPTT == 1 && bkmjmld - dscanbkdK == 0.0) ||
+		(djoinbkdDPTT == 1 && djoinbkdKPTT == 1 && dscanbkdD - dscanbkdK == 0.0)
+		)
+
+PERMIT(master)
+  PMT_UPDALL_COND cstsOPEN
+  PMT_DEL_COND cstsOPEN
+
+PERMIT(trans)
+  PMT_UPDALL_COND cstsOPEN
+  PMT_DEL_COND cstsOPEN
+  PMT_ADD_COND cstsOPEN
+  PMT_EXIT_COND  csama
+  PMT_EXIT_MSG   samakan dulu debet dan kreditnya
+
+
+IMAGE(report) 
+/------------------------------------------------\
+		No. Bukti   : __________  
+
+\------------------------------------------------/
+								               
+FIELD(report)
+    bkmnobuk 	    PROTECT	       INPUTRI		4	
+
+MAP(mparam)
+bkmnobuk            r_string1          REPLACE
+
+RTREE(report)
+USES_SCRIPT(scr101.rptdesign)
+RT_MAP   mparam
+
+END_SCREEN

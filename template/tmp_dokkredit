@@ -1,0 +1,136 @@
+LOCAL
+PGM_FIELDS
+ltypedokkredit		STRING          21
+ltanyacek1              STRING          21
+
+IMAGE(tmptranst) {BASE_ROW=2} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||i.NoPK : _______________                          ||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.Buktimilikrumah                                 ||
+||t.Typedok               : _____________________   ||  
+||t.Nodokumen             : _____________________   ||
+||t.Namapemilikdok        : _____________________   ||
+||spasi                                             ||
+||t.Kelidentitas                                    ||
+||t.Ktpalmbali            : ______                  ||
+||t.Kipem                 : ______                  ||
+||t.Kartubanjar           : ______                  ||
+||t.Kartuibanjar          : ______                  ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnobuk	PROTECT 	INPUTRI		1
+btdlok		NOCHANGE  	INPUTRI		2
+btdnorangka	ALLCAPS 	INPUTRI		3
+btdnomesin 	ALLCAPS 	INPUTRI		4
+btdukrwrn	NOCHANGE  	INPUTRI		5
+btdth		NOCHANGE  	INPUTRI		6
+btdkat		NOCHANGE  	INPUTRI		7
+btdcab		NOCHANGE  	INPUTRI		8
+
+DEFAULTS(tmptranst)
+ltypedokkredit	INIT	TYPEDOKKREDIT
+ltanyacek1      INIT    TANYACEK1
+
+MAP(mjoinalmktp)
+almprop         lalmprop	REPLACE
+
+DBCALCS(djoinalmktp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almotodatidx	btmplg	gv_psmktp
+        DBC_MAP         mjoinalmktp
+
+CALCS()
+cbali		djoinalmktp==1 && lalmprop=="BALI"
+cbalix		djoinalmktp==1 && lalmprop=="BALI" && btdukrwrn=="YA"
+cnonbali	djoinalmktp==1 && lalmprop!="BALI"
+cnonbalix	djoinalmktp==1 && (lalmprop!="BALI" || (lalmprop=="BALI" && btdukrwrn=="TIDAK"))
+
+EDITS(tmptranst)
+e.Validate      btdlok          VALIDATE tbddatkodidx mtbddokkredit stbd {Pgv_dttabel} {Pgv_survey21} {Pltypedokkredit}
+e.Validate      btdukrwrn       VALIDATE tbddatkodidx mtbddkredt1 stbd {Pgv_dttabel} {Pgv_survey21} {Pltanyacek1}
+e.Validate      btdth           VALIDATE tbddatkodidx mtbddkredt2 stbd {Pgv_dttabel} {Pgv_survey21} {Pltanyacek1}
+e.Validate      btdkat          VALIDATE tbddatkodidx mtbddkredt3 stbd {Pgv_dttabel} {Pgv_survey21} {Pltanyacek1}
+e.Validate      btdcab          VALIDATE tbddatkodidx mtbddkredt4 stbd {Pgv_dttabel} {Pgv_survey21} {Pltanyacek1}
+e.Mandatory     btdlok		MANDATORY
+e.Mandatory     btdnorangka     MANDATORY
+e.Mandatory     btdnomesin      MANDATORY
+e.Mandatory     btdukrwrn       MANDATORY_IF cbali
+e.Mandatory     btdth           MANDATORY_IF cbalix
+e.Mandatory     btdkat          MANDATORY_IF cbalix
+e.Mandatory     btdcab          MANDATORY_IF cbalix
+
+MAP(mtbddokkredit)
+tbdkode         btdlok          REPLACE
+
+MAP(mtbddkredt1)
+tbdkode         btdukrwrn       REPLACE
+
+MAP(mtbddkredt2)
+tbdkode         btdth           REPLACE
+
+MAP(mtbddkredt3)
+tbdkode         btdkat          REPLACE
+
+MAP(mtbddkredt4)
+tbdkode         btdcab          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=btdukrwrn		DO_SKIP_IF cnonbali
+BEFORE_INPUT    cur_field=btdth			DO_SKIP_IF cnonbalix
+BEFORE_INPUT    cur_field=btdkat		DO_SKIP_IF cnonbalix
+BEFORE_INPUT    cur_field=btdcab		DO_SKIP_IF cnonbalix
+
+AFTER_INPUT cur_field=btdlok DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	btdstsbukbrg gv_OPEN btmnobuk ldokkredit
+SFL_MAP
+	btmnobuk	btdnobuk	REPLACE
+	gv_OPEN		btdsts		REPLACE
+	g_usrkode	btdsat   	REPLACE
+	ldokkredit 	btdbrg		REPLACE
+
+CALCS()
+cmtcms          "MTCMS"
+
+MAP(maddmnt)
+btmnobuk        mntnobuk        REPLACE
+g_usrkode       mntkode         REPLACE
+btmtgl          mnttgl          REPLACE
+cmtcms          mntdata         DO_CALC
+
+SPCALCS(sptmptrans)
+        DO_LIB ap_dbclc(DNAME daddmnt,DCOMMAND ADD,DFILE mnt,DMAP maddmnt);
+
+POSTING(tmptrans)
+  PST_ADDCMD    sptmptrans
+
+CALCS()
+ctambah_dokkredit	btmsts=="714" && g_scrnumstr=="714" && djoinbtddok==0 
+cubah_dokkredit		btmsts=="714" && g_scrnumstr=="714" && djoinbtddok==1 
+cdel_dokkredit		0            
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	ctambah_dokkredit
+	PMT_UPDALL_COND	cubah_dokkredit
+	PMT_DEL_COND	cdel_dokkredit
+	

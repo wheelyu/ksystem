@@ -1,0 +1,141 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.UplFotoBajuBatik                     | 
+|/-------------------------------------\|
+|| t.PnySrgmBtk?    : ________________ ||
+|| t.Kettdkpunya    : _______________  ||
+|| t.JmlhSrgm       : _______________  ||
+|| t.TglBeliBatik   : _______________  ||
+|| t.AprAtsn        : _______________  ||
+|| t.KetTAcc        : _______________  ||
+|| t.KndsBatik      : _______________  ||
+|| _______   _______  ________ ______  ||
+|\-------------------------------------/|
+|/-------------s.UPLOAD----------------\|
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+|\-------------------------------------/|                         
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmbuk1             ALLCAPS         INPUTRI 1
+tkmnama             TEXTAREA 2  ALLCAPS       INPUTRI 2
+tkmtotal	    NUMERIC         INPUTRI 3
+tkmtgl2        	    PROTECT 	NOLIMIT {DD-MM-YY}      INPUTRI  4
+tkmcab              ALLCAPS         INPUTRI 5
+tkmket              TEXTAREA 2  ALLCAPS       INPUTRI 6
+tkmdvs              ALLCAPS         INPUTRI 7
+lstrbtk             NOCHANGE        INPUTRI 8
+tkmtgl              PROTECT         INPUTRI 9
+tkmplg              PROTECT         INPUTRI 10
+tkmlok1              PROTECT         INPUTRI 11
+
+CALCS()
+ctdkbatik       tkmbuk1 == "TIDAK"
+cyabatik        tkmbuk1 == "YA"
+cyesbatik        tkmbuk1 == "YA" || hrmsts !="OPEN"
+caccats         (tkmbuk1 =="YA" && tkmcab  == "ACC") || hrmsts =="OPEN"
+/*ctkmtacc        tkmcab  == "TACC"*/
+cstsopen        hrmsts  == "OPEN"
+cstsinpg        hrmsts  == "INPG"
+copentdk        hrmsts  == "OPEN" && tkmbuk1 == "YA"
+cinpgtdk        hrmsts  == "INPG" && tkmcab == "TACC"
+clebihdarinol   (tkmtotal >= 1 && tkmbuk1 == "YA") || tkmbuk1 =="TIDAK"
+ctdkpunya	tkmbuk1 =="TIDAK"
+cisikndsbtk     (tkmcab=="TACC" || tkmcab=="ACC") && tkmbuk1=="YA" && hrmkep==BLANKS
+cskipkndsbtk    hrmkep!=BLANKS
+
+EDITS(tmptranst)
+e.Mandatory     tkmbuk1         MANDATORY_IF    cstsopen
+e.Mandatory     tkmnama         MANDATORY_IF    ctdkpunya
+e.Mandatory     tkmtotal        MANDATORY_IF    copentdk
+e.Mandatory     tkmcab         MANDATORY_IF    cstsinpg
+e.Mandatory     tkmket         MANDATORY_IF    cinpgtdk
+e.Mandatory     tkmdvs         MANDATORY_IF    cisikndsbtk
+
+DEFAULT(tmptranst)
+tkmbuk1             DFALT_SCAN_BLANKS       BLANKS
+                                            YA
+                                            TIDAK
+tkmcab              DFALT_SCAN_BLANKS       BLANKS
+                                            ACC
+                                            TACC
+tkmdvs              DFALT_SCAN_BLANKS       BLANKS
+                                            BAIK
+                                            KUSAM
+lstrbtk             INIT                    ENTER
+
+MAP(mkosongkanjmlh)
+cblanks         tkmtotal    DO_CALC_IF  ctdkbatik
+
+MAP(mkosongkanatsnbtk)
+cblanks         tkmket    DO_CALC_IF  caccats
+
+CALCS()
+ctglterakhir			ppmsts =="CLSD"
+
+MAP(mmapppmbatik)
+ppmtglfak		ltglbatik	REPLACE_IF ctglterakhir
+DEBUG			ldum		ldum		REPLACE
+
+DBCALCS(djoinppmbatik)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      ppmdtpldvtg		lSBATIK         hrmnip1
+        DBC_MAP         mmapppmbatik
+
+
+CALCS()
+cjoinppmbtk		djoinppmbatik ==1
+
+MAP(misitgl)
+ltglbatik		tkmtgl2		REPLACE_IF cjoinppmbtk
+	
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=tkmbuk1      DO_SKIP_IF cstsinpg
+BEFORE_INPUT cur_field=tkmnama      DO_SKIP_IF cyesbatik
+BEFORE_INPUT cur_field=tkmtotal     DO_SKIP_IF cstsinpg
+BEFORE_INPUT cur_field=tkmcab       DO_SKIP_IF cstsopen
+BEFORE_INPUT cur_field=tkmket       DO_SKIP_IF cstsopen
+BEFORE_INPUT cur_field=tkmdvs       DO_SKIP_IF cstsopen
+BEFORE_INPUT cur_field=tkmtotal     DO_SKIP_IF ctdkbatik
+BEFORE_INPUT cur_field=tkmcab       DO_SKIP_IF cstsopen 
+BEFORE_INPUT cur_field=tkmket       DO_SKIP_IF cstsopen 
+BEFORE_INPUT cur_field=tkmdvs       DO_SKIP_IF ctdkbatik
+BEFORE_INPUT cur_field=tkmdvs       DO_SKIP_IF cskipkndsbtk
+BEFORE_INPUT cur_field=tkmket       DO_SKIP_IF caccats
+
+AFTER_INPUT  cur_field=tkmbuk1      DO_MAP  SHOW mkosongkanjmlh
+AFTER_INPUT  cur_field=tkmtotal     DO_MAP  SHOW misitgl
+AFTER_INPUT  cur_field=tkmcab      DO_MAP  SHOW mkosongkanatsnbtk
+
+AFTER_INPUT     cur_field=tkmtotal            DO_MAP SHOW
+                IF clebihdarinol       mdum 
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusLebihDariNol
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+/*SFL_DEL_COND caccblanks*/
+SFL_UPL_COND cyabatik
+SFL_UPL_DIRFLD hrmdvs2
+SFL_UPLFLD  tkmoto lUPLFTBTK166
+SFL_UPLFLD_DBCALCS dupdtkmftbjbtk
+/*SFL_UPL_DELCOND caccblanks*/
+SFL_COND        cftobjbtk
+SFL_TARGET
+         tkmdtkdstlok   lUPLFTBTK166 hrmnobuk
+
+SFL_MAP
+lUPLFTBTK166             tkmdata         REPLACE
+hrmnobuk                tkmnobuk        REPLACE
+gv_OPEN                 tkmsts          REPLACE

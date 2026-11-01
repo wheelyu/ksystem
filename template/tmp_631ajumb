@@ -1,0 +1,345 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|________________________________________|
+|/--------------------------------------\|
+||i.LokJl      _________________________||
+||i.Sales      _________ _______________||
+||i.TypMtr     _________________________||
+||t.NamaMtr    _________________________||
+||i.Thn        ________ i.Wrn  _________||
+||i.Plat       _________________________||
+||i.JtpStnk    _________________________||
+||t.KdPlaPembia_________________________||
+||i.HrgPsr     ____________________.____||
+||i.ProgJl     _________________________||
+||i.TypByr     _________________________||
+||t.Promo      _________________________||
+||t.PilPembia  _________________________||
+||t.Pembia     _________________________||
+||i.Angsuran   _____  __________________||
+||t.InEx       _____                    ||
+||i.Finco      __________   __________  ||
+||i.Kodeass    _________________________||  
+||t.ThAss      __________   __________  ||
+||t.JlAss      ____________________.____||
+||t.UjEks      ____________________.____||
+||             _________                ||
+|\--------------------------------------/|
+|t.BisaUbahDisini                        |
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btmnobuk	PROTECT UNSEEN			INPUTRI		1
+btmlokjual	PROTECT SCROLL			INPUTRI		1
+btmsales	PROTECT SCROLL			INPUTRI		1
+lpsijabatan1	PROTECT SCROLL			INPUTRI		1
+btmtypmtr	ALLCAPS SCROLL			INPUTRI		2	/* Post */
+btmtypmtr2	PROTECT SCROLL			INPUTRI		3
+btmthn		ALLCAPS SCROLL			INPUTRI		4	/* Post */
+btmwrn		ALLCAPS SCROLL			INPUTRI		5	/* Post */
+jmnnopol	PROTECT SCROLL			INPUTRI		6
+jmntgl		PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI		7
+btmkdmaxc	PROTECT	SCROLL			INPUTRI		8
+nhmhrgpasar	NUMERIC PROTECT			INPUTRI		9
+lnhmprogjl	ALLCAPS SCROLL			INPUTRI		10	/* Post */
+btmnorangka	ALLCAPS SCROLL			INPUTRI		11	/* Post */
+btmposjmn	NOCHANGE SCROLL			INPUTRI		12	/* Post */
+btmstr2		NOCHANGE SCROLL			INPUTRI		13	/* Post */
+lnhmcairpinj	NUMERIC				INPUTRI		13	/* Post */
+lnhmtenor	NUMERIC				INPUTRI		14
+nhmbsrang	NUMERIC PROTECT			INPUTRI		15
+btmtype		PROTECT SCROLL			INPUTRI		16
+btmcab		NOCHANGE SCROLL			INPUTRI		17	/* Post */
+btmdvs		PROTECT SCROLL			INPUTRI		18
+btmass		PROTECT	PROTECT			INPUTRI		19
+btmbisnisjl	PROTECT 			INPUTRI		20	/* Post */
+nhmtypass	ALLCAPS PROTECT			INPUTRI		21
+nhmasuransi	NUMERIC PROTECT			INPUTRI		22
+lhasilkomisi2	PROTECT	PROTECT			INPUTRI		22
+lenter		NOCHANGE			INPUTRI		23
+
+DEFAULTS(tmptranst)
+IF ckliknss btmstr2     INIT    TRANSFER
+btmstr2			DFALT_SCAN_BLANKS	TUNAI TRANSFER
+
+btmposjmn		DFALT_SCAN	BLANKS
+					EVENT	"PROMO EVENT"
+IF cjoincadtrf1 btmstr2 INIT_UPDATE 	TRANSFER
+
+lenter			INIT		ENTER
+ltransfer               INIT            TRANSFER
+
+IF ckliknssro lnhmprogjl INIT		SPECIAL	
+
+
+EDITS(tmptranst)
+e.Mandatory             btmnorangka     MANDATORY
+t.MandatoryPilCair	btmstr2		MANDATORY
+e.Mandatory		lnhmprogjl	MANDATORY
+e.Mandatory		lnhmtenor	MANDATORY
+e.Mandatory		lnhmtenor	MANDATORY
+
+.                       btmnobuk        VALIDATE nhmdatbukidx mnhmdtl_btm 0 {Pgv_bukutamu}
+e.Validate		btmsales 	VALIDATE psikodidx mpsiSL2 0
+t.ValidateCab           btmlokjual      VALIDATE cabstsushkod mcab 0 {Pgv_INPG} {Pgv_finco11}
+t.ValidateJmn		btmnobuk	VALIDATE_IF castada jmnplgnoidx mjmnmtr 0 {Pbtmplg}
+t.ValidateBrgModel      btmtypmtr       VALIDATE brgstsdatbrg mbrg sbrg {Pgv_INPG} {Pgt_dtmodel}
+e.ValidateThn 		btmthn 		VALIDATE tbddatkodidx mtbdTHN stbdTHN {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+t.ValidateWrnModel	btmwrn 		VALIDATE ubrbrgdatkod mubr subr {Pbtmtypmtr} {Pgt_dtmodel}
+t.ValidateTypByr        btmnorangka     VALIDATE tbddatkodidx mtbdTypByr stbdBYR {Pgv_dttabel} {Pgv_infokredit} {Pgv_type_byrkredit}
+t.ValidateFincoInM2w    btmcab          VALIDATE cabstsushkod mcabF 0 {Pgv_INPG} {Pgv_finco11}
+t.ValidateProgJlReg	lnhmprogjl	VALIDATE_IF ctopupro00 tbddatkodidx mtbd_lnhm stbd {Pgv_dttabel} {Pgv_infokredit} {Pgt_provisi}
+t.ValidateProgJlRo	lnhmprogjl	VALIDATE_IF ctopupro01a tbddatkodidx mtbd_lnhm stbd {Pgv_dttabel} {Pgv_infokredit} {Plprovisiro}
+t.ValidateProgJlRo	lnhmprogjl	VALIDATE_IF ctopupro01b tbddatkodidx mtbd_lnhm stbd {Pgv_dttabel} {Pgv_infokredit} {Plprovisiroagen}
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=btmtypmtr		DO_SKIP_IF castada
+BEFORE_INPUT		cur_field=btmthn		DO_SKIP_IF castada
+BEFORE_INPUT		cur_field=btmwrn		DO_SKIP_IF castada
+BEFORE_INPUT		cur_field=btmposjmn		DO_SKIP_IF ctopupro01
+BEFORE_INPUT		cur_field=btmstr2		DO_SKIP_IF cjoincadtrf1
+BEFORE_INPUT		cur_field=lnhmtenor		DO_SKIP_IF cmusiman
+/*BEFORE_INPUT		cur_field=lnhmtenor		DO_SKIP_IF cskip_angs*/
+
+BEFORE_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW misitanggal
+
+AFTER_INPUT             cur_field=lnhmprogjl            DO_SCAN dbscanpikfid
+
+AFTER_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW mhitungfid
+AFTER_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW mrmdplacair
+AFTER_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW mrmd2
+AFTER_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW mhitungbgawal
+AFTER_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW mjmlang1
+AFTER_INPUT             cur_field=lnhmprogjl		DO_MAP SHOW mkdkomisi1
+AFTER_INPUT		cur_field=lnhmprogjl		DO_MAP SHOW mjtppajak
+AFTER_INPUT             cur_field=lnhmprogjl		DO_MAP SHOW mrmdgarap
+AFTER_INPUT             cur_field=btmnorangka           DO_MAP SHOW mpencairanklik
+AFTER_INPUT		cur_field=btmnorangka		DO_MAP SHOW mrmdplacair
+AFTER_INPUT		cur_field=btmnorangka		DO_MAP SHOW mrmd2
+AFTER_INPUT		cur_field=btmnorangka		DO_MAP SHOW mhitungbgawal
+AFTER_INPUT		cur_field=btmnorangka		DO_MAP SHOW mjmlang1
+AFTER_INPUT             cur_field=btmnorangka		DO_MAP SHOW mkdkomisi1
+AFTER_INPUT		cur_field=btmnorangka		DO_MAP SHOW mjtppajak
+AFTER_INPUT             cur_field=btmnorangka		DO_MAP SHOW mrmdgarap
+AFTER_INPUT		cur_field=btmcab		DO_MAP SHOW mrmdplacair
+AFTER_INPUT		cur_field=btmcab		DO_MAP SHOW mrmd2
+AFTER_INPUT		cur_field=btmcab		DO_MAP SHOW mhitungbgawal
+AFTER_INPUT		cur_field=btmcab		DO_MAP SHOW mjmlang1
+AFTER_INPUT             cur_field=btmcab		DO_MAP SHOW mkdkomisi1
+AFTER_INPUT		cur_field=btmcab		DO_MAP SHOW mjtppajak
+AFTER_INPUT             cur_field=btmcab		DO_MAP SHOW mrmdgarap
+AFTER_INPUT		cur_field=lnhmtenor		DO_MAP SHOW mrmdplacair
+AFTER_INPUT		cur_field=lnhmtenor		DO_MAP SHOW mrmd2
+AFTER_INPUT		cur_field=lnhmtenor		DO_MAP SHOW mhitungbgawal
+AFTER_INPUT		cur_field=lnhmtenor		DO_MAP SHOW mjmlang1
+AFTER_INPUT             cur_field=lnhmtenor		DO_MAP SHOW mkdkomisi1
+AFTER_INPUT		cur_field=lnhmtenor		DO_MAP SHOW mjtppajak
+AFTER_INPUT             cur_field=lnhmtenor		DO_MAP SHOW mrmdgarap
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_MAP SHOW mrmdplacair
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_MAP SHOW mrmd2
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_MAP SHOW mhitungbgawal
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_MAP SHOW mjmlang1
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_MAP SHOW mkdkomisi1
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_MAP SHOW mjtppajak
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_MAP SHOW mrmdgarap
+
+AFTER_INPUT		cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdpfnew1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdpfblank1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdpfsilver1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdpfgold1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdpfplatinum1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_field=lnhmprogjl           DO_LIB_IF cjoinrmdplafcairfid ap_ambts(gv_INPG,lrmdgabplafcairfid,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdplfkry      ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdpplfslik     ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdlimitcair ap_ambts(gv_INPG,lrmdgablimitcair,lNol,lNol,lNol,&lhasil1limitcair,&lhasil2limitcair,&lhasil3limitcair,lhasil1strlimitcair,lhasil2strlimitcair)
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdmasterbg1 ap_ambts(gv_INPG,lrmdgabmasterbg,lnhmtenor,lnhmcairpinj,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdmasterbg1kry ap_ambts(gv_INPG,lrmdgabmasterbg,lNol,lNol,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdgarap1    ap_ambts(gv_INPG,lrmdgabgarapjl,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdgarap11   ap_ambts(gv_INPG,lrmdgabgarapjl1,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmprogjl		DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,lnhmcairpinj,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+
+AFTER_INPUT		cur_field=btmnorangka		DO_LIB_IF cjoinrmdpfnew1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmnorangka		DO_LIB_IF cjoinrmdpfblank1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmnorangka		DO_LIB_IF cjoinrmdpfsilver1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmnorangka		DO_LIB_IF cjoinrmdpfgold1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmnorangka		DO_LIB_IF cjoinrmdpfplatinum1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_field=btmnorangka           DO_LIB_IF cjoinrmdplafcairfid ap_ambts(gv_INPG,lrmdgabplafcairfid,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdplfkry      ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdpplfslik     ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdlimitcair ap_ambts(gv_INPG,lrmdgablimitcair,lNol,lNol,lNol,&lhasil1limitcair,&lhasil2limitcair,&lhasil3limitcair,lhasil1strlimitcair,lhasil2strlimitcair)
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdmasterbg1 ap_ambts(gv_INPG,lrmdgabmasterbg,lnhmtenor,lnhmcairpinj,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdmasterbg1kry ap_ambts(gv_INPG,lrmdgabmasterbg,lNol,lNol,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdgarap1    ap_ambts(gv_INPG,lrmdgabgarapjl,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdgarap11   ap_ambts(gv_INPG,lrmdgabgarapjl1,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmnorangka		DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,lnhmcairpinj,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+
+AFTER_INPUT		cur_field=btmcab		DO_LIB_IF cjoinrmdpfnew1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmcab		DO_LIB_IF cjoinrmdpfblank1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmcab		DO_LIB_IF cjoinrmdpfsilver1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmcab		DO_LIB_IF cjoinrmdpfgold1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=btmcab		DO_LIB_IF cjoinrmdpfplatinum1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_field=btmcab                DO_LIB_IF cjoinrmdplafcairfid ap_ambts(gv_INPG,lrmdgabplafcairfid,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+
+AFTER_INPUT             cur_field=btmcab                DO_LIB_IF cjoinrmdplfkry      ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=btmcab                DO_LIB_IF cjoinrmdpplfslik     ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=btmcab                DO_LIB_IF cjoinrmdlimitcair ap_ambts(gv_INPG,lrmdgablimitcair,lNol,lNol,lNol,&lhasil1limitcair,&lhasil2limitcair,&lhasil3limitcair,lhasil1strlimitcair,lhasil2strlimitcair)
+AFTER_INPUT             cur_field=btmcab		DO_LIB_IF cjoinrmdmasterbg1 ap_ambts(gv_INPG,lrmdgabmasterbg,lnhmtenor,lnhmcairpinj,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmcab		DO_LIB_IF cjoinrmdmasterbg1kry ap_ambts(gv_INPG,lrmdgabmasterbg,lNol,lNol,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmcab		DO_LIB_IF cjoinrmdgarap1    ap_ambts(gv_INPG,lrmdgabgarapjl,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmcab		DO_LIB_IF cjoinrmdgarap11   ap_ambts(gv_INPG,lrmdgabgarapjl1,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=btmcab		DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,lnhmcairpinj,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+
+AFTER_INPUT		cur_field=lnhmtenor		DO_SCAN dscanbtmM2w2
+AFTER_INPUT		cur_field=lnhmtenor		DO_LIB_IF cjoinrmdpfnew1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmtenor		DO_LIB_IF cjoinrmdpfblank1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmtenor		DO_LIB_IF cjoinrmdpfsilver1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmtenor		DO_LIB_IF cjoinrmdpfgold1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmtenor		DO_LIB_IF cjoinrmdpfplatinum1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_field=lnhmtenor             DO_LIB_IF cjoinrmdplafcairfid ap_ambts(gv_INPG,lrmdgabplafcairfid,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdplfkry      ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdpplfslik     ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdlimitcair ap_ambts(gv_INPG,lrmdgablimitcair,lNol,lNol,lNol,&lhasil1limitcair,&lhasil2limitcair,&lhasil3limitcair,lhasil1strlimitcair,lhasil2strlimitcair)
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdmasterbg1 ap_ambts(gv_INPG,lrmdgabmasterbg,lnhmtenor,lnhmcairpinj,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdmasterbg1kry ap_ambts(gv_INPG,lrmdgabmasterbg,lNol,lNol,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdgarap1    ap_ambts(gv_INPG,lrmdgabgarapjl,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdgarap11   ap_ambts(gv_INPG,lrmdgabgarapjl1,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmtenor		DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,lnhmcairpinj,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdpfnew1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdpfblank1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdpfsilver1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdpfgold1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdpfplatinum1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_field=lnhmcairpinj          DO_LIB_IF cjoinrmdplafcairfid ap_ambts(gv_INPG,lrmdgabplafcairfid,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdplfkry      ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdpplfslik     ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdlimitcair ap_ambts(gv_INPG,lrmdgablimitcair,lNol,lNol,lNol,&lhasil1limitcair,&lhasil2limitcair,&lhasil3limitcair,lhasil1strlimitcair,lhasil2strlimitcair)
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdmasterbg1 ap_ambts(gv_INPG,lrmdgabmasterbg,lnhmtenor,lnhmcairpinj,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdmasterbg1kry ap_ambts(gv_INPG,lrmdgabmasterbg,lNol,lNol,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdgarap1    ap_ambts(gv_INPG,lrmdgabgarapjl,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdgarap11   ap_ambts(gv_INPG,lrmdgabgarapjl1,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,lnhmcairpinj,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_field=lnhmcairpinj          DO_LIB_IF cjoinrmdkomisi1xx ap_ambts(gv_INPG,lrmdgabkomisi,lnhmtenor,lnhmcairpinj,lhitjlMkl2,&lhasil1komisi,&lhasil2komisi,&lhasil3komisi,&lhasil1strkomisi,&lhasil2strkomisi);
+AFTER_INPUT             cur_field=lnhmcairpinj		DO_MAP SHOW mkomisim2w2
+
+AFTER_INPUT		cur_keybd=EN			DO_LIB_IF cjoinrmdpfnew1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_keybd=EN			DO_LIB_IF cjoinrmdpfblank1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_keybd=EN			DO_LIB_IF cjoinrmdpfsilver1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_keybd=EN			DO_LIB_IF cjoinrmdpfgold1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT		cur_keybd=EN			DO_LIB_IF cjoinrmdpfplatinum1 ap_ambts(gv_INPG,lbtmkdmaxc,lthnmtr,lFid,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+AFTER_INPUT             cur_keybd=EN                     DO_LIB_IF cjoinrmdplafcairfid ap_ambts(gv_INPG,lrmdgabplafcairfid,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair);
+
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdplfkry      ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdpplfslik     ap_ambts(gv_INPG,lbtmkdmaxc,lNol,lNol,lNol,&lhasil1Placair,&lhasil2Placair,&lhasil3Placair,lhasilstr1Placair,lhasilstr2Placair)
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdlimitcair ap_ambts(gv_INPG,lrmdgablimitcair,lNol,lNol,lNol,&lhasil1limitcair,&lhasil2limitcair,&lhasil3limitcair,lhasil1strlimitcair,lhasil2strlimitcair)
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdmasterbg1 ap_ambts(gv_INPG,lrmdgabmasterbg,lnhmtenor,lnhmcairpinj,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdmasterbg1kry ap_ambts(gv_INPG,lrmdgabmasterbg,lNol,lNol,lNol,&lhasil1bg,&lhasil2bg,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdgarap1    ap_ambts(gv_INPG,lrmdgabgarapjl,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdgarap11   ap_ambts(gv_INPG,lrmdgabgarapjl1,lpercair,lNol,lNol,&lhasil1garap,&lhasil2bg,&lhasil3bg,lhasilstr1garap,lhasilstr2bg);
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdtenormax1 ap_ambts(gv_INPG,lrmdgabtenormax,lnhmcairpinj,lNol,lNol,&lhasil1tenmax,&lhasil2tenmax,&lhasil3bg,lhasilstr1bg,lhasilstr2bg);
+
+AFTER_INPUT		cur_keybd=EN			DO_MAP SHOW mrmdplacair
+AFTER_INPUT		cur_keybd=EN			DO_MAP SHOW mrmd2
+AFTER_INPUT		cur_keybd=EN			DO_MAP SHOW mhitungbgawal
+AFTER_INPUT		cur_keybd=EN			DO_MAP SHOW mjmlang1
+AFTER_INPUT             cur_keybd=EN			DO_MAP SHOW mkdkomisi1
+AFTER_INPUT		cur_keybd=EN			DO_MAP SHOW mjtppajak
+AFTER_INPUT             cur_keybd=EN			DO_MAP SHOW mrmdgarap
+AFTER_INPUT             cur_keybd=EN			DO_LIB_IF cjoinrmdkomisi1xx ap_ambts(gv_INPG,lrmdgabkomisi,lnhmtenor,lnhmcairpinj,lhitjlMkl2,&lhasil1komisi,&lhasil2komisi,&lhasil3komisi,&lhasil1strkomisi,&lhasil2strkomisi);
+AFTER_INPUT             cur_keybd=EN			DO_MAP SHOW mkomisim2w2
+
+
+AFTER_INPUT		cur_field=lnhmprogjl DO_MAP SHOW
+			IF cuntukkliknssro mdum
+			ELSE HKCURSOR STAY
+			HKMSG IKLAN DARI KLIKNSS_RO WAJIB SPESIAL
+
+AFTER_INPUT		cur_field=btmthn	DO_MAP SHOW
+			IF climitthn2013 mdum
+			ELSE HKCURSOR btmthn
+			HKMSG t.LimitThn2013
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW
+			IF climitthn2013 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.LimitThn2013
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cjoinrmdmasterbg1 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.BlmAdaMasterBungaM2wBiasa
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF csdhadamasterbgkry mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.BlmAdaMasterBungaM2wUtkKaryawan
+AFTER_INPUT             cur_keybd=EN                    DO_MAP SHOW 
+			IF cisibunga_awal mdum
+			ELSE HKCURSOR STAY
+			HKMSG Master Bunga M2W Belum Ada. Lakukan Pengajuan Terlebih Dahulu di 1405 Pengajuan Master Bunga M2W.
+AFTER_INPUT             cur_field=lnhmprogjl		DO_MAP SHOW
+                        IF cextraplus mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG  t.TidakBolehTypeIni
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF ctenormin1 mdum    
+			ELSE HKCURSOR STAY 
+			HKMSG t.MinTenorDiBwhBts
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF ctenormax1 mdum    
+			ELSE HKCURSOR STAY 
+			HKMSG t.MaxTenor24
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW
+			IF climittenormklr1 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.MklrLimitTenor8
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW
+			IF climittenoragen1 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.AgenLimitTenor6
+AFTER_INPUT		cur_keybd=EN	DO_MAP SHOW
+			IF climitcairmklr1 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.MklrLimitCair3Jt
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cminimumcair1 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.MinCairDiBwhBts
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW
+			IF cmaksimumcair1 mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.MaxCairDiAtsBts
+AFTER_INPUT		cur_field=lnhmprogjl	DO_MAP SHOW
+			IF cextraup mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.ExtraUpUtkKliknsc
+AFTER_INPUT		cur_field=lnhmprogjl	DO_MAP SHOW
+			IF cprogjlextra	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.TopUpTidakBolehProgramJualExtra
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND	cskema_syariah
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	btmotoidx	btmoto
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dupdnhm_progjlmb,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btmnobuk,DMAP mupdnhm_progjl);
+DO_LIB ap_nxpst(l4399,lm4399_btm);
+
+POSTING(tmptrans)
+	PST_UPDCMD sptmptrans
+
+PERMIT(tmptrans)
+PMT_ADD_COND  c0
+PMT_UPDALL_COND csts631
+PMT_UPD_MSG	IF cmsg_01	t.StsChanged
+		IF cmsg_03	t.SdhAda305Aktif
+PMT_DEL_COND  c0
+
+

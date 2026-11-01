@@ -1,0 +1,117 @@
+LOCAL 
+PGM_FIELDS
+lJNJSVY		 STRING 	 11
+ljamjnj		 TIME		 4
+ljamact		 TIME		 4
+lthbl		STRING		21
+
+DBCALCS(djoinsudahjanji)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   lJNJSVY   btmnobuk lJNJSVY
+
+CALCS()
+cthblskr	THBLS(g_tgltrn)
+
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|t.NoBuk      :  ________________________________      |
+|t.iddeb      :  ___________ _________________________ |
+|t.Alamat     :  _____________________________________ |
+|t.Nohp       :  _____________________                 |
+|t.Ket        :  _____________________________________ |
+|t.Tgljnj     :  ____________     t.Jamjnj : _________ |
+|t.TglAct     :  ____________     t.JamAct : _________ |
+|t.Hasil      :  _____________________________________ |
+|t.nipmo      :  _____________   t.Nipcmo  : _________ |
+\------------------------------------------------------/
+
+
+FIELD(tmptranst)
+svinobuk        NOCHANGE SCROLL          INPUTRI                 1
+svikode		PROTECT SCROLL		INPUTRI			1
+psmnama_2	PROTECT SCROLL		INPUTRI			2
+sviket		ALLCAPS SCROLL		INPUTRI			3
+svistr1		ALLCAPS SCROLL		INPUTRI			3
+sviket2		TEXTAREA SCROLL		INPUTRI			4
+svitgl1		ALLCAPS {DD-MM-YYY} NOLIMIT     INPUTRI		5
+ljamjnj		NUMERIC                  	 NONE		6
+svitgl2		ALLCAPS {DD-MM-YYY} NOLIMIT     INPUTRI		7
+ljamact		NUMERIC                    NONE			8
+sviket3		TEXTAREA SCROLL             NONE			9
+svidtmkode	PROTECT SCROLL		INPUTRI			10
+svitblkode	PROTECT SCROLL		INPUTRI			10
+
+IMAGE(tmptrans)
+
+CALCS()
+/*cMO		g_grpnam == "B.M4WCMO" || g_grpnam == "B.M4WMO" || g_grpnam == "B.M4WADH" || g_grpnam == "B.M4WADH"
+cCMO		g_grpnam == "B.M4WCMO" || g_grpnam == "B.M4WMO" || g_grpnam == "B.M4WADH" || g_grpnam == "B.M4WADH"*/
+c701		btmsts == "701"
+
+
+DEFAULTS(tmptranst)
+svidata         INIT    JANJI 
+lJNJSVY		INIT	JANJI 
+svidtmkode	INIT	{g_usrkode}
+lthbl		INIT	{cthblskr}
+IF c701 	svitblkode	INIT_UPDATE {g_usrkode}
+
+EDITS(tmptranst)
+e.Mndatory	 ljamjnj	MANDATORY
+e.Mndatory	 sviket 	MANDATORY
+e.Mndatory	 svistr1	MANDATORY   
+e.Mndatory	 svitgl1	MANDATORY   
+e.Mndatory	 svitgl2	MANDATORY
+e.Mndatory	 sviket3	MANDATORY
+e.ValidateID         svinobuk   VALIDATE btmbukidx  mbtmdeb sbtm                                     
+
+MAP(mbtmdeb)
+btmnobuk	svinobuk	REPLACE
+btmplg  	svikode   	REPLACE
+svidf2		ljamjnj		REPLACE
+svidf3		ljamact		REPLACE
+
+MAP(misijam)
+ljamjnj		svidf2		REPLACE
+ljamact		svidf3		REPLACE
+
+MAP(misinobuk)
+lJNJSVY		svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lJNJSVY		svitype		REPLACE
+btmplg		svikode		REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=svinobuk       DO_MAP SHOW misinobuk
+AFTER_INPUT     cur_field=ljamjnj      DO_MAP SHOW misijam	
+AFTER_INPUT     cur_field=ljamact      DO_MAP SHOW misijam	
+/*BEFORE_INPUT 	cur_field=sviket	DO_SKIP_IF c701
+BEFORE_INPUT 	cur_field=sviket2	DO_SKIP_IF c701
+BEFORE_INPUT 	cur_field=svistr1	DO_SKIP_IF c701
+BEFORE_INPUT 	cur_field=svitgl1	DO_SKIP_IF c701
+BEFORE_INPUT 	cur_field=ljamjnj	DO_SKIP_IF c701
+BEFORE_INPUT 	cur_field=svitgl2 	DO_SKIP_IF cMO
+BEFORE_INPUT 	cur_field=ljamact 	DO_SKIP_IF cMO
+BEFORE_INPUT 	cur_field=sviket3 	DO_SKIP_IF cMO*/
+  
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	svidatbuktyp   lJNJSVY   btmnobuk lJNJSVY                         
+
+SFL_MAP	
+lJNJSVY		svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lJNJSVY		svitype		REPLACE
+btmplg		svikode		REPLACE
+  
+CALCS()
+cMOsaja		((g_grpnam == "RI" || g_grpnam == "B.M4WMO" || g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WSALES" || g_usrkode == "1935425" || g_usrkode == "2001755" || g_grpnam == "TLDM4W" || g_grpnam == "B.M4W" || g_grpnam == "B.M4WCMO" || g_grpnam == "B.M4WADH") && djoinsudahjanji == 0) 
+csurveysaja	(g_grpnam == "RI" || g_grpnam == "B.M4WCMO"  || g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WADH" || g_grpnam=="SURVEYOR" ||g_grpnam == "CRDTSVY") && btmsts == "701"
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cMOsaja  
+  PMT_UPDALL_COND  csurveysaja 
+  PMT_DEL_COND  c0         

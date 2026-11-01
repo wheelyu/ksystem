@@ -1,0 +1,120 @@
+LOCAL
+PGM_FIELDS
+lsvinourtz	STRING	3
+lsvitype_3  	STRING	11
+lsvistr2_1	STRING	31
+lnourt1a	INT2	2
+ltlmtype2_2	STRING	21
+
+MAP(mjoinnourt1a)
+svinourt	lnourt1a	REPLACE
+
+DBCALCS(djoinsvinourt1a)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp  tlmdata tlmnobuk svitype
+	DBC_MAP		mjoinnourt1a
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------\
+ /--------s.UPLOAD--------------\/---------------------------------------------\ 
+ |                              || t.Kode       ___________                    |  
+ |                              || t.KetFot     ____________________________   |
+ |                              || t.Wajib      ___                            |
+ |                              || t.Sts        ____ t.TglUpl ___________      |
+ |                              || t.NipLegalIR ____ ________ ________________ |
+ |                              || t.Review     ______________________________ | 
+ |                              ||                                             | 
+ \------------------------------/\---------------------------------------------/ 
+\-------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1		ALLCAPS 		INPUTRI	1
+svinama  	ALLCAPS 		INPUTRI	2
+sviyt1  	NOCHANGE		INPUTRI	3
+sviyt2   	PROTECT 		INPUTRI	4
+svitgl1  	PROTECT			INPUTRI	5
+svistr31	NOCHANGE		INPUTRI	6
+svistr2		PROTECT			INPUTRI	7
+lsvistr2_1	PROTECT			INPUTRI	8
+sviket		ALLCAPS			INPUTRI	9
+
+DEFAULTS(tmptranst)
+svitype  	INIT		BUKTI
+lsvitype_3	INIT		BUKTI
+sviyt1		DFALT_SCAN	T Y
+svistr31	DFALT_SCAN	BLANKS Y T
+ltlmtype2_2	INIT		{tlmtype2}
+
+CALCS()
+cisiket		svistr31 == "T"
+ckosonginket	svistr31 == "Y"
+
+EDITS(tmptranst)
+e.Validate	svistr2		VALIDATE psikodidx mpsi2 0
+e.Mandatory     sviket       	MANDATORY_IF cisiket
+
+MAP(mpsi2)
+psikode		svistr2		REPLACE
+psinama		lsvistr2_1	REPLACE
+
+CALCS()
+cjoinchdnourt1a         g_curcmd == 1 && djoinsvinourt1a == 0
+cjoinchdnourt2a         g_curcmd == 1 && djoinsvinourt1a == 1
+c1e			1
+cnourta			lnourt1a + 1
+ctmbh			g_curcmd == 1
+cskipsviyt1		(g_curcmd == 1 || g_curcmd == 2 || sviyt2 == "OK") && tlmgrup2 != g_usrkode && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT"
+cskipsvistr31		g_curcmd == 1 || sviyt2 == "" || (tlmgrup2 != g_usrkode && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT")
+cskipsvistr1		g_curcmd == 1 || (g_curcmd == 2 && (g_grpnam != "RI" && g_grpnam != "IT")) || (g_grpnam != "RI" && g_grpnam != "IT")
+cskipsvinama	 	(tlmgrup2 != g_usrkode && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT")
+cltlmtype2_2		STRIP(tlmtype2) + FLD_TO_STRING(svinourt)
+cblank			BLANKS
+
+MAP(mnourt1a)
+c1e		svinourt	DO_CALC_IF cjoinchdnourt1a
+cnourta		svinourt	DO_CALC_IF cjoinchdnourt2a
+svinourt	lsvinourtz	REPLACE
+cltlmtype2_2	svistr1 	DO_CALC_IF ctmbh
+
+MAP(mnipIR)
+g_usrkode	svistr2		REPLACE
+cblank		sviket		DO_CALC_IF ckosonginket
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr1	DO_MAP SHOW mnourt1a
+BEFORE_INPUT	cur_field=svinama	DO_MAP SHOW mnourt1a
+BEFORE_INPUT    cur_field=svinama       DO_SKIP_IF cskipsvinama
+BEFORE_INPUT	cur_field=svistr31	DO_SKIP_IF cskipsvistr31
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cskipsviyt1
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cskipsvistr1
+AFTER_INPUT	cur_field=svistr31	DO_MAP SHOW mnipIR
+
+CALCS()
+cOK		"OK"
+csdhY		g_usrkode == "tidakboleh"
+
+MAP(mupdsvibukti)
+cOK		sviyt2   	DO_CALC
+g_tgltrn	svitgl1  	REPLACE
+
+DBCALCS(dupdsvibukti)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviprmidx   sviprm
+	DBC_MAP		mupdsvibukti
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD svinourt
+SFL_UPL_DELCOND csdhY
+SFL_UPLFLD_DBCALCS dupdsvibukti
+SFL_UPLFLD svinobuk svistr1
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+        svidatbuktyp  tlmdata tlmnobuk lsvitype_3
+SFL_MAP
+tlmnobuk        svinobuk        REPLACE
+tlmdata		svidata		REPLACE
+gv_OPEN		svists		REPLACE
+tlmnobuk	svikode		REPLACE

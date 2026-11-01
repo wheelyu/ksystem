@@ -1,0 +1,151 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------\
+|t.PLANKONTENADS		       |
+|t.tambahsblmupload 		       |
+|/--------s.UPLOAD------------------------------------------\|
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+||                                                          ||
+|\----------------------------------------------------------/|
+|/------------------------------------\|
+||				      ||	
+||t.UserUpl                           ||
+!!t.Nip       : __________            ||
+!!t.Nama      : _____________________ ||
+!!t.Tanggal   : __________            ||
+||t.NamaKonten: _____________________ ||
+||t.KatKonten : _____________________ ||
+||t.KolomKontenJgnLgsgEnter           ||
+!!spasi                               ||
+||t.apruser                           ||
+!!t.Nip       : __________            ||
+!!t.Nama      : ______________________||
+||t.Jabatan   : ______________________||
+!!t.Tanggal   : __________            ||
+||t.Hasil     : __________            ||
+||t.Keterangan: ______________________||
+||spasi			              ||
+||				______||
+||                                 __ ||_
+|\------------------------------------/|
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svidtmkode	ALLCAPS NOCHANGE 	INPUTRI 1 /* nip usr*/
+lnamausr	PROTECT			INPUTRI	2
+svitgl1		PROTECT			INPUTRI 3
+sviket		TEXTAREA		INPUTRI 4
+svistr4		NONE			INPUTRI	5
+svistr1		ALLCAPS NOCHANGE 	INPUTRI 6 /*nip digmkthead*/
+lnamaapr	PROTECT			INPUTRI 7
+lJabatanapr	PROTECT			INPUTRI 8
+svitgl2		PROTECT			INPUTRI 9
+svistr2		ALLCAPS			INPUTRI 10 /*hasil */
+sviket2		TEXTAREA ALLCAPS	INPUTRI 11
+lenter		NOCHANGE		INPUTRI	15
+svikode		PROTECT UNSEEN		INPUTRI 16
+svinourt	PROTECT			INPUTRI 16
+
+CALCS()
+cmax10  llast<tkmnil1 && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && tkmsts=="OPEN"
+ctdkapr svistr2=="T" 
+cupdcab         g_curcmd==2 && tkmplg!= g_usrkode
+
+
+DEFAULTS(tmptranst)
+svidtmkode	INIT_ADD 	{g_usrkode}
+svitgl1		INIT_ADD	{g_tgltrn}
+IF cupdcab		svistr1      INIT_UPDATE {g_usrkode}
+IF cupdcab		svitgl2		INIT_UPDATE {g_tgltrn}
+IF cupdcab		svistr2	DFALT_SCAN_BLANKS 
+				Y
+				T
+
+
+EDITS(tmptranst)
+e.Validate	svidtmkode 	VALIDATE psikodidx mpsiusr 0
+e.Validate	svistr1	VALIDATE psikodidx mpsidig 0
+e.Mandatory	svistr2	MANDATORY_IF cupdcab
+e.Mandatory	sviket2		MANDATORY_IF ctdkapr
+e.Mandatory     sviket          MANDATORY_IF cadd
+e.Mandatory	svistr4		MANDATORY_IF cadd
+
+MAP(mpsiusr)
+psinama		lnamausr	REPLACE
+c0              llast           DO_CALC
+llast           llast           REPLACE_IF cdjoinsvikonten
+c0		llast2		DO_CALC
+
+
+MAP(mpsidig)
+psinama		lnamaapr	REPLACE
+psijabatan 	lJabatanapr	REPLACE
+
+CALCS()
+cyaapr		svistr2=="Y"
+
+MAP(mnama)
+sviket		lnamakonten	REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svidtmkode	DO_SKIP_IF cupdcab
+BEFORE_INPUT	cur_field=sviket	DO_SKIP_IF cupdcab
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF cupdcab
+
+BEFORE_INPUT    cur_field=svistr2    DO_SKIP_IF cadd
+BEFORE_INPUT	cur_field=sviket2	DO_SKIP_IF cadd
+BEFORE_INPUT 	cur_field=sviket2	DO_SKIP_IF cyaapr
+BEFORE_INPUT    cur_field=svistr1    DO_SKIP_IF cupdusr
+BEFORE_INPUT    cur_field=svistr2    DO_SKIP_IF cupdusr
+BEFORE_INPUT    cur_field=sviket2        DO_SKIP_IF cupdusr
+
+AFTER_INPUT     cur_keybd=EN    	DO_MAP SHOW mnama
+
+
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND copen
+SFL_UPLFLD svinobuk svitblkode 
+SFL_UPL_DIRFLD tkmtgl
+SFL_SHOW_NEXT
+SFL_TARGET_IF cnoawalkosong
+	svidatbuktyp   lADSKONTEN tkmnobuk lADSKONTEN 
+SFL_TARGET_IF cnoawalisi
+	svidatbuktyp   lADSKONTEN tkmnobuk2 lADSKONTEN
+
+
+SFL_MAP
+tkmnobuk	svinobuk	REPLACE
+lADSKONTEN	svidata		REPLACE
+lADSKONTEN	svitype		REPLACE
+lAPRKONTEN	svikode		REPLACE
+cnourut		svinourt	DO_CALC 
+cutkjsa		svitblkode	DO_CALC
+tkmlokjl	svistr3		REPLACE
+
+
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND cmax10
+PMT_UPDALL_COND cinp1
+PMT_DEL_COND c0
+
+
+
+

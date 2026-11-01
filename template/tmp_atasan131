@@ -1,0 +1,60 @@
+LOCAL
+PGM_FIELDS
+lpsinama_a1		STRING		61
+lpsinama_a2		STRING		61
+
+
+IMAGE(tmptranst)
+/----------------------------------------------\
+|/--------------------------------------------\|
+|| t.NipAtsn1         : ___________________   ||
+|| t.NamAtsn1         : ___________________   ||
+|| t.NipAtsn2         : ___________________   ||
+|| t.NamAtsn2         : ___________________   ||
+|\--------------------------------------------/|
+\----------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+amtstr1         ALLCAPS         INPUTRI 1
+amtstr6         PROTECT         INPUTRI 2
+amtstr2         ALLCAPS         INPUTRI 3
+amtstr7         PROTECT         INPUTRI 4
+
+MAP(mmappsia1)
+psinama		lpsinama_a1		REPLACE
+
+DBCALCS(djoinpsia1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	amtstr1
+	DBC_MAP		mmappsia1
+
+MAP(mmappsia2)
+psinama		lpsinama_a2		REPLACE
+
+DBCALCS(djoinpsia2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	amtstr2
+	DBC_MAP		mmappsia2
+
+
+CALCS()
+cjoinpsi_a1		djoinpsia1 ==1
+cjoinpsi_a2		djoinpsia2 ==1
+
+MAP(mapnama)
+lpsinama_a1	amtstr6		REPLACE_IF cjoinpsi_a1
+lpsinama_a2	amtstr6		REPLACE_IF cjoinpsi_a2
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=amtstr2       DO_MAP SHOW mapnama
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW	mapnama 
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	amtdatotoidx	gv_dtplengkap psikode 
+
+

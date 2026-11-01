@@ -1,0 +1,401 @@
+
+IMAGE(tmptranst)
+/--------------------------------------------\
+|/------------------------------------------\|
+||t.NoGsm       : ______________            ||
+||t.VerGsm      : ___  ___________________ _||
+||t.VerGsm	: ______________ 	    ||
+||t.NoGsmBaru   : ______________            ||
+||t.NoWa        : ______________            ||
+||t.VerWa	: ______________ 	    ||
+||t.NoWaBaru    : ______________            ||
+||t.TelpTKerja  : ______________            ||
+||t.VerTKerja   : ___  ___________________  ||
+||t.TelpTKerja2 : ______________            ||
+||t.KbnaranKerja: ___                       ||
+||t.BrbcaraDngan: ________________________  ||
+||t.Jabatan     : ________________________  ||
+||t.MilikKend   : ___________________       ||
+||t.UnitDiambil : ___________________       ||
+||i.Namaibu     : __________________________||
+||t.DPatauCair  : ____________________      ||
+||                __ __ __                  ||
+|\------------------------------------------/|
+|/-------s.UPLOAD---------------------------\|
+||                                          ||
+||                                          ||
+||                                          ||
+||                                          ||
+||                                          ||
+|\------------------------------------------/|
+\--------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lnohp		PROTECT                 	INPUTRI 1
+svistr1		ALLCAPS SCROLL			INPUTRI 2
+lsvistr15d	PROTECT         		INPUTRI 3
+svinobuk	PROTECT UNSEEN          	INPUTRI 4
+svitype2	NOCHANGE			INPUTRI 5
+svistr2		DIGITS	                 	INPUTRI 6
+lnohpwa		PROTECT				INPUTRI 7
+svitype3	NOCHANGE			INPUTRI 8
+svidtmkode	DIGITS				INPUTRI 9
+lsvistr2transc5		PROTECT		        INPUTRI 10
+svistr8		ALLCAPS SCROLL          	INPUTRI 11
+lsvistr85d	PROTECT         		INPUTRI 12
+svistr10	DIGITS		          	INPUTRI 13
+svistr31	NOCHANGE	          	INPUTRI 14
+svinama		ALLCAPS SCROLL          	INPUTRI 15
+sviket 		ALLCAPS SCROLL          	INPUTRI 16
+svistr3		ALLCAPS                 	INPUTRI 17
+svistr4		ALLCAPS                 	INPUTRI 18
+svistr5		ALLCAPS                 	INPUTRI 19
+svistr6		DIGITS				INPUTRI	20	
+lbtmplgtelp	PROTECT	UNSEEN			INPUTRI	21
+ldum            NOCHANGE                	INPUTRI 22
+g_usrkode	PROTECT	UNSEEN			INPUTRI 23
+
+DEFAULTS(tmptranst)
+svistr31	DFALT_SCAN_BLANKS Y "YA"
+				T "TIDAK"
+ljaminput1      INIT    SYSTIME
+ldari714           INIT    714
+lVERIFTLPKONS   INIT    "VERIFTLPKONS"
+svitype2	DFALT_SCAN_BLANKS VALID
+				  TDK_VALID
+svitype3	DFALT_SCAN_BLANKS VALID
+				TDK_VALID
+
+CALCS()
+ctelp           condata=="GSM"
+cwa		condata=="WA"
+ctidak_valid	conkel == "TDK_VALID"
+cambilnik	conkode == btmplg
+
+MAP(mjoincon)
+conhp           lnohp           REPLACE
+
+DBCALCS(djoincon)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    btmplg gv_INPG
+        DBC_SELECT      ctelp
+        DBC_MAP         mjoincon
+
+MAP(mjoinconwa)
+conhp		lnohpwa		REPLACE
+
+DBCALCS(djoinconwa)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    btmplg gv_INPG
+        DBC_SELECT      cwa
+        DBC_MAP         mjoinconwa
+
+DBCALCS(djoinhpgsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lgsm11 svistr2	
+	DBC_SELECT	ctidak_valid
+
+DBCALCS(djoinhpgsm2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lgsm11 svistr2
+	DBC_SELECT	cambilnik
+
+DBCALCS(djoinhpgsm3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lgsm11 svistr2
+
+DBCALCS(djoinhpwa)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lwa11 svidtmkode
+	DBC_SELECT	ctidak_valid
+
+DBCALCS(djoinhpwa2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lwa11 svidtmkode
+	DBC_SELECT	cambilnik
+
+DBCALCS(djoinhpwa3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	condathpidx	lwa11 svidtmkode
+
+CALCS()
+cteleponbaru    (svistr1 == "V2"||svistr1=="V3" || svistr1=="V4" ||svistr1=="V5") && svitype2 == "TDK_VALID"
+chanyavalid	svistr1 == "V1"
+ctidakvalid	svistr1 == "V2" || svistr1 == "V3" || svistr1 == "V4" || svistr1 == "V5"
+cteleponok      svistr1=="V1" && svitype2 == "VALID"
+cteleponok2	svitype2 == "VALID"
+cdjoincon1      djoincon==1
+cdjoinconwa1	djoinconwa==1
+/*ctelpbedaok     (djoincon==1 && lnohp!=svistr2) || djoincon==0*/
+/*ctelpbedaok2	(djoinconwa==1 && lnohpwa!=svidtmkode) || djoinconwa==0*/
+cpanjangnom     DO_LIB ap_strln(svistr2,&ljumlahnomor);
+
+cpanjangnomwa     DO_LIB ap_strln(svidtmkode,&ljumlahnomorwa);
+
+cpanjangnom2    DO_LIB ap_strln(svistr10,&ljumlahnomor2);
+cbukan08        (ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=11 && ljumlahnomor<=13 && (svistr1 == "V2" || svistr1=="V3" || svistr1=="V4" ||svistr1=="V5")) || svistr1=="V1" 
+cbukan08wa	(ldigit1wa=="0" && ldigit2wa=="8" && ljumlahnomorwa>=11 && ljumlahnomorwa<=13 && svitype3=="TDK_VALID") || svitype3 == "VALID"
+cbukan08a       (ldigit1a=="0" && ldigit2a=="8" && ljumlahnomor2>=11 && ljumlahnomor2<=13 && (svistr8 == "V2" || svistr8=="V3" || svistr8=="V4" ||svistr8=="V5")) || (svistr8=="V1" || svistr8==" ")
+cpekswpns               djoinsvicapacityd==1 && (lsvistr2capacity=="SW" || lsvistr2capacity=="PN")
+ctkerjaok	svistr8=="V1"
+ctkerjabaru	svistr8 == "V2" || svistr8=="V3" || svistr8=="V4" ||svistr8=="V5"
+ctdkvalid	svitype3=="TDK_VALID"
+cvalid		svitype3=="VALID"
+cjointelpgsm	djoinhpgsm == 0 || g_usrkode!="TUTUP"
+cjointelpgsm2	djoinhpgsm2 == 0 || (svistr1=="V1" && svitype2 == "VALID")
+cjointelpgsm3	djoinhpgsm3 == 0 || (svistr1=="V1" && svitype2 == "VALID")
+cjointelwa	djoinhpwa == 0 || g_usrkode!="TUTUP"
+cjointelwa2	djoinhpwa2 == 0 || svitype3=="VALID"
+cjointelwa3	djoinhpwa3 == 0 || svitype3=="VALID"
+cstrvld		"VALID"
+cstrtdkvld	"TDK_VALID"	
+
+EDITS(tmptranst)
+e.mandatory     svistr1       MANDATORY
+e.mandatory	svitype3	MANDATORY
+e.mandatory     svistr2       MANDATORY_IF cteleponbaru
+e.mandatory	svidtmkode	MANDATORY_IF ctdkvalid 
+e.mandatory	svistr3		MANDATORY_IF cDTN
+e.mandatory	svistr4		MANDATORY_IF cgabindukok1
+e.Mandatory	svistr5		MANDATORY
+e.mandatory	svistr6		MANDATORY
+e.mandatory	svistr8		MANDATORY_IF cpekswpns
+e.mandatory     svistr10       	MANDATORY_IF ctkerjabaru
+e.mandatory	svistr31	MANDATORY_IF cpekswpns
+e.mandatory	svinama		MANDATORY_IF cpekswpns
+e.mandatory	sviket 		MANDATORY_IF cpekswpns
+
+e.validateA      svinobuk VALIDATE    btmbukidx mbtmtelepon 
+e.validate	g_usrkode	VALIDATE psikodidx mbtmtelepon
+e.Validate svistr1 VALIDATE tbddatkodidx mtbd5d stbd {Pgv_dttabel} {Pgv_survey21} {Plvertelepon}
+e.Validate svistr8 VALIDATE tbddatkodidx mtbd5d1 stbd {Pgv_dttabel} {Pgv_survey21} {Plvertelepon}
+
+/*MAP(mkosonghape)
+cBLANKS     svistr2        DO_CALC
+cBLANKS     svistr10       DO_CALC*/
+
+MAP(mbtmtelepon)
+lnohp           lnohp           REPLACE_IF cdjoincon1
+lnohp		svistr7		REPLACE_IF cdjoincon1
+lnohpwa		lnohpwa		REPLACE_IF cdjoinconwa1
+lnohpwa		svitblkode	REPLACE_IF cdjoinconwa1
+lsvistr2transc5 lsvistr2transc5 REPLACE_IF cdjoinsvitransc5
+lsvistr2transc5 svistr9		REPLACE_IF cdjoinsvitransc5
+DEBUG	ldum	ldum	REPLACE
+
+MAP(mtbd5d)
+tbdkode         svistr1         REPLACE
+tbdket		lsvistr15d	REPLACE
+
+MAP(mtbd5d1)
+tbdkode         svistr8         REPLACE
+tbdket		lsvistr85d	REPLACE
+
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+
+MAP(mpanjangnomwa)
+cpanjangnomwa		ljumlahnomorwa		DO_CALC
+DEBUG	ldum	ldum	REPLACE
+
+MAP(mpanjangnom2)
+cpanjangnom2            ljumlahnomor2           DO_CALC
+
+CALCS()
+cpanjangibu     DO_LIB ap_strln(svistr5,&ljumlahibu);
+cibu3digit      ljumlahibu>2
+
+MAP(mhitungibu)
+cpanjangibu     ljumlahibu      DO_CALC
+
+MAP(mkosongnogsm)
+cblanks		svistr2		DO_CALC_IF cteleponok2
+
+MAP(mgantivld)
+cstrvld		svitype2	DO_CALC_IF chanyavalid
+cstrtdkvld	svitype2	DO_CALC_IF ctidakvalid
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=svistr2           DO_SKIP_IF cteleponok
+BEFORE_INPUT cur_field=svidtmkode	DO_SKIP_IF cvalid
+BEFORE_INPUT cur_field=svistr10          DO_SKIP_IF ctkerjaok
+BEFORE_INPUT cur_field=svistr3		DO_SKIP_IF cgabindukok1
+BEFORE_INPUT cur_field=svistr4          DO_SKIP_IF cDTN
+
+/*AFTER_INPUT cur_field=svistr1         DO_MAP SHOW mkosonghape*/
+BEFORE_INPUT cur_field=svistr1		DO_MAP SHOW mbtmtelepon
+AFTER_INPUT cur_field=svistr1		DO_MAP SHOW mgantivld
+
+AFTER_INPUT cur_field=svitype2		DO_MAP SHOW mkosongnogsm
+
+AFTER_INPUT cur_field=svistr2       DO_LIB ap_amstr(svistr2,ln1i,ln1,&ldigit1);
+AFTER_INPUT cur_field=svistr2       DO_LIB ap_amstr(svistr2,ln2i,ln1,&ldigit2);
+
+AFTER_INPUT cur_field=svidtmkode       DO_LIB ap_amstr(svidtmkode,ln1i,ln1,&ldigit1wa);
+AFTER_INPUT cur_field=svidtmkode       DO_LIB ap_amstr(svidtmkode,ln2i,ln1,&ldigit2wa);
+
+AFTER_INPUT cur_field=svistr2       DO_MAP SHOW mpanjangnom
+
+AFTER_INPUT cur_field=svidtmkode    DO_MAP SHOW mpanjangnomwa
+
+AFTER_INPUT cur_field=svistr10      DO_LIB ap_amstr(svistr10,ln1i,ln1,&ldigit1a);
+AFTER_INPUT cur_field=svistr10      DO_LIB ap_amstr(svistr10,ln2i,ln1,&ldigit2a);
+AFTER_INPUT cur_field=svistr10      DO_MAP SHOW mpanjangnom2
+AFTER_INPUT     cur_field=svistr5      DO_MAP SHOW mhitungibu
+
+AFTER_INPUT cur_field=svistr2 DO_MAP SHOW
+                  IF cbukan08 mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT cur_field=svidtmkode DO_MAP SHOW
+                  IF cbukan08wa mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG Nomor WA 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+/*AFTER_INPUT cur_field=svistr2 DO_MAP SHOW
+        IF ctelpbedaok    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.TelpHrsBeda*/
+
+/*AFTER_INPUT cur_field=svidtmkode DO_MAP SHOW
+        IF ctelpbedaok2    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.TelpHrsBeda*/
+
+AFTER_INPUT     	cur_field=svistr2 DO_MAP SHOW
+                	IF cjointelpgsm  mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG Nomor Telepon   Sudah Pernah tidak valid
+
+AFTER_INPUT             cur_field=svistr2 DO_MAP SHOW
+                        IF cjointelpgsm2  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon sama Dengan No GSM
+
+AFTER_INPUT             cur_field=svistr2 DO_MAP SHOW
+                        IF cjointelpgsm3  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon sudah pernah diisi
+
+AFTER_INPUT     	cur_field=svidtmkode DO_MAP SHOW
+                	IF cjointelwa  mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG Nomor WA   Sudah Pernah tidak valid 
+
+AFTER_INPUT     	cur_field=svidtmkode DO_MAP SHOW
+                	IF cjointelwa2  mdum
+                	ELSE HKCURSOR STAY
+                	HKMSG Nomor Telepon sama Dengan No WA
+			
+AFTER_INPUT             cur_field=svidtmkode DO_MAP SHOW
+                        IF cjointelwa3  mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor WA sudah pernah diisi
+
+AFTER_INPUT cur_field=svistr10 DO_MAP SHOW
+                  IF cbukan08a mdum714
+                  ELSE HKCURSOR STAY
+                  HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+/*AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF ctelpbedaok    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.TelpHrsBeda*/
+
+/*AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF ctelpbedaok2    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.TelpHrsBeda*/
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+	IF cjointelpgsm	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG Nomor GSM   Sudah Pernah tidak valid
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+	IF cjointelpgsm2	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG Nomor Telepon sama Dengan No GSM 
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+	IF cjointelpgsm3	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG Nomor Telepon sama Dengan No GSM 
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+	IF cjointelwa	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG Nomor WA   Sudah Pernah tidak valid
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+	IF cjointelwa2	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG Nomor Telepon sama Dengan No GSM
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+	IF cjointelwa3	mdum714
+	ELSE HKCURSOR STAY
+	HKMSG Nomor Telepon sama Dengan No GSM
+
+AFTER_INPUT cur_field=svistr5 DO_MAP SHOW
+        IF cibu3digit    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Min3Digit
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cibu3digit    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Min3Digit
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+CALCS()
+ciya            "Y"
+cfotosudahacc   sviyt1!="Y"
+
+MAP(mupdfototelpacc)
+ciya            sviyt1      DO_CALC
+g_tgltrn	svitgl2		REPLACE
+
+DBCALCS(dupdfototelpacc)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviotoidx	svioto
+        DBC_MAP         mupdfototelpacc
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPL_DELCOND cfotosudahacc
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD_DBCALCS dupdfototelpacc
+SFL_UPLFLD btmnobuk svitype
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk lvertelp714 l1
+SFL_MAP
+gv_datasurvey   svidata         REPLACE
+btmnobuk        svinobuk        REPLACE
+lvertelp714  svitype         REPLACE
+l1		svinourt	REPLACE
+g_tgltrn	svitgl1		REPLACE
+              
+
+MAP(mapmapveriftlp)
+lVERIFTLPKONS   lDETAIL2   REPLACE
+
+SPCALCS(spvertlpkons)
+DO_LIB ap_dbclc(DNAME dmapveriftlp;DCOMMAND MAPMAP;DMAP mapmapveriftlp);
+DO_LIB ap_nxpst(l4461,lm4461det2);
+
+POSTING(tmptrans)
+        PST_UPDCMD  spvertlpkons    

@@ -1,0 +1,84 @@
+LOCAL
+PGM_FIELDS
+lnama		STRING	61
+ltmplahir	STRING	21
+ltgllahir	DATE	8
+lgender		STRING	5
+ldum2           INT2    2
+ltipe2		STRING	21
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.KtpPenj     __________________||___
+||i.Nama        __________________||
+||i.TmpLhr      __________________||
+||i.TglLhr      __________________||
+||i.Gender      __________________||
+||t.Tipe        __________________||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btppsm		ALLCAPS			INPUTRI 1
+btpdata		PROTECT QPROTECT UNSEEN	INPUTRI 1
+lnama		PROTECT			INPUTRI 1	
+ltmplahir       PROTECT			INPUTRI	1
+ltgllahir	PROTECT {DD-MM-YYYY}	INPUTRI	1
+lgender		PROTECT			INPUTRI	1
+ltipe2		PROTECT			INPUTRI	1
+
+EDITS(tmptranst)
+e.ValidateID btppsm VALIDATE psmplgstsktp   mpsmpenj 0 {Pgv_dtkonsumen} {Pgv_INPG}
+
+MAP(mpsmpenj)
+psmktp		btppsm		REPLACE
+psmnama		lnama  		REPLACE
+psmtmplahir	ltmplahir	REPLACE
+psmtgllahir	ltgllahir	REPLACE
+psmgender	lgender		REPLACE
+psmins		ltipe2		REPLACE
+
+
+MAP(mdum2)
+ldum2   ldum2   REPLACE
+
+CALCS()
+cadapenj	btmstr1=="Y"
+cktpnopmh	btppsm != btmplg
+charus_orang	ltipe2 == "PERORANGAN"
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=btppsm	DO_MAP SHOW
+		IF cktpnopmh	mdum2
+		ELSE HKCURSOR STAY
+		HKMSG t.KtpNoPmh
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cktpnopmh	mdum2
+		ELSE HKCURSOR STAY
+		HKMSG t.KtpNoPmh
+AFTER_INPUT	cur_field=btppsm	DO_MAP SHOW
+		IF charus_orang	mdum2
+		ELSE HKCURSOR STAY
+		HKMSG t.TipePjmHrsOrang
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF charus_orang	mdum2
+		ELSE HKCURSOR STAY
+		HKMSG t.TipePjmHrsOrang
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cadapenj
+
+SFL_TARGET
+	btpdatbuktgl gv_historisdm btmnobuk gv_penjamin
+
+SFL_MAP
+btmnobuk	btpnobuk	REPLACE
+btmtgl		btptgltrn	REPLACE
+btmscr		btpscr		REPLACE
+gv_penjamin	btptype		REPLACE
+gv_historisdm	btpdata		REPLACE

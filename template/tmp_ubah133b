@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+lMPP			STRING	11
+lMPP21			STRING	21
+lhrmsts133            	STRING 	21
+lamtdf3a              	DFLOAT	8
+ltgtmpp               	DFLOAT	8
+lUBAH133		STRING	11
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.UbahBioSdm            ___                         !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.Ubah       : ___________                          !                   |
+|	!t.Nobuk133   : _______________________              !                   |
+|       !t.AccHrd     : _______                              !                   |
+|       !t.Ket        : _____________________________________!                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt        NOCHANGE                INPUTRI 1
+psdtgl1         PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+psdtype         NOCHANGE                INPUTRI 3
+psdstr5         ALLCAPS                 INPUTRI 12
+psdtype3        NOCHANGE                INPUTRI 13
+psdket2         ALLCAPS SCROLL          INPUTRI 14
+
+MAP(mjoinhrmn133)
+hrmsts                  lhrmsts133        REPLACE
+
+DBCALCS(djoinhrmn133)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      hrmbukidx   psdstr5
+        DBC_MAP         mjoinhrmn133
+
+MAP(mjoinamtn133)
+amtdf3                 lamtdf3a        REPLACE
+
+DBCALCS(djoinamtn133)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      amtdatotoidx   lMPP psdstr5
+        DBC_MAP         mjoinamtn133
+
+MAP(mscanakt)
+c1                  ltgtmpp          DO_CALC
+
+DBCALCS(dbscanakt)
+        DBC_COMMAND             SCANSCAN
+        DBC_TARGET              aktkodtypidx   psdstr5 lMPP lMPP21
+        DBC_SUM_MAP             mscanakt
+
+CALCS()
+cnobuk133	djoinhrmn133==1 && lhrmsts133 == "INPG"
+cnobuk133a	(dbscanakt==1 || dbscanakt==0) && djoinamtn133==1 && lamtdf3a>ltgtmpp
+
+DEFAULTS(tmptranst)
+lUBAH133	INIT			UBAH133
+lMPP		INIT			MPP
+lMPP21		INIT			MPP
+psdtgl1         INIT_ADD                {g_tgltrn}
+psdtype		INIT_ADD		UBAH_133
+psdtype3        DFALT_SCAN_BLANKS ACC TACC
+
+EDITS(tmptranst)
+t.Mandatory  psdstr5   MANDATORY
+t.Mandatory  psdtype3  MANDATORY
+t.Mandatory  psdket2   MANDATORY
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdstr5      DO_MAP SHOW
+                IF cnobuk133  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NobukHarusINPG
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cnobuk133  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NobukHarusINPG
+
+AFTER_INPUT     cur_field=psdstr5      DO_MAP SHOW
+                IF cnobuk133a  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MppSudahCapai
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cnobuk133a  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MppSudahCapai
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD       psdnourt
+SFL_TARGET
+        psddatpsmkod lUBAH133 btmplg
+SFL_MAP
+lUBAH133                psddata         REPLACE
+btmplg                  psdpsmkode      REPLACE
+btmnobuk                psdstr4         REPLACE
+

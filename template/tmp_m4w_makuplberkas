@@ -1,0 +1,63 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------\|
+||                              t.UploadBerkas                                ||
+|\----------------------------------------------------------------------------/|
+|/--------s.UPLOAD----------\ /-----------------------------------------------\|
+||                          ! !t.Ket    ______________________________________!|
+||                          ! !t.lati   _____________.______                  !|
+||                          ! !t.long   _____________.______                  !|
+||                          ! !t.StsUpl   _____                               !|
+||                          ! !t.AccKawil   _____                             !|
+||                          ! \-----------------------------------------------/|
+||                          !                                                  |
+||                          !                                                  |
+||                          !                                                  |
+|\--------------------------/                                                  |
+\------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketisi          PROTECT                 INPUTRI 1
+ketdf1          PROTECT                 INPUTRI 1
+ketdf2          PROTECT                 INPUTRI 1
+ketyt1          PROTECT                 INPUTRI 1
+ketyt3    		NOCHANGE				INPUTRI 1
+
+DEFAULT(tmptranst)
+ketyt3        DFALT_SCAN      BLANKS  
+                                Y      
+                                T
+
+CALCS()
+cOK		"OK"
+chapusfoto      g_usrkode==BLANKS || g_grpnam=="RI"
+caccfoto		tlmsts=="INPG"&& tlmsts2=="AKTF" && tlmdvs!="M4W" && (g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode == lnippjho || g_grpnam == "SYOMAHEAD" || g_grpnam == "ARAMZ1Z2" || g_grpnam == "ARAMZ4Z6" || g_grpnam == "REMAM" || g_grpnam =="BM" || g_grpnam =="M2WAM")
+
+MAP(mupduplfoto)
+cOK		ketyt1		DO_CALC
+g_fotolat1	ketdf1		REPLACE
+g_fotolon1	ketdf2		REPLACE
+
+DBCALCS(dupduplfoto)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET 	ketprmidx ketprm
+	DBC_MAP		mupduplfoto
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD      ketnobuk ketkode
+SFL_UPLFLD_DBCALCS dupduplfoto
+SFL_UPL_DELCOND chapusfoto
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+ketdatbuktgl tlmdata tlmnobuk lBERKASMAK 
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	caccfoto
+	PMT_DEL_COND	c0

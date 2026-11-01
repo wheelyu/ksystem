@@ -1,0 +1,77 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+ /-----------------------------------\
+  t.IkutBisnisLain  : __
+  t.Bisnis          : ______________
+  t.Nobuk821BisLain : _______________
+  t.TglEvent	    : ______________
+                      _____
+ \-----------------------------------/
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlddk           ALLCAPS                         INPUTRI 1
+tldsat	        PROTECT		                INPUTRI 2
+tldnoll         ALLCAPS SCROLL			INPUTRI 3
+tldtglfak	PROTECT NOLIMIT {DD-MM-YYYY} 	INPUTRI 4
+lENTER          NOCHANGE                        INPUTRI 5
+
+
+CALCS()
+cscr2921	tlmscr == "2921"
+cscr821		tlmscr == "821"
+
+DEFAULT(tmptranst)
+tlddk			DFALT_LIST	BLANKS Y T
+lENTER          	INIT    	ENTER
+
+IF cscr2921	tldsat		INIT	HMC
+IF cscr821	tldsat		INIT	GADAI
+
+EDITS(tmptranst)
+e.Mandatory	tldsat	MANDATORY_IF cYBisnislain
+e.Mandatory	tldnoll	MANDATORY_IF cYBisnislain
+
+CALCS()
+cupdate         	tlddk == "T"
+cnobukhmcgadai  	(tlddk == "Y" && tldsat == "HMC" && djointlmhmc == 1) || tlddk == "T" || tldsat == "GADAI"
+ctglnobukhmcgadai	(tlddk == "Y" && tldsat == "HMC" && djointlmhmc == 1 && ltlmtgljtp >= g_tgltrn) || tlddk == "T" || tldsat == "GADAI"
+cdjointlmhmc		djointlmhmc == 1
+
+MAP(mblanks)
+cBLANKS         tldnoll         DO_CALC_IF cupdate
+cBLANKS         tldsat          DO_CALC_IF cupdate
+cBLANKS		tldtglfak	DO_CALC_IF cupdate
+
+MAP(mtgl820)
+ltlmtgljtp	tldtglfak	REPLACE_IF cdjointlmhmc
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=tlddk         DO_MAP SHOW mblanks
+AFTER_INPUT             cur_field=tldnoll       DO_MAP SHOW
+                        IF cnobukhmcgadai mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.HarusInputNobuk821atau820SesuaiBisnis
+AFTER_INPUT             cur_field=tldnoll	 DO_MAP SHOW
+                        IF ctglnobukhmcgadai mtgl820
+                        ELSE HKCURSOR STAY
+                        HKMSG t.TglEventHarusLebihDariTglHariIni
+BEFORE_INPUT		cur_field=tldsat	DO_SKIP_IF cTBisnislain
+BEFORE_INPUT            cur_field=tldnoll       DO_SKIP_IF cTBisnislain
+BEFORE_INPUT		cur_field=tldnoll	DO_SKIP_IF cgadai
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND        ckondpapbl
+SFL_TARGET tldstsbrgukr  lBISNISPAP gv_OPEN lPAPBISNISLAIN tlmnobuk
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+lBISNISPAP	tlddata	        REPLACE
+gv_OPEN		tldsts		REPLACE
+lPAPBISNISLAIN	tldbrg		REPLACE
+tlmnobuk	tldukrwrn	REPLACE
+

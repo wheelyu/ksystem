@@ -1,0 +1,47 @@
+LOCAL
+PGM_FIELDS
+lsviket2	STRING	251
+
+MAP(mjoinsvikunj)
+sviket2         lsviket2        REPLACE
+
+DBCALCS(djoinsvikunj)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp    gv_kunjungan11 mtsnobuk ldata l1
+        DBC_MAP         mjoinsvikunj
+
+
+IMAGE(tmptranst)
+/-------------------t------------\
+|i.NoBuk            |t.Tanggal   |
+\-------------------.------------/
+
+IMAGE(tmptrans)
+|___________________|____________|
+
+FIELD(tmptrans)
+mtsnobuk        NOCHANGE        INPUTRI 1
+mtstgl          PROTECT         INPUTRI 2
+
+CALCS()
+ckond6            (mtsnobbm==psikode && ldata=="KUNJKOL4" && (djoinsvikunj==0 || (djoinsvikunj==1 && lsviket2==""))) ||
+                  (mtstype1==psikode && ldata=="KUNJKOL5" && (djoinsvikunj==0 || (djoinsvikunj==1 && lsviket2==""))) ||
+                  (mtstype2==psikode && ldata=="KUNJKOL6" && (djoinsvikunj==0 || (djoinsvikunj==1 && lsviket2==""))) ||
+                  (mtsusrapr==psikode && ldata=="KUNJKOL15" && (djoinsvikunj==0 || (djoinsvikunj==1 && lsviket2==""))) ||
+                  (mtsbrdoto==psikode && ldata=="KUNJKOL19" && (djoinsvikunj==0 || (djoinsvikunj==1 && lsviket2==""))) ||
+                  (mtskodeapr==psikode && ldata=="KUNJKOL16" && (djoinsvikunj==0 || (djoinsvikunj==1 && lsviket2=="")))
+
+SUBFILE(tmptrans)
+SFL_LINES(15)
+SFL_TITLE(tmptranst)
+SFL_SELECT      ckond6
+
+SFL_TARGET
+mtsdatplgtgl    gv_kunjungan11 psikode g_tgltrn
+
+/*SFL_TARGET_IF cinikol
+mtsdatplgtgl    gv_kunjungan11 psikode g_tgltrn
+
+SFL_TARGET_IF cinibknkol
+mtsdattglidx    gv_kunjungan11 g_tgltrn
+*/

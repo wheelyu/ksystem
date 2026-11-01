@@ -1,0 +1,77 @@
+LOCAL
+PGM_FIELDS
+lketisi2    STRING 21
+
+IMAGE(tmptranst)
+/-----------------------------------------\
+|t.HasilAnalsis                           |
+|/---------------------------------------\|
+||t.No             :__                   ||
+||t.AlurOtom       :_________________    ||
+||t.AlurCross      :_________________    ||
+||t.AlirKonSist    :_________________    ||
+||t.LapKntrl       :_________________    ||
+||t.NobukPengajuan :_________________    ||
+||                  _________________    ||
+||spasi                                  ||
+||                                       ||
+||spasi __                               ||
+||                                       ||
+|\---------------------------------------/|
+\-----------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketnourt        PROTECT SCROLL  INPUTRI 1
+ketstr1         TEXTAREA        INPUTRI 2
+ketstr2         TEXTAREA        INPUTRI 3
+ketstr3         TEXTAREA        INPUTRI 4
+ketstr4         TEXTAREA        INPUTRI 5
+lketisi2		ALLCAPS			INPUTRI 6
+ketisi2			PROTECT         INPUTRI 99
+lenter          NOCHANGE        INPUTRI 12
+
+EDITS(tmptranst)
+i.Mandatory     ketstr1         MANDATORY
+i.Mandatory     ketstr2         MANDATORY
+i.Mandatory     ketstr3         MANDATORY
+i.Mandatory     ketstr4         MANDATORY
+i.Mandatory     lketisi2		MANDATORY
+e.Validate      lketisi2        VALIDATE_BUF3 tlmbukidx mmaptlm196 0
+
+MAP(mmaptlm196)
+lketisi2		ketisi2        REPLACE
+
+CALCS()
+chrsisi2     ketstr1 != BLANKS  && ketstr2 != BLANKS && ketstr3 != BLANKS && ketstr4 != BLANKS
+cupd		 g_curcmd == 2
+
+MAP(mmapnobuk196)
+ketisi2			lketisi2	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT   cur_field=ketstr1		DO_MAP SHOW IF cupd mmapnobuk196
+BEFORE_INPUT   cur_field=ketstr4        DO_MAP SHOW murut3
+AFTER_INPUT cur_field=lenter		DO_MAP SHOW
+			IF chrsisi2	mdum
+			ELSE HKCURSOR STAY
+			HKMSG harus isi keempat Keterangan
+
+CALCS()
+cdetINPG6       ((tlmbrdoto == "HEAD_ISI_DETAIL" || tlmbrdoto == "DEV_TERIMA_KERJA" || tlmbrdoto == "HEAD_PENILAIAN" || tlmbrdoto == "OPR_PENILAIAN") && ketjoin == "INPG")|| (tlmbrdoto != "DEV_TERIMA_KERJA" && (tlmbrdoto == "CLSD" || tlmtotal >= 1))
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD ketnourt
+SFL_SELECT cdetINPG6
+SFL_TARGET
+ketdatbuktgl    tlmdata tlmnobuk lHSLANLS
+SFL_MAP
+tlmdata   ketdata     REPLACE
+tlmnobuk    ketnobuk    REPLACE  
+lHSLANLS   kettype     REPLACE  
+gv_INPG     ketjoin      REPLACE

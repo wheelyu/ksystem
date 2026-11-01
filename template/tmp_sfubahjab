@@ -1,0 +1,349 @@
+LOCAL
+PGM_FIELDS
+lhrmtgl2ubh             DATE            4
+lpsmkodeubh	        STRING          21
+lRESIGN	                STRING          11
+lJABLCKx                STRING          21
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.UbahJabSdm            ___                         !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.Ubah       : ______________________               !                   |
+|       !t.NoKk       : ________________________             !                   |
+|       !t.Div        : ___________                          !                   |
+|       !t.Bisnis     : __________                           !                   |
+|       !t.Dep        : ______________                       !                   |
+|       !t.Jab        : __________________                   !                   |
+|       !t.Jnssdm     : ____________                         !                   |
+|       !t.AccHrd     : __________________                   !                   |
+|       !t.Ket        : _____________________________________!                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt        NOCHANGE                INPUTRI 1
+tldtglfak       PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+tldgrup		NOCHANGE		INPUTRI 3
+tldbrdoto	ALLCAPS			INPUTRI 4 /*No KK*/
+tldkat          ALLCAPS                 INPUTRI 7 /*Divisi*/
+tldsat          ALLCAPS                 INPUTRI 8 /*Bisnis*/
+tldplg          ALLCAPS                 INPUTRI 9 /*Dep*/
+tldnoll         ALLCAPS                 INPUTRI 10/*Jabatan*/
+tldukrwrn       ALLCAPS SCROLL          INPUTRI 11/*Jns sdm*/
+tldsisbrg	NOCHANGE SCROLL		INPUTRI 12/*acc tacc*/
+tldket		ALLCAPS SCROLL		INPUTRI 13
+
+DEFAULTS(tmptranst)
+tldsisbrg       DFALT_SCAN_BLANKS Y T           
+tldgrup		DFALT_SCAN_BLANKS UBAH_CABSKRG UBAH_CABASAL CABASAL_DAN_CABSKRG NO_KK
+lRESIGN         INIT            RESIGN
+lJABLCKx        INIT            JABLCK
+
+
+CALCS()
+cjikaKK		tldgrup=="NO_KK"
+cbukanKK	tldgrup!="NO_KK"
+
+EDITS(tmptranst)
+t.Mandatory     tldgrup MANDATORY
+t.Mandatory 	tldbrdoto MANDATORY_IF cjikaKK
+t.Mandatory     tldsat MANDATORY_IF cbukanKK
+t.Mandatory     tldkat MANDATORY_IF cbukanKK
+t.Mandatory     tldplg MANDATORY_IF cbukanKK
+
+t.Mandatory     tldnoll MANDATORY_IF cbukanKK
+t.Mandatory	tldukrwrn MANDATORY_IF cbukanKK
+e.ValidateKK2   tldbrdoto VALIDATE kkmbukidx mkkmKKa 0      
+t.ValidateBis   tldsat  VALIDATE tbtdattypkod mtbtBis2 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlBISDEPT} {Ptldkat} 
+t.ValidateTbdDiv tldkat VALIDATE tbddatkodidx mtbddiv7 stbd {Pgv_dttabel} {Pgv_personal} {PlDIVISI21}
+t.ValidateTbdDep tldplg VALIDATE tbddtmstidx mtbddep7 stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_DEP} {Ptldkat} {Pgv_DEP}
+t.ValidateTbdJab tldnoll VALIDATE tbddtmstidx mtbdjab7 stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} {Ptldkat} {Ptldplg}
+t.Validate      tldukrwrn VALIDATE tbtdattypkod mtbtJns7 stbtjenis {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pgv_jabatan} {Ptldnoll}
+
+MAP(mtbddiv7)
+tbdkode         tldkat                  REPLACE
+
+MAP(mtbddep7)
+tbdkode         tldplg                   REPLACE
+
+MAP(mtbtBis2)
+tbtkode         tldsat          REPLACE
+
+MAP(mtbdjab7)
+tbdkode         tldnoll         REPLACE
+tbdrekbk        lubahjns        REPLACE
+tbdusrcrt	lgruplogin	REPLACE
+
+MAP(mtbtJns7)
+tbtkode         tldukrwrn       REPLACE
+
+MAP(mkkmKKa)
+kkmnobuk	tldbrdoto	REPLACE
+
+MAP(mjoinpsmubah)
+psmkode                 lpsmkodeubh        REPLACE
+
+DBCALCS(djoinpsmubah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx      btmplg
+        DBC_MAP         mjoinpsmubah
+
+MAP(mjoinhrm150ubah)
+hrmtgl2                 lhrmtgl2ubh        REPLACE
+
+DBCALCS(djoinhrm150ubah)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      hrmdatniptgl    lRESIGN lpsmkodeubh
+        DBC_MAP         mjoinhrm150ubah
+
+DBCALCS(djointbdLCKubah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lJABLCKx        btmiklan
+
+CALCS()
+ctdkbisa	(djoinpsmubah==1 && (djoinhrm150ubah==1 && ((btmbisnis == "IVR" && tldsat == "IVR") || 
+		(btmbisnis == "IVR" && tldsat != "IVR" && ((djointbdLCKubah==1 &&  g_tgltrn >= lhrmtgl2ubh + 90) ||
+                (djointbdLCKubah==0 && g_tgltrn >= lhrmtgl2ubh + 180))) || btmbisnis != "IVR"))) || djoinpsmubah==0 || djoinhrm150ubah==0
+ctgtmktdvshmc           "TGTMKTHMC"
+ctgtmktdvs              "TGTMKT" + STRIP(tldsat)
+ctgtmktdvsm2w4          "TGTMKTM2W"
+csdmhmc                 tldsat=="H1" || tldsat=="HMC"
+csdmm2w4w               btmbisnis=="M2W4W"
+
+DBCALCS(djoinkkd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	kkddatbukidx	gt_datakk tldbrdoto btmplg
+
+MAP(mjointbdcabbissdm)
+tbddf1                  ltypecabbissdm          REPLACE
+ctgtmktdvs              ltgtmktdvs              DO_CALC
+ctgtmktdvshmc           ltgtmktdvs              DO_CALC_IF csdmhmc
+ctgtmktdvsm2w4          ltgtmktdvs              DO_CALC_IF csdmm2w4w
+ctgtmktdvs              ltgtmktdvs21            DO_CALC
+ctgtmktdvshmc           ltgtmktdvs21            DO_CALC_IF csdmhmc
+
+DBCALCS(djointbdcabbissdm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal lcabbissdm tldkat
+        DBC_MAP         mjointbdcabbissdm
+
+DBCALCS(djointbdjabbissdm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal lcabbissdm tldnoll
+        DBC_MAP         mjointbdcabbissdm
+
+MAP(mjoinbbcsdm)
+bbcsdakhbl              lsaldorek       REPLACE
+
+DBCALCS(djoinbbcsdm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      bbcdatnoth ldatarl lsisapokok lthbl11 btmlokjual tldsat
+        DBC_MAP         mjoinbbcsdm
+
+MAP(mjoincad3236)
+cadtot1         ljmltgt3236             REPLACE
+
+DBCALCS(djoincad3236dvs)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx btmlokjual ltgtmktdvs ltgtmktdvs21 lthbl21
+        DBC_MAP         mjoincad3236
+
+DBCALCS(djoincad3236h2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx btmlokjual ltgtahass lthbl21 ltgtue1
+        DBC_MAP         mjoincad3236
+
+DBCALCS(djoincad3236hmcx1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx lcabtwr11 ltgtmktdvs ltgtmktdvs21 lthbl21
+        DBC_MAP         mjoincad3236
+
+DBCALCS(djoincad3236hmcx2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx lcabtwr21 ltgtmktdvs ltgtmktdvs21 lthbl21
+        DBC_MAP         mjoincad3236
+
+DBCALCS(djoincad3105mga)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx btmlokjual ltgtmga ltgtmga21 lthbl21
+        DBC_MAP         mjoincad3236
+
+DBCALCS(djointbdcabnon)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel gv_personal lnonbiscab btmlokjual
+
+MAP(mnourtx)
+c0              tldnourt        DO_CALC_IF cjointld7b0
+ctbh2a          tldnourt        DO_CALC_IF cjointld7b1
+btmkdkms	tldlok		REPLACE
+
+CALCS()
+cgrupada	lgruplogin!=""
+ckkbenar	(djoinkkd==1 && tldgrup=="NO_KK") || tldgrup!="NO_KK" 
+cbisdepACCOUNTING       (((djointbdcabbissdm==1 && ltypecabbissdm==1) || (djointbdjabbissdm==1 && ltypecabbissdm==1)) && ((djoinbbcsdm==1 && lsaldorek>0) || djoincad3236hmcx1==1 || djoincad3236hmcx2==1 || djoincad3236dvs==1 || djoincad3236h2==1))
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=1)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=1)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepAHASSS           (((djointbdcabbissdm==1 && ltypecabbissdm==2) || (djointbdjabbissdm==1 && ltypecabbissdm==2)) && djoincad3236h2==1)
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=2)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=2)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepCOLLECTION       (((djointbdcabbissdm==1 && ltypecabbissdm==3) || (djointbdjabbissdm==1 && ltypecabbissdm==3)) && djoinbbcsdm==1 && lsaldorek>0)
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=3)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=3)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepCREDIT           (((djointbdcabbissdm==1 && ltypecabbissdm==4) || (djointbdjabbissdm==1 && ltypecabbissdm==4)) && ((djoinbbcsdm==1 && lsaldorek>0) || djoincad3236hmcx1==1 || djoincad3236hmcx2==1 || djoincad3236dvs==1))
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=4)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=4)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepMULTI2WHEELS     (((djointbdcabbissdm==1 && ltypecabbissdm==5) || (djointbdjabbissdm==1 && ltypecabbissdm==5)) && djoincad3236dvs==1)
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=5)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=5)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepNEWMOTORCYCLE    (((djointbdcabbissdm==1 && ltypecabbissdm==6) || (djointbdjabbissdm==1 && ltypecabbissdm==6)) && djoincad3236dvs==1)
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=6)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=6)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepREMUSED          (((djointbdcabbissdm==1 && ltypecabbissdm==7) || (djointbdjabbissdm==1 && ltypecabbissdm==7)) && djoinbbcsdm==1 && lsaldorek>0)
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=7)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=7)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+cbisdepGADAI            (((djointbdcabbissdm==1 && ltypecabbissdm==8) || (djointbdjabbissdm==1 && ltypecabbissdm==8)) && djoincad3105mga==1)
+                        || (djointbdcabbissdm==1 && ltypecabbissdm!=8)
+                        || (djointbdjabbissdm==1 && ltypecabbissdm!=8)
+                        || (djointbdcabbissdm==0 && djointbdjabbissdm==0)
+			|| djointbdcabnon==1
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldkat        DO_MAP SHOW mnourtx
+BEFORE_INPUT	cur_field=tldbrdoto		DO_SKIP_IF cbukanKK
+BEFORE_INPUT	cur_field=tldkat		DO_SKIP_IF cjikaKK
+BEFORE_INPUT	cur_field=tldsat		DO_SKIP_IF cjikaKK
+BEFORE_INPUT	cur_field=tldplg		DO_SKIP_IF cjikaKK
+BEFORE_INPUT	cur_field=tldnoll		DO_SKIP_IF cjikaKK
+BEFORE_INPUT	cur_field=tldukrwrn		DO_SKIP_IF cjikaKK
+BEFORE_INPUT    cur_field=tldsisbrg     DO_SKIP_IF cbkn_hrd
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cbkn_hrd
+AFTER_INPUT	cur_field=tldbrdoto	DO_MAP SHOW
+		IF ckkbenar mdum
+		ELSE HKCURSOR STAY
+		HKMSG e.ValidateKK2
+
+AFTER_INPUT     cur_field=tldsat        DO_MAP SHOW
+                IF ctdkbisa mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.BisAwlIvaro
+
+AFTER_INPUT	cur_field=tldnoll	DO_MAP SHOW 
+		IF cgrupada mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JabGrpLoginBlmAda
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepACCOUNTING mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ACCOUNTINGSispokTgtJl
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepAHASSS mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.AHASSSTgtUnitEntri
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepCOLLECTION mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.COLLECTIONSispok
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepCREDIT mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.CREDITSispokTgtJl
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepMULTI2WHEELS mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MULTI2WHEELSTgtJl
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepNEWMOTORCYCLE mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NEWMOTORCYCLETgtJl
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepREMUSED mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.REMUSEDSispok
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cbisdepGADAI mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.GADAITgtJl
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckkbenar mdum
+                ELSE HKCURSOR STAY
+                HKMSG e.ValidateKK2
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepACCOUNTING mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ACCOUNTINGSispokTgtJl
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepAHASSS mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.AHASSSTgtUnitEntri
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepCOLLECTION mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.COLLECTIONSispok
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepCREDIT mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.CREDITSispokTgtJl
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepMULTI2WHEELS mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.MULTI2WHEELSTgtJ
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepNEWMOTORCYCLE mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NEWMOTORCYCLETgtJl
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepREMUSED mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.REMUSEDSispok
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbisdepGADAI mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.GADAITgtJl
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD       tldnourt
+SFL_TARGET
+        tldbukbrgoto btmplg gv_CLSD lUBAHSDM21
+
+SFL_MAP
+lUBAHSDM11              tldbrg          REPLACE
+btmplg                  tldnobuk        REPLACE
+btmnobuk		tldlok2		REPLACE
+gv_CLSD			tldsts		REPLACE
+g_tgltrn		tldtglfak	REPLACE

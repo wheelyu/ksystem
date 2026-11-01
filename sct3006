@@ -1,0 +1,85 @@
+SCREEN  3006  APPLICATION_TYPE  s.ResetPasswd 
+SCR_ENTER_COND cROOT
+SCR_ENTER_MSG  t.BknLyrAnda
+
+CALCS() 
+cROOT     g_grpnam == "ROOT"
+
+LOCAL
+PGM_FIELDS
+lkode		STRING		   21
+lname		STRING		   21
+lnewpass 	STRING		   21
+ltekan       	STRING		   15
+lpesan       	STRING		   300
+lsubjek      	STRING		   45 
+ltype        	INT2		   2
+
+
+IMAGE(master) 
+/-------------------------------------------------------------------\ 
+|         /--------------------------------------------------\      |
+|	  |   i.Typ               : __   i.UL                |      |
+					 i.UG
+|	  |   i.Kode              : ____________________     |      |
+|	  |   i.Nama              : ____________________     |      |
+|	  \--------------------------------------------------/      | 
+|         /--------------------------------------------------\      |
+|	  |   i.PasswdBaru        : ____________________     |      |
+|         \--------------------------------------------------/      |
+|			            __________                      |
+\-------------------------------------------------------------------/
+
+FIELD(master)
+   ltype              NOCHANGE         INPUTRI     1 /* user name */
+   lkode              NONE             INPUTRI     2 /* user name */
+   lname              PROTECT          INPUTRI     3 /* user name */
+   lnewpass           NONE             INPUTRI     4 /* user password */
+   ltekan             NOCHANGE         INPUTRI     7 /* user password */
+
+DEFAULTS(master)
+ltype 	DFALT_LIST    1 2 
+lsubjek	INIT	"Resep Password"
+		 
+
+CALCS()
+c1		ltype == 1
+c2		ltype == 2
+
+EDITS(master)
+Hanya Boleh mengisi 1 2 ltype TABLE 1 2
+harus mengisi type ltype MANDATORY
+Harus Masukkan Nama Pemakai lname MANDATORY 
+Kode Harus diisi lkode MANDATORY
+Kode Pemakai tidak ada lkode VALIDATE usrkodidx musr susr
+Harus Masukkan password baru lnewpass MANDATORY
+
+MAP(musr)
+    usrkode              lkode                   REPLACE
+    usrnam               lname                   REPLACE
+
+HELP(master)
+Tekan tombol End untuk merekam ltekan
+
+CALCS()
+cpesan1		"Password Login dgn User (" + STRIP(lkode)  + "): " + STRIP(lnewpass) + " ,harap segera diganti di scr3003"
+cpesan		"Password gaji dgn User (" + STRIP(lkode)  + "): " + STRIP(lnewpass) + " ,harap segera diganti di scr3005"
+cKS		stssistem == "KSYSTEM"
+
+MAP(mupdpsm)
+psmhp   	psmhp		REPLACE
+cpesan		lpesan		DO_CALC_IF c2
+cpesan1		lpesan		DO_CALC_IF c1
+
+SPCALCS(spcal)
+DO_LIB_IF cKS ap_dbclc(DNAME dupdpsm,DCOMMAND UPDATE,DTARGET psmkodidx lkode,DMAP mupdpsm);
+DO_LIB_IF c1 ap_pwrst(lkode,lnewpass);
+DO_LIB_IF c2 ap_pgrst(lkode,lnewpass);
+DO_LIB_IF cKS ap_kreml(psmemail,lsubjek,lpesan,g_strksg,g_strksg); /*Programer*/
+DO_LIB_IF cKS ap_kreml(stsemail2,lsubjek,lpesan,g_strksg,g_strksg); /*Susan*/
+
+POSTING(master)
+   PST_COMMAND     spcal       /* APPLICATION_TYPE */
+				
+
+END_SCREEN

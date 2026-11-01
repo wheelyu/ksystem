@@ -1,0 +1,106 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+||             t.DetailSurat           ||
+|\-------------------------------------/|
+|/-------------------------------------\|
+||t.Nilai     ___________              ||
+||t.SuratSurat  t.Pilihan              || 
+||t.STNK     :__  ______ ___________.__||
+||t.jtpSTNK  :__  ______ ___________.__||
+||t.Kunci    :__  ______ ___________.__||
+||t.Total    :___________.__           ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+mtdnobuk        PROTECT QPROTECT  INPUTRI 1
+mtdhrg          NOCHANGE        INPUTRI         2
+lket1c          PROTECT         INPUTRI         3
+mtdperdis1      NUMERIC         INPUTRI         4
+mtdperdis       NOCHANGE        INPUTRI         5
+lket2c          PROTECT         INPUTRI         6
+mtdperdis2      NUMERIC         INPUTRI         7
+mtdtotdis       NOCHANGE        INPUTRI         8
+lket3c          PROTECT         INPUTRI         9
+mtdperdis3      NUMERIC         INPUTRI         10
+mtdjml          PROTECT         INPUTRI         11
+
+EDITS(tmptranst)
+t.Mandatory     mtdhrg          MANDATORY
+t.Mandatory     mtdperdis       MANDATORY
+t.Mandatory     mtdtotdis       MANDATORY
+e.Validate1     mtdnobuk        VALIDATE tlmbukidx mmtd_d4
+t.Mandatory     mtdperdis1      MANDATORY_IF cpil1ax
+t.Mandatory     mtdperdis2      MANDATORY_IF cpil2ax
+t.Mandatory     mtdperdis3      MANDATORY_IF cpil3ax
+
+
+DEFAULTS(tmptranst)
+mtddvs          INIT            M4W
+mtdsts          INIT_ADD        SRAT
+mtddata         INIT_ADD        1169SRAT
+mtdbisnis       INIT_ADD        PIUT4
+mtdhrg          DFALT_SCAN      BLANKS 1 "Hidup"
+                                2 "Mati"
+mtdperdis       DFALT_SCAN      BLANKS 1 "Hidup"
+                                2 "Mati"
+mtdtotdis       DFALT_SCAN      BLANKS 1 "Hidup"
+                                2 "Mati"
+
+MAP(mmtd_d4)
+tlmnobuk        mtdnobuk        REPLACE
+chidup2          lket1c          DO_CALC_IF cpil1a
+cmati2           lket1c          DO_CALC_IF cpil1b
+chidup2          lket2c          DO_CALC_IF cpil2a
+cmati2           lket2c          DO_CALC_IF cpil2b
+chidup2          lket3c          DO_CALC_IF cpil3a
+cmati2           lket3c          DO_CALC_IF cpil3b
+
+MAP(mket1c)
+chidup          lket1c          DO_CALC_IF cpil1a
+cmati           lket1c          DO_CALC_IF cpil1b
+
+MAP(mket2c)
+chidup          lket2c          DO_CALC_IF cpil2a
+cmati           lket2c          DO_CALC_IF cpil2b
+
+MAP(mket3c)
+chidup          lket3c          DO_CALC_IF cpil3a
+cmati           lket3c          DO_CALC_IF cpil3b
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=mtdhrg           DO_MAP SHOW mket1c
+AFTER_INPUT  cur_field=mtdperdis        DO_MAP SHOW mket2c
+AFTER_INPUT  cur_field=mtdtotdis        DO_MAP SHOW mket3c
+AFTER_INPUT  cur_keybd=EN               DO_MAP SHOW mjumtot3
+AFTER_INPUT  cur_field=mtdhrg     DO_MAP SHOW
+             IF cd4sudahada           mdum
+             ELSE HKCURSOR STAY
+             HKMSG Rekord Detail Sudah ada, Tekan U untuk Ubah
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET      mtdbukurtidx   tlmnobuk l4
+SFL_MAP
+tlmnobuk	mtdnobuk	REPLACE
+tlmdari		mtdbrg		REPLACE
+tlmnoasal	mtdoto		REPLACE
+tlmcab		mtdcab		REPLACE
+tlmnobuk	mtdnobbm	REPLACE
+l4		mtdnourt	REPLACE
+
+CALCS()
+caddtmptrans       tlmsts=="OPEN" && (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WCSPV" || g_grpnam=="BM") 
+                   && djoin4d==0
+cupdtmptrans       tlmsts=="OPEN" && (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WCSPV" || g_grpnam=="BM")
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddtmptrans
+        PMT_UPDALL_COND cupdtmptrans
+        PMT_DEL_COND    c0
+

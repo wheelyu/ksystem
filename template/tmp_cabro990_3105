@@ -1,0 +1,57 @@
+IMAGE(tmptranst)
+/------------------------------------------\
+|t.Cab   : ________                        |
+|t.Bagi  : _________                       |
+|/--------t-----------t-------------------\|
+||t.Nip   |t.Nama     |  t.GrpLogin       ||
+|\--------.-----------.-------------------/|
+\------------------------------------------/
+
+FIELD(tmptranst)
+cabkode		NOCHANGE	INPUTRI	1
+lbagispk	PROTECT		INPUTRI	7
+
+
+IMAGE(tmptrans)
+|________|___________|___________________|
+
+FIELD(tmptrans)
+cadstr1         NOCHANGE        INPUTRI         1
+lnamasdm	PROTECT		INPUTRI		2
+lgrplogin	PROTECT		INPUTRI		3
+
+
+MAP(mcad990)
+cadkode         lbagispk        REPLACE
+
+DBCALCS(djoincadbagi)
+        DBC_COMMAND     JOIN_LAST_SFL 
+        DBC_TARGET      caddatcabare lCABRO990 lSDMRO990 cabkode  
+        DBC_MAP         mcad990
+
+CALCS() 
+cjoincadbagi    djoincadbagi==1
+
+EDIT(tmptrans)
+e.Validatepsi   cadstr1 VALIDATE psikodidx  mpsi990 
+e.Validateusr   cadstr1 VALIDATE usrkodidx  musr990
+
+MAP(musr990)
+usrgrp		lgrplogin	REPLACE
+lbagispk        lbagispk        REPLACE_IF cjoincadbagi
+
+MAP(mpsi990)
+psinama		lnamasdm	REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+       caddatcabare   lCABRO990 lSDMRO990 cabkode
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    c0
+        PMT_UPDALL_COND c0
+        PMT_DEL_COND    c0
+

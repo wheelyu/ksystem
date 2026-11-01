@@ -1,0 +1,47 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------------------------------------------------------------\
+| /-------s.UPLOAD----------\/-------------------------------------------------------------\ |
+| |                         !! i.Ket : _______________________________________             ! |
+| |                         !!         ___ _____                                           ! |
+| |                         !!                                                             ! |
+| |                         !!                                                             ! |
+| |                         !!                                                             ! |
+| |                         |!                                                             ! |
+| \-------------------------/\-------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1                  NOCHANGE                INPUTRI         10
+svitblkode              NOCHANGE                INPUTRI         11
+
+CALCS()
+cblmupl	        sviyt1 != "Y"
+cY              "Y"
+cfotokwium      svitblkode == "ADH" && svikode =="KWIUM"
+cbukakwium	tmpkode =="KWIUM" && dscansvifotopk >= 0 && ladakwium == 1
+
+MAP(mupdsvifotokwium)
+cY              sviyt1          DO_CALC
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+g_fototime1     svidf8          REPLACE
+
+DBCALCS(dupdsvifotokwium)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvifotokwium
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbukakwium
+SFL_SELECT cfotokwium
+SFL_UPL_DELCOND cblmupl
+SFL_UPLFLD_DBCALCS dupdsvifotokwium
+SFL_UPLFLD tlmnobbm svikode
+
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey tlmnobbm gv_fotopk
+

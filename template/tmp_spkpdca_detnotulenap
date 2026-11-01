@@ -1,0 +1,94 @@
+LOCAL
+PGM_FIELDS
+lnobukkunci             STRING 21
+lnamapicdetprn          STRING 21
+lnamaatsdetprn          STRING 21
+llastnourt              INT2    2
+
+MAP(mjoinlastnourt)
+tkdnourt                       llastnourt      REPLACE
+tkdnoll                        lnobukkunci     REPLACE
+DBCALCS(djoinlastnourt)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              tkddatbukll    gt_dtpdca tlmnobuk
+        DBC_MAP                 mjoinlastnourt
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------------------------\
+|/--------------------------------------\                                                                                 |
+||t.DetNtlnAp                           |                                                                                 |
+|\--------------------------------------/                                                                                 |
+|/-------t-----------------t----------------t---------t------------t----------t----------t----------t-----------t--------\|
+|| t.Urt | t.NoBukKunci    | t.NamaProject  | t.KetAp | t.Deadline | t.PicAP  | t.Nama   | t.NipAts | t.NamaAtas| t.Sts  ||            
+|\-------t-----------------t----------------t---------t------------t----------t----------t----------t-----------t--------/|
+\-------------------------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|_______|__________________|________________|_________|____________|__________|__________|__________|___________|________|
+
+FIELDS(tmptrans)
+tkdnourt                PROTECT SCROLL                 INPUTRI 1       /*No Urut*/
+tkdnoll                 PROTECT SCROLL                 INPUTRI 2       /*Nobuk Kunci*/
+tkdjenis                ALLCAPS SCROLL                 INPUTRI 3       /*Nama Project*/
+tkdket                  ALLCAPS SCROLL                 INPUTRI 4       /*Ket AP*/
+tkdtgl                  NOLIMIT {DD-MM-YYYY}           INPUTRI 5       /*Deadline*/
+tkdjwbstr1              ALLCAPS SCROLL                 INPUTRI 6       /*PIC AP*/
+lnamapicdetprn          PROTECT SCROLL                 INPUTRI 7       /*Nama PIC AP*/
+tkdrek                  ALLCAPS SCROLL                 INPUTRI 8       /*NIP Atasan*/
+lnamaatsdetprn          PROTECT SCROLL                 INPUTRI 9       /*Nama Atasan*/
+tkdsts                  PROTECT                        INPUTRI 10      /*Status 983*/
+
+CALCS()
+cjoinlastnourt          djoinlastnourt == 1
+cnourtdetntln           llastnourt + 1
+cnobukkunci             STRIP(tlmnobuk) + "-0" + FLD_TO_STRING(tkdnourt)
+
+EDITS(tmptrans)
+e.Validate NIP PIC      tkdjwbstr1              VALIDATE psikodidx mpsidetprn1 0
+e.Validate NIP Atasan   tkdrek                  VALIDATE psikodidx mpsidetprn2 0
+
+MAP(mpsidetprn1)
+psikode                 tkdjwbstr1              REPLACE
+psinama                 lnamapicdetprn          REPLACE
+
+MAP(mpsidetprn2)
+psikode                 tkdrek                  REPLACE
+psinama                 lnamaatsdetprn          REPLACE
+
+MAP(misidetnotulen)
+cBLANKS                 llastnourt              DO_CALC
+cBLANKS                 lnobukkunci             DO_CALC
+llastnourt              llastnourt              REPLACE_IF cjoinlastnourt
+lnobukkunci             lnobukkunci             REPLACE_IF cjoinlastnourt
+cnourtdetntln           tkdnourt                DO_CALC
+cnobukkunci             tkdnoll                 DO_CALC
+gt_dtpdca               tkddata                 REPLACE
+tlmnobuk                tkdnobuk                REPLACE
+gv_OPEN                 tkdsts                  REPLACE
+DEBUG ldum              ldum                    REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT            cur_field=tkdjenis      DO_MAP SHOW misidetnotulen
+
+SUBFILE(tmptrans)
+SFL_LINES(15)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tkdnourt
+SFL_SORT_UPDOWN UP
+SFL_TARGET     
+        tkddatbukll    gt_dtpdca tlmnobuk
+
+MAP(maddnotulen)
+gt_dtpdca       amtdata         REPLACE
+tkdoto          amtbukoto       REPLACE
+tlmgrup         amtemail        REPLACE
+
+SPCALCS(spaddnotulen)
+DO_LIB                  ap_dbclc(DNAME daddnotulen,DCOMMAND ADD,DFILE amt,DMAP maddnotulen);
+
+SPCALCS(spdelnotulen)
+DO_LIB                  ap_dbclc(DNAME ddelnotulen,DCOMMAND DELETE,DTARGET amtdatotoidx gt_dtpdca tkdoto);
+
+POSTING(tmptrans)
+PST_ADDCMD     spaddnotulen
+PST_DELCMD     spdelnotulen

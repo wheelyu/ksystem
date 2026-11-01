@@ -1,0 +1,98 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||t.RekomendasiPenyelesaianBM                                                ||
+||                                                                           ||
+|| _________________________________________________________________________ ||
+||t.Userinput :_______  ______________________________                       ||
+||t.Tglinput  :___________                                                   ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.RekomendasiPenyelesaianRM                                                ||
+||                                                                           ||
+|| _________________________________________________________________________ ||
+||t.Userinput :_______  ______________________________                       ||
+||t.Tglinput  :___________                                                   ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.RekomendasiPenyelesaianHO                                                ||
+||                                                                           ||
+|| _________________________________________________________________________ ||
+||t.Userinput :_______  ______________________________                       ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviket		TEXTAREA ALLCAPS		INPUTRI		1
+svikode		NOCHANGE			INPUTRI		2
+lnamausrdet	PROTECT				INPUTRI		3
+svitgl1		PROTECT	{DD-MM-YYYY}		INPUTRI		4
+
+sviket2		TEXTAREA ALLCAPS		INPUTRI		5
+svidtmkode	NOCHANGE			INPUTRI		6
+lnamausrdet2	PROTECT				INPUTRI		7
+svitgl2		PROTECT	{DD-MM-YYYY}		INPUTRI		8
+
+sviket3		TEXTAREA ALLCAPS		INPUTRI		9
+svitblkode	NOCHANGE			INPUTRI		10
+lnamausrdet3	PROTECT				INPUTRI		11
+
+CALCS()
+cstsinp1	tlmsts =="INPG" && tlmsts2 == "BM"
+cstsinp2	tlmsts =="INPG" && tlmsts2  == "RM"
+cstsinp3	tlmsts =="INPG" && tlmsts2 == "CRAS"
+cskiprekomen1	tlmsts =="INPG" && tlmsts2 != "BM"
+cskiprekomen2	tlmsts =="INPG" && tlmsts2 != "RM"
+cskiprekomen3	tlmsts =="INPG" && tlmsts2 != "CRAS"
+
+DEFAULTS(tmptranst)
+IF cstsinp1 svikode		INIT_ADD	{g_usrkode}
+IF cstsinp1 svikode		INIT_UPDATE	{g_usrkode}
+IF cstsinp1 svitgl1		INIT_ADD	{g_tgltrn}
+IF cstsinp1 svitgl1		INIT_UPDATE	{g_tgltrn}
+
+IF cstsinp2 svidtmkode		INIT_ADD	{g_usrkode}
+IF cstsinp2 svidtmkode		INIT_UPDATE	{g_usrkode}
+IF cstsinp2 svitgl2		INIT_ADD	{g_tgltrn}
+IF cstsinp2 svitgl2		INIT_UPDATE	{g_tgltrn}
+
+IF cstsinp3 svitblkode          INIT_ADD        {g_usrkode}
+IF cstsinp3 svitblkode          INIT_UPDATE     {g_usrkode}
+
+EDITS(tmptranst)
+NAMA USER BM TIDAK ADA	svikode		VALIDATE psmkodidx mpsmusrdet
+NAMA USER RM TIDAK ADA	svidtmkode	VALIDATE psmkodidx mpsmusrdet2
+NAMA USER HO TIDAK ADA	svitblkode	VALIDATE psmkodidx mpsmusrdet3
+Rekomendasi HARUS DIISI	sviket		MANDATORY_IF cstsinp1
+Rekomendasi HARUS DIISI	sviket2		MANDATORY_IF cstsinp2
+Rekomendasi HARUS DIISI	sviket3		MANDATORY_IF cstsinp3
+
+MAP(mpsmusrdet)
+psmnama		lnamausrdet		REPLACE
+
+MAP(mpsmusrdet2)
+psmnama		lnamausrdet2		REPLACE
+
+MAP(mpsmusrdet3)
+psmnama		lnamausrdet3		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=sviket		DO_SKIP_IF cskiprekomen1
+BEFORE_INPUT	cur_field=svikode		DO_SKIP_IF cskiprekomen1
+BEFORE_INPUT	cur_field=sviket2		DO_SKIP_IF cskiprekomen2
+BEFORE_INPUT	cur_field=svidtmkode		DO_SKIP_IF cskiprekomen2
+BEFORE_INPUT	cur_field=sviket3		DO_SKIP_IF cskiprekomen3
+BEFORE_INPUT	cur_field=svitblkode		DO_SKIP_IF cskiprekomen3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp   tlmdata tlmnobuk lANALISA1  
+SFL_MAP
+tlmnobuk	svinobuk	REPLACE
+tlmdata		svidata		REPLACE
+lANALISA1  	svitype		REPLACE
+

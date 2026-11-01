@@ -1,0 +1,113 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.HasilReviewNSOMSO             ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.Spk           : ____          ||
+||________________________________||
+||t.HasilKunjCmo  : ______        ||
+||t.LonLatRt      : ____.________ ||
+||                : ____.________ ||
+||t.Userinput     : _________     ||
+||t.Nama          : ______________||
+||t.GrpLog        : ______________||
+||                  _________     ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviket			TEXTAREA	INPUTRI	1
+sviket2                 TEXTAREA        INPUTRI 2
+svistr1			NOCHANGE	INPUTRI	3
+lketrvwnso		PROTECT		INPUTRI	4
+svistr2			NOCHANGE	INPUTRI	5
+llatftrt		PROTECT		INPUTRI	6
+llonftrt		PROTECT		INPUTRI	7
+svikode			PROTECT		INPUTRI	8
+lnamarevnso             PROTECT         INPUTRI 9
+lgruprevnso             PROTECT         INPUTRI 10
+lENTER                  NOCHANGE        INPUTRI 11
+
+DEFAULT(tmptranst)
+svikode			INIT		{g_usrkode}
+svikode			INIT_UPDATE	{g_usrkode}
+svitgl2                 INIT            {g_tgltrn}
+lketrvwnso		INIT		BLANKS
+svinourt		INIT		1
+svinourt		INIT_UPDATE	1
+lket726nso		INIT		KET726NSOMSO
+lket726nso2		INIT		KET726NSOMSO2
+svistr2                 DFALT_SCAN      BLANKS
+                                        BENAR "BENAR"
+                                        SALAH "SALAH"
+
+EDITS(tmptranst)
+e.Validate		svistr1		VALIDATE_IF cfaktur tbddatkodidx  mtbd4a_1 stbd {Pgv_dttabel} {Pgv_survey21} {Plket726nso}
+e.Validate		svistr1		VALIDATE_IF cpk tbddatkodidx  mtbd4a_1 stbd {Pgv_dttabel} {Pgv_survey21} {Plket726nso}
+e.Validate		svistr1		VALIDATE_IF cspk tbddatkodidx  mtbd4a_1 stbd {Pgv_dttabel} {Pgv_survey21} {Plket726nso2}
+Nama tidak ada          svikode         VALIDATE        psikodidx mpsipic_1 0
+Jabatan tidak ada       svikode         VALIDATE        usrkodidx musrpic_1 0
+e.Mandatory		sviket		MANDATORY
+e.Mandatory		svistr1		MANDATORY
+e.Mandatory		svistr2		MANDATORY
+
+MAP(musrpic_1)
+usrgrp                  lgruprevnso     REPLACE
+
+MAP(mpsipic_1)
+psinama                 lnamarevnso     REPLACE
+
+MAP(mtbd4a_1)
+tbdkode			svistr1		REPLACE
+tbdket			lketrvwnso	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW mpanjangs
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW
+                        IF cisirvwnsomso mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin20
+
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF cisirvwnsomso mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.IsiReviewNsoMso
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+                IF cnsomso726 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiSesuaiNsoMso
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csdhambil2
+SFL_TARGET
+        svidatbuktyp    gv_datasurvey mtsnobuk lkunjrvwnsomso l1
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svidtmkode      REPLACE
+gv_datasurvey   svidata         REPLACE
+lkunjrvwnsomso 	svitype         REPLACE
+l1		svinourt	REPLACE
+g_usrkode	svikode		REPLACE
+
+SPCALCS(sptrans2g23)
+
+DO_LIB ap_dbclc(DNAME dmaptrans2g22,DCOMMAND MAPMAP,DMAP mmaptrans2nsomso);
+DO_LIB_IF cdjoinabknsomso ap_dbclc(DNAME dupdabkbum, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnobukabknsomso, DMAP mupdabknsomso);
+DO_LIB_IF ctambah ap_dbclc(DNAME dupdftmbum, DCOMMAND UPDATE, DTARGET ftmdatbukidx gv_datasurvey mtsnoasal, DMAP mupdftmnsomso);
+DO_LIB ap_dbclc(DNAME dupdmtsbum,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmtsnsomso);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptrans2g23
+PST_UPDCMD      sptrans2g23

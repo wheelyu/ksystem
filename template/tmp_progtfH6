@@ -1,0 +1,73 @@
+LOCAL
+PGM_FIELDS
+lnamasdm6               STRING          61
+lgrplogin6              STRING          61
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.RevAwalKasus                  ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.TglInp     : _________________||
+||t.Userinput  : _________________||
+||t.Nama       : _________________||
+||t.GrpLog     : _________________||
+||                         _______||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdket			TEXTAREA	INPUTRI	1
+tkdtgl2                 PROTECT         INPUTRI 2
+tkdrek                  PROTECT         INPUTRI 3
+lnamasdm6               PROTECT         INPUTRI 4
+lgrplogin6              PROTECT         INPUTRI 5
+lENTER2                 ALLCAPS         INPUTRI 2
+
+DEFAULT(tmptranst)
+l6		INIT		6
+tkdtgl2         INIT            {g_tgltrn}
+tkdtgl2		INIT_UPDATE	{g_tgltrn}
+tkdrek          INIT            {g_usrkode}
+tkdrek		INIT_UPDATE	{g_usrkode}
+tkdnourt	INIT		6
+tkdsts		INIT		INPG
+lENTER2         INIT            ENTER
+
+EDITS(tmptranst)
+e.Mandatory		tkdket		MANDATORY
+Nama tidak ada          tkdrek          VALIDATE        psikodidx mpsirev6 0
+Jabatan tidak ada       tkdrek          VALIDATE        usrkodidx musrrev6 0
+
+MAP(musrrev6)
+usrgrp                  lgrplogin6   REPLACE
+
+MAP(mpsirev6)
+psinama                 lnamasdm6    REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkdbukidx   tlmnobuk lINPG l6          
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+tlmdata         tkddata         REPLACE
+tlmnoasal       tkdnoll         REPLACE
+
+CALCS()
+caddtransacc6       (tlmsts=="762" && (tlmuntuk==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="1706116") && tlmsts2=="PRG2" &&
+                    djointkd6==0)
+cupdtransacc6       (tlmsts=="762" && (tlmuntuk==g_usrkode || g_grpnam=="RI" || g_grpnam=="IT" || g_usrkode=="1706116") && tlmsts2=="PRG2" &&
+		    djointkd6==1)
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddtransacc6
+        PMT_UPDALL_COND cupdtransacc6
+        PMT_DEL_COND    c0
+

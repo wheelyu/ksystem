@@ -1,0 +1,59 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------\
+|t.NipTrn        : ________________                                                      |
+|t.Nama          : ________________                                                      |
+|t.TglTrn        : ________________                                                      |
+|t.LinkZoom	 : _______________________________________                               |
+|-----------t----------------t---------------t--------------t-----------t----------------|
+| t.Nip     | t.Nama         | t.Divisi      | t.Jabatan    | t.Ceklis  | t.Keterangan   |
+\-----------.----------------.---------------.--------------.-----------.----------------/
+IMAGE(tmptrans)
+|___________|________________|_______________|______________|___________|________________|
+
+
+FIELDS(tmptranst)
+ltkdnoll        PROTECT                 INPUTRI 1
+lnamatrain      PROTECT                 INPUTRI 2
+/*lkontak         PROTECT                 INPUTRI 3*/
+ltldtglfak      PROTECT {DD-MM-YY}      INPUTRI 2
+llinkzoom	TEXTAREA PROTECT SCROLL	INPUTRI 3
+
+FIELDS(tmptrans)
+tldplg          PROTECT         INPUTRI         1
+lsdmtr          PROTECT         INPUTRI         2
+ldvstr          PROTECT         INPUTRI         3
+ljabtr          PROTECT         INPUTRI         4
+tldlok2         NOCHANGE        INPUTRI         5
+tldkirim        ALLCAPS         INPUTRI         6
+
+CALCS()
+chanyanip       abkkym==tldplg
+cskip    	tldlok2=="Y"
+cjwbyax		tldlok2=="T"
+
+DEFAULTS(tmptrans)
+tldlok2          DFALT_SCAN_BLANKS      Y T
+
+EDITS(tmptrans)
+e.Mandatory     tldkirim       MANDATORY_IF cjwbyax
+e.Validate      tldplg         VALIDATE psikodidx mpsi3
+
+MAP(mpsi3)
+psinama         lsdmtr          REPLACE
+psidvs          ldvstr          REPLACE
+psijabatan      ljabtr          REPLACE
+ltldtglfak      ltldtglfak      REPLACE_IF cdjointldtgl
+ltkdnoll        ltkdnoll        REPLACE_IF cdjointkd
+lnamatrain      lnamatrain      REPLACE_IF cdjoinpsi
+llinkzoom	llinkzoom	REPLACE_IF cjoinket914
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tldkirim      DO_SKIP_IF cskip
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT      chanyanip
+SFL_TARGET
+        tldbukbrglok   abknobuk lDTLISTRN
+

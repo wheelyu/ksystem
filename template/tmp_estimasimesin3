@@ -1,0 +1,93 @@
+DBCALCS(djoinestmesin)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      mtdbukurtidx lnobuk749 l3
+        DBC_MAP         mjoinestimasi
+
+CALCS()
+cjoinestmesin        djoinestmesin==1
+chidup          "Hidup"
+cmati           "Mati"
+ckarat          "Karat"
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------------------------\|
+||                                         t.DetailMesin                          _____________ ||
+|\----------------------------------------------------------------------------------------------/|
+|/--------------------------------------------------\/------------------------------------------\|
+||t.Mesin                      t.Pilihan            || t.NilaiADH           t.NilaiHO           ||
+||t.ACCU            :             ____  ___________ || ___________________  ___________________ ||
+||t.FisikMesin      :             ____  ___________ || ___________________  ___________________ ||
+||t.Radiator        :             ____  ___________ || ___________________  ___________________ ||
+||                                t.Total:          || ___________________  ___________________ ||
+|\--------------------------------------------------/\------------------------------------------/|
+\------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+mtdnobuk        PROTECT 	INPUTRI		1
+lpes1           PROTECT         INPUTRI         2
+lket1b          PROTECT         INPUTRI         3
+lnes1		PROTECT		INPUTRI		4
+mtdperdis1      NUMERIC         INPUTRI         5
+lpes2           PROTECT         INPUTRI         6
+lket2b          PROTECT         INPUTRI         7
+lnes2		PROTECT		INPUTRI		8
+mtdperdis2      NUMERIC         INPUTRI         9
+lpes3           PROTECT         INPUTRI         10
+lket3b          PROTECT         INPUTRI         11
+lnes3		PROTECT		INPUTRI		12
+mtdperdis3      NUMERIC         INPUTRI         13
+ltotal		PROTECT		INPUTRI		14
+mtdjml          PROTECT         INPUTRI         15
+
+DEFAULTS(tmptranst)
+lpes1          INIT             BLANKS
+lpes2          INIT            BLANKS
+lpes3          INIT            BLANKS
+lnes1          INIT            BLANKS
+lnes2          INIT            BLANKS
+lnes3          INIT            BLANKS
+ltotal         INIT            BLANKS
+
+EDITS(tmptranst)
+e.Validate      mtdnobuk        VALIDATE tlmbukidx mtlm3
+
+MAP(mtlm3)
+tlmnobuk        mtdnobuk        REPLACE
+lpes1           lpes1           REPLACE_IF cjoinestmesin
+chidup          lket1b          DO_CALC_IF cpil1a
+cmati           lket1b          DO_CALC_IF cpil1b
+ckarat          lket1b          DO_CALC_IF cpil1c
+chidup          lket2b          DO_CALC_IF cpil2a
+cmati           lket2b          DO_CALC_IF cpil2b
+ckarat          lket2b          DO_CALC_IF cpil2c
+chidup          lket3b          DO_CALC_IF cpil3a
+cmati           lket3b          DO_CALC_IF cpil3b
+ckarat          lket3b          DO_CALC_IF cpil3c
+
+MAP(mjumtot3)
+ctotal34        mtdjml          DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=mtdperdis1    DO_MAP SHOW mnobuk
+BEFORE_INPUT    cur_field=mtdperdis1    DO_MAP SHOW mtlm3
+AFTER_INPUT  cur_keybd=EN               DO_MAP SHOW mjumtot3
+
+POSTING(tmptrans)
+        PST_ADDCMD supdtlm1
+        PST_UPDCMD supdtlm1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+       mtdbukurtidx   tlmnobuk l3
+SFL_MAP
+tlmnobuk        mtdnobuk        REPLACE
+l3              mtdnourt        REPLACE
+tlmdata         mtddata         REPLACE
+tlmnobbm        mtdnobbm        REPLACE
+tlmcab          mtdcab          REPLACE
+

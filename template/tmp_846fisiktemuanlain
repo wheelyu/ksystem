@@ -1,0 +1,157 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------\|
+|| t.NoMesin          : ___________________                                        ||
+|| t.NoRangka         : ___________________                                        ||
+|| t.KetUnit          : _________________________                                  ||
+|| t.NomorDO/Faktur   : ___________________                                        ||
+|| t.TglDO            : _________                                                  ||
+|| t.TglTerima/Kirim  : _________   t.s/d _________                                ||
+|| t.LamaHari         : ______                                                     ||
+|| t.NamaBrg          : ___________________                                        ||
+|| t.HasilVerif       : _________________________                                  ||
+||		                ______		                                               ||
+|\---------------------------------------------------------------------------------/|
+|   _________                                                                       |
+|/----------s.UPLOAD-------------------------------\                                |
+||                                                 |                                |
+||                                                 |    /--------\                  |
+||                                                 |                                |
+||                                                 |      _____                     |
+||                                                 |    \--------/                  |
+||                                                 |                                |
+|\-------------------------------------------------/                                |
+\-----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktkode     PROTECT                         INPUTRI 1
+aktkode2    PROTECT                         INPUTRI 2
+aktlok      NOCHANGE                        INPUTRI 3
+aktcrtusr   ALLCAPS                         INPUTRI 4
+akttgl      NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 5
+akttgl2     NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 6
+ltglcek     PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 6
+aktjml      PROTECT                         INPUTRI 6
+aktcab      ALLCAPS                         INPUTRI 7
+aktket      TEXTAREA                        INPUTRI 7
+lenter      NOCHANGE                        INPUTRI 8
+lBUKTITEMU  PROTECT                         INPUTRI 9
+akttype2    PROTECT                         INPUTRI 10
+
+DEFAULTS(tmptranst)
+lenter      INIT                "OK"
+aktlok      DFALT_SCAN_BLANKS   DO_BLM_INPUT
+                                MUTASI_BLM_PROSES
+                                MTR_JUAL_BLM_KR
+                                MOTOR_RETUR
+/*ltglcek	    INIT		        {g_tgltrn}*/
+
+CALCS()
+clamahari	ltglcek - akttgl2 + 1
+cDOBlmInp   aktlok == "DO_BLM_INPUT"
+cnosinppdtm ppdnomesin == aktkode
+cnosinbrdtm brdnomesin == aktkode
+cnobrg      btmtypmtr == lnobrg
+cselaindo   aktlok != "DO_BLM_INPUT"
+ctgltrn     g_tgltrn
+
+MAP(mjoinppdtmlain)
+ppdnobuk        lnofakppd      REPLACE  
+ppdbrg          lnobrg         REPLACE
+
+DBCALCS(djoinppdtmlain)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      ppddatcabtgl   lDATAPIU 
+    DBC_SELECT      cnosinppdtm
+    DBC_MAP         mjoinppdtmlain
+
+MAP(mjoinbrdtmlain)
+brdbrg          lnobrg         REPLACE
+
+DBCALCS(djoinbrdtmlain)
+    DBC_COMMAND    JOIN
+    DBC_TARGET     brdstscabbrg   gv_INPG  
+    DBC_SELECT     cnosinbrdtm
+    DBC_MAP        mjoinbrdtmlain
+
+
+MAP(mjoinppmtmlain)
+ppmtglbyrakh    ltglkrm          REPLACE
+
+DBCALCS(djoinppmtmlain)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      ppmbukidx   lnofakppd
+    DBC_MAP         mjoinppmtmlain
+
+MAP(mjoinbtmtmlain)
+btmtypmtr2      lnamamtr        REPLACE
+
+DBCALCS(djoinbtmtmlain)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      btmdatstsoto   lBUKUTAMU gv_INPG
+    DBC_SELECT      cnobrg
+    DBC_MAP         mjoinbtmtmlain
+
+CALCS()
+cppdtmlain      djoinppdtmlain == 1 && (aktlok == "MTR_JUAL_BLM_KR" || aktlok == "MOTOR_RETUR")
+cppmtmlain      djoinppmtmlain == 1 && (aktlok == "MTR_JUAL_BLM_KR" || aktlok == "MOTOR_RETUR")
+cbtmtmlain      djoinbtmtmlain == 1 || djoinbrdtmlain == 1
+/*cblmkrretur     aktlok == "MTR_JUAL_BLM_KR" || aktlok == "MOTOR_RETUR" */
+cubahtmlain     g_curcmd == 2
+
+EDITS(tmptranst)
+/*e.MandatoryDO1        aktcrtusr      MANDATORY_IF cDOBlmInp */
+e.MandatoryDO2          akttgl2        MANDATORY_IF cDOBlmInp 
+e.Mandatoryfttmlain     akttype2       MANDATORY
+
+
+MAP(mblmkrretur)
+lnofakppd       aktcrtusr       REPLACE_IF cppdtmlain
+ltglkrm         akttgl2         REPLACE_IF cppmtmlain
+lnamamtr        aktcab          REPLACE_IF cbtmtmlain
+
+MAP(mlama)
+ctgltrn     ltglcek     DO_CALC
+clamahari	aktjml  	DO_CALC
+
+MAP(mupdakttmp1)
+lOK         akttype2                REPLACE
+
+DBCALCS(dupdakttmp1)
+    DBC_COMMAND     UPDATE
+    DBC_TARGET      aktprmidx   aktprm  
+	DBC_MAP         mupdakttmp1
+
+MAP(mubahtmlain)
+cBLANKS     lnofakppd       DO_CALC_IF  cubahtmlain
+cBLANKS     ltglkrm         DO_CALC_IF  cubahtmlain
+cBLANKS     lnobrg          DO_CALC_IF  cubahtmlain
+cBLANKS     lnamamtr        DO_CALC_IF  cubahtmlain
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD          tlmtgl
+SFL_UPLFLD              aktnobuk
+SFL_UPLFLD_DBCALCS      dupdakttmp1
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+aktbrgtglidx   tlmnobuk lTEMULAIN lMOBAR
+
+SFL_MAP
+tlmnobuk    aktbrg      REPLACE
+lTEMULAIN   aktdata     REPLACE
+lMOBAR      akttype     REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=aktlok        DO_MAP  SHOW mubahtmlain
+AFTER_INPUT     cur_field=aktlok        DO_MAP  SHOW mblmkrretur
+AFTER_INPUT     cur_field=akttgl2       DO_MAP  SHOW mlama
+BEFORE_INPUT    cur_field=akttgl        DO_SKIP_IF cselaindo
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cOPEN

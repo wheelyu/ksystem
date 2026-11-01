@@ -1,0 +1,494 @@
+LOCAL
+PGM_FIELDS
+
+lsvistr4m4w		STRING		21
+lsvidf5m4w		DFLOAT		8
+lsvilmkrjam4w		INT2		2
+lsvistr2m4w             STRING          21
+lsvidf1m4w              INT2            2
+lsvistr3pnjmnm4w	STRING		21
+lconhp			STRING		21
+lFOTORUMAH              STRING          11
+lalmjalanm4w		STRING		61
+lalamjalankrjam4w	STRING		61
+llatsurv1m4w		DFLOAT		8
+llongsurv2m4w		DFLOAT		8
+lFOTOSVY		STRING		11
+lCAPACITY		STRING		11
+lRpenghslnsurv		STRING		3
+lpenghslnsurvisi	STRING		61
+lpenghslnresurvisi	STRING		61
+lRpenghslnsurvbtm	STRING		3
+
+DBCALCS(djoinsvipik)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      pikdatbukidx   gv_dtpiu svikode
+
+DBCALCS(djoinsvibtm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btmbukidx   svikode
+
+MAP(mjoinuplkorkol)
+svidf1                  lsvidf1                 REPLACE
+svidf2                  lsvidf2                 REPLACE
+
+DBCALCS(djoinuplkorkol)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp mtsdata mtsnobuk lresurvey9
+        DBC_MAP         mjoinuplkorkol
+
+MAP(mjoinuplkorcmo)
+svidf1                  lsvidf1                 REPLACE
+svidf2                  lsvidf2                 REPLACE
+
+DBCALCS(djoinuplkorcmo)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp mtsdata mtsnobuk lresurvey10
+        DBC_MAP         mjoinuplkorcmo
+
+MAP(mjointranskerjam4w)
+svistr4         lsvistr4m4w             REPLACE  /* PEKERJAAN */
+svidf5          lsvidf5m4w              REPLACE  /* GAJI      */
+svidf7          lsvilmkrjam4w           REPLACE  /* Lama Kerja */
+
+DBCALCS(djointranskerjam4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_dt1106 piknobtm gv_pekerjaan
+        DBC_MAP         mjointranskerjam4w
+
+MAP(mjointransrmhm4w)
+svistr3         lsvistr2m4w             REPLACE         /* Status Rumah */
+svidf1          lsvidf1m4w              REPLACE         /* Lama Tinggal */
+
+DBCALCS(djointransrmhm4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_dtbukutamu piknobtm lCEKLISURV
+        DBC_MAP         mjointransrmhm4w
+
+MAP(mjoinalmm4w)
+almjalan	lalmjalanm4w		REPLACE
+
+DBCALCS(djoinalmm4w)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx     pikplg gt_psmtinggal
+	DBC_MAP		mjoinalmm4w
+
+MAP(mjointranspnjmnm4w)
+svistr3         lsvistr3pnjmnm4w        REPLACE         /*Hub dgn penjamin */
+
+DBCALCS(djointranspnjmnm4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_dt1106 btmnobuk gv_penjamin
+        DBC_MAP         mjointranspnjmnm4w
+
+MAP(mjoinalmkrjam4w)
+almjalan	lalamjalankrjam4w	REPLACE
+
+DBCALCS(djoinalmkrjam4w)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx   pikplg gv_psmkerja
+	DBC_MAP		mjoinalmkrjam4w
+
+MAP(mjoinconhp)
+conhp           lconhp          REPLACE
+
+DBCALCS(djoinconhp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx pikplg gv_INPG
+        DBC_MAP         mjoinconhp
+
+MAP(mjoinsvilonglatm4w)
+svidf6          llatsurv1m4w       REPLACE
+svidf7          llongsurv2m4w      REPLACE
+
+DBCALCS(djoinsvilonglatm4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lFOTOSVY piknobtm lFOTORUMAH l1
+        DBC_MAP         mjoinsvilonglatm4w
+
+MAP(mjoinsvicapacity)
+svistr31        lRpenghslnsurv          REPLACE
+
+DBCALCS(djoinsvicapacity)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey piknobtm lCAPACITY l1
+        DBC_MAP         mjoinsvicapacity
+
+MAP(mjoinsvicapacitybtm)
+svistr31        lRpenghslnsurvbtm          REPLACE
+
+DBCALCS(djoinsvicapacitybtm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey mtsnoasal lCAPACITY l1
+        DBC_MAP         mjoinsvicapacitybtm
+
+CALCS()
+cjoinsvipik		djoinsvipik==1 
+cjoinsvibtm		djoinsvibtm==1
+cjoinsvisurv2		(djoincapacity==1 || djoincapacitybtm==1) && mtsdvs!="M4W"
+cjoinsvisurv3		(djoincapital==1 || djoincapitalbtm==1) && mtsdvs!="M4W"
+cjoinsvisurv4		(djoincharacter==1 || djoincharacterbtm==1) && mtsdvs!="M4W"
+cjoinuplkorkol		djoinuplkorkol==1 && lsvidf1!=0
+cjoinuplkorkol2         djoinuplkorkol==1 && lsvidf2!=0
+cjoinuplkorcmo		djoinuplkorcmo==1 && lsvidf1!=0
+cjoinuplkorcmo2         djoinuplkorcmo==1 && lsvidf2!=0
+cjointranskerjam4w	djointranskerjam4w==1 && mtsdvs=="M4W"
+cjointransm4w1		djointransm4w==1 && mtsdvs=="M4W"
+cjointransrmhm4w	djointransrmhm4w==1 && mtsdvs=="M4W"
+cjoinalmm4w		djoinalmm4w==1 && mtsdvs=="M4W"
+cjointranspnjmnm4w	djointranspnjmnm4w==1 && mtsdvs=="M4W"
+cjoinalmkrjam4w		djoinalmkrjam4w==1 && mtsdvs=="M4W"
+cjoinconhp		djoinconhp==1 && mtsdvs=="M4W"
+cjoinsvilonglatm4w	djoinsvilonglatm4w==1 && mtsdvs=="M4W"
+cjikaBM			mtshcin==g_usrkode || mtsbisnis==g_usrkode || (djoinpsiHo==1 && lpsicabskr=="PST30") || g_grpnam == "B.M4WADH" || g_grpnam=="B.M4WBM" || g_grpnam=="RI" || g_grpnam=="IT"
+
+cjointransx1		djointrans==1 && lRpenghslnresurv=="R1"
+cjointransx2		djointrans==1 && lRpenghslnresurv=="R2"
+cjointransx3		djointrans==1 && lRpenghslnresurv=="R3"
+cjointransx4            djointrans==1 && lRpenghslnresurv=="R4"
+cjointransx5            djointrans==1 && lRpenghslnresurv=="R5"
+cjointransx6            djointrans==1 && lRpenghslnresurv=="R6"
+cjointransx7            djointrans==1 && lRpenghslnresurv=="R7"
+
+cjoinsvicapacityx1	djoinsvicapacity==1 && lRpenghslnsurv=="R1"
+cjoinsvicapacityx2      djoinsvicapacity==1 && lRpenghslnsurv=="R2"
+cjoinsvicapacityx3      djoinsvicapacity==1 && lRpenghslnsurv=="R3"
+cjoinsvicapacityx4      djoinsvicapacity==1 && lRpenghslnsurv=="R4"
+cjoinsvicapacityx5      djoinsvicapacity==1 && lRpenghslnsurv=="R5"
+cjoinsvicapacityx6      djoinsvicapacity==1 && lRpenghslnsurv=="R6"
+cjoinsvicapacityx7      djoinsvicapacity==1 && lRpenghslnsurv=="R7"
+
+
+cjoinsvicapacityy1      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R1"
+cjoinsvicapacityy2      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R2"
+cjoinsvicapacityy3      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R3"
+cjoinsvicapacityy4      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R4"
+cjoinsvicapacityy5      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R5"
+cjoinsvicapacityy6      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R6"
+cjoinsvicapacityy7      djoinsvicapacitybtm==1 && lRpenghslnsurvbtm=="R7"
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------------------------------\|
+|| ____________________   t.InputanSurvey     t.InputanResurvey    t.Ket         t.HasilVerif         ||
+|| t.PkrjnPmhn        _____________________  ____________________  ___________  ____________________  || _ _
+|| t.StsRmh           _____________________  ____________________  ___________  ____________________  || _ _
+|| t.PenghslPmh       _____________________  ____________________  ___________  ____________________  ||
+|| t.ketPenghslPmhmtr _____________________  ____________________  ___________  ______________________||
+|| t.LamaTinggal      ______t.Thn______t.Bln  _____t.Thn______t.Bln ___________  ______t.Thn______t.Bln||
+|| t.AlamatRumah      _____________________  ____________________  ___________  ____________________  ||
+|| t.HubDgnPenj       _____________________  ____________________  ___________  ____________________  || _ _
+|| t.AlmtKrja         _____________________  ____________________  ___________  ____________________  ||
+|| t.LamaKerja        ______t.Thn______t.Bln  _____t.Thn______t.Bln ___________  ______t.Thn______t.Bln||
+|| t.NomorTelpon      _____________________  ____________________  ___________  ____________________  ||
+|| t.LonglatRumah     _____.____ _____.____   _____.____ ____.____  __.__t.M ___  ____.____  ____.____  ||
+|| t.HasilFoto                                                                  ____________________  ||
+|\----------------------------------------------------------------------------------------------------/|
+\------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode 		NOCHANGE                INPUTRI 1
+
+lketpekerjaansurv	PROTECT			INPUTRI 2
+lketpekerjaanresurv	PROTECT			INPUTRI 3
+sviyt1			PROTECT			INPUTRI 4
+svistr1			PROTECT			INPUTRI 5
+lpekerjaansurv		PROTECT	QPROTECT	INPUTRI 5
+lpekerjaanresurv	PROTECT	QPROTECT	INPUTRI 5
+
+lketstsrmhsurv		PROTECT			INPUTRI 6
+lketstsrmhresurv	PROTECT			INPUTRI 7
+sviyt2			PROTECT			INPUTRI 8
+svistr2			PROTECT			INPUTRI 9
+lstsrmhsurv		PROTECT	QPROTECT	INPUTRI 9
+lstsrmhresurv		PROTECT	QPROTECT	INPUTRI 9
+
+lpenghslnsurv		PROTECT			INPUTRI 9
+lpenghslnresurv	PROTECT			INPUTRI	9
+svistr31		PROTECT                 INPUTRI 9
+svidf2			PROTECT                 INPUTRI 9
+
+lpenghslnsurvisi	PROTECT			INPUTRI 10
+lpenghslnresurvisi	PROTECT			INPUTRI 11
+svistr39		PROTECT			INPUTRI 12
+svinama  		PROTECT			INPUTRI 13
+
+llmtglsurv1		PROTECT			INPUTRI 14
+llmtglsurv2		PROTECT			INPUTRI	15
+llmtglresurv1		PROTECT			INPUTRI 16
+llmtglresurv2		PROTECT                 INPUTRI 17
+svistr32		PROTECT			INPUTRI 18
+svidf4			PROTECT			INPUTRI	19
+svidf5                  PROTECT                 INPUTRI 19
+
+lalmtrmhsurv		PROTECT			INPUTRI 20
+lalmtrmhresurv		PROTECT			INPUTRI 21
+svistr33		PROTECT			INPUTRI 22
+svistr5			PROTECT			INPUTRI 23
+
+lkethubpnjmnsurv	PROTECT			INPUTRI 24
+lkethubpnjmnresurv	PROTECT			INPUTRI 25
+svistr34		PROTECT			INPUTRI 26
+svistr6			PROTECT			INPUTRI 27
+lhubpnjmnsurv		PROTECT	QPROTECT	INPUTRI 27
+lhubpnjmnresurv		PROTECT	QPROTECT	INPUTRI 27
+
+lalmtkrjsurv		PROTECT			INPUTRI 28
+lalmtkrjresurv		PROTECT			INPUTRI 29
+svistr35		PROTECT			INPUTRI 30
+svistr7		 	PROTECT			INPUTRI 31
+
+llmkrjsurv1		PROTECT			INPUTRI 32
+llmkrjsurv2		PROTECT			INPUTRI 33
+llmkrjresurv1		PROTECT			INPUTRI 34
+llmkrjresurv2		PROTECT			INPUTRI 35
+svistr36		PROTECT			INPUTRI 36
+svidf6 			PROTECT			INPUTRI 37
+svidf7			PROTECT			INPUTRI 37
+
+lnmrtelpsurv		PROTECT			INPUTRI 38
+lnmrtelpresurv		PROTECT			INPUTRI 39
+svistr37		PROTECT			INPUTRI 40
+svistr9			PROTECT			INPUTRI 41
+
+llonglatsurv1		PROTECT			INPUTRI 42
+llonglatsurv2		PROTECT			INPUTRI 43
+llonglatresurv1		PROTECT			INPUTRI 44
+llonglatresurv2		PROTECT			INPUTRI 45
+svidf1			PROTECT			INPUTRI 46 
+svistr38		PROTECT			INPUTRI 47
+lupld1			PROTECT			INPUTRI	48
+lupld2			PROTECT			INPUTRI 49
+svistr10		PROTECT			INPUTRI 50
+
+DEFAULTS(tmptranst)
+lresurvey7              INIT            RESURVEY7
+lFOTOSVY		INIT		FOTOSVY
+lFOTORUMAH		INIT		FOTORUMAH
+lCAPACITY		INIT		CAPACITY
+
+EDITS(tmptranst)
+e.validate svikode  VALIDATE_IF cjoinsvipik pikdatbukidx mmap 0 {Pgv_dtpiu}
+t.Validatebtm svikode VALIDATE_IF cjoinsvibtm btmbukidx mmapbtm1 0
+e.validate lpekerjaansurv VALIDATE_IF cjoinsvisurv2 tbddatkodidx mtbd12 0 {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21} /* SURVEY */
+e.validate lstsrmhsurv VALIDATE_IF cjoinsvisurv3 tbddatkodidx mtbd13 0 {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah} /* SURVEY */
+e.validate lhubpnjmnsurv VALIDATE_IF cjoinsvisurv4 tbddatkodidx mtbd14 0 {Pgv_dttabel} {Pgv_survey21} {Pgv_hubpenj} /* SURVEY */
+e.validate lpekerjaanresurv VALIDATE_IF cjointrans1_1 tbddatkodidx mtbd15 0 {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21} /* RESURVEY */
+e.validate lstsrmhresurv VALIDATE_IF cjointrans1_1 tbddatkodidx mtbd16 0 {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah} /* RESURVEY */
+e.validate lhubpnjmnresurv VALIDATE_IF cjointrans1_1 tbddatkodidx mtbd17 0 {Pgv_dttabel} {Pgv_survey21} {Pgv_hubpenj} /* RESURVEY */
+
+MAP(mtbd17)
+tbdket                  lkethubpnjmnresurv      REPLACE
+
+MAP(mtbd16)
+tbdket                  lketstsrmhresurv        REPLACE
+
+MAP(mtbd15)
+tbdket                  lketpekerjaanresurv     REPLACE
+
+MAP(mtbd14)
+tbdket			lkethubpnjmnsurv	REPLACE
+
+MAP(mtbd13)
+tbdket			lketstsrmhsurv		REPLACE
+MAP(mtbd12)
+tbdket			lketpekerjaansurv	REPLACE
+
+
+MAP(mmap)
+piknobtm		piknobtm		REPLACE
+cblanks			lketpekerjaansurv	DO_CALC
+cblanks			lketpekerjaanresurv	DO_CALC
+lsvistr4m4w		lketpekerjaansurv	REPLACE_IF cjointranskerjam4w 
+lpekerjaanresurvm4w 	lketpekerjaanresurv	REPLACE_IF cjointransm4w1
+
+cblanks			lketstsrmhsurv		DO_CALC
+cblanks			lketstsrmhresurv	DO_CALC
+lsvistr2m4w		lketstsrmhsurv		REPLACE_IF cjointransrmhm4w
+lstsrmhresurvm4w	lketstsrmhresurv	REPLACE_IF cjointransm4w1
+
+cblanks			lpenghslnsurv		DO_CALC
+cblanks                 lpenghslnresurv		DO_CALC
+lpenghslnsurv		lpenghslnsurv		REPLACE_IF cjoinsvisurv2
+lpenghslnresurv		lpenghslnresurv		REPLACE_IF cjointrans1
+
+cblanks			lpenghslnsurvisi	DO_CALC
+cblanks			lpenghslnresurvisi	DO_CALC
+chsl1			lpenghslnsurvisi	DO_CALC_IF cjoinsvicapacityx1
+chsl2			lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityx2
+chsl3			lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityx3
+chsl4                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityx4
+chsl5			lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityx5
+chsl6			lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityx6
+chsl7			lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityx7
+
+chsl1                   lpenghslnresurvisi      DO_CALC_IF cjointransx1  
+chsl2                   lpenghslnresurvisi      DO_CALC_IF cjointransx2  
+chsl3                   lpenghslnresurvisi      DO_CALC_IF cjointransx3  
+chsl4                   lpenghslnresurvisi      DO_CALC_IF cjointransx4  
+chsl5                   lpenghslnresurvisi      DO_CALC_IF cjointransx5  
+chsl6                   lpenghslnresurvisi      DO_CALC_IF cjointransx6  
+chsl7                   lpenghslnresurvisi      DO_CALC_IF cjointransx7  
+
+lsvidf5m4w		lpenghslnsurvisi	REPLACE_IF cjointranskerjam4w
+lpenghslnresurvm4w	lpenghslnresurvisi	REPLACE_IF cjointransm4w1
+
+cblanks			llmtglsurv1		DO_CALC
+cblanks			llmtglsurv2		DO_CALC
+cblanks			llmtglresurv1		DO_CALC
+cblanks			llmtglresurv2		DO_CALC
+llmtglsurv1		llmtglsurv1		REPLACE_IF cjoinsvisurv3
+llmtglsurv2             llmtglsurv2             REPLACE_IF cjoinsvisurv3
+llmtglresurv1		llmtglresurv1		REPLACE_IF cjointrans1
+llmtglresurv2           llmtglresurv2           REPLACE_IF cjointrans1
+lsvidf1m4w		llmtglsurv1		REPLACE_IF cjointransrmhm4w
+llmtglresurv1m4w	llmtglresurv1		REPLACE_IF cjointransm4w1
+
+cblanks			lalmtrmhsurv		DO_CALC
+cblanks			lalmtrmhresurv		DO_CALC
+lalmjalan   		lalmtrmhsurv		REPLACE_IF cjoinalm
+lalmtrmhresurv		lalmtrmhresurv		REPLACE_IF cjointrans1
+lalmjalanm4w		lalmtrmhsurv		REPLACE_IF cjoinalmm4w
+lalmtrmhresurvm4w	lalmtrmhresurv		REPLACE_IF cjointransm4w1
+
+cblanks			lkethubpnjmnsurv	DO_CALC
+cblanks			lkethubpnjmnresurv	DO_CALC
+lsvistr3pnjmnm4w	lkethubpnjmnsurv	REPLACE_IF cjointranspnjmnm4w 
+lhubpnjmnresurvm4w	lkethubpnjmnresurv	REPLACE_IF cjointransm4w1
+
+cblanks			lalmtkrjsurv		DO_CALC
+cblanks			lalmtkrjresurv		DO_CALC	
+lalmkerja    		lalmtkrjsurv		REPLACE_IF cjoinalmkrja
+lalmtkrjresurv		lalmtkrjresurv		REPLACE_IF cjointrans1
+lalamjalankrjam4w	lalmtkrjsurv		REPLACE_IF cjoinalmkrjam4w
+lalmtkrjresurvm4w	lalmtkrjresurv		REPLACE_IF cjointransm4w1
+
+cblanks			llmkrjsurv1		DO_CALC
+cblanks			llmkrjsurv2		DO_CALC
+cblanks			llmkrjresurv1		DO_CALC
+cblanks			llmkrjresurv2		DO_CALC
+llmkrjsurv1             llmkrjsurv1             REPLACE_IF cjoinsvisurv2
+llmkrjsurv2             llmkrjsurv2             REPLACE_IF cjoinsvisurv2
+llmkrjresurv1           llmkrjresurv1           REPLACE_IF cjointrans1
+llmkrjresurv2           llmkrjresurv2           REPLACE_IF cjointrans1
+lsvilmkrjam4w		llmkrjsurv1		REPLACE_IF cjointranskerjam4w
+llmkrjresurv1m4w	llmkrjresurv1		REPLACE_IF cjointransm4w1
+
+cblanks			lnmrtelpsurv		DO_CALC
+cblanks			lnmrtelpresurv		DO_CALC	
+lnmrtelpsurv		lnmrtelpsurv		REPLACE_IF cjoinsvisurv2
+lnmrtelpresurv		lnmrtelpresurv		REPLACE_IF cjointrans1
+lconhp			lnmrtelpsurv		REPLACE_IF cjoinconhp
+lnmrtelpresurvm4w	lnmrtelpresurv		REPLACE_IF cjointransm4w1
+
+cblanks			llonglatsurv1		DO_CALC
+cblanks			llonglatsurv2		DO_CALC
+cblanks			llonglatresurv1		DO_CALC
+cblanks			llonglatresurv2		DO_CALC
+
+llatsurv1		llonglatsurv1		REPLACE_IF cjoinsvilonglat
+llongsurv2		llonglatsurv2		REPLACE_IF cjoinsvilonglat
+llatresurv1		llonglatresurv1		REPLACE_IF cjointrans1
+llongresurv2		llonglatresurv2		REPLACE_IF cjointrans1
+
+llatsurv1m4w		llonglatsurv1		REPLACE_IF cjoinsvilonglatm4w
+llongsurv2m4w		llonglatsurv2		REPLACE_IF cjoinsvilonglatm4w
+llatresurv1m4w		llonglatresurv1		REPLACE_IF cjointransm4w1
+llongresurv2m4w		llonglatresurv2		REPLACE_IF cjointransm4w1
+
+lsvidf1			lupld2			REPLACE_IF cjoinuplkorcmo
+lsvidf2			lupld1			REPLACE_IF cjoinuplkorcmo2
+lsvidf1                 lupld2                  REPLACE_IF cjoinuplkorkol
+lsvidf2                 lupld1                  REPLACE_IF cjoinuplkorkol2
+
+MAP(mmapbtm1)
+cblanks			lketpekerjaansurv	DO_CALC
+cblanks			lketpekerjaanresurv	DO_CALC
+
+cblanks			lketstsrmhsurv		DO_CALC
+cblanks			lketstsrmhresurv	DO_CALC
+
+cblanks			lpenghslnsurvisi	DO_CALC
+cblanks			lpenghslnresurvisi	DO_CALC
+
+lpenghslnsurv		lpenghslnsurv		REPLACE_IF cjoinsvisurv2
+lpenghslnresurv		lpenghslnresurv		REPLACE_IF cjointrans1
+
+chsl1                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy1
+chsl2                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy2
+chsl3                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy3
+chsl4                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy4
+chsl5                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy5
+chsl6                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy6
+chsl7                   lpenghslnsurvisi        DO_CALC_IF cjoinsvicapacityy7
+
+chsl1                   lpenghslnresurvisi      DO_CALC_IF cjointransx1
+chsl2                   lpenghslnresurvisi      DO_CALC_IF cjointransx2
+chsl3                   lpenghslnresurvisi      DO_CALC_IF cjointransx3
+chsl4                   lpenghslnresurvisi      DO_CALC_IF cjointransx4
+chsl5                   lpenghslnresurvisi      DO_CALC_IF cjointransx5
+chsl6                   lpenghslnresurvisi      DO_CALC_IF cjointransx6
+chsl7                   lpenghslnresurvisi      DO_CALC_IF cjointransx7
+
+
+cblanks			llmtglsurv1		DO_CALC
+cblanks			llmtglsurv2		DO_CALC
+cblanks			llmtglresurv1		DO_CALC
+cblanks			llmtglresurv2		DO_CALC
+llmtglsurv1		llmtglsurv1		REPLACE_IF cjoinsvisurv3
+llmtglsurv2             llmtglsurv2             REPLACE_IF cjoinsvisurv3
+llmtglresurv1		llmtglresurv1		REPLACE_IF cjointrans1
+llmtglresurv2           llmtglresurv2           REPLACE_IF cjointrans1
+
+cblanks			lalmtrmhsurv		DO_CALC
+cblanks			lalmtrmhresurv		DO_CALC
+lalmjalan   		lalmtrmhsurv		REPLACE_IF cjoinalmbtm
+lalmtrmhresurv		lalmtrmhresurv		REPLACE_IF cjointrans1
+
+cblanks			lkethubpnjmnsurv	DO_CALC
+cblanks			lkethubpnjmnresurv	DO_CALC
+
+cblanks			lalmtkrjsurv		DO_CALC
+cblanks			lalmtkrjresurv		DO_CALC	
+lalmkerja    		lalmtkrjsurv		REPLACE_IF cjoinalmkrjabtm
+lalmtkrjresurv		lalmtkrjresurv		REPLACE_IF cjointrans1
+
+cblanks			llmkrjsurv1		DO_CALC
+cblanks			llmkrjsurv2		DO_CALC
+cblanks			llmkrjresurv1		DO_CALC
+cblanks			llmkrjresurv2		DO_CALC
+llmkrjsurv1             llmkrjsurv1             REPLACE_IF cjoinsvisurv2
+llmkrjsurv2             llmkrjsurv2             REPLACE_IF cjoinsvisurv2
+llmkrjresurv1           llmkrjresurv1           REPLACE_IF cjointrans1
+llmkrjresurv2           llmkrjresurv2           REPLACE_IF cjointrans1
+
+cblanks			lnmrtelpsurv		DO_CALC
+cblanks			lnmrtelpresurv		DO_CALC	
+lnmrtelpsurv		lnmrtelpsurv		REPLACE_IF cjoinsvisurv2
+lnmrtelpresurv		lnmrtelpresurv		REPLACE_IF cjointrans1
+
+cblanks			llonglatsurv1		DO_CALC
+cblanks			llonglatsurv2		DO_CALC
+cblanks			llonglatresurv1		DO_CALC
+cblanks			llonglatresurv2		DO_CALC
+
+llatsurv1		llonglatsurv1		REPLACE_IF cjoinsvibtmgps
+llongsurv2		llonglatsurv2		REPLACE_IF cjoinsvibtmgps
+llatresurv1		llonglatresurv1		REPLACE_IF cjointrans1
+llongresurv2		llonglatresurv2		REPLACE_IF cjointrans1
+
+lsvidf1			lupld2			REPLACE_IF cjoinuplkorcmo
+lsvidf2			lupld1			REPLACE_IF cjoinuplkorcmo2
+lsvidf1                 lupld2                  REPLACE_IF cjoinuplkorkol
+lsvidf2                 lupld1                  REPLACE_IF cjoinuplkorkol2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cjikaBM
+SFL_SHOW_NEXT
+SFL_TARGET
+svidatbuktyp    mtsdata mtsnobuk lresurvey7
+
+

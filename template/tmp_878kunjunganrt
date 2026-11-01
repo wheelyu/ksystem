@@ -1,0 +1,308 @@
+LOCAL
+PGM_FIELDS
+lnamakelurahan          STRING 61
+lKETEMURT		STRING 21
+lPROMORT		STRING 21
+lPROMOGRUPRT            STRING 21
+lAREAHMC		STRING 11
+lMASTERRT               STRING 11
+lrt                     STRING 4
+lrw                     STRING 4
+lpanjangrt              INT2   2
+lpanjangrw              INT2   2
+
+CALCS()
+cselkelurahangedung     tbtkode == spkkat3
+DBCALCS(djoinkelurahangedung)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      cselkelurahangedung
+        DBC_TARGET      tbtdatkodtyp lAREAHMC lkodegedung lkodegedung lkodegedung
+
+CALCS()
+cseljointblmasterrt     tbllv1 == spktgg3 && tbllv2 == spktgg4
+DBCALCS(djointblmasterrt)
+	DBC_COMMAND     JOIN
+        DBC_SELECT      cseljointblmasterrt
+	DBC_TARGET	tbldtcabnoid   lMASTERRT lkodegedung spkkat3
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+| t.Prov                : ___________________________________________________ |
+| t.Kota                : ___________________________________________________ |
+| t.Kec                 : ___________________________________________________ |
+| t.Kel                 : ___________________________________________________ |
+| t.NamaKel       	: ___________________________________________________ |
+| i.RT	                : ___________________________________________________ |
+| i.RW	                : ___________________________________________________ |
+| t.KetemuRT/PasanganRT : ___________________________________________________ |
+| t.AdaDataRT	        : ___________________________________________________ |
+| t.NamaRT	 	: ___________________________________________________ |
+| i.Nowhatsapp	   	: ___________________________________________________ |
+| t.AlamatRT	        : ___________________________________________________ |
+| t.JumlahKK    	: ___________________________________________________ |
+| t.Minat	        : ___________________________________________________ |
+|i.TekanEnter          : ______________					      |
+  t.FotoKetemuRT            t.FotoBuktiChatPromoKeRT  t.FotoKirimPromoNSSKeGrupRT    
+  /--s.UPLOAD------------\  /--s.UPLOAD2-----------\  /--s.UPLOAD3-----------\
+  |                      |  |                      |  |                      | 
+  |                      |  |                      |  |                      | 
+  |                      |  |                      |  |                      | 
+  |                      |  |                      |  |                      | 
+  |                      |  |                      |  |                      | 
+  |                      |  |                      |  |                      | 
+  \----------------------/  \----------------------/  \----------------------/
+  i.Keterangan ___________  i.Keterangan ___________  i.Keterangan ___________
+  t.Tanggal    ___________  t.Tanggal    ___________  t.Tanggal    ___________
+  t.Lat        ___________   
+  t.Lon        ___________
+\-----------------------------------------------------------------------------/
+
+CALCS()
+cupdkunrtok   	        tkmsts != gv_CLSD && ((tkmsts == gv_OPEN && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")) || (tkmsts == gv_INPG && (g_grpnam=="PICMKT" || g_grpnam=="KAPOSHMC" || g_grpnam == "IT" || g_grpnam == "RI")))
+cgruppicnso             g_grpnam=="PICMKT" || g_grpnam=="KAPOSHMC"
+cbukangruppicnsoinpg    tkmsts == gv_INPG && g_grpnam!="PICMKT" && g_grpnam!="KAPOSHMC"
+cbukannipmasteropen     tkmsts == gv_OPEN && tkmplg != g_usrkode
+cadakelurahan           spkhasil == "Y"
+cadakelurahanbukanfu    spkhasil == "Y" && tkmkode != lFU_KUN_RT
+ctidakadakelurahan      spkhasil == "T"
+cskipadadatartok        spkhasil == "T" || spkhasil2 == "Y"
+ckelurahangedungok      djoinkelurahangedung == 1 || spkhasil == "T"
+cketemurtatauadadatart  spkhasil2 == "Y" || spkkat2 == "Y"
+cketemurt               spkhasil2 == "Y"
+ctidakketemurt          spkhasil2 == "T"
+creviewok               spkkat4 == gv_ok && (g_grpnam=="PICMKT" || g_grpnam=="KAPOSHMC")
+cskipkelurahanfu        spkkat != BLANKS && tkmkode == lFU_KUN_RT
+cskiprtfu               spktgg3 != BLANKS && tkmkode == lFU_KUN_RT
+cskiprwfu               spktgg4 != BLANKS && tkmkode == lFU_KUN_RT
+cskipnamartfu           spknama != BLANKS && tkmkode == lFU_KUN_RT
+cskipnowafu             spknohp != BLANKS && tkmkode == lFU_KUN_RT
+cskipalamatfu           spkalamat != BLANKS && tkmkode == lFU_KUN_RT
+cskipjumlahkkfu         spkjrk3 != BLANKS && tkmkode == lFU_KUN_RT
+cpanjangrt              DO_LIB ap_strln(spktgg3,&lpanjangrt);
+cpanjangrw              DO_LIB ap_strln(spktgg4,&lpanjangrw);
+crtrw3digit             lpanjangrt == 3 && lpanjangrw == 3
+cmasterrtok             djointblmasterrt == 0 || tkmkode == lFU_KUN_RT
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkkat5                 ALLCAPS                         INPUTRI 2 /*Provinsi*/
+spkkat6                 ALLCAPS                         INPUTRI 2 /*Kota*/
+spkkat7                 ALLCAPS                         INPUTRI 2 /*Kecamatan*/
+spkkat 			ALLCAPS 		        INPUTRI 2 /*Kelurahan*/
+lnamakelurahan          PROTECT			        INPUTRI 2 /*NamaKelurahan*/
+spktgg3		        DIGITS   		        INPUTRI 3 /*RT*/
+spktgg4		        DIGITS   		        INPUTRI 4 /*RW*/
+spkhasil2		NOCHANGE		        INPUTRI	5 /*KetemuRT/PasanganRT*/
+spkkat2  		NOCHANGE                        INPUTRI	6 /*AdaDataRT*/
+spknama			ALLCAPS			        INPUTRI 7 /*NamaRT*/
+spknohp                 ALLCAPS                         INPUTRI 8 /*NO WA*/
+spkalamat               ALLCAPS			        INPUTRI 9 /*AlamatRT*/
+spkjrk3                 DIGITS			        INPUTRI 10 /*JumlahKK*/
+spkrekom		NOCHANGE		        INPUTRI 11 /*Minat*/
+lenter                  NOCHANGE                        INPUTRI 14
+lKETEMURT		PROTECT			        INPUTRI	20
+lPROMORT		PROTECT			        INPUTRI	20
+lPROMOGRUPRT		PROTECT			        INPUTRI	20
+spktglft		PROTECT			        INPUTRI	20
+spktglft2		PROTECT			        INPUTRI	20
+spktglft3		PROTECT			        INPUTRI	20
+spklat  		PROTECT			        INPUTRI	20
+spklon  		PROTECT			        INPUTRI	20
+
+DEFAULTS(tmptranst)
+lKETEMURT		INIT 		KETEMURT
+lPROMORT		INIT 		PROMORT
+lPROMOGRUPRT		INIT 		PROMOGRUPRT
+lAREAHMC		INIT 		AREAHMC
+lMASTERRT               INIT            MASTERRT
+spkhasil      		DFALT_LIST      Y T
+spkhasil                INIT_UPDATE     Y
+spkhasil2               DFALT_LIST      Y T
+spkkat2                 DFALT_LIST      Y T
+spkrekom                DFALT_LIST      BLANKS Y T
+spkkat4                 DFALT_LIST      OK TACC
+
+MAP(mprovinsi)
+dtmkode      	spkkat5       	REPLACE
+
+MAP(mkota)
+tblkode      	spkkat6     	REPLACE
+
+MAP(mkec)
+tbdkode    	spkkat7	        REPLACE
+
+MAP(mkel)
+tbtkode         spkkat          REPLACE
+tbtkode2        spkkat3         REPLACE
+tbtket          lnamakelurahan  REPLACE
+
+CALCS()
+cadaprov        spkkat5 != BLANKS
+cadaprovkota    spkkat5 != BLANKS && spkkat6 != BLANKS
+cadaprovkotakec spkkat5 != BLANKS && spkkat6 != BLANKS && spkkat7 != BLANKS
+
+EDITS(tmptranst)
+/*e.Mandatory             spkhasil        MANDATORY*/
+e.Mandatory             spkkat 	        MANDATORY_IF cadakelurahan
+e.Mandatory             spkkat5 	MANDATORY_IF cadakelurahanbukanfu
+e.Mandatory             spkkat6         MANDATORY_IF cadakelurahanbukanfu
+e.Mandatory             spkkat7         MANDATORY_IF cadakelurahanbukanfu
+e.validatePropinsi1     spkkat5	        VALIDATE_IF cadakelurahan dtmdtkodidx  mprovinsi sdtm {Pgv_dtkota}
+e.validateKota1         spkkat6  	VALIDATE_IF cadaprov tbldtdtmkod mkota stbl {Pgv_dtkota} {Pspkkat5}
+e.validateKec1          spkkat7	        VALIDATE_IF cadaprovkota tbddatkodidx mkec stbd {Pgv_dtkota} {Pspkkat5} {Pspkkat6}
+e.validateKel1          spkkat	        VALIDATE_IF cadaprovkotakec tbtdattypkod mkel stbt {Pgv_dtkota} {Pgv_dtkota21} {Pspkkat5} {Pspkkat6} {Pspkkat7}
+e.Mandatory             spktgg3         MANDATORY_IF cadakelurahan
+e.Mandatory             spktgg4         MANDATORY_IF cadakelurahan
+e.Mandatory             spkhasil2	MANDATORY_IF cadakelurahan
+e.Mandatory             spkkat2         MANDATORY_IF ctidakketemurt
+
+e.Mandatory             spknama	        MANDATORY_IF cketemurtatauadadatart
+e.Mandatory             spknohp         MANDATORY_IF cketemurtatauadadatart
+e.Mandatory             spkalamat       MANDATORY_IF cketemurtatauadadatart
+e.Mandatory             spkjrk3         MANDATORY_IF cketemurtatauadadatart
+e.Mandatory             spkrekom	MANDATORY_IF cketemurt
+
+/*e.Mandatory             spkkat4         MANDATORY_IF cgruppicnso
+e.Mandatory             spkket          MANDATORY_IF creviewtacc*/
+
+MAP(mresetdata)
+cblanks                 spkkat 	        DO_CALC_IF ctidakadakelurahan
+cblanks                 lnamakelurahan  DO_CALC_IF ctidakadakelurahan   
+cblanks                 spkkat5         DO_CALC_IF ctidakadakelurahan
+cblanks                 spkkat6         DO_CALC_IF ctidakadakelurahan
+cblanks                 spkkat7         DO_CALC_IF ctidakadakelurahan
+cblanks                 spktgg3         DO_CALC_IF ctidakadakelurahan
+cblanks                 spktgg4	        DO_CALC_IF ctidakadakelurahan
+cblanks                 spkhasil2	DO_CALC_IF ctidakadakelurahan
+cblanks                 spkkat2  	DO_CALC_IF ctidakadakelurahan
+cblanks                 spknama		DO_CALC_IF ctidakadakelurahan
+cblanks                 spknohp         DO_CALC_IF ctidakadakelurahan
+cblanks                 spkalamat       DO_CALC_IF ctidakadakelurahan
+cblanks                 spkjrk3         DO_CALC_IF ctidakadakelurahan
+cblanks                 spkrekom	DO_CALC_IF ctidakadakelurahan
+cblanks                 spkket          DO_CALC_IF creviewok
+
+MAP(mpanjangrtrw)
+spktgg3                 lrt             REPLACE
+spktgg4                 lrw             REPLACE
+lrt                     spktgg3         REPLACE
+lrw                     spktgg4         REPLACE
+cpanjangrt              lpanjangrt      DO_CALC
+cpanjangrw              lpanjangrw      DO_CALC
+
+MAP(mresetadadatart)
+cblanks                 spkkat2         DO_CALC_IF cketemurt     
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW mresetdata
+AFTER_INPUT	cur_keybd=EN            DO_MAP SHOW mpanjangrtrw
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF crtrw3digit mdum
+                ELSE HKCURSOR STAY
+                HKMSG RT RW harus 3 digit
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cmasterrtok mdum
+                ELSE HKCURSOR STAY
+                HKMSG RT dan RW di Kelurahan Tersebut Sudah Terdaftar Di Master RT
+AFTER_INPUT     cur_field=spktgg3       DO_MAP SHOW mpanjangrtrw
+AFTER_INPUT     cur_field=spktgg4       DO_MAP SHOW mpanjangrtrw
+AFTER_INPUT     cur_field=spkhasil2     DO_MAP SHOW mresetadadatart
+
+AFTER_INPUT	cur_field=spkkat       DO_MAP
+		IF ckelurahangedungok mdum
+		ELSE HKCURSOR STAY
+		HKMSG Bukan Kelurahan Area HMC Cabang Induk
+
+/*BEFORE_INPUT    cur_field=spkhasil      DO_SKIP_IF cgruppicnsoataufu*/
+BEFORE_INPUT    cur_field=spkkat5       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkkat5       DO_SKIP_IF cskipkelurahanfu
+BEFORE_INPUT    cur_field=spkkat6       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkkat6       DO_SKIP_IF cskipkelurahanfu
+BEFORE_INPUT    cur_field=spkkat7       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkkat7       DO_SKIP_IF cskipkelurahanfu
+BEFORE_INPUT    cur_field=spkkat        DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkkat        DO_SKIP_IF cskipkelurahanfu
+BEFORE_INPUT    cur_field=spktgg3       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spktgg3       DO_SKIP_IF cskiprtfu
+BEFORE_INPUT    cur_field=spktgg4       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spktgg4       DO_SKIP_IF cskiprwfu
+BEFORE_INPUT    cur_field=spkhasil2     DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkkat2       DO_SKIP_IF cskipadadatartok
+BEFORE_INPUT    cur_field=spknama       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spknama       DO_SKIP_IF cskipnamartfu
+BEFORE_INPUT    cur_field=spknohp       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spknohp       DO_SKIP_IF cskipnowafu
+BEFORE_INPUT    cur_field=spkalamat     DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkalamat     DO_SKIP_IF cskipalamatfu
+BEFORE_INPUT    cur_field=spkjrk3       DO_SKIP_IF ctidakadakelurahan
+BEFORE_INPUT    cur_field=spkjrk3       DO_SKIP_IF cskipjumlahkkfu
+BEFORE_INPUT    cur_field=spkrekom      DO_SKIP_IF ctidakadakelurahan
+/*BEFORE_INPUT    cur_field=spkkat4       DO_SKIP_IF cbukangruppicnso
+BEFORE_INPUT    cur_field=spkket        DO_SKIP_IF cbukangruppicnso*/
+
+MAP(mupdfotoketemurt)
+g_tgltrn                spktglft         REPLACE
+g_fotolat1              spklat           REPLACE
+g_fotolon1              spklon           REPLACE
+
+MAP(mupdfotopromort)
+g_tgltrn                spktglft2        REPLACE
+
+MAP(mupdfotopromogruprt)
+g_tgltrn                spktglft3        REPLACE
+
+DBCALCS(dupdfotoketemurt)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx   spkprm
+        DBC_MAP         mupdfotoketemurt
+
+DBCALCS(dupdfotopromort)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx   spkprm
+        DBC_MAP         mupdfotopromort
+
+DBCALCS(dupdfotopromogruprt)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkprmidx   spkprm
+        DBC_MAP         mupdfotopromogruprt
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tkmcab
+SFL_UPLFLD  spknobuk lKETEMURT
+SFL_UPLFLD2 spknobuk lPROMORT
+SFL_UPLFLD3 spknobuk lPROMOGRUPRT
+SFL_UPLFLD_DBCALCS dupdfotoketemurt
+SFL_UPLFLD2_DBCALCS  dupdfotopromort
+SFL_UPLFLD3_DBCALCS  dupdfotopromogruprt
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET  spkdatbuktyp   lSPKLCK tkmnobuk lHASILSPK
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    c0
+	PMT_UPDALL_COND cupdkunrtok
+	PMT_UPD_MSG 	IF cred Status Sudah CLSD
+                        IF cbukangruppicnsoinpg Hanya Bisa U Oleh Grup Login PICMKT Atau KAPOSHMC Saat INPG
+                        IF cbukannipmasteropen Hanya Bisa U Oleh NIP di Master Saat OPEN
+	PMT_DEL_COND    c0
+
+MAP(mmapupdatejam)
+lSYSTIME        spkjam          REPLACE
+
+MAP(mupdabkkunrt)
+gv_CLSD         abksts          REPLACE
+DEBUG	ldum	ldum		REPLACE
+
+MAP(mupdtkmmasterkunrt)
+gv_CLSD         tkmsts          REPLACE
+DEBUG	ldum	ldum		REPLACE
+
+SPCALCS(spupdkunrt)
+DO_LIB                  ap_dbclc(DNAME dmapupdatejam, DCOMMAND MAPMAP, DMAP mmapupdatejam);
+DO_LIB_IF cgruppicnso   ap_dbclc(DNAME dupdabkkunrt, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN tkmnobuk, DMAP mupdabkkunrt);
+DO_LIB_IF cgruppicnso   ap_dbclc(DNAME dupdtkmmasterkunrt,DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkmmasterkunrt);
+
+POSTING(tmptrans)
+        PST_UPDCMD spupdkunrt

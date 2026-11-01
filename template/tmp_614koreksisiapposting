@@ -1,0 +1,70 @@
+LOCAL
+PGM_FIELDS
+	lsave_ppdpsnoto	STRING	21
+
+CALCS()
+ckatKSUtmp	ppdkat == "KSU"
+
+DBCALCS(djoinppdKSUtmp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppdbukurtidx	ppdnobuk
+	DBC_SELECT	ckatKSUtmp
+
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.SiapPst                              |
+|------------------------------------t--|
+|____________________________________|  |
+\------------------------------------.--/
+
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+lenter          NOCHANGE        INPUTRI         1
+
+DEFAULTS(tmptranst)
+lenter          INIT            "Tekan ENTER untuk Mengisi 614 Siap Posting"
+
+CALCS()
+chrsadaksu	((ppdpsnoto == "OK" && djoinppdKSUtmp == 1) || ppdpsnoto != "OK")
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=lenter	DO_MAP SHOW
+		IF chrsadaksu mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG KSU belum ada, UBAH MASTERNYA
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF chrsadaksu mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG KSU belum ada, UBAH MASTERNYA
+
+CALCS()
+cstart_null	lsave_ppdpsnoto == BLANKS
+cstart_ok	lsave_ppdpsnoto == "OK"
+
+MAP(mmapsaveppd)
+ppdpsnoto	lsave_ppdpsnoto	REPLACE
+
+MAP(mupdppdsiapposting)
+cOK		ppdpsnoto	DO_CALC_IF cstart_null
+cposting	ppdpsnoto       DO_CALC_IF cstart_ok
+
+SPCALCS(spsiapposting)
+DO_LIB ap_dbclc(DNAME dmapsaveppd,DCOMMAND MAPMAP,DMAP mmapsaveppd);
+DO_LIB ap_dbclc(DNAME dupdppdsiapposting, DCOMMAND UPDATE, DTARGET ppdotoidx ppdoto, DMAP mupdppdsiapposting);
+
+POSTING(transc2g5)
+        PST_COMMAND spsiapposting
+
+CALCS()
+csiapposting    ppmsts == "OPEN" && ppdpsnoto_1 != "POSTING" && ppdnorangka_1 != BLANKS
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND csiapposting
+SFL_TARGET
+        ppdbukurtidx	ppmnobuk l1 l1
+

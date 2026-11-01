@@ -1,0 +1,142 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------\
+ /--------------------------------------------------------\
+  t.Tanggal        : _______________                          
+  t.NipBum         : _____________ ______________________
+  t.KpiMin3        : __________
+  t.KpiMin2	   : __________
+  t.KpiMin1        : __________ 
+  t.AvgKpi         : __________ 
+  t.KatKpi         : __________ 
+  t.Pencapaian     : _______
+ \--------------------------------------------------------/
+ /--------------------------------------------------------\
+  t.IntiMasalah    : ____ ____________________________
+  t.RekomPengembang: ____ ____________________________
+  t.Problem        : ____________________________
+ \--------------------------------------------------------/
+\----------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+kettgl1		PROTECT {DD-MM-YY}	INPUTRI 1
+ketkode		PROTECT 		INPUTRI 2
+lnamabum	PROTECT			INPUTRI 3
+ketdf1		PROTECT			INPUTRI 4
+ketdf2		PROTECT			INPUTRI 5
+ketdf3		PROTECT			INPUTRI 6
+ketdf4		PROTECT			INPUTRI 7
+lkatkpi 	PROTECT			INPUTRI 8
+
+tlmtotal	PROTECT			INPUTRI 9
+
+ketdf6		NOCHANGE		INPUTRI 9
+lketdf6		PROTECT			INPUTRI 10
+ketdf7		NOCHANGE		INPUTRI 11
+lketdf7		PROTECT			INPUTRI 12
+ketisi		TEXTAREA ALLCAPS	INPUTRI 13
+
+DEFAULTS(tmptranst)
+kettgl1		INIT_ADD	{g_tgltrn}
+ketkode		INIT_ADD	{g_usrkode}
+kettype		INIT		PROBLEM
+
+ketdf6		DFALT_SCAN_BLANKS 1 "SKILL_SET" 
+				  2 "KOMPETENSI_INDIVIDU"
+				  3 "KOMPETENSI_TEKNIS"
+
+ketdf7		DFALT_SCAN_BLANKS 1 "PERSONALITY"
+				  2 "KOMPETENSI_TEKNIS"  
+
+CALCS()
+cskillset	"SKILL SET"
+ckompindividu	"KOMPETENSI INDIVIDU"
+ckompteknis	"KOMPETENSI TEKNIS"
+cpersonality	"PERSONALITY"
+cpilmasalah1	ketdf6 == 1
+cpilmasalah2	ketdf6 == 2
+cpilmasalah3	ketdf6 == 3
+
+cpilmasalah4	ketdf7 == 1
+cpilmasalah5	ketdf7 == 2
+cmin1bulan      DO_LIB ap_tambl(g_tgltrn,l1,&ltgl1bulan);
+cmin2bulan      DO_LIB ap_tambl(g_tgltrn,l2,&ltgl2bulan);
+cmin3bulan      DO_LIB ap_tambl(g_tgltrn,l3,&ltgl3bulan);
+cthblmin1	THBLS(ltgl1bulan)
+cthblmin2	THBLS(ltgl2bulan)
+cthblmin3	THBLS(ltgl3bulan)
+
+cjika_deadwood  ketdf4 < 70
+cjika_bronze    ketdf4 >=70 && ketdf4 <=79
+cjika_silver   	ketdf4 >=80 && ketdf4 <=89
+cjika_gold      ketdf4 >=90 && ketdf4 <=99
+cjika_platinum  ketdf4 >=100
+cDEADWOOD	"DEADWOOD"
+cBRONZE  	"BRONZE"
+cSILVER  	"SILVER"
+cGOLD    	"GOLD"
+cPLATINUM 	"PLATINUM"
+ckpimin1	djoinpsdkpi1==1
+ckpimin2	djoinpsdkpi2==1
+ckpimin3	djoinpsdkpi3==1
+cratakpi	(ketdf1 + ketdf2 + ketdf3) / 3
+
+EDITS(tmptranst)
+t.Validate	ketkode	VALIDATE psikodidx mpsiproblem
+t.Mandatory	ketisi	MANDATORY
+t.Mandatory	ketdf6	MANDATORY
+t.Mandatory	ketdf7	MANDATORY
+
+MAP(mpsiproblem)
+psikode		ketkode	REPLACE
+psinama		lnamabum	REPLACE
+cskillset	lketdf6		DO_CALC_IF cpilmasalah1
+ckompindividu	lketdf6		DO_CALC_IF cpilmasalah2
+ckompteknis	lketdf6		DO_CALC_IF cpilmasalah3
+cpersonality	lketdf7		DO_CALC_IF cpilmasalah4
+ckompteknis	lketdf7		DO_CALC_IF cpilmasalah5
+cmin1bulan	ltgl1bulan	DO_CALC
+cmin2bulan	ltgl2bulan	DO_CALC
+cmin3bulan	ltgl3bulan	DO_CALC
+cthblmin1	lthblmin1	DO_CALC
+cthblmin2	lthblmin2	DO_CALC
+cthblmin3	lthblmin3	DO_CALC
+cPLATINUM	lkatkpi		DO_CALC_IF cjika_platinum	
+cGOLD    	lkatkpi		DO_CALC_IF cjika_gold    	
+cSILVER  	lkatkpi		DO_CALC_IF cjika_silver   
+cBRONZE  	lkatkpi		DO_CALC_IF cjika_bronze  	
+cDEADWOOD	lkatkpi		DO_CALC_IF cjika_deadwood 
+ 
+MAP(mnilaikpi)
+lkpi1		ketdf3		REPLACE_IF ckpimin1
+lkpi2		ketdf2		REPLACE_IF ckpimin2
+lkpi3		ketdf1		REPLACE_IF ckpimin3
+cratakpi	ketdf4		DO_CALC
+		
+MAP(mintimasalah1)
+cskillset	lketdf6		DO_CALC_IF cpilmasalah1
+ckompindividu	lketdf6		DO_CALC_IF cpilmasalah2
+ckompteknis	lketdf6		DO_CALC_IF cpilmasalah3
+
+MAP(mintimasalah2)
+cpersonality	lketdf7		DO_CALC_IF cpilmasalah4
+ckompteknis	lketdf7		DO_CALC_IF cpilmasalah5
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=ketdf6	DO_MAP SHOW mnilaikpi
+AFTER_INPUT	cur_field=ketdf6	DO_MAP SHOW mintimasalah1
+AFTER_INPUT	cur_field=ketdf7	DO_MAP SHOW mintimasalah2
+AFTER_INPUT	cur_keybd=EN		DO_LIB ap_nxpst(l4393,lm4393);
+
+SUBFILE(tmptrans)
+        SFL_LINES(1)
+        SFL_TITLE(tmptranst)
+        SFL_TARGET
+        ketdatbuktgl  tlmdata tlmnobuk lPROBLEM
+
+SFL_MAP
+tlmdata         ketdata         REPLACE
+tlmnobuk        ketnobuk        REPLACE
+lPROBLEM        kettype         REPLACE
+g_tgltrn	kettgl1		REPLACE
+g_usrkode	ketkode		REPLACE

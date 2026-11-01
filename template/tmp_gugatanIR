@@ -1,0 +1,189 @@
+LOCAL
+PGM_FIELDS
+lTAHAPx         STRING          21
+lsvistr1_1	STRING		21
+lsvistr6_1      STRING          21
+lsvistr7_1      STRING          21
+lsvikode_1	STRING		21
+lsvitype_1	STRING		11
+ltgltarget	DATE		4
+lsvitgl1_4d	DATE		4
+lnourt1y	INT2		2
+lentr4          STRING  	11
+llv11           STRING          21
+llv22           STRING          21
+llead           DFLOAT          8
+llegalirx       STRING          21
+lsvistr5        STRING          21
+
+MAP(mjoinnourt1y)
+svinourt        lnourt1y        REPLACE
+svistr5		lsvistr5	REPLACE
+
+DBCALCS(djoinsvinourt1)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              svidatbuktyp    tlmdata tlmnobuk lsvitype_1
+        DBC_MAP                 mjoinnourt1y
+
+CALCS()
+csvitype2	svitype2 == svitype2
+
+MAP(mjointgtdetail4)
+svitgl1		lsvitgl1_4d	REPLACE
+
+DBCALCS(djointgtdetail4)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              svidatbuktyp    tlmdata tlmnobuk lsvitype_1
+	DBC_COND		csvitype2
+        DBC_MAP                 mjointgtdetail4
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+ /-------------------------------------------\
+ |t.TglInput   : ___________________         |
+ |t.TglIRjwb   : ___________________         |
+ |t.Tgltarget  : ___________________         |
+ |t.Instansi   : ___________________         |
+ |t.Tahapan    : ____ ______________________ |
+ |t.ProTahap   : ____ ______________________ |
+ |t.Plp        : _______ ___________________ |
+ |t.NoPHI      : ___________________________ |
+ |t.Hasil      : ___________________________ |
+ |t.Ket        : ___________________________ |
+ |t.NipLegalIR : _______ ___________________ |
+ |t.Review     : ___________________________ |
+ |t.Ket        : ___________________________ |
+ |__________                                 |
+ \-------------------------------------------/
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svitgl1		PROTECT {DD-MM-YYYY}	INPUTRI	1
+svitgl2		PROTECT	{DD-MM-YYYY}	INPUTRI	1
+ltgltarget	PROTECT	{DD-MM-YYYY}	INPUTRI 1
+svitype2	NOCHANGE		INPUTRI	2
+svistr6 	ALLCAPS SCROLL		INPUTRI	3
+lsvistr6_1	PROTECT			INPUTRI	4
+svistr7		ALLCAPS SCROLL		INPUTRI	5
+lsvistr7_1	PROTECT			INPUTRI	6
+svistr1		PROTECT			INPUTRI	7
+lsvistr1_1	PROTECT			INPUTRI	8
+sviket3		ALLCAPS			INPUTRI	9
+svistr3		NOCHANGE		INPUTRI	10
+sviket		TEXTAREA 3		INPUTRI	11
+svikode		PROTECT			INPUTRI	13
+lsvikode_1	PROTECT			INPUTRI	14
+svistr5		NOCHANGE		INPUTRI	15
+sviket2		TEXTAREA 3		INPUTRI	16
+lentr4          NOCHANGE        	INPUTRI 17
+
+DEFAULTS(tmptranst)
+llegalirx       INIT            	LEGAL
+lTAHAPx         INIT            	TAHAP
+lsvitype_1	INIT			GUGATANIR
+svitype2	DFALT_SCAN_BLANKS	INTERNAL DISNAKER PHI MA
+svistr3		DFALT_SCAN_BLANKS	SELESAI BELUM_SELESAI
+svistr5         DFALT_SCAN_BLANKS       SELESAI BELUM_SELESAI
+lentr4          INIT            	"TABENTR"
+svitgl1		INIT_ADD		{g_tgltrn}
+svistr1		INIT_ADD		{g_usrkode}
+
+CALCS()
+cPHI		svitype2 == "PHI"
+
+EDITS(tmptranst)
+e.Mandatory     svitype2        MANDATORY
+e.Mandatory     sviket3         MANDATORY_IF cPHI
+e.Mandatory     svistr3         MANDATORY
+e.Mandatory     sviket          MANDATORY
+e.Mandatory	svistr6		MANDATORY
+e.Mandatory	svistr7		MANDATORY
+e.Validate	svistr1		VALIDATE psikodidx mpsi4 0
+e.Validate      svikode         VALIDATE psikodidx mpsi4_1 0
+e.ValidateTbd   svistr6         VALIDATE tbddatkodidx mtbd stbdIR {Pgv_dttabel} {Pllegal} {PlTAHAPAN}
+e.ValidateTbd   svistr7         VALIDATE tbddtmstidx  mtbd_1 stbd1 {Pgv_dttabel} {Pllegal} {PlTAHAP} {Pllv11} {Pllv22}
+
+MAP(mscantbd)
+tbddf1          llead           REPLACE
+
+DBCALCS(dscantbd)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tbddtmstidx    gv_dttabel llegalirx lTAHAPx svistr6 svistr6
+        DBC_SUM_MAP     mscantbd
+
+CALCS()
+chitungtarget4d		lsvitgl1_4d + llead
+c4d			djointgtdetail4 == 1 && (dscantbd == 0 || dscantbd != 0)
+
+
+MAP(mpsi4)
+psikode		svistr1		REPLACE
+psinama		lsvistr1_1	REPLACE
+chitungtarget4d	ltgltarget	DO_CALC_IF c4d
+
+MAP(mpsi4_1)
+psikode		svikode		REPLACE
+psinama		lsvikode_1	REPLACE
+
+MAP(mtbd)
+tbdkode		svistr6		REPLACE
+tbdket		lsvistr6_1	REPLACE
+svistr6		llv11		REPLACE
+svistr6		llv22		REPLACE
+
+MAP(mtbd_1)
+tbdkode		svistr7		REPLACE
+tbdket		lsvistr7_1	REPLACE
+
+CALCS()
+cjoinchdnourt1y         g_curcmd == 1 && djoinsvinourt1 == 0
+cjoinchdnourt2y         g_curcmd == 1 && djoinsvinourt1 == 1
+c1c			1
+cnourt1y                lnourt1y + 1
+ckhusus			tlmsts == "INPG" && (tlmsts2 == "CAB4" || tlmsts2 == "C4+7") && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT"
+cskipsviket3		svitype2 != "PHI" || (g_curcmd == 2 && tlmsts == "INPG" && (tlmsts2 == "O4+7" || tlmsts2 == "OFF4") && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT")
+cubah4a			g_curcmd == 2 && tlmsts == "INPG" && (tlmsts2 == "O4+7" || tlmsts2 == "OFF4") && g_usrkode != "1832688" && g_grpnam != "RI" && g_grpnam != "IT"
+
+MAP(mnourt1y)
+c1c             svinourt        DO_CALC_IF cjoinchdnourt1y
+cnourt1y        svinourt        DO_CALC_IF cjoinchdnourt2y
+
+MAP(mupdubh)
+g_usrkode	svikode		REPLACE_IF cubah4a
+g_tgltrn	svitgl2		REPLACE_IF cubah4a
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=svitype2      DO_MAP SHOW mnourt1y
+AFTER_INPUT     cur_field=svistr5       DO_MAP SHOW mupdubh
+BEFORE_INPUT	cur_field=sviket3	DO_SKIP_IF cskipsviket3
+BEFORE_INPUT	cur_field=svistr5	DO_SKIP_IF ckhusus
+BEFORE_INPUT	cur_field=sviket2	DO_SKIP_IF ckhusus
+BEFORE_INPUT	cur_field=svitype2	DO_SKIP_IF cubah4a
+BEFORE_INPUT    cur_field=svistr3       DO_SKIP_IF cubah4a
+BEFORE_INPUT    cur_field=svistr6       DO_SKIP_IF cubah4a
+BEFORE_INPUT    cur_field=svistr7       DO_SKIP_IF cubah4a
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cubah4a
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_UPDOWN DOWN
+SFL_SORT_BY_FIELD svinourt
+SFL_TARGET
+        svidatbuktyp    tlmdata tlmnobuk lsvitype_1
+SFL_MAP
+tlmdata		svidata		REPLACE
+lsvitype_1	svitype		REPLACE
+tlmnobuk	svinobuk	REPLACE
+
+MAP(mupdtlmjml4)
+svistr6 	tlmdari		REPLACE
+svistr7		tlmuntuk	REPLACE
+
+SPCALCS(spcalupdjml4)
+DO_LIB ap_dbclc(DNAME dupdtlmjml4,DCOMMAND UPDATE,DTARGET tlmbukidx svinobuk,DMAP mupdtlmjml4);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spcalupdjml4

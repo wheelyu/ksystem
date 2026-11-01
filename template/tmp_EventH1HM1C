@@ -1,0 +1,132 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Checkpoint PPRT
+  t.FotoCheckpoint
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| i.DetailLokasi  : ____________________  ||
+  t.FotoTenda
+  /--s.UPLOAD2----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| i.DetailLokasi  : ____________________  ||
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc : ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1       ALLCAPS SCROLL  		            INPUTRI	1
+tkdjwbstr2       ALLCAPS SCROLL  		            INPUTRI	2
+
+tkdrek                  PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts                  PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1                 PROTECT                                 INPUTRI 2
+tkdket                  TEXTAREA                                INPUTRI 3
+lenter                  NOCHANGE                                INPUTRI 4
+ltombolchm1ok            TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 40
+
+DEFAULTS(tmptranst)
+ltmpisidf1  	  INIT            {tmpisidf1}
+labktype	      INIT            {ctipedetail}
+tkdtotsj        INIT_UPDATE     0
+
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+CALCS()
+cuploadcheckpointtendapprtok  tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tlmuntuk == "PPRT" && tkdtotsj == 1
+ccheckpointtendaok            tkdjwbstr1 != "" || tkdjwbstr2 != ""
+cdetailchm1ok                 tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tlmuntuk == "PPRT" && tkdtotsj == 1
+cuploadcheckpointtendabelumok tlmuntuk == lPPRT && tkdjml5 == 0 && tkdnil == 0
+cdetailcheckpointtendabelumok tlmuntuk == lPPRT && tkdjwbstr1 == "" && tkdjwbstr2 == ""
+
+MAP(mupdinfodetailchm1)
+
+lISIDETCHECKPOINTENDA   tkdrek          REPLACE_IF cdetailcheckpointtendabelumok
+lUPLCHECKPOINTTENDA     tkdrek          REPLACE_IF cuploadcheckpointtendabelumok
+lSELESAIKANHMIN8DULU    tkdrek          REPLACE_IF cdjoindetailhm8apr
+lSELESAIKANHMIN7DULU    tkdrek          REPLACE_IF cdjoindetailhm7apr
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokchm1)
+        DO_LIB_IF cdetailchm1ok         ap_dbclc(DNAME dupddetailreqchm1,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilchm1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamchm1, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailchm1,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailchm1);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN     	DO_MAP
+		IF ccheckpointtendaok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Harus Ada Minimal 1 Detail Lokasi Checkpoint / Tenda
+
+CLICKED         cur_field=ltombolchm1ok  DO_SPCALCS spdetailokchm1
+
+BEFORE_INPUT    cur_field=tkdjwbstr2        DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjwbstr1        DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+MAP(mtambahuploadfotocheckpoint)
+ctambahupload		        tkdnourt	      DO_CALC
+ctambahuploadfoto5      tkdjml5         DO_CALC
+gv_int1                 tkdtotjsa       REPLACE
+DBCALCS(dtambahuploadfotocheckpoint)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mtambahuploadfotocheckpoint
+
+MAP(mtambahuploadfototenda)
+ctambahupload		        tkdnourt	      DO_CALC
+ctambahuploadfoto6      tkdnil          DO_CALC
+gv_int1                 tkdtotjsa       REPLACE
+
+DBCALCS(dtambahuploadfototenda)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mtambahuploadfototenda
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cpprt
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPL_DIRFLD2 tlmtgl 
+SFL_UPLFLD  tkdnobuk lCHECKPOINT
+SFL_UPLFLD2 tkdnobuk lTENDA
+SFL_UPLFLD_DBCALCS dtambahuploadfotocheckpoint
+SFL_UPLFLD2_DBCALCS dtambahuploadfototenda
+SFL_UPL_COND cuploadcheckpointtendapprtok
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan U Enter Dulu
+                        IF cbukanpprt Hanya Tipe Event PPRT yang Bisa Upload
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNH1CHM1 tlmnobuk
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

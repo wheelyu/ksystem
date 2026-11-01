@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------\
+| /-------s.UPLOAD----------\/------------------------------------------\ |
+| |                         !! t.Kode     : ____ ______________________ ! |
+| |                         !! t.TglTolak : ___________                 ! |
+| |                         !! t.NipTolak : ___________                 ! |
+| |                         !! t.HslCek   : ____ ___________            ! |
+| |                         !! t.KetCek   : ___________________________ ! |_
+| |                         !!                                          ! |
+| \-------------------------/\------------------------------------------/ |
+\-------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+	aktkode2        ALLCAPS                 INPUTRI 1               /*kode tolakan*/
+	lkettlk         PROTECT                 INPUTRI 2               /*ket tolakan*/
+	akttgl          PROTECT {DD-MM-YY}      INPUTRI 3               /*tgl tolak pertama*/
+	aktcrtusr       PROTECT                 INPUTRI 4               /*nip penolak*/
+	aktlok          NOCHANGE                INPUTRI 5               /*hasil cek arsip*/
+	akttgl2         PROTECT {DD-MM-YY}      INPUTRI 6               /*tgl cek arsip*/
+	aktket          ALLCAPS                 INPUTRI 7               /*ket cek*/
+	akttype         NOCHANGE QPROTECT UNSEEN        INPUTRI 8       /*svikode*/
+
+DEFAULTS(tmptranst)
+akttgl                  INIT                    {g_tgltrn}
+aktlok			DFALT_SCAN_BLANKS	OK "OK"
+						B.OK "B.OK"
+
+EDITS(tmptranst)
+e.MandatoryKode aktkode2        MANDATORY
+e.MandatoryKet  aktket          MANDATORY
+e.MandatoryCek  aktlok          MANDATORY_IF cubhlok
+e.Validate      aktkode2        VALIDATE_IF ctbh rmdstskodgab mrmdg2 srmdonline {Pgv_INPG} {Plberkassjf} {Srmdgab} {Srmdbts1} {Srmdbts2} {Srmdbts3}
+e.Validate      akttype         VALIDATE tmpdatdvskod mtmpg2 0 {Pgv_dttemplate} {Pltmptolakan} {PlH1} {PlK}
+
+CALCS()
+cbukuplbrkssjf	STRIP(btmnobuk) + STRIP(aktkode2)
+
+MAP(misi11d)
+g_usrkode       akttotal                REPLACE_IF cubh
+g_tgltrn	akttgl2			REPLACE_IF cubh
+aktjml		laktjml			REPLACE
+aktjml		laktjmlI		REPLACE
+DEBUG	caktjmlT	laktjmlT		DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktkode2	DO_SKIP_IF cubh
+BEFORE_INPUT	cur_field=aktlok	DO_SKIP_IF ctbh
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckodetetap           mdum                                                                
+                ELSE HKCURSOR STAY
+                HKMSG Kode Berubah, Tekan Esc Ubah Kembali
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cblmpernahtlk        mdum
+                ELSE HKCURSOR STAY
+                HKMSG Sudah Pernah Tolak Yang Sama
+AFTER_INPUT	cur_keybd=EN		DO_MAP misi11d
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD      aktkode aktnobuk
+SFL_COND	cboleh8d
+SFL_TARGET      aktkodtypidx    btmnobuk ltlk721 lberkassjf
+SFL_MAP
+ltlk721         aktdata         REPLACE
+btmnobuk        aktkode         REPLACE
+lberkassjf	akttype         REPLACE
+cT1             akttype2        DO_CALC
+c1              aktjml          DO_CALC
+cbukuplbrkssjf	aktnobuk	DO_CALC
+g_usrkode	aktcrtusr	REPLACE

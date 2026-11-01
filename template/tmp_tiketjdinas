@@ -1,0 +1,126 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|t.tiketJdinas                      |
+|/---------------------------------\|
+|! i.Ket          : _______________!|
+|! i.Tanggal      : _______________!|
+|! t.BeliTiket    : _______________!|
+|! t.JenisTiket   : _______________!|
+|! t.Rute         : _______________!|
+!! t.Transportasi : _______________!|
+|! t.Armada       : _______________!|
+|! i.Biaya        : ____________.__!|
+|! i.Rek          : _______________!|
+|! t.SisaBudget   : ____________.__!|
+|! i.KetRek       : _______________!|
+|! t.Upload       : _______________!|
+|! spasi 			   !|
+|! t.KhususTiketGaHarusAccGA	   !|
+|! t.AccGa        : ______	   !|
+|! t.KetTacc      : _______________!|
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bkdket                  TEXTAREA                 INPUTRI         1
+bkdtgl                  NOLIMIT {DD-MM-YY}      INPUTRI		 2
+bkdbrg 			ALLCAPS		INPUTRI		3  
+bkdbisnis		ALLCAPS		INPUTRI		4  
+bkdmua 			ALLCAPS		INPUTRI		5  
+bkddep 			NOCHANGE		INPUTRI		6  
+bkddvs 			ALLCAPS		INPUTRI		7  
+bkdjml			NUMERIC 		INPUTRI		8  
+bkdnobbm		PROTECT  		INPUTRI		9  
+bkddf2			PROTECT 		INPUTRI		10
+bbgket  	 	PROTECT 		INPUTRI		10 
+bkdfl			PROTECT		INPUTRI	11
+bkdsts2			NOCHANGE		INPUTRI		12
+bkdnomesin		TEXTAREA		INPUTRI		13
+
+EDITS(tmptranst)
+e.Mandatory bkdket      MANDATORY
+e.Mandatory bkdtgl      MANDATORY
+e.Mandatory bkdjml      MANDATORY
+e.Mandatory bkdbrg      MANDATORY
+e.Mandatory bkdnobbm    MANDATORY
+e.Mandatory bkdnomesin   MANDATORY_IF cgatacc
+e.ValidateBbm   bkdnobbm        VALIDATE_IF ckondtiket bbgnoidx mbbg2 sbbg 
+e.ValidateBbm   bkdnobbm        VALIDATE_IF ckondnontiket bbggolnoidx mbbg2 sbbgRL {Pgv_05}
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW murut
+BEFORE_INPUT    cur_field=bkdbrg    DO_SKIP_IF csdhada
+BEFORE_INPUT	cur_field=bkdsts2	DO_SKIP_IF ctiketsendiri
+BEFORE_INPUT	cur_field=bkdnomesin	DO_SKIP_IF ctiketsendiri2
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mplafon
+AFTER_INPUT	cur_field=bkdbisnis	DO_MAP SHOW
+		IF cpulang mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TiketPulangSdhDiInput
+
+AFTER_INPUT	cur_field=bkdbisnis	DO_MAP SHOW
+		IF cpergi  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TiketPergiSdhDiInput
+
+BEFORE_INPUT	cur_field=bkdket	DO_MAP SHOW
+		IF cPBS  mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG t.HanyaUtkTiketDibelikanGA
+
+
+DEFAULTS(tmptranst)
+lcount		INIT	{tmpnourt}
+bkdsts          INIT_ADD                OPEN
+lbkdjml         INIT_UPDATE             {bkdjml}
+bkdnobbm        INIT_ADD                {lREKJLND}
+bkdnobbm        INIT_UPDATE             {lREKJLND}
+
+IF cc_BS  	bkdbrg 		DFALT_SCAN       	DIBELIKAN_GA
+IF cd_BS	bkdbrg		DFALT_SCAN		BLANKS
+					BELISENDIRI
+					DIBELIKAN_GA
+bkdbisnis	DFALT_SCAN		BLANKS
+					TIKET_PERGI
+					TIKET_PULANG
+bkddep 		DFALT_SCAN	BLANKS
+				KERETA
+				BUS
+				PESAWAT
+
+bkdsts2		DFALT_SCAN	BLANKS
+						ACC 
+						TACC
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cTIKET
+SFL_UPL_DIRFLD  bkmtgl
+SFL_UPLFLD_DBCALCS dupdbkdtiket   
+SFL_UPLFLD bkmnobuk     bkdbukll
+SFL_UPL_DELCOND	cOPEN_SAJA
+
+SFL_TARGET
+	bkdbuklloto    bkmnobuk   lBIAYA 
+
+SFL_MAP
+bkmdata         bkddata         REPLACE
+bkmnobuk        bkdnobuk        REPLACE
+lBIAYA          bkdbukll        REPLACE
+lBIAYA          bkdgrup         REPLACE
+
+
+
+
+

@@ -1,0 +1,142 @@
+LOCAL
+PGM_FIELDS
+lnamasdm	STRING	61
+ltomacc		STRING	21
+ltomtacc	STRING	21
+ldum		INT2	2
+lurtiklan	INT2	2
+
+
+
+MAP(mjoinurtiklan)
+aktjml		lurtiklan	REPLACE
+
+DBCALCS(djoinurtiklan)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	aktkodtypidx brgkode lUPLIKLAN
+	DBC_MAP		mjoinurtiklan
+
+DBCALCS(djoinmediaiklan)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx brgkode lUPLIKLAN akttype brgtgl1
+
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------\
+|/--------------------------------\/---------UPLOAD----------\|
+||t.Media     : _________________ ||                         ||
+||t.Ket       : _________________ ||                         ||
+||t.NipApr1   : _________________ ||                         ||
+||t.NamaSdm   : _________________ ||                         ||
+||t.AccAtasan :_______   _______  ||                         ||
+||t.OkUp      : ________  _______ ||                         ||
+|\--------------------------------/\-------------------------/|
+\-------------------------------------------------------------/
+ ___
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+akttype		ALLCAPS			INPUTRI	1
+aktket		TEXTAREA		INPUTRI	2
+aktcrtusr	PROTECT			INPUTRI	3
+lnamasdm	PROTECT			INPUTRI	4
+ltomacc		TOMBOL		INPUTRI	5
+ltomtacc	TOMBOL		INPUTRI	6
+akttype2	PROTECT			INPUTRI	7
+aktdk		PROTECT			INPUTRI	8
+aktdata		PROTECT	QPROTECT	INPUTRI	50
+
+CALCS()
+ciklan0		(djoinmediaiklan == 0 && g_curcmd == 1) || g_curcmd == 2
+cjoinurtiklan0	djoinurtiklan == 0 && g_curcmd == 1
+cjoinurtiklan1	djoinurtiklan == 1 && g_curcmd == 1
+curtiklan0	1
+curtiklan	lurtiklan + 1
+cUPLOADOK	"OK"
+csudahupl	((akttype2 != BLANKS) && (g_grpnam == "BOM" || g_grpnam == "REMHEAD" || g_grpnam == "REMSPV" || g_grpnam == "ARDVH" || g_grpnam=="BM" || g_grpnam=="PDCA")) || g_grpnam == "RI" || g_grpnam == "IT"
+cACC		"A"
+cTACC		"T"
+cOPN2		akttype_1 == gv_OPEN && aktlok_1 == gv_OPEN
+cINP2		akttype_1 == gv_INPG && aktlok_1 == "CAB" && aktdk == "T"
+
+DEFAULTS(tmptranst)
+aktdata		INIT		"UPLIKLAN"
+ltomacc		INIT		"ACC"
+ltomtacc	INIT		"TACC"
+
+EDITS(tmptranst)
+t.ValidatMedia	akttype		VALIDATE tbddatkodidx mtbd stbd {Pgv_dttabel} {PlLELANG21} {PlUPLIKLAN21}
+t.ValidateNip	aktcrtusr	VALIDATE psikodidx mpsi 0
+
+MAP(mtbd)
+tbdkode		akttype		REPLACE
+
+MAP(mpsi)
+psinama		lnamasdm	REPLACE
+
+MAP(mnourut)
+lurtiklan	lurtiklan	REPLACE_IF cjoinurtiklan1
+curtiklan0	aktjml		DO_CALC_IF cjoinurtiklan0
+curtiklan	aktjml		DO_CALC_IF cjoinurtiklan1
+brgtgl1		akttgl		REPLACE
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+MAP(mupduplacc)
+cACC		aktdk		DO_CALC
+c0		aktjml2		DO_CALC
+g_usrkode	aktcrtusr	REPLACE
+
+MAP(mupdupltacc)
+cTACC		aktdk		DO_CALC
+g_usrkode	aktcrtusr	REPLACE
+
+SPCALCS(sptomacc)
+DO_LIB_IF csudahupl	ap_dbclc(DNAME dupduplacc,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP mupduplacc);
+
+SPCALCS(sptomtacc)
+DO_LIB_IF csudahupl	ap_dbclc(DNAME dupdupltacc,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP mupdupltacc);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=akttype	DO_MAP SHOW mnourut
+AFTER_INPUT	cur_field=akttype	DO_MAP SHOW
+		IF ciklan0 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.InputanMediaSdhAda
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ciklan0 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.InputanMediaSdhAda
+
+CLICKED		cur_field=ltomacc	DO_SPCALCS sptomacc
+CLICKED		cur_field=ltomtacc	DO_SPCALCS sptomtacc
+
+MAP(mupdupliklan)
+cUPLOADOK	akttype2	DO_CALC_IF cOPN2
+c1		aktjml2		DO_CALC_IF cINP2
+
+DBCALCS(dupdupliklan)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	aktprmidx aktprm
+	DBC_MAP		mupdupliklan
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SELECT		ciklanbks
+SFL_UPL_DELCOND		c0
+SFL_UPLFLD		aktkode aktprm
+SFL_UPLFLD_DBCALCS	dupdupliklan
+SFL_UPL_DIRFLD  brgtgl1
+SFL_TARGET
+aktkodtypidx  brgkode lUPLIKLAN 
+
+SFL_MAP
+brgkode		aktkode		REPLACE
+lUPLIKLAN	aktdata		REPLACE
+
+
+

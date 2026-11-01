@@ -1,0 +1,145 @@
+LOCAL()
+PGM_FIELDS
+ltbtkodedok		STRING	21
+lKRY1			STRING	21
+lWIRA2			STRING	21
+lPROF3			STRING	21
+lBUSH4			STRING	21
+lALLKWP5		STRING	21
+lALLWPB6		STRING	21
+lALLKWPB7		STRING	21
+lSRVY1			STRING	21
+lBM2			STRING	21
+
+CALCS()
+ckodesama	svikode == tbtkode
+
+DBCALCS(djoinsvikode)
+DBC_COMMAND	JOIN
+DBC_SELECT	ckodesama
+DBC_TARGET	svidatbuktyp lDT668 btmnobuk lCEKDOKUMEN11
+
+IMAGE(tmptranst)
+/--t-----------------t-------------\
+\--.-----------------.-------------/
+
+IMAGE(tmptrans)
+|__|_________________|_____________|
+
+FIELD(tmptrans)
+tbtnourt                PROTECT SCROLL                  INPUTRI 1
+tbtket                  PROTECT SCROLL                  INPUTRI 2
+tbtkat                 	ALLCAPS SCROLL                  INPUTRI 3
+
+CALCS()
+cadaygbelumisi	(djoinsvicekdokbm == 0 || (djoinsvicekdokbm == 1 && djoinsvicekdokbm2 == 1)) && (btmflag1 == "BM" || btmflag1 == "SRVY" || btmflag1 == "OPEN")
+		 && (g_grpnam == "B.UMROHADHSPV" || g_grpnam == "B.M4WADH" || g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WRM" || g_grpnam=="RI")
+cjoinsvikode	djoinsvikode == 0
+cjoinsvikode1	djoinsvikode == 1
+cnori		g_grpnam != "RI"
+
+cnilai1			tbtdf1 == 1
+cnilai2			tbtdf1 == 2
+cnilai3			tbtdf1 == 3
+
+ctipe1			tbtdf2 == 1
+ctipe2			tbtdf2 == 2
+ctipe3			tbtdf2 == 3
+ctipe4			tbtdf2 == 4
+ctipe5			tbtdf2 == 5
+ctipe6			tbtdf2 == 6
+ctipe7			tbtdf2 == 7
+
+
+cfiltercekbm    djoinkerja == 1 &&
+                (
+                (lcekpekerjaan == "KARYAWAN"     && tbtdf2 == 1)  ||
+                (lcekpekerjaan == "WIRASWASTA"   && tbtdf2 == 2)  ||
+                (lcekpekerjaan == "PROFESIONAL"  && tbtdf2 == 3)  ||
+                (lcekpekerjaan == "BADANUSAHA"   && tbtdf2 == 4)  ||
+                ((lcekpekerjaan == "KARYAWAN" || lcekpekerjaan == "WIRASWASTA" || lcekpekerjaan == "PROFESIONAL") && tbtdf2 == 5) ||
+                ((lcekpekerjaan == "WIRASWASTA" || lcekpekerjaan == "PROFESIONAL" || lcekpekerjaan == "BADANUSAHA") && tbtdf2 == 6) ||
+                ((lcekpekerjaan == "KARYAWAN" || lcekpekerjaan == "WIRASWASTA" || lcekpekerjaan == "PROFESIONAL" || lcekpekerjaan == "BADANUSAHA") && tbtdf2 == 7)
+                ) &&
+                (
+                (btmsts == "668" && btmflag1 == "SRVY" && tbtdf1 == 1) ||
+                (btmsts == "668" && btmflag1 == "BM" && tbtdf1 == 2) ||
+                (btmsts == "669" && btmflag1 == "OPEN" && tbtdf1 == 3)
+                )
+
+DEFAULT(tmptrans)
+IF cnilai1      tbtkat  DFALT_SCAN      BLANKS 
+					ADA ""
+					TDK_ADA ""
+IF cnilai2      tbtkat	DFALT_SCAN	BLANKS
+					ADA ""
+					TDK_ADA ""
+IF cnilai3      tbtkat	DFALT_SCAN	BLANKS
+					ADA ""
+					TDK_ADA ""
+
+lSRVY1		INIT	SRVY
+lBM2		INIT	BM
+lKRY1		INIT	KRY
+lWIRA2		INIT	WIRA
+lPROF3		INIT	PROF
+lBUSH4		INIT	BUSH
+lALLKWP5	INIT	ALLKWP
+lALLWPB6	INIT	ALLWPB
+lALLKWPB7	INIT	ALLKWPB
+
+
+EDITS(tmptrans)
+e.Mandatory		tbtkat		MANDATORY_IF cnori
+e.Mandatory		tbtkat		MANDATORY
+
+
+SUBFILE(tmptrans)
+SFL_LINES(15)
+SFL_COND	cadaygbelumisi
+SFL_SELECT	cfiltercekbm
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tbtdaturtidx   gv_dttemplate lTMPUMROH lCEKDOKUMEN lCEKDOKUMEN lUMROH
+
+MAP(maddsvicekdokumen)
+btmnobuk	svinobuk	REPLACE
+tbtnourt	svidf1	        REPLACE
+tbtkode		svikode		REPLACE
+tbtket		sviket		REPLACE
+lDT668		svidata		REPLACE
+lCEKDOKUMEN	svitype		REPLACE
+tbtkat		svistr1		REPLACE
+gv_INPG		svists		REPLACE
+tbtdf1          svinourt        REPLACE
+
+lSRVY1		svistr2		REPLACE_IF cnilai1
+lBM2		svistr2		REPLACE_IF cnilai2
+gv_OPEN		svistr2		REPLACE_IF cnilai3
+
+lKRY1		svistr3		REPLACE_IF ctipe1
+lWIRA2		svistr3		REPLACE_IF ctipe2
+lPROF3		svistr3		REPLACE_IF ctipe3
+lBUSH4		svistr3		REPLACE_IF ctipe4
+lALLKWP5	svistr3		REPLACE_IF ctipe5
+lALLWPB6	svistr3		REPLACE_IF ctipe6
+lALLKWPB7	svistr3		REPLACE_IF ctipe7		
+
+MAP(mupdsvicekdokumen)
+tbtkat		svistr1		REPLACE_IF ckodesama
+
+MAP(mmapcekdok)
+DEBUG	ldum	ldum	REPLACE
+tbtkode		ltbtkodedok	REPLACE
+
+SPCALCS(spdetailcekok)
+	DO_LIB ap_dbclc(DNAME dmapcekdok,DCOMMAND MAPMAP,DMAP mmapcekdok);
+        DO_LIB_IF cjoinsvikode   ap_dbclc(DNAME daddsvicekdokumen,DCOMMAND ADD,DFILE svi,DMAP maddsvicekdokumen);
+        DO_LIB_IF cjoinsvikode1  ap_dbclc(DNAME dupdsvicekdokumen,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp lDT668 btmnobuk lCEKDOKUMEN11,DMAP mupdsvicekdokumen);
+
+POSTING(tmptrans)
+  PST_COMMAND   spdetailcekok
+
+
+

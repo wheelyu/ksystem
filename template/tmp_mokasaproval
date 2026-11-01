@@ -1,0 +1,82 @@
+LOCAL
+PGM_FIELDS
+
+lnamausrdet	STRING	31
+ljam		TIME	4
+lSYSTIME	TIME	4
+lversi3		STRING	11
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||                                      t.Approval                           ||
+|\---------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------\|
+||t.No             : ___  ______  _____________________  ___________    ____ ||
+||t.Ket                                                                      ||
+|| _________________________________________________________________________ ||
+||spasi                                                                      ||
+||t.Approval       : _________ _______ __________ ______                     ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnourt	NUMERIC         		INPUTRI		1
+tkdsisstr 	ALLCAPS				INPUTRI		2
+lnamausrdet	PROTECT				INPUTRI		3 
+tkdtgl 		PROTECT {DD-MM-YY}     		INPUTRI		4 
+tkdsts     	PROTECT				INPUTRI		5 
+tkdket 		TEXTAREA ALLCAPS		INPUTRI		6
+tkdjwbstr1 	ALLCAPS SCROLL			INPUTRI		7 
+ljam		PROTECT				INPUTRI 	8
+tkdtgl2		PROTECT {DD-MM-YY}		INPUTRI 	9
+lenter		ALLCAPS SCROLL			INPUTRI 	10
+
+
+DEFAULTS(tmptranst)
+tkdjwbstr1	DFALT_SCAN_BLANKS ACC TACC
+lSYSTIME	INIT		SYSTIME
+tkdtgl		INIT		{g_tgltrn}
+tkdtgl2		INIT_UPDATE	{g_tgltrn}
+tkdjml		INIT_UPDATE	{lSYSTIME}
+lversi3		INIT		240222v1
+
+CALCS()
+cnip		tkdsisstr  != "CRAS" && tkdsisstr  != "CAM" && tkdsisstr != "DCOO"
+cskipx		g_grpnam!="RI" && g_grpnam!="IT"
+
+EDITS(tmptranst)
+Nama User Tdk Ada       tkdsisstr       VALIDATE_IF cnip psmkodidx mpsmuser
+e.Mandatory		tkdjwbstr1	MANDATORY
+
+MAP(mpsmuser)
+psmnama		lnamausrdet		REPLACE
+tkdjml		ljam			REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdnourt 	DO_SKIP_IF cskipx
+BEFORE_INPUT	cur_field=tkdsisstr 	DO_SKIP_IF cskipx
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkdbukidx   tlmnobuk gv_INPG                  
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+tlmdata		tkddata		REPLACE
+laproval   	tkdnoll		REPLACE
+
+CALCS()
+cupdtmptrans	((tlmsts == "OPEN" && tkdnourt == 1) || (tlmsts=="INPG" && tlmsts2=="RM" && tkdnourt==2) || (tlmsts=="INPG" && tlmsts2=="CRAS" && tkdnourt==3) ||
+		 (tlmsts=="INPG" && tlmsts2=="CAM" && tkdnourt==4) || (tlmsts=="INPG" && tlmsts2=="DCOO" && tkdnourt==5)) ||
+		 (g_grpnam=="RI" || g_grpnam=="IT")
+caddtmptrans	tlmsts == "OPEN" && (g_grpnam=="RI" || g_grpnam=="IT")
+
+PERMIT(tmptrans)
+	PMT_ADD_COND 	caddtmptrans
+	PMT_UPDALL_COND cupdtmptrans
+	PMT_DEL_COND	c0

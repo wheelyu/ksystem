@@ -1,0 +1,214 @@
+LOCAL
+PGM_FIELDS
+lenterb		    STRING	    11
+ldumb		    STRING	    2
+lsvidtmkodeb        STRING          21
+lSLIKPENJAMIN	    STRING          21
+
+
+ltldlokpenjamin     STRING          21
+ltldppdotopenjamin  STRING          21
+ltldgruppenjamin    STRING          21
+ltldgrup2penjamin   STRING          21
+ltldlok2penjamin    STRING          21
+ltldukrwrnpenjamin  STRING          21
+
+lkopib		    STRING	    3
+
+MAP(misisvi_2)
+tldlok          ltldlokpenjamin     REPLACE  /* Jml Nominal Tunggakan -> Denda */
+tldppdoto       ltldppdotopenjamin  REPLACE  /* Mks usia tngkn 12 bln -> Nungak terlama */
+tldgrup         ltldgruppenjamin    REPLACE  /* Jumlah Kreditur -> Jumlah Kreditur */
+tldgrup2        ltldgrup2penjamin   REPLACE  /* Jml Plafon -> Plafon Efektif */
+tldlok2         ltldlok2penjamin    REPLACE  /* Jml Baki Debet -> Baki Debet */
+tldukrwrn       ltldukrwrnpenjamin  REPLACE  /* Pemohon */
+
+DBCALCS(djointld711_2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldbukurtidx   tlmnobuk
+        DBC_MAP         misisvi_2
+
+
+IMAGE(tmptranst)
+
+/---------------------------------------------\
+|/-------------------------------------------\|
+||spasi                            	     ||
+||t.TekanU                  	             ||
+||t.AdaSlik       	    : ___  _______   ||
+||t.RingkasanFasilitas                       ||
+||t.PlafonEfektif           : _____________  ||
+||t.BakiDebet               : _____________  ||
+||t.JumlahKreditur          : _____________  ||
+||t.FasilitasNunggak                         ||
+||t.NunggakTerlamaAllKredit : _____________ _|| 
+||t.Bank/LembBia 	                     ||
+|| ________________________________________ _||
+||t.JenisKredit/Pembiayaan  : _____________  ||
+||t.BakiDebetNunggak        : _____________  ||
+||t.Denda                   : _____________  ||  
+||spasi                    	             ||
+||                     		  _______    ||
+||t.Nip		  : ________  ______________ ||
+|\-------------------------------------------/|
+| t.UplFotoSlik                    	      |
+|/--------DOCUPLOAD--------------------------\|
+||                                	     ||
+||                                	     ||
+||                                	     ||
+||                                	     ||
+||                               	     ||
+||                        	             ||
+|\-------------------------------------------/|
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviyt1		NOCHANGE		INPUTRI		1
+lsviyt1		PROTECT			INPUTRI		1
+
+svidf2          NUMERIC                 INPUTRI         2       /*Plafon Efektif        */
+svidf3          NUMERIC                 INPUTRI         3       /*Baki Debet            */
+svidf4          NUMERIC                 INPUTRI         4       /*Jumlah Kreditur       */
+svidf1          NUMERIC                 INPUTRI         5
+svinobuk        PROTECT UNSEEN          INPUTRI         6
+svistr1         ALLCAPS SCROLL          INPUTRI         8
+svikode         PROTECT UNSEEN          INPUTRI         7
+svitype2        NOCHANGE                INPUTRI         9       /*Jenis Kredit/pembiayaan*/
+svidf5          NUMERIC                 INPUTRI         10      /*Baki debet nunggak     */
+svidf6          NUMERIC                 INPUTRI         11      /*Denda     */
+
+lenterb		NOCHANGE		INPUTRI		15
+svidtmkode      PROTECT                 INPUTRI         16
+lsvidtmkodeb    PROTECT                 INPUTRI         17
+
+DEFAULTS(tmptranst)
+sviyt1		DFALT_SCAN 	BLANKS
+				Y " "
+				T " "
+svitype2        DFALT_SCAN 	BLANKS
+                                KARTU "KARTU"
+                                NON_KARTU "NON_KARTU"
+
+lentera		INIT		"ENTER"
+lSLIKPENJAMIN	INIT		SLIKPENJAMIN
+lkopib		INIT		sd
+
+
+CALCS()
+cYAb		"YA"
+cTIDAKb		"TIDAK"
+ciyab		sviyt1=="Y"
+ctidakb		sviyt1=="T"
+cdjointld711_2tldlok       g_grpnam=="TDK" && djointld711_2==1 && ltldukrwrn=="PENJAMIN" && ltldlokpenjamin != BLANKS && ltldlokpenjamin != "0"
+cdjointld711_2tldppdoto    g_grpnam=="TDK" && djointld711_2==1 && ltldukrwrn=="PENJAMIN" && ltldppdotopenjamin != BLANKS && ltldppdotopenjamin != "0"
+cdjointld711_2tldgrup      g_grpnam=="TDK" && djointld711_2==1 && ltldukrwrn=="PENJAMIN" && ltldgrup2penjamin != BLANKS && ltldgruppenjamin != "0"
+cdjointld711_2tldgrup2     g_grpnam=="TDK" && djointld711_2==1 && ltldukrwrn=="PENJAMIN" && ltldgrup2penjamin != BLANKS && ltldgrup2penjamin != "0"
+cdjointld711_2tldlok2      g_grpnam=="TDK" && djointld711_2==1 && ltldukrwrn=="PENJAMIN" && ltldlok2penjamin != BLANKS && ltldlok2penjamin != "0"
+
+EDITS(tmptranst)
+/*
+e.Mandatory	svidf1		MANDATORY 
+e.Mandatory     svidf2          MANDATORY
+e.Mandatory     svidf3          MANDATORY
+e.Mandatory     svidf4          MANDATORY 
+e.Mandatory     svitype2        MANDATORY 
+e.Mandatory     svidf5          MANDATORY 
+e.Mandatory	svistr1 	MANDATORY 
+*/
+e.Mandatory	sviyt1		MANDATORY
+e.validate	svikode		VALIDATE tlmbukidx mtlmb
+e.Validate      svidtmkode 	VALIDATE psikodidx mpsib
+
+
+MAP(mtlmb)
+cYAb             lsviyt1         DO_CALC_IF ciyab
+cTIDAKb          lsviyt1         DO_CALC_IF ctidakb
+cBLANKS         lsvidtmkodea     DO_CALC
+
+MAP(mpsib)
+psinama                 lsvidtmkodeb    REPLACE
+ltldlokpenjamin          svidf6       REPLACE_IF cdjointld711_2tldlok      /* Jml Nominal Tunggakan -> Denda */
+ltldppdotopenjamin       svidf1       REPLACE_IF cdjointld711_2tldppdoto   /* Mks usia tngkn 12 bln -> Nungak terlama */
+ltldgruppenjamin         svidf4       REPLACE_IF cdjointld711_2tldgrup     /* Jumlah Kreditur -> Jumlah Kreditur */
+ltldgrup2penjamin        svidf2       REPLACE_IF cdjointld711_2tldgrup2    /* Jml Plafon -> Plafon Efektif */
+ltldlok2penjamin         svidf3       REPLACE_IF cdjointld711_2tldlok2     /* Jml Baki Debet -> Baki Debet */
+
+CALCS()
+ctidakadaslikb 	 sviyt1=="T"
+/* cjikatld711adab  djointld711==1 || sviyt1=="T" */
+
+MAP(mkosongb)
+/* cBLANKS         svidf1          DO_CALC */
+cBLANKS         svistr1          DO_CALC
+g_usrkode       svidtmkode      REPLACE
+g_tgltrn        svitgl1         REPLACE
+
+cBLANKS         svidf2          DO_CALC_IF ctidakb
+cBLANKS         svidf3          DO_CALC_IF ctidakb
+cBLANKS         svidf4          DO_CALC_IF ctidakb
+cBLANKS         svidf1          DO_CALC_IF ctidakb
+cBLANKS         svistr1         DO_CALC_IF ctidakb
+cBLANKS         svitype2        DO_CALC_IF ctidakb
+cBLANKS         svidf5          DO_CALC_IF ctidakb
+cBLANKS         svidf6          DO_CALC_IF ctidakb
+
+
+CALCS()
+cinibuhb	((svistr10=="630" || svistr10=="610") && (g_grpnam=="SPVAREA" || g_grpnam=="CRHMCSPV" || g_grpnam=="COLLAREASP" || g_grpnam=="ANSYSUAT" || g_grpnam=="RASDVH" || g_grpnam=="PDCA" || g_grpnam=="ROOT" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="DCOOOPR" || g_grpnam=="DCOOADH" || g_grpnam=="COO" || g_grpnam=="ARDVH" || g_grpnam=="BOM" || g_grpnam=="CREDITDVH" || g_grpnam=="HMCSPV" || g_grpnam=="REMSPV" || g_grpnam=="MKTHEAD" || g_grpnam=="KAWIL" || g_grpnam=="BUM" || g_grpnam=="CREDITAM" || g_grpnam=="BUMM2W" || g_grpnam=="MKTM2WDVH" || g_grpnam=="BM" || g_grpnam=="BMMM2W")) ||
+                ((svistr10=="715"|| svistr10=="714" || svistr10=="714LAIN") && (g_grpnam=="CREDITDCA" || g_grpnam=="MKTHMCDVH" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ANSYSUAT" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="BMMM2W")) ||
+                (svistr10=="721" && (g_grpnam=="SPVAREA" || g_grpnam=="CRHMCSPV" || g_grpnam=="COLLAREASP" || g_grpnam=="ANSYSUAT" || g_grpnam=="RASDVH" || g_grpnam=="PDCA" || g_grpnam=="ROOT" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="DCOOOPR" || g_grpnam=="DCOOADH" || g_grpnam=="COO" || g_grpnam=="ARDVH" || g_grpnam=="BOM" || g_grpnam=="CREDITDVH" || g_grpnam=="HMCSPV" || g_grpnam=="REMSPV" || g_grpnam=="MKTHEAD" || g_grpnam=="KAWIL" || g_grpnam=="BUM" || g_grpnam=="CREDITAM" || g_grpnam=="BUMM2W" || g_grpnam=="MKTM2WDVH" || g_grpnam=="GA" || g_grpnam=="AUDIT" || g_grpnam=="AUDITTL" || g_grpnam=="CRM" || g_grpnam=="CRMSPV" || g_grpnam=="HRDSPV" || g_grpnam=="CMBNSPV" || g_grpnam=="TRAINSPV" || g_grpnam=="HRDODTM" || g_grpnam=="HRDREC" || g_grpnam=="CREDITDCA" || g_grpnam=="BM" || g_grpnam=="BMMM2W"))
+
+MAP(mdummb)
+ldumb		ldumb	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviyt1       DO_MAP SHOW mkosongb
+
+BEFORE_INPUT cur_field=svidf1		DO_SKIP_IF ctidakadaslikb
+BEFORE_INPUT cur_field=svistr1 		DO_SKIP_IF ctidakadaslikb
+BEFORE_INPUT cur_field=svidf2          DO_SKIP_IF ctidakadaslikb
+
+BEFORE_INPUT cur_field=svidf3          DO_SKIP_IF ctidakadaslikb
+BEFORE_INPUT cur_field=svidf4          DO_SKIP_IF ctidakadaslikb
+
+BEFORE_INPUT cur_field=svitype2        DO_SKIP_IF ctidakadaslikb
+BEFORE_INPUT cur_field=svidf5          DO_SKIP_IF ctidakadaslikb
+
+AFTER_INPUT cur_field=sviyt1 DO_MAP SHOW
+        IF cinibuhb    mdummb
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhUbh
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cinibuhb    mdummb
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhUbh
+
+CALCS()
+cOKb		"OK"
+
+MAP(mupdfotoslikb)
+cOKb		svitype3	DO_CALC
+
+DBCALCS(dupdfotoslikb)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviotoidx   svioto
+	DBC_MAP		mupdfotoslikb
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/*SFL_COND	cdari630b*/
+SFL_DOCUPL_DELCOND csudahtdkopen
+SFL_DOCUPLFLD_DBCALCS dupdfotoslikb
+SFL_DOCUPLFLD svikode lSLIKPENJAMIN
+SFL_TARGET
+        svidatbuktyp   lCEKSLIK lnobukahm lCEKSLIK l2
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

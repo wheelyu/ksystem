@@ -1,0 +1,313 @@
+IMAGE(tmptranst)
+/------------------------------------------\
+|/----------------------------------------\|
+||t.nobuk735    :___________________      ||
+||t.NipReview   :_________ _________      ||
+||t.NamReview   :___________________      ||
+||t.Tgldanjam   :________ ________ _______||
+||t.HasilReview :___________________      ||
+||t.Ket         :___________________      ||
+||t.Ketblmkerja :___________________      ||
+|\----------------------------------------/|
+\------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk        PROTECT                 INPUTRI 2
+svidtmkode      PROTECT                 INPUTRI 2
+svitype         PROTECT                 INPUTRI 2
+lnamasdmcab     PROTECT                 INPUTRI 3
+svitgl1         PROTECT NOLIMIT {DD-MM-YY} INPUTRI 3
+ljaminput       PROTECT                 INPUTRI 3
+ljamselesai     PROTECT                 INPUTRI 3
+svitblkode      ALLCAPS                 INPUTRI 4
+sviket          TEXTAREA                INPUTRI 5
+sviket2         TEXTAREA                INPUTRI 5
+
+CALCS()
+cdjointrans      djointrans == 1
+cSYSTIME2       	SYSTIME
+cjikablmkerja           svitblkode == "TIDAK_SESUAI"
+c60                     60
+cblmjam10               lSYSTIME >= l1030 
+csdhreview              ((dscansvi == 1  || dscansvi == 0) && lperview1 ==  0 ) || ljamskrng >= l1130
+csdhreview2             ((dscansvi == 1  || dscansvi == 0) && lperview2 ==  0 ) || ljamskrng >= l1430
+csdhreview3             ((dscansvi == 1  || dscansvi == 0) && lperview3 ==  0 ) || ljamskrng >= l1600               
+csdhreview4             ((dscansvi == 1  || dscansvi == 0) && lperview4 ==  0 ) || ljamskrng >= l1800 
+
+/*c60menit1               (djoinakt2 == 1 && ljamskrng < ljamakhir) ||  (djoinakt2 == 0 && ljamskrng < l1130) || djoinakt2 == 0
+c60menit2               (djoinakt2 == 1 && ljamskrng < ljamakhir) ||  (djoinaktb == 0 && ljamskrng > l1130 && ljamskrng <= l1430) 
+			|| djoinaktb == 0
+c60menit3               (djoinaktc == 1 && ljamskrng < ljamakhir) ||  (djoinaktc == 0 && ljamskrng > l1430 && ljamskrng <= l1600) 
+			|| djoinaktc == 0
+c60menit4               (djoinaktd == 1 && ljamskrng < ljamakhir) ||  (djoinaktd == 0 && ljamskrng > l1600 && ljamskrng <= l1800) 
+			|| djoinaktd == 0
+*/
+
+csvidf1                 svidf1         
+csvidf2                 svidf2         
+ctambahakt              aktjml + 1
+creview0                djoinakt2 == 0 && ljamskrng < l1130
+creviewb0               djoinaktb == 0 && ljamskrng > l1130 && ljamskrng <= l1430
+creviewc0               djoinaktc == 0 && ljamskrng > l1430 && ljamskrng <= l1600 
+creviewd0               djoinaktd == 0 && ljamskrng > l1600 
+crev0                 	ljamskrng < l1130
+crevb0                	ljamskrng > l1130 && ljamskrng <= l1430
+crevc0                	ljamskrng > l1430 && ljamskrng <= l1600 
+crevd0                	ljamskrng > l1600 
+creview1                djoinakt == 1 
+creviewb1               djoinaktb == 1 
+creviewc1               djoinaktc == 1 
+creviewd1               djoinaktd == 1 
+c1a                      0  
+ctambah60               ljaminput + 60 
+ckrng1030               ljamskrng <= l1030 
+clebih1030              ljamskrng > l1030  && ljamskrng <= l1130
+ckrng1330               ljamskrng > l1130  && ljamskrng <= l1330 
+clebih1330              ljamskrng > l1330  && ljamskrng <= l1430
+ckrng1500               ljamskrng > l1430  && ljamskrng <= l1530
+clebih1500              ljamskrng > l1530  && ljamskrng <= l1600
+ckrng1700               ljamskrng > l1600  && ljamskrng <= l1700
+clebih1700              ljamskrng > l1700  && ljamskrng <= l1800
+
+
+
+
+DEFAULTS(tmptranst)
+svitblkode      DFALT_SCAN_BLANKS        SESUAI
+                                         TIDAK_SESUAI
+
+svidata         INIT                    REVIESPK
+svitype         INIT                    {g_grpnam}
+svidtmkode      INIT                    {g_usrkode}
+svitgl1         INIT                    {g_tgltrn}
+svidf3          INIT                     60
+IF ctambah      ljaminput      INIT_ADD                SYSTIME 
+
+
+EDITS(tmptranst)
+e.IsiReview     svitblkode      MANDATORY
+e.Isiket        sviket          MANDATORY
+e.Isiblmkerja   sviket2         MANDATORY_IF cjikablmkerja
+e.ValidateNip   svidtmkode      VALIDATE psikodidx mpsipic 0
+
+
+MAP(mpsipic)
+psinama         lnamasdmcab        REPLACE
+lsvidf2         lsvidf2            REPLACE_IF cdjointrans
+lsvidf4         lsvidf4            REPLACE_IF cdjointrans
+ckbyr1          lkonsbyr           DO_CALC_IF ckbyr1x
+ckbyr2          lkonsbyr           DO_CALC_IF ckbyr2x
+ckbyr3          lkonsbyr           DO_CALC_IF ckbyr3x
+ckbyr4          lkonsbyr           DO_CALC_IF ckbyr4x
+cPKonsTdkByr1   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr1x
+cPKonsTdkByr2   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr2x
+cPKonsTdkByr3   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr3x
+cPKonsTdkByr4   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr4x
+cPKonsTdkByr5   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr5x
+cPKonsTdkByr6   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr6x
+cPKonsTdkByr7   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr7x
+cPKonsTdkByr8   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr8x
+cPKonsTdkByr9   lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr9x
+cPKonsTdkByr10  lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr10x
+cPKonsTdkByr11  lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr11x
+cPKonsTdkByr12  lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr12x
+cPKonsTdkByr13  lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr13x
+cPKonsTdkByr14  lPKonsTdkByr       DO_CALC_IF cPKonsTdkByr14x
+ljaminput       svidf1             REPLACE_IF ctambah 
+csvidf1         ljaminput          DO_CALC
+csvidf2         ljamselesai        DO_CALC
+cSYSTIME2       ljamskrng          DO_CALC
+
+MAP(misikan)
+l1130           ljamselesai     REPLACE_IF ctambah1a
+ctambah60       ljamselesai     DO_CALC_IF ctambah1 
+l1430           ljamselesai     REPLACE_IF ctambah2a
+ctambah60       ljamselesai     DO_CALC_IF ctambah2 
+l1600           ljamselesai     REPLACE_IF ctambah3a
+ctambah60       ljamselesai     DO_CALC_IF ctambah3 
+l1800           ljamselesai     REPLACE_IF ctambah4a
+ctambah60       ljamselesai     DO_CALC_IF ctambah4 
+l1130           svidf2          REPLACE_IF ctambah1a
+ctambah60       svidf2          DO_CALC_IF ctambah1 
+l1430           svidf2          REPLACE_IF ctambah2a
+ctambah60       svidf2          DO_CALC_IF ctambah2 
+l1600           svidf2 		REPLACE_IF ctambah3a
+ctambah60       svidf2          DO_CALC_IF ctambah3 
+l1800           svidf2          REPLACE_IF ctambah4a
+ctambah60       svidf2          DO_CALC_IF ctambah4 
+c1              svinourt           DO_CALC_IF crev0
+c2              svinourt           DO_CALC_IF crevb0
+c3              svinourt           DO_CALC_IF crevc0
+c4              svinourt           DO_CALC_IF crevd0
+lperiode1       svikode            REPLACE_IF crev0
+lperiode2       svikode            REPLACE_IF crevb0
+lperiode3       svikode            REPLACE_IF crevc0
+lperiode4       svikode            REPLACE_IF crevd0
+
+
+MAP(mduma)
+
+MAP(maddaktbm)
+svidtmkode      aktkode         REPLACE
+svidata         aktdata         REPLACE
+svinobuk        aktnobuk        REPLACE
+lperiode1       akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+c60             akttotal        DO_CALC
+ctambah60       aktcrtjam       DO_CALC_IF ckrng1030
+l1130           aktcrtjam       REPLACE_IF clebih1030 
+c1a             aktjml          DO_CALC 
+
+
+MAP(maddaktbmb)
+svidtmkode      aktkode         REPLACE
+svidata         aktdata         REPLACE
+svinobuk        aktnobuk        REPLACE
+lperiode2       akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+c60             akttotal        DO_CALC
+ctambah60       aktcrtjam       DO_CALC_IF ckrng1330
+l1430           aktcrtjam       REPLACE_IF clebih1330
+c1a             aktjml          DO_CALC
+
+MAP(maddaktbmc)
+svidtmkode      aktkode         REPLACE
+svidata         aktdata         REPLACE
+svinobuk        aktnobuk        REPLACE
+lperiode3       akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+c60             akttotal        DO_CALC
+ctambah60       aktcrtjam       DO_CALC_IF ckrng1500
+l1600           aktcrtjam       REPLACE_IF clebih1500
+c1a             aktjml          DO_CALC
+
+MAP(maddaktbmd)
+svidtmkode      aktkode         REPLACE
+svidata         aktdata         REPLACE
+svinobuk        aktnobuk        REPLACE
+lperiode4       akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+c60             akttotal        DO_CALC
+ctambah60       aktcrtjam       DO_CALC_IF ckrng1700
+l1800           aktcrtjam       REPLACE_IF clebih1700
+c1a             aktjml          DO_CALC
+
+
+MAP(mupdakt)
+ctambahakt      aktjml          DO_CALC
+
+MAP(mupdaktb)
+ctambahakt      aktjml          DO_CALC
+
+
+MAP(mupdaktc)
+ctambahakt      aktjml          DO_CALC
+
+
+MAP(mupdaktd)
+ctambahakt      aktjml          DO_CALC
+
+SPCALCS(standa)
+DO_LIB_IF creview0     ap_dbclc(DNAME daddaktbm,DCOMMAND ADD,DFILE akt,DMAP maddaktbm);
+DO_LIB_IF creview1     ap_dbclc (DNAME dupdakta,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx svidtmkode  svidata lperiode1 mtstgl,DMAP mupdakt);
+DO_LIB_IF creviewb0     ap_dbclc(DNAME daddaktbm2a,DCOMMAND ADD,DFILE akt,DMAP maddaktbmb);
+DO_LIB_IF creviewb1     ap_dbclc (DNAME dupdakta2a,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx svidtmkode  svidata lperiode2 mtstgl,DMAP mupdaktb);
+DO_LIB_IF creviewc0     ap_dbclc(DNAME daddaktbm3a,DCOMMAND ADD,DFILE akt,DMAP maddaktbmc);
+DO_LIB_IF creviewc1     ap_dbclc (DNAME dupdakta3a,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx svidtmkode  svidata lperiode3 mtstgl,DMAP mupdaktc);
+DO_LIB_IF creviewd0     ap_dbclc(DNAME daddaktbm4a,DCOMMAND ADD,DFILE akt,DMAP maddaktbmd);
+DO_LIB_IF creviewd1     ap_dbclc (DNAME dupdakta4a,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx svidtmkode  svidata lperiode4 mtstgl,DMAP mupdaktd);
+
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN   		DO_SPCALCS standa
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW misikan
+AFTER_INPUT     cur_field=svitblkode          DO_MAP SHOW
+                IF csdhreview mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode1sdhdireview
+
+
+AFTER_INPUT     cur_field=svitblkode          DO_MAP SHOW
+                IF csdhreview2 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode2sdhdireview
+
+
+AFTER_INPUT     cur_field=svitblkode          DO_MAP SHOW
+                IF csdhreview3 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode3sdhdireview
+
+
+
+AFTER_INPUT     cur_field=svitblkode          DO_MAP SHOW
+                IF csdhreview4 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode4sdhdireview
+
+AFTER_INPUT     cur_field=svitblkode          DO_MAP SHOW
+                IF cblmjam10   mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.InputSPKBelumJam10          
+
+
+/*AFTER_INPUT     cur_field=svitblkode   	DO_MAP SHOW
+                IF c60menit1 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode1SdhHbs
+
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW
+                IF c60menit2 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode2SdhHbs
+
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW
+                IF c60menit3 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode3SdhHbs
+
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW
+                IF c60menit4 mduma
+                ELSE HKCURSOR STAY
+                HKMSG t.periode4SdhHbs
+
+
+*/
+
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+        svidatbuktyp   lREVIESPK mtsnobuk  lBM
+
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+g_grpnam        svitype         REPLACE
+g_tgltrn        svitgl1         REPLACE
+g_usrkode       svidtmkode      REPLACE
+c60             svidf3          DO_CALC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,66 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------\|
+  t.AdaSkck     : ___ _______                                           
+  i.NoSkck      : _______________________________________________________       
+  i.TglLakusd   : ___________                                                       
+  i.Prop        : __________________                                                           
+  i.Kota        : __________________                                                
+|\-----------------------------------------------------------------------/|
+\-------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtype			NOCHANGE 		INPUTRI 1
+psdtype2		ALLCAPS			INPUTRI 2
+psdket  		ALLCAPS                	INPUTRI 3
+psdtgl2 		NONE {DD-MM-YYYY} NOLIMIT	INPUTRI 4
+psdstr2 		ALLCAPS       	 	INPUTRI 5
+psdstr3 		ALLCAPS                	INPUTRI 6
+
+
+DEFAULTS(tmptranst)
+psdtype			DFALT_SCAN_BLANKS Y T
+
+CALCS()
+cadaSKCK		psdtype=="Y"
+ctdkSKCK		psdtype=="T"
+cYa			"Ya"
+cTdk			"Tidak"
+ 
+EDITS(tmptranst)
+e.Mandatory psdtype	MANDATORY
+e.Mandatory psdket 	MANDATORY_IF cadaSKCK
+e.Mandatory psdstr2  	MANDATORY_IF cadaSKCK
+e.Mandatory psdstr3  	MANDATORY_IF cadaSKCK
+e.Mandatory psdtgl2 	MANDATORY_IF cadaSKCK
+e.ValidateProp  psdstr2 VALIDATE_IF cadaSKCK dtmdtkodidx  mdtmSkckProp sdtmProp {Pgv_dtkota}
+e.ValidateKota  psdstr3 VALIDATE_IF cadaSKCK tbldtdtmkod  mtblSkckKota stblKota {Pgv_dtkota} {Ppsdstr2}
+
+
+MAP(mdtmSkckProp)
+dtmkode                 psdstr2         REPLACE
+
+MAP(mtblSkckKota)
+tblkode                 psdstr3         REPLACE
+
+MAP(madaSkck)
+cYa			psdtype2	DO_CALC_IF cadaSKCK
+cTdk			psdtype2	DO_CALC_IF ctdkSKCK
+ 
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=psdtype	DO_MAP SHOW madaSkck
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11  btmplg	gv_dtskck   
+
+SFL_MAP
+gv_clnkry11   	psddata		REPLACE
+gv_dtskck	psdkode		REPLACE
+btmplg        	psdpsmkode	REPLACE
+

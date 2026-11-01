@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+lbtmsts		STRING		5
+lscreen		STRING		11
+
+
+IMAGE(tmptranst)
+/---------t---------------t---------t---------------------t------------t-------------t-------t-----------------t------------\
+| t.Scr   |t.buk          | i.Nip   | i.Nama              | t.Supdept  | i.Tanggal   | t.Jam |  t.Keterangan   | t.NoPKBr   |
+\---------.---------------.---------.---------------------.------------.-------------.-------.-----------------.------------/
+
+
+
+IMAGE(tmptrans)
+|_________|_______________|_________|_____________________|____________|_____________|_______|_________________|____________|
+
+FIELD(tmptrans)
+aktscr                  FLDBUTTON SCROLL                MEDIUM  1
+aktnobuk		PROTECT				INPUTRI 1
+aktkode2                PROTECT SCROLL                  INPUTRI 1
+lnamapsi                PROTECT                         INPUTRI 2
+lpsisdep                PROTECT                         INPUTRI 3
+akttgl                  PROTECT {DD-MM-YYYY}            INPUTRI 3
+aktjam                  PROTECT {99:99}                 INPUTRI 4
+aktket                  PROTECT                         INPUTRI 5
+aktbrg                  NOCHANGE                        INPUTRI 6
+
+CALCS()
+c787x		"787"
+cbkn787		aktscr != "735"
+cya787		aktscr == "735"
+
+EDIT(tmptrans)
+e.Validate      aktkode2        VALIDATE        psikodidx       mpsi6
+
+MAP(mpsi6)
+cBLANKS         lnamapsi                DO_CALC
+psinama         lnamapsi                REPLACE
+psisdep         lpsisdep                REPLACE
+aktscr		lscreen			REPLACE_IF cbkn787
+c787x		lscreen			DO_CALC_IF cya787
+
+
+MAP(mbtmscr713714)
+btmsts		lbtmsts		REPLACE
+
+DBCALCS(djoinbtmscr713714)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btmbukidx       aktkode
+	DBC_MAP		mbtmscr713714
+
+IMAGE(transheader)
+/---------------------------------------------------------\
+|No Telpon Penjamin  _________________                    |
+|Keterangan Valid    _________________                    |
+\---------------------------------------------------------/
+
+FIELD(transheader)
+lhp740          PROTECT         INPUTRI 1
+lketvalid       PROTECT         INPUTRI 2
+
+
+CALCS()
+cifscr          ( 
+                  ( djoinbtmscr713714 == 1 && (
+		    (aktscr == "713" && btmsts == "CLSD" || aktscr == "713" && btmsts == "713") 
+		    || 
+		    (aktscr == "714" && btmsts == "CLSD" || aktscr == "714" && btmsts == "714") 
+		    ||
+		    (aktscr == "719" && btmsts == "CLSD" || aktscr == "719" && btmsts == "719")
+		    )
+		  )
+                ||  
+                  (aktscr != "713" && aktscr != "714" && aktscr != "719" && aktscr != "305" && aktscr != "735" && aktscr != "787")
+                )
+c305		aktscr == "305"
+c787scr		(aktscr == "735" || aktscr == "734" || aktscr == "737" || aktscr == "738" || aktscr == "739" || aktscr == "736")
+
+
+HOOKS(tmptrans)
+CLICKED         cur_field=aktscr        DO_FLY {lscreen} mmaptmptrans
+
+MAP(mmaptmptrans)
+aktkode      r_string1   REPLACE_IF cifscr
+aktnobuk     r_string1	 REPLACE_IF c787scr
+piknobuk     r_string1   REPLACE_IF c305
+DEBUG lbtmsts      r_string2   REPLACE_IF cifscr
+
+CALCS()
+cbukanhistoris  akttype!="OTP728"
+
+SUBFILE(tmptrans)
+SFL_LINES(50)
+SFL_HEADER(transheader)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD akttgl
+SFL_SHOW_NEXT
+SFL_SELECT      cbukanhistoris
+SFL_TARGET
+aktkodtypidx   piknobtm gv_historisdm

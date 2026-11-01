@@ -1,0 +1,197 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+ t.jenisBahan  : _________________
+ t.Dvs         : _________________
+ t.ketBahan    : _________________
+ t.prior       : _________________
+ t.SisaTenor   : _____________ ___
+ t.persendana  : ____.__
+ t.persentnr   : ____.__
+ spasi
+ t.Umur	       : _______
+ t.NoKtp       : _________________
+ t.Kategori    : _________________
+ t.NoHp	       : _________________
+ t.Penghasilan : _____________ ___
+ t.Pekerjaan   : _________________
+ t.TglByrAkh   : _________________          
+ t.Ketlunas    : _____________ ___
+ t.TglSpk      : _________________
+ t.NoBukti     : _________________
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+prodata		PROTECT		INPUTRI 1
+probisnis	PROTECT         INPUTRI 2
+prokel		PROTECT         INPUTRI 3
+prokat		PROTECT         INPUTRI 4
+lsisatenor	PROTECT         INPUTRI 5
+lkattenor	PROTECT         INPUTRI 6
+lpsdana		PROTECT         INPUTRI 7
+lpstenor	PROTECT         INPUTRI 8
+pikstspiubli	PROTECT         INPUTRI 9
+pikplg		PROTECT		INPUTRI 10
+lpsmstsbill	PROTECT         INPUTRI 10
+lnoHp		PROTECT		INPUTRI 11
+ltotalpenghasilan PROTECT         INPUTRI 11
+lpenghasilanok 	PROTECT		INPUTRI 11
+lpekerjaanpm	PROTECT         INPUTRI 12
+piktglbyrakh	PROTECT		INPUTRI 12
+llunaskapan	PROTECT		INPUTRI	13
+lketlunas	PROTECT         INPUTRI 13
+ltglspk		PROTECT         INPUTRI 15
+ltkdnobuk	PROTECT		INPUTRI 16
+
+
+
+
+MAP(mjoinsvicapacityP)
+svistr2         lpekerjaanpm    REPLACE
+svidf5          lpenghasilanpm  REPLACE
+svidf6          lpengtambahanpm REPLACE
+
+DBCALCS(djoinsvicapacityP)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey piknobtm gv_capacityH1 l1
+        DBC_MAP         mjoinsvicapacityP
+
+MAP(mtkdspk)
+tkdnobuk	ltkdnobuk	REPLACE
+
+DBCALCS(djointkdspk)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tkddatllidx   lMAXCAIR piknobuk
+	DBC_MAP		mtkdspk
+
+MAP(mtkmspk)
+tkmtgl	ltglspk       REPLACE
+
+DBCALCS(djointkmspk)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkmbukidx   ltkdnobuk
+        DBC_MAP         mtkmspk
+
+
+MAP(mjoinconro)
+conhp           lnoHp         REPLACE
+DBCALCS(djoinconro)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      conkodstsidx pikplg gv_INPG
+        DBC_MAP         mjoinconro
+
+
+
+CALCS()
+cklik	prosts=="KLIK" || (prosts=="PLNS"  && (prodata=="FU_TOPUP" || prodata=="FU_WB"))
+csisatenor	piklama-pikke
+cprototal	prototal
+catas6		piklama >6
+cbawah6		piklama <=6
+ctotpenghasilan lpenghasilanpm + lpengtambahanpm
+cA		"A"
+cB		"B"
+cC		"C"
+cD		"D"
+cE		"E"
+cF		"F"
+cG		"G"
+cH              "H"
+cI              "I"
+cJ              "J"
+cK              "K"
+cL              "L"
+cM              "M"
+cN              "N"
+crangea         ltotalpenghasilan<3000000
+crangeb         ltotalpenghasilan>=3000000 && ltotalpenghasilan<4000000
+crangec         ltotalpenghasilan>=4000000 && ltotalpenghasilan<5000000
+cranged         ltotalpenghasilan>=5000000 && ltotalpenghasilan<6000000
+crangee         ltotalpenghasilan>=6000000 && ltotalpenghasilan<7000000
+crangef         ltotalpenghasilan>=7000000 && ltotalpenghasilan<8000000
+crangeg         ltotalpenghasilan>=8000000
+ctenora         lsisatenor==0
+ctenorb         lsisatenor==1
+ctenorc         lsisatenor==2
+ctenord         lsisatenor==3
+ctenore         lsisatenor==4
+ctenorf         lsisatenor==5
+ctenorg         lsisatenor==6
+ctenorh         lsisatenor==7
+ctenori         lsisatenor==8
+ctenorj         lsisatenor==9
+ctenork         lsisatenor==10
+ctenorl         lsisatenor==11
+ctenorm         lsisatenor==12
+ctenorn         lsisatenor>=12
+clunasb         llunaskapan <=60 && prodata=="FU_WB"
+clunasc         llunaskapan >= 61 && llunaskapan <=90 && prodata=="FU_WB"
+clunasd         llunaskapan >= 91 && llunaskapan <=120 && prodata=="FU_WB"
+clunase         llunaskapan >= 121 && llunaskapan <=150 && prodata=="FU_WB"
+
+cdjoinsvicapacityP	djoinsvicapacityP==1
+clunaskapan     g_tgltrn-piktglbyrakh
+cdjointkdspk	djointkdspk==1
+cdjointkmspk	djointkmspk==1
+cwb		prodata=="FU_WB"
+cdjoinconro	djoinconro==1
+
+EDITS(tmptranst)
+t.Validate	pikplg	VALIDATE psmktpidx mpsmklik 0
+
+MAP(mpsmklik)
+psmstsbill	lpsmstsbill	REPLACE
+csisatenor	lsisatenor	DO_CALC
+c0		lpsdana		DO_CALC
+c0		lpstenor	DO_CALC
+cprototal	lpsdana		DO_CALC_IF catas6
+cprototal	lpstenor	DO_CALC_IF cbawah6
+lpenghasilanpm	lpenghasilanpm	REPLACE_IF cdjoinsvicapacityP
+lpengtambahanpm	lpengtambahanpm	REPLACE_IF cdjoinsvicapacityP
+lpekerjaanpm	lpekerjaanpm	REPLACE_IF cdjoinsvicapacityP
+ctotpenghasilan ltotalpenghasilan	DO_CALC
+cA              lpenghasilanok          DO_CALC_IF crangea
+cB              lpenghasilanok          DO_CALC_IF crangeb
+cC              lpenghasilanok          DO_CALC_IF crangec
+cD              lpenghasilanok          DO_CALC_IF cranged
+cE              lpenghasilanok          DO_CALC_IF crangee
+cF              lpenghasilanok          DO_CALC_IF crangef
+cG              lpenghasilanok          DO_CALC_IF crangeg
+cA              lkattenor               DO_CALC_IF ctenora
+cB              lkattenor               DO_CALC_IF ctenorb
+cC              lkattenor               DO_CALC_IF ctenorc
+cD              lkattenor               DO_CALC_IF ctenord
+cE              lkattenor               DO_CALC_IF ctenore
+cF              lkattenor               DO_CALC_IF ctenorf
+cG              lkattenor               DO_CALC_IF ctenorg
+cH              lkattenor               DO_CALC_IF ctenorh
+cI              lkattenor               DO_CALC_IF ctenori
+cJ              lkattenor               DO_CALC_IF ctenorj
+cK              lkattenor               DO_CALC_IF ctenork
+cL              lkattenor               DO_CALC_IF ctenorl
+cM              lkattenor               DO_CALC_IF ctenorm
+cN              lkattenor               DO_CALC_IF ctenorn
+clunaskapan     llunaskapan             DO_CALC_IF cwb
+cB              lketlunas               DO_CALC_IF clunasb
+cC              lketlunas               DO_CALC_IF clunasc
+cD              lketlunas               DO_CALC_IF clunasd
+cE              lketlunas               DO_CALC_IF clunase
+ltkdnobuk	ltkdnobuk		REPLACE_IF cdjointkdspk
+ltglspk		ltglspk			REPLACE_IF cdjointkmspk
+lnoHp		lnoHp			REPLACE_IF cdjoinconro
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cklik
+SFL_TARGET
+        probukidx   piknobuk
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+
+

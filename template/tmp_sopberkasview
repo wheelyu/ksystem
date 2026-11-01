@@ -1,0 +1,66 @@
+LOCAL
+PGM_FIELDS
+lSOPx		STRING	11
+lberkasx	STRING	21
+
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------\
+|---------t-------------------------------t----------t----------|
+| i.No    |  t.Keterangan                 |t.Divisi  |t.SOP     |
+\---------.-------------------------------.----------.----------/
+
+IMAGE(tmptrans)
+|_________|_______________________________| _____    | _____    |
+
+FIELD(tmptrans)
+tldnourt                PROTECT SCROLL		INPUTRI 1
+tldket                  PROTECT SCROLL		INPUTRI 2
+tlddk                   NOCHANGE		INPUTRI 3
+tldjasbrg		NOCHANGE		INPUTRI	4
+
+DEFAULTS(tmptrans)
+lSOPx			INIT		SOP
+lberkasx		INIT		BERKAS
+tldjasbrg		DFALT_LIST	BLANKS
+					Y T
+tlddk			DFALT_LIST	BLANKS
+					Y T
+
+CALCS()
+c0z		0
+cubah	(g_scrnumstr == "901" && (tlmsts == "OPEN" || tlmsts == "RINP") && (tlmgrup == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")) || 
+	(g_scrnumstr == "902" && tlmsts == "OPEN") || g_usrkode == "1610666"
+c901	g_scrnumstr == "901"
+c902	g_scrnumstr == "902"
+
+ctolak	tldjasbrg == "T"
+
+/*EDITS(tmptrans)
+e.Mandatory		tlddk	MANDATORY*/
+
+HOOKS(tmptrans)
+BEFORE_INPUT		cur_field=tldjasbrg	DO_SKIP_IF c901
+BEFORE_INPUT		cur_field=tlddk		DO_SKIP_IF c902
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET_IF c901	tldstsbrgukr    lSOPx gv_OPEN tlmnobuk lberkasx
+SFL_TARGET_IF c902	tldstsbrgukr    lSOPx gv_OPEN tlmnoasal lberkasx
+
+
+MAP(mupdtlm1)
+lberkasx	tlmkode		REPLACE
+
+SPCALCS(supdtmp1)
+        DO_LIB_IF ctolak ap_dbclc(DNAME dupdtlm,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlm1);
+
+POSTING(tmptrans)
+        PST_UPDCMD      supdtmp1
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0z
+PMT_UPDALL_COND cubah
+PMT_DEL_COND    c0z
+

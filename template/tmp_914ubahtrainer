@@ -1,0 +1,75 @@
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/-----------------------------------------------\|
+|| spasi					 || 
+|| t.914KetUbahTrainer				 ||
+|| t.NoBuk	: ________________		 ||    
+|| t.Tgl	: ________			 ||    
+|| t.NipInp	: ________ ___________________	 ||    
+|| t.NipTrnLama	: ________ ___________________	 ||    
+|| t.NipTrnBaru	: ________ ___________________	 ||    
+|| t.Alasan	: ___________________________ _  ||
+|| spasi					 ||
+|\-----------------------------------------------/|
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT   		INPUTRI 1
+psdtgl1		PROTECT	{DD-MM-YYYY}	INPUTRI	2
+psdstr1		PROTECT			INPUTRI 3	
+lubhnama1	PROTECT	ALLCAPS		INPUTRI 4
+psdstr3		PROTECT			INPUTRI 3	
+lubhnama3	PROTECT	ALLCAPS		INPUTRI 4
+psdstr2		ALLCAPS			INPUTRI 3	
+lubhnama2	PROTECT	ALLCAPS		INPUTRI 4
+psdket		TEXTAREA ALLCAPS	INPUTRI 6
+ldum		ALLCAPS			INPUTRI	7
+
+DEFAULTS(tmptranst)
+psdstr1         INIT	        {g_usrkode}
+psdtgl1		INIT		{g_tgltrn}
+psdstr3		INIT		{ltkdnoll}
+
+CALCS()
+cubhtrnok	psdstr2 != psdstr3
+
+HOOKS(tmptranst)
+AFTER_INPUT 	cur_field=psdstr2	DO_MAP SHOW
+		IF cubhtrnok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.NipSama  
+
+EDITS(tmptranst)
+e.Mandatory     psdstr2		MANDATORY
+t.Validate 	psdstr1 	VALIDATE psikodidx mpsiubhtrn1 0
+t.Validate 	psdstr2 	VALIDATE psikodidx mpsiubhtrn2 0
+e.ValidateNip 	psdstr3 	VALIDATE psikodidx mpsiubhtrn3 0
+e.Mandatory     psdket		MANDATORY
+
+MAP(mpsiubhtrn1)
+psikode		psdstr1		REPLACE
+psinama		lubhnama1	REPLACE
+
+MAP(mpsiubhtrn2)
+psikode		psdstr2		REPLACE
+psinama		lubhnama2	REPLACE
+
+MAP(mpsiubhtrn3)
+psikode		psdstr3		REPLACE
+psinama		lubhnama3	REPLACE
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD psdtgl1
+SFL_SORT_UPDOWN DOWN
+SFL_COND cjointkdubhtrn
+SFL_LINES(1)
+SFL_TARGET
+        psddatpsmkod tlmdata tlmnobuk lUBAHTRN
+
+SFL_MAP
+tlmdata		psddata		REPLACE
+tlmnobuk        psdpsmkode	REPLACE
+lUBAHTRN	psdkode		REPLACE

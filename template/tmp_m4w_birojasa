@@ -1,0 +1,139 @@
+LOCAL 
+PGM_FIELDS
+lhutbj                  STRING          21
+lnomorbj                STRING          21
+lbirojasa21	STRING		21
+lversi8			STRING		11
+
+DBCALCS(djoinppsbirojasa)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ppsbukidx lnomorbj
+
+IMAGE(tmptranst) 
+/----------------------------------------------------------------t---------------t-----------------\
+|i.Ket                                                           | i.Feebased    | i.Biurus        |
+\----------------------------------------------------------------.---------------.-----------------/
+
+IMAGE(tmptrans)
+|________________________________________________________________|____________.__|______________.__|
+
+    
+FIELD(tmptrans)
+tbtket			PROTECT 			INPUTRI 1
+tbtdf1			PROTECT 			INPUTRI 2
+tbtdf2			NUMERIC				INPUTRI 3
+
+DEFAULTS(tmptrans)
+lbirojasa21		INIT		BIROJASA
+lhutbj          INIT    251.11.2004
+lversi8			INIT		030622v1
+
+
+CALCS()
+/* chargaok		tbtdf2 >= tbljml */
+cbiro0			nhmkrepok_3 == 0 && (btmytbiro == "P" || btmytbiro == "B")
+
+
+/*
+HOOKS(tmptrans)
+
+AFTER_INPUT  		cur_keybd=EN    	DO_MAP SHOW
+             		IF chargaok mdum
+             		ELSE HKCURSOR STAY
+                  		HKMSG Harga jual harus lebih tingai dari feebase
+
+AFTER_INPUT  		cur_field=tbtdf2    	DO_MAP SHOW
+             		IF chargaok mdum
+             		ELSE HKCURSOR STAY
+                  		HKMSG Harga jual harus lebih tingai dari feebase
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(10)       
+SFL_COND cbiro0
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	tbtdaturtidx   gv_dttemplate lTMPQA lbirojasa21 lbirojasa21 btmdvs
+
+CALCS()
+ctotalbiromaster	nhmkrepok_3 + (tbtdf1 + tbtdf2)
+ctotalcairbiro		nhmcairpinj_3 - (tbtdf1 + tbtdf2)
+cpotongcair		btmytbiro == "P" && tbtdf2 > 0
+ctotalbiro		tbtdf1 + tbtdf2
+cfeebase		btmdf2 + tbtdf1
+cnomorbj                STRIP(btmnobuk) + "BJ"
+cBJ                     "BJ"
+cketkombj               "BIROJASA NOMOR BUKUTAMU :" + STRIP(btmnobuk)
+cdjoinppsbirojasa        djoinppsbirojasa == 0
+c6433			"643"
+
+
+MAP(mupdnhmbiro)
+ctotalbiromaster	nhmkrepok_3 		DO_CALC_IF cpotongcair
+ctotalcairbiro		nhmcairpinj_3		DO_CALC_IF cpotongcair
+
+MAP(maddnhdbiro)
+gv_dtbirojasa 		nhddata			REPLACE
+btmnobuk		nhdnobuk		REPLACE
+lnomorbj		nhdnobuk2		REPLACE
+tbtkode			nhdkode			REPLACE
+gv_INPG                 nhdsts                  REPLACE
+tbtket			nhdkode2		REPLACE
+tbtdf1			nhdhrg1			REPLACE
+tbtdf2			nhdhrg2			REPLACE
+ctotalbiro		nhdhrg3			DO_CALC
+btmytbiro		nhddk			REPLACE
+
+MAP(maddppsbirojasa)
+lnomorbj              	ppsnobuk                REPLACE
+cBJ                   	ppstype         	DO_CALC
+btmnobuk                ppsnobuk2               REPLACE
+lhutbj                 	ppsnobbm                REPLACE
+btmnobuk                ppsnomst       		REPLACE
+btmplg                	ppsplg                  REPLACE
+gv_OPEN                 ppssts                  REPLACE
+gv_OPEN                 ppsstsprc               REPLACE
+nhmkrepok_3            	ppstotal                REPLACE
+nhmkrepok_3            	ppssisa                 REPLACE
+nhmkrepok_3            	ppssisprc               REPLACE
+cketkombj              	ppsket                  DO_CALC
+gv_dthut                ppsdata                 REPLACE
+c6433                    ppsscr                  DO_CALC
+btmlokjual              ppscab                  REPLACE
+btmdvs                  ppsdvs                  REPLACE
+
+
+
+CALCS()
+cbiurusada		tbtdf2 > 0
+
+cADH			(btmsts == "705" && (btmflag1 == "OPEN" || btmflag1 == "SCTK") && g_grpnam == "B.M4WADH") || (btmsts == "705" && (btmflag1 == "OPEN" || btmflag1 == "SCTK" || btmflag1 == "OPE1" || btmflag1 == "OPE2") && (g_grpnam == "RI" || g_grpnam == "IT" || g_usrkode == "1075708" || g_grpnam == "ADHDVH" || g_grpnam == "ADHSPV" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WADHDVH" || g_grpnam == "B.M4WQA" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM"))
+
+MAP(mupdbtmbiro)
+cfeebase		btmdf2			DO_CALC
+
+MAP(mmapnobiro)
+cnomorbj                lnomorbj                DO_CALC
+
+SPCALCS(spdetailbiro)
+	DO_LIB ap_dbclc(DNAME dupdnhmbiro ,DCOMMAND UPDATE,DTARGET nhmprmidx_3 nhmprm_3,DMAP mupdnhmbiro);
+	DO_LIB_IF cbiurusada ap_dbclc(DNAME dupdbtmbiro ,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdbtmbiro);
+	DO_LIB ap_dbclc(DNAME dmapbiro,DCOMMAND MAPMAP,DMAP mmapnobiro);
+	DO_LIB_IF cbiurusada ap_dbclc(DNAME daddnhdbiro ,DCOMMAND ADD,DFILE nhd,DMAP maddnhdbiro);
+	DO_LIB_IF cdjoinppsbirojasa ap_dbclc(DNAME daddppsbirojasa,DCOMMAND ADD,DFILE pps,DMAP maddppsbirojasa);
+
+POSTING(tmptrans)
+  PST_COMMAND 	spdetailbiro 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cADH
+  PMT_UPDALL_COND cADH
+  PMT_DEL_COND  cADH
+
+
+
+
+
+

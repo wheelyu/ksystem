@@ -1,0 +1,184 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+ /--------------------------------------\
+  t.NoOto       : ___________________
+  t.No          : ___
+  t.NobukTgs    : ___________________
+  t.Jenis       : ___________________
+  t.Pek         : ___________________
+  t.Kategori    : ___________________
+  t.Grade       : ___
+  t.Screen      : ___________________
+  t.JmlChart    : ___
+  t.JmlKolom    : ___
+  t.SdmIt       : ___________________
+  t.SdmUat      : ___________________
+  t.TgtMli      : ___________________
+  t.TgtSls      : ___________________
+  t.EstMenit    : ___________________
+  t.ActMenit    : ___________________
+  i.Sts         : ___________________
+ \--------------------------------------/
+ /----------------UPLOAD----------------\
+ |                                      |
+ |                                      |
+ |                                      |
+ |                                      |
+ \--------------------------------------/
+  __________________
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdsisstr    PROTECT                    INPUTRI          1
+tkdnourt     PROTECT                    INPUTRI          2
+tkdnoll      PROTECT                    INPUTRI          3
+tkdjenis     ALLCAPS SCROLL             INPUTRI          3
+tkdket       TEXTAREA ALLCAPS           INPUTRI          4
+tkdstr1      NOCHANGE SCROLL            INPUTRI          5
+tkdstr2      ALLCAPS SCROLL             INPUTRI          6
+tkdstr3      ALLCAPS SCROLL             INPUTRI          6
+tkdjml3      NUMERIC                    INPUTRI          6
+tkdjml4      NUMERIC                    INPUTRI          6
+tkdjwbstr1   ALLCAPS                    INPUTRI          7
+tkdjwbstr2   ALLCAPS                    INPUTRI          8
+tkdtgl       NONE NOLIMIT {DD-MM-YYYY}  INPUTRI          9
+tkdtgl2      NONE NOLIMIT {DD-MM-YYYY}  INPUTRI          10
+tkdjml2      NUMERIC                    INPUTRI          11
+tkdjml       PROTECT                    INPUTRI          12
+tkdsts       NOCHANGE                   INPUTRI          13
+ltombol3     TOMBOL                     INPUTRI          14
+
+
+DEFAULT(tmptranst)
+tkddata                 INIT_ADD        TGSA
+tkdsts                  INIT_ADD        OPEN
+ltombol3                INIT            "d. UntukMelihatDetil"
+ltkdjwbstr1       	INIT_UPDATE	{tkdjwbstr1}
+IF clayarpros tkdstr1   DFALT_SCAN      BLANKS  KSWEBALUR KSWEBSUPERSET
+
+EDITS(tmptranst)
+e.Mandatory tkdjwbstr1 MANDATORY
+e.Mandatory tkdjwbstr2 MANDATORY
+e.Mandatory     tkdjenis MANDATORY
+e.Mandatory     tkdstr1 MANDATORY
+e.Mandatory     tkdstr2 MANDATORY
+e.Mandatory     tkdjml2  MANDATORY
+e.ValidatePsi tkdjwbstr1 VALIDATE_IF cnip1_ada psmdtkodidx mpsm2 spsm  {Pgv_dtkaryawan} {Pgv_INPG}
+t.ValidateProg  tkdjwbstr1 VALIDATE  tbddatkodidx mtbdIT  stbd {Pgv_dttabel} {PlIT} {PlSOIT}
+e.ValidatePsi tkdjwbstr2 VALIDATE_IF cnip2_ada psmdtkodidx mpsm3 spsm  {Pgv_dtkaryawan} {Pgv_INPG}
+e.ValidateJenis tkdjenis VALIDATE tbddatkodidx mjns stbd  {Pgv_dttabel} {PlIT} {PlDETAILPRSA}
+t.ValidateJenis2 tkdstr1 VALIDATE_IF ctambahuatx tbddatkodidx mtbd3 stbd {Pgv_dttabel} {PlIT} {PlKAT1962D}
+t.ValidateGrade tkdstr2 VALIDATE tbtdattypkod mtbt2 stbt {Pgv_dttabel} {Pgv_dttabel21} {PlIT} {PlDETAILGRADE} {Ptkdstr1}
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjenis              DO_MAP SHOW mgantiDP
+BEFORE_INPUT    cur_field=tkdjenis              DO_MAP SHOW mjenislain
+BEFORE_INPUT    cur_field=tkdket                DO_MAP SHOW murut2
+BEFORE_INPUT    cur_field=tkdstr1               DO_SKIP_IF cnolayarpros
+BEFORE_INPUT    cur_field=tkdjml3               DO_SKIP_IF cbknlap
+BEFORE_INPUT    cur_field=tkdjml4               DO_SKIP_IF cbknlap
+BEFORE_INPUT    cur_field=tkdtgl                DO_SKIP_IF csdhCLSD2
+BEFORE_INPUT    cur_field=tkdtgl2               DO_SKIP_IF csdhCLSD2
+BEFORE_INPUT    cur_field=tkdjwbstr1            DO_SKIP_IF csdhCLSD
+AFTER_INPUT     cur_field=tkdjwbstr1            DO_MAP SHOW mtglprod
+AFTER_INPUT     cur_field=tkdjenis              DO_MAP SHOW mnipituat
+AFTER_INPUT     cur_field=tkdtgl2               DO_MAP SHOW mtgljtp
+AFTER_INPUT     cur_field=tkdtgl                DO_MAP SHOW
+        IF      ctglawal        mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl
+        HKMSG   t.TglBenar
+
+AFTER_INPUT     cur_field=tkdtgl2               DO_MAP SHOW
+        IF      ctgldeadline    mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl2
+        HKMSG   Tanggal selesai tidak boleh mundur
+
+AFTER_INPUT     cur_field=tkdtgl2               DO_MAP SHOW
+        IF      ctglhk    mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl2
+        HKMSG   Hanya Bisa Hari Kerja dan Senin-Jumat
+
+AFTER_INPUT     cur_field=tkdtgl2               DO_MAP SHOW
+        IF      cmaxmppit    mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl2
+        HKMSG   Penugasan Sdh Max Di Tgl Ini
+
+AFTER_INPUT     cur_field=tkdjml2               DO_MAP SHOW
+        IF      cmaxmenit120    mtgl
+        ELSE
+        HKCURSOR STAY tkdjml2
+        HKMSG   Menit Penugasan Max 120 menit
+
+AFTER_INPUT     cur_field=tkdjml2               DO_MAP SHOW
+        IF      cmaxmenit60    mtgl
+        ELSE
+        HKCURSOR STAY tkdjml2
+        HKMSG   Menit penugasan Max 60 menit
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+        IF      ctglawal        mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl
+        HKMSG   t.TglBenar
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+        IF      ctgldeadline    mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl2
+        HKMSG   Tanggal selesai tidak boleh mundur
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+        IF      ctglhk    mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl2
+        HKMSG   Hanya Bisa Hari Kerja dan Senin-Jumat
+
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+        IF      cmaxmppit    mtgl
+        ELSE
+        HKCURSOR STAY tkdtgl2
+        HKMSG   Penugasan Sdh Max Di Tgl Ini
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+        IF      cmaxmenit120    mtgl
+        ELSE
+        HKCURSOR STAY tkdjml2
+        HKMSG   Menit Penugasan Max 120 menit
+
+AFTER_INPUT     cur_keybd=EN                    DO_MAP SHOW
+        IF      cmaxmenit60    mtgl
+        ELSE
+        HKCURSOR STAY tkdjml2
+        HKMSG   Menit Penugasan Max 60 menit
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD tkdoto
+SFL_UPL_DELCOND c0
+SFL_SORT_BY_FIELD tkdnourt
+SFL_UPLFLD_DBCALCS dupdtkdfoto
+SFL_UPL_DIRFLD  tlmtgl
+SFL_SELECT      cstatusisi
+SFL_SHOW_NEXT
+
+SFL_TARGET
+tkddatbukll   lTGSA  tlmnobuk
+
+SFL_MAP
+        tlmnobuk        tkdnobuk
+        lTGSA           tkddata
+
+POSTING(tmptrans)
+        PST_ADDCMD supd
+        PST_UPDCMD supd
+
+

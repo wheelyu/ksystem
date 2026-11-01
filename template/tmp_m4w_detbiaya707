@@ -1,0 +1,115 @@
+/*LOCAL 
+PGM_FIELDS
+ljmldetil		DFLOAT		8
+ljmldetiltbl		DFLOAT		8
+
+
+DBCALCS(djoinbifidusia)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	nhddatbukidx   gt_biaya11 btmnobuk gv_INPG gt_fidusia21
+*/
+IMAGE(tmptranst) 
+/-------------------------t-----------t--------------------------\
+|   i.Keterangan          | i.Persen  |  i.Nominal               |
+\-------------------------.-----------.--------------------------/
+
+
+IMAGE(tmptrans) 
+|_________________________|________.__|_______________________.__|
+    
+FIELD(tmptrans)
+nhdkode			PROTECT SCROLL		INPUTRI 1
+nhdhrg2			PROTECT 		INPUTRI 3
+nhdhrg1			NOCHANGE		INPUTRI 4
+
+
+CALCS()
+cbiayaada		nhmdebpok_3 > 0 || nhmbiamklr_3 > 0
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)        
+SFL_COND cbiayaada
+
+SFL_TARGET
+	nhdbukidx   btmnobuk gv_biaya 
+
+
+
+CALCS()
+ckurangbi		nhmdebpok - nhdhrg1
+ckurangbiltv		nhmtotpok - nhdhrg1
+ckurangkomisi		nhmbiamklr - nhdhrg1
+
+cltvada_bi2		nhmtotpok > 0
+cpersenltv_bi2		(ltotalpokok / nhmhrgpasar) * 100
+cbukanKomisi		nhdkode != "KOMISI"
+cjikakomisi		nhdkode == "KOMISI"
+cefektifperbl           nhmbgstd / 12
+
+
+MAP(mupdnhm_delbi)
+langsuran		nhmbsrang		REPLACE
+ckurangbi		nhmdebpok		DO_CALC_IF cbukanKomisi
+ckurangbiltv		nhmtotpok		DO_CALC_IF cbukanKomisi
+cpersenltv_bi2		nhmperpok		DO_CALC_IF cltvada_bi2
+ckurangkomisi		nhmbiamklr		DO_CALC_IF cjikakomisi
+cefektifperbl		lbgefektifbl		DO_CALC
+
+
+MAP(mmapbiayadel)
+ckurangbiltv		ltotalpokok		DO_CALC_IF cbukanKomisi
+nhmtenor		ltenor			REPLACE
+nhmbsrang		lbesarang		REPLACE
+
+
+SPCALCS(spdeltrans_biaya)
+	DO_LIB		ap_dbclc(DNAME dmapdelbiaya,DCOMMAND MAPMAP,DMAP mmapbiayadel);
+	DO_LIB 		ap_angbe(nhmbgstd,ltenor,ltotalpokok,lR,&langsuran);
+	DO_LIB          ap_bgflt(lbgefektifbl,ltenor,&lbgflatbl,&ltotbgflat);
+	DO_LIB		ap_dbclc(DNAME dupdnhmbiaya2,DCOMMAND UPDATE,DTARGET nhmprmidx nhmprm,DMAP mupdnhm_delbi);
+
+
+
+
+POSTING(tmptrans)
+   	PST_DELCMD  spdeltrans_biaya
+
+/*CALCS()
+cnotkomisi              ltbtkode != "KOMISI"
+
+
+MAP(mscannhd)
+r_long8			ljmldetil		REPLACE_IF cnotkomisi
+
+DBCALCS(dbscannhd)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	nhddatbukidx   	gv_biaya btmnobuk
+	DBC_SUM_FIELD	nhdhrg1
+	DBC_MAP		mscannhd
+
+
+CALCS()
+ctambahdetil		r_long8 + 1 
+cdjoinbifidusia0	djoinbifidusia == 0
+cdjoinbifidusia1	djoinbifidusia == 1
+
+MAP(mscantbt)
+r_long8			ljmldetiltbl		REPLACE_IF cdjoinbifidusia0
+ctambahdetil		ljmldetiltbl		DO_CALC_IF cdjoinbifidusia1
+
+DBCALCS(dbscantbt)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tbtdaturtidx   gv_dttemplate gv_tmpbukutamu gt_struktur gt_struktur btmdvs
+	DBC_SUM_FIELD	tbtnourt
+	DBC_MAP		mscantbt
+*/
+
+CALCS()
+ctmpbiaya_pro1		btmsts == "643" || btmsts == "3701"
+
+PERMIT(tmptrans)
+  	PMT_ADD_COND  	c0
+  	PMT_UPDALL_COND	c0
+  	PMT_DEL_COND  	ctmpbiaya_pro1
+

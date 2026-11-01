@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|/------------------------------------------------------------------------------\|
+||                         t.SuratPernyataan                                    ||
+||   t.Denganinimenyatakanbahwa                                                 ||
+|| t.danadalahbenarmerupakanaset                                                ||
+|| t.Groupyangdiserahkankepada                                                  ||
+||                                                                              ||
+||                                                                              ||
+||                                                                              ||
+||      t.Demikiansuratpernyataanini                                            ||
+|| t.untukdapatdipergunakan                                                     ||
+||                                                                              ||
+||       t.Acc1 : ___ ___  t.Ya                                                 ||
+||                                                                              ||
+|\------------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+  lend              NOCHANGE             INPUTRI            1
+  tlmytppn          PROTECT              INPUTRI            2
+
+EDITS(tmptranst)
+e.Mandatory tlmytppn MANDATORY
+
+DEFAULTS(tmptranst)
+lend            INIT    Y
+
+CALCS()
+cclsd           tlmsts != "CLS1"
+cbolehacc       lend != ""
+cjam            SYSTIME
+ctest	       (g_usrkode!="1805349" || (tlmdata=="DTMUTASI" && (tlmgrup=="TITIP" || tlmgrup=="NIP_GDG" || tlmgrup=="ANTAR_GEDUNG") && g_usrkode!="1805349")) && (djoinabd == 1 && labdnil == 1)
+cmasuk		(tlmsts=="INPG" && tlmdata=="DTMUTASI") || tlmdata=="DTSENSUS"
+
+MAP(misi)
+cjam            tlmtgljtp       DO_CALC
+g_tgltrn        tlmtgl2         REPLACE
+lend            tlmytppn        REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN              DO_LIB_IF ctest ap_ceksj(tlmplg);
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cbolehacc mdum
+                ELSE HKCURSOR STAY
+                HKMSG Harap ACC dahulu, Tekan Spasi
+AFTER_INPUT     cur_field=tlmytppn       DO_MAP SHOW misi
+AFTER_INPUT     cur_field=tlmytppn       DO_MAP SHOW
+                IF cclsd mdum
+                ELSE HKCURSOR STAY
+                HKMSG Status Sudah CLS1 Tidak Bisa Posting
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cmasuk
+SFL_TARGET
+        tlmbukidx tlmnobuk

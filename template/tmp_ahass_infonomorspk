@@ -1,0 +1,114 @@
+/******************** Trans Info Nomor SPK ************************/
+IMAGE(tmptranst)
+/-----------------------------------\
+|/-Detail Info Nomor SPK ----------\|
+|| i.Data	: _________________||
+|| i.NoBuk      : _________________||
+|| t.NoSpk      : _________________||
+|| t.TglSpk     : _________________||
+|| t.nobukclaim : _________________||
+|| t.YTGC       : ____             ||
+|| t.KdGC       : _________________||
+|| i.Npwp       : _________________||
+|| t.NamaPT     : _________________||
+||                       _________ ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkddata		PROTECT				INPUTRI 1
+tkdnobuk 	PROTECT         		INPUTRI 2
+tkdket          ALLCAPS         		INPUTRI 3
+tkdtgl          NONE NOLIMIT {DD-MM-YY}      	INPUTRI 4
+lnobukclaim     ALLCAPS                         INPUTRI 5
+tkdtype2	NOCHANGE			INPUTRI	6
+tkdjwbstr1	ALLCAPS				INPUTRI	7
+tkdjwbstr2	PROTECT				INPUTRI	8
+lnamaPT		PROTECT				INPUTRI	9
+lenter          NOCHANGE        		INPUTRI 10
+
+CALCS()
+cInstansi2	btmstr2 == "CLAIM" && btmtypdeb == "INSTANSI"
+cGaransi2	btmstr2 == "CLAIM" && btmtypdeb == "GARANSI"
+
+DEFAULTS(tmptranst)
+
+IF cGaransi2 tkdtype2	INIT		T
+IF cInstansi2 tkdtype2	INIT		Y
+/*
+tkdtype2	INIT	T
+*/
+CALCS()
+cInstansi	btmstr2 == "CLAIM" && ( btmtypdeb == "INSTANSI" || btmtypdeb == "GARANSI" ) 
+cGCY		tkdtype2 == "Y"
+cGCT		tkdtype2 == "T"
+
+EDITS(tmptranst)
+e.mandatory	tkdtgl MANDATORY_IF cinstansi1
+e.mandatory     tkdket  MANDATORY_IF cinstansi1        
+e.mandatory    	lnobukclaim MANDATORY_IF cgaransi        
+e.Mandatory	tkdtype2	MANDATORY
+e.validate      tkdnobuk VALIDATE_IF ctkd  tkddatbukll mastkode 0  {PlSPKINSTAN}
+t.MandatoryGC	tkdjwbstr1	MANDATORY_IF cGCY
+t.ValidateGC	tkdjwbstr1	VALIDATE_IF cGCY tbddatkodidx mtbdGC stbd {Pgv_dttabel} {Pgv_infoumum} {Plgroupcustomer}
+
+MAP(mtbdGC)
+tbdkode		tkdjwbstr1	REPLACE
+tbdlv1		tkdjwbstr2	REPLACE
+tbdkettype	lnamaPT		REPLACE
+
+MAP(mkosongGC)
+cBLANKS		tkdjwbstr1	DO_CALC_IF cGCT
+cBLANKS		tkdjwbstr2	DO_CALC_IF cGCT
+
+MAP(mastkode)
+tkdnobuk        tkdnobuk        REPLACE
+laktnobuk       lnobukclaim     REPLACE_IF cdjoinspkakt
+
+MAP(mpanjangspk)
+cpanjangspk     lpanjangspk     DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr1		DO_SKIP_IF cGCT
+
+
+AFTER_INPUT     cur_field=lnobukclaim  DO_MAP SHOW mpanjangspk
+AFTER_INPUT	cur_field=tkdtype2	DO_MAP mkosongGC
+AFTER_INPUT     cur_field=lnobukclaim  DO_MAP SHOW
+                IF clocaloke mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.panjangharus26digit
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cInstansi
+SFL_TARGET
+tkddatbukll lSPKINSTAN	btmnobuk
+
+SFL_MAP
+lSPKINSTAN	tkddata		REPLACE
+btmnobuk	tkdnobuk	REPLACE
+
+MAP(maddaktspk)
+btmnobuk        aktkode        	REPLACE
+btmdata         aktdata         REPLACE
+lnobukclaim     aktket        	REPLACE
+lSPKGARANSI     akttype         REPLACE
+g_tgltrn        akttgl          REPLACE
+lSYSTIME        aktjam          REPLACE
+
+SPCALCS(spaddakt)
+DO_LIB_IF cgaransi  ap_dbclc(DNAME daddaktspk,DCOMMAND  ADD,DFILE akt, DMAP maddaktspk);
+
+SPCALCS(spdelakt)
+DO_LIB              ap_dbclc(DNAME ddelaktspk,DCOMMAND DELETE_RANGE,DTARGET  aktkodtypidx  mntnobuk lAHASS lSPKGARANSI21);
+
+POSTING(tmptrans)
+PST_ADDCMD     spaddakt
+PST_DELCMD     spdelakt
+
+
+

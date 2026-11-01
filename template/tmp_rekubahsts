@@ -1,0 +1,86 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+|!_____________________ ___             ||
+|!t.User    : ________ _________________!|
+|!t.StsSblm : ________                  !|
+|!t.StsSdh  : ________                  !|
+|!t.Ket     : __________________________!|
+|\--------------------------------------/|
+|t.KetVoid1                              |
+|t.KetVoid2                              |
+\----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL          INPUTRI 1
+psdnourt        PROTECT SCROLL          INPUTRI 2
+psdstr1         PROTECT SCROLL          INPUTRI 3
+lnamahrd        PROTECT SCROLL          INPUTRI 4
+psdstr2         PROTECT SCROLL         	INPUTRI 5
+psdstr3         NOCHANGE SCROLL         INPUTRI 6
+psdket          ALLCAPS SCROLL          INPUTRI 7
+
+EDITS(tmptranst)
+t.Validate psdstr1 VALIDATE psikodidx mpsiubah 0
+t.Mandatory psdstr3 MANDATORY
+t.Mandatory psdket MANDATORY
+
+MAP(mpsiubah)
+psikode         psdstr1         REPLACE
+psinama         lnamahrd        REPLACE
+
+DEFAULTS(tmptranst)
+psdstr3         DFALT_SCAN_BLANKS VOID          
+
+CALCS()
+ctbh1x          lnourt_sts+1
+cjoinacc0       djoinpsdsts==0 && g_curcmd==1
+cjoinacc1       djoinpsdsts==1 && g_curcmd==1
+ckode2          STRIP(hrmnobuk)+"-"+FLD_TO_STRING(psdnourt)
+cvoid		hrmtgl > ststglprjgl && hrmsts =="VOID"
+cmaxvoid	ljmlvoid < 3 || g_grpnam =="CMBNSPV" || g_grpnam =="CMBNHEAD" 
+
+
+
+MAP(mnourtx)
+c0              psdnourt                DO_CALC_IF cjoinacc0
+ctbh1x           psdnourt                DO_CALC_IF cjoinacc1
+hrmsts          psdstr2                 REPLACE
+
+MAP(mkode2)
+ckode2          psdkode                 DO_CALC
+g_usrkode       psdstr1                 REPLACE
+
+MAP(mscanhrmd)
+gv_int1         ljmlvoid           REPLACE_IF cvoid    
+
+DBCALCS(dbscanhrmd)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      hrmdatniptgl    lREKBRSDM   hrmnip1
+        DBC_SUM_MAP     mscanhrmd
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdstr3       DO_MAP SHOW mnourtx
+AFTER_INPUT     cur_field=psdstr3        DO_SCAN dbscanhrmd
+AFTER_INPUT     cur_field=psdstr3       DO_MAP SHOW mkode2
+AFTER_INPUT     cur_field=psdstr3       DO_MAP SHOW
+                IF cmaxvoid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KuotaVOID155Hanya2x
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cmaxvoid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KuotaVOID155Hanya2x
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod    lUBHSTSREK hrmnobuk
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+lUBHSTSREK      psddata         REPLACE
+lUBHSTSREK	psdtype		REPLACE

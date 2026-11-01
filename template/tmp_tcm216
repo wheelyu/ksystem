@@ -1,0 +1,247 @@
+LOCAL
+PGM_FIELDS
+luruttcm	INT2		2
+l05            	DFLOAT		8
+lPA		STRING		21
+l01042020	DATE		11
+
+MAP(mjointcmu)
+tcmnourt     luruttcm  REPLACE
+
+DBCALCS(djointcmu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	tcmbukurtidx   bkmnobuk 
+        DBC_MAP         mjointcmu
+
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+||i.Ty     : ___                   ||
+||i.NoCek  : ______________        || 
+||t.Kdhl   : _____________________ ||
+||t.NoHL   : _____________________ ||
+||i.KasBank: _________   _________ ||
+||i.Total  : __________________.__ ||
+||i.Ket    : _____________________ ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans) 
+                                    
+FIELD(tmptranst)
+   tcmtype       NOCHANGE INPUTRI         	1 /* nomor cek */
+   tcmnocek      ALLCAPS SCROLL INPUTRI        	2 /* nomor cek */
+   tcmkode	 ALLCAPS SCROLL INPUTRI	  	3 /* Kota Bank */
+   tcmbank	 ALLCAPS SCROLL INPUTRI	  	3 /* Kota Bank */
+   tcmnobbm  	 NOCHANGE INPUTRI 	  	4 /* Nama Bank */
+   tcmtgljtp     PROTECT {DD-MM-YYYY} NONE 	6 /* Tanggal jt */
+   tcmtotbuk     NUMERIC NONE  	        	7 /* Nilai faktur */
+   tcmket        ALLCAPS INPUTRI             	7 /* Nilai faktur */
+
+HELP(tmptranst)
+h.TypeTcm tcmtype
+
+EDITS(tmptranst)
+e.Validate tcmkode VALIDATE cmphlkodidx mcmp scmpDTHL {Pgv_DTHL}
+e.Validate tcmbank VALIDATE ppsstsplgdat mppshl spps216 {Pgv_INPG} {Ptcmkode} {Pgv_dthut}
+e.MandatoryRekKasBank tcmnobbm MANDATORY
+e.MandatoryTot tcmtotbuk MANDATORY
+
+CALCS()
+c01042020			20200401
+
+MAP(mtcmtotal)
+tcmtotbuk	tcmtotal	REPLACE
+
+MAP(mcmp)
+cmpkode		tcmkode		REPLACE
+c01042020       l01042020       DO_CALC
+gv_D            tcmdk           REPLACE
+
+/*
+CALCS()
+cnilok		ppssisprc + ~tcmtotbuk <= tcmtotbuk
+*/
+
+MAP(mppshl)
+ppsnobuk	tcmbank		REPLACE
+ppsnobbm	tcmnobbm	REPLACE
+ppscab  	tcmcab          REPLACE
+ppstglbuk	ppstglbuk	REPLACE
+/* ppssisprc	tcmtotbuk	REPLACE_IF cnilok */
+
+DEFAULTS(tmptranst)
+tcmdk         	INIT            D
+l05            	INIT            0.05
+lPA		INIT		PA
+tcmdk         	INIT_UPDATE     D
+tcmtype  	DFALT_SCAN      HL "Ambil Titipan"
+tcmsts			INIT			OPEN
+tcmtgljtp       INIT           {g_tgltrn}
+
+CALCS()
+cjointcmu0       djointcmu == 0 && g_curcmd == 1 && tcmnourt == 0
+cjointcmu1       djointcmu  == 1 && g_curcmd == 1 && tcmnourt == 0
+curuttcm       	 luruttcm + 1
+cCekHrsIsi  	 (tcmtype == "CS" && tcmnocek != BLANKS) || tcmtype != "CS"
+cpercard0	 tcmpercard == 0.0
+/*ctgljtp_ksg	 tcmtgljtp == BLANKS && tcmtype != "CS"*/
+cnomer_tcm_bkm 	 FLD_TO_STRING(tcmnourt) + STRIP(bkmnobuk) 
+cnocek_ksg_bkm	 tcmnocek == BLANKS
+
+cnilai_bkm	 bkmtotal
+
+ctcmtot0_bkm	 g_scrfile == "bkm" && tcmtotbuk == 0 
+
+cdvs_rekpiugr	 DO_LIB ap_amdvs(gv_dtdivisi21,gv_piugiro,tcmbbmpiugr); 
+cganti_type  	 tcmtype != ^tcmtype 
+cnoHL		 tcmtype != "HL"
+cnoCS		 tcmtype != "CS"
+cCS		 tcmtype == "CS"
+csatu		 1
+/* ctidakcukup      (bkmtype == "TN" && ppmsisprc + ~tcmtotbuk >= tcmtotbuk) 
+||      (bkmtype == "ANG" && piksisa + ~tcmtotbuk >= tcmtotbuk) 
+||	(bkmtype == "UM" && ppmsisprc + ~tcmtotbuk >= tcmtotbuk)
+*/
+ctidakcukup1	(g_curcmd == 1 && tcmtotbuk <= ppssisprc) || 
+		(g_curcmd == 2 && (tcmbank == ~tcmbank && tcmtotbuk <= ppssisa) || (tcmbank != ~tcmbank && tcmtotbuk <= ppssisprc)) || 
+		g_curcmd == 4
+
+MAP(muruttcm)
+csatu       	tcmnourt   	DO_CALC_IF cjointcmu0
+curuttcm      	tcmnourt   	DO_CALC_IF cjointcmu1
+cnilai_bkm   	tcmtotbuk	DO_CALC_IF ctcmtot0_bkm   
+cdvs_rekpiugr	tcmbbmpiugr	DO_CALC_IF cCS
+cnomer_tcm_bkm 	tcmnocek       	DO_CALC_IF cnocek_ksg_bkm
+/*tlmtgl          tcmtgljtp       REPLACE_IF ctgljtp_ksg*/
+
+MAP(mksg)
+cBLANKS		tcmnobbm	DO_CALC_IF cganti_type
+cBLANKS		tcmnocek	DO_CALC_IF cganti_type
+cBLANKS		tcmnocard       DO_CALC_IF cganti_type
+cBLANKS		tcmbank  	DO_CALC_IF cganti_type
+cBLANKS		tcmnamcard      DO_CALC_IF cganti_type
+cBLANKS		tcmpercard      DO_CALC_IF cganti_type
+cBLANKS		tcmkota         DO_CALC_IF cganti_type
+cBLANKS		tcmgrup         DO_CALC_IF cganti_type
+cBLANKS		tcmtotal        DO_CALC_IF cganti_type
+cBLANKS		tcmtotbuk       DO_CALC_IF cganti_type
+cBLANKS		tcmmua          DO_CALC_IF cganti_type
+cBLANKS		tcmtotas        DO_CALC_IF cganti_type
+cBLANKS		tcmkurs         DO_CALC_IF cganti_type
+
+CALCS()
+cketre		"BYR DP FAKTUR GANTI " + lnamauser
+cblnapril	ppstglbuk >= l01042020
+cfaktursama	ppsnobuk2 == bkmnobs
+
+MAP(misikas)
+cketre		tcmket		DO_CALC
+
+MAP(mhitakh)
+tcmtotbuk	tcmtotal	REPLACE_IF cpercard0
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tcmkode 	DO_SKIP_IF cnoHL
+BEFORE_INPUT	cur_field=tcmbank 	DO_SKIP_IF cnoHL
+BEFORE_INPUT	cur_field=tcmnocek 	DO_SKIP_IF cnoCS
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW mksg
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW misikas
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW muruttcm
+AFTER_INPUT	cur_field=tcmtotbuk	DO_MAP SHOW mtcmtotal
+/*
+AFTER_INPUT	cur_field=tcmtotbuk	DO_MAP SHOW 
+		IF ctidakcukup  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG nilai piutang lebih
+*/
+AFTER_INPUT	cur_field=tcmtotbuk	DO_MAP SHOW 
+		IF ctidakcukup1  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG nilai titipan lebih
+AFTER_INPUT	cur_field=tcmbank	DO_MAP SHOW
+		IF cblnapril mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Hanya boleh HL dibulan april
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF ctidakcukup1  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG nilai titipan lebih
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF cCekHrsIsi  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG No.Cek Harus Diisi
+AFTER_INPUT	cur_field=tcmbank	DO_MAP SHOW
+		IF cfaktursama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Nomor faktur HL harus sama, cek 3222
+
+MAP(mdet_tcm)
+     bkmnobuk         tcmnobuk          REPLACE
+     bkmtgl           tcmtgl            REPLACE
+     lPA              tcmtype2          REPLACE
+     bkmscr           tcmscr            REPLACE
+     bkmdvs           tcmdvs            REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)     /* total number of lines sfl takes up on screen  */
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tcmbukurtidx			bkmnobuk
+
+SFL_MAP_MAP(mdet_tcm)
+/*
+CALCS()
+caddtlm1	   tlmperdisd + tcmtotbuk
+
+cupdtlm1	   tlmperdisd + tcmtotbuk - ~tcmtotbuk
+
+cupdtlmd1	   tlmperdisd - ~tcmtotbuk
+
+MAP(mupdtlma2)
+caddtlm1	  tlmperdisd	DO_CALC
+
+MAP(mupdtlmu2)
+cupdtlm1	  tlmperdisd      DO_CALC
+
+MAP(mupdtlmd2)
+cupdtlmd1	  tlmperdisd	DO_CALC
+*/
+CALCS()
+cppssisprca	ppssisprc - tcmtotbuk
+cppssisprcu	ppssisprc + ~tcmtotbuk - tcmtotbuk
+cppssisprcd	ppssisprc + ~tcmtotbuk
+ctdksama	tcmbank != ~tcmbank
+csama		tcmbank == ~tcmbank
+
+MAP(mupdppsa)
+cppssisprca	ppssisprc	DO_CALC
+gv_RCLS		ppsstsprc	REPLACE
+
+MAP(mupdppsu)
+cppssisprcu	ppssisprc	DO_CALC_IF csama
+cppssisprca	ppssisprc	DO_CALC_IF ctdksama
+gv_RCLS		ppsstsprc	REPLACE
+
+MAP(mupdppsd)
+cppssisprcd	ppssisprc	DO_CALC
+gv_INPG		ppsstsprc	REPLACE
+
+/************SPCALS dari TRANSA***************/
+
+/************SPCALS dari TRANSA***************/
+
+SPCALCS(spcaladd1)
+DO_LIB ap_dbclc(DNAME dupdppsa2d,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdppsa);
+
+SPCALCS(spcalupd1)
+DO_LIB ap_dbclc(DNAME dupdppsu2d,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdppsu);
+DO_LIB_IF ctdksama ap_dbclc(DNAME dupdppsu3d,DCOMMAND UPDATE,DTARGET ppsbukidx ~tcmbank,DMAP mupdppsd);
+
+SPCALCS(spcaldel1)
+DO_LIB ap_dbclc(DNAME dupdppsd2d,DCOMMAND UPDATE,DTARGET ppsbukidx ~tcmbank,DMAP mupdppsd);
+
+POSTING(tmptrans)
+ 	PST_ADDCMD 	spcaladd1
+	PST_UPDCMD 	spcalupd1
+	PST_DELCMD 	spcaldel1

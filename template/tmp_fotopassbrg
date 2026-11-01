@@ -1,0 +1,120 @@
+LOCAL 
+PGM_FIELDS
+lbukabkftomga22		STRING		21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| |t.AdaPass : _____________!|
+| |t.PolaNon : _____________!|
+| |t.Pass    : _____________!|
+| |t.Isijawabketikatacc     !|
+| |t.Jwb : ________________ !|
+| |        __               !|
+| | _______________________ !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk                PROTECT                INPUTRI         10
+doclok                  PROTECT                 INPUTRI         11
+docsts			NOCHANGE		INPUTRI		12
+doccab			NOCHANGE		INPUTRI		13
+docno			NONE			INPUTRI		14
+docnobuk2               TEXTAREA                INPUTRI         15
+ldoc                    NOCHANGE                INPUTRI         16
+ltombolbrg              TOMBOL                  INPUTRI         99
+
+DEFAULTS(tmptranst)
+docsts		DFALT_SCAN_BLANKS	YA "YA"
+					TDK "TDK"
+doccab		DFALT_SCAN_BLANKS	POLA "SANDI POLA"
+					NON_POLA "SANDI KATA/NOMOR"
+
+CALCS()
+ctgluplisi22	(doctgljadi!=BLANKS && docsts=="YA" && doccab=="POLA") ||
+		(docsts=="YA" && doccab=="NON_POLA" && docno!=BLANKS) ||
+		docsts=="TDK"
+cstsuplisi22	doclok=="OK"
+cbukabkftomga22	STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+cadapass	docsts=="YA"
+cadapassnon	docsts=="YA" && doccab=="NON_POLA"
+cwjbisi         djoinketbrg == 1 && (lketstr1 == "TACC" || lketstr3 == "TACC")
+cdocsts         docsts == "TDK"
+cdoccab         doccab == "POLA"
+
+EDITS(tmptranst)
+e.Mandatory	docsts	MANDATORY
+e.MandatoryPola	doccab	MANDATORY_IF cadapass
+e.MandatoryPass	docno	MANDATORY_IF cadapassnon
+e.MANDATORY     docnobuk2 MANDATORY_IF cwjbisi
+
+MAP(mupddocpassbrg)
+g_tgltrn        doctgljadi      REPLACE
+DEBUG ldum      ldum    REPLACE
+
+MAP(mupddocpassbrg_22)
+lY              doclok          REPLACE_IF ctgluplisi22
+cbukabkftomga22	lbukabkftomga22	DO_CALC
+DEBUG ldum      ldum    REPLACE
+
+DBCALCS(dupddocpassbrg)
+        DCOMMAND UPDATE
+        DTARGET  docprmidx docprm
+        DMAP     mupddocpassbrg
+
+CALCS()
+cpassbrg	tbtkode == "UPLPASS" || tbtkode == "UPLPASSLPTP"
+cdf1		tbtdf1 == 1
+
+MAP(mupdabkftomga22)
+gv_CLSD         abksts          REPLACE
+
+MAP(mdocststdkada)
+cBLANKS         doccab          DO_CALC_IF cdocsts
+
+SPCALCS(spuplftomga22)
+DO_LIB_IF csdhisijwb         ap_dbclc(DNAME dupddockonfkonspj_22,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocpassbrg_22);
+DO_LIB_IF cstsuplisi22          ap_dbclc(DNAME dupdabkftomga22,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga22,DMAP mupdabkftomga22);
+DO_LIB_IF cdjoinketbrg0         ap_dbclc(DNAME daddketbrg2,DCOMMAND ADD,DFILE ket,DMAP maddketbrg);
+DO_LIB_IF cdjoinketbrg1         ap_dbclc(DNAME dupdketbrg2,DCOMMAND UPDATE,DTARGET ketotoidx lketoto,DMAP mupdketberkas);
+DO_LIB_IF cdjoinketbrg1         ap_dbclc(DNAME daddabkadmarsip9,DCOMMAND ADD,DFILE abk,DMAP maddabkadmarsip);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombolbrg               DO_SPCALCS spuplftomga22	
+BEFORE_INPUT     cur_field=doccab                   DO_SKIP_IF cdocsts
+BEFORE_INPUT     cur_field=docno                    DO_SKIP_IF cdocsts
+BEFORE_INPUT     cur_field=docno                    DO_SKIP_IF cdoccab
+AFTER_INPUT     cur_field=docsts                DO_MAP SHOW mdocststdkada
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_SELECT cpassbrg
+SFL_COND cdf1
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD_DBCALCS dupddocpassbrg
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+        docdatbukidx lUPGAD  btmnobuk lpassbrg 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cboleh
+  PMT_DEL_COND  c0

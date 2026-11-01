@@ -1,0 +1,175 @@
+SCREEN  3003  APPLICATION_TYPE  i.IsiPassword
+SCR_MSG Mengisi atau Mengubah Password dari User
+SCR_CHCCK_GPS
+
+LOCAL
+PGM_FIELDS
+lpanjang	INT2	2
+	lkode			STRING		   21
+	lname			STRING		   21
+	lgroup			STRING		   11
+	loldpass		STRING		   21
+	loldencpwd		STRING		   21
+	lnewpass 		STRING		   21
+	lnewencpwd 		STRING		   21
+	lverpass 		STRING		   21
+	ltekan       		STRING		   21
+        lpsists                 STRING              5
+
+
+MAP(mjoinpsi)
+psists    	lpsists    	REPLACE
+
+DBCALCS(djoinpsi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	usrkode
+        DBC_MAP         mjoinpsi 
+
+IMAGE(master) 
+/-------------------------------------------------------------------\ 
+|         /--------------------------------------------------\      |
+|	  |  i.Kode               : ____________________     |      |
+|	  |  i.Nama               : ____________________     |      |
+|	  |  i.Grup               : __________               |      |
+|	  \--------------------------------------------------/      | 
+|         /--------------------------------------------------\      |
+|	  |  i.PasswdLama         : ____________________     |      |
+|	  |  i.PasswdBaru         : ____________________     |      |
+|	  |  i.VeriPasswd         : ____________________     |      |
+|         |                                                  |      |
+|         |  i.TekanEnter         : __________               |      |
+|         \--------------------------------------------------/      |
+|         /--------------------------------------------------\      |
+             t.Perhatian
+             t.AturanPwd1
+             t.AturanPwd2
+             t.AturanPwd3
+             t.AturanPwd4
+|         \--------------------------------------------------/      |
+\-------------------------------------------------------------------/
+
+FIELD(master)
+   lkode              ALLCAPS          INPUTRI          1 /* user name */
+   lname              PROTECT          INPUTRI          2 /* user name */
+   lgroup             PROTECT          NONE             3 /* user group */
+   loldpass           UNSEEN           NONE             4 /* user password */
+   lnewpass           UNSEEN           NONE             5 /* user password */
+   lverpass           UNSEEN           NONE             6 /* user password */
+   ltekan             NOCHANGE         INPUTRI   	7 /* user password */
+
+CALCS()
+cpsiP		usrstr == "P" 
+
+EDITS(master)
+e.Mandatory lname MANDATORY 
+e.ValidateUsr lkode VALIDATE usrkodidx musrmapK susr
+e.Mandatory lnewpass MANDATORY
+e.ValidatePsm lkode VALIDATE_IF cpsiP psmkodidx mpsm 0
+
+MAP(mpsm)
+psmtgllahir		psmtgllahir		REPLACE
+
+
+MAP(musrmapK)
+    usrgrp		lgroup			REPLACE
+    usrpwd		loldencpwd		REPLACE
+    usrnam              lname                   REPLACE
+    usrkode             lkode                   REPLACE
+    usrstr		usrstr			REPLACE
+
+
+DEFAULTS(master)
+lkode     INIT   {g_usrkode}
+
+CALCS()
+  cocok		lverpass == lnewpass
+  ctekan	"Tekan Enter"
+  cgrupTroot	g_grpnam == "ROOT" || g_usrnam == lname /* same user */
+  clama_ksg	usrpwd == BLANKS && usrhashvalue == BLANKS
+cnewpass        lnewpass != STRIP(lkode) + "AB" && lnewpass != STRIP(lkode) + "ab" && 
+                lnewpass != "AB" + STRIP(lkode) && lnewpass != "ab" +STRIP(lkode) &&
+                lnewpass != STRIP(lkode) + "ABC" && lnewpass != STRIP(lkode) + "abc" && 
+                lnewpass != STRIP(lkode) + "ABCD" && lnewpass != STRIP(lkode) + "abcd" 
+cnewold         lnewpass != loldpass 
+cpanjang        DO_LIB ap_strln(lnewpass,&lpanjang);
+cpanjangok      lpanjang > 7
+  cbknkry   	djoinpsi == 0 || (djoinpsi==1 && lpsists=="INPG")
+/*cvalid          DO_LIB ap_pwvld(lnewpass);*/
+
+MAP(mpanjangpass)
+cpanjang	lpanjang        DO_CALC
+
+MAP(mdum)
+  ltekan		ltekan		REPLACE
+  
+MAP(mtekan)
+  ctekan	ltekan		DO_CALC
+
+HOOKS(master)
+  AFTER_INPUT 	cur_field=lkode	        DO_MAP SHOW
+		IF cgrupTroot   mdum
+		ELSE
+		   HKCURSOR STAY
+		   HKMSG    h.TdkBolehMengubahPassLain
+  AFTER_INPUT 	cur_field=lkode	        DO_MAP SHOW
+		IF cbknkry   mdum
+		ELSE
+		   HKCURSOR STAY
+		   HKMSG    h.AndaTdkBolehMengubahPass
+
+  AFTER_INPUT	cur_field=lnewpass     DO_MAP SHOW mpanjangpass
+  AFTER_INPUT 	cur_field=lnewpass      DO_MAP SHOW
+		IF cnewpass     mdum
+		ELSE
+		   HKCURSOR STAY
+		   HKMSG    h.TdkBolehNipAB
+  AFTER_INPUT 	cur_field=lnewpass      DO_MAP SHOW
+		IF cnewold      mdum
+		ELSE
+		   HKCURSOR STAY
+		   HKMSG    t.PwdTdkBolehSmDgnSbl
+  AFTER_INPUT 	cur_field=lnewpass      DO_MAP SHOW
+		IF cpanjangok      mdum
+		ELSE
+		   HKCURSOR STAY
+		   HKMSG    t.PwdMin8Dgt
+  AFTER_INPUT 	cur_field=lnewpass      DO_LIB ap_pwvld(lnewpass)
+		/*IF cvalid      mdum
+		ELSE
+		   HKCURSOR STAY
+		   HKMSG    t.PwdMengandungAngkaHurufBesarHurufKecil*/
+  BEFORE_INPUT 	cur_field=loldpass      DO_SKIP_IF clama_ksg
+
+  AFTER_INPUT 	cur_field=loldpass	DO_LIB ap_pwchk(lkode,loldpass,loldencpwd);
+  AFTER_INPUT 	cur_field=lverpass	DO_MAP SHOW
+		IF cocok mdum
+		ELSE HKCURSOR STAY
+		     HKMSG    h.PasswdTidakBetul
+  BEFORE_INPUT 	cur_field=ltekan	DO_MAP SHOW mtekan
+
+CALCS()
+cubahpass   "UBAHPASS"
+csystime    SYSTIME
+
+
+MAP(maddakt)
+cubahpass	aktdata		DO_CALC
+cubahpass	akttype		DO_CALC
+csystime	aktjam 		DO_CALC
+g_tgltrn        akttgl          REPLACE
+lkode           aktkode         REPLACE
+g_usrkode       aktkode2        REPLACE
+g_scrnumstr     aktscr          REPLACE
+g_ipname        aktbrg          REPLACE
+g_mobile        aktlok          REPLACE
+g_lat           aktcrtusr       REPLACE
+g_lon           aktnobuk        REPLACE
+
+SPCALCS(spcal)
+   DO_LIB DOEDITS_HOME ap_pwchg(lkode,loldpass,loldencpwd,lnewpass,lnewencpwd);
+   DO_LIB ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+
+POSTING(master)
+   PST_COMMAND     spcal       /* APPLICATION_TYPE */
+				
+END_SCREEN

@@ -1,0 +1,85 @@
+LOCAL                                                                                                                                                                                                       
+PGM_FIELDS
+lDTJBMD         STRING          11
+lSMSC           STRING          21
+lpsdkode        STRING          21
+lpsdtype        STRING          21
+lpsdtgl1         DATE            4
+
+DBCALCS(djoinabkahm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN psikode
+
+MAP(mpsdMD)
+psdkode         lpsdkode        REPLACE
+psdtype         lpsdtype        REPLACE
+psdtgl1          lpsdtgl1         REPLACE
+
+DBCALCS(djoinpsdMD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddatpsmkod    lDTJBMD lSMSC psikode
+        DBC_MAP         mpsdMD
+
+IMAGE(tmptranst)
+/----------------------------------\
+| /------------------------------\ |
+| |t.Nip        : _______________| |
+| |t.IdAhm      : _______________| |
+| |t.JabatanMD  : _______________| |
+| |t.TglAktif   : _______________| |
+| |t.t				 | |
+| \------------------------------/ |
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psikode		PROTECT		INPUTRI	1
+psinoidll2	ALLCAPS		INPUTRI	2
+lpsdtype        PROTECT          INPUTRI 3
+lpsdtgl1        PROTECT {DD-MM-YY}  INPUTRI 4
+
+CALCS()
+cdjoinpsdMD     djoinpsdMD == 1
+cdjoinpsdMD0    djoinpsdMD == 0
+/*ctutup          g_grpnam == "TUTUP"*/
+
+EDITS(tmptranst)
+/*e.VALIDATE      psikode         VALIDATE_IF ctutup psikodidx  mpsd 0*/
+e.VALIDATE      psikode         VALIDATE_BUF3 psikodidx  mpsd 0
+
+
+MAP(mpsd)
+psikode         psikode         REPLACE
+psdtype         lpsdtype        REPLACE_IF cdjoinpsdMD
+psdtgl1         lpsdtgl1        REPLACE_IF cdjoinpsdMD
+cBLANKS         lpsdtype        DO_CALC_IF cdjoinpsdMD0
+cBLANKS         lpsdtgl1        DO_CALC_IF cdjoinpsdMD0
+
+DEFAULTS(tmptranst)
+lSMSC                   INIT            SMSC                                                                                                                                                                
+lDTJBMD                 INIT            DTJBMD
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+psikodidx	psikode
+
+MAP(mupdabkahm)
+gv_CLSD		abksts		REPLACE
+
+CALCS()
+csesuai		psikode == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "KAWIL" || g_grpnam == "BUM"
+cdjoinabkahm	djoinabkahm == 1
+
+
+SPCALCS(sptmptransahm)
+DO_LIB_IF cdjoinabkahm	ap_dbclc(DNAME dupdabkahm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN psikode,DMAP mupdabkahm);
+
+POSTING(tmptrans)
+PST_UPDCMD	sptmptransahm
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	csesuai
+PMT_DEL_COND	c0

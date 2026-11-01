@@ -1,0 +1,77 @@
+CALCS()
+cbrdtahun	brdsat == aktkode2
+
+MAP(mscanbrdmtr)
+brdsisa		lbrdsisamtr	REPLACE
+
+DBCALCS(dscanbrdmtr)
+	DBC_COMMAND	SCANSCAN
+	DBC_SELECT	cbrdtahun
+	DBC_TARGET	brdstscabbrg    gv_INPG aktkode aktbrg
+	DBC_SUM_MAP	mscanbrdmtr
+
+MAP(mbrcmtr)
+brchrgjl	lbrchrgjl	REPLACE
+
+DBCALCS(djoinbrcmtr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brcdttypidx	gv_dtbarang aktbrg aktkode lSPM lBARU lthnHITAMmtr
+	DBC_MAP		mbrcmtr
+
+IMAGE(tmptranst)
+/-----------t--------------------t---------------------t--------t-----------t------t-----------t--------\
+|t.Series   |t.NamaMtr	         |t.TypMtr	       |t.TM    |i.HrgOtr   |t.Stok|t.Diskon   |t.Pilih |
+\-----------.--------------------.---------------------.--------.-----------.------.-----------.--------/
+
+IMAGE(tmptrans)
+|___________|____________________|_____________________|________|___________|______|___________|________|
+
+FIELD(tmptrans)
+aktlok		PROTECT		INPUTRI		1
+aktket		PROTECT		INPUTRI		2
+aktbrg		PROTECT		INPUTRI		3
+aktkode2	PROTECT		INPUTRI		4
+lbrchrgjl	PROTECT		INPUTRI		5
+lbrdsisamtr	PROTECT		INPUTRI		6
+aktjml		PROTECT		INPUTRI		7
+lpilihmotor	TOMBOL		INPUTRI		8
+
+DEFAULTS(tmptrans)
+lpilihmotor	INIT		"PILIH"
+
+CALCS()
+cthnHITAMmtr	STRIP(aktkode2) + "HITAM"
+cdjoinbrcmtr	djoinbrcmtr == 1
+cjkadastok	dscanbrdmtr >= 0 && lbrdsisamtr > 0
+
+EDITS(tmptrans)
+e.Validate	aktbrg		VALIDATE brgdatkodidx mbrgmtr 0 {Pgv_dtbarang}
+
+MAP(mbrgmtr)
+brgkode		aktbrg		REPLACE
+cthnHITAMmtr	lthnHITAMmtr	DO_CALC
+c0		lbrchrgjl	DO_CALC
+lbrchrgjl	lbrchrgjl	REPLACE_IF cdjoinbrcmtr
+c0		lbrdsisamtr	DO_CALC
+lbrdsisamtr	lbrdsisamtr	REPLACE_IF cjkadastok
+
+MAP(mupdtkmmotor)
+aktbrg		tkmlok1		REPLACE
+aktkode		tkmlok2		REPLACE
+
+CALCS()
+cstsOPEN	tkmsts != "INPG" && tkmsts != "CLSD" && tkmsts != "CLS1" && tkmsts != "VOID"
+
+SPCALCS(spcalcmotor)
+DO_LIB_IF cstsOPEN ap_dbclc(DNAME dupdtkmmotor,DCOMMAND UPDATE,DTARGET tkmbukidx tkmnobuk,DMAP mupdtkmmotor);
+
+HOOKS(tmptrans)
+CLICKED		cur_field=lpilihmotor	DO_SPCALCS spcalcmotor
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT	cjkadastok
+SFL_TARGET
+aktkodtypidx	tkmlokjl lMTRKLIKHMC tkmlokjl
+

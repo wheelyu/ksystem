@@ -1,0 +1,60 @@
+LOCAL
+PGM_FIELDS
+lkode		STRING	21
+lKUNCI		STRING	21
+lKUNCIABSEN	STRING	11
+
+CALCS()
+ckode           "DESK" + THBLS(g_tgltrn) + THBLS_DD(g_tgltrn)
+
+DBCALCS(djoinabkx)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN lkode
+
+IMAGE(tmptranst)
+/------------------------------\
+ /----------------------------\
+  t.AccKunci  : _____________
+  t.NipAcc    : _____________
+ \----------------------------/
+\------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1      NOCHANGE        INPUTRI         1 /* Acc */
+tkdjenis        NOCHANGE        INPUTRI         2
+
+DEFAULTS(tmptranst)
+lkode		INIT			{ckode}
+lKUNCI		INIT			KUNCI
+lKUNCIABSEN	INIT			KUNCIABSEN
+tkdjwbstr1      DFALT_SCAN_BLANKS       ACC
+
+CALCS()
+cdjoinabk	djoinabkx == 1
+cdvhsaja	g_grpnam == "PDCADVH" || g_grpnam == "RI" || g_grpnam == "IT"
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr1      MANDATORY
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_COND    cdvhsaja
+SFL_LINES(1)
+SFL_TARGET
+tkddatbukll     tlmdata lkode lKUNCI
+
+SFL_MAP
+tlmdata         tkddata         REPLACE
+lkode		tkdnobuk        REPLACE
+lKUNCI          tkdnoll         REPLACE
+g_usrkode       tkdjenis        REPLACE
+
+MAP(mupdabk)
+gv_CLSD		abksts		REPLACE
+
+SPCALCS(sptmpkunci)
+DO_LIB_IF cdjoinabk   ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN lkode,DMAP mupdabk);
+
+POSTING(tmptrans)
+PST_ADDCMD	sptmpkunci

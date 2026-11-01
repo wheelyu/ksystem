@@ -1,0 +1,104 @@
+LOCAL
+PGM_FIELDS
+lklikok2d                STRING          31
+ljaminput2d              TIME    4
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket   : ______________________||
+||          _____ _______         ||
+!!t.TglFt : __________            ||
+!!t.Jam   : __________            ||
+!!t.Lat   : ___.__________________||
+!!t.Lon   : ___.__________________||
+||          _______________      _||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1                  NOCHANGE                INPUTRI         2
+sviyt2                  NOCHANGE                INPUTRI         3
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+ljamfoto                PROTECT                 INPUTRI         5
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         5
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         6
+lklikok2d                TOMBOL                  INPUTRI         7
+svinobuk                PROTECT UNSEEN          INPUTRI         8
+
+DEFAULTS(tmptranst)
+lcount                   INIT   7
+lklikok2d                INIT    "UPLOAD OK"
+ljaminput2d              INIT    SYSTIME
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msviselfie
+
+MAP(msviselfie)
+cBLANKS         ljamfoto        DO_CALC
+svidf8          ljamfoto        REPLACE
+
+CALCS()
+cfotoselfie      sviyt1 != "Y"
+cok2d            "OK"
+cadalonlat2d     svidf7!=0 && (g_fotodate1==g_tgltrn || g_grpnam=="RI" || g_grpnam=="IT")
+csdhupload2d     sviyt1=="Y"
+
+MAP(mupdsviselfie)
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+cok2d            sviyt2          DO_CALC_IF cadalonlat2d
+
+DBCALCS(dupdsviselfie)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsviselfie
+
+MAP(mupdsvifotoselfie)
+cY              sviyt1          DO_CALC
+cSYSTIME        svidf8          DO_CALC
+g_tgltrn        svitgl2         REPLACE
+
+DBCALCS(dupdsvifotoselfie)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvifotoselfie
+
+SPCALCS(spcaluplfotoselfie)
+dupdsviselfie
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lklikok2d       DO_SPCALCS IF csdhupload2d spcaluplfotoselfie
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_CAMERAONLY
+SFL_UPLFLD_DBCALCS dupdsvifotoselfie
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND cfotoselfie
+
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk lcount
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+
+
+

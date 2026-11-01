@@ -1,0 +1,189 @@
+LOCAL
+PGM_FIELDS
+luruttcm		INT2		2
+lnobuk 			STRING		21
+lbiajns			STRING		21
+lnsc			STRING		21
+lbianobbm		STRING		21
+lketnama		STRING		61
+
+MAP(mjointcmu)
+tcmnourt     luruttcm  REPLACE
+
+DBCALCS(djointcmu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	tcmbukurtidx   lnobuk 
+        DBC_MAP         mjointcmu
+
+DBCALCS(djointkm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkmbukidx	bkmnobuk
+
+MAP(misibia)
+bianobbm	lbianobbm		REPLACE
+
+DBCALCS(djoinbia)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      biadatstskod gv_dtbank lnsc gv_INPG tcmnobbm
+	DBC_MAP		misibia
+
+MAP(misiket)
+ketnama         lketnama        REPLACE
+
+DBCALCS(djoinket)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      ketdatbukkod    gv_dtbank tcmnocair
+        DBC_MAP         misiket
+
+IMAGE(tmptranst) 
+/----t----------t---------t-----------t---------t-----------t-------------t--------t-----------t-\
+|i.Ty| i.NoCek  |i.KasBank| i.Rek     | i.Jtp   |t.RekKnsmn | t.Nama      | i.Bank | i.Nilai   | |
+\----.----------.---------.-----------.---------.-----------.-------------.--------.-----------.-/
+
+IMAGE(tmptrans) 
+|____|__________|_________|___________|_________|___________|_____________|________|___________|_|
+                                    
+FIELD(tmptrans)
+   tcmtype       NOCHANGE                   INPUTRI    1 /* Type O/S */
+   tcmnocek      NOCHANGE                    INPUTRI    2 /* nomor cek */
+   tcmnobbm	 ALLCAPS                    INPUTRI    3 /* Kode Rekening */
+   tcmbbm2	 NOCHANGE                   INPUTRI    4 /* Kode Rekening */
+   tcmtgljtp     NONE NOLIMIT {DD-MM-YY}    INPUTRI    5 /* Tanggal jt */
+   tcmnocair	 ALLCAPS SCROLL             INPUTRI    6 /* Keterangan */
+   tcmnamcard	 ALLCAPS SCROLL             INPUTRI    7 /* Keterangan */
+   tcmbbm1 	 ALLCAPS SCROLL             INPUTRI    8 /* Kode Rekening */
+   tcmtotal      NUMERIC                    INPUTRI    9 /* Nilai Cek */
+   tcmkmb        NUMERIC                    INPUTRI    10
+
+HELP(tmptrans)
+h.TypeTcm tcmtype
+
+CALCS()
+cTN            	 tcmtype == "TN" 
+cTB            	 tcmtype == "TB" 
+ctrfbank	 bbggrup1 == "BCA"
+
+EDITS(tmptrans)
+e.MandatoryRekKasBank tcmnobbm MANDATORY
+e.MandatoryTot tcmtotal MANDATORY
+e.ValidateBbm tcmnobbm VALIDATE_IF cTB bbgbbtnoidx mbbg sbbgKB4 {Pgv_BK}
+e.ValidateBbm tcmnobbm VALIDATE_IF cTN bbgbbtnoidx mbbg sbbgKB {Pgv_KS}
+e.ValidateBia tcmnocair VALIDATE_IF ctrfbank biadatstskod mbiabank sbials {Pgv_dtbank} {Plbiajns} {Pgv_INPG}
+
+CALCS()
+cadaket		djoinket == 1
+cTRANSFER	"TRANSFER"
+cadabia		djoinbia == 1
+
+MAP(mbiabank)
+biakode		tcmnocair	REPLACE
+biacab		tcmbbm1		REPLACE
+cTRANSFER	tcmkota		DO_CALC
+bianip		tcmmua		REPLACE
+lketnama	tcmnamcard	REPLACE_IF cadaket
+
+MAP(mbbg)
+bbgno		tcmnobbm	REPLACE
+lbianobbm	tcmbbm2		REPLACE_IF cadabia
+
+DEFAULTS(tmptrans)
+tcmdk         	INIT            K
+tcmsts		INIT		OPEN
+tcmtype  	DFALT_SCAN   	TB "Transfer Bank"
+lbiajns		INIT		KONSUMEN
+lnsc		INIT		NSC
+
+CALCS(master)
+cjointcmu0       djointcmu == 0 && g_curcmd == 1 && tcmnourt == 0
+cjointcmu1       djointcmu  == 1 && g_curcmd == 1 && tcmnourt == 0
+curuttcm       	 luruttcm + 1
+ctgljtp_ksg	 tcmtgljtp == BLANKS
+
+MAP(muruttcm)
+bkmnobuk	lnobuk		REPLACE
+csatu       	tcmnourt   	DO_CALC_IF cjointcmu0
+curuttcm      	tcmnourt   	DO_CALC_IF cjointcmu1
+bkmtgl          tcmtgljtp       REPLACE_IF ctgljtp_ksg
+bkmnobuk	tcmnocek	REPLACE
+
+MAP(mhitakh)
+tcmtotal	tcmtotbuk	REPLACE
+
+CALCS()
+cnonbca		bbggrup1 != "BCA"
+charusisi	tcmtotal != 0
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tcmnocair 	DO_SKIP_IF cnonbca
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW muruttcm
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF charusisi  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG Nominal harus di isi
+
+SUBFILE(tmptrans)
+SFL_LINES(6)    
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tcmbukurtidx			bkmnobuk
+SFL_MAP_MAP(mdet_tcm)
+
+MAP(mdet_tcm)
+     bkmnobuk         tcmnobuk          REPLACE
+     bkmtgl           tcmtgl            REPLACE
+     bkmkode          tcmkode           REPLACE
+     bkmjns           tcmtype2          REPLACE
+     bkmscr           tcmscr            REPLACE
+     bkmcab           tcmcab            REPLACE
+     bkmgrup      tcmgrup               REPLACE
+     bkmdvs           tcmdvs            REPLACE
+     bkmbisnis        tcmbisnis         REPLACE
+
+CALCS()
+caddbkm1	   bkmtotal + tcmtotbuk
+cupdbkm1	   bkmtotal + tcmtotbuk - ~tcmtotbuk
+cupdbkmd1	   bkmtotal - tcmtotbuk
+
+MAP(mupdbkma2)
+caddbkm1	  bkmtotal	DO_CALC
+
+MAP(mupdbkmu2)
+cupdbkm1	  bkmtotal     DO_CALC
+
+MAP(mupdbkmd2)
+cupdbkmd1	  bkmtotal	DO_CALC
+
+CALCS()
+cAPRBANK305     "APRBANK305"
+cAPR_BANK       "APR_TRFBANK"
+ctadatkm	djointkm == 0
+cOPENksg	bkmsts == "OPEN" && bkmnobbm == BLANKS
+
+MAP(maddtkm)
+cAPRBANK305     tkmdata         DO_CALC
+bkmnobuk        tkmnobuk        REPLACE
+cAPR_BANK       tkmkode         DO_CALC
+g_tgltrn	tkmtgl		REPLACE
+
+SPCALCS(spcaladd1)
+DO_LIB 	ap_dbclc(DNAME dupdbkma2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma2);
+DO_LIB_IF ctadatkm ap_dbclc(DNAME daddtkmapr,DCOMMAND ADD,DFILE tkm,DMAP maddtkm);
+
+SPCALCS(spcalupd1)
+DO_LIB 	ap_dbclc(DNAME dupdbkmu2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmu2);
+
+SPCALCS(spcaldel1)
+DO_LIB 	ap_dbclc(DNAME dupdbkmd2,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd2);
+
+POSTING(tmptrans)
+        PST_ADDCMD  	spcaladd1
+	PST_UPDCMD 	spcalupd1
+	PST_DELCMD 	spcaldel1
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cOPENksg
+	PMT_UPDALL_COND	cOPENksg
+	PMT_DEL_COND	cOPENksg
+
+

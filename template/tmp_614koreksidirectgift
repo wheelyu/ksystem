@@ -1,0 +1,76 @@
+LOCAL
+PGM_FIELDS
+	lenter_koreksidg	STRING		21
+
+IMAGE(tmptranst)
+/------------t--------------------t--------------t-----------------------\
+|i.Brg       |i.Nama              |i.Nominal     |                       |
+\------------.--------------------.--------------.-----------------------/
+
+IMAGE(tmptrans)
+|____________|____________________|___________.__|_______________________|
+
+FIELD(tmptrans)
+nhdkode			PROTECT		INPUTRI		1
+nhdket			PROTECT		INPUTRI		2
+nhdhrg1			PROTECT		INPUTRI		3
+lenter_koreksidg	NOCHANGE	INPUTRI		4
+
+DEFAULTS(tmptrans)
+lenter_koreksidg	INIT	"PROSES DIRECT GIFT"
+
+CALCS()
+ckoreksidg	ppmsts == "OPEN" && djoinnhdDG == 1 && djoinppdDG == 0
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND ckoreksidg
+SFL_TARGET
+	nhdbukidx	ppmnoll ldirectgift11
+	
+CALCS()
+cbonus		"BONUS"
+c1_tmp2		1
+c2_tmp2		2
+cB_tmp2		"B"
+cK_tmp2		"K"
+cM_tmp2		"M"
+cPL_tmp2	"PL"	
+cDGblm		nhddk != "K"
+
+MAP(maddppdDGkor)
+ppmnobuk	ppdnobuk	REPLACE
+gv_OPEN		ppdsts		REPLACE
+ppdbrg_1	ppdnomst2	REPLACE
+nhdkode		ppdbrg		REPLACE
+nhdkode2	ppdsat		REPLACE
+ppmcabpos	ppdgrup		REPLACE
+lcabstock	ppdcab		REPLACE
+ppmdvs		ppddvs		REPLACE
+ppmplg		ppdplg		REPLACE
+nhdnobbm	ppdnobbm	REPLACE
+cbonus		ppdkat		DO_CALC
+c1_tmp2		ppdjml		DO_CALC
+nhdhrg1		ppdhrg		REPLACE
+nhdhrg1		ppdtotfak	REPLACE
+gv_BR		ppdjasbrg	REPLACE
+c2_tmp2		ppdnourt	DO_CALC
+nhdnourt	ppdnourt2	REPLACE
+cB_tmp2		ppdkb		DO_CALC
+cK_tmp2		ppddk		DO_CALC
+cM_tmp2		ppdsisbrg	DO_CALC
+cPL_tmp2	ppdsup		DO_CALC
+ppmscr		ppdscr		REPLACE
+gv_dtpiu	ppddata		REPLACE
+
+MAP(mupdnhdDGkor)
+cK_tmp2		nhddk		DO_CALC
+
+SPCALCS(spkoreksidg)
+DO_LIB_IF cDGblm ap_dbclc(DNAME daddppdDGkor,DCOMMAND ADD,DFILE ppd,DMAP maddppdDGkor);
+DO_LIB_IF cDGblm ap_dbclc(DNAME dupdnhdDGkor,DCOMMAND UPDATE,DTARGET nhdprmidx nhdprm,DMAP mupdnhdDGkor);
+
+POSTING(tmptrans)
+PST_COMMAND spkoreksidg

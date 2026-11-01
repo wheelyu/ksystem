@@ -1,0 +1,252 @@
+LOCAL
+PGM_FIELDS
+ltldtydisTF1		STRING	21
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.NoBuk      :___________________||
+||t.apadikunj  :___  _____________ ||
+||t.bertemudg  :___________________||
+||t.hubdgkons  :___________________||
+||t.bertemudmn :___________________||
+||t.konspndhrmh:___  _____________ ||
+||t.konsmshkrj :___________________||
+||t.krjskr     :___  _____________ ||
+||t.SubPekerja :_____  ____________||
+||t.klaskons   :___  _____________ ||
+||t.PenggunaUnt:___________________||
+||t.sdhkunj    :___  _____________ ||
+||t.Kwitansi   :__________________ ||
+||t.Threatment :___________________||
+||t.tgljanjibyr:___________________||
+||t.kelayakkons:___  _____________ ||
+||t.StatusRumah:___  ______________||
+||t.indksfraud :___  ______________||
+||t.Keterangan :___________________||
+||spasi                            ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+tldnoll 	PROTECT			INPUTRI	1	/* Nomor Bukti */
+tldlok2         NOCHANGE SCROLL         INPUTRI 2       /* Sudah Kunjungan Kolektor */
+lkunjung        PROTECT                 INPUTRI 3 
+tldkat		ALLCAPS			INPUTRI	4	/* Bertemu Dengan */
+tldlok		ALLCAPS			INPUTRI 5	/* Hubungan Dengan Konsumen */
+tldplg		NOCHANGE       		INPUTRI 6	/* Bertemu Dimana */
+tlddk		NOCHANGE		INPUTRI 8	/* Konsumen Pindah Rumah */
+lkonspndrmh	PROTECT			INPUTRI	9	
+tldnobbm	NOCHANGE		INPUTRI	10	/* Konsumen Masih Bekerja */
+tldukrwrn	ALLCAPS			INPUTRI	11	/* Pekerjaan Sekarang */
+lpekerjaskrng	PROTECT			INPUTRI	12		
+tldgrup		ALLCAPS			INPUTRI	13	/* Sub Pekerjaan */
+lsubpekerja	PROTECT			INPUTRI	14
+ltldtydisTF1	ALLCAPS			INPUTRI	14	/* Klasifikasi Konsumen */
+lklaskons	PROTECT			INPUTRI	15
+tldgrup2	ALLCAPS			INPUTRI	16	/* Pengguna Unit */
+tldjasbrg	ALLCAPS			INPUTRI	17	/* Posisi Unit */
+lposisiunit	PROTECT			INPUTRI	18	
+tldsat		ALLCAPS			INPUTRI 21	/* Kwitansi */
+tldbisnis	ALLCAPS			INPUTRI	22	/* Treatment Kolektor */
+tldtglfak	NONE    {DD-MM-YYYY} 	INPUTRI 23	/* Tgl Janji Bayar */
+tldppdoto	NOCHANGE		INPUTRI	24	/* Kelayakan Konsumen */
+lkelayakan	PROTECT			INPUTRI	25
+tldbrdoto	ALLCAPS			INPUTRI	26	/* Status Rumah */
+lstsrumah	PROTECT			INPUTRI	27
+tldsts		NOCHANGE		INPUTRI	29	/* Indikasi Fraud */
+lsts		PROTECT			INPUTRI	29
+tldket		TEXTAREA 6              INPUTRI 30
+DEFAULTS(tmptranst)
+tldnourt         INIT                    1
+tlddata          INIT                    TASKFORCE
+lKLASIFIKASIKONS INIT			 KLASIFIKASIKONS
+lPOSISIUNIT             INIT    POSISIUNIT
+lPOTENSISELESAI         INIT    POTENSISELESAI
+lkwidata                INIT            DTKWI
+ltaskforce		INIT	TASKFORCE
+l1		INIT			1
+/*
+l7WHYPIUT               INIT    7WHYPIUT
+lTHBL                   INIT    {cthbls}
+*/
+tldsat		DFALT_SCAN_BLANKS	SESUAI
+					TIDAK_SESUAI
+
+tldlok2		 DFALT_SCAN_BLANKS	1 "YA"
+					2 "TIDAK"
+
+tldplg          DFALT_SCAN_BLANKS       RUMAH
+                                        TEMPAT_KERJA
+                                        DINAS
+
+tlddk	       DFALT_SCAN_BLANKS       1 "TIDAK PINDAH"
+                                        2 "PINDAH(TAU ALMT)"    /* PINDAH (TAHU ALAMAT BARU)            */
+                                        3 "PINDAH(T-TAU ALMT)"  /* PINDAH (TIDAK TAHU ALAMAT BARU)      */
+
+tldnobbm        DFALT_SCAN_BLANKS       KERJA_SPA "SESUAI PENGAJUAN AWAL"
+                                        KERJA_SKS "SESUAI KUNJUNGAN SEBELUMNYA"
+                                        PINDAH_KERJA
+                                        TIDAK_KERJA
+
+tldbisnis	DFALT_SCAN_BLANKS	TDK_ADA
+					SOMASI
+					SPJB
+					TARIK
+					RESTRUKTUR
+
+tldppdoto       DFALT_SCAN_BLANKS       1 "TIDAK LAYAK KREDIT"
+                                        2 "LAYAK KREDIT"
+
+tldsts		DFALT_SCAN_BLANKS       Y "YA"
+                                        T "TIDAK"
+
+tldjasbrg	DFALT_SCAN_BLANKS	S "SUDAH"
+					B "BELUM"
+
+
+
+CALCS()
+cYAx		"YA"
+cTDKx		"TIDAK"
+cisi1x		tldlok2 == "1"
+cisi2x          tldlok2 == "2"
+cmasihkerjax    tldnobbm =="PINDAH_KERJA" || tldnobbm =="KERJA_SKS" || tldnobbm =="KERJA_SPA"
+/*cklasifikasi    tldtydis =="100 " || tldtydis =="101 " || tldtydis =="300 " || tldtydis =="301 "*/
+cnotbayarx      tldlok2=="1 " /*&& tldbl!="100 " && tldbl!="200 " && tldbl!="201 " && svistr35!="28 " && svistr35!="29 " */
+cpin1sx         "TIDAK PINDAH"
+cpin2sx         "PINDAH (TAHU ALAMAT BARU)"
+cpin3sx         "PINDAH (TIDAK TAHU ALAMAT BARU)"
+cpin1x          tlddk=="1 "
+cpin2x          tlddk=="2 "
+cpin3x          tlddk=="3 "
+cklk1sx         "TIDAK LAYAK KREDIT"
+cklk2sx         "LAYAK KREDIT"
+cklk1x		tldppdoto == "1"
+cklk2x          tldppdoto == "2"
+cpindahx        tlddk == "2 "
+cisi23x		tldlok2 == "2" || tldlok2 == "3"
+cskip_kerjax    tldnobbm == "TIDAK_KERJA"
+ctdkpindahrmhx  tldbrdoto=="1 " || tldbrdoto=="3 "
+cnotklasifikasix tldtydis=="999 " || tldtydis=="200 " || tldlok2!="1 "
+cjikabayarx      tldbl=="100 " || tldbl=="200 " /*|| svistr35=="28 " || svistr35=="29 " || svistr35=="39 " || svistr35=="40 "*/
+cstsyx		tldsts=="Y"
+cststdkx	tldsts=="T"
+cBELUMx		"BELUM"
+cSUDAHx		"SUDAH"
+cblmx		tldjasbrg == "B"
+csdhx		tldjasbrg == "S"
+
+EDITS(tmptranst)
+e.Mandatory     tldlok2         MANDATORY
+e.Mandatory     tldkat          MANDATORY_IF cisi1
+e.Mandatory	tldlok		MANDATORY_IF cisi1
+e.Mandatory     tldplg          MANDATORY_IF cisi1
+e.Mandatory	tldnobbm	MANDATORY_IF cisi1
+e.Mandatory	tlddk		MANDATORY_IF cisi1
+e.Mandatory	tldukrwrn	MANDATORY_IF cmasihkerjax
+e.Mandatory     tldgrup         MANDATORY_IF cmasihkerjax
+e.Mandatory     ltldtydisTF1    MANDATORY_IF cisi1
+e.Mandatory     tldgrup2        MANDATORY_IF cisi1
+e.Mandatory     tldjasbrg       MANDATORY
+e.Mandatory     tldsat          MANDATORY_IF cisi1
+e.Mandatory 	tldbisnis	MANDATORY_IF cisi1
+e.Mandatory     tldtglfak       MANDATORY_IF cnotbayarx
+e.Mandatory     tldppdoto       MANDATORY_IF cisi1
+e.Mandatory     tldbrdoto       MANDATORY_IF cpindahx
+e.Mandatory	tldsts		MANDATORY_IF cisi1
+e.Mandatory	tldket		MANDATORY_IF cisi1
+e.Validatenobuk tldnoll         VALIDATE pikdatbukidx mmap7 0 {Pgv_dtpiu}
+e.validate      tldgrup         VALIDATE tbtdattypkod mtbt7     stbt    {Pgv_dttabel} {Pgv_dttabel21} {Pgv_infokredit} {Pgv_pekerjaan21} {Ptldukrwrn}     /* Validate Sub Pekerjaan               */
+
+e.validate      tldukrwrn       VALIDATE tbddatkodidx mtbd1_1     stbd    {Pgv_dttabel} {Pgv_infokredit} {Pgv_pekerjaan21} /* Validate Pekerjaan */
+e.validate      ltldtydisTF1    VALIDATE tbddatkodidx mtbd2_1     stbd    {Pgv_dttabel} {Pgv_kunjungan} {PlKLASIFIKASIKONS} /* Validate klasifikasi konsumen */
+e.validate      tldgrup2        VALIDATE tbddatkodidx mtbd4_1     stbd    {Pgv_dttabel} {Pgv_kunjungan} {Pgv_pemakai} /* Validate pemakai unit */
+e.validate      tldbrdoto    VALIDATE tbddatkodidx mtbd7_1     stbd    {Pgv_dttabel} {Pgv_personal} {Pgv_stsrumah} /* Validate status rumah */
+
+MAP(mtbd7_1)
+tbdkode         tldbrdoto       REPLACE
+tbdket		lstsrumah	REPLACE
+
+
+MAP(mtbd4_1)
+tbdkode         tldgrup2         REPLACE
+
+MAP(mtbd2_1)
+tbdkode		ltldtydisTF1	REPLACE
+tbdkode         tldtydis        REPLACE
+ltldtydisTF1	tldtydis	REPLACE
+tldtydis	ltldtydisTF1	REPLACE
+
+tbdket          lklaskons       REPLACE
+
+MAP(mtbd1_1)
+tbdkode         tldukrwrn       REPLACE
+tbdket          lpekerjaskrng   REPLACE
+
+MAP(mmap7)
+cBELUMx		lposisiunit	DO_CALC_IF cblmx
+cSUDAHx		lposisiunit	DO_CALC_IF csdhx
+cYAx            lkunjung        DO_CALC_IF cisi1x
+cTDKx           lkunjung        DO_CALC_IF cisi2x
+cpin1sx		lkonspndrmh	DO_CALC_IF cpin1x
+cpin2sx		lkonspndrmh	DO_CALC_IF cpin2x
+cpin3sx		lkonspndrmh	DO_CALC_IF cpin3x	
+cklk1sx         lkelayakan      DO_CALC_IF cklk1x
+cklk2sx         lkelayakan      DO_CALC_IF cklk2x
+cYAx            lsts            DO_CALC_IF cstsyx
+cTDKx           lsts            DO_CALC_IF cststdkx
+
+
+MAP(mtbt7)
+tbtkode         tldgrup         REPLACE
+tbtket		lsubpekerja	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldkat        DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldlok	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldplg	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tlddk		DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldnobbm	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldukrwrn	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldgrup	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=ltldtydisTF1	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldgrup2	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldjasbrg	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldsat	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldbisnis	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldtglfak	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldppdoto	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldbrdoto	DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tlddk		DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldsts        DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cisi23x
+BEFORE_INPUT    cur_field=tldukrwrn     DO_SKIP_IF cskip_kerjax
+BEFORE_INPUT    cur_field=tldgrup	DO_SKIP_IF cskip_kerjax
+BEFORE_INPUT    cur_field=tldbrdoto     DO_SKIP_IF ctdkpindahrmhx
+BEFORE_INPUT    cur_field=tlddk         DO_SKIP_IF cnotklasifikasix
+BEFORE_INPUT    cur_field=tldtglfak     DO_SKIP_IF cjikabayarx
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_UPDOWN UP
+SFL_SORT_BY_FIELD tldnourt
+SFL_TARGET
+tldbukurtidx tlmnobuk l1
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmnobuk        tldbrg          REPLACE
+tlmdata         tlddata         REPLACE
+tlmnoasal       tldnoll         REPLACE
+l1		tldnourt        REPLACE
+lTASKFORCE	tlddata         REPLACE
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0       
+        PMT_UPDALL_COND c0       
+        PMT_DEL_COND    c0          
+

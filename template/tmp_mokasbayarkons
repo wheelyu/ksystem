@@ -1,0 +1,227 @@
+
+LOCAL
+PGM_FIELDS
+lSYSTIME2	TIME	4
+/*
+lbkdurt		INT2		2
+*/
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------------------------------------\|
+||                         t.DETAIL PEMBAYARAN KONSUMEN                                                ||
+|\-----------------------------------------------------------------------------------------------------/|
+| _________________   ___________________                                                               |
+|/-----------------------------------------------------------------------------------------------------\|
+||/----------------------------------------------------------\/-------s.UPLOAD------------------------\||
+|||t.Cabang      : ________ ____________________             ||                                       |||
+|||t.qamit11     : _____________________________             ||                                       |||
+|||t.qadis9      : _____________________________             ||                                       |||
+|||t.qadis12     : _____________________________             ||                                       |||
+|||t.qadis10     : ________ ____________________             ||                                       |||
+|||t.NominalTrf  : _____________________________             ||                                       |||
+|||t.tgljamtf    : ________ ____________________             ||                                       |||
+|||spasi                                                     ||                                       |||
+|||t.useruplaod  : ________ ____________________             ||                                       |||
+|||t.tgljamjwb   : ________ ____________________             ||                                       |||
+|||spasi                                                     ||                                       |||
+|||t.ADHHO       : ________ ____________________             ||                                       |||
+|||t.Acctacc     : _____________________________             |\---------------------------------------/||
+|||t.tgljamjwb   : ________ ____________________             |t.StsUpl      : _________________        ||
+|||t.Keterangan                                              |                                         ||  
+|||__________________________________________________________|                                         ||
+|||spasi                                                     |                                         ||
+|||spasi                                                     |                                         ||
+||\----------------------------------------------------------/                                         ||
+|\-----------------------------------------------------------------------------------------------------/|
+\-------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+bkdnobuk        PROTECT SCROLL       INPUTRI         1
+bkdbukll        PROTECT SCROLL       INPUTRI         6
+bkdcab          PROTECT SCROLL       INPUTRI         2
+lnamacab2       PROTECT SCROLL       INPUTRI         4
+bkdcabat        PROTECT SCROLL       INPUTRI         5
+bkddvs          PROTECT SCROLL       INPUTRI         6
+bkdgrup2        PROTECT SCROLL       INPUTRI         7
+bkdgrup         PROTECT SCROLL       INPUTRI         8
+bkdnobbm        PROTECT SCROLL       INPUTRI         9
+bkdjml          NUMERIC SCROLL       INPUTRI         10
+bkdtgl          ALLCAPS {DD-MM-YYYY} INPUTRI         11
+bkdmua          NONE {99:99}         INPUTRI         12
+bkdbrg          PROTECT SCROLL       INPUTRI         13
+bkdnama         PROTECT SCROLL       INPUTRI         14
+bkdtglbuk       PROTECT {DD-MM-YYYY} INPUTRI         15
+ljamupload      PROTECT NONE {99:99} INPUTRI         16
+bkdkode         PROTECT SCROLL       INPUTRI         17
+lnamaadhho      PROTECT SCROLL       INPUTRI         18
+bkdtype         PROTECT SCROLL       INPUTRI         19
+bkdtglgj        PROTECT {DD-MM-YYYY} INPUTRI         20
+ljamacc         PROTECT NONE {99:99} INPUTRI         21
+luploadoke      PROTECT SCROLL       INPUTRI         22
+bkdket          PROTECT              BIG             23
+
+
+CALCS()
+cADHHO               (bkmsts == "CLS3" && (g_grpnam=="ADHJR" || g_grpnam== "GM"|| g_grpnam== "RI" || g_grpnam == "RASSPV") || bkmsts == "CLS3") 
+cCLS3                bkmsts == "CLS3"
+cbukanadhho          bkmsts == "CLS3" && (g_grpnam=="ADH" || g_grpnam == "RI")
+cTACC                bkdtype == "TACC"
+crekbca         "489.030.7073"
+crekbni         "002.904.6089"
+crekman         "135.000.573.9055"
+crekbri         "0083.01.001054.305"
+
+cbca            bkdgrup  == "BCA"
+cbni            bkdgrup  == "BNI"
+cman            bkdgrup  == "MANDIRI"
+cbri            bkdgrup  == "BRI"
+cMOKASJUAL      "MOKASJUAL"
+creksama        bkdjml >= bkmtotal
+cACC            lbkdtype == "ACC" 
+cTACC4          (bkdtype == "TACC" && bkdurt == 0 && g_curcmd == 2)
+cTACC5          (bkdtype == "TACC" && g_curcmd == 2)
+cTACC3          (bkdtype == "TACC" && bkdurt > 0 && g_curcmd == 2) 
+curut2          lurut + 1
+/*clbh2           bkdurt == 2*/
+ccab            bkdcab == bkmcab 
+cRI             g_grpnam == "RI"
+
+
+EDITS(tmptranst)
+e.isi_nmer_rek_pngrm bkdbukll             MANDATORY
+e.isi_nmer_rek_nsc   bkdgrup              MANDATORY
+e.isi_cab            bkdcab               MANDATORY
+e.isi_bank           bkdcabat             MANDATORY
+e.isi_nomerRekening  bkdnobbm             MANDATORY
+e.isi_niminal        bkdjml               MANDATORY
+e.isi_tgl            bkdtgl               MANDATORY
+e.isinamapemilikrek  bkdgrup2             MANDATORY                
+e.isinamabanknsc     bkdgrup              MANDATORY                
+e.isi_jam            bkdmua               MANDATORY
+e.isi_acc            bkdtype              MANDATORY_IF cCLS3 
+e.isi_alasantacc     bkdket               MANDATORY_IF cTACC 
+e.isi_cabang         bkdcab               VALIDATE cabkodidx mcab2 scabm4w
+e.nip_upload         bkdbrg               VALIDATE psmkodidx mpsm33  
+e.nip_ADHHO          bkdkode              VALIDATE psmkodidx mpsm2
+
+
+DEFAULTS(tmptranst)
+bkdtype              DFALT_SCAN                BLANKS
+                                               ACC
+                                               TACC
+lSYSTIME2			INIT	       SYSTIME
+IF cCLS3             bkdkode    INIT           {g_usrkode}
+IF cCLS3             bkdkode    INIT_UPDATE    {g_usrkode}
+IF cCLS3             bkdtglgj   INIT           {g_tgltrn}
+IF cCLS3             bkdtglgj   INIT_UPDATE    {g_tgltrn}
+IF cCLS3             ljamacc    INIT            SYSTIME
+IF cCLS3             ljamacc    INIT_UPDATE     SYSTIME
+bkdgrup              DFALT_SCAN                 BLANKS BCA BNI BRI MANDIRI
+
+
+MAP(mpsm2)
+psmkode              bkdkode              REPLACE
+psmnama              lnamaadhho           REPLACE
+
+
+MAP(mpsm33)
+psmkode              bkdbrg               REPLACE
+psmnama              bkdnama              REPLACE
+
+
+MAP(mcab2)
+cabkode        bkdcab        REPLACE
+cabnama        lnamacab2     REPLACE
+bkddf1	       ljamupload    REPLACE
+bkddep         luploadoke    REPLACE
+bkddf2         ljamacc       REPLACE
+
+MAP(misifl)
+bkmnobuk        bkdbukll        REPLACE
+cMOKASJUAL      bkddata         DO_CALC
+
+
+MAP(mrek)
+crekbca         bkdnobbm        DO_CALC_IF cbca
+crekbni         bkdnobbm        DO_CALC_IF cbni
+crekman         bkdnobbm        DO_CALC_IF cman
+crekbri         bkdnobbm        DO_CALC_IF cbri
+
+
+MAP(murt)
+c1              lurut  	        DO_CALC_IF cTACC4
+lurut		bkdurt		REPLACE_IF cTACC5
+curut2          lurut           DO_CALC_IF cTACC3   
+
+
+HOOKS(tmptranst)
+AFTER_INPUT      cur_keybd=EN      	    DO_MAP SHOW murt
+BEFORE_INPUT     cur_field=bkdcab           DO_MAP SHOW misifl
+BEFORE_INPUT     cur_field=bkdcab           DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdbukll         DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdgrup          DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdcabat         DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdgrup2         DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdnobbm         DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdjml           DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdtgl           DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdmua           DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdbrg           DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdtglbuk        DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdtglbuk        DO_SKIP_IF cCLS3  
+BEFORE_INPUT     cur_field=bkdtype          DO_SKIP_IF cbukanadhho
+BEFORE_INPUT     cur_field=bkdket           DO_SKIP_IF cACC       
+BEFORE_INPUT     cur_field=bkdket           DO_SKIP_IF cbukanadhho
+AFTER_INPUT      cur_field=bkdgrup          DO_MAP SHOW mrek
+AFTER_INPUT      cur_field=bkdjml           DO_MAP SHOW
+                 IF creksama mdum
+                 ELSE HKCURSOR STAY
+                 HKMSG Nominal Transfer Kurang dari Harga Final
+
+/*AFTER_INPUT      cur_field=bkdtype          DO_MAP SHOW
+                 IF clbh2   mdum
+                 ELSE HKCURSOR STAY
+                 HKMSG Anda Sudah TACC 2X                       
+*/
+
+AFTER_INPUT      cur_field=bkdcab           DO_MAP SHOW
+                 IF ccab    mdum
+                 ELSE HKCURSOR STAY
+                 HKMSG Cabang tdk Sama Dengan Cabang Master
+
+
+
+
+
+MAP(mupdfoto2)
+cok             luploadoke      DO_CALC
+g_tgltrn        bkdtglbuk       REPLACE
+lSYSTIME2       ljamupload      REPLACE
+ljamupload      bkddf1          REPLACE
+luploadoke      bkddep          REPLACE
+ljamupload      bkddf1          REPLACE
+g_usrkode       bkdbrg          REPLACE
+
+
+DBCALCS(dupdfoto1)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      bkdprmidx bkdprm
+        DBC_MAP         mupdfoto2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD bkdnobuk
+SFL_UPLFLD_DBCALCS dupdfoto1
+SFL_UPL_DELCOND chapusfoto
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+        bkdbukllidx  bkmnobuk
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0         
+  PMT_UPDALL_COND cRI          
+  PMT_DEL_COND  c0
+
+

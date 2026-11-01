@@ -1,0 +1,59 @@
+IMAGE(tmptranst)
+/------------------------------------------\
+/------------------------------------------\
+| t.TipePenanganan                         |
+| spasi		                           |
+|  t.TglInput         :__________________  |
+|  t.NipPengaju       :__________________  |
+|  t.Nama             :__________________  |
+|  t.TipePenanganan   :_________________   |
+|  t.Polres           :_________________   |
+|  t.Polres           :__________________  |
+\------------------------------------------/
+\------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdtgl                  PROTECT {DD-MM-YY}      INPUTRI 1
+tkdtmp1                 PROTECT                 INPUTRI 2
+lnamapengaju            PROTECT                 INPUTRI 3
+tkdnoll                 NOCHANGE                INPUTRI 4
+tkdjwbstr1              NOCHANGE                INPUTRI 5
+lketpolres              PROTECT                 INPUTRI 6
+
+DEFAULTS(tmptranst)
+tkdtgl          INIT_ADD                        {g_tgltrn}
+tkdtmp1         INIT_ADD                        {g_usrkode}
+tkdnoll         DFALT_SCAN_BLANKS               PIDANA "PIDANA" 
+						PERDATA "PERDATA"
+						GUGATAN "GUGATAN SEDERHANA"
+
+CALCS()
+cTipePenanganan		tkdnoll == "PIDANA" || tkdnoll == "PERDATA" || tkdnoll == "GUGATAN" 
+cpolres 		tkdnoll == "PIDANA"
+
+MAP(mnipadd1)
+psinama         lnamapengaju    REPLACE
+
+MAP(mpolres)
+tbdkode		tkdjwbstr1	REPLACE
+tbdket		lketpolres	REPLACE
+
+EDITS(tmptranst)
+e.ValidatePsi   	tkdtmp1         VALIDATE psikodidx mnipadd1 0
+e.Validatepolres  	tkdjwbstr1   	VALIDATE tbddatkodidx   mpolres stbd   {Pgv_dttabel} {Pllegal} {Plpolres}
+e.Mandatoryplres	tkdjwbstr1	MANDATORY_IF cpolres
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cnew
+SFL_SELECT	cTipePenanganan
+SFL_TARGET
+tkddatbukll   tlmdata tlmnobuk
+SFL_MAP
+tlmnobuk    tkdnobuk    REPLACE
+tlmsts      tkdsisstr   REPLACE
+tlmdata     tkddata	REPLACE
+
+

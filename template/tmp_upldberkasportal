@@ -1,0 +1,78 @@
+LOCAL
+PGM_FIELDS
+
+luplok2		STRING	11
+lenter2		STRING	21
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||i.Upload	  : ______	    ||
+||i.Tgl           : _________       ||
+||t.JmlKlaim	  : ______	    ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT          INPUTRI 1
+aktdk		PROTECT		 INPUTRI 2
+akttgl          PROTECT 	 INPUTRI 3
+aktjml		NUMERIC		 INPUTRI 4
+lenter2		NOCHANGE	 INPUTRI 5
+luplok2		TOMBOL		 INPUTRI 8
+
+EDIT(tmptranst)
+e.MandatoryJml	aktjml	MANDATORY
+
+DEFAULTS(tmptranst)
+lPORTAL		INIT		PORTAL
+lenter2		INIT		ENTER
+luplok2		INIT		UPLOAD_OK
+
+CALCS()
+cdjoinaktkpb2   (tkmsts == "OPEN" ||tkmsts == "INPG" || tkmsts == "CLSD" || tkmsts == "RINP") && tkmkode == "AD"
+cY2		"Y"
+cfotobaru2	akttgl == g_tgltrn
+
+MAP(mupdaktportal)
+g_tgltrn	akttgl	REPLACE
+cY2		aktdk	DO_CALC_IF cfotobaru2
+
+DBCALCS(dupdfoto1)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktportal
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdjoinaktkpb2
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tkmnobuk akttype
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD_DBCALCS dupdfoto1
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+aktkodtypidx       tkmnobuk tkmdata     lPORTAL
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c1
+PMT_DEL_COND c0

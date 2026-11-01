@@ -1,0 +1,49 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+   t.Acc        : __________
+   t.Nip        : __________
+   t.Nama       : ____________________
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1        NOCHANGE        INPUTRI 1
+tkdstr1           PROTECT         INPUTRI 2
+tkdstr2           PROTECT         INPUTRI 3
+
+
+DEFAULTS(tmptranst)
+tkdjwbstr1        DFALT_SCAN BLANKS       ACC
+                                        TACC
+tkdstr1           INIT_UPDATE   {g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory     tkdjwbstr1                MANDATORY
+e.Validatepsi   tkdstr1 VALIDATE        psikodidx mpsiam 0
+
+MAP(mpsiam)
+psikode	tkdstr1	REPLACE
+psinama tkdstr2 REPLACE
+
+CALCS()
+clihatmktg	djointkdacc3502==1 && laccsoh=="ACC" && (tlmdari=="BL21" || tlmdari=="BL22" || tlmdari=="BL23" || tlmdari=="BL24")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND clihatmktg
+SFL_TARGET
+        tkddatbukll   lUSRACC tlmnobuk lnoll1  
+
+CALCS()
+cammktg 	(((djoinsgmamhmc==1 || djoinsgmamhmcm2w==1) && lnipamhmc == g_usrkode) || (djoinsgmkawil==1 && lnipkawil==g_usrkode) || 
+		(djoinsgmamm2w==1  && lnipamm2w == g_usrkode) || (djoinsgmcreditam==1 && lnipcreditam == g_usrkode) || 
+		(djoinsgmcreditspv && lnipcreditspv == g_usrkode) || (djoinsgmamm2w4w==1  && lnipamm2w4w == g_usrkode)
+		|| g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="IT2") && tlmdari != "BL26" && tkdjwbstr2==BLANKS && 
+		tlmstsapr!="IN" && tlmstsapr!="OK" && tlmsts=="OPEN"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND cammktg
+        PMT_DEL_COND    c0
+

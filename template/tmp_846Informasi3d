@@ -1,0 +1,188 @@
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/----------------------------------------------\|
+|| t.Tanggal    : _________            		||
+|| t.Hari	: _________	       		||
+|| t.KodeAHASS  : _____________        		||
+|| t.KelasAHASS : _________	       		||
+|| t.Gedung     : _____ _______________________ ||
+|| t.KelasCbg   : _____________        		||
+|| t.Kaca/Non   : __________       		||
+|| t.MainDealer : _____________        		||
+|| t.DCOOBisnis : _____________        		||
+|| t.DCOOArea   : _____________        		||
+|| t.Kawil      : _____________        		||
+|| t.HeadSales  : _____________        		||
+|| t.HeadAHASS  : _____________        		||
+|| t.SPVAHASS   : _____________        		||
+|| t.HeadGA     : _____________        		||
+|\----------------------------------------------/|
+\------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svitgl1         PROTECT                 INPUTRI 1
+lhari		PROTECT			INPUTRI 1
+sviket2         ALLCAPS                 INPUTRI 2	/*kode ahass*/
+sviket3         ALLCAPS                 INPUTRI 3	/*kelas ahass*/
+svistr7	        ALLCAPS                 INPUTRI 4	/*gedung*/
+lnamagedung     PROTECT                 INPUTRI 4	
+sviket          ALLCAPS                 INPUTRI 5	/*kelas cbg*/
+svistr2         ALLCAPS SCROLL          INPUTRI 6	/*kaca*/
+svistr6         ALLCAPS                 INPUTRI 7	/*main dealer*/
+svitblkode      PROTECT                 INPUTRI 8	/*dcoo bisnis*/
+svistr8         ALLCAPS                 INPUTRI 9	/*dcoo area*/
+svistr9         PROTECT                 INPUTRI 10	/*kawil*/
+svistr10        ALLCAPS                 INPUTRI 11	/*head sales*/
+svikode         PROTECT                 INPUTRI 12	/*head ahass*/
+svinama         PROTECT	         	INPUTRI 13	/*spv ahass */
+svidtmkode      PROTECT		 	INPUTRI 14	/*head GA*/
+
+CALCS()
+cthbl           THBLS(g_tgltrn)
+cSENIN          "SENIN"
+cSELASA         "SELASA"
+cRABU           "RABU"
+cKAMIS          "KAMIS"
+cJUMAT          "JUMAT"
+cSABTU          "SABTU"
+cMINGGU         "MINGGU"
+cjika1          djointgm3d==1 && ltgmke==1
+cjika2          djointgm3d==1 && ltgmke==2
+cjika3          djointgm3d==1 && ltgmke==3
+cjika4          djointgm3d==1 && ltgmke==4
+cjika5          djointgm3d==1 && ltgmke==5
+cjika6          djointgm3d==1 && ltgmke==6
+cjika7          djointgm3d==1 && ltgmke==0
+cjika1a         djointgma3d==1 && ltgmke==1
+cjika2a         djointgma3d==1 && ltgmke==2
+cjika3a         djointgma3d==1 && ltgmke==3
+cjika4a         djointgma3d==1 && ltgmke==4
+cjika5a         djointgma3d==1 && ltgmke==5
+cjika6a         djointgma3d==1 && ltgmke==6
+cjika7a         djointgma3d==1 && ltgmke==0
+
+DEFAULTS(tmptranst)
+svistr2		DFALT_SCAN_BLANKS	KACA
+					NON_KACA
+svitgl1		INIT			{g_tgltrn}
+lthbl21         INIT            	{cthbl}
+lh2             INIT           	 	H2
+ldcoohmc        INIT            	DCOOHMC
+lkawil          INIT            	KAWIL
+lheadhass       INIT            	AHASSHEAD
+lspvahass       INIT            	AHASSSPV
+lgahead         INIT            	GAHEAD
+sviket3         DFALT_SCAN_BLANKS       SMALL
+                                	MEDIUM
+                               		LARGE
+
+EDITS(tmptranst)
+t.ValidateTgl    	svitgl1 	VALIDATE_DUP tgmdattglidx mtgm3d 0 {Pgv_dttgl}
+t.ValidateGedung   	svistr7         VALIDATE tbddatkodidx mtbdgd stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_gedung}
+
+MAP(mtbdgd)
+tbdkode		svistr7		REPLACE
+tbdket		lnamagedung	REPLACE
+
+MAP(mtgm3d)
+tgmtgl          psdtgl1         REPLACE
+tgmke           ltgmke          REPLACE
+lblanks		lhari		REPLACE
+cSENIN          lhari           DO_CALC_IF cjika1
+cSELASA         lhari           DO_CALC_IF cjika2
+cRABU           lhari           DO_CALC_IF cjika3
+cKAMIS          lhari           DO_CALC_IF cjika4
+cJUMAT          lhari           DO_CALC_IF cjika5
+cSABTU          lhari           DO_CALC_IF cjika6
+cMINGGU         lhari           DO_CALC_IF cjika7
+
+MAP(mtanggal3d)
+cSENIN          lhari_ini               DO_CALC_IF cjika1a
+cSELASA         lhari_ini               DO_CALC_IF cjika2a
+cRABU           lhari_ini               DO_CALC_IF cjika3a
+cKAMIS          lhari_ini               DO_CALC_IF cjika4a
+cJUMAT          lhari_ini               DO_CALC_IF cjika5a
+cSABTU          lhari_ini               DO_CALC_IF cjika6a
+cMINGGU         lhari_ini               DO_CALC_IF cjika7a
+
+MAP(mjoinsgmdcooh)
+sgmstr5         lniphmc        REPLACE
+
+
+DBCALCS(djoinsgmdcooh)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 ldcoohmc lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmdcooh
+
+MAP(mjoinsgmkawil)
+sgmstr5          lnipkawil       REPLACE
+
+DBCALCS(djoinsgmkawil)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lkawil lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmkawil
+
+MAP(mjoinsgmheadahass)
+sgmstr5          lnipheadahass       REPLACE
+
+DBCALCS(djoisgmheadahass)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lheadhass lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmheadahass
+
+MAP(mjoinsgmspvahass)
+sgmstr5          lnipSPVahass       REPLACE
+
+DBCALCS(djoisgmspvahass)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lspvahass lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmspvahass
+
+
+MAP(mjoinsgmgahead)
+sgmstr5          lnipGAhead       REPLACE
+
+DBCALCS(djoisgmgahead)
+DBC_COMMAND     JOIN
+DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lh2 lgahead lthbl21 tlmcab tlmcab
+DBC_MAP         mjoinsgmgahead
+
+CALCS()
+cdcoohmc        djoinsgmdcooh == 1
+ckawil          djoinsgmkawil == 1
+cheadahass      djoisgmheadahass == 1
+cspvahass       djoisgmspvahass == 1
+cgahead         djoisgmgahead == 1
+
+MAP(maddtldahass)
+lniphmc         svitblkode      REPLACE_IF cdcoohmc
+lnipkawil       svistr9         REPLACE_IF ckawil
+lnipheadahass   svikode         REPLACE_IF cheadahass
+lnipSPVahass    svinama         REPLACE_IF cspvahass
+lnipGAhead      svidtmkode      REPLACE_IF cgahead
+DEBUG           ldum    ldum    REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviket3       DO_MAP SHOW mtanggal3d
+AFTER_INPUT     cur_keybd=EN    	DO_MAP SHOW maddtldahass
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_TARGET
+        svidatbuktyp  linfonosnew tlmnobuk linfonosnew
+SFL_MAP
+linfonosnew        svidata
+tlmnobuk           svinobuk
+linfonosnew        svitype
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cOPEN
+PMT_UPDALL_COND cOPEN
+PMT_DEL_COND    cIT
+
+

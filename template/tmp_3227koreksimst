@@ -1,0 +1,114 @@
+IMAGE(tmptranst)
+/------------------------------\
+|t.Tipe		_______________|
+|t.NoBuk	_______________|
+|t.Cab		_______________|
+|t.Dvs		_______________|
+|t.NoRek	_______________|
+|t.DK		_______________|
+|t.Nominal	__________.____|
+|t.Ket		_______________|
+|     ________  _______________|
+\------------------------------/
+				
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg		NOCHANGE	INPUTRI	1
+tldnobuk	PROTECT		INPUTRI	2
+tldcab		ALLCAPS		INPUTRI	3
+tlddvs		ALLCAPS		INPUTRI	4
+tldnobbm	ALLCAPS		INPUTRI	5
+tlddk		NOCHANGE	INPUTRI	6
+tldjml		NUMERIC		INPUTRI	7
+tldket		NONE		INPUTRI	98
+tldkat		PROTECT		INPUTRI	99
+tldtglfak	PROTECT {DD-MM-YYYY}	INPUTRI	100
+
+CALCS()
+ctmp3227kormst		tmpkode=="3227KORMST"
+cdatakor1		tlddata=="KOR3227" && tldnourt==1
+ckor1hlass		tldnobbm=="241.21.1001" && tlddk=="D"
+cbtlsisahl		ppssisa - tldjml
+cKORJURNAL		tldbrg == "KOREKSIJURNALMST"
+cKORNILAI		tldbrg == "KOREKSINILAIPRTG" || tldbrg == "KOREKSINILAICNTN"
+cKORNILPRTG		tldbrg == "KOREKSINILAIPRTG"
+cKORNILCNTN		tldbrg == "KOREKSINILAICNTN"
+
+DEFAULTS(tmptranst)
+tldbrg		DFALT_SCAN_BLANKS	KOREKSIJURNALMST
+					KOREKSINILAIPRTG
+					KOREKSINILAICNTN
+tlddk		DFALT_LIST		D K
+
+EDITS(tmptranst)
+e.Mandatory	tldbrg	MANDATORY
+e.Mandatory	tldcab	MANDATORY_IF cKORJURNAL
+e.Mandatory	tlddvs	MANDATORY_IF cKORJURNAL
+e.Mandatory	tldnobbm MANDATORY_IF cKORJURNAL
+e.Mandatory	tlddk	MANDATORY_IF cKORJURNAL
+e.Mandatory	tldjml	MANDATORY
+e.Mandatory	tldket	MANDATORY
+e.ValidateCabkor1 tldcab VALIDATE cabkodidx mcabkor1 scab
+e.ValidateDvskor1 tlddvs VALIDATE dtmdtkodidx mdtmkor1 sdtm {Pgv_bisnis}
+e.ValidateBbgkor1 tldnobbm VALIDATE bbgnoidx mbbgkor1 sbbg
+
+MAP(mcabkor1)
+cabkode		tldcab		REPLACE
+
+MAP(mdtmkor1)
+dtmkode		tlddvs		REPLACE
+dtmcab		tldbisnis	REPLACE
+
+MAP(mbbgkor1)
+bbgno		tldnobbm	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldcab	DO_SKIP_IF cKORNILAI
+BEFORE_INPUT	cur_field=tlddvs	DO_SKIP_IF cKORNILAI
+BEFORE_INPUT	cur_field=tldnobbm	DO_SKIP_IF cKORNILAI
+BEFORE_INPUT	cur_field=tlddk		DO_SKIP_IF cKORNILAI
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctmp3227kormst
+SFL_SELECT cdatakor1
+SFL_TARGET
+        tldbukurtidx	ppsnobuk l1
+
+SFL_MAP
+lkor3227	tlddata		REPLACE
+ppsnobuk	tldnobuk	REPLACE
+ppsnobuk	tldnoll		REPLACE
+l1		tldnourt	REPLACE
+g_tgltrn	tldtglfak	REPLACE
+gv_CLSD		tldsts		REPLACE
+g_usrkode	tldkat		REPLACE
+
+MAP(mupdppskor1)
+cbtlsisahl	ppssisa		DO_CALC
+
+MAP(mupdppskor2)
+tldjml		ppsdf1		REPLACE_IF cKORNILPRTG
+tldjml		ppsdf2		REPLACE_IF cKORNILCNTN
+cbayargd        ppstotal	DO_CALC_IF cProperty
+cbayarstok      ppstotal	DO_CALC_IF cStok
+cbayarmobil     ppstotal	DO_CALC_IF cMobil
+cbayarcargo     ppstotal	DO_CALC_IF cCargo
+cbayaradjust    ppstotal	DO_CALC_IF cStokAJ
+
+SPCALCS(spcaladdkor1)
+DO_LIB_IF cKORJURNAL ap_adjrn(l1,tldnobbm,ppsnobuk,tldket,tlddk,lKR,tldjml,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor1hlass ap_dbclc(DNAME dupdppskor1,DCOMMAND UPDATE,DTARGET ppsprmidx ppsprm,DMAP mupdppskor1);
+DO_LIB_IF cKORNILAI ap_dbclc(DNAME dupdppskor2,DCOMMAND UPDATE,DTARGET ppsprmidx ppsprm,DMAP mupdppskor2);
+
+POSTING(tmptrans) 
+	PST_ADDCMD      spcaladdkor1
+
+PERMIT(tmptrans)
+	PMT_ADD_COND  cri
+	PMT_UPDALL_COND  c0
+	PMT_DEL_COND  c0
+

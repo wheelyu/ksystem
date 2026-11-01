@@ -1,0 +1,91 @@
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/----------------------------------------------\|
+||t.GantiAcc                                    ||
+|\----------------------------------------------/|
+|/----------------------------------------------\|
+||t.Nobuk     _________________________________ ||
+||t.Pilihan   _______________                   ||
+||t.YgDiganti _______________                   ||
+||t.NipLama   _______________                   ||
+||t.NipGanti  ____________  ___________________ ||
+||t.Alasan                                      ||
+||  ___________________________________________ ||
+|\----------------------------------------------/|
+\------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnobuk        PROTECT                 INPUTRI 1       /* Nobuk        */
+tkdjwbstr1      NOCHANGE                INPUTRI 2       /* Pilihan      */
+tkdjwbstr2      NOCHANGE                INPUTRI 3       /* Yang Diganti */
+tkdsisstr       PROTECT                 INPUTRI 4       /* Nip Lama     */
+tkdrek          ALLCAPS                 INPUTRI 5       /* Nip Baru     */
+lnamaganti      PROTECT                 INPUTRI 6
+tkdket          ALLCAPS                 INPUTRI 7       /* Alasan       */
+
+CALCS()
+cpilih1         tkdjwbstr1 == "UBAH_PKA"
+
+DEFAULTS(tmptranst)
+tkddata         INIT                    KUNCITGT
+tkdnourt        INIT                    1
+tkdjenis        INIT_ADD                {g_usrkode}
+lKUNCITGT       INIT                    KUNCITGT
+tkdjwbstr1      DFALT_SCAN              BLANKS
+                                        UBAH_PKA
+                                        UBAH_STS
+
+IF cpilih1 tkdjwbstr2 DFALT_SCAN        BLANKS
+                                        PKA
+
+IF cpilih2 tkdjwbstr2 DFALT_SCAN        BLANKS
+                                        INPG
+                                        CLSD
+
+EDITS(tmptranst)
+e.Mandatory tkdjwbstr1 MANDATORY
+e.Mandatory tkdjwbstr2 MANDATORY_IF cpilih1
+e.Mandatory tkdjwbstr2 MANDATORY_IF cpilih2
+e.Mandatory tkdrek MANDATORY_IF cpilih1
+
+e.ValidateNip tkdrek VALIDATE psmdtkodidx mpsmnip 0 {Pgv_dtkaryawan} {Pgv_INPG}
+
+MAP(mpsmnip)
+psmnama         lnamaganti      REPLACE
+
+
+CALCS()
+cpilpka         tkdjwbstr2=="PKA"
+cbtsnip         tkdjwbstr1 == "UBAH_STS" || (djoinabdnip==1 && labdtypenip=="DATANG")
+clvlsdm         tkdjwbstr1 == "UBAH_STS" || (djoinusrlama==1 && djoingrplama==1 && djoinusrbaru==1 && djoingrpbaru==1 && lurutloginlama >= lurutloginbaru && ((lloginlama==lloginbaru) ||
+                lloginbaru=="SPVKOL" || lloginbaru=="BM" || lloginbaru=="ARAM" || lloginbaru=="REMAM" || lloginbaru=="KAWIL" || lloginbaru=="REMDVH")) || (tkdsisstr=="" && tkdjwbstr1=="UBAH_PKA")
+
+MAP(misitransb)
+abkkym2         tkdsisstr       REPLACE_IF cpilpka
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tkdjwbstr2    DO_MAP SHOW misitransb
+BEFORE_INPUT    cur_field=tkdrek        DO_SKIP_IF cpilih2
+
+AFTER_INPUT     cur_field=tkdrek        DO_MAP SHOW
+                IF cbtsnip mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipAdaAbsenDtgBlmPlg
+                
+AFTER_INPUT     cur_field=tkdrek        DO_MAP SHOW
+                IF clvlsdm mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipHarusDiAtasAtauSelevel
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+        tkdbukidx abknobuk
+
+SFL_MAP
+abknobuk        tkdnobuk        REPLACE
+abkdata         tkddata         REPLACE

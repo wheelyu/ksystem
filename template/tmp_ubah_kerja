@@ -1,0 +1,97 @@
+LOCAL
+PGM_FIELDS
+lDTUBHKERJA	STRING		11
+ljumlahrekord	INT2		2
+ltkdjenis	STRING		31
+ltkdsisstr	STRING		31
+ltkdjwbstr1	STRING		51
+
+CALCS()
+c1dt	1
+cnourtdt	ljumlahrekord+1
+
+MAP(mscantkdkerja)
+c1dt	ljumlahrekord	DO_CALC
+
+DBCALCS(dscantkdkerja)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tkddatbukll   lDTUBHKERJA psmktp
+	DBC_LAST_TARGET	tkddatbukll   lDTUBHKERJA psmktp
+	DBC_SUM_MAP	mscantkdkerja
+
+IMAGE(tmptranst)
+
+/----------------------------------------------------------\
+|/--------------------------------------------------------\|
+|| t.PekLm       : ______________  ______________________ || 
+|| t.PekSkr      : ______________  ______________________ ||
+|| spasi                                                  ||
+|| t.Nip         : _________  ___________________         ||
+|| t.TanggalUbah : __________                             ||
+|\--------------------------------------------------------/|
+\----------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjenis	PROTECT		INPUTRI		1
+ltkdjenis	PROTECT		INPUTRI		1
+tkdsisstr	ALLCAPS		INPUTRI		2
+ltkdsisstr	PROTECT		INPUTRI		3
+tkdjwbstr1	NOCHANGE	INPUTRI		3
+ltkdjwbstr1	PROTECT		INPUTRI		4
+tkdtgl		PROTECT NOLIMIT {DD-MM-YYYY}		INPUTRI		4
+
+DEFAULTS(tmptranst)
+lDTUBHKERJA	INIT	"DTUBHKERJA"
+tkdjwbstr1	INIT	{g_usrkode}
+tkdtgl		INIT	{g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory     tkdsisstr  MANDATORY
+/*e.validate      tkdjenis        VALIDATE        tbddatkodidx mtbddt {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21}*/
+e.validate	tkdsisstr	VALIDATE	tbddatkodidx mtbddt2 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pekerjaan21}
+e.validate	tkdjwbstr1	VALIDATE	 psikodidx	mpsidt
+
+/*
+MAP(mtbddt)
+tbdkode         tkdjenis        REPLACE
+tbdket          ltkdjenis       REPLACE
+*/
+MAP(mtbddt2)
+tbdkode         tkdsisstr       REPLACE
+tbdket          ltkdsisstr      REPLACE
+
+MAP(mpsidt)
+psikode		tkdjwbstr1	REPLACE
+psinama		ltkdjwbstr1	REPLACE
+
+MAP(mmapisikerja)
+psmpend		tkdjenis	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdsisstr	DO_MAP SHOW mmapisikerja
+AFTER_INPUT cur_field=tkdsisstr	DO_SCAN dscantkdkerja
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkddatbukll   lDTUBHKERJA psmktp
+
+SFL_MAP
+psmktp		tkdnobuk        REPLACE
+lDTUBHKERJA	tkddata         REPLACE
+gv_INPG         tkdsts          REPLACE
+cnourtdt	tkdnourt	DO_CALC
+
+MAP(mupdpsmmaster)
+tkdsisstr	psmpend		REPLACE
+
+SPCALCS(sadd)
+DO_LIB ap_dbclc(DNAME dupdpsmmaster,DCOMMAND UPDATE,DTARGET psmktpidx   tkdnobuk,DMAP mupdpsmmaster);
+
+POSTING(tmptrans)
+        PST_ADDCMD sadd
+
+
+

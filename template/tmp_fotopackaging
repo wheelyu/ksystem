@@ -1,0 +1,95 @@
+LOCAL                                                                                                                                                       
+PGM_FIELDS
+lbukabkftomga5          STRING          21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| |t.Isijawabketikatacc     !|
+| |t.Jwb : ________________ !|
+| |        __               !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		PROTECT		        INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+docnobuk2                   TEXTAREA         	INPUTRI		12
+ldoc                   NOCHANGE         	INPUTRI		12
+ltombol			TOMBOL			INPUTRI		99
+
+EDITS(tmptranst)
+e.Mandatory             docnobuk2                MANDATORY
+
+CALCS()
+ctgluplisi5		doctgljadi != BLANKS 
+cstsuplisi5     doclok=="OK"
+cbukabkftomga5  STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddocpac)
+/*cY              doclok          DO_CALC*/
+/*g_fotodate1	doctgljadi	REPLACE*/
+g_tgltrn        doctgljadi      REPLACE         
+DEBUG ldum      ldum    REPLACE                                                                             
+
+MAP(mupddocpac_5)
+lY              doclok          REPLACE_IF ctgluplisi5
+cbukabkftomga5  lbukabkftomga5  DO_CALC
+DEBUG ldum      ldum    REPLACE
+
+DBCALCS(dupddocpac)
+        DCOMMAND UPDATE
+        DTARGET docprmidx docprm
+        DMAP mupddocpac   
+
+CALCS()
+cpacpmh	tmpkode == "PACKAGING"
+
+MAP(mupdabkftomga5)
+gv_CLSD         abksts          REPLACE
+
+SPCALCS(spuplftomga5)
+DO_LIB_IF csdhisijwb            ap_dbclc(DNAME dupddocpac_5,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocpac_5);
+DO_LIB_IF cstsuplisi5           ap_dbclc(DNAME dupdabkftomga5,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga5,DMAP mupdabkftomga5);
+DO_LIB_IF cdjoinketbrks0        ap_dbclc(DNAME daddketpackagin,DCOMMAND ADD,DFILE ket,DMAP maddketberkas);
+DO_LIB_IF cdjoinketbrks1        ap_dbclc(DNAME dupdketpackaging,DCOMMAND UPDATE,DTARGET ketotoidx lketoto,DMAP mupdketberkas);
+DO_LIB_IF cdjoinketbrks1        ap_dbclc(DNAME daddabkadmarsip4,DCOMMAND ADD,DFILE abk,DMAP maddabkadmarsip);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltombol               DO_SPCALCS spuplftomga5
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_COND cpacpmh
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD_DBCALCS dupddocpac     
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+	docdatbukidx lUPGAD  btmnobuk lpackaging l5       
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cjwbpic
+  PMT_DEL_COND  c0
+

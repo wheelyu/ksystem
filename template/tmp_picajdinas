@@ -1,0 +1,148 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|t.picaJdinas						|
+|t.UntukUbhTglHapusDetail			|
+|/---------------------------------\|
+||t.TypeJd   :_____________________||
+||            _____________________||
+||t.CabTujuan:_____________________||
+||t.NamaCab2 :_____________________||
+||t.Jabatan  :_____________________||
+||t.Propinsi :_____________________||
+||t.Periode  :________t.sd_________||
+||t.Activity :_____________________||
+||t.Target   :_____________________||
+||t.Upload   :_____________________||
+|\---------------------------------/|
+|/--------s.UPLOAD-----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr2  		NOCHANGE               	INPUTRI 1
+ltypejd  		PROTECT                	INPUTRI 1
+svikode  		ALLCAPS                	INPUTRI 2
+lnamaCbg2		PROTECT                	INPUTRI 3
+svistr3  		PROTECT               	INPUTRI 4
+svistr1  		ALLCAPS                	INPUTRI 5
+svitgl1   		NOLIMIT {DD-MM-YY}     	INPUTRI 6
+svitgl2   		NOLIMIT {DD-MM-YY}     	INPUTRI 7
+sviket   		TEXTAREA ALLCAPS       	INPUTRI 8
+sviket2   		TEXTAREA ALLCAPS       	INPUTRI 9
+sviyt1			PROTECT			INPUTRI	10
+
+EDITS(tmptranst)
+t.ValidateCab  svikode  VALIDATE cabstskodidx mcabu scab {Pgv_INPG}
+e.Mandatory svistr1  	MANDATORY_IF cnon5
+e.Mandatory svistr2  	MANDATORY
+e.Mandatory svikode 	MANDATORY_IF cinternal
+e.Mandatory sviket  	MANDATORY
+e.Mandatory sviket2  	MANDATORY
+e.Mandatory svitgl1 	MANDATORY
+e.Mandatory svitgl2 	MANDATORY
+e.ValidateJab   svistr3 VALIDATE tbddatkodidx mtbd3 stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+e.ValidateProp  svistr1 VALIDATE dtmdtkodidx  mdtmProp sdtmProp {Pgv_dtkota}
+/* e.ValidateTbd2 svistr2 VALIDATE tbddatkodidx mtbd4 stbd  {Pgv_dttabel} {Pgv_personal} {PlJLNDINAS} */
+t.ValidateTbt2 svistr2 VALIDATE tbtdattypkod mtbtt2 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlTYPEJLNDINAS} {Pbkmnobuk2}
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr2	DO_MAP SHOW mjab
+BEFORE_INPUT	cur_field=svistr2	DO_MAP SHOW mtype
+BEFORE_INPUT	cur_field=svikode	DO_MAP SHOW	misicabakt
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF ckondupdate
+BEFORE_INPUT	cur_field=svitgl2	DO_SKIP_IF ckondupdate
+AFTER_INPUT	cur_field=svistr2	DO_MAP SHOW
+		IF csesuai mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TdkSesuaiMaster
+
+AFTER_INPUT	cur_field=svitgl1	DO_MAP SHOW
+		IF cmaxtgl mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.ExternakMaxH-1
+
+AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF cmaxtgl2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.ExternakMaxH-1
+
+AFTER_INPUT	cur_field=svitgl1	DO_MAP SHOW
+		IF cmaxtgl3 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.InternalMaxH-2
+
+AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF cmaxtgl4 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.InternalMaxH-2
+
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW
+                IF ctgl2ok mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Tglbesar
+
+AFTER_INPUT     cur_field=svistr2       DO_MAP SHOW
+                IF cLN     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.ExternalLn
+
+AFTER_INPUT	cur_field=svitgl1	DO_MAP SHOW
+		IF cbukansabtu mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TdkBlhInputSabtu
+
+AFTER_INPUT	cur_field=svitgl2	DO_MAP SHOW
+		IF cbukansabtu2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TdkBlhInputSabtu
+
+AFTER_INPUT     cur_field=svitgl2       DO_MAP SHOW mhari
+BEFORE_INPUT     cur_field=svikode       DO_SKIP_IF cnoninternal
+AFTER_INPUT     cur_field=svikode	DO_MAP SHOW misiapr
+BEFORE_INPUT     cur_field=svistr1       DO_SKIP_IF cnonprop 
+
+DEFAULTS(tmptranst)
+/* 
+svistr2         DFALT_SCAN      BLANKS
+                                1 "Dinas Internal [Wajib Absen]"
+                                2 "Dinas External [Tidak Absen]"
+                                3 "PMT Ahass      [Tidak Absen]"
+                                4 "Training External [Tidak Absen]"
+                                5 "Luar Negeri    [Tidak Absen]"
+*/
+lm4540          INIT            m4540
+lsvitgl1	INIT_UPDATE	{svitgl1}
+lsvitgl2	INIT_UPDATE	{svitgl2}
+lJLNDINAS	INIT		JLNDINAS
+lTGL		INIT		TGL
+labkky2		INIT_ADD	"SELESAIKAN SCR 313"
+labkknol	INIT_ADD	"1"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_UPL_DELCOND cOPEN_SAJA
+SFL_UPL_DIRFLD	bkmtgl
+SFL_UPLFLD_DBCALCS dupdsvifoto   
+SFL_UPLFLD bkmnobuk tmpkode 
+SFL_COND	cPICA
+SFL_SHOW_NEXT
+SFL_UPL_COND  cbolehupl
+SFL_UPL_COND_MSG  IF cno123   "Record blm ada tekan tambah lalu end "
+SFL_LINES(1)
+
+SFL_TARGET
+	svidatbuktyp  bkmdata    bkmnobuk     
+
+SFL_MAP
+bkmdata         svidata         REPLACE
+bkmdata         svitype         REPLACE
+bkmnobuk        svinobuk        REPLACE
+gv_INPG		svists		REPLACE
+l1		svinourt	REPLACE

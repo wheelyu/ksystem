@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+lyes		STRING		5
+lfotodokp	STRING		11
+
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}   
+/----------------------------------\
+| /-------s.UPLOAD----------------\|
+| |                               ||
+| |                               ||
+| |                               ||
+| |                               ||
+| |                               ||               
+| \-------------------------------/|
+| /-------------------------------\|
+| |i.Ket    : ___________________ ||
+| |t.UplodOk: _____               ||
+| |t.Wajib  : _______             ||
+| |t.Wajib2 : ___________________ ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        svinama                 PROTECT         INPUTRI 1
+	svistr1			PROTECT		INPUTRI 2
+	svists			PROTECT		INPUTRI 3
+        svistr2                 PROTECT         INPUTRI 4
+
+CALCS()
+        ccheckpekerjaan         djoinkerja == 1 
+        cfotodokp               djoinkerja == 1 &&
+                                (
+                                (lcekpekerjaan == "KARYAWAN"     && svistr2 == "KRY")   ||
+                                (lcekpekerjaan == "WIRASWASTA"   && svistr2 == "WIRA")  ||
+                                (lcekpekerjaan == "PROFESIONAL"  && svistr2 == "PROF")  ||
+                                (lcekpekerjaan == "BADANUSAHA"   && svistr2 == "BUSH")  ||
+                                ((lcekpekerjaan == "KARYAWAN" || lcekpekerjaan == "WIRASWASTA" || lcekpekerjaan == "PROFESIONAL") && svistr2 == "ALLKWP") ||
+                                ((lcekpekerjaan == "WIRASWASTA" || lcekpekerjaan == "PROFESIONAL" || lcekpekerjaan == "BADANUSAHA") && svistr2 == "ALLWPB") ||
+                                ((lcekpekerjaan == "KARYAWAN" || lcekpekerjaan == "WIRASWASTA" || lcekpekerjaan == "PROFESIONAL" || lcekpekerjaan == "BADANUSAHA") && svistr2 == "ALLKWPB")
+                                )
+        
+
+DEFAULTS(tmptranst)
+lyes		INIT		"OK"
+lfotodokp	INIT		"FOTODOKP"
+
+
+MAP(mupdsviftmand)
+lyes	svistr1		REPLACE
+
+DBCALCS(dbftmand)
+        DCOMMAND UPDATE
+        DTARGET sviotoidx svioto
+        DMAP mupdsviftmand
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND                ccheckpekerjaan  
+SFL_SELECT              cfotodokp
+SFL_UPLFLD_DBCALCS dbftmand
+SFL_UPL_DIRFLD          btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOSRVY11 btmnobuk lfotodokp
+
+
+

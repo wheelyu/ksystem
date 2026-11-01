@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+lTANGGUNGAN2 		STRING	11
+laprusr5                 STRING  21
+
+MAP(mjoinaprMD5)
+aprusr                laprusr5         REPLACE
+
+DBCALCS(djoinaprMD5)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aprbukkeurt   hrmnobuk
+        DBC_MAP         mjoinaprMD5
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.InputHasilExInterview                           ||
+||t.TekanUbah                                       ||
+||t.TglInterview   :_________                       ||
+||t.User           :_______________________         ||
+||                 :______________________________  ||
+||t.HasilInterview :______________________________  ||
+||t.TipeAcc        :___                             ||
+||t.AlasanTacc     :______________________________  ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+kettgl1  		NOLIMIT {DD-MM-YY}     	INPUTRI 1
+ketkode                 NOCHANGE           	INPUTRI 2
+psinama                 PROTECT           	INPUTRI 3
+ketisi                  TEXTAREA  ALLCAPS     	INPUTRI 4
+ketyt1                  NOCHANGE           	INPUTRI 5
+ketisi2                 TEXTAREA  ALLCAPS     	INPUTRI 6
+
+CALCS()
+cWajibIsi		ketyt1 == "TL"
+cskip1   		ketyt1 == "OK"
+
+EDITS(tmptranst)
+e.Mandatory kettgl1   	MANDATORY
+e.Mandatory ketisi   	MANDATORY
+e.MandatoryAlasan ketisi2   	MANDATORY_IF cWajibIsi
+e.MandatoryTipe   ketyt1   	MANDATORY
+t.ValidatePsi ketkode  VALIDATE psikodidx mpsix 0
+
+MAP(mpsix)
+psikode		ketkode		REPLACE
+
+
+DEFAULTS(tmptranst)
+kettype		INIT_ADD	TANGGUNGAN
+lTANGGUNGAN2	INIT		TANGGUNGAN
+ketkode		INIT_ADD 	{g_usrkode}
+ketkode		INIT_UPDATE	{g_usrkode}
+ketyt1          DFALT_SCAN 	BLANKS      
+				OK "ACC"
+				TL "TOLAK"
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=ketisi2      DO_SKIP_IF  cskip1
+
+
+CALCS()
+cEXIT  		tmpkode=="EXIT_INTERVIEW" && ((djoinaprMD5 == 1 && laprusr5 == g_usrkode) || hrmnip2 == g_usrkode || hrmnip1 == g_usrkode
+		|| hrmcab2 == g_usrkode || hrmusrapr == g_usrkode || g_grpnam=="CMBNHEAD" || g_grpnam=="RI" || g_grpnam=="IT"
+		|| g_grpnam=="CMBNSPV" || g_grpnam=="HRDDVH" || g_grpnam=="HRD" || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT"
+		|| g_grpnam=="RAS" || g_grpnam=="RASDVH" || g_grpnam=="RASMGR" || g_grpnam=="B.IVAROHRD" || g_grpnam=="HRDSPV" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD"
+		|| g_grpnam =="B.PARTHRD" || g_grpnam =="BUM" || g_grpnam =="KAWIL" || g_grpnam =="BM" || g_grpnam=="B.M4WBM"
+		|| g_grpnam=="B.M4WRM" || (djoinpsdatasanmd==1 && (g_usrkode==latasan1 || g_usrkode==latasan2)))
+
+chanya_odtm	(hrmsts=="INPG" || hrmsts=="RCLS" || (hrmsts=="OPEN" && hrmtgl2 <= g_tgltrn)) && (((g_grpnam=="HRD" || g_grpnam =="HRDDVH"
+		|| g_grpnam=="B.IVAROHRD" || g_grpnam =="B.PARTHRD" || g_usrkode == "1618481" || g_grpnam=="RI" || g_grpnam =="RAS"
+		|| hrmcab2 == g_usrkode || g_grpnam =="HRDODTM" || g_grpnam=="SUPPORT" || g_grpnam =="BUM" || g_grpnam =="KAWIL" || g_grpnam =="BM" || g_grpnam=="ODTMHEAD"
+		|| g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WRM" || (djoinpsdatasanmd==1 && (g_usrkode==latasan1 || g_usrkode==latasan2))) && lurutanjab<=5)
+		|| (lurutanjab>=5 && (g_grpnam=="ODTMHEAD" ||  g_grpnam=="HRDODTM" || g_grpnam=="SUPPORT" || g_grpnam=="RI" || (hrmdvs=="IVR" && g_grpnam=="B.IVAROHRD"))))
+
+cblmada		djoinkettanggungan==0 && (((g_grpnam=="RI" || g_grpnam=="HRDDVH" || g_grpnam=="HRDODTM" || g_grpnam =="B.PARTHRD" || g_grpnam=="ODTMHEAD" || g_grpnam=="SUPPORT"
+		|| (djoinpsdatasanmd==1 && (g_usrkode==latasan1 || g_usrkode==latasan2))) && lurutanjab<5) || (lurutanjab>=5 && (g_grpnam=="ODTMHEAD" ||  g_grpnam=="HRDODTM" || g_grpnam=="RI" ||
+		(djoinpsdatasanmd==1 && (g_usrkode==latasan1 || g_usrkode==latasan2)))))
+
+cbolehhapus	g_grpnam=="RI" || g_grpnam=="HRDDVH" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD" || g_grpnam=="SUPPORT"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND	cEXIT
+SFL_LINES(1)
+
+SFL_TARGET
+	ketdatbuktgl	hrmdata     hrmnobuk   lTANGGUNGAN2 
+
+
+SFL_MAP
+hrmnobuk        ketnobuk        REPLACE
+hrmdata         ketdata         REPLACE
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cblmada     
+        PMT_UPDALL_COND chanya_odtm
+        PMT_DEL_COND    cbolehhapus    
+
+

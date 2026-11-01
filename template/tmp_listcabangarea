@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+lnamam2wam			STRING		61
+lnamacreditam		STRING		61
+lnamaamopr			STRING		61
+lnamaaram			STRING		61
+
+IMAGE(tmptranst)
+/---------t-----------t------------t-------------t--------------t---------t---------t----------t--------t---------t---------\
+|t.kodecab|t.NipAMMKTG|t.Namaammktg|t.NipAMKREDIT|t.NamaAMKREDIT|t.TypeACC|t.NipAMP|t.NamaAMP|t.NipARAM|t.NamaARAM|t.TypeACC|
+\---------.-----------.------------.-------------.--------------.---------.---------.----------.--------.---------.---------/
+
+IMAGE(tmptrans)
+|_________|___________|____________|_____________|_____________|__________|_________|__________|________|_________|_________|
+
+FIELD(tmptrans)
+tkdjenis	PROTECT		INPUTRI	1
+tkdstr1		PROTECT		INPUTRI	3
+lnamam2wam	PROTECT		INPUTRI	4
+tkdstr2		PROTECT		INPUTRI 4
+lnamacreditam	PROTECT		INPUTRI	4
+tkdjwbstr1	ALLCAPS		INPUTRI	5
+tkdstr3		PROTECT		INPUTRI	3
+lnamaamopr	PROTECT		INPUTRI	4
+tkdstr4		PROTECT		INPUTRI 4
+lnamaaram	PROTECT		INPUTRI	4
+tkdjwbstr2	ALLCAPS		INPUTRI	8
+
+DEFAULTS(tmptrans)
+tkdjwbstr1	DFALT_SCAN	ACC	"ACC"
+						TACC "TACC"
+tkdjwbstr2	DFALT_SCAN	ACC	"ACC"
+						TACC "TACC"
+					
+MAP(mnamam2wam)
+psinama		lnamam2wam	REPLACE
+
+MAP(mnamacreditam)
+psinama		lnamacreditam		REPLACE
+
+MAP(mnamaamopr)
+psinama		lnamaamopr		REPLACE
+
+MAP(mnamaaram)
+psinama		lnamaaram		REPLACE
+
+DBCALCS(djionabkubahsts)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      abkdatbukidx   lKUNCIABSEN mtsnobuk 
+
+CALCS()
+cadanipm2wam	tkdstr1 != BLANKS
+cadanipcreditam	tkdstr2 != BLANKS
+cadanipamopr	tkdstr3 != BLANKS
+cadaniparam		tkdstr4 != BLANKS
+cinim2wam			tkdstr1 == g_usrkode || tkdstr2 == g_usrkode 
+cinicreditam 		tkdstr3 == g_usrkode || tkdstr4 == g_usrkode
+cbukanm2wam			g_grpnam!="IT" && tkdstr1!=g_usrkode && tkdstr2 != g_usrkode  
+cbukancreditam		g_grpnam!="IT" && (tkdstr3!=g_usrkode && tkdstr4 != g_usrkode )
+
+cdjionabkubahsts     djionabkubahsts==1
+cacctacc	((abkcab==tkdjenis && ( abkkym2==lacc1406m2wam || abkkym2==lacc1406creditam )) && tkdjwbstr1!=BLANKS )
+			||
+			((abkcab==tkdjenis && ( abkkym2==lacc1406amopr || abkkym2==lacc1406aram )) && tkdjwbstr2!=BLANKS )
+			
+
+EDITS(tmptrans)
+v.validatenipm2wam	tkdstr1		VALIDATE_IF cadanipm2wam psikodidx mnamam2wam spsi
+v.validatenipcreditam		tkdstr2		VALIDATE_IF cadanipcreditam psikodidx mnamacreditam spsi
+v.validatenipamopr		tkdstr3		VALIDATE_IF cadanipamopr psikodidx mnamaamopr spsi
+v.validateniparam		tkdstr4		VALIDATE_IF cadaniparam psikodidx mnamaaram spsi
+
+e.Mandatory 	tkdjwbstr1 MANDATORY_IF cinim2wam
+e.Mandatory 	tkdjwbstr2 MANDATORY_IF cinicreditam
+
+
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_SKIP_IF cbukanm2wam
+BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF cbukancreditam
+
+
+MAP(mupdabksts)  
+gv_CLSD        abksts         REPLACE_IF cacctacc
+DEBUG   ldum    ldum            REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(8)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkddatbukll   lpic1406data mtsnobuk 
+
+SPCALCS(saddtrans2g2)
+DO_LIB_IF cdjionabkubahsts ap_dbclc(DNAME dupdabksts,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN mtsnobuk,DMAP mupdabksts);
+
+POSTING(tmptrans)
+        PST_UPDCMD saddtrans2g2
+
+PERMIT(tmptrans)
+	 PMT_ADD_COND	c0
+	 PMT_UPDALL_COND	cmtsOPENKP1x
+	 PMT_DEL_COND	c0
+
+
+	

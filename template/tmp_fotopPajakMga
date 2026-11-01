@@ -1,0 +1,82 @@
+LOCAL
+PGM_FIELDS
+lbukabkftomga12x	STRING		21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		NOCHANGE		INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+ltombol			TOMBOL			INPUTRI		99
+
+CALCS()
+ctgluplisi12x	doctgljadi!=BLANKS
+cstsuplisi12x	doclok=="OK"
+cbukabkftomga12x	STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddocktp12x)
+g_tgltrn        doctgljadi      REPLACE
+
+
+DBCALCS(dupddocktp12x)
+        DCOMMAND UPDATE
+        DTARGET docprmidx docprm
+        DMAP mupddocktp12x   
+
+MAP(mupddocktp_12x)
+lY		doclok		REPLACE_IF ctgluplisi12x
+cbukabkftomga12x	lbukabkftomga12x	DO_CALC
+
+CALCS()
+cPajakbMga	tmpkode == doctype
+cnoT		tmptypjl == BLANKS
+
+MAP(mupdabkftomga12x)
+gv_CLSD		abksts		REPLACE
+
+SPCALCS(spuplftomga12x)
+DO_LIB			ap_dbclc(DNAME dupddocktp_12x, DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocktp_12x);
+DO_LIB_IF cstsuplisi12x	ap_dbclc(DNAME dupdabkftomga12x,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga12x,DMAP mupdabkftomga12x);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombol		DO_SPCALCS spuplftomga12x
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cPajakbMga
+SFL_COND cnoT
+SFL_UPLFLD_DBCALCS dupddocktp12x
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_UPLREADONLY
+SFL_TARGET
+	docdatbukidx lUPGAD  btmnobuk 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

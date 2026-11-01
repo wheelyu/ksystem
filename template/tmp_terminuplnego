@@ -1,0 +1,204 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ /---------s.DOCUPLOAD-----------\
+
+
+
+ \-------------------------------/
+ /-------------------------------\
+  ____________
+  t.Upload       :___  
+  t.TglUpload    :_______________
+  t.NoBuk        :_______________
+  t.Kontraktor   :_______________
+  t.JenisKont    :_______________
+  t.TypeKontrak  :_______________
+  t.TerbitFaktur :___
+  t.NilaiMaterial:_______________
+  t.NilaiJasa    :_______________
+  t.TotalNilai   :_______________
+  t.Dpp          :_______________
+  t.PphNego      :_______________
+  t.PpnNego      :_______________
+  t.PphDiTanggung:_______________
+  t.TotalNego    :_______________
+  t.JenisBiaya   :_______________
+  t.ApproveBoq   :___  __________
+                 :_______________                            
+  t.ApproveFinTax:___  __________
+                 :_______________                            
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+luplok2         TOMBOL          INPUTRI 26
+tkdjenis	NOCHANGE	INPUTRI	1
+tkdtgl2		PROTECT NOLIMIT {DD-MM-YYYY} INPUTRI 2
+tkdnobuk	PROTECT		INPUTRI	3
+tkdnoll		ALLCAPS		INPUTRI	4
+tkdjwbstr1	NOCHANGE	INPUTRI	5
+tkdstr3   	NOCHANGE	INPUTRI	6
+tkdjenisaw	NOCHANGE	INPUTRI	7
+tkdnil		NUMERIC		INPUTRI 8
+tkdnil2		NUMERIC		INPUTRI	9
+tkdnil3		PROTECT		INPUTRI	10
+tkdjml2		NUMERIC		INPUTRI	11
+tkdjml3		NUMERIC		INPUTRI	12
+tkdjml4		NUMERIC		INPUTRI	13
+tkdkodejsa	NOCHANGE	INPUTRI	14
+tkdjml 		PROTECT		INPUTRI	15
+tkdjwbstr2	NOCHANGE	INPUTRI	16
+tkdtmp1		NOCHANGE	INPUTRI	20
+tkdtmp2		PROTECT		INPUTRI	21
+lnamaaprboq	PROTECT		INPUTRI	22
+tkdstr1		NOCHANGE	INPUTRI	23
+tkdstr2		PROTECT		INPUTRI	24
+lnamaaprfin	PROTECT		INPUTRI	25
+
+CALCS()
+c500		mtsdari=="PEKERJAAN_PROPERTY" && (tkdstr3=="JUNIOR" || tkdstr3=="SENIOR") && tkdjml <= 500000000 
+c1000		mtsdari=="PEKERJAAN_PROPERTY" && (tkdstr3=="JUNIOR" || tkdstr3=="SENIOR") && tkdjml > 500000000
+
+DEFAULTS(tmptranst)
+luplok2         INIT            "UPLOAD OK"
+IF cpengaduan tkdjwbstr2	DFALT_SCAN	BLANKS 
+					TERMINA "TERMIN 50 45 5"
+					TERMINB "TERMIN 45 50 5"
+					TERMINC "TERMIN 40 55 5"
+IF c500 tkdjwbstr2	DFALT_SCAN	BLANKS
+					ALTERNATIF1 "ALTERNATIF 1"
+					ALTERNATIF2 "ALTERNATIF 2"
+IF c1000 tkdjwbstr2	DFALT_SCAN	BLANKS
+					ALTERNATIF "ALTERNATIF"
+tkdjenisaw	DFALT_SCAN	BLANKS
+				Y " "
+				T " "
+tkdjwbstr1	DFALT_SCAN	BLANKS 
+				EKSTERNAL " "
+				INTERNAL " "
+tkdstr3		DFALT_SCAN	BLANKS
+				JUNIOR " "
+				SENIOR " "
+/*
+tkdjwbstr2	DFALT_SCAN	BLANKS 
+					TERMINA "TERMIN 50 45 5"
+					TERMINB "TERMIN 45 50 5"
+					TERMINC "TERMIN 40 55 5"
+*/
+tkdkodejsa	DFALT_SCAN	BLANKS
+				VENDOR " "
+				NON_VENDOR_NSG " "
+tkdtmp1		DFALT_SCAN	BLANKS
+				OK " "
+				TL " "
+tkdstr1		DFALT_SCAN	BLANKS
+				OK " "
+				TL " "
+
+
+EDITS(tmptranst)
+e.Mandatory	tkdnoll		MANDATORY
+/*e.Mandatory	tkdjwbstr1 	MANDATORY*/
+e.Mandatory	tkdjwbstr1 	MANDATORY
+e.Mandatory	tkdjml     	MANDATORY
+e.Mandatory	tkdjwbstr2 	MANDATORY_IF cpembangunan
+e.Validate      tkdnoll VALIDATE_IF cnotgax    cmpsuptykod mcmp2 scmp {Pgv_dtsup} {PlKONTRAKTOR}
+e.Validate      tkdnoll VALIDATE_IF cgax cmpsuptykod mcmp2 scmp {Pgv_dtsup} {Pgv_DN}
+e.Validate      tkdtmp2 VALIDATE psikodidx mpsiboq 0 
+e.Validate      tkdstr2 VALIDATE psikodidx mpsiboq2 0 
+
+MAP(mpsiboq)
+psikode		tkdtmp2		REPLACE
+psinama		lnamaaprboq	REPLACE
+
+MAP(mpsiboq2)
+psikode		tkdstr2		REPLACE
+psinama		lnamaaprboq2	REPLACE
+
+MAP(mcmp2)
+cmpkode		tkdnoll		REPLACE
+
+CALCS()
+ctotalnilai	tkdnil+tkdnil2
+ctotalnego	tkdnil3+tkdjml2+tkdjml3+tkdjml4
+ctotalnego2	tkdnil3+tkdjml2+tkdjml4
+cbukanremmgrx	g_grpnam!="REMMGR" && g_grpnam!="RI"
+cbukanfintax	g_grpnam!="ACC" && g_grpnam!="RI" && g_grpnam!="ACCMNG"
+ckosonga	tkdtmp2==BLANKS
+ckosongb	tkdstr2==BLANKS
+ctgvendor	tkdkodejsa!="VENDOR"
+ctgvendor2	tkdkodejsa=="VENDOR"
+
+MAP(mtotalnilai)
+ctotalnilai	tkdnil3		DO_CALC
+
+MAP(mtotalnego)
+ctotalnego	tkdjml		DO_CALC_IF ctgvendor
+ctotalnego2	tkdjml		DO_CALC_IF ctgvendor2
+
+MAP(maprboq)
+g_usrkode	tkdtmp2		REPLACE_IF ckosonga
+
+MAP(maprboq2)
+g_usrkode	tkdstr2		REPLACE_IF ckosongb
+
+CALCS()
+cdjointbt1	djointbt1==1
+cdjointbt2	djointbt2==1
+cdjointbt3	djointbt3==1
+cnildp		tkdjml/ltbtdf1
+caprboq		g_grpnam=="REMMGR" || g_grpnam=="ACC" || g_grpnam=="ACCMNG"
+ctl		tkdtmp1=="TL"
+ctl2		tkdstr1=="TL"
+cskipx		tkdtmp1==BLANKS
+
+MAP(mniltermin)
+cnildp		tkdnil4		DO_CALC_IF cdjointbt1
+cnildp 		tkdnil5		DO_CALC_IF cdjointbt2
+cnildp 		tkdjml5		DO_CALC_IF cdjointbt3
+cBLANKS		tkdtmp1		DO_CALC_IF ctl
+cBLANKS		tkdstr1		DO_CALC_IF ctl2
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF caktiva
+BEFORE_INPUT	cur_field=tkdtmp1   	DO_SKIP_IF cbukanremmgrx
+BEFORE_INPUT	cur_field=tkdstr1   	DO_SKIP_IF cbukanfintax 
+AFTER_INPUT	cur_field=tkdnil2 	DO_MAP SHOW mtotalnilai
+AFTER_INPUT	cur_field=tkdkodejsa	DO_MAP SHOW mtotalnego
+AFTER_INPUT	cur_field=tkdtmp1 	DO_MAP SHOW maprboq 
+AFTER_INPUT	cur_field=tkdstr1 	DO_MAP SHOW maprboq2
+AFTER_INPUT	cur_field=tkdjwbstr2	DO_MAP SHOW mniltermin 
+BEFORE_INPUT	cur_field=tkdnoll	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdstr3   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjenisaw   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdnil   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdnil2   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdnil3   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjml2   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjml3   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjml4   	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdkodejsa	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjml    	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF caprboq
+BEFORE_INPUT	cur_field=tkdstr1   	DO_SKIP_IF cskipx       
+CLICKED         cur_field=luplok2       DO_SPCALCS supdkunfoto
+
+CALCS()
+cmasukboq	g_grpnam=="IT" || g_grpnam=="RI" || g_grpnam=="ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam=="REMMGR" || g_grpnam=="ACC" || g_grpnam=="ADHDVH" || g_grpnam=="DCOOADH" || g_grpnam=="ESTIMATOR" || g_grpnam=="PROPERTY" || g_grpnam=="ACCMNG"
+cblhhapus	(tkdtmp1 == BLANKS && tkdstr1 == BLANKS && (g_grpnam == "REMMGR" || g_grpnam == "ESTIMATOR" || g_grpnam == "PROPERTY")) || (g_usrkode == "1805349" || g_usrkode != "2490990") 
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cmasukboq
+SFL_DOCUPL_DELCOND cblhhapus
+SFL_DOCUPLFLD mtsnobuk tmpkode 
+SFL_DOCUPLFLD_DBCALCS dupdtkdfoto
+SFL_TARGET
+        tkddatbukll lNEGOSIASI mtsnobuk 
+SFL_MAP
+	lNEGOSIASI	tkddata		REPLACE
+	mtsnobuk	tkdnobuk	REPLACE 
+	gv_OPEN		tkdsts		REPLACE

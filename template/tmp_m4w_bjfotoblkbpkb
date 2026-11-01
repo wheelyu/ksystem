@@ -1,0 +1,290 @@
+LOCAL
+PGM_FIELDS
+lBALIK		STRING		11
+lBALIKNAMA	STRING		61
+lsviblkhis      INT2
+
+CALCS()
+csviblk  sviket=="BALIK NAMA BPKB"
+
+MAP(msviblkhis)
+l1		lsviblkhis 	REPLACE
+
+DBCALCS(djoinsvihistoryblk)
+	DBC_COMMAND	SCANSCAN
+	DBC_SELECT      csviblk
+	DBC_TARGET      svidatbuktyp   ldtbiro tlmnobuk lhistory
+	DBC_SUM_MAP msviblkhis
+
+MAP(mnhdb)
+nhdkode         lnhdkode        REPLACE
+nhdkode2        lnhdkode2       REPLACE
+
+DBCALCS(djoinnhdb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbukidx  tlmnobbm gv_dtbirojasa
+        DBC_MAP         mnhdb
+  
+DBCALCS(djoinsviblk0)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   ldtbiro tlmnobuk lBALIK
+
+
+DBCALCS(djoinastdeb)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      astdatkodidx   gv_dtassets svistr8  gv_bpkb svikode
+
+
+  
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/--------------------------------------------------------------------------\ |
+||t.t                                                                       | |
+||t.Nobuk      : _____________________                                      | |
+||t.kdasset    : ___________             t.samsat       : ___________       | |
+||t.Nobpkblama : ______________________  t.Nobpkbbaru   : _________________ | |
+||t.anbpkblama : ______________________  t.anbpkbbaru   : _________________ | |
+||t.NoPolLama  : ______________________  t.NoPolBaru    : _________________ | |
+||t.AlamatLama : ______________________  t.AlamatBaru   : _________________ | |
+||               _____                                                      | |
+|\--------------------------------------------------------------------------/ |
+|/---UPLOAD1-------------------------\||/---UPLOAD2-------------------------\ |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+||                                   ||||                                   | |
+|\-----------------------------------/||\-----------------------------------/ |
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svidtmkode              NOCHANGE SCROLL                  INPUTRI         1
+svikode                 ALLCAPS SCROLL                  INPUTRI         2
+svinama                 ALLCAPS                         INPUTRI         3
+svistr1                 PROTECT                         INPUTRI         4 /*bpkblama*/
+svistr9                 ALLCAPS SCROLL                  INPUTRI         5 /*bpkbbaru*/
+svistr3                 PROTECT                         INPUTRI         6 /*anlama*/
+svistr4                 ALLCAPS SCROLL                  INPUTRI         7 /*anbaru*/
+svistr5                 PROTECT                         INPUTRI         8 /*nopollama*/
+svistr6                 ALLCAPS SCROLL                  INPUTRI         9 /*nopolbaru*/
+sviket                  TEXTAREA                        INPUTRI         10 /*almlama*/
+sviket2                 TEXTAREA                        INPUTRI         11 /*almbaru*/
+lenter                  NOCHANGE                        INPUTRI         12
+
+DEFAULT(tmptranst)
+svitype                 INIT                    BALIK
+lBALIK			INIT			BALIK
+lenter                  INIT                    ENTER
+svinama                 DFALT_SCAN              BLANKS
+                                                ANTAR-SAMSAT
+                                                SATU-SAMSAT
+lBALIKNAMA              INIT                    BALIK NAMA BPKB
+lBALIKNAMA              INIT_UPDATE             BALIK NAMA BPKB
+
+EDITS(tmptranst)
+e.Mandatory		svikode			MANDATORY
+e.Mandatory		svistr9			MANDATORY_IF cnotopen1
+e.Mandatory		svistr4			MANDATORY_IF cnotopen1
+e.Mandatory		svistr6			MANDATORY_IF cnotopen1
+e.Mandatory		sviket 			MANDATORY
+e.Mandatory		sviket2 		MANDATORY_IF cnotopen1
+
+e.Validate              svidtmkode              VALIDATE btmbukidx mbtmbalik 0
+e.Validate              svikode                 VALIDATE astdatkodidx  mastbalik sast {Pgv_dtassets} {Ptlmplg} {Pgv_bpkb} 
+
+MAP(mastbalik)
+astkode			svikode			REPLACE
+astno1 			svistr1			REPLACE
+astanbpkb		svistr3			REPLACE
+astnopol		svistr5			REPLACE
+astalmbpkb		svistr7			REPLACE
+
+MAP(mbtmbalik)
+btmnobuk                svidtmkode              REPLACE
+
+CALCS()
+cbalik  		 djoinsviblk0 == 1  ||  ( djoinnhdb == 1 && lnhdkode == "BJ003" )
+cdjoinast1               djoinastdeb == 1 && tlmsts == "CLS3" 
+csvibpkbblk         	 STRIP(svitype) + THBLS(tlmtgl)
+/*chrsisiblkbaru           lsvi17!=BLANKS*/
+csvitype2blk             "BLKLM" + FLD_TO_STRING(svinourt)
+csvitype3blk             "BLKBR" + FLD_TO_STRING(svinourt)
+cjoinaddhisblk   (djoinsvihistoryblk!=0 || djoinsvihistoryblk==0) && lsviblkhis ==0 && g_curcmd == 2 && lsvitype3!=BLANKS
+
+MAP(misitmptrans)
+tlmnobbm		svidtmkode      REPLACE
+csvibpkbblk             svistr10        DO_CALC
+
+MAP(mnourtblk)
+cno1his        svinourt   DO_CALC_IF ctmbh1
+curuthis       svinourt   DO_CALC_IF ctmbh2
+csvitype2blk   svitype2   DO_CALC_IF ctambah
+
+MAP(mblktype3)
+csvitype3blk   svitype3    DO_CALC_IF cupdate
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svidtmkode	DO_MAP SHOW misitmptrans
+AFTER_INPUT		cur_field=svikode	DO_MAP SHOW mnourtblk
+BEFORE_INPUT		cur_field=svistr9       DO_SKIP_IF copent
+AFTER_INPUT		cur_field=svistr9       DO_MAP SHOW mblktype3
+BEFORE_INPUT		cur_field=svikode       DO_SKIP_IF cnotopen1
+BEFORE_INPUT		cur_field=svinama       DO_SKIP_IF cnotopen1
+BEFORE_INPUT		cur_field=sviket        DO_SKIP_IF cnotopen1
+BEFORE_INPUT		cur_field=svistr4       DO_SKIP_IF copent
+BEFORE_INPUT		cur_field=svistr6       DO_SKIP_IF copent
+BEFORE_INPUT		cur_field=sviket2       DO_SKIP_IF copent
+
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD  tlmnobuk svitype2
+SFL_UPLFLD2 tlmnobuk svitype3
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DIRFLD2 tlmtgl
+SFL_SELECT cbalik     
+SFL_TARGET
+        svidatbuktyp ldtbiro tlmnobuk lBALIK
+
+SFL_MAP
+tlmnobbm                svidtmkode      REPLACE
+tlmnobuk                svinobuk        REPLACE
+tlmnobuk                svitblkode      REPLACE
+tlmdata                 svidata         REPLACE
+tlmplg			svistr8		REPLACE
+
+MAP(mupdastdeb)
+svistr9         astno1          REPLACE
+svistr4         astanbpkb       REPLACE
+svistr6         astnopol        REPLACE
+sviket2         astalmbpkb      REPLACE
+
+MAP(mblanks3)
+cBLANKS         lsvi1   DO_CALC  
+cBLANKS         lsvi2   DO_CALC
+cBLANKS         lsvi3   DO_CALC
+cBLANKS         ltgl1   DO_CALC
+cBLANKS         ltgl2   DO_CALC
+cBLANKS         lsvi4   DO_CALC
+cBLANKS         lsvi5   DO_CALC
+cBLANKS         lsvi6   DO_CALC
+cBLANKS        lsvi7    DO_CALC  
+cBLANKS        lsvi8    DO_CALC
+cBLANKS        lsvi9    DO_CALC
+cBLANKS        lsvi10   DO_CALC
+cBLANKS        lsvi11   DO_CALC
+cBLANKS        lsvi12   DO_CALC
+cBLANKS        lsvi13   DO_CALC
+cBLANKS        lsvi14   DO_CALC
+cBLANKS        lsvi15   DO_CALC
+cBLANKS        lsvi16   DO_CALC
+cBLANKS        lsvi17   DO_CALC
+cBLANKS        lsvi18   DO_CALC
+cBLANKS     lsvinourt   DO_CALC
+cBLANKS     lsvitype2   DO_CALC
+cBLANKS     lsvitype3   DO_CALC
+cBLANKS     lsvinama    DO_CALC
+cBLANKS     lsvioto     DO_CALC
+DEBUG ldum ldum REPLACE
+
+
+MAP(msvihis31)
+svidtmkode      lsvi1   REPLACE  
+svikode         lsvi2   REPLACE
+svistr1         lsvi3   REPLACE
+svitgl1         ltgl1   REPLACE
+svitgl2         ltgl2   REPLACE
+sviket          lsvi4   REPLACE
+svitype         lsvi5   REPLACE
+tlmnobuk        lsvi7   REPLACE
+tlmnobuk        lsvi8   REPLACE
+tlmdata         lsvi9   REPLACE
+nhdkode        lsvi10   REPLACE
+svistr10       lsvi11   REPLACE
+svistr3        lsvi12   REPLACE
+svistr4        lsvi13   REPLACE
+svioto         lsvioto  REPLACE
+svistr5        lsvi14   REPLACE
+svistr6        lsvi15   REPLACE
+svistr8        lsvi16   REPLACE
+svistr9        lsvi17   REPLACE
+sviket2        lsvi18   REPLACE
+svinourt      lsvinourt   REPLACE
+svitype2    lsvitype2   REPLACE
+svitype3    lsvitype3   REPLACE
+svinama     lsvinama    REPLACE
+DEBUG ldum ldum REPLACE
+
+MAP(maddsvihis3)
+ldtbiro       svidata    REPLACE
+lhistory      svitype    REPLACE
+lBALIKNAMA    sviket     REPLACE
+lsvitype3     svistr10    REPLACE
+lsvi7   svinobuk     REPLACE
+lsvi8   svitblkode   REPLACE
+lsvi9   svidata      REPLACE
+lsvinourt  svinourt   REPLACE
+cBLANKS  svidtmkode  DO_CALC
+cBLANKS  svikode     DO_CALC
+cBLANKS  svistr1     DO_CALC
+cBLANKS  svitgl1     DO_CALC
+cOK      svistr31    DO_CALC   
+cBLANKS  svitgl2     DO_CALC
+DEBUG ldum ldum REPLACE
+
+
+MAP(msvihis32)
+lsvi1      svidtmkode REPLACE
+lsvi2      svikode    REPLACE
+lsvi3      svistr1    REPLACE
+ltgl1      svitgl1    REPLACE
+ltgl2      svitgl2    REPLACE
+lsvi4      sviket     REPLACE
+lsvi5      svitype    REPLACE
+lsvi7      svinobuk   REPLACE
+lsvi8      svitblkode REPLACE
+lsvi9      svidata    REPLACE
+lsvi10     svistr2    REPLACE
+lsvi11     svistr10   REPLACE
+lsvi12     svistr3    REPLACE
+lsvi13     svistr4    REPLACE
+lsvi14     svistr5    REPLACE
+lsvi15     svistr6    REPLACE
+lsvi16     svistr8    REPLACE
+lsvi17     svistr9    REPLACE
+lsvi18     sviket2    REPLACE
+lsvinourt  svinourt   REPLACE
+lsvitype2  svitype2   REPLACE
+lsvitype3  svitype3   REPLACE
+lsvinama   svinama    REPLACE
+lsvioto    svioto     REPLACE
+DEBUG ldum ldum REPLACE
+
+
+SPCALCS(spupdsvi2)
+        DO_LIB_IF cupdate ap_dbclc(DNAME dmblanks3,DCOMMAND MAPMAP,DMAP mblanks3));
+        DO_LIB_IF cupdate ap_dbclc(DNAME dsvihis31,DCOMMAND MAPMAP,DMAP msvihis31));
+        DO_LIB_IF cjoinaddhisblk ap_dbclc(DNAME daddsvihis3,DCOMMAND ADD,DFILE svi,DMAP maddsvihis3);
+        DO_LIB_IF cupdate ap_dbclc(DNAME dsvihis32,DCOMMAND UPDATE,DTARGET sviotoidx   lsvioto,DMAP msvihis32));
+        DO_LIB_IF cdjoinast1 ap_dbclc(DNAME dupdastdeb,DCOMMAND UPDATE,DTARGET astprmidx astprm,DMAP mupdastdeb);
+
+POSTING(tmptrans)
+        PST_UPDCMD spupdsvi2
+
+
+PERMIT(tmptrans)
+ /* PMT_ADD_COND  c0 */
+  PMT_UPDALL_COND cnotopenupd
+  PMT_DEL_COND  c0
+

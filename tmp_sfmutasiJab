@@ -1,0 +1,178 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------\|
+||                         t.Awal                                             ||
+||-------------t--------------------------------------------------------------||
+||i.Nip        | __________                                                   ||
+||i.BisAwl     | ________                                                     ||
+||i.DvsAwl     | ________________________                                     ||
+||i.DepAwl     | _______________________________                              ||
+||i.JabAwl     | ___________________________________                          ||
+||t.JnsAwl     | ___________                                                  ||
+||t.LevAwl     | _____________                                                ||
+||t.ShifAwl    | _____________                                                ||
+|\-------------.--------------------------------------------------------------/|
+|/----------------------------------------------------------------------------\|
+||                         t.Tujuan                                           || 
+||-------------t--------------------------------------------------------------||
+||t.BisTuj     | _________                                                    ||
+||i.DvsTuj     | ________________________                                     ||
+||i.DepTuj     | ________________________________                             ||
+||i.JabTuj     | ____________________________________                         ||
+||t.JnsTuj     | _____________                                                ||
+||i.LevTuj     | _________________                                            ||
+||i.Shift      | _________________   ______________                           ||
+|\-------------.--------------------------------------------------------------/|
+\------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   mtdplg       NOCHANGE                INPUTRI          1 /*Nip*/
+   mtdlok2      PROTECT                 INPUTRI          2 /*Bisnis*/
+   mtdbrg       PROTECT                 INPUTRI          3 /*Div*/
+   lpsisdep     PROTECT                 INPUTRI          4 /*Dep*/
+   mtdnoll      PROTECT                 INPUTRI          5 /*Jabatan*/
+   mtdgrup  	PROTECT			INPUTRI		 6 /*JnsSdm*/
+   mtdbisnis	PROTECT                 INPUTRI		 7 /*LvlSdm*/
+   lpsishift	PROTECT			INPUTRI		 8 /*Shift*/                                                       
+
+   mtddvs       ALLCAPS                 INPUTRI          9 /*Bisnis*/
+   mtdlok       ALLCAPS                 INPUTRI          10 /*Div*/
+   mtdgrup2     ALLCAPS                 INPUTRI          11 /*Dep*/
+   mtdkat       ALLCAPS                 INPUTRI          12 /*Jabatan*/
+   mtdukrwrn    NOCHANGE                INPUTRI          13 /*JnsSdm*/
+   mtdnorangka  PROTECT                 INPUTRI          14 /*LvlSdm*/
+   mtdnomesin	ALLCAPS			INPUTRI 	 15 /*Shift*/
+   mtdnobbm	NOCHANGE		INPUTRI		 16
+
+CALCS()
+cbknregular	djoinpsi==1 && lpsiplaobat!=1 && (lpsinokon==" " || lpsinokon=="JKKJKM")             
+cregular	djoinpsi==1 && (lpsiplaobat==1 || lpsinokon=="PKT")
+
+EDITS(tmptranst)
+e.Mandatory mtdlok MANDATORY
+e.Mandatory mtddvs MANDATORY
+e.Mandatory mtdgrup2  MANDATORY
+e.Mandatory mtdukrwrn  MANDATORY
+e.Mandatory mtdkat MANDATORY
+e.Mandatory mtdnomesin MANDATORY
+e.ValidateDvs   mtddvs  VALIDATE cadcabdtidx mcadDV scad {Pmtshcex} {Pgv_cabbis} {Pmtshcex}
+e.ValidateTbdDiv mtdlok VALIDATE tbddatkodidx mtbdDiv stbd {Pgv_dttabel} {Pgv_personal} {PlDIVISI21}
+e.ValidateTbdDep mtdgrup2 VALIDATE tbddtmstidx mtbdDep stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_DEP} {Pmtdlok} {Pgv_DEP}
+e.ValidateTbdJab mtdkat VALIDATE tbddtmstidx mtbdJab stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} {Pmtdlok} {Pmtdgrup2}
+e.ValidateTbdJns mtdukrwrn VALIDATE_IF cbknregular tbtdattypkod mtbtJenis stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pgv_jnssdm21} {Pljenis_sdm}
+e.ValidateTbdJns mtdukrwrn VALIDATE_IF cregular tbtdattypkod mtbtJenis stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pgv_jnssdm21} {Pljenis1}
+e.ValidateDvs mtddvs  VALIDATE_IF cbknAc cadcabdtidx mcadDV scad {Pmtshcex} {Pgv_cabbis} {Pmtshcex}
+e.Validatetbd mtdnomesin VALIDATE tbddatkodidx mtbdShift stbdWkt {Pgv_dttabel} {Pgv_infoumum} {Pgv_shift21}
+
+MAP(mtbdShift)
+tbdkode         mtdnomesin      REPLACE
+
+MAP(mcadDV)
+cadkode         mtddvs          REPLACE
+
+MAP(mtbdDiv)
+tbdkode         mtdlok          REPLACE
+
+MAP(mtbdDep) 
+tbdkode		mtdgrup2	REPLACE
+
+MAP(mtbdJab) 
+tbdkode         mtdkat          REPLACE
+tbdrekbk	ljenis_sdm	REPLACE
+tbdlv3		mtdnorangka	REPLACE
+tbdusrcrt	lgruplogin	REPLACE
+
+MAP(mtbtJenis)
+tbtkode         mtdukrwrn       REPLACE
+
+MAP(mniptuj)
+mtsuntuk        mtdplg          REPLACE
+lpsidvs          mtdlok2         REPLACE_IF cjoinpsix /*Bisnis*/
+lpsidep          mtdbrg          REPLACE_IF cjoinpsix /*Divisi*
+lpsidep          lpsisdep       REPLACE_IF cjoinpsix /*Dep*/
+lpsijabatan      mtdnoll         REPLACE_IF cjoinpsix /*Jabatan*/
+ljns_asal	mtdgrup		REPLACE_IF cjointbtx 
+llevel 		mtdbisnis	REPLACE_IF cjointbdx
+lpsishift	lpsishift	REPLACE_IF cjoinpsix /*Shift*/
+
+MAP(mtujuan)
+mtdlok2		mtddvs		REPLACE_IF cAC
+mtdbrg		mtdlok		REPLACE_IF cAC
+lpsisdep	mtdgrup2	REPLACE_IF cAC
+mtdnoll		mtdkat		REPLACE_IF cAC
+mtdgrup		mtdukrwrn	REPLACE_IF cbknMag
+/*mtdbisnis	mtdnorangka	REPLACE_IF cAC*/
+g_usrkode	mtdnobbm	REPLACE
+
+CALCS()
+cselevel	(djointbdJab==1 && llevel==mtdnorangka) || mtstype2=="PEMBENAHANDATASDM" || mtstype2=="DEMOSI" 
+cpelatihan	(ljenis_sdm=="JENIS3" && ((mtdnoll=="SODP" && mtdkat=="SODP") || (mtdnoll=="SDP" && mtdkat=="SDP"))) || ljenis_sdm!="JENIS3"
+cmagang		(mtdukrwrn=="MAGANG" && mtstype2=="ANTARCABANG") || mtdukrwrn!="MAGANG" || (mtsgrup!="SALESDTN" && mtsgrup!="SALESHMC" && mtsgrup!="SALESREFI" && mtsgrup!="CTR") || (mtsgrup=="SALES" && mtdkat=="SALES") || (mtsgrup=="CTR" && mtdkat=="CTR") || (mtsgrup=="SALES" && mtdkat=="A/RCOLLECTIONSTAFF") 
+cpdsama		(mtstype2=="PEMBENAHAN DATA" && mtdlok==mtdbrg) || mtstype2!="PEMBENAHAN DATA"
+cbeda		((mtstype2=="ANTARBAG&CAB" || mtstype2=="ANTARBAG") && mtdkat!=mtdnoll) || mtstype2!="ANTARBAG"
+cjkMT		(mtdkat=="MT " && mtdnoll!="MT ") || mtdkat!="MT "	
+chanyaTRN	(mtdkat=="MT " && g_grpnam=="TRAINING") || mtdkat!="MT" 
+cgrupada	lgruplogin!=""
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=mtdplg        DO_MAP SHOW mniptuj
+AFTER_INPUT	cur_field=mtdplg	DO_MAP SHOW mtujuan
+BEFORE_INPUT	cur_field=mtdlok	DO_SKIP_IF cAC
+BEFORE_INPUT	cur_field=mtdgrup2	DO_SKIP_IF cAC
+BEFORE_INPUT	cur_field=mtdkat	DO_SKIP_IF cAC
+BEFORE_INPUT	cur_field=mtdukrwrn	DO_SKIP_IF cbknMag
+BEFORE_INPUT	cur_field=mtdnorangka	DO_SKIP_IF cAC
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cgrupada mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JabGrpLoginBlmAda
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cpelatihan mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JnsLatihTdkBsBedaJab
+
+AFTER_INPUT	cur_field=mtdukrwrn	DO_MAP SHOW
+		IF cmagang mdum
+		ELSE HKCURSOR STAY 
+		HKMSG t.MagangHnyBlhAntarCbg
+
+AFTER_INPUT	cur_field=mtdlok	DO_MAP SHOW
+		IF cpdsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.UtkPdDepHrsSm
+
+AFTER_INPUT	cur_field=mtdukrwrn	DO_MAP SHOW
+		IF cselevel mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HrsSelevel
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cbeda mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JkAntarBagHrsBeda
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cjkMT mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JkMtTdkBsMt
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF chanyaTRN mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HnyTrnYgBsMtsMt
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        mtdbukbrgoto   mtssts mtsnobuk
+
+SFL_MAP
+mtssts		     mtdsts		REPLACE
+mtsnobuk             mtdnobuk           REPLACE
+mtsdata              mtddata            REPLACE
+mtsuntuk             mtdplg             REPLACE
+

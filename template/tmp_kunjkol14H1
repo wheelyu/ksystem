@@ -1,0 +1,154 @@
+LOCAL
+PGM_FIELDS
+lnamarevrek     STRING          31
+lgruprevrek     STRING          31
+/*
+lketrtrw	STRING		31
+*/
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.HasiAccTaccKunj               ||
+||t.HasilKunjungan : _____        ||
+||t.FotoKunjungan  : _____        ||
+||t.FotoBerkas     : _____        ||
+/*
+||t.FotoKwitpmbyrn : _____        ||
+||t.GuidWhyBM      : ____________ ||
+||t.FotoRtRw       : __ _____     ||
+*/
+||t.Jar            : _______.____ ||
+||t.Userinput      : _________    ||
+||t.Nama           : _____________||
+||t.GrpLog         : _____________||
+||                   _________    ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjwbstr1		NOCHANGE	INPUTRI	1
+tkdjwbstr2		NOCHANGE	INPUTRI 2
+tkdsisstr		NOCHANGE	INPUTRI 3 
+/*
+tkdjenis		NOCHANGE	INPUTRI 4 
+tkdket			NOCHANGE	INPUTRI 5
+tkdjml2			NOCHANGE	INPUTRI 6
+lketrtrw		PROTECT		INPUTRI 7
+*/
+lsvidf5d		PROTECT		INPUTRI 7
+tkdrek 			PROTECT		INPUTRI	8
+lnamarevrek		PROTECT		INPUTRI 9
+lgruprevrek		PROTECT		INPUTRI	10
+lenter                  ALLCAPS         INPUTRI 11
+
+DEFAULT(tmptranst)
+tkddata			INIT		KUNJUNGAN 
+lKUNJKOL2		INIT		KUNJKOL2
+lKUNJKOL3		INIT		KUNJKOL3
+tkdrek 			INIT		{g_usrkode}
+tkdrek 			INIT_UPDATE	{g_usrkode}
+tkdnourt		INIT_UPDATE	1
+
+tkdjwbstr1	DFALT_SCAN_BLANKS ACC TACC
+
+tkdjwbstr2	DFALT_SCAN_BLANKS ACC TACC
+
+tkdsisstr	DFALT_SCAN_BLANKS ACC TACC
+
+/*
+tkdjenis		 DFALT_SCAN_BLANKS ACC
+                                           TACC
+
+tkdket			DFALT_SCAN_BLANKS SESUAI
+					  TDK_SESUAI
+
+tkdjml2			DFALT_SCAN_BLANKS 1 "ACC"
+					  2 "TACC"
+*/
+CALCS()
+/*
+cadafotokwit	mtsperdis==1
+c0foto		mtsperdis==BLANKS
+c0rtrw		mtsdvs=="M4W"
+cadaguidwhy	mtsdvs!="M4W" && djoin7why2==1
+cadartrw	mtsdvs!="M4W"
+
+cACC		"ACC"
+cTACC		"TACC"
+cACCx		tkdjml2==1
+cTACCx		tkdjml2==2
+*/
+cjointransg29_3	djointransg29_3==1
+
+EDITS(tmptranst)
+e.Mandatory		tkdjwbstr1	MANDATORY
+e.Mandatory             tkdjwbstr2      MANDATORY
+e.Mandatory             tkdsisstr       MANDATORY
+/*
+e.Mandatory             tkdjml2         MANDATORY_IF cadartrw
+e.Mandatory             tkdjenis        MANDATORY_IF cadafotokwit
+e.Mandatory		tkdket		MANDATORY_IF cadaguidwhy
+*/
+Nama tidak ada          tkdrek          VALIDATE        psikodidx mpsirek 0
+Jabatan tidak ada       tkdrek          VALIDATE        usrkodidx musrrek 0
+
+MAP(musrrek)
+usrgrp		lgruprevrek     REPLACE
+/*
+cBLANKS		lketrtrw	DO_CALC
+cACC            lketrtrw        DO_CALC_IF cACCx
+cTACC           lketrtrw        DO_CALC_IF cTACCx
+*/
+MAP(mpsirek)
+psinama         lnamarevrek     REPLACE
+cBLANKS         lsvidf5d        DO_CALC
+lsvidf5d        lsvidf5d        REPLACE_IF cjointransg29_3
+/*
+MAP(misiketrtrw)
+cACC		lketrtrw	DO_CALC_IF cACCx
+cTACC		lketrtrw	DO_CALC_IF cTACCx
+*/
+MAP(misiawal)
+cBLANKS		lsvidf5d	DO_CALC
+lsvidf5d	lsvidf5d	REPLACE_IF cjointransg29_3
+
+HOOKS(tmptranst)
+/*
+BEFORE_INPUT    cur_field=tkdjenis      DO_SKIP_IF c0foto
+BEFORE_INPUT	cur_field=tkdket	DO_SKIP_IF condtransg1
+BEFORE_INPUT	cur_field=tkdjml2	DO_SKIP_IF c0rtrw
+AFTER_INPUT     cur_field=tkdjml2	DO_MAP SHOW misiketrtrw
+*/
+AFTER_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW misiawal
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+     tkddatbukll gv_kunjungan11 mtsnobuk mtsnoasal
+SFL_MAP
+mtsnobuk	tkdnobuk	REPLACE
+mtsnoasal       tkdnoll         REPLACE
+g_usrkode	tkdrek		REPLACE
+gv_kunjungan11	tkddata         REPLACE
+g_usrkode	tkdrek          REPLACE
+l1		tkdnourt        REPLACE
+
+
+CALCS()
+caddtransg55	mtssts=="RINP" && (mtstgl==g_tgltrn || (mtsdvs=="M4W" && tldtydis_1=="KMAL") || g_grpnam == "IT" || g_grpnam == "RI") && djointkd14==0 && 
+		(((mtsscr=="787" || mtsscr=="735" || (mtsscr=="770" && mtsjml2==0)) && (mtsnobbm==g_usrkode || mtstype1==g_usrkode || mtstype2==g_usrkode || g_grpnam=="ARPIC" || g_grpnam=="PICPIUT" || g_grpnam == "B.M4WADH" || 
+		g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WCSPV" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.M4WCSPV" || g_grpnam=="BM" || g_grpnam=="B.M4WRM")) || (mtsscr=="770" && (mtsjml2==1 || mtsjml2==10 || mtsjml2==20) && mtstype2==g_usrkode))
+
+cupdtransg55	mtssts=="RINP" && (mtstgl==g_tgltrn || (mtsdvs=="M4W" && tldtydis_1=="KMAL") || g_grpnam == "IT" || g_grpnam == "RI")  && djointkd14==1 && 
+		(((mtsscr=="787" || mtsscr=="735" || (mtsscr=="770" && mtsjml2==0)) && (mtsnobbm==g_usrkode || mtstype1==g_usrkode || mtstype2==g_usrkode || g_grpnam=="ARPIC" || g_grpnam=="PICPIUT" || g_grpnam == "B.M4WADH" || 
+		g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WCSPV" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.M4WCSPV" || g_grpnam=="BM" || g_grpnam=="B.M4WRM")) || (mtsscr=="770" && (mtsjml2==1 || mtsjml2==10 || mtsjml2==20) && mtstype2==g_usrkode))
+
+PERMIT(tmptrans)
+PMT_ADD_COND    caddtransg55
+PMT_UPDALL_COND cupdtransg55
+PMT_DEL_COND    c0

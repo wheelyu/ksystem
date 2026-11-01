@@ -1,0 +1,609 @@
+SCREEN 401 QUERY_TYPE s.KorPlus
+SCR_FILE mts
+SCR_JRNFLD mtsnobuk mtstgl
+SCR_LOGFLD mtsnobuk 
+SCR_NXT_POSTING 4301
+SCR_NXT_MAP mnext
+SCR_NXT_COND cmtsOPEN
+SCR_NXT_MSG  IF cmtsOPEN1 harap izin audit dahulu 
+
+MAP(mnext)
+mtsnobuk     	r_string1    REPLACE
+mtstgl     	r_date1      REPLACE
+
+LOCAL
+PGM_FIELDS
+lkodebukti	        STRING		21
+lPJ       	        STRING		21
+lurut  		        INT2   		2
+lurutppt  	        INT2   		2
+lpengirim	        STRING		26
+lkettotal               STRING          16  
+lbrchrgbl	        DFLOAT		8
+ltomdet_d    	        STRING		20
+ltomdet_d2    	        STRING		20
+lLOKAHASS	        STRING		21
+lFASTMOVING	        STRING		21
+ltahunini	        STRING		21
+lpmbgrup 	        STRING		21
+lVERSI		        STRING		21
+l1_int		        INT2		2
+l3_int		        INT2		2
+ltbdtblkode_tujuan	STRING	        21
+ltbdkettype_tujuan      STRING	        21
+ldum		        STRING		21
+lscr                    STRING		21
+l4996                   INT2            2
+lmnxtpstadd             STRING          15
+lmnxtpstupd             STRING          15
+ldatakuncian            STRING          11
+lLinkBarcode		STRING		61
+lenter          	STRING          61
+ltbddf1         	DFLOAT          8
+lCABMPM         	STRING          21
+ltbddf1MPM      	DFLOAT          8
+ldumm           	STRING          30
+
+/*---------------djoinbrc--------------*/
+MAP(mjoinbrc)
+brchrgbl	lbrchrgbl	REPLACE
+
+DBCALCS(djoinbrc)  /*Cabang saja*/
+DBC_COMMAND	JOIN
+DBC_TARGET	brcdtbrgidx   gv_dtbrgcab mtdbrg mtscab 
+DBC_MAP		mjoinbrc
+
+/* ------------------ djoinmtdu --------------*/
+MAP(mjoinmtdu)
+mtdnourt   lurut   REPLACE
+
+DBCALCS(djoinmtdu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET      mtdbukurtidx   mtsnobuk  
+        DBC_MAP         mjoinmtdu
+
+DBCALCS(dbscanppt)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET 	pptbukotodat   mtsnobuk mtdoto gv_dtbrm
+        DBC_SUM_FIELD   pptjml
+
+/* ------------------ djoinpptPlk --------------*/
+DBCALCS(djoinpptPlk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	pptbukotodat   mtdnobuk mtdoto gv_dtplengkap 
+
+MAP(mjoinpmb)
+pmbgrup		lpmbgrup	REPLACE
+
+DBCALCS(djoinpmb)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	pmbbukidx mtsnopsn
+	DBC_MAP		mjoinpmb
+
+CALCS()
+cdtbrm     pptdata == gv_dtbrm 
+cabkclsd   abksts == gv_CLSD
+cabkinph	abksts == "INPH"
+
+DBCALCS(dbscanppt2)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET 	pptbukotodat   mtsnobuk 
+        DBC_SELECT      cdtbrm
+        DBC_SUM_FIELD   pptjml
+
+MAP(mjointbdlok_tujuan)
+tbdtblkode              ltbdtblkode_tujuan              REPLACE
+tbdkettype              ltbdkettype_tujuan              REPLACE
+
+DBCALCS(djointbdlok_tujuan)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddtdtmkod     gv_dttabel gv_barang  mtdlok
+        DBC_MAP         mjointbdlok_tujuan
+
+DBCALCS(djoinabk)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx ldatakuncian mtsnobuk
+        DBC_SELECT      cabkinph
+
+DBCALCS(djoinabkcls)
+        DBC_COMMAND JOIN
+        DBC_TARGET abkdatbukidx ldatakuncian mtsnobuk
+        DBC_SELECT cabkclsd
+
+MAP(mjointbdCABMPM)
+tbddf1          ltbddf1         REPLACE
+DBCALCS(djointbdCABMPM)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_barang lCABMPM mtscab
+        DBC_MAP         mjointbdCABMPM
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /-------------------------------\ /------------------------------------------------------------\ |
+| |i.Tgl   : __________           | | i.NoBuk           : _____________________    i.Sts : _____ | |
+| |i.Cab   : _________    _______ | | i.aproval         : ____ ________________                  | |
+| |i.Dvs   : _________    ________| | i.RekPend    ____ : __________  __________________________ | |                                                                                   
+| |                               | | i.Keterangan      : ______________________________________ | |
+| \-------------------------------/ \------------------------------------------------------------/ |
+|    ___________________                                                                   ______  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+| /----------------------------------------------------------------------------------------------\ |
+| | ___________________   ______________________________________________________________________ | |
+| |                                                                                              | |
+| |                                                                                              | |
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(master)
+   mtstgl        NONE {DD-MM-YY}  INPUTRI          1 /* Tanggal Mutasi*/
+   mtsnobuk      ALLCAPS          INPUTRI          6 /* No Mutasi */
+   mtssts        PROTECT ALLCAPS  NONE             7 /* Status */
+   mtscab        ALLCAPS SCROLL   INPUTRI          2 /* Keterangan  */
+   mtsuntuk      NOCHANGE SCROLL  INPUTRI         5 /* Keterangan  */
+   mtstype1      ALLCAPS  SCROLL  INPUTRI          5
+   mtstype2      PROTECT  SCROLL  INPUTRI          5
+   mtsdvs        ALLCAPS SCROLL   INPUTRI          3 /* Keterangan  */
+   mtsbisnis     NOCHANGE ALLCAPS NONE            4 /* Status */
+   mtsgrup2      NOCHANGE         INPUTRI          8 /* Kode Cabang Pengirim */
+   mtsnobbm      ALLCAPS          INPUTRI          9 /* Kode Cabang Pengirim */
+   lpengirim  	 PROTECT	  NONE             9 /* Nama Cabang Pengirim */
+   mtsket        ALLCAPS   SCROLL INPUTRI          10 /* Keterangan  */
+   ltomdet_d  	 TOMBOL	      	  INPUTRI	   11 /* Tombol Detil d*/
+   mtsdata       PROTECT QPROTECT UNSEEN NONE      12
+   lkettotal     PROTECT          BIG       	   13 /* Keterangan Total*/
+   mtstotal      PROTECT          BIG              14
+
+CALCS()
+c0		0
+cgsglbisdvs1	g_sglbisdvs == 1 && g_sglcab == 1
+cgsglcabbisdvs1	g_sglcabbisdvs == 1 
+cgsglcab1	g_sglcab == 1 
+cmtsOPEN	mtssts == "OPEN" && mtstype1 == "Y"
+cmtsOPEN1       mtstype1 != "Y" || mtstype1 == BLANKS
+ctahunini	THBLS_YYYY(g_tgltrn)
+cH2             mtsdvs == "H2"
+cnotH2          mtsdvs != "H2"
+
+DEFAULTS(master)
+ltomdet_d    	INIT   		"1d.Isi Barang"
+lkettotal       INIT       	NETTO 
+mtsscr          INIT            {g_scrnumstr}
+IF cgsglbisdvs1    mtsdvs  INIT  	{g_grpbisdvs}
+IF cgsglcab1    mtscab  INIT  	{g_grpcab}
+mtstgl   	INIT  		{g_tgltrn}
+mtssts   	INIT 	      	OPEN
+mtsdata         INIT_ADD        KORPLUS
+mtsdata         INIT_QUERY      KORPLUS
+lPJ		INIT		PJ
+lLOKAHASS	INIT		LOKAHASS
+lFASTMOVING	INIT		FASTMOVING
+mtsgrup2	DFALT_LIST	PJ
+				BRG
+ltahunini	INIT		{ctahunini}
+lVERSI		INIT		06082025
+l1_int		INIT		1
+l3_int		INIT		3
+lscr            INIT            {g_scrnumstr}
+lmnxtpstadd     INIT            mnxtpstadd
+lmnxtpstupd     INIT            mnxtpstupd
+l4996           INIT            4996
+ldatakuncian	INIT            "KUNCIABSEN"
+mtsuntuk        DFALT_SCAN_BLANKS       KRF "KOREKSI FIX"
+                                        KRA "KOREKSI AUDIT"
+
+mtstype1        DFALT_SCAN_BLANKS       Y
+lCABMPM         INIT            CABMPM
+
+MAP(mnxtpstadd)
+    mtsnobuk    r_string1  REPLACE
+    lscr        r_string2  REPLACE
+
+MAP(mnxtpstupd)
+    mtsnobuk    r_string1  REPLACE
+    lscr        r_string2  REPLACE
+
+EDITS(master)
+e.Tombol ltomdet_d SHOW_SFL trans
+e.MandatoryDvs mtsdvs MANDATORY
+e.MandatoryCab mtscab MANDATORY
+e.MandatoryBuk mtsnobuk MANDATORY
+e.MandatoryTgl mtstgl MANDATORY
+e.MandatoryRek mtsnobbm MANDATORY
+e.MandatoryKet mtsket MANDATORY
+e.MandatoryUtk  mtsuntuk MANDATORY_IF cH2
+e.ValidateCab tidak ada mtscab VALIDATE cabstskodidx mcab scab {Pgv_INPG}
+e.DupkeyBuk mtsnobuk DUPKEY mtsbukidx
+e.ValidateRek mtsnobbm VALIDATE bbgbbtnoidx mbbg sbbgT {Pmtsgrup2}
+e.ValidateDvs mtsdvs VALIDATE cadcabdtidx mcadDV scad {Pmtscab} {Pgv_cabbis} {Pmtscab}
+e.ValidateDvs mtsdvs VALIDATE dtmkodidx mdtmDV 0
+
+MAP(mcadDV)
+cadkode		mtsdvs		REPLACE
+
+MAP(mdtmDV)
+dtmcab   	mtsbisnis	REPLACE
+
+MAP(mcab)
+cabkode		mtscab		REPLACE
+g_cabbisdvs	mtsdvs	REPLACE_IF cgsglcabbisdvs1
+
+MAP(mbbg)
+bbgno		mtsnobbm	REPLACE
+bbgket		lpengirim	REPLACE
+
+CALCS()
+cotY       	stsotobukti == "Y"
+ckodebukti	DO_LIB ap_amdvs(mtsdvs,mtsscr,lkodebukti); 
+cnomer     	STRIP(lkodebukti) + STRIP(cabkdfak) + THBLS(g_tgltrn) + "-"
+ctypadd    	g_curcmd == 1
+csettglmmT     	stssettglmm == "T"
+cbisdvs1	mtsdvs != BLANKS
+cgrpaudit       g_grpnam != "AUDITSPV"  &&  g_grpnam != "AUDITHEAD" && g_grpnam != "RI"
+ctambahabk	mtsuntuk == "KRA" && djoinabk == 0 && djoinabkcls == 0
+cgrpaudit1      (g_grpnam == "AUDITSPV"  || g_grpnam == "AUDITHEAD" || g_grpnam == "RI")  && mtstype1 != BLANKS
+cdjoinabkdankrf	mtsuntuk == "KRF" && djoinabk == 1
+cdjoinclsdabk   djoinabkcls == 1 && mtsuntuk == "KRA"
+
+MAP(mnomer)
+ckodebukti	lkodebukti	DO_CALC_IF cbisdvs1
+cnomer     	mtsnobuk    	DO_CALC_IF ctypadd
+
+MAP(mtgl)
+g_tgltrn	mtstgl		REPLACE
+
+MAP(mdumm)
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mnipaudit)
+g_usrkode       mtstype2        REPLACE
+
+HOOKS(master)
+BEFORE_INPUT    cur_field=mtscab   	DO_SKIP_IF cgsglcab1  
+BEFORE_INPUT    cur_field=mtsdvs   	DO_SKIP_IF cgsglcabbisdvs1  
+BEFORE_INPUT    cur_field=mtsuntuk   	DO_SKIP_IF cnotH2 
+BEFORE_INPUT   	cur_field=mtsnobuk   	DO_SKIP_IF cotY  
+AFTER_INPUT    	cur_field=mtstgl  	DO_MAP SHOW IF cotY mnomer
+AFTER_INPUT    	cur_field=mtsdvs  	DO_MAP SHOW IF cotY mnomer
+AFTER_INPUT    	cur_field=mtsnobbm	DO_MAP SHOW IF cotY mnomer
+BEFORE_INPUT	cur_field=mtstgl  	DO_SKIP_IF csettglmmT
+BEFORE_INPUT	cur_field=mtsnobbm	DO_MAP SHOW IF csettglmmT mtgl
+BEFORE_INPUT    cur_field=mtstype1      DO_SKIP_IF cgrpaudit      
+/* BEFORE_INPUT    cur_field=mtstype2      DO_SKIP_IF cgrpaudit */
+AFTER_INPUT     cur_field=mtstype1      DO_MAP SHOW IF cgrpaudit1 mnipaudit
+
+
+/*** SUBFILE INFORMATION ***/
+IMAGE(transt) 
+/--t-------t----------t-----------t-----------t------t------t------t-------t------------t-----------t----------\
+|No|i.Kat  |i.Brg     |i.NamaBrg  |t.TypeLok  |i.Lok |i.Ukr |i.Sat |i.Jml  |    i.Hrg   | i.Sub     |i.TglEx   |
+\--.-------.----------.-----------.-----------.------.------.------.-------.------------.-----------.----------/
+
+IMAGE(trans) 
+|__|_______|__________|___________|___________|______|______|______|_____._|_________.__|___________|__________|
+
+FIELD(trans)
+   mtdnourt          PROTECT             INPUTRI     1 /* Jumlah Barang */
+   mtdkat            ALLCAPS SCROLL      INPUTRI     2 /* Kode Brg */
+   mtdbrg            ALLCAPS SCROLL      INPUTRI     3 /* Kode Brg */
+   brgnama           PROTECT SCROLL      INPUTRI     4 /* Kode Brg */
+   mtdgrup	     ALLCAPS SCROLL	 INPUTRI     4 /* Type Lokasi */
+   mtdlok  	     ALLCAPS SCROLL      INPUTRI     5
+   mtdukrwrn	     ALLCAPS SCROLL      INPUTRI     6
+   mtdsat 	     ALLCAPS SCROLL      INPUTRI     7
+   mtdjml            NUMERIC             INPUTRI     8 /* Jumlah Barang */
+   mtdhrg            NUMERIC             INPUTRI     9
+
+   mtdsubtot         PROTECT             INPUTRI     10 /* Jumlah Barang */
+   mtdtgl2           NONE {DD-MM-YY} NOLIMIT INPUTRI  11 
+   
+DEFAULTS(trans)
+ltomdet_d2    	INIT   			"1d.Rangka Mesin"
+ltomdet_d    	INIT   			"1d.Isi Barang"
+mtdsatbsr  	INIT	        	1
+mtddk           INIT            	D
+mtddk           INIT_UPDATE     	D
+mtdgrup		DFALT_SCAN_BLANKS	INTI
+
+CALCS()
+ckatisi  	mtdkat != BLANKS
+cTglExpY	brgytexp == "Y"
+cTglExpT	brgytexp != "Y"
+cytukrY   	brgytukr != "T" && brgytukr != "" 
+cytukrT   	brgytukr == "T" 
+/* cukrYotoT	brgytukr == "Y" && stssetukrbrg != "Y" */
+cLokInti	mtdgrup == "INTI"
+cLokFast	mtdgrup == "FASTMOVING"
+cAHS         	mtsdvs == "H2"
+cnotksu		mtdkat != "KSU"
+
+EDITS(trans)
+e.MandatoryTglExp mtdtgl2 MANDATORY_IF cTglExpY
+e.MandatoryUrt mtdnourt MANDATORY
+e.MandatoryBrg mtdbrg  MANDATORY
+e.MandatoryType mtdgrup MANDATORY_IF cAHS
+e.MandatoryBrg mtdjml MAND_PLUS
+e.MandatoryBrg mtdhrg MANDATORY_IF cnotksu
+e.MandatoryUkr mtdukrwrn MANDATORY_IF cytukrY
+e.MandatoryLok mtdlok MANDATORY
+e.MandatorySat mtdsat MANDATORY
+
+e.ValidateKatbrg mtdkat VALIDATE tbddatkodidx  mkat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_kategori} /*kategori*/
+e.ValidateKatBrg mtdbrg VALIDATE_IF ckatisi brgstdtkatbr mbrg sbrgKat {Pgv_INPG} {Pgv_dtbarang} {Pmtdkat}
+e.ValidateBrg mtdbrg VALIDATE brgstsdatbrg mbrg sbrg {Pgv_INPG} {Pgv_dtbarang}
+/* e.ValidateUkr mtdukrwrn VALIDATE_IF cukrYotoT ubrbrgdatkod mubr subr {Pmtdbrg} {Pgv_dtukrwrn} */
+e.ValidateLok mtdlok VALIDATE_IF cLokInti tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlLOKAHASS} {Pgv_BR} {Pmtscab}
+e.ValidateLok mtdlok VALIDATE_IF cLokFast tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {PlFASTMOVING} {Pgv_BR} {Pmtscab}
+e.ValidateSat mtdsat VALIDATE  tbddatkodidx mtbdSat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_satuan} /* satuan */
+
+
+/* 
+MAP(mubr)
+ubrkode		mtdukrwrn	REPLACE 
+*/
+
+MAP(mkat)
+tbdkode		mtdkat   	REPLACE
+
+MAP(mtbdLK2)
+tbdkode        	mtdlok       	REPLACE
+
+MAP(mtbdSat)
+tbdkode		mtdsat		REPLACE
+tbddf1		mtdsatbsr	REPLACE  /* x Satuan Besar */
+
+
+CALCS()
+csubtot         	mtdjml * mtdhrg
+csatu			1
+curut         		lurut + 1
+cjoinmtdu0    		djoinmtdu == 0 && g_curcmd == 1 && mtdnourt == 0 
+cjoinmtdu1    		djoinmtdu == 1 && g_curcmd == 1 && mtdnourt == 0 
+chrg0	      		djoinbrc == 1 && mtdhrg == 0 
+csatksg			mtdsat == BLANKS
+
+chnyaLokAktif		((djointbdlok_tujuan == 1 && ltbdtblkode_tujuan == "LOKAHASS" && ltbdkettype_tujuan == "AKTIF") ||
+                	(djointbdlok_tujuan == 1 && ltbdtblkode_tujuan != "LOKAHASS"))
+
+MAP(mdum)
+lurut     	lurut     	REPLACE
+
+MAP(mbrg)
+brgkode        mtdbrg       REPLACE
+brgnama        brgnama      REPLACE
+brgsat         mtdsat       REPLACE_IF csatksg
+brgkat         mtdkat       REPLACE
+brgytseri      brgytseri    REPLACE
+brgytexp       brgytexp     REPLACE
+brgytukr       brgytukr     REPLACE
+brgbbmprs      mtdnobbm	    REPLACE
+
+MAP(mhitsubtot)
+csubtot         mtdsubtot       DO_CALC
+
+MAP(mhrgbrg)
+lbrchrgbl       mtdhrg          REPLACE_IF chrg0
+
+
+MAP(murut)
+csatu          	mtdnourt   DO_CALC_IF cjoinmtdu0
+curut       	mtdnourt   DO_CALC_IF cjoinmtdu1
+
+HOOKS(trans)
+BEFORE_INPUT    cur_field=mtdtgl2       DO_SKIP_IF cTglExpT
+BEFORE_INPUT	cur_field=mtdukrwrn	DO_SKIP_IF cytukrT
+BEFORE_INPUT 	cur_field=mtdbrg  	DO_MAP SHOW murut  
+AFTER_INPUT	cur_field=mtdjml 	DO_MAP SHOW mhrgbrg
+AFTER_INPUT	cur_field=mtdjml	DO_MAP SHOW mhitsubtot
+AFTER_INPUT	cur_field=mtdhrg	DO_MAP SHOW mhitsubtot
+AFTER_INPUT	cur_keybd=EN    	DO_MAP SHOW mhitsubtot
+
+AFTER_INPUT     cur_field=mtdlok 	DO_MAP SHOW
+                IF chnyaLokAktif mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.BatasLokasiAktif
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF chnyaLokAktif mdumm
+                ELSE HKCURSOR STAY
+                HKMSG t.BatasLokasiAktif
+
+CALCS()
+cbknKRD      	(stssistem != "DEALER" || mtsdvs == "H2")
+
+/*****/
+SUBFILE(trans)
+SFL_LINES(6)
+SFL_TITLE(transt)
+SFL_COND cbknKRD
+
+SFL_TARGET
+     mtdbukurtidx        	  mtsnobuk
+
+SFL_MAP 
+     mtsnobuk         	mtdnobuk
+     mtssts	 	mtdsts
+     mtstgl	 	mtdtglfak
+     mtscab             mtdcab
+     mtsscr             mtdscr 
+     mtsdata            mtddata
+
+IMAGE(transg1t) 
+/--------------------------------------------------------------------------------------------\
+|i.NamaBrg: _________________________________         ___________________                    |
+|--t------t-------------t--------------t------t------t-----t-----t-------------t-------------|
+|No|i.Kat |i.Brg        |  i.NamaBrg   |i.Lok |i.ukr |i.Sat|i.Jml|    i.Hrg    | i.Sub       |
+\--.------.-------------.--------------.------.------.-----.-----.-------------.-------------/
+
+FIELD(transg1t)
+brgnama           PROTECT SCROLL      INPUTRI     4 
+ltomdet_d2  	  TOMBOL	     INPUTRI	5 /* Tombol Detil d*/
+
+
+EDITS(transg1t)
+e.Tombol ltomdet_d2 SHOW_SFL trans2
+
+CALCS()
+crangkaT	brgytseri != "Y" || mtdbrg == BLANKS
+
+HOOKS(transg1t)
+BEFORE_INPUT	cur_field=ltomdet_d2	DO_SKIP_IF crangkaT
+
+
+IMAGE(transg1) {IMG_HOOKS=trans} {IMG_DEFAULT=trans} {IMG_HELP=trans} {COVER_MASTER} {IMG_EDIT=trans}
+|__|______|_____________|______________|______|______|_____|_____|___________._|_____________|
+
+FIELD(transg1)
+   mtdnourt     PROTECT         INPUTRI     1 /* Jumlah Barang */
+   mtdkat       ALLCAPS SCROLL  INPUTRI     2 /* Kode Brg */
+   mtdbrg       ALLCAPS SCROLL  INPUTRI     3 /* Kode Brg */
+   brgnama      PROTECT SCROLL  INPUTRI     4 /* Kode Brg */
+   mtdlok       ALLCAPS SCROLL  INPUTRI     5
+   mtdukrwrn    ALLCAPS SCROLL  INPUTRI     6
+   mtdsat       ALLCAPS SCROLL  INPUTRI     7
+
+   mtdjml       NUMERIC         INPUTRI     8 /* Jumlah Barang */
+   mtdhrg       NUMERIC         INPUTRI     9
+   mtdsubtot    PROTECT         INPUTRI     10  /* unit sat kecil */
+   
+CALCS()
+cDEALER    stssistem == "DEALER" 
+
+SUBFILE(transg1)
+SFL_LINES(9)
+SFL_TITLE(transg1t)
+SFL_COND cDEALER
+
+SFL_TARGET
+mtdbukurtidx            mtsnobuk
+
+SFL_MAP 
+     mtsnobuk         	mtdnobuk
+     mtssts	 	mtdsts
+     mtstgl	 	mtdtglfak
+     mtscab             mtdcab
+     mtsscr             mtdscr 
+
+SUBFILE(trans2)
+SFL_TEMPLATE(tmp_mtd_ppt)
+
+CALCS(master)
+cmtstotal_a		mtstotal + mtdsubtot
+cmtstotal_u		mtstotal + mtdsubtot - ~mtdsubtot
+cmtstotal_d		mtstotal - mtdsubtot
+cINPH                   "INPH"
+
+MAP(mupdmts_a)
+   cmtstotal_a		mtstotal	   DO_CALC
+
+MAP(mupdmts_u)
+   cmtstotal_u		mtstotal	   DO_CALC
+
+MAP(mupdmts_d)
+   cmtstotal_d		mtstotal	   DO_CALC	
+
+MAP(maddsub)
+mtsnobuk   mtsnobuk  REPLACE
+
+/* ------------------------------------------- */
+SPCALCS(spadd) 	
+DO_LIB ap_dbclc(DNAME dupdmts_a,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_a);
+
+SPCALCS(spupd) 	
+DO_LIB ap_dbclc(DNAME dupdmts_u,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_u);
+
+SPCALCS(spdel) 	
+DO_LIB ap_dbclc(DNAME dupdmts_d,DCOMMAND UPDATE,DTARGET mtsprmidx mtsprm,DMAP mupdmts_d);
+
+SPCALCS(sadd)
+DO_LIB_IF cotY	ap_dbclc(DNAME daddsub,DCOMMAND ADD_SUB,DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+
+MAP(mupdabk)
+    gv_CLSD	abksts	REPLACE
+
+MAP(mupdinphabk)
+    cINPH       abksts  DO_CALC
+
+SPCALCS(spdelabk)
+DO_LIB ap_dbclc(DNAME dupdabk, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx ldatakuncian mtsnobuk, DMAP mupdabk);
+
+SPCALCS(spaddabk)
+DO_LIB_IF ctambahabk ap_nxpst(l4996, lmnxtpstadd);
+DO_LIB_IF cdjoinabkdankrf  ap_dbclc(DNAME dupdabk1, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx ldatakuncian mtsnobuk, DMAP mupdabk);
+DO_LIB_IF cdjoinclsdabk    ap_dbclc(DNAME dupdabklagi, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx ldatakuncian mtsnobuk,DBC_COND cabkclsd, DMAP mupdinphabk);
+
+POSTING(master)
+   PST_UPD_DET_COND    csatu
+   PST_SUB_ADDCMD sadd
+   PST_ADDCMD spaddabk
+   PST_UPDCMD spaddabk
+   PST_DELCMD spdelabk
+				
+POSTING(trans)
+        PST_ADDCMD 	spadd
+	PST_UPDCMD 	spupd
+	PST_DELCMD 	spdel
+
+POSTING(transg1)
+        PST_ADDCMD 	spadd
+	PST_UPDCMD 	spupd
+	PST_DELCMD 	spdel
+
+CALCS(master)
+cmtsOPENKP 	mtssts == "OPEN" && mtsdata == "KORPLUS" 
+cadadetail	djoinmtdu == 1 
+csamajml   brgytseri != "Y" || (brgytseri == "Y" && dbscanppt == mtdjml && djoinpptPlk == 1)
+
+PERMIT(master)
+	PMT_UPDALL_COND	cmtsOPENKP
+	PMT_DEL_COND    cmtsOPENKP
+	PMT_EXIT_COND   cadadetail
+	PMT_EXIT_MOV_COND cadadetail
+	PMT_EXIT_MSG Detil harus diisi atau hapus data ini
+
+PERMIT(trans)
+	PMT_ADD_COND	cmtsOPENKP
+	PMT_UPDALL_COND	cmtsOPENKP
+	PMT_DEL_COND	cmtsOPENKP
+
+PERMIT(transg1)
+	PMT_ADD_COND	cmtsOPENKP
+	PMT_UPDALL_COND	cmtsOPENKP
+	PMT_DEL_COND	cmtsOPENKP
+	PMT_EXIT_COND   csamajml
+	PMT_EXIT_MOV_COND csamajml
+	PMT_EXIT_MSG p.IsiRMorJmlTdkSesuai
+
+/*
+PERMIT(trans2)
+        PMT_ADD_COND    cmtsOPEN 
+	PMT_UPDALL_COND	cmtsOPEN 
+	PMT_DEL_COND    cmtsOPEN 
+*/
+
+IMAGE(report) 
+/------------------------------------------------------------\
+	
+		No. Koreksi : ______________
+
+		Status      : ____
+
+\------------------------------------------------------------/
+
+FIELD(report)
+    mtsnobuk	    PROTECT	       INPUTRI		1	
+    mtssts          PROTECT	       INPUTRI		2
+
+MAP(mstring)
+mtsnobuk		r_string1	REPLACE
+mtssts		r_string2	REPLACE
+
+RTREE(report)
+USES_SCRIPT(scr401.rptdesign)
+RT_MAP   mstring
+
+END_SCREEN

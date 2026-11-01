@@ -1,0 +1,88 @@
+LOCAL
+PGM_FIELDS
+lnamahrd1		STRING		41
+lstscaba		STRING		5
+lstscabb		STRING		5
+
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/----------------------------------------------\|
+|!t.UbahCabSdm            ___                   !|
+|!t.Tgl        : ___________                    !|
+|!t.Niphrd     : _________                      !|
+|!t.Nama       : ___________________________    !|
+|!t.Ubah       : ______________________         !|
+|!t.CabAsal    : ___________                    !|
+|!t.CabSkrg    : ___________                    !|
+|!t.Ket        : _______________________________!|
+|\----------------------------------------------/|
+\------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt        PROTECT			INPUTRI 1
+tldtglfak       PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+tldplg          PROTECT                 INPUTRI 3
+lnamahrd1        PROTECT                 INPUTRI 4 
+tldgrup         NOCHANGE                INPUTRI 5
+tldcab          ALLCAPS                 INPUTRI 6 
+tldnobbm        ALLCAPS                 INPUTRI 7 
+tldket		TEXTAREA ALLCAPS	INPUTRI 8 
+
+CALCS()
+cbukancab_skrg  tldgrup!="UBAH_CABSKRG"
+cbukancab_asal  tldgrup!="UBAH_CABASAL"
+cubah_cabskrg   tldgrup=="UBAH_CABSKRG"
+cubah_cabasal   tldgrup=="UBAH_CABASAL"
+ccab1           lstscaba == "INPG" || lstscaba =="RENC" || tldnobbm==BLANKS
+ccab2           lstscabb == "INPG" || lstscabb=="RENC" || tldcab==BLANKS
+c138accgaji     (btmsts=="138" && btmsurveyor=="ACC_GAJI" ) || (btmsts=="140" && btmsurveyor=="SDK_JARI") || (btmsts=="138" && btmsurveyor=="CETAK_SPK" && btmnorangka=="MAGANG_UANG_SAKU")      
+
+DEFAULTS(tmptranst)
+tldplg		INIT_ADD        {g_usrkode}
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldgrup         DFALT_SCAN_BLANKS UBAH_CABSKRG UBAH_CABASAL CABASAL_DAN_CABSKRG
+
+EDITS(tmptranst)
+t.Mandatory     tldgrup		MANDATORY
+t.Mandatory     tldcab 		MANDATORY_IF cbukancab_skrg
+t.Mandatory     tldnobbm	MANDATORY_IF cbukancab_asal
+t.Mandatory     tldket		MANDATORY
+t.ValidateCab tldcab VALIDATE cabkodidx mcab138 scab 
+t.ValidateCab tldnobbm VALIDATE cabkodidx mcab138a scab
+
+MAP(mcab138)
+cabkode		tldcab			REPLACE
+cabsts		lstscaba		REPLACE
+
+MAP(mcab138a)
+cabkode		tldnobbm		REPLACE
+cabsts		lstscabb		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldcab                DO_SKIP_IF cubah_cabskrg
+BEFORE_INPUT    cur_field=tldnobbm              DO_SKIP_IF cubah_cabasal
+AFTER_INPUT     cur_field=tldcab        DO_MAP SHOW
+                IF ccab1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaCabInpgRenc
+
+AFTER_INPUT     cur_field=tldnobbm        DO_MAP SHOW
+                IF ccab2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HanyaCabInpgRenc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND c138accgaji
+SFL_TARGET
+        tldbukbrgoto btmplg gv_CLSD lUBAHCAB
+
+SFL_MAP
+lUBAHCAB		tldbrg          REPLACE
+btmplg                  tldnobuk        REPLACE
+btmnobuk		tldlok2		REPLACE
+gv_CLSD			tldsts		REPLACE
+g_tgltrn		tldtglfak	REPLACE
+c1			tldnourt	REPLACE

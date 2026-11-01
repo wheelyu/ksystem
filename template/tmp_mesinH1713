@@ -1,0 +1,42 @@
+IMAGE(tmptranst)
+/-------------------t----------------t--------------\
+|i.Kode             |i.Keterangan    |t.Potongan    |
+\-------------------.----------------.--------------/
+
+IMAGE(tmptrans)
+|___________________|________________|______________|
+FIELD(tmptrans)
+nhdkode                 PROTECT SCROLL                  INPUTRI 1
+nhdkode2                NOCHANGE SCROLL                 INPUTRI 1
+nhdhrg2                 ALLCAPS SCROLL                  INPUTRI 3
+
+DEFAULTS(tmptrans)
+nhdkode2                DFALT_SCAN BLANKS MESINKASAR MESINBAGUS
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+CALCS()
+cmesinkasar     nhdkode2=="MESINKASAR" || nhdkode2!="MESINBAGUS"
+
+EDITS(tmptrans)
+e.Mandatory     nhdkode2  MANDATORY
+e.Mandatory nhdhrg2     MANDATORY_IF cmesinkasar
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_field=nhdkode2       DO_MAP SHOW mmapjaminput
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND cadaunit
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+nhdbukidx   btmnobuk gv_estimasi l35
+
+SPCALCS(spmesin713)
+DO_LIB ap_nxpst(l4461,lm4461det5);
+
+POSTING(tmptrans)
+        PST_ADDCMD spmesin713
+        PST_UPDCMD spmesin713
+

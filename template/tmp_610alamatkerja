@@ -1,0 +1,117 @@
+LOCAL
+PGM_FIELDS
+lpropinsi         STRING   21
+lkota       STRING   21
+lkec        STRING   21
+lkel        STRING   21
+/*lALMKRJ610  STRING   11*/
+
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|/----------------------------------------------------\|   
+   t.NoTelp       : _________________
+   t.NamaPT       : ______________________________
+   t.Alamat       : ___________________________________
+   t.RT           : _____        t.RW : _____
+   t.Propinsi     : ____ _________________________
+   t.Kota         : ____ _________________________
+   t.Kecamatan    : _______ _________________________
+   t.Kelurahan    : ________ _________________________
+   t.KodePos      : _______
+   t.Cabang       : ______________________________
+   t.Latitude     : __._____________
+   t.Longitude    : __._____________ 
+                    __________
+
+|\----------------------------------------------------/|
+\------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr9           DIGITS                        INPUTRI  1
+svinama         ALLCAPS SCROLL                  INPUTRI 2
+sviket          TEXTAREA ALLCAPS SCROLL         INPUTRI 3
+svistr1         ALLCAPS                         INPUTRI 4
+svistr2         ALLCAPS                         INPUTRI 5
+
+svistr3         ALLCAPS SCROLL                  INPUTRI 6
+lpropinsi       PROTECT SCROLL                  INPUTRI 7
+
+svistr4         ALLCAPS SCROLL                  INPUTRI 8
+lkota           PROTECT SCROLL                  INPUTRI 9
+
+svistr5         ALLCAPS SCROLL                  INPUTRI 10
+lkec            PROTECT SCROLL                  INPUTRI 11
+
+svistr6         ALLCAPS SCROLL                  INPUTRI 12
+lkel            PROTECT SCROLL                  INPUTRI 13
+
+svistr7         DIGITS                          INPUTRI 14
+
+svistr8         PROTECT SCROLL                  INPUTRI 15
+svidf1          PROTECT  {99.9999999999} SCROLL                  INPUTRI 16
+svidf2          PROTECT  {99.99999999999} SCROLL                 INPUTRI 17
+
+lenter         NOCHANGE                         INPUTRI  100
+
+/*DEFAULTS(tmptranst)*/
+/*lALMKRJ610        INIT     ALMKRJ610*/
+
+
+EDITS(tmptranst)
+e.valProp       svistr3         VALIDATE dtmdtkodidx  mdtm_almkrj sdtm {Pgv_dtkota}
+e.valKota       svistr4         VALIDATE tbldtdtmkod  mtbl_almkrj stbl {Pgv_dtkota} {Psvistr3}
+e.valKec        svistr5         VALIDATE tbddatkodidx mtbd_almkrj stbd {Pgv_dtkota} {Psvistr3} {Psvistr4}
+e.valKel        svistr6         VALIDATE tbtdattypkod mtbt_almkrj stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr3} {Psvistr4} {Psvistr5}
+
+e.MandatoryPT           svinama         MANDATORY
+e.MandatoryAlm          sviket          MANDATORY
+e.MandatoryRT           svistr1         MANDATORY
+e.MandatoryRW           svistr2         MANDATORY
+e.MandatoryProp         svistr3         MANDATORY
+e.MandatoryKota         svistr4         MANDATORY
+e.MandatoryKec          svistr5         MANDATORY
+e.MandatoryKel          svistr6         MANDATORY
+e.MandatoryKdPos        svistr7         MANDATORY
+e.MandatoryCab          svistr8         MANDATORY 
+
+
+MAP(mdtm_almkrj)
+dtmkode                 svistr3                 REPLACE
+dtmket                  lpropinsi               REPLACE
+
+MAP(mtbl_almkrj)
+tblkode                 svistr4                 REPLACE
+tblket                  lkota                   REPLACE
+
+MAP(mtbd_almkrj)
+tbdkode                 svistr5                 REPLACE
+tbdket                  lkec                    REPLACE
+
+MAP(mtbt_almkrj)
+tbtkode                 svistr6                 REPLACE
+tbtket                  lkel                    REPLACE
+tbtcab                  svistr8                 REPLACE
+tbtdf1                  svidf1                  REPLACE
+tbtdf2                  svidf2                  REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET  svidatbuktyp   gv_datasurvey btmnobuk lALMKRJ610
+
+SFL_MAP
+gv_datasurvey           svidata         REPLACE
+btmnobuk                svinobuk        REPLACE
+lALMKRJ610              svitype         REPLACE
+gv_OPEN                 svists          REPLACE
+
+CALCS()
+cbolehtambahalmkrj   btmsts=="OPEN" && djoinsvialmkerja==0
+cbolehubhalmkrj      btmsts=="OPEN" && djoinsvialmkerja==0
+
+PERMIT(tmptrans)
+	PMT_ADD_COND      cbolehtambahalmkrj
+	PMT_UPDALL_COND	cbolehubhalmkrj
+	PMT_DEL_COND      c0

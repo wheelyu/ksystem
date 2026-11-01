@@ -1,0 +1,156 @@
+LOCAL
+PGM_FIELDS
+ljabatanhrd     STRING  21
+lgruploghrd     STRING  21
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------\
+|/---------------------------------\/------------------------------------------------------\|
+                                     t.Kat                  : __ ________________________
+                                     t.Als1                 : ___________________________
+  t.WawancaraHrd                     t.PenTacc              : ___________________________
+  t.WawancaraHrd                     t.Ket                  : ___________________________
+  t.Jenis           : _____________ 
+  t.Pendidikanakhir : _____________
+  t.Jurusan         : _____________
+    _______________________________
+  t.PenempatanSdm   : ____________________
+  t.IkutParpol      : _____
+  t.Hasil           : _____                                                                        
+  t.Keterangan      : _____________                                                   
+  t.Tgl             : _________                                                         
+  t.NipInterview    : _________                                                         
+                      _____________
+                      _____________
+                      _____________
+|\---------------------------------/\------------------------------------------------------/|
+\-------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+amtstr1_1     NOCHANGE    INPUTRI 8
+lkattaccitv PROTECT     INPUTRI 8
+lalstaccitv PROTECT     INPUTRI 8
+lkettaccitv TEXTAREA PROTECT     INPUTRI 8
+psdket2			TEXTAREA  		INPUTRI 9
+psdstr3			NOCHANGE		INPUTRI 1
+psdtype2		NOCHANGE		INPUTRI	2
+psdstr4			ALLCAPS 		INPUTRI 3
+lnama_studi		PROTECT			INPUTRI	4
+psdstr5 		NOCHANGE               	INPUTRI 5
+psdsts	 		NOCHANGE               	INPUTRI 6
+psdtype 		NOCHANGE               	INPUTRI 7
+psdket  		PROTECT       	 	INPUTRI 10
+psdtgl1 		PROTECT {DD-MM-YY} NOLIMIT INPUTRI 11
+psdstr1 		ALLCAPS       	 	INPUTRI 12
+lbtmnama4		PROTECT			INPUTRI	13
+ljabatanhrd             PROTECT                 INPUTRI 14
+lgruploghrd             PROTECT                 INPUTRI 15
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT		{g_tgltrn}
+psdstr3		DFALT_SCAN_BLANKS DATANG_LANGSUNG
+				  TELEPHONE
+				  VIDEO_CALL
+
+psdtype 	DFALT_SCAN_BLANKS ACC                        
+                                  TACC             
+
+psdsts	 	DFALT_SCAN_BLANKS TDK
+                                  YA
+
+psdtype2        DFALT_SCAN_BLANKS       D1 D2 D3 D4 S1 S2 S3 SD SMA SMK SMP TDKSEKOLAH
+psdstr5		DFALT_SCAN_BLANKS SELINDO SATU_PULAU SATU_PROVINSI
+
+CALCS()
+cacc		psdtype == "ACC"
+ctacc		psdtype == "TACC"
+
+EDITS(tmptranst)
+t.Mandatory psdstr3	MANDATORY
+t.Mandatory psdstr4	MANDATORY
+t.Mandatory psdtype	MANDATORY
+t.Mandatory psdsts	MANDATORY
+t.Mandatory psdtype2	MANDATORY
+t.Mandatory psdket2	MANDATORY
+t.Mandatory psdket   	MANDATORY
+t.Mandatory psdstr1 	MANDATORY
+t.Mandatory amtstr1_1 	MANDATORY_IF ctacc
+t.Validate psdstr1 VALIDATE  psikodidx mbtm_interviewa
+t.Validate psdstr1 VALIDATE usrkodidx musrhrd
+e.Validate psdstr4 VALIDATE tbtdattypkod  mtbt_ijazah stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pgv_pendidikan} {Pljns_pendidikan}
+e.ValidateTbdTacc amtstr1_1 VALIDATE_IF ctacc  tbddatkodidx mtbdtacc stbdtaccitv {Pgv_dttabel} {Pgv_personal} {PlTACCITV136a}
+t.ValidateKet amtstr1_1 VALIDATE_IF ctacc ketdatbukkod mkettacc sket {PlTACCITV136}
+
+MAP(musrhrd)
+usrkode psdstr1         REPLACE
+usrgrp  lgruploghrd     REPLACE
+
+MAP(mtbt_ijazah)
+tbtkode         psdstr4         REPLACE
+tbtket          lnama_studi     REPLACE
+
+MAP(mbtm_interviewa)
+psikode		psdstr1		REPLACE
+psinama		lbtmnama4	REPLACE
+psijabatan      ljabatanhrd     REPLACE
+
+MAP(mtbdtacc)
+tbdkode       amtstr1_1       REPLACE
+tbdkettype    lkattaccitv   REPLACE
+tbdtblket     lalstaccitv   REPLACE
+
+MAP(mkettacc)
+ketnobuk      amtstr1_1       REPLACE
+ketisi        lkettaccitv   REPLACE
+  
+CALCS()
+clolos		"LOLOS"
+ctdk		"TIDAK LOLOS"
+cUNIVERSITASxd    "UNIVERSITAS"
+cSMKxd            "SMK"
+cSMAxd            "SMA"
+cjns_univxd       psdtype2=="S1" || psdtype2=="S2" || psdtype2=="S3" || psdtype2=="D1" || psdtype2=="D2" || psdtype2=="D3" || psdtype2=="D4"
+cjns_smkxd        psdtype2=="SMK"
+cjns_smaxd        psdtype2=="SMU" || psdtype2=="SMA"
+
+MAP(mket)
+clolos		psdket		DO_CALC_IF cacc
+ctdk  		psdket		DO_CALC_IF ctacc
+cblanks   amtstr1_1 DO_CALC_IF cacc
+
+MAP(mtbd_ijazahxd)
+cUNIVERSITASxd    ljns_pendidikan DO_CALC_IF cjns_univxd
+cSMKxd            ljns_pendidikan DO_CALC_IF cjns_smkxd
+cSMAxd            ljns_pendidikan DO_CALC_IF cjns_smaxd
+
+CALCS()
+ctglinterview   psdtgl1 <= g_tgltrn
+cFu_done        ((djoinpsd_FU1==1 && lpilhrd_FU1=="LANJUT_INTERVIEW") || (djoinpsd_FU2==1 && lpilhrd_FU2=="LANJUT_INTERVIEW") || (djoinpsd_FU3==1 && lpilhrd_FU3=="LANJUT_INTERVIEW"))
+
+HOOKS(tmptranst)
+BEFORE_INPUT cur_field=amtstr1_1 DO_SKIP_IF cacc
+AFTER_INPUT	cur_field=psdtype	DO_MAP SHOW mket
+AFTER_INPUT     cur_field=psdtype2      DO_MAP SHOW mtbd_ijazahxd
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW mket
+AFTER_INPUT	cur_field=psdstr3	DO_MAP SHOW
+		IF cFu_done mdum
+		HKMSG t.FuHarusSelesai
+AFTER_INPUT     cur_field=psdtgl1  DO_MAP SHOW
+                IF ctglinterview mdum
+                ELSE HKCURSOR STAY
+                HKMSG i.TglTdkBlhLebihHariIni
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod gv_clnkry11 btmnobuk gv_interview21 
+
+SFL_MAP
+gv_clnkry11   	psddata		REPLACE
+btmnobuk  	psdpsmkode	REPLACE
+gv_interview21	psdkode		REPLACE
+

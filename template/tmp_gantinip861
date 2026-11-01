@@ -1,0 +1,49 @@
+IMAGE(tmptrans)
+|t.NipBaru   ________ ___________ | ____ |
+
+FIELD(tmptrans)
+ltipenip        NOCHANGE        INPUTRI         1
+lnipganti       ALLCAPS         INPUTRI         2
+lenter2         NOCHANGE        INPUTRI         3
+
+DEFAULTS(tmptrans)
+ltipenip        DFALT_SCAN              PEMBUAT  " "
+                                        PENERIMA " "
+					USERCEK " "
+
+lenter2         INIT                    ENTER
+
+EDITS(tmptrans)
+e.Validate lnipganti VALIDATE psikodidx mpsiacc spsiINPG
+
+MAP(mpsiacc)
+psikode         lnipganti       REPLACE
+
+CALCS()
+cblhganti       tlmsts != "CLSD" && (g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "FINBPKB" || g_grpnam == "FINBPKBCO" || g_grpnam == "RI")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_APP_TYPE
+SFL_COND cblhganti
+SFL_SHOW_NEXT
+SFL_TARGET tlmbukidx tlmnobuk
+
+CALCS()
+cgantinip        lnipganti != BLANKS
+cpembuat         ltipenip == "PEMBUAT"
+cpenerima        ltipenip == "PENERIMA"
+cusercek	 ltipenip == "USERCEK"
+
+MAP(mupdtlmgantinip)
+lnipganti       tlmgrup2       REPLACE_IF cpembuat
+lnipganti       tlmbrdoto      REPLACE_IF cpenerima
+lnipganti	tlmkode	       REPLACE_IF cusercek
+
+
+SPCALCS(spgantinip)
+DO_LIB_IF cgantinip  ap_dbclc(DNAME dupdtlmgantinip,DCOMMAND UPDATE, DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmgantinip);
+
+POSTING(tmptrans)
+PST_COMMAND spgantinip
+

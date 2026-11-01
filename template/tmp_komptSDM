@@ -1,0 +1,124 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+|!t.AdaKompH2  :_______________________ !|
+|!t.Kompetensi :_______________________ !|
+|!             :_______________________ !|
+|!t.Ket        :_______________________ !|
+|!t.AccVerif   :_______________________ !|
+|!t.NipVerif   :_________ _____________ !|
+|!t.KetVerif   :_______________________ !|
+|!             :____                    !|
+|\--------------------------------------/|
+|t.FotoKtp                               |
+|t.Upload : ____                         |
+|/---------s.UPLOAD---------------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr2		NOCHANGE                        INPUTRI 1
+psdstr3		NOCHANGE                        INPUTRI 2
+lskomp		PROTECT                         INPUTRI 2
+psdket		TEXTAREA ALLCAPS                INPUTRI 3
+psdstr4         NOCHANGE                        INPUTRI 4
+psdstr1		PROTECT				INPUTRI 4
+lnamaacc	PROTECT				INPUTRI 4
+psdket2		TEXTAREA ALLCAPS                INPUTRI 5
+ldum            NOCHANGE                        INPUTRI 6
+psdtype2        PROTECT                         INPUTRI 7
+
+CALCS()
+cadakomp        dscanpsdkomp==0 || dscanpsdkomp!=0
+cadakompx       psdstr2=="YA"
+ctdkkomp        psdstr2=="TIDAK"
+cjabpsi         djoinpsi==1
+cadakompxy      psdstr2=="YA" && ((djointbdjabverif==1 && psdstr3!="TTL1" && psdstr3!="TTL2" && psdstr3!="TTL3") || ( djointbdjabverif2==1 && (psdstr3=="TTL1" || psdstr3=="TTL2" || psdstr3=="TTL3")))
+ctdkkompxy      djointbdjabverif==0 || psdstr2=="TIDAK"
+cselainttl	djointbdjabverif==1 && psdstr3!="TTL1" && psdstr3!="TTL2" && psdstr3!="TTL3"
+cttlxy		djointbdjabverif2==1 && (psdstr3=="TTL1" || psdstr3=="TTL2" || psdstr3=="TTL3")
+cadanipacc	psdstr4==BLANKS
+cnipaccok	psdstr4!=BLANKS
+
+DEFAULTS(tmptranst)
+psdstr2		 DFALT_SCAN_BLANKS 	YA
+					TIDAK
+
+IF cselainttl psdstr4 	DFALT_SCAN_BLANKS      	ACC  
+						SDHREV
+
+IF cttlxy psdstr4   DFALT_SCAN_BLANKS    	ACC      
+                                                SDHREV
+	
+
+EDITS(tmptranst)
+t.Mandatory     psdstr2         MANDATORY
+t.Mandatory     psdstr3         MANDATORY_IF cadakompx
+t.Mandatory     psdket          MANDATORY_IF cadakompx
+t.Mandatory     psdstr4         MANDATORY_IF cadakompxy
+t.Mandatory     psdket2         MANDATORY_IF cadakompxy
+e.Validate	psdstr3		VALIDATE tbddatkodidx mtbdserth2 stbd {Pgv_dttabel} {Pgv_personal} {PlKOMPETENSIH2}
+e.Validate      psdstr1 	VALIDATE psikodidx mnamanipacc 0
+
+MAP(mtbdserth2)
+tbdkode		psdstr3		REPLACE
+tbdket		lskomp		REPLACE
+ljmlkomp	ljmlkomp	REPLACE_IF cadakomp
+ljabuser	ljabuser	REPLACE_IF cjabpsi
+
+MAP(misinipacc)
+cBLANKS		psdstr1		DO_CALC_IF cadanipacc
+g_usrkode	psdstr1		REPLACE_IF cnipaccok
+
+MAP(mnamanipacc)
+psinama		lnamaacc	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdstr3        DO_SKIP_IF ctdkkomp
+BEFORE_INPUT    cur_field=psdket         DO_SKIP_IF ctdkkomp
+BEFORE_INPUT    cur_field=psdstr4	 DO_SKIP_IF ctdkkompxy
+BEFORE_INPUT    cur_field=psdket2        DO_SKIP_IF ctdkkompxy
+AFTER_INPUT     cur_field=psdstr4     	 DO_MAP SHOW     misinipacc
+
+CALCS()
+chtgkomp	ljmlkomp+1
+cstringk	FLD_TO_STRING(lbukkomp)
+cpsdkode	STRIP(btmnobuk) + "-" + STRIP(lstrjmp)
+
+MAP(mupdfoto)
+cOK             psdtype2        DO_CALC
+
+DBCALCS(dupdfoto)
+DCOMMAND        UPDATE
+DTARGET         psdprmidx   psdprm
+DMAP            mupdfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD psdkode
+SFL_COND   cadakomp
+SFL_UPLFLD_DBCALCS dupdfoto
+SFL_UPL_DELCOND c0
+SFL_TARGET
+psddatpsmkod lDTKOMPH2	btmnobuk
+
+SFL_MAP
+chtgkomp	lbukkomp	DO_CALC
+cstringk	lstrjmp		DO_CALC
+lDTKOMPH2	psddata		REPLACE
+btmnobuk	psdpsmkode	REPLACE
+cpsdkode	psdkode		DO_CALC
+
+

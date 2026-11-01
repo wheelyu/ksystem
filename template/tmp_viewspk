@@ -1,0 +1,59 @@
+LOCAL
+PGM_FIELDS
+lAREASALES	STRING	11
+lnamasales	STRING	61
+lnamakel3	STRING	61
+lnamakel	STRING	61
+lring		STRING	11
+lkodekec	STRING	21
+lGARAP		STRING	21
+
+MAP(mjointbtkel)
+tbtscr          lring           REPLACE
+tbttblkode      lkodekec        REPLACE
+tbtket          lnamakel        REPLACE
+
+DBCALCS(djointbtkel2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdatkod2id    gv_dtkota tbetype
+        DBC_MAP         mjointbtkel
+
+IMAGE(tmptranst)
+/-----------------------t-------------t------------------t----------\
+|  t.Tanggal            | i.Kel       | t.NamaKel        |t.CabInduk|
+\-----------------------.-------------.------------------.----------/
+
+IMAGE(tmptrans)
+|_______________________|_____________|__________________|__________|_
+FIELD(tmptrans)
+        
+        tbetglcrt               NOLIMIT {DD-MM-YYYY}    INPUTRI         1
+        tbetype                 PROTECT                 INPUTRI         2
+        lnamakel3               PROTECT                 INPUTRI         3
+        tbetblket               NOCHANGE                INPUTRI         4
+	tbetbdkode		QPROTECT UNSEEN		INPUTRI		5
+
+CALCS()
+cdjointbtkel21          djointbtkel2 == 1
+ctglini			tbetbdkode == psmkode && tbetglcrt >= g_tgltrn && tbetglcrt <= g_tgltrn + 1
+
+DEFAULTS(tmptrans)
+lAREASALES	INIT		AREASALES
+lGARAP		INIT		GARAP
+
+EDITS(tmptrans)
+e.Validate      tbetbdkode       VALIDATE psikodidx mpsit 0
+
+MAP(mpsit)
+psinama         lnamasales      REPLACE
+lnamakel        lnamakel3       REPLACE_IF cdjointbtkel21
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tbetglcrt
+SFL_SORT_UPDOWN UP
+SFL_SELECT ctglini
+SFL_TARGET
+        tbedtkodidx lAREASALES lGARAP
+

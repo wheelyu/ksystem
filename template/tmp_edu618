@@ -1,0 +1,56 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\!
+| |                         !!
+| |                         !!
+| |                         !!                                                             ! |
+| |                         !!                                                             ! |
+| |                         !!                                                             ! |
+| |                         |!                                                             ! |
+| \-------------------------/|
+| /-------------------------\|
+| i.Ket  _________________  ||
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELD(tmptranst)
+akttype		PROTECT		INPUTRI		1
+
+CALCS()
+cbolehisi	mtdtglfak < 20231124 && (((ppmtk_2 == "K" || ppmtk_2 == "T") && tmpkode == "MOTORKU") || 
+                (ppmtk_2 == "K" && tmpkode == "KLIKNSC") ||
+		((ppmtk_2 == "K" || ppmtk_2 == "T") && tmpkode == "KLIKNSS"))
+
+MAP(maddaktfoto)
+mtdnobuk	aktkode		REPLACE
+ledu618		aktdata		REPLACE
+tmpkode		akttype		REPLACE
+lsystime	aktjam		REPLACE
+g_usrkode	aktcrtusr	REPLACE
+g_tgltrn	akttgl		REPLACE
+	
+
+DBCALCS(daddaktfoto)
+        DCOMMAND ADD
+        DFILE	akt
+        DMAP maddaktfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbolehisi
+/* SFL_UPL_CAMERAONLY  */
+SFL_UPLFLD_DBCALCS daddaktfoto
+SFL_UPLFLD mtdnobuk tmpkode
+SFL_UPL_DELCOND c0
+SFL_TARGET
+aktkodtypidx   mtdnobuk ledu618 tmpkode
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+

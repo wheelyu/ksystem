@@ -1,0 +1,256 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|t.Type	    ____________  ______________|
+|i.Kode	    ____________________________|
+|t.Cab      ____________ t.Dvs _________|
+|/--t.Dari--------------\/---t.Ke------\|
+||i.LmSusut ____________||_____________||
+||i.NilAwl  _______.____||________.____||
+||i.SstBln  _______.____||________.____||
+||i.NilAkh  _______.____||________.____||
+|\----------------------/\-------------/|
+|t.Ket      ____________________________|
+|                   ________  __________|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg		NOCHANGE	INPUTRI	1
+tldnobuk        PROTECT         INPUTRI 2
+tldnoll		ALLCAPS		INPUTRI	3
+tldcab          ALLCAPS         INPUTRI 4
+tlddvs          ALLCAPS         INPUTRI 5
+tldperdis1	PROTECT		INPUTRI	6
+tldsatbsr	NUMERIC		INPUTRI	7
+tldperdis2	PROTECT		INPUTRI	8
+tldsubtot	NUMERIC		INPUTRI	9
+tldperdis3	PROTECT		INPUTRI	10
+tldperdis	NUMERIC		INPUTRI	11
+tldperdis4	PROTECT		INPUTRI	12
+tldtotdis	NUMERIC		INPUTRI	13
+tldket          NONE            INPUTRI 98
+tldkat          PROTECT         INPUTRI 99
+tldtglfak       PROTECT {DD-MM-YYYY}    INPUTRI 100
+
+CALCS()
+ctmp3227korsst		tmpkode=="3227KORSST"
+cdatakor2		tlddata=="KOR3227" && tldnourt==2
+cpemutihankor2		"PEMUTIHAN"
+ckoreksinom2		"Penyesuaian Nominal Susut"
+ckor2isilama		tldsatbsr==BLANKS && tldbrg!="KOREKSILAMASST"
+ckor2isiawal		tldsubtot==BLANKS && tldbrg!="KOREKSINOMINALSST"
+ckor2isiperbl		tldperdis==BLANKS
+ckor2isiakhir		tldtotdis==BLANKS
+ckor2btlsst		tldbrg=="BATALSST"
+ckor2btlsst_jml1	tldbrg=="BATALSST" && tldjml != 0
+ckor2lamasst		tldbrg=="KOREKSILAMASST"
+ckor2nomsst		tldbrg=="KOREKSINOMINALSST"
+ckor2nomssthbs		tldbrg=="KOREKSINOMINALSST" && tldtotdis < 0
+ckor2opensst		tldbrg=="OPENSST"
+chitkor2lamasst		tldperdis4 / (tldsatbsr - tldjml2)	/*nilai akhir awal dibagi (lama sst baru dikurangi ke) <sisa blm susut>*/
+chitkor2nomsst		(tldsubtot - tldjml)	/*nilai awal baru dikurangi total susut awal*/
+chitkor2nomsst2		(tldsubtot - tldjml) / (tldperdis1 - tldjml2) /*nilai awal baru dikurangi total susut awal dibagi (lama sst awal dikurangi ke) <sisa blm susut>*/
+cbukaslksg		brgprefik==BLANKS
+ckornomsstkrg0		tldtotdis < 0
+ckornomsstlbh0		tldtotdis >= 0
+cexnobuksst		STRIP(tldnoll) +"_EX"
+cbuksstsama		tldnoll == aktnobuk && aktkode == "HUTASSIN21"
+
+DEFAULTS(tmptranst)
+tldbrg		DFALT_SCAN_BLANKS	BATALSST "VOID 3127 BALIK JURNAL YG SUDAH SST"
+					KOREKSILAMASST "UBAH LAMA 3127 HITUNG ULANG NILAI YG BLM SST"
+					KOREKSINOMINALSST "UBAH NOMINAL 3127 HITUNG ULANG NILAI YG BLM SST"
+					OPENSST "VOID 3127 BALIK 3227 KE OPEN"
+
+EDITS(tmptranst)
+e.Mandatory     tldbrg  MANDATORY
+e.Mandatory	tldnoll	MANDATORY
+e.Mandatory     tldcab  MANDATORY
+e.Mandatory     tlddvs  MANDATORY
+e.Mandatory     tldket  MANDATORY
+e.ValidateKodekor2 tldnoll VALIDATE_IF ctambah brgstdtkatbr mbrgkor2 0 {Pgv_INPG} {Pgv_dtbiaya} {PlASURANSI21}
+e.ValidateCabkor2 tldcab VALIDATE cabkodidx mcabkor2 scab
+e.ValidateDvskor2 tlddvs VALIDATE dtmdtkodidx mdtmkor2 sdtm {Pgv_bisnis}
+
+MAP(mbrgkor2)
+brgkode		tldnoll		REPLACE
+brgcab		tldcab		REPLACE
+brgkat2		tlddvs		REPLACE
+brgbbmprs	tldnobbm	REPLACE /*byr dimuka*/
+brgbbmbiasst	tldukrwrn	REPLACE /*biaya*/
+brgtotsst	tldjml		REPLACE /*total susut*/
+brgsstke	tldjml2		REPLACE /*susut ke*/
+brgjmlmax	tldperdis1	REPLACE /*lama*/
+brgnsdawl	tldperdis2	REPLACE /*nilai awal*/
+brgsstbl	tldperdis3	REPLACE /*nilai per bl*/
+brgnsdakh	tldperdis4	REPLACE	/*nilai akhir*/
+brgjmlmax	tldsatbsr	REPLACE_IF ckor2isilama
+brgnsdawl	tldsubtot	REPLACE_IF ckor2isiawal
+brgsstbl	tldperdis	REPLACE_IF ckor2isiperbl
+brgnsdakh	tldtotdis	REPLACE_IF ckor2isiakhir
+
+MAP(mcabkor2)
+cabkode         tldcab          REPLACE
+
+MAP(mdtmkor2)
+dtmkode         tlddvs          REPLACE
+dtmcab          tldbisnis       REPLACE
+
+MAP(mhitkor2lama)
+chitkor2lamasst	tldperdis	DO_CALC_IF ckor2lamasst
+
+MAP(mhitkor2nom)
+chitkor2nomsst	tldtotdis	DO_CALC_IF ckor2nomsst	
+chitkor2nomsst2	tldperdis	DO_CALC_IF ckor2nomsst
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldsatbsr	DO_SKIP_IF ckor2btlsst
+BEFORE_INPUT	cur_field=tldsubtot	DO_SKIP_IF ckor2btlsst
+BEFORE_INPUT	cur_field=tldperdis	DO_SKIP_IF ckor2btlsst
+BEFORE_INPUT	cur_field=tldtotdis	DO_SKIP_IF ckor2btlsst
+
+BEFORE_INPUT	cur_field=tldsubtot	DO_SKIP_IF ckor2lamasst
+BEFORE_INPUT	cur_field=tldperdis	DO_SKIP_IF ckor2lamasst
+BEFORE_INPUT	cur_field=tldtotdis	DO_SKIP_IF ckor2lamasst
+
+BEFORE_INPUT	cur_field=tldsatbsr	DO_SKIP_IF ckor2nomsst
+BEFORE_INPUT	cur_field=tldperdis	DO_SKIP_IF ckor2nomsst
+BEFORE_INPUT	cur_field=tldtotdis	DO_SKIP_IF ckor2nomsst
+
+BEFORE_INPUT    cur_field=tldsatbsr     DO_SKIP_IF ckor2opensst
+BEFORE_INPUT    cur_field=tldsubtot     DO_SKIP_IF ckor2opensst
+BEFORE_INPUT    cur_field=tldperdis     DO_SKIP_IF ckor2opensst
+BEFORE_INPUT    cur_field=tldtotdis     DO_SKIP_IF ckor2opensst
+
+AFTER_INPUT	cur_field=tldsatbsr	DO_MAP SHOW IF ckor2lamasst mhitkor2lama
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW IF ckor2lamasst mhitkor2lama
+
+AFTER_INPUT	cur_field=tldsubtot	DO_MAP SHOW IF ckor2nomsst mhitkor2nom
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW IF ckor2nomsst mhitkor2nom
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctmp3227korsst
+SFL_SELECT cdatakor2
+SFL_TARGET
+        tldbukurtidx    ppsnobuk l2
+
+SFL_MAP
+lkor3227        tlddata         REPLACE
+ppsnobuk        tldnobuk        REPLACE
+tldnoll         tldnoll         REPLACE
+l2              tldnourt        REPLACE
+g_tgltrn        tldtglfak       REPLACE
+gv_CLSD         tldsts          REPLACE
+g_usrkode       tldkat          REPLACE
+
+MAP(maddaktkor2btl)
+gv_dtaktiva	aktdata		REPLACE
+ppsnobuk	aktkode2	REPLACE
+ppsnobuk	aktnobuk	REPLACE
+cpemutihankor2	aktkode		DO_CALC
+cpemutihankor2	akttype		DO_CALC
+tldnoll		aktbrg		REPLACE
+g_tgltrn	aktcrttgl	REPLACE
+g_tgltrn	akttgl		REPLACE
+g_scrnumstr	aktscr		REPLACE
+tldjml		akttotal	REPLACE
+tldket		aktket		REPLACE
+
+MAP(mupdbrgkor2btl)
+gv_VOID		brgsts		REPLACE
+ppsnobuk	brgprefik	REPLACE_IF cbukaslksg
+
+MAP(mupdbrgkor2lama)
+tldsatbsr	brgjmlmax	REPLACE
+tldperdis	brgsstbl	REPLACE
+ppsnobuk	brgprefik	REPLACE_IF cbukaslksg
+
+MAP(mupdbrgkor2nom)
+tldsubtot	brgnsdawl	REPLACE
+tldperdis	brgsstbl	REPLACE_IF ckornomsstlbh0
+tldtotdis	brgnsdakh	REPLACE_IF ckornomsstlbh0
+c0		brgnsdakh	DO_CALC_IF ckornomsstkrg0
+tldtotdis	brgpb		REPLACE_IF ckornomsstkrg0
+gv_CLSD		brgsts		REPLACE_IF ckornomsstkrg0
+ppsnobuk	brgprefik	REPLACE_IF cbukaslksg
+
+MAP(maddaktkor2nom)
+gv_dtaktiva     aktdata         REPLACE
+ppsnobuk        aktkode2        REPLACE
+ppsnobuk        aktnobuk        REPLACE
+ckoreksinom2	aktkode         DO_CALC
+ckoreksinom2	akttype         DO_CALC
+tldnoll         aktbrg          REPLACE
+g_tgltrn        aktcrttgl       REPLACE
+g_tgltrn        akttgl          REPLACE
+g_scrnumstr     aktscr          REPLACE
+tldtotdis       akttotal        REPLACE
+tldket          aktket          REPLACE
+
+MAP(mupdbrgkor2open)
+gv_VOID         brgsts          REPLACE
+ppsnobuk        brgprefik       REPLACE_IF cbukaslksg
+cexnobuksst	lexnobuksst	DO_CALC
+lexnobuksst	brgkode		REPLACE
+
+MAP(maddaktkor2open)
+gv_dtaktiva     aktdata         REPLACE
+ppsnobuk        aktkode2        REPLACE
+ppsnobuk        aktnobuk        REPLACE
+cpemutihankor2  aktkode         DO_CALC
+cpemutihankor2  akttype         DO_CALC
+cexnobuksst     aktbrg          DO_CALC
+g_tgltrn        aktcrttgl       REPLACE
+g_tgltrn        akttgl          REPLACE
+g_scrnumstr     aktscr          REPLACE
+tldjml          akttotal        REPLACE
+tldket          aktket          REPLACE
+
+MAP(mupdaktkor2open3127)
+cexnobuksst	brgkode		DO_CALC
+
+MAP(mupdaktkor2open3227)
+cexnobuksst	aktnobuk	DO_CALC_IF cbuksstsama
+
+MAP(mupdppskor2open)
+cbyrmukaprop	ppsnobbm	DO_CALC_IF cProperty
+cbyrmukastk	ppsnobbm	DO_CALC_IF cStok
+cbyrmukambl	ppsnobbm	DO_CALC_IF cMobil
+cbyrmukastk	ppsnobbm	DO_CALC_IF cCargo
+
+lOPEN		ppssts		REPLACE
+lSCEK		ppsstsprc	REPLACE
+
+SPCALCS(spcaladdkor2)
+DO_LIB_IF ckor2btlsst_jml1 ap_adjrn(l1,tldnobbm,ppsnobuk,tldket,gv_D,lKR,tldjml,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2btlsst_jml1 ap_adjrn(l1,tldukrwrn,ppsnobuk,tldket,gv_K,lKR,tldjml,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2btlsst ap_dbclc(DNAME daddaktkor2btl,DCOMMAND ADD,DFILE akt,DMAP maddaktkor2btl);
+DO_LIB_IF ckor2btlsst ap_dbclc(DNAME dupdbrgkor2btl,DCOMMAND UPDATE,DTARGET brgdatkodidx gv_dtbiaya tldnoll,DMAP mupdbrgkor2btl);
+
+DO_LIB_IF ckor2lamasst ap_dbclc(DNAME dupdbrgkor2lama,DCOMMAND UPDATE,DTARGET brgdatkodidx gv_dtbiaya tldnoll,DMAP mupdbrgkor2lama);
+
+DO_LIB_IF ckor2nomssthbs ap_adjrn(l1,tldnobbm,ppsnobuk,tldket,gv_D,lKR,tldtotdis,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2nomssthbs ap_adjrn(l1,tldukrwrn,ppsnobuk,tldket,gv_K,lKR,tldtotdis,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2nomssthbs ap_dbclc(DNAME dupdaktkor2nom,DCOMMAND ADD,DFILE akt,DMAP maddaktkor2nom);
+DO_LIB_IF ckor2nomsst ap_dbclc(DNAME dupdbrgkor2nom,DCOMMAND UPDATE,DTARGET brgdatkodidx gv_dtbiaya tldnoll,DMAP mupdbrgkor2nom);
+
+DO_LIB_IF ckor2opensst ap_adjrn(l1,tldnobbm,ppsnobuk,tldket,gv_D,lKR,tldjml,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2opensst ap_adjrn(l1,tldukrwrn,ppsnobuk,tldket,gv_K,lKR,tldjml,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2opensst ap_dbclc(DNAME dupdbrgkor2open,DCOMMAND UPDATE,DTARGET brgdatkodidx gv_dtbiaya tldnoll,DMAP mupdbrgkor2open);
+DO_LIB_IF ckor2opensst ap_dbclc(DNAME daddaktkor2open,DCOMMAND ADD,DFILE akt,DMAP maddaktkor2open);
+DO_LIB_IF ckor2opensst ap_dbclc(DNAME dupdaktkor2open3127,DCOMMAND UPDATE_RANGE,DTARGET aktbrgtglidx tldnoll,DMAP mupdaktkor2open3127);
+DO_LIB_IF ckor2opensst ap_dbclc(DNAME dupdaktkor2open3227,DCOMMAND UPDATE_RANGE,DTARGET	aktkod2typid ppsnobuk ppstype,DMAP mupdaktkor2open3227);
+DO_LIB_IF ckor2opensst ap_dbclc(DNAME dupdppskor2open,DCOMMAND UPDATE,DTARGET ppsbukidx ppsnobuk,DMAP mupdppskor2open);
+DO_LIB_IF ckor2opensst ap_adjrn(l1,lREKHL,ppsnobuk,tldket,gv_D,lKR,tldsubtot,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+DO_LIB_IF ckor2opensst ap_adjrn(l1,ppsnobbm,ppsnobuk,tldket,gv_K,lKR,tldsubtot,g_tgltrn,g_scrnumstr,tldcab,tldbisnis,tlddvs,tldnoll,l2,lnamamap);
+
+POSTING(tmptrans) 
+        PST_ADDCMD      spcaladdkor2
+
+PERMIT(tmptrans)
+        PMT_ADD_COND  cri
+        PMT_UPDALL_COND  c0
+        PMT_DEL_COND  c0

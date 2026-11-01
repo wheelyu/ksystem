@@ -1,0 +1,108 @@
+LOCAL
+PGM_FIELDS
+lkathsltelp6	STRING	61
+
+MAP(mjoinhsltelp6)
+tbdket	lkathsltelp6	REPLACE	
+
+DBCALCS(djoinhsltelp6)
+DBC_COMMAND	JOIN
+DBC_TARGET	tbddatkodidx	ldttabel11 ldesk ltelp ltldnobbm3
+DBC_MAP		mjoinhsltelp6
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.UplBuktiWaNoAktifDarurat        ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.NoBuk      : ___________________ ||
+||t.Nama       : ___________________ ||
+||t.NoWa       : ___________________ ||
+||t.JamBisaTel : ___________________ ||
+||t.JamSatu    : ___________________ ||
+||t.JamDua     : ___________________ ||
+||t.JamMulai   : ___________________ ||
+||t.JamSls     : ___________________ ||
+||t.KatHslTelf : __ ________________ ||
+||t.StsBukti   : ___________________ ||
+|| spasi			     ||
+||               ___________________ ||
+||spasi				     ||
+||spasi				     ||
+||t.SebelumUpload		     ||
+||t.TekanTKemudianEnter		     ||
+||t.UploadBukti			     ||
+|\-----------------------------------/|
+|/----------s.UPLOAD-----------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tlmnobuk	PROTECT			INPUTRI 1
+lnamadarurat	PROTECT			INPUTRI	1
+ltldsat3	PROTECT			INPUTRI 2
+amtstr3_1	PROTECT			INPUTRI 3
+amtstr4_1	PROTECT			INPUTRI 4
+amtstr5_1	PROTECT			INPUTRI 5
+tlmjam1		PROTECT			INPUTRI 6
+tlmjam2		PROTECT			INPUTRI 7
+ltldnobbm3	PROTECT			INPUTRI 8
+lkathsltelp6	PROTECT	SCROLL		INPUTRI	8
+tkdtype		PROTECT			INPUTRI 9
+lenter		ALLCAPS			INPUTRI 10
+
+DEFAULTS(tmptranst)
+tkdtgl		INIT	{g_tgltrn}
+tkdsts		INIT	"INPG"
+tkdnoll		INIT	BKTDRTWA840
+
+CALCS()
+cdjoinhsltelp6	djoinhsltelp6 == 1
+
+EDITS(tmptranst)
+e.Validate	tlmnobuk	VALIDATE tlmbukidx mtlm6 0 
+
+MAP(mtlm6)
+lkathsltelp6	lkathsltelp6	REPLACE_IF cdjoinhsltelp6
+
+MAP(mupdtkdwadar)
+lOK		tkdtype		REPLACE
+
+DBCALCS(dupdtkdwadar)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx tkdprm
+	DBC_MAP		mupdtkdwadar
+
+DBCALCS(djoincekuplwadar)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tkddatbukll lDRTWA840 tlmnobuk
+
+CALCS()
+cdjoincekuplwadar		djoincekuplwadar == 0
+cdjoincekuplwaxdar		djoincekuplwadar == 1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD tkdtgl
+SFL_UPLFLD tkdoto tkdnoll
+SFL_UPLFLD_DBCALCS dupdtkdwadar
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD tlmkodeapr
+SFL_TITLE(tmptranst)
+SFL_TARGET	tkddatbukll lDRTWA840 tlmnobuk
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+lDRTWA840	tkddata		REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND 	cdjoincekuplwadar
+PMT_UPDALL_COND cdjoincekuplwaxdar
+PMT_DEL_COND 	cboleh

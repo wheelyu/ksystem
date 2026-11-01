@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+lbukabkftomga17		STRING		21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		NOCHANGE		INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+ltombol			TOMBOL			INPUTRI		99
+
+CALCS()
+ctgluplisi17	doctgljadi!=BLANKS
+cstsuplisi17	doclok=="OK"
+cbukabkftomga17	STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddocktp17)
+/*cY              doclok          DO_CALC*/
+/*g_fotodate1   doctgljadi      REPLACE*/
+g_tgltrn        doctgljadi      REPLACE
+
+MAP(mupddocktp_17)
+cY		doclok		DO_CALC_IF ctgluplisi17
+cbukabkftomga17	lbukabkftomga17	DO_CALC
+
+DBCALCS(dupddocktp17)
+        DCOMMAND UPDATE
+        DTARGET docprmidx docprm
+        DMAP mupddocktp17
+
+CALCS()
+cKananMga	tmpkode == "UPLBODYKANAN"
+
+MAP(mupdabkftomga17)
+gv_CLSD		abksts		REPLACE
+
+SPCALCS(spuplftomga17)
+DO_LIB	ap_dbclc(DNAME dupddocktp_17,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocktp_17);
+DO_LIB_IF cstsuplisi17	ap_dbclc(DNAME dupdabkftomga17,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga17,DMAP mupdabkftomga17);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombol		DO_SPCALCS spuplftomga17
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cKananMga
+SFL_UPLFLD_DBCALCS dupddocktp17 
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+	docdatbukidx lUPGAD  btmnobuk lUPLBODYKAN l17 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

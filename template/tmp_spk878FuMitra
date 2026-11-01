@@ -1,0 +1,206 @@
+LOCAL
+PGM_FIELDS
+lmobil		STRING	21
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.NoBuk     ____________________||
+||t.KatMitra  ____________________||
+||t.Hasil     ____________________||
+||t.AdaPkTdk  ____________________||
+||t.PlnKshPK  ____________________||
+||            ____________________||
+||t.MntHmc    ____  ______________||
+||t.MntM2w    ____  ______________||
+||            ____________________||
+||t.JdpkHmc   ____  ______________||
+||t.JdpkM2W   ____  ______________||
+||t.AlsnTdkJ  ____  ______________||
+||t.Ket       ____________________||
+||t.Ket       ____________________||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk	PROTECT			INPUTRI		1
+svistr4		NOCHANGE		INPUTRI		2 /* usia */
+
+svistr2		NOCHANGE		INPUTRI		3 /* Hasil  */
+svistr33 	NOCHANGE		INPUTRI		4 /* Ada PK atau Tdk */
+svistr3		NOCHANGE		INPUTRI		5 /* Plan Kasih PK */
+lketplan	PROTECT			INPUTRI		5 /* Ket Plan Kasih PK */
+
+svistr31	NOCHANGE		INPUTRI		6 /* minat Hmc  */
+svidf1		PROTECT NUMERIC		INPUTRI		7
+svistr32 	NOCHANGE		INPUTRI		8 /* minat M2w  */
+svidf2		PROTECT NUMERIC		INPUTRI		9
+
+sviket2         PROTECT	SCROLL		INPUTRI         10 /* tipe mobil */
+
+svistr35	NOCHANGE		INPUTRI		11 /* jadi pk HMC */
+svidf4		PROTECT NUMERIC		INPUTRI		12
+svistr36	NOCHANGE		INPUTRI		13 /* jadi pk M2W */
+svidf5		PROTECT NUMERIC		INPUTRI		14
+svistr6         ALLCAPS                 INPUTRI         15 /* alasan tdk jd */
+lket7why        PROTECT                 INPUTRI         16 /* alasan tdk jd */
+sviket          ALLCAPS SCROLL          INPUTRI         17 /* alasan tdk jd */
+svidata         NOCHANGE                INPUTRI         18 /* alasan tdk jd */
+
+CALCS()
+cKuAja	tkmkode =="KUS_AGEN" || tkmkode == "KUM_AGEN"
+cFuAja	tkmkode =="FU_AGEN"
+
+DEFAULTS(tmptranst)
+lmobil		INIT		MOBIL
+IF cKuAja svistr2	DFALT_SCAN_BLANKS
+				BERTEMU
+				TDK_BERTEMU
+IF cFuAja svistr2	DFALT_SCAN_BLANKS
+				TERHUBUNG
+				TDK_TERHUBUNG
+svistr33	DFALT_LIST	BLANKS
+				Y
+				T
+svistr31	DFALT_LIST	BLANKS
+				Y
+				T
+svistr32 	DFALT_LIST	BLANKS
+				Y
+				T
+svistr35	DFALT_LIST	BLANKS
+				Y
+				T
+svistr36	DFALT_LIST	BLANKS
+				Y
+				T
+
+
+CALCS()
+cHASILFU	"HASILFU"
+
+/*cjadihmcY	(svistr2 == "BERTEMU" || svistr2 == "TERHUBUNG") && svistr35 == "Y"
+cjadim2wY	(svistr2 == "BERTEMU" || svistr2 == "TERHUBUNG") && svistr36 == "Y" */
+cFuKj		tkmkode == "FU_AGEN" || tkmkode == "KUS_AGEN" || tkmkode == "KUM_AGEN"
+cGajdpk		svistr33 == "T" || (svistr35 == "T" && svistr36 == "T")
+clanjut1	svistr33 == "T" && svistr3 != "BLM_ADA_PLANPK"
+
+cstopx1		svistr33 == "Y" || (svistr33 == "T" && svistr3 == "BLM_ADA_PLANPK")
+cstopx2		svistr33 == "Y" 
+cstopx3		svistr33 == "T" 
+
+cjikaif2	svistr33 != "Y" 
+cjikaif3	svistr33 == "Y" || (svistr33 == "T" && svistr3 != "BLM_ADA_PLANPK")
+
+EDITS(tmptranst)
+t.Mandatory          	svistr2		MANDATORY
+t.Mandatory		svistr33	MANDATORY
+t.Mandatory		svistr3 	MANDATORY_IF cstopx3
+t.Mandatory          	svistr31	MANDATORY_IF clanjut1
+t.Mandatory		svistr32 	MANDATORY_IF clanjut1
+
+t.MandatoryJdPk		svistr35	MANDATORY_IF cstopx2          
+t.MandatoryJdPk		svistr36	MANDATORY_IF cstopx2 
+
+t.MandatoryAlsnTdkJdPk  svistr6         MANDATORY_IF cGajdpk
+t.MandatoryKet          sviket          MANDATORY_IF cGajdpk
+e.Validate              svistr6         VALIDATE_IF cGajdpk tbddatkodidx mTdkJd stbd {Pgv_dttabel} {PlALASANPK} {PlALASANPK}
+e.Validate              svistr3         VALIDATE_IF cstopx3 tbddatkodidx mTdkaAda stbd {Pgv_dttabel} {PlALASANPK} {PlPLANBRPK}
+
+MAP(mTdkaAda)
+tbdkode         svistr3         REPLACE
+tbdket		lketplan	REPLACE
+
+MAP(mTdkJd)
+tbdkode         svistr6         REPLACE
+tbdket          lket7why        REPLACE
+
+CALCS()
+c1Y		1
+chmcPk		svistr35 == "Y"
+cm2wPk		svistr36 == "Y"
+chmcMnt		svistr31== "Y"
+cm2wMnt		svistr32 == "Y"
+
+chmcMinat	(svistr2 == "BERTEMU" || svistr2 == "TERHUBUNG") && svistr31== "Y" && svistr32=="T" && svistr6=="MINAT_BLN_DPN"
+cm2wMinat	(svistr2 == "BERTEMU" || svistr2 == "TERHUBUNG") && svistr31== "T" && svistr32=="Y" && svistr6=="MINAT_BLN_DPN"
+chmcm2w		(svistr2 == "BERTEMU" || svistr2 == "TERHUBUNG") && svistr32== "Y" && svistr31=="Y" && svistr6=="MINAT_BLN_DPN"
+cTdkAdaPk	svistr33 == "T" && svistr3 == "BLM_ADA_PLANPK"
+cHMCMinat	"MINATHMC"
+cM2WMinat	"MINATM2W"
+cHMCM2WM	"MINATHMCM2W"
+cTDKMINAT	"TDKMINAT"
+
+MAP(mhasil7why)
+c1Y	svidf4		DO_CALC_IF chmcPk
+c1Y	svidf5		DO_CALC_IF cm2wPk
+c1Y	svidf1		DO_CALC_IF chmcMnt
+c1Y	svidf2		DO_CALC_IF cm2wMnt
+
+MAP(mMinatKba)
+cHMCMinat	sviket2		DO_CALC_IF chmcMinat
+cM2WMinat	sviket2		DO_CALC_IF cm2wMinat
+cHMCM2WM	sviket2		DO_CALC_IF chmcm2w
+cTDKMINAT	sviket2		DO_CALC_IF cTdkAdaPk
+
+MAP(mkosongkan)
+cblanks		svistr3		DO_CALC_IF cstopx2 
+
+cblanks		svistr31	DO_CALC_IF cstopx1 
+cblanks		svistr32	DO_CALC_IF cstopx1 
+cblanks		svistr35	DO_CALC_IF cjikaif2
+cblanks		svistr36	DO_CALC_IF cjikaif2
+cblanks		svistr6		DO_CALC_IF cjikaif3
+cblanks		sviket 		DO_CALC_IF cjikaif3
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF cstopx2 
+
+BEFORE_INPUT	cur_field=svistr31	DO_SKIP_IF cstopx1
+BEFORE_INPUT	cur_field=svistr32	DO_SKIP_IF cstopx1
+
+BEFORE_INPUT	cur_field=svistr35 	DO_SKIP_IF cstopx3
+BEFORE_INPUT	cur_field=svistr36 	DO_SKIP_IF cstopx3
+
+BEFORE_INPUT	cur_field=svistr6       DO_SKIP_IF cstopx2
+BEFORE_INPUT	cur_field=sviket        DO_SKIP_IF cstopx2
+
+/* BEFORE_INPUT	cur_field=svistr6       DO_SKIP_IF cjadihmcY
+BEFORE_INPUT	cur_field=sviket        DO_SKIP_IF cjadihmcY
+BEFORE_INPUT	cur_field=svistr6       DO_SKIP_IF cjadim2wY
+BEFORE_INPUT	cur_field=sviket        DO_SKIP_IF cjadim2wY */
+
+AFTER_INPUT	cur_field=svistr33      DO_MAP SHOW mkosongkan
+AFTER_INPUT	cur_field=svistr3       DO_MAP SHOW mkosongkan
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mhasil7why
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mMinatKba
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cFuKj
+SFL_TARGET
+	svidatbuktyp	lHASILFU tkmnobuk lHASILFU
+
+SFL_MAP
+tkmnobuk	svinobuk	REPLACE
+cHASILFU	svidata		DO_CALC
+cHASILFU	svitype		DO_CALC
+tkmplg		svistr1		REPLACE
+tkmsts		svists		REPLACE
+tkmtgl		svitgl1		REPLACE
+c1		svinourt	REPLACE
+
+
+MAP(mupdtkmMinatKba)
+sviket2		tkmlok2		REPLACE
+
+SPCALCS(sptmptrans2g8)
+DO_LIB  ap_dbclc(DNAME dupdtkmMinatKba, DCOMMAND UPDATE, DTARGET tkmbukidx svinobuk, DMAP mupdtkmMinatKba);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptmptrans2g8
+PST_UPDCMD      sptmptrans2g8

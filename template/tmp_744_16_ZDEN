@@ -1,0 +1,120 @@
+LOCAL
+PGM_FIELDS
+lsisadenda              DFLOAT          8
+
+IMAGE(tmptranst)
+/------------------------------------------\
+ /----------------------------------------\ 
+ | t.Enter ____ t.NipUser    _______      |   
+ | t.ZDEN                                 | 
+ \----------------------------------------/ 
+ /----------------------------------------\
+  /--------------------------------------\            
+	              t.Total                                     
+   t.Tipe        t.Unit    t.TtlSis    
+   t.Awal        ______   ____________.__
+   t.ActLap      ______   ____________.__  
+  \--------------------------------------/         
+ \----------------------------------------/
+\------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lenter			NOCHANGE		INPUTRI	1
+lnip			NOCHANGE		INPUTRI	1
+
+lttlawlunitrem		PROTECT			INPUTRI	2
+lttlawlsispokrem	PROTECT			INPUTRI 2
+
+lttlactslsunitrem       PROTECT                 INPUTRI 3
+lttlactslssispokrem     PROTECT                 INPUTRI 3
+
+
+DEFAULTS(tmptranst)
+lnip			INIT		{psikode}
+lenter			INIT		TAB
+
+ltglawl         	INIT          	{cawlbln}
+ltglskrg        	INIT          	{ctglskr}
+
+lFAKPRIO11		INIT		FAKPRIO
+lFAKPRIO21		INIT		FAKPRIO
+lTGL			INIT		TGL
+
+lestimasi		INIT		ESTIMASI
+
+lMONPIUT        	INIT            MONPIUT
+lMONPCPREM      	INIT            MONPCPREM
+
+lttlawlunitrem		INIT 		BLANKS
+lttlawlsispokrem	INIT 		BLANKS	
+
+lbyrawlunitrem         	INIT 		BLANKS 
+lbyrawlsispokrem       	INIT 		BLANKS 
+
+lttlactslsunitrem      	INIT 		BLANKS 
+lttlactslssispokrem    	INIT 		BLANKS 
+
+
+CALCS()
+cttlawlzden	 	 pikstspiubli=="ZDEN" && (pikdvs=="HMC" || pikdvs=="M2W") 
+
+cactawlunitzden		 pikstspiubli=="ZDEN" && (pikdvs=="HMC" || pikdvs=="M2W") && piktglbyrakh>=ltglawl &&
+                         piktglbyrakh<=g_tgltrn
+
+
+MAP(mscanpikzden)
+
+c1			lttlawlunitrem			DO_CALC_IF cttlawlzden
+piksispokabl		lttlawlsispokrem		REPLACE_IF cttlawlzden
+
+c1			lttlactslsunitrem		DO_CALC_IF cactawlunitzden
+DBCALCS(dbscanpikzden)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	pikkolstsidx lnip
+	DBC_LAST_TARGET pikkolstsidx lnip
+	DBC_SUM_MAP	mscanpikzden
+
+MAP(mscanbkmzden)
+c1                      lactuntsisadenda        	DO_CALC_IF cactsisadendax /* actual unit denda */
+bkmtotal                lactrpsisadenda         	REPLACE_IF cactsisadendax /* actual sispok denda */
+
+DBCALCS(dbscanbkmzden)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      bkmkodstsjns lnip
+        DBC_LAST_TARGET bkmkodstsjns lnip
+        DBC_SUM_MAP     mscanbkmzden
+
+MAP(mjoinrptzden)
+rptbl1			lsisadenda			REPLACE
+
+DBCALCS(djoinrptzden)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rptdttypkod lMONPIUT lthbls lMONPCPREM psicabskr lnip
+        DBC_MAP		mjoinrptzden
+
+CALCS()
+cjoinrptzden			djoinrptzden==1
+
+MAP(mhitungzden)
+lttlawlunitrem                  lttlawlunitrem			REPLACE
+lsisadenda	                lttlawlsispokrem		REPLACE_IF cjoinrptzden
+
+lttlactslsunitrem               lttlactslsunitrem               REPLACE
+lactrpsisadenda                 lttlactslssispokrem             REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=lenter	DO_SCAN dscantgm
+AFTER_INPUT     cur_field=lenter        DO_SCAN dbscanpikzden
+AFTER_INPUT     cur_field=lenter        DO_SCAN dbscanbkmzden
+
+AFTER_INPUT	cur_field=lenter	DO_MAP SHOW mhitungzden
+
+SUBFILE(tmptrans)
+SFL_APP_TYPE
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psmkodidx   psikode
+

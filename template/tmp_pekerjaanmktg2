@@ -1,0 +1,158 @@
+LOCAL
+PGM_FIELDS
+lnamay    		STRING	21
+lKetKerja 		STRING	31
+lSubKerja 		STRING	31
+ltglawlbl		DATE	4
+lentertmp		STRING	11
+lKetSektor		STRING  31
+lSektor 		STRING  21
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+  i.Ktp            : _____________________   ||__
+  i.Nama           : _____________________   ||
+  i.Pekerjaan      : ____ ________________   ||
+  i.Jabatan        : ____ ________________   ||
+  t.Sektor 	   : ____ ________________   ||
+  i.Level	   : _____________________   ||
+  t.TempatKerja    : _____________________   ||
+                     _____________________   ||
+| v20260114b         _______ ________________||
+|\-------------------------------------------/|
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btppsm			ALLCAPS                 	INPUTRI 1			
+btpdata			PROTECT QPROTECT UNSEEN		INPUTRI 1
+lnamay			PROTECT				INPUTRI 3	
+btpkodeapr		ALLCAPS SCROLL			INPUTRI	4
+lKetKerja		PROTECT SCROLL			INPUTRI	4
+btpjabatan		ALLCAPS SCROLL			INPUTRI	5
+lSubKerja		PROTECT SCROLL			INPUTRI	5
+btpnofak		ALLCAPS SCROLL			INPUTRI 6
+lKetSektor		PROTECT SCROLL			INPUTRI 6
+btpjnsdeb		ALLCAPS SCROLL 			INPUTRI 7
+btpusrapr		ALLCAPS SCROLL			INPUTRI	8
+btpnobuk2		PROTECT SCROLL			INPUTRI 9
+lentertmp		NOCHANGE			INPUTRI 10
+btptgltrn		NOCHANGE {DD-MM-YYYY}		INPUTRI 11
+
+CALCS()
+ctglawal        	ststglprjgl+1
+cvalidasipekerjaan      btpkodeapr!="MF" && btpkodeapr!="PE" && btpkodeapr!="NB"
+chanyaK			btmtypjl == "K" || (btmscr == "635" && btmtypjl == BLANKS) 
+cgarapksg		BLANKS
+cselainmga		btmscr != "635"
+cjikamga		btmscr == "635"
+
+DEFAULT(tmptranst)
+ltglawlbl       	INIT   		{ctglawal}
+lentertmp		INIT		ENTER
+/*btpnofak              DFALT_SCAN      1. "Pertanian, Perkebunan, Kehutanan, Perburuan & Perikanan"
+                                        2. "Pertambangan dan Penggalian"
+                                        3. "Industri Pengolahan"
+                                        4. "Listrik, Gas, dan Air Minum"
+                                        5. "Konstruksi"
+                                        6. "Perdagangan, Rumah Makan, dan Jasa Transportasi"
+                                        7. "Lembaga Keuangan"
+                                        8. "Jasa Kemasyarakatan, Sosial, dan Perorangan"
+*/
+btpjnsdeb               DFALT_SCAN      BLANKS
+					Magang
+                                        Admin
+                                        Staff
+                                        Officer
+                                        Supervisor
+                                        Manager
+                                        Direktur
+                                        Direksi
+lSektor 		INIT		SEKTOR
+
+EDITS(tmptranst)
+e.MandatoryKtp 		btppsm 		MANDATORY
+e.Mandatory    		btppsm 		MANDATORY
+e.Mandatory    		btpkodeapr 	MANDATORY
+e.Mandatory    		btpjabatan 	MANDATORY_IF cvalidasipekerjaan
+e.Mandatory    		btpusrapr 	MANDATORY
+e.Mandatory    		btpnofak 	MANDATORY
+
+t.ValidateKtp 		btppsm 		VALIDATE psmplgstsktp  mpsmkerja 0 {Pgv_dtkonsumen} {Pgv_INPG}
+e.validate 		btpkodeapr   	VALIDATE tbddatkodidx mtbd2_2 stbd {Pgv_dttabel} {Pgv_infokredit} {Pgv_pekerjaan21}
+e.Validate 		btpjabatan	VALIDATE tbtdattypkod mtbt2_2 stbt1 {Pgv_dttabel} {Pgv_dttabel21} {Pgv_infokredit} {Pgv_pekerjaan21} {Pbtpkodeapr}
+e.Validate 		btpnofak 	VALIDATE tbddatkodidx mtbd3_3 stbd {Pgv_dttabel} {Pgv_infokredit} {PlSektor} 
+
+
+MAP(mpsmkerja)
+psmktp			btppsm		REPLACE
+psmnama			lnamay  	REPLACE
+
+MAP(mtbd2_2)
+tbdkode         	btpkodeapr      REPLACE
+tbdket          	lKetKerja       REPLACE
+
+MAP(mtbt2_2)
+tbtkode			btpjabatan	REPLACE
+tbtket			lSubKerja	REPLACE
+
+MAP(mtbd3_3)
+tbdkode			btpnofak 	REPLACE
+tbdket			lKetSektor 	REPLACE	
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND		chanyaK
+
+SFL_TARGET
+	btpdatbuktgl gv_historisdm btmnobuk lkerjamktg
+
+SFL_MAP
+btmnobuk		btpnobuk	REPLACE
+g_tgltrn		btptgltrn	REPLACE
+btmscr			btpscr		REPLACE
+lkerjamktg    		btptype		REPLACE
+gv_historisdm		btpdata		REPLACE
+
+MAP(mupdnhmgarap)
+btpnobuk2		nhmgrup		REPLACE
+
+MAP(mupdnhmgarapD)
+cgarapksg		nhmgrup		DO_CALC
+
+MAP(mupdbtmMGA)
+lSubKerja		btmtypdeb	REPLACE
+
+SPCALCS(spgarap_add)
+DO_LIB_IF cselainmga ap_dbclc (DNAME dupdnhmgarapA,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btpnobuk,DMAP mupdnhmgarap);
+DO_LIB_IF cjikamga ap_dbclc (DNAME dupdbtmMGA,DCOMMAND UPDATE,DTARGET btmbukidx btpnobuk,DMAP mupdbtmMGA);
+
+SPCALCS(spgarap_upd)
+DO_LIB_IF cselainmga ap_dbclc (DNAME dupdnhmgarapU,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btpnobuk,DMAP mupdnhmgarap);
+DO_LIB_IF cjikamga ap_dbclc (DNAME dupdbtmMGAU,DCOMMAND UPDATE,DTARGET btmbukidx btpnobuk,DMAP mupdbtmMGA);
+
+SPCALCS(spgarap_del)
+DO_LIB ap_dbclc(DNAME dupdnhmgarapD,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btpnobuk,DMAP mupdnhmgarapD);
+
+POSTING(tmptrans)
+	PST_ADDCMD spgarap_add
+	PST_UPDCMD spgarap_upd
+	PST_DELCMD spgarap_del
+
+
+/***********************************************************************/
+
+CALCS()
+c611a       	((btmsts=="OPEN" && g_scrnumstr == "635") && djoinbtppekerjaan == 0 && 
+		(
+		(g_grpnam=="PICGADAI" || g_grpnam=="BUM" || g_grpnam=="BMMGADAI" || g_grpnam=="SPVGADAI" || g_grpnam=="RMGADAI" ||
+		g_grpnam=="ANSYSUAT" || g_grpnam == "RI" || g_grpnam == "KAWIL" || g_grpnam=="IT") || 
+		btmsales == g_usrkode || g_grpnam=="ASSTMGR")
+		)
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c611a
+PMT_UPDALL_COND	c0    
+PMT_DEL_COND	c0

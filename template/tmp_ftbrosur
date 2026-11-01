@@ -1,0 +1,88 @@
+IMAGE(tmptranst)
+/-----------------------------------------\
+|t.upftobrosur		                  |
+|t.adddulu		                  |
+|/-------------s.UPLOAD------------------\|
+||                                       ||
+||                                       ||
+||                                       ||
+||                                       ||
+||                                       ||
+||                                       ||
+||                                       ||
+|\---------------------------------------/|
+|/---------------------------------------\|
+||t.Ket         : _____________________  ||
+|\---------------------------------------/|
+|/---------------------------------------\|
+||t.Tgl         : _____________________  ||
+||t.NipAdhHead  : _____________________  ||
+||t.NamaAdhHead : _____________________  ||
+||t.OkUp        : __                     ||
+||t.AccAhHead   : _____                  ||
+||               __________  __________  ||
+|\---------------------------------------/|
+\-----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktket          NOCHANGE                INPUTRI 1       /*ket*/
+akttgl          PROTECT {DD-MY-YY}      INPUTRI 2       /*buat*/
+aktcrtusr       PROTECT                 INPUTRI 3       /*nipacc*/
+aktlok          PROTECT                 INPUTRI 4       /*namaacc*/
+akttype2        PROTECT                 INPUTRI 5       /*upld ok*/
+aktkode2        PROTECT                 INPUTRI 6       /*ket acc*/
+lacc3           TOMBOL                  INPUTRI 7
+ltacc3          TOMBOL                  INPUTRI 8
+
+DEFAULTS(tmptranst)
+akttgl          INIT            {g_tgltrn}
+lacc3           INIT            ACC
+ltacc3          INIT            TACC
+aktcab		INIT		INPG
+aktket          INIT_LABEL      "Tambah Keterangan Dahulu"
+aktket          INIT_ADD	"FOTO BROSUR TOKO MOTOR"
+
+MAP(mupdacc3)
+cACC            aktkode2        DO_CALC
+g_usrkode       aktcrtusr       REPLACE
+cBLANKS         aktlok          DO_CALC
+lnamaAdhHead    aktlok          REPLACE_IF cnamaAdhHead
+csystime	aktjam		DO_CALC
+
+MAP(mupdtacc3)
+cTACC           aktkode2        DO_CALC
+g_usrkode       aktcrtusr       REPLACE
+cBLANKS         aktlok          DO_CALC
+lnamaAdhHead    aktlok          REPLACE_IF cnamaAdhHead
+csystime        aktjam          DO_CALC 
+
+SPCALCS(supdacc3)
+        DO_LIB_IF cnipada ap_dbclc(DNAME dupdpacc3,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP mupdacc3);
+SPCALCS(supdtacc3)
+        DO_LIB_IF cnipada ap_dbclc(DNAME dupdptacc3,DCOMMAND UPDATE,DTARGET aktprmidx aktprm,DMAP mupdtacc3);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lacc3   DO_SPCALCS supdacc3
+CLICKED         cur_field=ltacc3  DO_SPCALCS supdtacc3
+
+CALCS()
+cINPG3           aktcab == "INPG"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SELECT              cINPG3
+SFL_UPLFLD              tbdkode lakttype3
+SFL_UPLFLD_DBCALCS      dupdfoto
+SFL_UPL_COND            cSudahtambah
+SFL_UPL_DELCOND         cBlanks
+SFL_UPL_COND_MSG IF c0  t.IsiKet
+
+SFL_UPL_CAMERONLY
+SFL_TARGET
+        aktkodtypidx    tbdkode tbddata tmpkode
+SFL_MAP
+tbdkode         aktkode REPLACE
+tbddata	        aktdata REPLACE
+tmpkode	        akttype REPLACE

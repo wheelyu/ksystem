@@ -1,0 +1,103 @@
+LOCAL
+PGM_FIELDS
+	lenter_procksu	STRING	21
+	lbrgsatKSU	STRING	21
+	lurut2		INT2	2
+
+MAP(mjoinbrgKSU)
+brgsat		lbrgsatKSU	REPLACE
+
+DBCALCS(djoinbrgKSU)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brgdatkodidx	gv_dtbarang sgmtbl
+	DBC_MAP		mjoinbrgKSU
+
+MAP(mjoinppdu2)
+ppdnourt2     	lurut2 		REPLACE
+
+DBCALCS(djoinppdu2)
+DBC_COMMAND	JOIN_LAST_SFL
+DBC_TARGET      ppdbukurtidx	ppmnobuk
+DBC_MAP         mjoinppdu2
+
+IMAGE(tmptranst)
+/-------------------t-------t-------------------\
+|i.Brg              |i.Jml  |                   |
+\-------------------.-------.-------------------/
+
+IMAGE(tmptrans)
+|___________________|_______|___________________|
+
+FIELD(tmptrans)
+sgmtbl		PROTECT SCROLL		INPUTRI		1 
+sgmhrg1		PROTECT			INPUTRI		2
+lenter_procksu	NOCHANGE		INPUTRI		3
+
+DEFAULTS(tmptrans)
+lenter_procksu		INIT		"PROSES KSU"
+
+CALCS()
+cksu_ksg	ppmsts == "OPEN" && djoinppdKSU == 0
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND cksu_ksg
+SFL_TARGET
+	sgmdabrplgtb	gv_dtplengkap gv_plengkap ppdbrg_1
+
+CALCS()
+cjoinbrgKSU	djoinbrgKSU == 1
+c1_tmp		1
+c2_tmp		2
+cK_tmp		"K"
+cB_tmp		"B"
+cM_tmp		"M"
+cBR_tmp		"BR"
+cjoinppdu21	djoinppdu2 == 1 
+cjoinppdu20	djoinppdu2 == 0 
+curut2_tmp	lurut2 + 1
+crekhutbrg_tmp	DO_LIB ap_amdvs(gv_dtdivisi21,gv_hutbrg,ppdnobbm);
+cPL_tmp		"PL"
+
+MAP(mmapKSU)
+lbrgsatKSU	lbrgsatKSU	REPLACE_IF cjoinbrgKSU
+
+MAP(maddppdKSU)
+ppmnobuk	ppdnobuk	REPLACE
+ppmplg		ppdplg  	REPLACE
+ppmmua		ppdkdmua	REPLACE
+ppmtglfak	ppdtglfak	REPLACE
+ppmsts		ppdsts		REPLACE
+ppmscr		ppdscr   	REPLACE
+ppmdata		ppddata		REPLACE
+lcabstock	ppdcab		REPLACE
+ppmbisnis	ppdbisnis	REPLACE
+ppmdvs		ppddvs		REPLACE
+curut2_tmp	ppdnourt2	DO_CALC_IF cjoinppdu21
+c2_tmp		ppdnourt2	DO_CALC_IF cjoinppdu20
+gv_999		ppdnourt	REPLACE
+
+ppdbrg_1	ppdnomst2	REPLACE
+ppdoto_1	ppdpsnoto	REPLACE
+sgmtbl		ppdbrg		REPLACE   
+sgmhrg1		ppdjmlawl	REPLACE   
+sgmhrg1		ppdjml   	REPLACE   
+sgmstr1		ppdkat		REPLACE
+cPL_tmp		ppdsup		DO_CALC
+crekhutbrg_tmp	ppdnobbm	DO_CALC
+lbrgsatKSU	ppdsat		REPLACE
+
+c1_tmp		ppdsatbsr	DO_CALC
+cK_tmp		ppddk        	DO_CALC
+cB_tmp		ppdkb		DO_CALC
+cM_tmp		ppdsisbrg	DO_CALC
+cBR_tmp		ppdjasbrg	DO_CALC
+
+SPCALCS(spkoreksiksu)
+DO_LIB ap_dbclc(DNAME dmapKSU,DCOMMAND MAPMAP,DMAP mmapKSU);
+DO_LIB ap_dbclc(DNAME daddppdKSU,DCOMMAND ADD,DFILE ppd,DMAP maddppdKSU);
+
+POSTING(tmptrans)
+PST_COMMAND spkoreksiksu

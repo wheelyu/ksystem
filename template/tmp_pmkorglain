@@ -1,0 +1,120 @@
+LOCAL
+PGM_FIELDS
+lpropinsiorglain        STRING          21
+lkotaorglain            STRING          21
+lkecorglain             STRING          21
+lkelorglain		STRING		21
+lalmjalanorglain        STRING          251
+lalmrtorglain           STRING          21
+lalmrworglain           STRING          21
+lnamaorglain		STRING		51
+
+MAP(mjoinalmorglain)
+almjalan        lalmjalanorglain	REPLACE
+almrt           lalmrtorglain		REPLACE
+almrw           lalmrworglain		REPLACE
+almprop         lpropinsiorglain	REPLACE
+almkota         lkotaorglain		REPLACE
+almkec          lkecorglain		REPLACE
+almkel          lkelorglain		REPLACE
+
+DBCALCS(djoinalmorglain)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almotodatidx   btppsm gv_psmktp
+        DBC_MAP         mjoinalmorglain
+
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+  t.NikPengguna	    : ________________ 
+  i.Nama       	    : ________________ 
+  i.Handphone  	    : ________________ 
+  i.Alamatktp  	    : ________________ 
+  i.RT              : ____ i.RW : ____
+  i.Prop       	    : ________________ 
+  i.Kota       	    : ________________ 
+  i.Kec        	    : ________________ 
+  i.Kel        	    : ________________ 
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btppsm  		ALLCAPS 	INPUTRI	1
+lnamaorglain		PROTECT		INPUTRI	2
+btpnobuk2		DIGITS		INPUTRI	3
+lalmjalanorglain	PROTECT         INPUTRI 4
+lalmrtorglain		PROTECT         INPUTRI 5
+lalmrworglain		PROTECT         INPUTRI 6
+lpropinsiorglain	PROTECT		INPUTRI 7
+lkotaorglain		PROTECT		INPUTRI 8
+lkecorglain		PROTECT		INPUTRI 9
+lkelorglain		PROTECT		INPUTRI 10
+
+CALCS()
+cjoinalmorglain		djoinalmorglain == 1
+cadddtorglain		btmsts == "OPEN" && djoinbtporglain == 0 && djoinjmnmtr == 1 && djoinsvicapacityP == 1 && lketatsnmabpkb == "BD" && (lsvistr6P == "TEMAN" || lsvistr6P == "KLRGLAIN" || lsvistr6P == "ORANGLAIN")
+cupddtorglain		btmsts == "OPEN" && djoinbtporglain == 1 && djoinjmnmtr == 1 && djoinsvicapacityP == 1 && lketatsnmabpkb == "BD" && (lsvistr6P == "TEMAN" || lsvistr6P == "KLRGLAIN" || lsvistr6P == "ORANGLAIN")
+chitCBAorglain		djointbdhitcba == 1 && lbtppsmorglain != BLANKS && djoinahmcbas3 == 1
+
+EDITS(tmptranst)
+e.Mandatory             btppsm		MANDATORY
+e.Mandatory             btpnobuk2	MANDATORY
+t.ValidateKtp           btppsm 		VALIDATE psmplgstsktp   mpsmorglain 0 {Pgv_dtkonsumen} {Pgv_INPG}
+
+MAP(mpsmorglain)
+psmktp			btppsm			REPLACE_IF cjoinalmorglain
+psmnama			lnamaorglain		REPLACE
+lalmjalanorglain	lalmjalanorglain	REPLACE_IF cjoinalmorglain
+lalmrtorglain		lalmrtorglain		REPLACE_IF cjoinalmorglain
+lalmrworglain		lalmrworglain		REPLACE_IF cjoinalmorglain
+lpropinsiorglain	lpropinsiorglain	REPLACE_IF cjoinalmorglain	
+lkotaorglain		lkotaorglain		REPLACE_IF cjoinalmorglain
+lkecorglain		lkecorglain		REPLACE_IF cjoinalmorglain
+lkelorglain		lkelorglain		REPLACE_IF cjoinalmorglain
+
+MAP(misibtporglain)
+gv_historisdm   	btpdata         REPLACE
+btmtgl			btptgltrn	REPLACE
+gv_infolain		btptype		REPLACE
+btmnobuk		btpnobuk	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW misibtporglain
+
+CALCS()
+cslp31			btmlokjual == "SLP31"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cslp31
+SFL_TARGET 	btpdatbuktgl gv_historisdm btmnobuk gv_infolain btmtgl
+
+MAP(m4974b)
+btmnobuk                r_string1       REPLACE
+lbtppsmorglain		r_string2       REPLACE
+l1                      r_count1        REPLACE
+l4                      r_count2        REPLACE
+
+MAP(mapmap2g17)
+btmplg          	lidktp                  REPLACE
+btmnobuk        	lahmno2cbas             REPLACE
+btppsm			lbtppsmorglain		REPLACE
+
+SPCALCS(sptrans2g17)
+        DO_LIB  ap_dbclc(DNAME dmapmap2g17, DCOMMAND MAPMAP, DMAP mapmap2g17);
+        DO_LIB_IF chitCBAorglain ap_nxpst(l4974,lm4974b);
+
+POSTING(tmptrans)
+	PST_ADDCMD      sptrans2g17
+	PST_UPDCMD      sptrans2g17
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cadddtorglain
+        PMT_UPDALL_COND cupddtorglain
+        PMT_DEL_COND    c0
+
+
+

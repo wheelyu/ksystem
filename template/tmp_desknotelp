@@ -1,0 +1,529 @@
+LOCAL
+PGM_FIELDS
+ltelp1		STRING	61
+ltelp2		STRING	61
+lvertelp	STRING	21
+lenterx		STRING	21
+lmap		STRING	11
+lpiudesk	STRING	11
+lMODULTRN	STRING	21
+lHISTORISNOHP   STRING  11
+lHISTORIS       STRING  21
+ltotal          INT2	2
+lTELPTERHUBUNG	STRING	21
+lKATHUBUNGAN	STRING	21
+lTELPTERHUBUNG3	STRING	21
+lusrgrp		STRING	21
+
+CALCS()
+caktdata	aktdata == "HSTRNOHP"
+cconvalid		conkel == "VALID"
+cambilnik	conkode == tlmplg
+
+MAP(mupdaktscan)
+gv_int1         ltotal  REPLACE
+
+DBCALCS(dscanakt)
+DBC_COMMAND             SCANSCAN
+DBC_TARGET              aktbukotoidx    tlmplg 
+DBC_SELECT              caktdata
+DBC_SUM_MAP             mupdaktscan
+
+MAP(mjoinusr)
+usrgrp		lusrgrp		REPLACE
+
+DBCALCS(djoinusr)
+DBC_COMMAND	JOIN
+DBC_TARGET	usrkodidx	g_usrkode
+DBC_MAP		mjoinusr
+
+DBCALCS(djoinhpgsm)
+DBC_COMMAND	JOIN
+DBC_TARGET	condathpidx	lgsm11 tldstr1
+DBC_SELECT	cconvalid
+
+DBCALCS(djoinhpgsm2)
+DBC_COMMAND	JOIN
+DBC_TARGET	condathpidx	lgsm11 tldstr1
+DBC_SELECT	cambilnik
+
+DBCALCS(djoinhpwa)
+DBC_COMMAND	JOIN
+DBC_TARGET	condathpidx	lwa11 tldstr2
+DBC_SELECT	cconvalid
+
+DBCALCS(djoinhpwa2)
+DBC_COMMAND	JOIN
+DBC_TARGET	condathpidx	lwa11 tldstr2
+DBC_SELECT	cambilnik
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------------------------------\
+ /--------------t-------------t-------t------t-------------------------t-----t--------------t----t--------t------------\
+ |              |t.NoTelp     |t.Terhub|t.Kat|t.KatTelp                |t.Kat|t.KatTerhubung|t.Kk|t.Konfir|t.NoTelp    |
+ \--------------.-------------.-------.------.-------------------------.-----,--------------,----,--------,------------/
+ /---------------------------------------------------------------------------------------------------------------------\
+  ____________ _
+  spasi
+  t.Nama	: _________________________
+  t.StatusHub	: _________________________
+  spasi
+  t.NoGsm   ___ : ____________    ___    ___  _________________________  ___  ___________ ___ _____________ ___________   
+  t.NoWa    ___ : ____________    ___    ___  _________________________  ___  ___________ ___ _____________ ___________
+ 		  _______
+ \---------------------------------------------------------------------------------------------------------------------/
+\----------------------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldgrup		PROTECT		INPUTRI	1
+tldnobuk	PROTECT	UNSEEN	INPUTRI 1
+
+lnamainfo	PROTECT		INPUTRI 1
+lhubinfo	PROTECT		INPUTRI 1
+
+tldperdis1	PROTECT		INPUTRI 2
+
+tldlok 		PROTECT		INPUTRI	3 /* GSM */
+tldjasbrg	PROTECT 	INPUTRI	3
+tldplg		NOCHANGE	INPUTRI	4
+ltelp1		PROTECT		INPUTRI	5
+tldbisnis	NOCHANGE	INPUTRI	6
+tldkat		PROTECT		INPUTRI 7
+tldstr3		NOCHANGE	INPUTRI 8
+tldstr4		NOCHANGE	INPUTRI 9
+tldstr1		DIGITS		INPUTRI 10
+
+tldperdis2	PROTECT		INPUTRI 11
+
+tldsat  	PROTECT		INPUTRI	11 /* WA */
+tlddk		PROTECT 	INPUTRI	12
+tldnobbm	NOCHANGE	INPUTRI	13
+ltelp2		PROTECT		INPUTRI	14
+tldgrup2	NOCHANGE	INPUTRI	15
+tldlok2		PROTECT		INPUTRI	16
+tldstr5		NOCHANGE	INPUTRI 17
+tldkirim	NOCHANGE	INPUTRI 18
+tldstr2		DIGITS		INPUTRI 19
+
+lenterx		NOCHANGE	INPUTRI 31
+
+CALCS()
+cBLANKS		BLANKS
+cpanjangnom     DO_LIB ap_strln(tldstr1,&ljumlahnomor);
+
+cpanjangnomwa     DO_LIB ap_strln(tldstr2,&ljumlahnomorwa);
+cblanks		tldjasbrg == "Y"
+cblanksx	tldjasbrg == "Y"
+cblanksgsm	(tldbisnis != BLANKS || tldkat != BLANKS) || (tldplg != "4" || tldplg != "6") || tldstr3 != BLANKS
+cblankswa	(tldgrup2 != BLANKS || tldlok2 != BLANKS) || (tldnobbm != "4" || tldnobbm != "6") || tldstr5 != BLANKS
+cterhubung1	(tldplg == "4" || tldplg == "6" || tldplg == "9" || tldplg == "10") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+cterhubung2	(tldnobbm == "4" || tldnobbm == "6" || tldnobbm == "9" || tldnobbm == "10") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+cbukan4		tldplg == "1" || tldplg == "2" || tldplg == "3" || tldplg == "5" || tldplg == "7" || tldplg == "8"
+cbukan4x	tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8"
+
+cbukan08        (ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=11 && ljumlahnomor<=13 ) || 
+		(tldjasbrg == "Y" && tldplg != "6" && (tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")) || 
+		(tldjasbrg == "Y" && tldplg == "6" && (tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")) ||
+		/*(tldplg != "10" && tldjasbrg == "Y" && tldgrup == "NODARURAT") ||
+		(tldjasbrg == "T" && tldgrup == "NODARURAT") || */
+		(tldgrup == "NODARURAT" && tldstr4 == BLANKS)||
+		(tldjasbrg == "T" && tldstr1 == BLANKS && (tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+
+cbukan08wa	(ldigit1wa=="0" && ldigit2wa=="8" && ljumlahnomorwa>=11 && ljumlahnomorwa<=13 ) || 
+		(tlddk == "Y" && tldnobbm != "6" && (tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")) || 
+		(tlddk == "Y" && tldnobbm == "6" && (tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")) || 
+		/*(tldnobbm != "10" && tlddk == "Y" && tldgrup == "NODARURAT") || 
+		(tlddk == "T" && tldgrup == "NODARURAT") || */
+		(tldgrup == "NODARURAT" && tldkirim == BLANKS) ||
+		 (tlddk == "T" && tldstr2 == BLANKS && (tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+
+cjointelpgsm	djoinhpgsm == 0
+cjointelpgsm2	djoinhpgsm2 == 0 
+/*cjointelpgsm3	djoinhpgsm3 == 0 */
+cjointelwa	djoinhpwa == 0
+cjointelpwa2	djoinhpwa2 == 0 
+/*cjointelpwa3	djoinhpwa3 == 0 */
+
+cwajibisigsm	((tldplg == "1" || tldplg == "2" || tldplg == "3") && (tldnobbm == "5" || tldnobbm == "6" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10")) && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))/*||
+		((tldplg == "4") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3"))*/
+
+cwajibisiwa	((tldplg == "5" || tldplg == "6" ||tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3")) && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))/*||
+		((tldplg == "1" || tldplg == "2" || tldplg == "3") && (tldnobbm == "4"))*/
+		
+cskipnokorgsm	((tldplg == "5" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10") && (tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))) ||	
+		((tldplg == "1" || tldplg == "2" || tldplg == "3") && ((tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3") || tldnobbm == "4") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")))  ||
+		((tldplg == "5" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10") && ((tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3") || tldnobbm == "4") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))) ||
+		((tldplg == "5" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10") && (tldnobbm == "6") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")))
+		
+cskipnokorwa	((tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10") && (tldplg == "5" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))) ||
+		((tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3") && ((tldplg == "1" || tldplg == "2" || tldplg == "3") || tldplg == "4") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))) ||
+		((tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10") && ((tldplg == "1" || tldplg == "2" || tldplg == "3") || tldplg == "4") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))) ||
+		((tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10") && (tldplg == "6") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873")))
+
+cwajibisikkgsm	tldplg == "4" && (tldbisnis == "1" || tldbisnis == "2" || tldbisnis == "3" || tldbisnis == "4") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+
+cskipkkgsm	(tldplg == "1" || tldplg == "2" || tldplg == "3" ||tldplg == "5" || tldplg == "6" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10" ) ||
+		(tldplg == "4" && (tldbisnis == "5" || tldbisnis == "6" || tldbisnis == "7" || tldbisnis == "8")) ||
+		tldgrup == "NODARURAT"
+
+cskipkongsm	(tldplg == "1" || tldplg == "2" || tldplg == "3" || tldplg == "5" || tldplg == "6" || tldplg == "7" || tldplg == "8" || tldplg == "9") || 
+		(tldplg == "4" && tldstr3 == "TIDAK") ||
+		(tldplg == "4" && (tldbisnis == "5" || tldbisnis == "6" || tldbisnis == "7" || tldbisnis == "8")) 
+		
+
+cwajibisikongsm	tldstr3 == "YA" && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+
+cwajibisikkwa	tldnobbm == "4" && (tldgrup2 == "1" || tldgrup2 == "2" || tldgrup2 == "3" || tldgrup2 == "4") && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+
+cskipkkwa	(tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "5" || tldnobbm == "6" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10") ||
+		(tldnobbm == "4" && (tldgrup2 == "5" || tldgrup2 == "6" || tldgrup2 == "7" || tldgrup2 == "8")) || 
+		tldgrup == "NODARURAT"
+
+cskipkonwa	(tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "5" || tldnobbm == "6" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9") || 
+		(tldnobbm == "4" && tldstr5 == "TIDAK") ||
+		(tldnobbm == "4" && (tldgrup2 == "5" || tldgrup2 == "6" || tldgrup2 == "7" || tldgrup2 == "8")) 
+		
+
+cwajibisikonwa	tldstr5 == "YA" && ((tldgrup == "NOPENJAMIN" || tldgrup == "NOPEMOHON") || (tldth == "MKTG" || tldth == "SVY" || tldth == "AKL" || tldth == "873"))
+
+cjoinpsmt2	tldgrup == "NOPEMOHON" && lnama != BLANKS	
+chubp1		tldgrup == "NOPEMOHON"
+
+cjoinpsmpnjmt2	tldgrup == "NOPENJAMIN" && djoinpsmp2 == 1
+cjoinpsmpnjmt2x	tldgrup == "NOPENJAMIN" && djoinhubp2 ==1 && tldkat == BLANKS && tldlok2 == BLANKS
+cjoinpsmpnjmt2y	tldgrup == "NOPENJAMIN" && tldkat != BLANKS
+cjoinpsmpnjmt2z tldgrup == "NOPENJAMIN" && tldlok2 != BLANKS
+
+cjoindart2	tldgrup == "NODARURAT" && djoinsvidar == 1
+cjoindart2x	tldgrup == "NODARURAT" && (djointerhub == 1 || djointerhub2 == 1) && tldkat == BLANKS && tldlok2 == BLANKS
+cjoindart2y	tldgrup == "NODARURAT" && tldkat != BLANKS
+cjoindart2z	tldgrup == "NODARURAT" && tldlok2 != BLANKS
+
+ckonfirdar	tldgrup == "NODARURAT"
+cselainkonfir	tldgrup	!= "NODARURAT"
+
+cpemohonhub	"PEMOHON"
+
+DEFAULTS(tmptranst)
+lenterx		INIT		ENTER
+lvertelp	INIT		VERTELEPON
+lpiudesk	INIT		PIUDESK
+lMODULTRN	INIT		MODULTRN
+lHISTORISNOHP   INIT            HSTRNOHP
+lHISTORIS       INIT            HISTORIS
+lTELPTERHUBUNG	INIT		TELPTERHUBUNG
+lKATHUBUNGAN	INIT		KATHUBUNGAN
+lTELPTERHUBUNG3	INIT		TELPTERHUBUNG3
+tldstr3		DFALT_SCAN	BLANKS
+				YA
+				TIDAK
+IF cselainkonfir tldstr4		DFALT_SCAN	BLANKS
+							YA
+							TIDAK
+
+IF ckonfirdar	tldstr4			DFALT_SCAN	BLANKS
+							PEMOHON_GSM
+							PEMOHON_WA
+							PENJAMIN_GSM
+							PENJAMIN_WA
+							
+tldstr5		DFALT_SCAN	BLANKS
+				YA
+				TIDAK
+IF cselainkonfir tldkirim		DFALT_SCAN	BLANKS
+							YA		
+							TIDAK
+
+IF ckonfirdar	tldkirim		DFALT_SCAN	BLANKS
+							PEMOHON_GSM
+							PEMOHON_WA
+							PENJAMIN_GSM
+							PENJAMIN_WA
+
+EDITS(tmptranst)
+e.Mandatory		tldbisnis	MANDATORY_IF cterhubung1
+e.Mandatory		tldgrup2	MANDATORY_IF cterhubung2
+
+e.MandatoryKorgsm	tldstr1 	MANDATORY_IF cwajibisigsm
+e.MandatoryKorwa	tldstr2		MANDATORY_IF cwajibisiwa
+
+e.MandatoryKkgsm	tldstr3		MANDATORY_IF cwajibisikkgsm
+e.MandatoryKongsm	tldstr4		MANDATORY_IF cwajibisikongsm
+
+e.MandatoryKkwa		tldstr5		MANDATORY_IF cwajibisikkwa
+e.MandatoryKonwa	tldkirim	MANDATORY_IF cwajibisikonwa
+
+e.Validate	tldnobuk	VALIDATE	tlmbukidx mtlm1x 0
+ 
+e.Validate	tldplg		VALIDATE	tbddatkodidx mtbd1x stbddesk {Pldttabel11} {Pldesk} {Pltelp}
+e.Validate	tldnobbm	VALIDATE	tbddatkodidx mtbd2x stbddesk {Pldttabel11} {Pldesk} {Pltelp}
+
+e.Validate	tldbisnis	VALIDATE_IF cselainkonfir	tbddatkodidx mtbd3x stbddesk {Pldttabel11} {Pldesk} {PlKATHUBUNGAN}
+e.Validate	tldgrup2	VALIDATE_IF cselainkonfir	tbddatkodidx mtbd4x stbddesk {Pldttabel11} {Pldesk} {PlKATHUBUNGAN}
+
+e.Validate	tldbisnis	VALIDATE_IF ckonfirdar		tbddatkodidx mtdb5x stbddesk {Pldttabel11} {Pldesk} {PlKATHUBUNGAN}
+e.Validate	tldgrup2	VALIDATE_IF ckonfirdar		tbddatkodidx mtdb6x stbddesk {Pldttabel11} {Pldesk} {PlKATHUBUNGAN}
+
+MAP(mtlm1x)
+cBLANKSm	lnamainfo	DO_CALC
+cBLANKSm	lhubinfo	DO_CALC
+
+lnama		lnamainfo	REPLACE_IF cjoinpsmt2
+lnamap2		lnamainfo	REPLACE_IF cjoinpsmpnjmt2
+lnamadarurat	lnamainfo	REPLACE_IF cjoindart2
+
+cpemohonhub	lhubinfo	DO_CALC_IF chubp1
+
+lhubp2		lhubinfo	REPLACE_IF cjoinpsmpnjmt2x
+tldkat		lhubinfo	REPLACE_IF cjoinpsmpnjmt2y
+tldlok2		lhubinfo	REPLACE_IF cjoinpsmpnjmt2z
+
+lketdar		lhubinfo	REPLACE_IF cjoindart2x
+tldkat		lhubinfo	REPLACE_IF cjoindart2y
+tldlok2		lhubinfo	REPLACE_IF cjoindart2z
+
+MAP(mtbd1x)
+cblanks		ltelp1		DO_CALC	
+
+tbdkode		tldplg		REPLACE
+tbdket		ltelp1		REPLACE
+tbdlv2		tldjasbrg	REPLACE
+
+MAP(mtbd2x)
+cblanks		ltelp2		DO_CALC	
+
+tbdkode		tldnobbm	REPLACE
+tbdket		ltelp2		REPLACE
+lmap		lmap		REPLACE
+tbdlv2		tlddk		REPLACE
+
+MAP(mtbd3x)
+tbdkode		tldbisnis	REPLACE
+tbdket		tldkat		REPLACE
+
+MAP(mtbd4x)
+tbdkode		tldgrup2	REPLACE
+tbdket		tldlok2		REPLACE
+
+MAP(mtdb5x)
+tbdkode		tldbisnis	REPLACE
+tbdket		tldkat		REPLACE
+
+MAP(mtdb6x)
+tbdkode		tldgrup2	REPLACE
+tbdket		tldlok2		REPLACE
+
+MAP(mblank)
+cBLANKS		tldstr1		DO_CALC_IF cblanks
+cBLANKS		tldbisnis	DO_CALC_IF cblanksgsm
+cBLANKS		tldkat		DO_CALC_IF cblanksgsm
+cBLANKS		tldstr3		DO_CALC_IF cblanksgsm
+cBLANKS		tldstr4		DO_CALC_IF cblanksgsm
+
+MAP(mblankx)
+cBLANKS		tldstr2		DO_CALC_IF cblanksx
+cBLANKS		tldgrup2	DO_CALC_IF cblankswa
+cBLANKS		tldlok2		DO_CALC_IF cblankswa
+cBLANKS		tldstr5		DO_CALC_IF cblankswa
+cBLANKS		tldkirim	DO_CALC_IF cblankswa
+
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+
+MAP(mpanjangnomwa)
+cpanjangnomwa		ljumlahnomorwa		DO_CALC
+
+MAP(mblankgsm)
+cBLANKS		tldbisnis	DO_CALC_IF cblanksgsm
+cBLANKS		tldkat		DO_CALC_IF cblanksgsm
+
+MAP(mblankwa)
+cBLANKS		tldgrup2	DO_CALC_IF cblankswa
+cBLANKS		tldlok2		DO_CALC_IF cblankswa
+
+MAP(mkkblank)
+cBLANKS		tldstr3		DO_CALC_IF cblanksgsm
+
+MAP(mkkblankx)
+cBLANKS		tldstr5		DO_CALC_IF cblankswa
+
+MAP(mkonblank)
+cBLANKS		tldstr4		DO_CALC_IF cblanksgsm
+
+MAP(mkonblankx)
+cBLANKS		tldkirim	DO_CALC_IF cblankswa
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldstr1	DO_SKIP_IF cskipnokorgsm
+BEFORE_INPUT	cur_field=tldstr2	DO_SKIP_IF cskipnokorwa
+BEFORE_INPUT	cur_field=tldstr3	DO_SKIP_IF cskipkkgsm
+BEFORE_INPUT	cur_field=tldstr4	DO_SKIP_IF cskipkongsm
+BEFORE_INPUT	cur_field=tldstr5	DO_SKIP_IF cskipkkwa
+BEFORE_INPUT	cur_field=tldkirim	DO_SKIP_IF cskipkonwa
+BEFORE_INPUT	cur_field=tldbisnis	DO_SKIP_IF cbukan4
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF cbukan4x
+
+BEFORE_INPUT	cur_field=tldbisnis	DO_MAP	SHOW mblankgsm
+BEFORE_INPUT	cur_field=tldgrup2	DO_MAP	SHOW mblankwa
+
+BEFORE_INPUT	cur_field=tldstr3	DO_MAP	SHOW mkkblank
+BEFORE_INPUT	cur_field=tldstr5	DO_MAP	SHOW mkkblankx
+
+BEFORE_INPUT	cur_field=tldstr4	DO_MAP	SHOW mkonblank
+BEFORE_INPUT	cur_field=tldkirim	DO_MAP	SHOW mkonblankx
+
+AFTER_INPUT 	cur_field=tldstr1       DO_LIB ap_amstr(tldstr1,ln1i,ln1,&ldigit1);
+AFTER_INPUT 	cur_field=tldstr1       DO_LIB ap_amstr(tldstr1,ln2i,ln1,&ldigit2);
+
+AFTER_INPUT 	cur_field=tldstr2       DO_LIB ap_amstr(tldstr2,ln1i,ln1,&ldigit1wa);
+AFTER_INPUT 	cur_field=tldstr2       DO_LIB ap_amstr(tldstr2,ln2i,ln1,&ldigit2wa);
+
+AFTER_INPUT 	cur_field=tldstr1       DO_MAP SHOW mpanjangnom
+
+AFTER_INPUT 	cur_field=tldstr2    	DO_MAP SHOW mpanjangnomwa
+
+AFTER_INPUT 	cur_field=tldstr1 DO_MAP SHOW
+                IF cbukan08 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT 	cur_field=tldstr2 DO_MAP SHOW
+                IF cbukan08wa mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor WA 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT     cur_field=tldstr1 DO_MAP SHOW
+                IF cjointelpgsm  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon   Sudah Pernah valid
+
+AFTER_INPUT     cur_field=tldstr1 DO_MAP SHOW
+                IF cjointelpgsm2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Koreksi sama Dengan No GSM 
+
+/*AFTER_INPUT     cur_field=tldstr1 DO_MAP SHOW
+                IF cjointelpgsm3  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon sudah pernah diisi*/
+
+AFTER_INPUT     cur_field=tldstr2 DO_MAP SHOW
+                IF cjointelwa  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor WA   Sudah Pernah valid 
+
+AFTER_INPUT     cur_field=tldstr2 DO_MAP SHOW
+                IF cjointelpwa2  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Koreksi sama Dengan No WA 
+
+/*AFTER_INPUT     cur_field=tldstr2 DO_MAP SHOW
+                IF cjointelpwa3  mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor WA sudah pernah diisi*/
+
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW mblank
+AFTER_INPUT	cur_field=tldnobbm	DO_MAP SHOW mblankx
+
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD tldnourt
+SFL_TARGET	tldstsbrgukr	ldeskcall gv_OPEN tlmnobuk lDTLP
+
+CALCS()
+/*ctdkvldTelp	(((tldplg == "1" || tldplg == "2" || tldplg == "3" || tldplg == "4") || (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "4")) || 
+		((tldplg == "1" || tldplg == "2" || tldplg == "3" || tldplg == "4") && tldstr1 == BLANKS) || 
+		((tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "4") && tldstr2 == BLANKS))
+
+cvldTelp	(((tldplg == "5" || tldplg == "6" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10") || 
+		  (tldnobbm == "5" || tldnobbm == "6" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10") ||
+		  (tldplg == "4" && tldstr3 == "YA" && tldstr4 == "YA") ||
+		  (tldnobbm == "4" && tldstr5 == "YA" && tldkirim == "YA")) && ((djointkdvalid == 1 && (dscantelp == 0 || dscantelp != 0) && lisino1 == 1 && lisino3 == 1 && lisino3 == 1) || djointkdvalid == 0))*/ 
+
+/*cadatldplg	tldplg != BLANKS && ((tldjasbrg == "Y" && tlddk == "T") || (tldjasbrg != "T" && tlddk != "Y") || (tldjasbrg == "Y" && tlddk == "Y") || (tldjasbrg == "T" && tlddk == "T"))
+cadatldnobbm	tldnobbm != BLANKS && ((tldjasbrg != "Y" && tlddk != "T") || (tldjasbrg == "T" && tlddk == "Y") || (tldjasbrg == "Y" && tlddk == "Y") || (tldjasbrg == "T" && tlddk == "T")) */
+
+ctbh1           ltotal+1
+
+curut0         ((dscanakt!=0 || dscanakt==0) && ltotal==0) 
+curut1         ((dscanakt!=0 || dscanakt==0) && ltotal!=0)
+cdjoinusr	djoinusr == 1
+ctelp1		ltelp1	!= BLANKS
+ctelp2		ltelp2	!= BLANKS
+caddakt3201	((tldplg == "1" || tldplg == "2" || tldplg == "3") && (tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8")) || 
+		((tldplg == "5" || tldplg == "7" || tldplg == "8") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3")) || 
+		((tldplg == "1" || tldplg == "2" || tldplg == "3") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3")) ||
+		((tldplg == "4") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3")) || 
+		((tldplg == "1" || tldplg == "2" || tldplg == "3") && (tldnobbm == "4")) || 
+		((tldplg == "5" || tldplg == "7" || tldplg == "8") && (tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8")) || 
+		((tldplg == "1" || tldplg == "2" || tldplg == "3" || tldplg == "4") && (tldnobbm == "6")) || 
+		((tldplg == "6") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "4")) || 
+		((tldplg == "4" && tldstr3 == "YA" && tldstr4 == "YA") && (tldnobbm == "5" || tldnobbm == "7" || tldnobbm == "8" || tldnobbm == "9" || tldnobbm == "10")) ||
+		((tldplg == "4" && tldstr3 == "YA" && tldstr4 == "YA") && (tldnobbm == "4" && tldstr5 == "YA" && tldkirim == "YA")) || 
+		((tldplg == "4" && tldstr3 == "YA" && tldstr4 == "YA") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3" || tldnobbm == "4")) ||
+		((tldnobbm == "4" && tldstr5 == "YA" && tldkirim == "YA") && (tldplg == "5" || tldplg == "7" || tldplg == "8" || tldplg == "9" || tldplg == "10")) || 
+		((tldnobbm == "4" && tldstr5 == "YA" && tldkirim == "YA") && (tldplg == "1" || tldplg == "2" || tldplg == "3" || tldplg == "4"))
+
+caddakt3201x	((tldplg == "1" || tldplg == "2" || tldplg == "3") && (tldnobbm == "9" && tldnobbm == "10")) || 
+		((tldplg == "9" || tldplg == "10") && (tldnobbm == "1" || tldnobbm == "2" || tldnobbm == "3")) || 
+		((tldplg == "9" || tldplg == "10") && (tldnobbm == "9" || tldnobbm == "10"))
+cketsama	"NO PEMOHON & PENJAMIN SAMA"
+
+MAP(mupdtlmy)
+ltgl            tlmtgl2          REPLACE
+ljam            tlmjam1         REPLACE
+g_usrkode       tlmnobbm        REPLACE
+/*ctdkvld		tlmbisnis	DO_CALC_IF ctdkvldTelp
+cvalid1		tlmbisnis	DO_CALC_IF cvldTelp*/
+lMODULTRN	tlmkodeapr	REPLACE
+/*tldplg		tlmtype1	REPLACE_IF cadatldplg
+tldnobbm	tlmtype1	REPLACE_IF cadatldnobbm*/
+DEBUG	ldum	ldum	REPLACE
+
+MAP(maddakt)
+lHISTORISNOHP	aktdata		REPLACE
+tlmplg		aktnobuk	REPLACE
+c1              akturt          DO_CALC_IF curut0
+ctbh1           akturt          DO_CALC_IF curut1
+tlmdvs		aktcab		REPLACE
+tldlok		aktkode		REPLACE
+tldsat		aktkode2	REPLACE
+tlmbisnis	akttype		REPLACE
+tlmbisnis	aktbrg		REPLACE
+g_tgltrn	akttgl		REPLACE
+g_usrkode	aktcrtusr	REPLACE
+lusrgrp		aktlok		REPLACE_IF cdjoinusr
+tlmnobbm	aktscr		REPLACE
+ltelp1		aktket		REPLACE_IF ctelp1
+ltelp2		aktket		REPLACE_IF ctelp2
+tlmnobuk	aktbukoto	REPLACE
+DEBUG	ldum	ldum	REPLACE
+
+MAP(maddaktx)
+lHISTORISNOHP	aktdata		REPLACE
+tlmplg		aktnobuk	REPLACE
+c1              akturt          DO_CALC_IF curut0
+ctbh1           akturt          DO_CALC_IF curut1
+tlmdvs		aktcab		REPLACE
+tldlok		aktkode		REPLACE
+tldsat		aktkode2	REPLACE
+tlmbisnis	akttype		REPLACE
+tlmbisnis	aktbrg		REPLACE
+g_tgltrn	akttgl		REPLACE
+g_usrkode	aktcrtusr	REPLACE
+lusrgrp		aktlok		REPLACE_IF cdjoinusr
+tlmnobbm	aktscr		REPLACE
+cketsama	aktket		DO_CALC
+tlmnobuk	aktbukoto	REPLACE
+DEBUG	ldum	ldum	REPLACE
+
+SPCALCS(supdtmptrans)
+DO_LIB			ap_dbclc(DNAME dupdtlmx,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmy);
+DO_LIB_IF caddakt3201	ap_dbclc(DNAME daddakt,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF caddakt3201x	ap_dbclc(DNAME daddaktx,DCOMMAND ADD,DFILE akt,DMAP maddaktx);
+
+POSTING(tmptrans)
+PST_UPDCMD	supdtmptrans

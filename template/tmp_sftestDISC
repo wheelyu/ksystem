@@ -1,0 +1,119 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------\
+!/-----\/--s.UPLOAD--------------------------------------------\/------------\/------------\ !
+!! ___ !!                                                      !!            !!            | !
+!\-----/!                                                      !!  spasi     !!  spasi     | !
+!       !                                                      !!  spasi     !!  spasi     | !
+!       !                                                      !!  ______    !!  ______    | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!  spasi     !!  spasi     | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!    __      !!    __      | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!  spasi     !!  spasi     | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!            !!            | !
+!       !                                                      !!  spasi     !!  spasi     | !
+!       !                                                      !!            !!            | !
+!       |                                                      !!            !!            | !
+!       \------------------------------------------------------/\------------/\------------/ !
+\--------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   sgmurt       PROTECT                 INPUTRI          1
+   sgmtbl       PROTECT BIG             INPUTRI          2
+   sgmscr       PROTECT BIG             INPUTRI          3
+   sgmjasbrg    ALLCAPS                 INPUTRI          4
+   sgmtype      ALLCAPS                 INPUTRI          5
+
+CALCS()
+cjikadisc       sgmstr3 == "DISC"
+
+EDITS(tmptranst)
+e.Mandatory sgmtype  MANDATORY_IF cjikadisc
+
+MAP(mjoinrmd1)
+        rmdbts1         lrmdbts11       REPLACE
+
+DBCALCS(djoinrmd1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmddatidx       gv_psikotest11  gv_inpg5        lrmdgab1
+        DBC_MAP         mjoinrmd1
+
+MAP(mjoinrmd2)
+        rmdbts1         lrmdbts12       REPLACE
+
+DBCALCS(djoinrmd2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmddatidx       gv_psikotest11  gv_inpg5        lrmdgab2
+        DBC_MAP         mjoinrmd2
+
+
+
+CALCS()
+cgabrmd1a       "DISC" + FLD_TO_STRING(sgmurt) + STRIP(sgmjasbrg) + "1"
+cgabrmd2a       "DISC" + FLD_TO_STRING(sgmurt) + STRIP(sgmtype) + "2"
+cdjoinrmd1      djoinrmd1 == 1
+cdjoinrmd2      djoinrmd2 == 1
+cbkndisc        sgmstr3 != "DISC"
+
+csyrYT          (sgmstr3 == "YT" && (sgmjasbrg == "Y" || sgmjasbrg == "T")) || sgmstr3 != "YT"
+csyrABC         (sgmstr3 == "AC" && (sgmjasbrg=="A" || sgmjasbrg=="B" || sgmjasbrg=="C")) || sgmstr3 != "AC"
+csyrABCD        ((sgmstr3=="AD" || sgmstr3=="DISC") && (sgmjasbrg=="A" || sgmjasbrg=="B" || sgmjasbrg=="C" || sgmjasbrg=="D")) || (sgmstr3!="AD" && sgmstr3 != "DISC")
+csyrABCD2       (sgmstr3 == "DISC" && (sgmtype=="A" || sgmtype=="B" || sgmtype=="C" || sgmtype=="D")) || sgmstr3 != "DISC"
+ctdkblhsama     sgmjasbrg != sgmtype
+
+MAP(misi1)
+cgabrmd1a       lrmdgab1        DO_CALC
+lrmdbts11       sgmhrg11        REPLACE_IF cdjoinrmd1
+
+MAP(misi2)
+cgabrmd2a       lrmdgab2        DO_CALC
+lrmdbts12       sgmhrg12        REPLACE_IF cdjoinrmd2
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sgmjasbrg     DO_MAP SHOW misi1
+AFTER_INPUT     cur_field=sgmtype       DO_MAP SHOW misi2
+BEFORE_INPUT    cur_field=sgmtype       DO_SKIP_IF cbkndisc
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW maddtgltes
+AFTER_INPUT     cur_field=sgmjasbrg     DO_MAP SHOW
+                IF csyrYT       mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HrsIsiYT
+AFTER_INPUT     cur_field=sgmjasbrg     DO_MAP SHOW
+                IF csyrABC      mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HrsIsiABC
+
+AFTER_INPUT     cur_field=sgmjasbrg     DO_MAP SHOW
+                IF csyrABCD     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HrsIsiABCD
+AFTER_INPUT     cur_field=sgmtype     DO_MAP SHOW
+                IF csyrABCD2    mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HrsIsiABCD
+
+AFTER_INPUT     cur_field=sgmtype     DO_MAP SHOW
+                IF ctdkblhsama  mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JawabanTidakBolehSama
+
+
+CALCS()
+cdjoinsgm21      (djoinsgm2 == 1 || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA" || g_grpnam=="HRDSPV" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD") && btmstsdata=="OPEN"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     sgmstr2
+SFL_UPLREADONLY
+SFL_SORT_BY_FIELD sgmurt
+SFL_COND        cdjoinsgm21
+SFL_TARGET
+        sgmdabrplgtb    gv_testkry11   btmnobuk gv_disc21
+

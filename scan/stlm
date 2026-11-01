@@ -1,0 +1,234 @@
+/****************************************************************************/
+IMAGE(tlmhead) 
+/-------------Daftar Pesanan------------------------------\			
+|  Kode          | Keterangan |       Nama                |
+|---------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|---------------------------------------------------------|
+|      Tekan ESC untuk keluar                             |
+\---------------------------------------------------------/
+
+IMAGE(tlmroll) 
+ ________________  ___________  _________________________
+
+FIELD(tlmroll)
+   tlmnobuk          	NOCHANGE SCROLL          NONE              1  
+   tlmplg               PROTECT SCROLL           NONE              2  
+   tlmket               PROTECT SCROLL           NONE              2  
+
+/*IMAGE(tlmhead3)
+/-------------Daftar Pesanan------------------------------------------------------------------------\
+|  Kode     |   Ktp        | Keterangan                      | Kelurahan           | No hp          |
+|---------------------------------------------------------------------------------------------------|
+
+
+
+
+
+
+|---------------------------------------------------------------------------------------------------|
+|       Tekan ESC untuk keluar                                                                      |
+\---------------------------------------------------------------------------------------------------/
+
+IMAGE(tlmroll3)
+  ______________ ______________  __________________________ ___________________ ___________________
+
+FIELD(tlmroll3)
+   tlmnoasal             NOCHANGE SCROLL          NONE              1
+   tlmplg		NOCHANGE SCROLL		NONE		1
+   almkec               PROTECT SCROLL           NONE              2
+   almkel		PROTECT		NONE 3
+   tlmket			PROTECT		NONE 4
+
+
+EDITS(tlmroll3)
+.		tlmplg	VALIDATE_DUP almdatotobuk malmtlm  {Pgv_psmtinggal}
+
+MAP(malmtlm)
+almkec		almkec		REPLACE
+almkel		almkel		REPLACE
+*/
+
+
+CALCS()
+ctypesama	tlmtypbrg == pmbndk
+/*ccab		(tlmcab == #tlmcab || tlmuntuk == #tlmcab)*/
+/*ccab2		(tlmcab == #tlmcab || tlmuntuk == #tlmcab) && #tlmsts == "INPG"*/
+cscan_kwitansi	#tlmsts2 == "KWI" && #tlmplg == "KWITANSI"
+cscan_bukti_bia	#tlmsts2 == "BIA" && #tlmplg == "BUKTI_BIA"
+cclaim		tlmcab == #tlmgrup && tlmcab == #tlmgrup2
+cclaim1		tlmcab == #tlmcab /*tlmcab == #tlmgrup && tlmcab != #tlmgrup2*/
+cclaim2		tlmcab != #tlmgrup && tlmcab == #tlmgrup2
+cclaim3         tlmcab == #tlmcab && (#tlmkode == "LENGKAP" || #tlmkode == "RCN_CAIR") && #tlmbisnis == "FAKTUR"
+cLKM4W		tlmcab == mtscab 
+cLKM4W2		tlmcab == mtsdari 
+ctlm920bp       #tlmdvs=="M4W" && #tlmtype1=="BPKB"
+/* ctlm981	#tlmdata == "DTMEDSOS" && #tlmcab == tldcab && #tlmbisnis == tldbisnis && #tlmsts2 == tldsisbrg
+		&& #tlmnoasal == "AKTIF" && #tlmsts == "INPG" && #tlmtypbrg == "OK" && #tlmplg == "KLIK" */
+ctlm981		#tlmbisnis == tldbisnis && #tlmsts2 == tldsisbrg && #tlmcab == tldcab
+		&& #tlmsts == "INPG" && #tlmtypbrg == "OK" && #tlmnoasal == "AKTIF" && #tlmplg == "MKTG" 
+
+ctlm981ok       #tlmtypbrg=="OK" && #tlmcab==tldcab && 
+		(((#tlmsts2=="FB" && tldbrg== "FACEBOOK")   || (#tlmsts2=="IG" && tldbrg== "INSTAGRAM") || (#tlmsts2=="TG" && tldbrg== "TELEGRAM")  || 
+		  (#tlmsts2=="TT" && tldbrg== "TIKTOK")     || (#tlmsts2=="WA" && tldbrg== "WHATSAPP")  || (#tlmsts2=="YT" && tldbrg== "YOUTUBE")   || 
+		  (#tlmsts2=="TW" && tldbrg== "TWITTER")    || (#tlmsts2=="LN" && tldbrg== "LINE")      || (#tlmsts2=="PN" && tldbrg== "PINTARNYA") || 
+		  (#tlmsts2=="DK" && tldbrg== "DISNAKERJA") || (#tlmsts2=="LI" && tldbrg== "LINKEDIN")  || (#tlmsts2=="OX" && tldbrg== "OLX")       ||
+		  (#tlmsts2=="JS" && tldbrg== "JOBSTREET")  || (#tlmsts2=="GL" && tldbrg== "GLINTS"))   || tldbrg==#tlmdari)
+/*		&& ((tlmgrup2 == tldgrup && tlmnobbm == "AKUN") || (tlmcab == tldcab && tlmbobbm == "SARANA"))  */
+ctypepartspm	tlmdvs == "H2" && tlmcab == pmbcab 
+ccf801		tlmcab == #tlmcab 
+crkm803		tlmcab == #tlmcab 
+ctlmcug		#tlmtype1 == "CUG"
+ctlmpolis	#tlmtype1 == "ASS"
+ctlm949		(#tlmsts2 == "KRIM" && #tlmnobbm == BLANKS) || (#tlmsts2 == "TRMA")
+c820ijin	tlmgrup2=="IJIN_PBB" && (tlmnoasal==BLANKS || (tlmnoasal!=BLANKS && tlmperppn!=0))
+ctlm969		tlmcab == tkmlok2 && tlmtype1 == BLANKS
+cexm4w		tlmdvs == "M4W" && tlmtype1 == "PT/CV"
+
+SCAN(stlm) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} 
+SCAN(stlm2) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8}  
+SCAN(stlm820) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=c820ijin}
+SCAN(stlmM4W) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cLKM4W}
+SCAN(stlmM4W2) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cLKM4W2}
+/*SCAN(stlm862) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ccab}*/
+/*SCAN(stlm862a) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ccab2}*/
+SCAN(stlm862arsip) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8}
+SCAN(stlm862bpkb) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8}
+SCAN(stlm862atm) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8}
+SCAN(stlm862kwi) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cscan_kwitansi}
+SCAN(stlm862bia) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cscan_bukti_bia}
+SCAN(stlmTY) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctypesama}
+SCAN(stlmClm) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cclaim}
+SCAN(stlmClm1) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cclaim1}
+SCAN(stlmClm2) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cclaim2}
+SCAN(stlmClm3) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cclaim3}
+SCAN(stlm969) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlm969}
+SCAN(stlm981) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlm981}
+SCAN(stlm981ok) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlm981ok}
+SCAN(stlm801) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ccf801}
+SCAN(stlm803) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=crkm803}
+SCAN(stlmcug) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlmcug}
+SCAN(stlmpolis) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlmpolis}
+SCAN(stlmpartspm) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctypepartspm}
+SCAN(stlm949) {IMAGE_OUT=tlmhead} {IMAGE_ROL=tlmroll} {IMAGE_INP=tlmroll} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlm949}
+
+IMAGE(tlmhead6)
+/-------------Daftar Pesanan---------------------------------------\			
+|  Nobuk          |       Kode          |       Nama                |
+|------------------------------------------------------------------|
+
+
+
+
+|------------------------------------------------------------------|
+|      Tekan ESC untuk keluar                                      |
+\------------------------------------------------------------------/
+
+
+IMAGE(tlmroll6)
+________________ ______________________ ___________________________
+
+FIELD(tlmroll6)
+   tlmnobuk             NOCHANGE SCROLL          NONE              1
+   tlmplg               PROTECT SCROLL           NONE              2
+   tlmgrup2		         PROTECT SCROLL		       NONE		   3
+
+   EDITS(tlmroll6)
+. tlmplg VALIDATE psmktpidx mtlmroll6 0 
+
+MAP(mtlmroll6)
+psmnama		tlmgrup2	   REPLACE
+
+SCAN(stlmex)  {IMAGE_OUT=tlmhead6} {IMAGE_ROL=tlmroll6} {IMAGE_INP=tlmroll6} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=cexm4w}
+
+IMAGE(tlmhead2)
+/-------------Daftar Pesanan------------------------------------\
+|  Kode           Keterangan               Total       		|
+|---------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|---------------------------------------------------------------|
+|      Tekan ESC untuk keluar                     		|
+\---------------------------------------------------------------/
+
+IMAGE(tlmroll2)
+  ______________  ____________________  __________________.__
+
+FIELD(tlmroll2)
+   tlmnobuk             NOCHANGE SCROLL          NONE              1
+   tlmplg               PROTECT SCROLL           NONE              2
+   tlmtotal		PROTECT SCROLL		 NONE		   3
+
+CALCS()
+csisprc 	tlmperppn + ~bkdtotal > 0.0
+
+SCAN(stlmBB) {IMAGE_OUT=tlmhead2} {IMAGE_ROL=tlmroll2} {IMAGE_INP=tlmroll2} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=csisprc}
+
+IMAGE(tlmhead5)
+/-------------Daftar Pesanan----------------------\
+|  Kode           Cabang         Total            |
+|-------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|-------------------------------------------------|
+|      Tekan ESC untuk keluar                     |
+\-------------------------------------------------/
+
+IMAGE(tlmroll5)
+  ______________  ____________________  __________________.__
+
+FIELD(tlmroll5)
+   tlmnobuk             NOCHANGE SCROLL          NONE              1
+   tlmcab               PROTECT SCROLL           NONE              2
+   tlmtotal		PROTECT SCROLL		 NONE		   3
+
+SCAN(stlm750) {IMAGE_OUT=tlmhead5} {IMAGE_ROL=tlmroll5} {IMAGE_INP=tlmroll5} {SELECT_BAR} {ROLL_LINES=8}
+
+IMAGE(tlmhead4)
+/-------------Daftar Pesanan----------------------\
+|  NOBUK                      Faktur              |
+|-------------------------------------------------|
+
+
+
+
+
+
+
+
+
+|-------------------------------------------------|
+|      Tekan ESC untuk keluar                     |
+\-------------------------------------------------/
+
+IMAGE(tlmroll4)
+  _______________________  ______________________
+
+FIELD(tlmroll4)
+   tlmnobuk             NOCHANGE SCROLL          NONE              1
+   tlmnoasal            PROTECT SCROLL           NONE              2
+
+SCAN(stlm920bp) {IMAGE_OUT=tlmhead4} {IMAGE_ROL=tlmroll4} {IMAGE_INP=tlmroll4} {SELECT_BAR} {ROLL_LINES=8} {SCAN_SELECT=ctlm920bp}
+

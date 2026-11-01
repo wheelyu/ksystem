@@ -1,0 +1,82 @@
+                              LOCAL 
+PGM_FIELDS
+lurut_verekontak	INT2		2
+
+MAP(mjoinsviverekontak)
+svinourt		lurut_verekontak		REPLACE
+
+DBCALCS(djoinsviverekontak)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp   ldt703 btmnobuk gv_verekontak 
+	DBC_MAP		mjoinsviverekontak
+
+IMAGE(tmptranst) 
+ /------------------------------------------------------------------------------------------------\
+ |i.Notelpdihub       			  	: ____________________                            |
+ |i.Bisadihubungi     			  	: ____                                            |
+ |i.Namasumberinformasi                   	: ____________________                            |
+ |i.Apasumberkenalcadeb			  	: ____                                            |
+ |i.Apasumbertahucadebkredit		  	: ____                                            |
+ |i.Apasumbertahutmptglcadeb              	: ____                                            |
+ |i.Apasumbertahutmpkerja                 	: ____                                            |
+ |i.Apasumbertahujabatancadeb             	: ____                                            |
+ |i.Sudahbrplamacadebkerjausaha           	: ____ i.Th                                       |
+ |i.Profil                                	: ____________________                            |
+ |i.Hasilverifikasi                       	: _______________________________________________ |
+ \------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+sviyt1			NOCHANGE			INPUTRI 2
+svistr2			ALLCAPS SCROLL			INPUTRI 3
+sviyt2			NOCHANGE			INPUTRI 4
+svitype2		NOCHANGE			INPUTRI 5
+svitype3		NOCHANGE			INPUTRI 6
+svistr3			NOCHANGE			INPUTRI 7
+svistr4			NOCHANGE			INPUTRI 8
+svidf1			NUMERIC				INPUTRI 9
+svistr5			ALLCAPS SCROLL			INPUTRI 10
+sviket			TEXTAREA                        INPUTRI 11
+
+DEFAULTS(tmptranst)
+sviyt1			DFALT_LIST 		Y T
+sviyt2			DFALT_LIST		Y T
+svitype2		DFALT_LIST		Y T
+svitype3		DFALT_LIST		Y T
+svistr3		DFALT_LIST		Y T
+svistr4		DFALT_LIST		Y T
+
+CALCS()
+cverkerja0		g_curcmd == 1 && djoinsviverekontak == 0
+cverkerja1		g_curcmd == 1 && djoinsviverekontak == 1
+curutverkontak		lurut_verekontak + 1
+cverkontak1		1
+
+MAP(murut_verekontak)
+cverkontak1		svinourt		DO_CALC_IF cverkerja0
+curutverkontak		svinourt		DO_CALC_IF cverkerja1
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_keybd=EN 		DO_MAP SHOW murut_verekontak
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   ldt703 btmnobuk gv_verekontak
+
+SFL_MAP
+ldt703			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_verekontak		svitype			REPLACE
+
+
+CALCS()
+cupd_verekontak		(btmsts == "705" || btmsts == "703") && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD")
+
+PERMIT(tmptrans)
+  	PMT_UPDALL_COND cupd_verekontak
+  	PMT_DEL_COND  	cupd_verekontak

@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/---------------------------------\
+|t.Nobuk : _______________ _____  |
+|t.Target PK Total  : __________  | 
+|t.Actual PK Total  : __________  | 
+|t.Actual PK Kredit : __________  |
+|t.Actual PK Tunai  : __________  |
+|spasi			 	  |
+|t.Target JL Total  : __________  | 
+|t.Actual JL Total  : __________  | 
+|t.Actual JL Kredit : __________  |
+|t.Actual JL Tunai  : __________  |
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	PROTECT			INPUTRI 1
+tldlok		PROTECT			INPUTRI 1
+tldjml		NOCHANGE		INPUTRI	2	
+lpktotal	PROTECT                 INPUTRI 3 /*ACT PK TTL*/
+lpkkre		PROTECT                 INPUTRI 4 /*ACT PK K*/
+lpktun		PROTECT                 INPUTRI 5 /*ACT PK T*/
+tldhrg		NOCHANGE		INPUTRI	6
+ljltotal	PROTECT                 INPUTRI 7 /*ACT JL TTL*/
+ljlkre		PROTECT                 INPUTRI 8 /*ACT JL K*/
+ljltun		PROTECT                 INPUTRI 9 /*ACT JL T*/
+
+EDITS(tmptranst)
+e.Validate	tldlok		VALIDATE cabkodidx mcabtld
+
+MAP(mcabtld)
+tlmnobuk	tlmnobuk		REPLACE
+lpktotal        lpktotal                REPLACE_IF cdscanakt
+lpkkre          lpkkre                  REPLACE_IF cdscanakt
+lpktun          lpktun                  REPLACE_IF cdscanakt
+ljlkre          ljlkre                  REPLACE_IF cdscanakt
+ljltun          ljltun                  REPLACE_IF cdscanakt
+ljltotal        ljltotal                REPLACE_IF cdscanakt
+
+CALCS()
+cutkhmc		tlmdvs=="M2W" || tlmdvs=="HMC" || tlmdvs=="H1"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cutkhmc
+SFL_SHOW_NEXT
+SFL_TARGET
+	tldbukbrgoto	tlmnobuk gv_INPG levent
+
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+gv_INPG		tldsts		REPLACE
+levent		tldbrg		REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND            c0
+PMT_UPDALL_COND         c0
+PMT_DEL_COND            c0
+

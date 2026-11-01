@@ -1,0 +1,53 @@
+
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.NipSdm  	:    ______________     ||
+||t.NipAtsn2    :    ______________     ||
+||t.ApakahSDMDiIkutkanRemedial  :       ||
+|| __________                           ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+hrmnip1         		PROTECT                	INPUTRI 1
+latasan2				PROTECT					INPUTRI 2
+psdtype2        	    NOCHANGE                INPUTRI 3
+
+
+DEFAULTS(tmptranst)
+psdtype2		    DFALT_SCAN	BLANKS		
+				YA 
+				TIDAK
+
+CALCS()
+cbenar	tmpkode == "KONFREMEDIAL"
+cTidak 	psdtype2 != "TIDAK"
+cYa 	psdtype2 != "YA"
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdtype2     DO_MAP SHOW
+                IF cYa  mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG Jika Pilih Ya, Maka SDM Ini Akan Mengikuti Training Ulang di Hari Kamis, Jumat, dan Sabtu 
+AFTER_INPUT     cur_field=psdtype2     DO_MAP SHOW
+                IF cTidak  mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG Jika Pilih Tidak, Maka SDM Akan Dilanjutkan TL
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_COND cbenar 
+SFL_LINES(1)
+
+SFL_TARGET
+	psddattypidx   lKONFREMED lKONFREMED hrmnobuk hrmnip1  
+
+SFL_MAP
+lKONFREMED      psddata         REPLACE
+hrmnobuk        psdpsmkode      REPLACE
+hrmnip1		    psdkode		    REPLACE
+lKONFREMED      psdtype         REPLACE
+

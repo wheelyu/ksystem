@@ -1,0 +1,125 @@
+LOCAL
+PGM_FIELDS
+ltombolr1               STRING          21
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-s.DOCUPLOAD-------------------------------\|
+||                                           ||
+||                                           ||
+||                                           ||
+|\-------------------------------------------/|
+|/-------------------------------------------\|
+||t.Upload         :___                      ||
+||t.tglu           :_________________        ||
+||t.Sts            :_____                    ||
+||t.Tanggal        :_________________        ||
+||t.fnlpoint       :______________.__        ||
+||t.pntperformance :______________.__        ||
+||t.pntpotential   :______________.__        ||
+||t.Ket            :_____________________    ||
+||                           _____  _______  ||
+|\-------------------------------------------/|
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tlddk           PROTECT SCROLL  INPUTRI 1
+tldtgl2         PROTECT {DD-MM-YYYY}  INPUTRI 2
+tldsts		PROTECT		INPUTRI	3
+tldtglfak       NOLIMIT {DD-MM-YYYY} INPUTRI 4
+tldjml        	PROTECT         INPUTRI 5
+tldhrg          PROTECT         INPUTRI 6
+tldperdis       PROTECT         INPUTRI 7
+tldket          TEXTAREA        INPUTRI 8
+lenter		NOCHANGE	INPUTRI	9
+ltombolr1	TOMBOL		INPUTRI	10
+
+DEFAULTS(tmptranst)
+ltombolr1	INIT		"REVIEW"
+
+
+CALCS()
+cabkdetail1	abktype == BLANKS && abktype2 == BLANKS && abkkym == g_usrkode
+
+DBCALCS(dcekkunciand1)
+DBC_COMMAND	JOIN
+DBC_TARGET	abkdatbukidx	lKUNCIABSEN	tlmnobuk
+DBC_SELECT	cabkdetail1
+
+CALCS()
+cstsopen	tldsts == "OPEN" && tldtglfak > g_tgltrn && dcekkunciand1 == 1
+cstsinpg	tldsts == "INPG" && tlddk != BLANKS
+cstsdone	tldsts == "OPEN" && (tldtglfak == g_tgltrn || tldtglfak == BLANKS) && tlddk != BLANKS
+cekkunciand1	dcekkunciand1 == 1
+cekkunciand1a	dcekkunciand1 == 1 && ((tldsts == "OPEN" && (tldtglfak == g_tgltrn || tldtglfak == BLANKS) && tlddk != BLANKS) || (tldsts == "OPEN" && tldtglfak != BLANKS) || (tldsts == "INPG" && tlddk != BLANKS))
+cselectcxhead   tbttblkode == "HOCX"
+
+MAP(mcxdivhead)
+tbtkode                 lnipHOCX                REPLACE
+
+DBCALCS(dnipcxhead)
+DBC_COMMAND             JOIN
+DBC_TARGET              tbtdaturtidx    gv_dttabel        lCUSTOMEREXPERIENCE
+DBC_SELECT              cselectcxhead
+DBC_MAP                 mcxdivhead
+
+CALCS()
+cxdivhead               dnipcxhead == 1
+
+MAP(mapmap1)
+DEBUG	ldum	ldum		REPLACE
+
+MAP(mupdabk)
+gv_CLSD		abksts		REPLACE_IF cabkdetail1
+DEBUG	ldum	ldum	REPLACE
+
+MAP(maddabk)
+lKUNCIABSEN     abkdata         REPLACE
+g_scrnumstr     abkscr          REPLACE
+gt_RINP         abksts          REPLACE
+tlmnobuk    	abknobuk        REPLACE
+lnipHOCX        abkkym          REPLACE_IF cxdivhead
+lCEKREVIEW      abkkym2         REPLACE
+tldtglfak	abktgl		REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+MAP(mupdtld)
+gv_CLSD		tldsts		REPLACE_IF cstsinpg
+gv_INPG		tldsts		REPLACE_IF cstsopen
+gv_CLSD		tldsts		REPLACE_IF cstsdone
+DEBUG	ldum	ldum		REPLACE
+
+SPCALCS(spreview1)
+DO_LIB          	ap_dbclc(DNAME dmapmap1,DCOMMAND MAPMAP,DMAP mapmap1);
+DO_LIB_IF cekkunciand1a	ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabk);
+DO_LIB_IF cstsopen	ap_dbclc(DNAME daddabk,DCOMMAND ADD,DFILE abk,DMAP maddabk);
+DO_LIB_IF cekkunciand1	ap_dbclc(DNAME dupdtld,DCOMMAND UPDATE,DTARGET tldotoidx tldoto,DMAP mupdtld);
+
+
+CALCS()
+cskip		tldsts == "CLSD"
+cskip2		tldsts == "INPG" || tldsts == "CLSD"
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombolr1		DO_SPCALCS	spreview1
+BEFORE_INPUT	cur_field=tldket		DO_SKIP_IF	cskip
+BEFORE_INPUT	cur_field=tldtglfak		DO_SKIP_IF	cskip2
+
+CALCS()
+creviewdivhead1	tlddata == lCXDIVHEAD1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SORT_BY_FIELD tldnourt
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DELCOND c0
+SFL_DOCUPLFLD tldnobuk
+SFL_DOCUPLFLD_DBCALCS dupdfoto15
+SFL_SELECT	creviewdivhead1
+SFL_TARGET
+tldbukurtidx	tlmnobuk
+
+

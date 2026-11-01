@@ -1,0 +1,51 @@
+IMAGE(tmptranst)
+/======================t=====================t==================\
+| i.NoBuk              | i.Tgl               | t.Tgl301         |
+\======================.=====================.==================/
+
+IMAGE(tmptrans)
+|______________________|_____________________|__________________|
+
+FIELD(tmptrans)
+tkdnobuk      PROTECT 		    INPUTRI         1
+tkdtgl        PROTECT {DD-MM-YYYY}  INPUTRI         2
+ltglbyr301    PROTECT {DD-MM-YYYY}  INPUTRI         3
+
+
+EDITS(tmptrans)
+t.ValidateNobukDas tkdnobuk VALIDATE tkmbukidx mnobukdas 0
+
+MAP(mbkdbyr301)
+bkdtgl                ltglbyr301       REPLACE
+
+DBCALCS(djoinbkdbyr301)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      bkdbukllidx tkdnobuk
+        DBC_MAP         mbkdbyr301
+
+MAP(mbkmbyr301)
+bkmtgl                ltglbyr301       REPLACE
+
+DBCALCS(djoinbkmbyr301)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      bkmstsbsidx gv_CLSD tkdnobuk
+        DBC_MAP         mbkmbyr301
+
+CALCS()
+/*csamabuk	ppsnobuk==tkdnoll*/
+cjoinbyr301     djoinbkdbyr301 == 1 || (djoinbkmbyr301 == 1 && djoinbkdbyr301 == 0)
+cjoinbyr301_0   djoinbkdbyr301 == 0 && djoinbkmbyr301 == 0
+cBLANKS         BLANKS
+
+MAP(mnobukdas)
+tkmnobuk        tkdnobuk        REPLACE
+cBLANKS         ltglbyr301      DO_CALC_IF cjoinbyr301_0
+ltglbyr301      ltglbyr301      REPLACE_IF cjoinbyr301
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/*SFL_SELECT csamabuk
+SFL_TARGET tkddatbukll   lASRGD*/
+SFL_TARGET tkddatllidx	lASRGD ppsnobuk
+

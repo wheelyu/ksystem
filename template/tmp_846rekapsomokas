@@ -1,0 +1,118 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------------------------\
+ /--------------------------------------\/-------------------------------------------------------------\
+  t.JmlUnitSis          : _______           t.JmlUHslSo                 : _______    t.TglSO : _______
+  t.JmlUAdBcd           : _______           t.JmlUTAdBcd                : _______
+  t.UMokasSdhRetur      : _______           t.UMokasBlmRetur            : _______
+  t.UnitMauRetur        : _______           t.UnitMauTebus              : _______
+ \--------------------------------------/\-------------------------------------------------------------/
+     ________
+\-------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldjml          PROTECT                          INPUTRI 1
+tldsubtot       PROTECT                          INPUTRI 2
+tldtgl2         PROTECT NOLIMIT {DD-MM-YYYY}     INPUTRI 3
+
+tldtmp1         PROTECT                          INPUTRI 4
+tldtmp2         PROTECT                          INPUTRI 5
+
+tldtotdis       PROTECT                          INPUTRI 6
+tldperdis       PROTECT                          INPUTRI 7
+
+tldhrg          PROTECT                          INPUTRI 8
+tldsatbsr       PROTECT                          INPUTRI 9
+
+lgomokas        TOMBOL                           INPUTRI 10
+
+DEFAULTS(tmptranst)
+lgomokas        INIT    "GO"
+
+CALCS()
+cmokas	            (brdkat == "SPMB" && brdnomesin != BLANKS && brdbisnis != "M2W4W" && brdbisnis != "M4W" && tlmdvs != "M2W4W" && tlmdvs != "M4W") || 
+                    (brdkat == "SPMB" && brdnomesin != BLANKS && brdbisnis == "M2W4W" && tlmdvs == "M2W4W") || 
+                    (brdkat == "RETUR" && brdnomesin != BLANKS && brdbisnis == "M4W" && tlmdvs == "M4W")
+cscanadbcdmks       svistr31 == "SC"
+cscanTadbcdmks      svistr31 == "MN"
+cscanblmrtr         svistr6 == "BELUM RETUR"
+cscansdhrtr         svistr6 == "SUDAH RETUR"
+cscanakanrtr        tldgrup == "AKAN_RETUR"
+cscanakantbs        tldgrup == "AKAN_TEBUS"
+
+MAP(mscanstokbrdmks)
+cBLANKS ltotalmokas        DO_CALC
+c1      ltotalmokas        DO_CALC_IF cmokas
+
+DBCALCS(dbscanstok1490mks)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      brdstscabbrg	gv_INPG tlmcab
+        DBC_SUM_MAP     mscanstokbrdmks
+
+MAP(mscansvisomks)
+cBLANKS ltotalsvimks         DO_CALC
+cBLANKS ltotaladbcdmks       DO_CALC
+cBLANKS ltotaltadbcdmks      DO_CALC
+cBLANKS ltotalblmretur       DO_CALC
+cBLANKS ltotalsdhretur       DO_CALC
+c1      ltotalsvimks         DO_CALC
+c1      ltotaladbcdmks       DO_CALC_IF cscanadbcdmks
+c1      ltotaltadbcdmks      DO_CALC_IF cscanTadbcdmks
+c1      ltotalsdhretur       DO_CALC_IF cscansdhrtr
+c1      ltotalblmretur       DO_CALC_IF cscanblmrtr
+
+DBCALCS(dbscansvisomks)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp   lRINCISO tlmnobuk
+        DBC_SUM_MAP     mscansvisomks
+
+MAP(mscantldblmretur)
+cBLANKS ltotalakanretur         DO_CALC
+cBLANKS ltotalakantebus         DO_CALC
+c1      ltotalakanretur         DO_CALC_IF cscanakanrtr
+c1      ltotalakantebus         DO_CALC_IF cscanakantbs
+
+DBCALCS(dbscantldblmrtr)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      tldstskodbrg   lBLMRETUR  gv_OPEN  tlmnobuk
+        DBC_SUM_MAP     mscantldblmretur
+
+CALCS()
+/*ctotalrkpmks    ltotalmokas*/
+cdbscanmks              (dbscanstok1490mks == 0 || dbscanstok1490mks == 1)
+/*ctotalsomks             ltotalsvimks */     
+cscansvimks             dbscansvisomks == 0 || dbscansvisomks == 1
+cscantldblmretur        dbscantldblmrtr == 0 || dbscantldblmrtr == 1
+/* ctotadbcdmks    ltotaladbcdmks
+ctottadbcdmks   ltotaltadbcdmks */
+
+MAP(mupdtldrkpmks)
+ltotalmokas             tldjml                  REPLACE_IF cdbscanmks
+tlmtgl                  tldtgl2                 REPLACE
+ltotalsvimks            tldsubtot               REPLACE_IF cscansvimks
+ltotaladbcdmks          tldtmp1                 REPLACE_IF cscansvimks
+ltotaltadbcdmks         tldtmp2                 REPLACE_IF cscansvimks
+ltotalblmretur          tldtotdis               REPLACE_IF cscansvimks
+ltotalsdhretur          tldperdis               REPLACE_IF cscansvimks
+ltotalakanretur         tldhrg                  REPLACE_IF cscantldblmretur
+ltotalakantebus         tldsatbsr               REPLACE_IF cscantldblmretur
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tldbukbrglok   tlmnobuk  lREKAPSO
+
+SFL_MAP
+tlmnobuk    tldnobuk    REPLACE
+lREKAPSO tldbrg      REPLACE
+
+SPCALCS(spshowrkp)
+	DO_LIB			ap_dbclc(DNAME dupdtldrkpmks,DCOMMAND ADD,DFILE tld, DMAP mupdtldrkpmks);
+
+
+HOOKS(tmptranst)
+CLICKED	         cur_field=lgomokas	  DO_SPCALCS spshowrkp
+

@@ -1,0 +1,92 @@
+LOCAL
+PGM_FIELDS
+lACTION21	STRING		21
+
+MAP(mjoinsviact)
+svinourt                lurut           REPLACE
+
+DBCALCS(djoinsviact)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp            lPICAREV  tlmnobuk lACTION 
+        DBC_MAP         mjoinsviact
+
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||__ _ _                           ||
+||t.Action  : ________________     || 
+||t.Tgt     : ___                  ||
+||t.Dateline: _________     ___    ||
+||t.Tgl     : _________            ||
+||t.Jam     : _________            ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt               PROTECT                 INPUTRI         1       /*nobuk co n co */
+svinobuk               PROTECT QPROTECT UNSEEN INPUTRI         1       /*nobuk co n co */
+svitype2               PROTECT QPROTECT UNSEEN INPUTRI         2       /*jumlah poin*/
+
+svitblkode             ALLCAPS                 INPUTRI         3	/*keterangan sales*/
+svidf1			NUMERIC			INPUTRI		4
+svitgl2                NONE NOLIMIT {DD-MM-YYYY}  INPUTRI       5         /*hasil co n co bm*/     
+lOK			NOCHANGE		INPUTRI		6
+svitgl1                NONE NOLIMIT {DD-MM-YYYY} PROTECT INPUTRI      7          /*hasil co n co bm*/     
+svistr1			PROTECT		INPUTRI		8 
+
+DEFAULTS(tmptranst)
+lACTION 		INIT		ACTION 
+lACTION21		INIT		ACTION 
+lOK			INIT		OK
+svitype2		INIT		OPEN
+svitgl1			INIT		{g_tgltrn}
+
+
+CALCS()
+ctambah1d                g_curcmd == 1 && djoinsviact == 0
+ctambah2d               g_curcmd == 1 && djoinsviact == 1
+
+EDITS(tmptranst)
+e.Mandatory 	svidf1     MANDATORY
+e.Mandatory 	svitblkode	MANDATORY
+e.Mandatory 	svitgl2		MANDATORY
+e.Validate      svitblkode      VALIDATE        tbddatkodidx mtbdact stbd {Pgv_dttabel} {PlREVIEWCAB} {PlACTION21}
+
+MAP(mtbdact)
+tbdkode		svitblkode	REPLACE
+
+MAP(mmapmap4)
+cno1                    svinourt        DO_CALC_IF ctambah1d
+curut                   svinourt        DO_CALC_IF ctambah2d
+cwaktu          lwaktu          DO_CALC
+cswaktu         lswaktu         DO_CALC
+lswaktu		svistr1		REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=svitblkode     DO_MAP SHOW mmapmap4
+
+SUBFILE(tmptrans)
+SFL_LINES(4)
+SFL_COND	ckosong
+SFL_TITLE(tmptranst)
+
+SFL_TARGET      svidatbuktyp   lPICAREV  tlmnobuk lACTION 
+
+SFL_MAP    
+tlmnobuk	svinobuk	REPLACE
+lPICAREV 	svidata		REPLACE
+lACTION 	svitype		REPLACE
+lOK		sviyt1		REPLACE
+
+ 
+PERMIT(tmptrans)
+        PMT_ADD_COND    copen
+	PMT_UPDALL_COND copen      
+	PMT_DEL_COND	c0    
+
+

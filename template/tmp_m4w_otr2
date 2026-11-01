@@ -1,0 +1,216 @@
+LOCAL  
+PGM_FIELDS
+lrekomenca		DFLOAT		8
+/*ldumm      	DFLOAT		8*/
+DBCALCS(djoinhrgotr1)
+	DCOMMAND	JOIN_LAST_SFL
+	DTARGET		svidatbuktyp   btmdata btmnobuk lHARGAOTR
+
+DBCALCS(djointakada)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp   lTAKSASI11 btmnobuk lTAKSASI11
+
+
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------------------\
+|t.NoBuk                 ____________________                                                                   |
+|t.HargaTertinggi        _________________.__                                                                   |
+|t.HargaTerendah         _________________.__                                                                   |
+|t.HargaOtrSystem        _________________.__                                                                   |
+|t.HargaSetelahtak       _________________.__                                                                   |
+|t.SumberInfo           t.Nmpemilik                  t.NoTelp          t.HargaCMO         t.HargaCA             |
+|t.1 ___________________ _____________________________ __________________ __________________ __________________ |
+|t.2 ___________________ _____________________________ __________________ __________________ __________________ |
+|t.3 ___________________ _____________________________ __________________ __________________ __________________ |
+|t.HargaRekomenCMO       _________________.__                                                                   |
+|t.SumberLainCA          ________________________________________________                                       |
+|t.HargaRekomenCA        _________________.__                                                                   |
+|t.SumberLainBM          ________________________________________________                                       | 
+|t.HargaRekomenBM        _________________.__                                                                   |
+\---------------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk                        PROTECT                         INPUTRI         1
+nhmhppass_3                     PROTECT                         INPUTRI         1
+nhmhrgoff_3                     PROTECT                         INPUTRI         1
+nhmbbnhpp_3                     PROTECT                         INPUTRI         2
+nhmhrgpasar_3                     PROTECT                         INPUTRI         2
+
+svistr1                         ALLCAPS                         INPUTRI         3
+svistr2                         ALLCAPS                         INPUTRI         5
+svistr3                         NUMERIC {9999999999999}    INPUTRI         6
+svidf1                          NUMERIC {9999999999999}    INPUTRI         7
+svidf2                          NUMERIC {9999999999999}    INPUTRI         8
+
+svistr4                         ALLCAPS                         INPUTRI         9
+svistr5                         ALLCAPS                         INPUTRI         11
+svistr6                         NUMERIC {9999999999999}    INPUTRI         12
+svidf3                          NUMERIC {9999999999999}    INPUTRI         13
+svidf4                          NUMERIC {9999999999999}    INPUTRI         14
+
+svistr7                         ALLCAPS                         INPUTRI         15
+svistr8                         ALLCAPS                         INPUTRI         16
+svistr9                         NUMERIC {9999999999999}    INPUTRI         17
+svidf5                          NUMERIC {9999999999999}    INPUTRI         18
+svidf6                          NUMERIC {9999999999999}    INPUTRI         19
+
+nhmhrgoff_3                     NUMERIC                         INPUTRI         20
+sviket                          ALLCAPS                         INPUTRI         21
+lrekomenca                      PROTECT NUMERIC                         INPUTRI         22
+sviket2                         ALLCAPS                         INPUTRI         23
+svidf7                          NUMERIC {9999999999999}    INPUTRI         24
+
+DEFAULTS(tmptranst)
+lrekomenca		INIT		BLANKS
+lHARGAOTR		INIT		HARGAOTR
+lTAKSASI11		INIT		TAKSASI11
+
+CALCS()
+crekomencmo1		((svidf1<=svidf3) || svidf3==0) && ((svidf1<=svidf5) || svidf5==0)
+crekomencmo2		((svidf3<=svidf1) || svidf1==0) && ((svidf3<=svidf5) || svidf5==0)
+crekomencmo3		((svidf5<=svidf1) || svidf1==0) && ((svidf5<=svidf3) || svidf3==0)
+ctertinggicmo1		svidf1>=svidf3 && svidf1>=svidf5
+ctertinggicmo2		svidf3>=svidf1 && svidf3>=svidf5
+ctertinggicmo3		svidf5>=svidf1 && svidf5>=svidf3
+crekomenca1             (svidf2<=svidf4) && (svidf2<=svidf6)
+crekomenca2             (svidf4<=svidf2) && (svidf4<=svidf6)
+crekomenca3             (svidf6<=svidf2) && (svidf6<=svidf4)
+/*cmand702		btmsts=="702"*/
+chrglbhkecil		svidf7<=nhmbbnhpp_3
+
+/*
+crekomenca1             ((svidf2<=svidf4) || svidf4==0) && ((svidf2<=svidf6) || svidf6==0)
+crekomenca2             ((svidf4<=svidf2) || svidf2==0) && ((svidf4<=svidf6) || svidf6==0)
+crekomenca3             ((svidf6<=svidf2) || svidf2==0) && ((svidf6<=svidf4) || svidf4==0)
+*/
+cskip702		(g_grpnam == "B.M4WCA" /*|| g_grpnam == "BM"*/ || g_grpnam == "B.M4WRM") && g_usrkode != "1810301"
+cskip705		g_grpnam != "B.M4WCA" && g_grpnam != "RI"
+cskip706		(g_grpnam != "B.M4WBM" &&  g_grpnam != "RI" && g_grpnam != "B.M4WRM" && g_grpnam != "B.M4WMSPV")
+cmand702		g_grpnam == "B.M4WMO" ||  g_usrkode == "1810301"
+cmand705		g_grpnam == "B.M4WCA"
+cmand706		g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WRM"
+
+EDITS(tmptranst)
+Nobuk tidak ada         svinobuk        VALIDATE btmbukidx mbtmotr 0
+e.Mandatory             svistr1       MANDATORY_IF      cmand702
+e.Mandatory             svistr2       MANDATORY_IF      cmand702
+e.Mandatory             svistr3       MANDATORY_IF      cmand702
+e.Mandatory             svidf1        MANDATORY_IF      cmand702
+e.Mandatory             svidf2        MANDATORY_IF      cmand705
+e.Mandatory             svistr4       MANDATORY_IF      cmand702
+e.Mandatory             svistr5       MANDATORY_IF      cmand702
+e.Mandatory             svistr6       MANDATORY_IF      cmand702
+e.Mandatory             svidf3        MANDATORY_IF      cmand702
+e.Mandatory             svidf4        MANDATORY_IF      cmand705
+e.Mandatory             svistr7       MANDATORY_IF      cmand702
+e.Mandatory             svistr8       MANDATORY_IF      cmand702
+e.Mandatory             svistr9       MANDATORY_IF      cmand702
+e.Mandatory             svidf5        MANDATORY_IF      cmand702
+e.Mandatory             svidf6        MANDATORY_IF      cmand705   
+e.Mandatory             sviket        MANDATORY_IF      cmand705
+/*e.Mandatory             nhmumsis    MANDATORY_IF      cmand705*/
+e.Mandatory             sviket2       MANDATORY_IF      cmand706
+e.Mandatory             svidf7        MANDATORY_IF      cmand706
+/*e.Mandatory             nhminsales  MANDATORY_IF      cmand706*/
+
+
+MAP(mbtmotr)
+btmnobuk	btmnobuk	REPLACE
+svidf2		lrekomenca	REPLACE_IF crekomenca1
+svidf4		lrekomenca	REPLACE_IF crekomenca2
+svidf6		lrekomenca	REPLACE_IF crekomenca3
+
+CALCS()
+cotrcmo1	svidf1>=10000000
+cotrcmo2	svidf3>=10000000
+cotrcmo3	svidf5>=10000000
+cotrbm1		svidf7>=10000000
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=nhmhrgoff_3	DO_SKIP_IF	cskip705
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svistr2       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svistr3       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svidf1        DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svidf2        DO_SKIP_IF      cskip705
+BEFORE_INPUT    cur_field=svistr4       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svistr6       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svidf3        DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svidf4        DO_SKIP_IF      cskip705
+BEFORE_INPUT    cur_field=svistr7       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svistr8       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svistr9       DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svidf5        DO_SKIP_IF      cskip702
+BEFORE_INPUT    cur_field=svidf6        DO_SKIP_IF      cskip705
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF      cskip705
+/*BEFORE_INPUT    cur_field=nhmumsis    DO_SKIP_IF      cskip705*/
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF      cskip706
+BEFORE_INPUT    cur_field=svidf7        DO_SKIP_IF      cskip706
+/*BEFORE_INPUT    cur_field=nhminsales_3  DO_SKIP_IF      cskip706*/
+
+AFTER_INPUT 	cur_keybd=EN	DO_MAP SHOW mbtmotr
+AFTER_INPUT     cur_field=svidf1        DO_MAP SHOW
+                IF cotrcmo1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG HARGA PASARAN TIDAK BOLEH LEBIH KECIL DARI 10 JT
+AFTER_INPUT     cur_field=svidf3        DO_MAP SHOW
+                IF cotrcmo2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG HARGA PASARAN TIDAK BOLEH LEBIH KECIL DARI 10 JT
+AFTER_INPUT     cur_field=svidf5        DO_MAP SHOW
+                IF cotrcmo3 mdum
+                ELSE HKCURSOR STAY
+                HKMSG HARGA PASARAN TIDAK BOLEH LEBIH KECIL DARI 10 JT
+AFTER_INPUT     cur_field=svidf7        DO_MAP SHOW
+                IF cotrbm1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG HARGA PASARAN TIDAK BOLEH LEBIH KECIL DARI 10 JT
+AFTER_INPUT     cur_field=svidf7        DO_MAP SHOW
+                IF chrglbhkecil mdum
+                ELSE HKCURSOR STAY
+                HKMSG HARGA PASARAN TIDAK BOLEH LEBIH BESAR DARI HARGA SISTEM
+/*MAP(dum)
+ldumm	ldumm	REPLACE*/
+
+MAP(mupdhargaotr1)
+svidf1		nhmhrgoff_3	REPLACE_IF crekomencmo1
+svidf3		nhmhrgoff_3	REPLACE_IF crekomencmo2
+svidf5		nhmhrgoff_3	REPLACE_IF crekomencmo3
+svidf1		nhmhppass_3  	REPLACE_IF ctertinggicmo1
+svidf3		nhmhppass_3  	REPLACE_IF ctertinggicmo2
+svidf5		nhmhppass_3  	REPLACE_IF ctertinggicmo3
+svidf7		nhmhrgpasar_3	REPLACE
+SPCALCS(sphargaotr)
+	DO_LIB ap_dbclc(DNAME dupdhargaotr1,DCOMMAND UPDATE,DTARGET  nhmprmidx_3 nhmprm_3,DMAP mupdhargaotr1);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sphargaotr
+	PST_UPDCMD	sphargaotr
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp   btmdata btmnobuk lHARGAOTR
+SFL_MAP
+btmdata         svidata         REPLACE
+btmnobuk        svinobuk        REPLACE
+lHARGAOTR     svitype         REPLACE
+
+CALCS()
+cadd_tmphrgotr2		(btmsts=="703" && djoinhrgotr1==0) || g_grpnam == "RI"
+cupd_tmphrgotr2		((btmsts=="703" || btmsts=="705") && djointakada == 0) || g_grpnam == "RI" 
+cdel_tmphrgotr2		g_usrkode==BLANKS
+
+PERMIT(tmptrans)
+  PMT_ADD_COND          cadd_tmphrgotr2
+  PMT_UPDALL_COND       cupd_tmphrgotr2
+  PMT_DEL_COND          cdel_tmphrgotr2
+
+/*
+1901000000000026
+1901000000000024
+1901000000000005
+*/

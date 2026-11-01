@@ -1,0 +1,169 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.NamaBank     _: _____________       !|
+|!t.RekBank       : ____________________!|
+|!t.NmDiBkTabungan: ____________________!|
+||t.NamaSesuaiBukuTabungan              ||
+|!t.Ket           : __________________ _!|
+|\--------------------------------------/|
+|/-----s.UPLOAD-------------------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+|t.Note                                  |
+|t.NamaRekeningBolehTandaBaca            |
+|t.Digit0KhususBniTdkInput               |
+|t.BsiHanyaUtkAceh                       |
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdkode		NOCHANGE SCROLL		INPUTRI         1
+psdstr3      	ALLCAPS SCROLL          INPUTRI         2
+psdstr4      	DIGITS			INPUTRI         3
+psdket2      	ALLCAPS SCROLL          INPUTRI         4
+psdstr5      	ALLCAPS SCROLL          INPUTRI         5
+lenter		NOCHANGE SCROLL		INPUTRI	    	6
+
+EDITS(tmptranst)
+t.ValidateBank  psdstr3 VALIDATE tbddatkodidx mtbd_bank stbdbanksdm {Pgv_dttabel} {Pgv_BANK} {Pgv_BANK}
+t.Mandatory     psdstr3 MANDATORY
+t.Mandatory     psdstr4 MANDATORY
+t.Mandatory     psdket2 MANDATORY
+t.Mandatory     psdstr5 MANDATORY
+t.Mandatory     psdstr5 VALIDATE tbddatkodidx mpil_bank stbd {Pgv_dttabel} {Pgv_personal} {Plpilverif}
+
+
+MAP(mpil_bank)
+tbdkode		psdstr5		REPLACE
+
+MAP(mtbd_bank)
+tbdkode         psdstr3         REPLACE
+
+CALCS()
+chanyasdm       ((g_usrkode==hrmnip1 || g_grpnam=="CMBNHEAD" || g_grpnam=="CMBNSPV" ||g_grpnam=="HRD" || g_grpnam=="PICMKT" || g_grpnam=="BM" || g_grpnam=="MM" || g_usrkode=="B.IVAROHRD" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ROOT") && (hrmnip2=="UBAH" || hrmnip2 =="VERIFIKASI"))
+		|| (hrmnip2=="TACCFT139" && (g_usrkode==hrmkep || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ROOT" || g_grpnam=="HRDHEAD" || g_grpnam=="CMBNHEAD" || g_grpnam=="CMBNSPV"))
+
+cjoinbank       djoinpsmbank==1
+
+MAP(mnip)
+hrmnip1         psdkode         REPLACE
+lpsmbank        psdstr1         REPLACE_IF cjoinbank
+lpsmrekbank     psdstr2         REPLACE_IF cjoinbank
+lpsmiddeb       psdket          REPLACE_IF cjoinbank
+
+CALCS()
+cpanjang        DO_LIB ap_strln(psdstr4,&lpanjang1);
+cnik1           (psdstr3=="BANK_BNI" && ldigit1!="0") || psdstr3!="BANK_BNI"
+csdh_ada        djoinrekening==0 || (djoinrekening==1 && lpsmsts!="INPG" ) || (djoinrekening==1 && lpsmkode == hrmnip1) || (djoinrekening==1 && djoinpsmagen==1 && lpsmktp==lktpagen) || g_grpnam=="CMBNSPV" || g_grpnam=="CMBNHEAD" 
+cadarek		djoinrekening==1
+cnmsmktp	psdket2==lnamasdm || g_grpnam=="CMBNSPV" || g_grpnam=="CMBNHEAD"
+csdhuplfoto	djoinpsd==1 && (UPLEXIST(l_count1)==1 || UPLEXIST(l_count1)==0)
+cmdrkrg13       (psdstr3=="BANK_MANDIRI" && lpanjang1 >=13 ) || psdstr3 != "BANK_MANDIRI"
+
+MAP(mcaripanjang)
+cpanjang        lpanjang        DO_CALC
+lktprek		lktprek		REPLACE_IF cadarek
+
+MAP(mupdprmfoto)
+gv_int1		hrmdf2		REPLACE_IF csdhuplfoto
+
+DBCALCS(dupdhrmuplfoto)
+DBC_COMMAND     UPDATE
+DBC_TARGET      hrmprmidx               hrmprm
+DBC_MAP         mupdprmfoto
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdstr3       DO_MAP SHOW mnip
+AFTER_INPUT     cur_field=psdstr4       DO_LIB ap_amstr(psdstr4,ln1,ln1,&ldigit1);
+AFTER_INPUT     cur_field=psdstr4       DO_MAP SHOW mcaripanjang
+AFTER_INPUT     cur_field=psdstr4       DO_MAP SHOW
+AFTER_INPUT    cur_field=psdstr3      DO_MAP SHOW
+               IF cnonacehpt  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT    cur_field=psdstr3       DO_MAP SHOW
+               IF cpkbankptok mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.Pt0405MandiriPt0910Bca
+
+AFTER_INPUT    cur_field=psdstr4      DO_MAP SHOW
+               IF cnik1  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BNINolTdkPerluDitulis
+
+AFTER_INPUT     cur_field=psdstr4       DO_MAP SHOW
+                IF csdh_ada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RekSdhAda
+
+AFTER_INPUT     cur_field=psdstr4          DO_MAP SHOW
+                IF ce1z   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT     cur_field=psdket2          DO_MAP SHOW
+                IF cnmsmktp   mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.RekAtasNamaPribadi
+
+AFTER_INPUT     cur_keybd=EN 	           DO_MAP SHOW
+                IF ce1z   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT     cur_field=psdstr5          DO_MAP SHOW
+                IF csdhket  mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.IsiKetDulu
+
+AFTER_INPUT     cur_keybd=EN               DO_MAP SHOW
+                IF csdhket mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiKetDulu
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cnmsmktp   mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NamaBankSesuaiKTP
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cpkbankptok mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.Pt0405MandiriPt0910Bca
+
+AFTER_INPUT    cur_keybd=EN       DO_MAP SHOW
+               IF cnonacehpt  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BSIHanyaAreaAceh
+
+AFTER_INPUT     cur_field=psdstr4          DO_MAP SHOW
+                IF cmdrkrg13   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputKrgdr13Tbh0
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        chanyasdm
+SFL_UPL_DIRFLD hrmdvs2
+SFL_UPLFLD  	psdpsmkode
+SFL_UPLFLD_DBCALCS dupdhrmuplfoto
+SFL_UPL_DELCOND c0    
+SFL_TARGET
+psddatpsmkod    lREKBRSDM       hrmnobuk	                    
+
+SFL_MAP
+lREKBRSDM       psddata         REPLACE
+hrmnobuk        psdpsmkode      REPLACE
+hrmnip1         psdtype         REPLACE
+hrmnip1         psdkode         REPLACE
+

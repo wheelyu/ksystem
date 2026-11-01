@@ -1,0 +1,66 @@
+LOCAL
+PGM_FIELDS
+lnamaplg   		STRING	21
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.NoBuk    : ____________________||
+||i.User     : ____________________||
+||i.Nama     : ____________________||
+||t.Acc      : ___________________ ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk	PROTECT                 INPUTRI 1			
+tldplg   	PROTECT                	INPUTRI 2
+lnamaplg	PROTECT			INPUTRI 3	
+tldukrwrn	NOCHANGE       		INPUTRI	4
+
+DEFAULTS(tmptranst)
+tldplg		INIT			{g_usrkode}
+tldukrwrn	DFALT_SCAN		BLANKS
+					ACCCETAK
+
+EDITS(tmptranst)
+e.Mandatory             tldukrwrn       MANDATORY
+e.Validate		tldplg		VALIDATE	psikodidx	mpsi
+
+MAP(mpsi)
+psikode		tldplg		REPLACE
+psinama		lnamaplg	REPLACE
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	tldbukurtidx		ppmnobuk
+
+SFL_MAP
+ppmnobuk 	tldnobuk 	REPLACE
+ppmdata  	tlddata  	REPLACE
+gv_INPG		tldsts		REPLACE
+
+CALCS()
+cACC		"ACC"
+cAHASSHEAD	g_grpnam =="AHASSHEAD" || g_grpnam =="AHASSDVH" || g_grpnam =="RI" || g_grpnam == "IT"
+
+MAP(mupdppmctk)
+cACC		ppmfinexin		DO_CALC
+
+
+SPCALCS(sptransaddtmp)
+	DO_LIB    ap_dbclc(DNAME dupdppmctk, DCOMMAND UPDATE,DTARGET ppmbukidx ppmnobuk,DMAP mupdppmctk);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransaddtmp
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cAHASSHEAD
+PMT_UPDALL_COND	c0          
+PMT_DEL_COND	c0

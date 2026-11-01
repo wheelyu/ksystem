@@ -1,0 +1,241 @@
+LOCAL
+PGM_FIELDS
+ltypealm                STRING          11
+lkelwrnsvy		STRING  11
+lwarnaarea		STRING	21
+ljalan                  STRING          61
+lrt3			STRING		5
+lrw3			STRING		5
+lprop3              	STRING          21
+lkota3                  STRING          21
+lkec3                   STRING          21
+lkel3                   STRING          21
+lkdpos3			STRING		11
+lSURVEYM2W41            STRING  	11
+lSURVEYM2W42            STRING  	21
+lPKTG                   STRING  	11
+ltbtcab                 STRING  	11
+ltbtusrcrt              STRING  	11
+lpropm2w4w		STRING		21
+lkotam2w4w              STRING          21
+lkecm2w4w               STRING          21
+lkelm2w4w               STRING          21
+lpsmtinggal             STRING          11
+
+CALCS()
+cblanks		BLANKS
+
+MAP(mjoinalmktp)
+cblanks		ljalan	DO_CALC
+cblanks		lrt3	DO_CALC
+cblanks		lrw3	DO_CALC
+cblanks		lprop3	DO_CALC
+cblanks		lkota3	DO_CALC
+cblanks		lkec3	DO_CALC
+cblanks		lkel3	DO_CALC
+cblanks		lkdpos3	DO_CALC
+almjalan	ljalan	REPLACE
+almrt		lrt3	REPLACE
+almrw		lrw3	REPLACE
+almprop		lprop3	REPLACE
+almkota		lkota3	REPLACE
+almkec		lkec3	REPLACE
+almkel		lkel3	REPLACE
+almkdpos	lkdpos3	REPLACE
+
+DBCALCS(djoinalmktp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx btmplg ltypealm
+	DBC_MAP		mjoinalmktp
+
+MAP(mjoinalmm2w4w)
+almprop         lpropm2w4w        REPLACE
+almkota         lkotam2w4w        REPLACE
+almkec          lkecm2w4w         REPLACE
+almkel          lkelm2w4w         REPLACE
+
+DBCALCS(djoinalmm2w4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      almotodatidx    btmplg lpsmtinggal
+        DBC_MAP         mjoinalmm2w4w
+
+MAP(mjoinalmtinggal)
+cblanks		ljalan	DO_CALC
+cblanks		lrt3	DO_CALC
+cblanks		lrw3	DO_CALC
+cblanks		lprop3	DO_CALC
+cblanks		lkota3	DO_CALC
+cblanks		lkec3	DO_CALC
+cblanks		lkel3	DO_CALC
+cblanks		lkdpos3	DO_CALC
+almjalan	ljalan	REPLACE
+almrt		lrt3	REPLACE
+almrw		lrw3	REPLACE
+almprop		lprop3	REPLACE
+almkota		lkota3	REPLACE
+almkec		lkec3	REPLACE
+almkel		lkel3	REPLACE
+almkdpos	lkdpos3	REPLACE
+
+MAP(mjointbewarnaArea)
+tbeusrcrt		lwarnaarea		REPLACE
+
+
+CALCS()
+cdivisiapa ((btmdvsjl == "HMC" || btmdvsjl == "H1") && tbekettype == "HMC" ) || tbekettype == btmdvsjl
+
+DBCALCS(djointbewarna3110)
+	DBC_COMMAND	JOIN
+	DBC_TARGET      tbedattypkod	lkelwrnsvy almprop almkota almkec almkel
+	DBC_SELECT 	cdivisiapa
+	DBC_MAP         mjointbewarnaArea
+
+DBCALCS(djoinalmtinggal)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx btmplg ltypealm
+	DBC_MAP		mjoinalmtinggal
+
+MAP(mjointbtm2w4w)
+tbtcab 		ltbtcab	   REPLACE
+tbtusrcrt	ltbtusrcrt REPLACE
+
+DBCALCS(djointbtm2w4w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdattypkod lSURVEYM2W41 lSURVEYM2W42 lpropm2w4w lkotam2w4w lkecm2w4w lkelm2w4w
+        DBC_MAP         mjointbtm2w4w
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   i.AlmSurvey : _________________
+   i.Alamat    : _____________________________________________________________
+   i.RT        : ____            i.RW         : ____ 
+   i.Propinsi  : _______________ _____________________________________________
+   i.Kota      : _______________ _____________________________________________
+   i.Kec       : _______________ _____________________________________________
+   i.Kel       : _______________ _____________________________________________
+   t.AreaWarna : ________________
+   i.KodePos   : ________                            
+   t.Latitude  : __._____________                                       
+   t.Longitude : __._____________
+   
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+almnama2		ALLCAPS SCROLL			INPUTRI	1
+almjalan		ALLCAPS SCROLL			INPUTRI	2
+almrt			PROTECT	SCROLL			INPUTRI	3
+almrw			PROTECT	SCROLL			INPUTRI	4
+almprop			PROTECT SCROLL			INPUTRI 5
+almnamprop		PROTECT QPROTECT		INPUTRI 6
+almkota			PROTECT SCROLL			INPUTRI 7
+almnamkota		PROTECT QPROTECT 		INPUTRI 8
+almkec			PROTECT SCROLL			INPUTRI 9
+almnamkec		PROTECT QPROTECT		INPUTRI 10
+almkel			PROTECT SCROLL			INPUTRI 11
+almnamkel		PROTECT QPROTECT		INPUTRI 12
+lwarnaarea              PROTECT                         INPUTRI 13
+almkdpos		PROTECT SCROLL			INPUTRI 14
+almlat   		PROTECT SCROLL			INPUTRI 15
+almlon   		PROTECT SCROLL			INPUTRI 16
+
+IMAGE(tmptrans) 
+
+CALCS()
+cjoin3110warna       djointbewarna3110 == 1
+coke		djoinalmktp==1 || djoinalmtinggal==1
+ccim2w4w		btmdvsjl == "M2W4W" && djoinalmm2w4w==1 && djointbtm2w4w==1
+cpktgm2w4w		btmdvsjl == "M2W4W" && djoinalmm2w4w==1 && djointbtm2w4w==1 && ltbtusrcrt == "TDK_JUAL"
+
+DEFAULT(tmptranst)
+almnama2		DFALT_SCAN PSMTINGGAL
+lkelwrnsvy		INIT		KELWRNSVY
+lSURVEYM2W41            INIT            SURVEYM2W4
+lSURVEYM2W42            INIT            SURVEYM2W4
+lPKTG                   INIT            PKTG
+lpsmtinggal		INIT		PSMTINGGAL
+
+EDITS(tmptranst)
+t.IsiLonLat3110 almlat MANDATORY
+t.IsiLonLat3110 almlon MANDATORY
+e.validatePropinsi3	almprop VALIDATE dtmdtkodidx  mdtm3 0 {Pgv_dtkota}
+e.validateKota3		almkota VALIDATE tbldtdtmkod mtbl3 0 {Pgv_dtkota} {Palmprop}
+e.validateKec3		almkec VALIDATE tbddatkodidx mtbd3 0 {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel3		almkel VALIDATE tbtdattypkod mtbt3 0 {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(mtbt3)
+tbtkode			almkel 			REPLACE
+tbtket			almnamkel		REPLACE
+tbtdf1			almlat			REPLACE
+tbtdf2			almlon			REPLACE
+lwarnaarea              lwarnaarea              REPLACE_IF cjoin3110warna
+
+MAP(mtbd3)
+tbdkode			almkec 			REPLACE
+tbdket			almnamkec		REPLACE
+
+MAP(mtbl3)
+tblkode			almkota 		REPLACE
+tblket			almnamkota		REPLACE
+
+MAP(mdtm3)
+dtmkode			almprop 		REPLACE
+dtmket			almnamprop		REPLACE
+
+MAP(malm)
+almnama2		ltypealm		REPLACE
+ljalan			almjalan		REPLACE_IF coke
+lrt3			almrt			REPLACE_IF coke
+lrw3			almrw			REPLACE_IF coke
+lprop3			almprop			REPLACE_IF coke
+lkota3			almkota			REPLACE_IF coke 
+lkec3			almkec			REPLACE_IF coke 
+lkel3			almkel			REPLACE_IF coke 
+lkdpos3			almkdpos		REPLACE_IF coke
+ltbtcab			btmcab			REPLACE_IF ccim2w4w
+lPKTG			btmsts			REPLACE_IF cpktgm2w4w
+
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=almnama2	DO_MAP SHOW malm
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_TARGET
+almdatbukidx   gv_almsurvey btmnobuk
+
+SFL_MAP
+btmnobuk	almnobuk	REPLACE
+btmplg		almbukoto	REPLACE
+gv_almsurvey	almdata		REPLACE
+
+CALCS()
+cfincoina             btmtypjl=="K" && btmdvsjl!="M2W4W"
+
+MAP(mupdbtmsurv)
+tbtcab         btmcab          REPLACE_IF cfincoina
+ltbtcab        btmcab          REPLACE_IF ccim2w4w
+lPKTG          btmsts          REPLACE_IF cpktgm2w4w
+
+SPCALCS(sptransaddbtm)
+DO_LIB ap_dbclc(DNAME dupdbtmadd,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmsurv);
+
+SPCALCS(sptransupdbtm)
+DO_LIB ap_dbclc(DNAME dupdbtmupd,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmsurv);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptransaddbtm
+        PST_UPDCMD sptransupdbtm
+
+CALCS()
+cdel		0
+calm0		(btmsts=="OPEN" || btmsts=="RENC" || btmsts=="621" || btmsts=="651") && btmtypjl=="K" && djoinalmsurv==0
+calm1		(btmsts=="OPEN" || btmsts=="RENC" || btmsts=="621" || btmsts=="651") && btmtypjl=="K" && djoinalmsurv==1
+
+PERMIT(tmptrans)
+PMT_ADD_COND	calm0
+PMT_UPDALL_COND calm1
+PMT_DEL_COND 	cdel

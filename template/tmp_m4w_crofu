@@ -1,0 +1,146 @@
+LOCAL
+PGM_FIELDS
+lnama		STRING		61
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||___         ________             ||
+||t.NoBukti : _____________________||
+||t.Katdeb  : _____________________||
+||t.Status  : _____________________||
+||t.HslTlp  : ____________________ ||
+||t.Ket     : ____________________ ||
+||t.Minat   : ____________________ ||
+||t.Tglfu   : _________            ||
+||spasi                            ||
+||t.Ket                            ||
+|| ________________________________||
+||spasi                            ||
+||t.Userrev : ______ ______________||
+||            ___                  ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+	svinourt  	PROTECT                 		INPUTRI 1       /*nobuk co n co */
+	svidata   	PROTECT         SCROLL 			INPUTRI 1       /*nobuk co n co */
+	svinobuk  	PROTECT  	SCROLL 			INPUTRI 1       /*nobuk co n co */
+	svidtmkode	PROTECT  	SCROLL 			INPUTRI 1       /*nobuk co n co */
+	svists    	PROTECT  	SCROLL 			INPUTRI 1       /*nobuk co n co */
+	svistr2   	ALLCAPS  	SCROLL 			INPUTRI 1       /*nobuk co n co */
+	svistr3   	ALLCAPS  	SCROLL 			INPUTRI 1       /*nobuk co n co */
+	svistr4   	ALLCAPS  	SCROLL 			INPUTRI 2       /*nobuk co n co */
+	svitgl1   	NONE 		NOLIMIT	{DD-MM-YYYY}  	INPUTRI 3       /*nobuk co n co */
+	sviket    	TEXTAREA               			INPUTRI 4	/*keterangan sales*/
+	svistr5 	PROTECT  	SCROLL  		INPUTRI	7	/*AWAL*/
+	lnama   	PROTECT  	SCROLL  		INPUTRI	8	/*AWAL*/
+	lOK		NOCHANGE  	SCROLL			INPUTRI	9
+
+CALCS()
+caktfakt	svistr2 == "AKTF_ANGKAT"
+caktftdk	svistr2 == "AKTF_TDKANGKAT"
+ctdkaktf	svistr2	== "TDK_AKTIF"
+cAktM2W4W	svistr2 == "AKTF_ANGKAT"
+cTdAktM2W4W	svistr2 == "AKTF_TDKANGKAT" || svistr2 == "TDK_AKTIF"
+
+
+DEFAULTS(tmptranst)
+	svistr5				INIT       	 	{g_usrkode}
+	svistr5				INIT_UPDATE		{g_usrkode}
+	svists				INIT			OPEN
+	IF cM2W4W    	svitgl1         INIT    		{g_tgltrn}
+	svistr2				DFALT_SCAN_BLANKS	AKTF_ANGKAT 	"AKTIF DIANGKAT"
+								AKTF_TDKANGKAT	"AKTIF TDK DIANGKAT"
+								TDK_AKTIF   	"TIDAK AKTIF"	
+
+	IF ctdkaktf	svistr3		DFALT_SCAN_BLANKS       NOMOR_SALAH     "NOMOR SALAH"
+	                                        		NO_TDK_TERDFTR  "NO TDK TERDAFTAR"
+	                                        		TEKAN_SUARA     "TEKAN_SUARA"
+
+	IF caktfakt	svistr3		DFALT_SCAN_BLANKS       SALAH_SAMBUNG   "SALAH SAMBUNG"
+	                                        		TRHBNG_DEBITUR  "TERHUBUNG DEBITUR"
+
+	IF caktftdk 	svistr3		DFALT_SCAN_BLANKS       AKTF_TDKANGKAT  "AKTIF TDK DIANGKAT"
+
+	IF cNoM2W4W	svistr4         DFALT_SCAN_BLANKS       MINAT  		"MINAT"
+								MINAT_NANTI	"MINAT NANTI"
+	                                        		TDK_MINAT 	"TIDAK MINAT"
+
+	IF cAktM2W4W	svistr4       	DFALT_SCAN_BLANKS       MINAT  		"MINAT"
+								MINAT_NANTI	"MINAT NANTI"
+	                                        		TDK_MINAT 	"TIDAK MINAT"
+
+	IF cTdAktM2W4W	svistr4         DFALT_SCAN_BLANKS       TDK_MINAT 	"TIDAK MINAT"
+
+
+EDITS(tmptranst)
+	e.Mandatory	sviket		MANDATORY
+	e.Validatepica  svistr5         VALIDATE		psmdtkodidx mpsmac 0 {Pgv_dtkaryawan} {Pgv_INPG}
+
+MAP(mpsmac)
+	psmnama         lnama           REPLACE
+
+CALCS()
+ckondg1		tlmytppn == "Y"
+ctgl		g_tgltrn + 30
+cempty  	BLANKS
+ctdkmnt		svistr4 == "TDK_MINAT"
+cmntnnti	svistr4 == "MINAT_NANTI"
+cminat   	svistr4 == "MINAT"
+cTDK		"TDMN"
+cNANTI		"NNTI"
+cMNAT 		"MNAT"
+
+MAP(misig1)
+	cempty 		svitgl1		DO_CALC
+	ctgl		svitgl1		DO_CALC_IF caktftdk
+
+HOOKS(tmptranst)
+	AFTER_INPUT 	cur_field=svistr2	DO_MAP SHOW IF 	cNoM2W4W misig1
+	BEFORE_INPUT 	cur_field=svitgl1	DO_SKIP_IF 	cM2W4W
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND  	ckondg1
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tlmnobuk svitype
+SFL_TARGET      svidatbuktyp   lDTCRO tlmnobuk lHSLFU          
+
+SFL_MAP    
+	tlmnobuk	svinobuk	REPLACE
+	lDTCRO   	svidata		REPLACE
+	lHSLFU   	svitype		REPLACE
+
+MAP(mupdtlmg1)
+	svitgl1         tlmtgljtp       REPLACE                
+	cMNAT 		tlmsts2 	DO_CALC_IF cminat
+	cTDK		tlmsts2 	DO_CALC_IF ctdkmnt
+	cNANTI		tlmsts2 	DO_CALC_IF cmntnnti
+
+MAP(mupdtlmM2W4W)
+	svitgl1         tlmtgljtp       REPLACE                
+	svistr4 	tlmpst 		REPLACE_IF cminat
+	svistr4		tlmpst 		REPLACE_IF ctdkmnt
+	svistr4		tlmpst 		REPLACE_IF cmntnnti
+
+SPCALCS(supdtlmg1)
+        DO_LIB_IF cNoM2W4W	ap_dbclc(DNAME dupdtlmg1,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmg1);
+
+SPCALCS(supdtlmg2)
+        DO_LIB_IF cM2W4W	ap_dbclc(DNAME dupdtlmg2,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmM2W4W);
+
+POSTING(tmptrans)
+        PST_UPDCMD      supdtlmg1   
+	PST_ADDCMD	supdtlmg2
+
+CALCS()
+cbisa		(g_grpnam != BLANKS && tlmbisnis != "M2W4W") || 
+		(tlmbisnis == "M2W4W" && djoinFUCRO == 0)
+ 
+PERMIT(tmptrans)
+PMT_ADD_COND	cbisa 
+PMT_UPDALL_COND c0    
+PMT_DEL_COND  	c0

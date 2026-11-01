@@ -1,0 +1,99 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.HasilReviewDCO                ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.ApajadiPK     : ____          ||
+||t.HasilReviewGM : ______        ||
+||t.Userinput     : _________     ||
+||t.Nama          : ______________||
+||t.GrpLog        : ______________||
+||t.TglInput      : ______________||
+||                  _________     ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviket			TEXTAREA	INPUTRI	1
+sviket2                 TEXTAREA        INPUTRI 2
+svistr1                 NOCHANGE        INPUTRI 3
+svistr2                 NOCHANGE        INPUTRI 4
+svikode			PROTECT		INPUTRI	5
+lnamarevdco             PROTECT         INPUTRI 6
+lgruprevdco             PROTECT         INPUTRI 7
+svitgl2                 PROTECT {DD-MM-YYYY} NOLIMIT    INPUTRI 8
+lENTER                  NOCHANGE        INPUTRI 9
+
+DEFAULT(tmptranst)
+svikode                 INIT            {g_usrkode}
+svikode                 INIT_UPDATE     {g_usrkode}
+svitgl2                 INIT            {g_tgltrn}
+svinourt                INIT            1
+svinourt                INIT_UPDATE     1
+svistr1                 DFALT_SCAN      BLANKS
+                                        Y "YA"
+                                        T "TIDAK"
+svistr2                 DFALT_SCAN      BLANKS
+                                        BENAR "BENAR"
+                                        SALAH "SALAH"
+
+EDITS(tmptranst)
+Nama tidak ada          svikode         VALIDATE        psikodidx mpsipic10a 0
+Jabatan tidak ada       svikode         VALIDATE        usrkodidx musrpic10a 0
+e.Mandatory             sviket          MANDATORY
+e.Mandatory             svistr2         MANDATORY
+
+MAP(musrpic10a)
+usrgrp                  lgruprevdco     REPLACE
+
+MAP(mpsipic10a)
+psinama                 lnamarevdco     REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW mpanjangc
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW
+                        IF cpjgrvwc mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin20
+
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF cisirvwcreditdvh mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.IsiReviewHo
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF ccreditdvh726 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiSesuaiHo
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csdhambil
+SFL_TARGET
+        svidatbuktyp    gv_datasurvey mtsnobuk lkunjrvwhc l1
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svidtmkode      REPLACE
+gv_datasurvey   svidata         REPLACE
+lkunjrvwhc      svitype         REPLACE
+l1		svinourt	REPLACE
+g_tgltrn        svitgl2         REPLACE
+
+SPCALCS(sptrans2g22)
+DO_LIB ap_dbclc(DNAME dmaptrans2g21,DCOMMAND MAPMAP,DMAP mmaptrans2creditdvh);
+DO_LIB ap_dbclc(DNAME dupdmtsdco2,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmtscreditdvh);
+DO_LIB_IF ctambah ap_dbclc(DNAME dupdftmdco2, DCOMMAND UPDATE, DTARGET ftmdatbukidx gv_datasurvey mtsnoasal, DMAP mupdftmcreditdvh);
+DO_LIB_IF cdjoinabkdco ap_dbclc(DNAME dupdabkdco2, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnobukabkdco, DMAP mupdabkcreditdvh);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptrans2g22
+PST_UPDCMD      sptrans2g22

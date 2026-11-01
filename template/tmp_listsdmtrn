@@ -1,0 +1,90 @@
+IMAGE(tmptranst)
+/-----------------t-----------t----------------t----------t---------------t--------------t-----------t----------------\
+| t.Nobuk         | t.Nip     | t.Nama         | t.Cabang | t.Divisi      | t.Jabatan    | t.Ceklis  | t.Keterangan   |
+\-----------------.-----------.----------------.----------.---------------.--------------.-----------.----------------/
+
+IMAGE(tmptrans)
+|_________________|___________|________________|__________|_______________|______________|___________|________________|
+
+FIELD(tmptrans)
+tldnobuk        PROTECT                 INPUTRI         1
+tldplg          ALLCAPS                 INPUTRI         2
+lsdmtr          PROTECT                 INPUTRI         3
+lcabtr          PROTECT                 INPUTRI         3
+ldvstr          PROTECT                 INPUTRI         4
+ljabtr          PROTECT                 INPUTRI         5
+tldgrup		NOCHANGE		INPUTRI		6
+tldgrup2	ALLCAPS			INPUTRI		7
+
+DEFAULTS(tmptrans)
+tldgrup          DFALT_SCAN_BLANKS      Y
+                                        T
+
+EDITS(tmptrans)
+e.Mandatory     tldplg        MANDATORY
+e.Mandatory     tldgrup	      MANDATORY_IF cinpg
+e.Mandatory     tldgrup2      MANDATORY_IF cya
+e.Validate      tldplg        VALIDATE psikodidx mpsitld
+
+CALCS()
+cseltlm954	tlmsts == "INPG" && tlmsts2 == "IN" && tlmgrup2 == "SDMBARU" && tlmpst == "SDMBARU" && tlmtype2 == "DTPENDMPNG"
+
+DBCALCS(djointldsdminp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	tldplgbrgidx lDTLISTRN11 gv_OPEN tldplg lDTLISTRN tlmnobuk
+
+MAP(mjointlm954)
+tlmnobuk	lnobuk954	REPLACE
+
+DBCALCS(djointlm954)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmdatplgtgl lDTCHECKSDM tldplg
+	DBC_SELECT	cseltlm954
+	DBC_MAP		mjointlm954
+
+CALCS()
+csdmmasihopen	lpsists=="INPG" || g_usrkode==tlmplg || (djointkd==1 && g_usrkode==ltkdnoll)
+csdmsdhinput	g_curcmd != 1 || (g_curcmd == 1 && djointldsdminp == 0)
+cictbaru	tlmpst == "SDMBARU"
+cjointlm954	tlmpst == "SDMBARU" && djointlm954 == 1
+
+MAP(mpsitld)
+psinama         lsdmtr          REPLACE
+psidvs		ldvstr		REPLACE
+psijabatan	ljabtr		REPLACE
+psicabskr	lcabtr		REPLACE
+psists		lpsists		REPLACE
+tlmtgl		tldtgl5		REPLACE_IF cictbaru
+lnobuk954	tldnoll		REPLACE_IF cjointlm954
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tldgrup        DO_SKIP_IF copen1
+BEFORE_INPUT    cur_field=tldgrup2       DO_SKIP_IF ctdk
+BEFORE_INPUT    cur_field=tldplg         DO_SKIP_IF cinpg
+AFTER_INPUT 	cur_field=tldplg	 DO_MAP SHOW
+                IF csdmmasihopen mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StsSdmTdkInpg
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+		IF csdmmasihopen mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StsSdmTdkInpg
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+		IF csdmsdhinput mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SdmSudahDiInput
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_TARGET
+	tldbukbrglok  tlmnobuk lDTLISTRN
+
+SFL_MAP
+lDTLISTRN       tlddata        REPLACE
+gv_OPEN         tldsts         REPLACE
+lDTLISTRN       tldbrg          REPLACE
+tlmnobuk        tldnobuk         REPLACE
+tlmnobuk        tldukrwrn        REPLACE 

@@ -1,0 +1,88 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|spasi                             |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||________________________________||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.StsUplYT    __________________||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.FisikTerima __________________||
+||t.AccBerkas   __________________||
+||i.Ket         __________________||
+||t.TglTerima   __________________||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdket          PROTECT SCROLL          INPUTRI         1
+tkdjenis        PROTECT                 INPUTRI         2
+tkdsisstr       NOCHANGE                INPUTRI         5
+tkdjwbstr1      NOCHANGE                INPUTRI         6
+tkdjwbstr2      ALLCAPS                 INPUTRI         7
+tkdtgl          NOLIMIT {DD-MM-YYYY}    INPUTRI         8
+
+DEFAULTS(tmptranst)
+tkdsisstr       DFALT_LIST              Y T
+tkdjwbstr1      DFALT_LIST              Y T
+lY              INIT                    Y
+
+CALCS()
+c33STLK         tmpkode=="33SRTTOLAKAN"
+cpil33          tkdnoll==tmpkode
+
+MAP(mupdtkdUPL33)
+lY              tkdjenis                REPLACE
+lY              tkdsisstr               REPLACE
+
+DBCALCS(dupdtkdUPL33)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkdprmidx tkdprm
+        DBC_MAP         mupdtkdUPL33
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND c33STLK
+SFL_SELECT cpil33
+SFL_UPLFLD_DBCALCS dupdtkdUPL33
+SFL_UPLFLD tkdnoll tkdnobuk
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+        tkddatbukll     lclaimass tlmnobuk
+
+SFL_MAP
+        tlmdata         tkddata         REPLACE
+        tlmnobuk        tkdnobuk        REPLACE
+        tmpnourt        tkdnourt        REPLACE
+        tmpkode         tkdnoll         REPLACE
+        tmpket          tkdket          REPLACE
+
+CALCS()
+ctrmsrttlkvoid		tkdtgl!=BLANKS && tkdjenis=="Y" && tlmsts=="VOID" && tlmkode=="VOID_PROSES"
+cTDK_CAIR		"TIDAK_CAIR"
+
+MAP(mupdtlmsrttlkvoid)
+cTDK_CAIR	tlmkode		DO_CALC
+
+SPCALCS(spvoiduplsrttlk)
+DO_LIB_IF ctrmsrttlkvoid ap_dbclc(DNAME dupdtlmsrttlkvoid,DCOMMAND UPDATE,DTARGET tlmbukidx tkdnobuk,DMAP mupdtlmsrttlkvoid);
+
+POSTING(tmptrans)
+PST_UPDCMD	spvoiduplsrttlk
+
+

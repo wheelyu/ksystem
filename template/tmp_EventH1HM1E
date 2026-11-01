@@ -1,0 +1,119 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------------------------\
+ t.RUTE ROADSHOW
+/----------t--------t---------------t---------------t----------------t--------t--------t---------t---------\
+|t.RUTE    |t.JAM   |t.Titik        |t.Kelurahan    |t.Kecamatan     |t.Long  |t.lat   | t.info  | __ __ __
+\----------.--------.---------------.---------------.----------------.--------.--------.---------.---------/
+\----------------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|__________|________|_______________|_______________|________________|________|_________|__________________|
+
+FIELD(tmptranst)
+ltombol2acc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombol1tacc    TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombolhm1eok   TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 2
+
+FIELD(tmptrans)
+tkdjenis 	ALLCAPS	PROTECT	        INPUTRI	1
+tkdsisstr  	ALLCAPS PROTECT          INPUTRI	1
+tkdrek      ALLCAPS               INPUTRI 1
+tkdjwbstr1        ALLCAPS                  INPUTRI 2
+lkecamatan      ALLCAPS NOCHANGE        INPUTRI 2
+tkdjml2        NUMERIC                     INPUTRI 2
+tkdjml3        NUMERIC                     INPUTRI 2
+tkdtmp1       PROTECT                   INPUTRI 3
+
+
+CALCS()
+crute "RUTE-" + FLD_TO_STRING(tkdnourt)
+cbelum4 tkdnourt <= 4
+ckunci1e       abkkym2 == lketreviewhm1e
+cdetailhm1eok         tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) 
+cjoinlastrute   djoindetailhm1e == 1
+ctambah         ltkdnourt + 1
+cjam1 "09.00-10.30 WIB"
+cjam2 "10.30-12.00 WIB"
+cjam3 "13.30-15.00 WIB"
+cjam4 "15.00-16.30 WIB"
+curt1 tkdnourt == 1
+curt2 tkdnourt == 2
+curt3 tkdnourt == 3
+curt4 tkdnourt == 4
+
+DEFAULTS(tmptrans)
+tkdsisstr        INIT                    ""
+tkdjwbstr2      DFALT_LIST              SDM_BERTUGAS PJ
+tkdsts INIT            {gv_OPEN}
+
+MAP(mupddetailtrinci1e)
+lMENUNGGUREVISI tkdtmp1					REPLACE
+gv_TACC         tkdsts                  REPLACE
+
+MAP(mupddetailok1e)
+lSUDAHACC       tkdtmp1		        REPLACE
+gv_ok         	tkdsts                  REPLACE
+
+MAP(mupdinfodetailhm1e)
+lDALAMPROSESREVIEW      tkdtmp1          REPLACE_IF cdetaildalamreview
+
+SPCALCS(saccdetailrinci1e)
+        DO_LIB_IF cadakawil             ap_dbclc(DNAME dupdabkclsdkawilaccdetail1e,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci1e, DMAP mupdabkclsdkawil);
+        DO_LIB_IF cadaam                ap_dbclc(DNAME dupdabkclsdamaccdetail1e,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk, DBC_COND ckunci1e,DMAP mupdabkclsdam);
+        DO_LIB                          ap_dbclc(DNAME dupddetailokaccdetail1e, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailok1e);
+        DO_LIB                          ap_dbclc(DNAME dupddetailreqhm1eoks,DCOMMAND MAPMAP, DMAP mupddetailreq);
+
+SPCALCS(staccdetailrinci1e)
+        DO_LIB                          ap_dbclc(DNAME dupddetailtacchm1e, DCOMMAND UPDATE_RANGE, DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailtrinci1e);
+
+
+SPCALCS(spdetailokhm1e)
+        DO_LIB_IF cdetailhm1eok   ap_dbclc(DNAME dupddetailreqhm1e,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailreq);
+        DO_LIB                          ap_dbclc(DNAME dupddetailreqhm1eok,DCOMMAND MAPMAP, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm1e, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm1e, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam); /*
+        DO_LIB_IF cadaahass             ap_dbclc(DNAME daddabkreviewahasshm1e, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewahass); */
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm1e,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupdinfodetailhm1e);
+
+MAP(mruteoto)
+c1              tkdnourt      DO_CALC
+ctambah         tkdnourt      DO_CALC_IF cjoinlastrute
+crute           tkdjenis      DO_CALC_IF cbelum4
+cjam1           tkdsisstr     DO_CALC_IF curt1
+cjam2           tkdsisstr     DO_CALC_IF curt2
+cjam3           tkdsisstr     DO_CALC_IF curt3
+cjam4           tkdsisstr     DO_CALC_IF curt4
+
+HOOKS(tmptrans)
+BEFORE_INPUT 	cur_field=tkdrek  	DO_MAP SHOW mruteoto 
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol1tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol2acc    DO_SKIP_IF camkawil
+
+AFTER_INPUT	cur_field=ltombolhm1eok    DO_MAP
+                IF csudahadaahass mdum
+                ELSE HKCURSOR STAY
+                HKMSG t. Input ahass dulu
+CLICKED         cur_field=ltombolhm1eok DO_SPCALCS spdetailokhm1e
+
+CLICKED         cur_field=ltombol1tacc   DO_SPCALCS IF camkawilin staccdetailrinci1e
+CLICKED         cur_field=ltombol2acc	DO_SPCALCS IF camkawilin saccdetailrinci1e      
+
+
+EDITS(tmptrans)
+e.Mandatory             tkdrek          MANDATORY
+e.Mandatory             tkdjwbstr1      MANDATORY
+e.validateKel1          tkdjwbstr1	VALIDATE_SEARCH tbtkodeidx mlokasi stbtkel
+e.validateKel1	        tkdjwbstr1	VALIDATE tbtkodeidx mlokasi 0
+CALCS()
+ctiperoadshow tlmdari == "RSM"
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND ctiperoadshow
+SFL_TARGET
+        tkddatbukll lEVNH1EHM1 tlmnobuk
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1EHM1 tkddata

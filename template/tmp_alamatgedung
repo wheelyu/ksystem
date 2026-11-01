@@ -1,0 +1,165 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------\
+|/--------------------------------------------------------------------------------------\|
+||t.Nobuk          : _______________________                                            ||
+||t.User           : ________  _____________                                            ||
+|\--------------------------------------------------------------------------------------/|
+|/--------------------------------------------------------------------------------------\|
+||t.AlamatSebelum                                                                       ||
+||t.Prop           : ___________  _______________ t.Kota : _____________  _____________ ||
+||t.Kec            : ___________  _______________ t.Kel  : _____________  _____________ ||
+||t.Alamat         : ________________________________________________________           ||
+|\--------------------------------------------------------------------------------------/|
+|/--------------------------------------------------------------------------------------\|
+||t.AlamatSesudah                                                                       ||
+||t.Prop           : ___________  _______________ t.Kota : _____________  _____________ ||
+||t.Kec            : ___________  _______________ t.Kel  : _____________  _____________ ||
+||t.Alamat         : ________________________________________________________           ||
+||t.KodePos        : ______                  t.RT   : ____  t.RW : ____                 ||
+|\--------------------------------------------------------------------------------------/|
+\----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdnobuk	NOCHANGE			INPUTRI	1
+mtdplg		PROTECT				INPUTRI	2
+lnamauser	PROTECT				INPUTRI	3
+
+mtdgrup 	PROTECT 			INPUTRI	4 
+lnamaprop2	PROTECT				INPUTRI	5
+mtdgrup2 	PROTECT                  	INPUTRI	6 
+lnamakota2	PROTECT				INPUTRI	7
+mtdlok 		PROTECT                   	INPUTRI	8 
+lnamakec2	PROTECT				INPUTRI	9
+mtdlok2  	PROTECT				INPUTRI	10 
+lnamakel2	PROTECT				INPUTRI	11
+mtdbisnis	PROTECT				INPUTRI	12
+
+mtdsat		ALLCAPS 			INPUTRI	13
+lnamaprop3	PROTECT				INPUTRI	14
+mtdkat   	ALLCAPS                  	INPUTRI	15
+lnamakota3	PROTECT				INPUTRI	16
+mtdukrwrn	ALLCAPS                   	INPUTRI	17
+lnamakec3	PROTECT				INPUTRI	18
+mtdnobbm 	ALLCAPS				INPUTRI	19 
+lnamakel3	PROTECT				INPUTRI	20
+mtdket		ALLCAPS				INPUTRI	21
+mtdppdoto	PROTECT				INPUTRI	22
+mtdnorangka	ALLCAPS				INPUTRI	23
+mtdnomesin	ALLCAPS				INPUTRI	24
+
+DBCALCS(djoinprov_1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	dtmdtkodidx	gv_dtkota      mtdgrup
+
+DBCALCS(djoinkota_1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbldtdtmkod	gv_dtkota      mtdgrup mtdgrup2
+
+
+DBCALCS(djoinkel_1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbtdattypkod	gv_dtkota gv_dtkota21  mtdgrup mtdgrup2  mtdlok mtdlok2
+
+CALCS()
+cjoinprov1		djoinprov_1 ==1
+cjoinkota1		djoinkota_1 ==1
+cjoinkel1		djoinkel_1 ==1
+
+EDITS(tmptranst)
+e.Mandatory		mtdsat	MANDATORY
+e.Mandatory		mtdkat	MANDATORY
+e.Mandatory		mtdukrwrn MANDATORY
+e.Mandatory		mtdnobbm MANDATORY
+e.Mandatory		mtdket   MANDATORY
+
+e.Validate              mtdplg   VALIDATE psikodidx mpsi2 0
+
+e.Validate              mtdgrup  VALIDATE_IF cjoinprov1 dtmdtkodidx mdtm2 sdtm {Pgv_dtkota}
+e.Validate              mtdgrup2 VALIDATE_IF cjoinkota1  tbldtdtmkod mtbl2 stbl {Pgv_dtkota} {Pmtdgrup}
+e.Validate              mtdlok2  VALIDATE_IF cjoinkel1 tbtdattypkod mtbt2 stbt {Pgv_dtkota} {Pgv_dtkota21} {Pmtdgrup} {Pmtdgrup2} {Pmtdlok}
+
+e.Validate              mtdsat  VALIDATE dtmdtkodidx mdtm3 sdtm {Pgv_dtkota}
+e.Validate              mtdkat  VALIDATE tbldtdtmkod mtbl3 stbl {Pgv_dtkota} {Pmtdsat}
+e.Validate              mtdukrwrn VALIDATE_BUF3 tbddatkodidx mtbd3 stbd {Pgv_dtkota} {Pmtdsat} {Pmtdkat}
+e.Validate              mtdnobbm  VALIDATE tbtdattypkod mtbt3 stbt {Pgv_dtkota} {Pgv_dtkota21} {Pmtdsat} {Pmtdkat} {Pmtdukrwrn}
+
+MAP(mpsi2)
+psikode		mtdplg		REPLACE
+psinama		lnamauser	REPLACE
+
+MAP(mdtm2)
+dtmkode         mtdgrup         REPLACE
+dtmket          lnamaprop2      REPLACE
+
+MAP(mtbl2)
+tblkode         mtdgrup2        REPLACE
+tblket          lnamakota2      REPLACE
+
+
+MAP(mtbt2)
+tbtkode         mtdlok2         REPLACE
+tbtket          lnamakel2       REPLACE
+
+MAP(mdtm3)
+dtmkode         mtdsat          REPLACE
+dtmket          lnamaprop3      REPLACE
+
+MAP(mtbl3)
+tblkode         mtdkat          REPLACE
+tblket          lnamakota3      REPLACE
+
+MAP(mtbd3)
+#tbdkode         mtdukrwrn       REPLACE
+#tbdket          lnamakec3       REPLACE
+
+MAP(mtbt3)
+tbtkode         mtdnobbm        REPLACE
+tbtket          lnamakel3       REPLACE
+tbtkat		mtdppdoto	REPLACE
+
+CALCS()
+cmtdnobuk	STRIP(tbdkode) + THBLS(g_tgltrn)
+
+MAP(msblm)
+cmtdnobuk	mtdnobuk	DO_CALC
+tbdlv1		mtdgrup		REPLACE
+tbdlv2		mtdgrup2	REPLACE
+tbdlv3		mtdlok 		REPLACE
+tbdlv4		mtdlok2 	REPLACE
+tbdkettype	mtdbisnis	REPLACE
+g_usrkode	mtdplg		REPLACE
+tbdkode		mtdbrg		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=mtdnobuk	DO_MAP SHOW msblm
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        mtdstsbrgukr lDTSEWA11 gv_OPEN tbdkode           
+SFL_MAP
+	lDTSEWA11   	mtddata   	REPLACE
+	gv_OPEN   	mtdsts   	REPLACE
+	mtdbrg    	tbdkode  	REPLACE
+
+MAP(mupdtbd)
+mtdsat		tbdlv1		REPLACE
+mtdkat		tbdlv2		REPLACE
+mtdukrwrn	tbdlv3		REPLACE
+mtdnobbm	tbdlv4		REPLACE
+mtdket		tbdkettype	REPLACE
+
+MAP(mupdcab)
+mtdket		cabalamat	REPLACE
+mtdkat		cabkota		REPLACE
+
+SPCALCS(sadd)
+	DO_LIB	ap_dbclc(DNAME dupdtbd,DCOMMAND UPDATE, DTARGET tbddatkodidx gv_dttabel gv_infoumum gv_gedung mtdbrg, DMAP mupdtbd);
+        DO_LIB	ap_dbclc(DNAME dupdcab,DCOMMAND UPDATE_RANGE, DTARGET cabtwridx mtdbrg, DMAP mupdcab);
+
+POSTING(tmptrans)
+        PST_ADDCMD sadd
+

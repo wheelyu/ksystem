@@ -1,0 +1,67 @@
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------\
+|					 t.FotoHarusHorizontal		 |
+|/-----------------------------------\/------------s.UPLOAD-------------\|
+|| t.Bagian     : ___ ______________ ||					||
+|| t.Keterangan : __________________ ||					||
+|| 				     ||   				||
+|| 				     ||					||
+|| 				     ||				 	||
+|\-----------------------------------/\---------------------------------/|
+\------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tldbrdoto	ALLCAPS			INPUTRI 1
+tldbrg		PROTECT	 		INPUTRI 2
+tldket		TEXTAREA		INPUTRI 3
+
+CALCS()
+cketpjg2        DO_LIB ap_strln (tldket,&lpanjangket2);
+cpanjangket2     lpanjangket2 >= 20
+
+EDITS(tmptranst)
+e.Validate      tldbrdoto        VALIDATE tbddatkodidx mtbd2_2 stbd {Pgv_dttabel} {Plaudit} {Plbagianeks}
+
+MAP(mtbd2_2)
+tbdkode         tldbrdoto     REPLACE
+tbdket		tldbrg	      REPLACE		
+
+MAP(mcek20t)
+cketpjg2         lpanjangket2  DO_CALC
+
+MAP(mdumtld2)
+lpanjangket2	lpanjangket2	REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldket      DO_MAP  SHOW    mcek20t
+AFTER_INPUT     cur_field=tldket      DO_MAP  SHOW    
+                                    IF cpanjangket2 mdumtld2
+                                    ELSE HKCURSOR STAY
+                                    HKMSG t.Minimal20Karakter
+
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD tldoto 
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        tldbukbbmidx    tlmnobuk  ldokekster
+
+SFL_MAP
+tlmnobuk        tldnobuk
+ldokekster      tldnobbm
+lkgedung	tlddata
+
+PERMIT(tmptrans)
+PMT_DEL_COND    cIT
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    cOPEN
+

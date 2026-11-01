@@ -1,0 +1,108 @@
+LOCAL
+PGM_FIELDS
+lvercadeb	STRING	11
+
+
+DBCALCS(djoinsvivercadeb) 
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   ldtca btmnobuk lvercadeb 
+
+IMAGE(tmptranst) 
+ /------------------------------------------------------------------------------------------------\
+ |i.Notelpdihub       				    : ____________________                        |
+ |i.Bisadihubungi     				    : ____                                        |
+ |i.Benarcadebmengajukankredit                      : ____                                        |
+ |i.Tenor                                           : ____                                        |
+ |i.Namaibukandung                                  : _____________________                       |
+ |i.Nomortelprumah                                  : _____________________                       |
+ |i.Nomorhplainnya                                  : _____________________                       |
+ |i.Tanggallahir 				    : ________                                    |
+ |t.Enter                                           : ________                                    |
+ \------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+    
+FIELD(tmptranst)
+svistr1			ALLCAPS SCROLL			INPUTRI 1
+sviyt1			NOCHANGE			INPUTRI 3
+sviyt2			NOCHANGE			INPUTRI 4
+/*svitype2		NOCHANGE			INPUTRI 5
+svinama			ALLCAPS SCROLL			INPUTRI 6
+svitype3		NOCHANGE			INPUTRI 7
+svistr3			ALLCAPS SCROLL			INPUTRI 8
+*/
+svidf1			NUMERIC				INPUTRI 9
+svistr4			ALLCAPS SCROLL			INPUTRI 10
+svistr5			ALLCAPS SCROLL			INPUTRI 11
+svistr6			ALLCAPS SCROLL			INPUTRI 12
+svitgl1			NONE NOLIMIT {DD-MM-YY}		INPUTRI 14
+lenter			ALLCAPS				INPUTRI 15
+
+DEFAULTS(tmptranst)
+lvercadeb		INIT			VERCADEB
+sviyt1			DFALT_SCAN 		BLANKS
+						YA
+						TDK
+sviyt2			DFALT_SCAN		BLANKS
+						YA
+						TDK  
+svitype2		DFALT_SCAN		BLANKS
+						YA
+						TDK
+svitype3		DFALT_SCAN		BLANKS
+						YA
+						TDK
+
+/*CALCS()
+canbeda			svitype2  == "Y"
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svinama	DO_SKIP_IF canbeda
+*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+SFL_COND	csdmho
+SFL_TARGET
+	svidatbuktyp   ldtca btmnobuk gv_vercadeb
+
+SFL_MAP
+ldtca			svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+gv_vercadeb		svitype			REPLACE
+
+
+CALCS()
+cadd_vcadeb		djoinsvivercadeb == 0 && (btmsts == "668" && (btmflag1=="CA" || btmflag1=="CAA" || btmflag1=="QA")) && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV")
+cupd_vcadeb		(btmsts == "668" && (btmflag1=="CA" || btmflag1=="CAA" || btmflag1=="QA")) && (g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" || g_grpnam == "B.M4WQA" || g_grpnam == "B.M4WADHSPV")
+caktadd668ca	 btmsts == "668" && btmflag1 == "CA"
+
+MAP(maddaktadd668ca)
+btmnobuk        aktkode     	REPLACE
+btmnobuk        aktnobuk    	REPLACE
+btmnobuk        aktbrg      	REPLACE
+l668         	aktkode2    	REPLACE
+lSLAUMROH       aktdata     	REPLACE
+l668ADDCA       akttype     	REPLACE
+g_tgltrn        akttgl      	REPLACE
+lsystime        aktjam      	REPLACE
+g_usrkode       aktcrtusr   	REPLACE
+btmlokjual      aktcab      	REPLACE
+l668            aktscr      	REPLACE
+lA				aktlok	  		REPLACE
+l668PSTCA		aktket	  		REPLACE
+l1				akturt	  		REPLACE
+
+SPCALCS(spadd668ca)
+DO_LIB_IF caktadd668ca ap_dbclc(DNAME daddaktadd668ca,DCOMMAND ADD,DFILE akt,DMAP maddaktadd668ca);
+
+POSTING(tmptrans)
+PST_ADDCMD            spadd668ca
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_vcadeb	
+  	PMT_UPDALL_COND cupd_vcadeb
+  	PMT_DEL_COND  	cupd_vcadeb
+
+

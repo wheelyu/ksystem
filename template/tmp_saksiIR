@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+ltldukrwrn_1	STRING	21
+lnourt1		INT2	2
+
+MAP(mjoinnourt1)
+tldnourt        lnourt1          REPLACE
+
+DBCALCS(djointldnourt1)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              tldbukbrgoto	tlmnobuk gv_OPEN tlmnobuk
+        DBC_MAP                 mjoinnourt1
+
+IMAGE(tmptranst)
+/----t---------t-------------------------------t---------------t------------t-----------\
+|t.No|t.Nip    |t.Nama                         |t.Subdept      |t.Divisi    |t.Status   |
+\----.---------.-------------------------------.---------------.------------.-----------/
+
+IMAGE(tmptrans)
+|____|_________|_______________________________|_______________|____________|___________|
+
+FIELDS(tmptrans)
+tldnourt	NOCHANGE	INPUTRI	1
+tldplg		ALLCAPS		INPUTRI	2
+tldsat		PROTECT		INPUTRI	3
+tldkat		PROTECT		INPUTRI	4
+tlddvs		PROTECT		INPUTRI	5
+tldnobbm	PROTECT		INPUTRI	6
+
+DEFAULTS(tmptrans)
+ltldukrwrn_1	INIT			"SAKSI"
+
+EDITS(tmptrans)
+e.mandatory	tldnourt	MANDATORY
+e.Mandatory	tldplg  	MANDATORY
+e.Validate      tldplg   	VALIDATE psikodidx mpsi1 spsi
+
+MAP(mpsi1)
+psikode		tldplg  	REPLACE
+psinama		tldsat 		REPLACE
+psisdep         tldkat          REPLACE
+psidep 		tlddvs  	REPLACE         
+psists 		tldnobbm	REPLACE          
+
+CALCS()
+cjoinchdnourt1          djointldnourt1 == 0 && g_curcmd == 1
+cjoinchdnourt2          djointldnourt1 == 1 && g_curcmd == 1
+c1a			1
+cnourt1                 lnourt1 + 1 
+/*ctldnourtskip		g_curcmd == 1 || (g_curcmd == 2 && g_grpnam != "RI" && g_grpnam != "IT")*/
+
+MAP(mnourt1)
+c1a             tldnourt        DO_CALC_IF cjoinchdnourt1
+cnourt1         tldnourt        DO_CALC_IF cjoinchdnourt2
+
+HOOKS(tmptrans)
+/*BEFORE_INPUT    cur_field=tldnourt      DO_SKIP_IF ctldnourtskip*/
+BEFORE_INPUT     cur_field=tldnourt      DO_MAP SHOW mnourt1
+BEFORE_INPUT    cur_field=tldplg        DO_MAP SHOW mnourt1
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD	tldnourt
+SFL_TARGET
+        tldstsbrgukr   tlmdata gv_OPEN tlmnobuk ltldukrwrn_1
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+gv_OPEN		tldsts		REPLACE
+tlmnobuk	tldbrg		REPLACE
+ltldukrwrn_1	tldukrwrn       REPLACE

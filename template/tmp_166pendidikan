@@ -1,0 +1,103 @@
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/-----------------------------------------------\|
+||t.DataPendidikanTerakhir                       ||
+||t.JnsUniv   : _________________________________||
+||t.NamaUniv  : _________________________________||
+||t.Jurusan   : _________________________________||
+||t.LulusThn  : ______                           ||
+||t.ApaPendidikanBerubah : ______                ||
+||spasi                                          ||
+||t.DataPendidikanTerbaru                        ||
+||t.Pendidikanakhir      : ______                || 
+||t.JnsUniv   : _________________________________||
+||t.NamaUniv  : __________________               ||
+||              _________________________________||
+||t.Jurusan   : __________________               ||
+||              _________________________________||
+||t.LulusThn  : ______   __                      ||
+|\-----------------------------------------------/|
+|/---------s.UPLOAD------------------------------\|
+||                                               ||
+||                                               ||
+||                                               ||
+||                                               ||
+||                                               ||
+||                                               ||
+||                                               ||
+||                                               ||
+|\-----------------------------------------------/|
+|t.UplIjazah       __   __________________        |
+|t.HapusFotoKlikApr                               |
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdjwbstr1		PROTECT                 INPUTRI	1
+tkdket    		PROTECT                 INPUTRI	2
+tkdrek			PROTECT                 INPUTRI	3
+tkdjenisaw		PROTECT                 INPUTRI	4
+tkdjenis		NOCHANGE		INPUTRI	5
+tkdsisstr		NOCHANGE		INPUTRI	6
+tkdstr1			ALLCAPS			INPUTRI	7
+tkdstr2  		ALLCAPS			INPUTRI	8
+lnama_univ		PROTECT			INPUTRI	9
+tkdstr3			ALLCAPS			INPUTRI	10
+lnama_studi		PROTECT 		INPUTRI	11
+tkdstr4			ALLCAPS			INPUTRI	12
+ldumx			NOCHANGE		INPUTRI	13
+tkdjml			PROTECT			INPUTRI	14
+ltombolx        	TOMBOL			INPUTRI 15
+
+DEFAULTS(tmptranst)
+tkdjenis		DFALT_SCAN_BLANKS TIDAK YA
+tkdsisstr        	DFALT_SCAN_BLANKS       D1 D2 D3 D4 S1 S2 S3 SD SMA SMK SMEA STM SMP 
+ltombolx        	INIT	"APPROVAL ULANG"
+
+EDITS(tmptranst)
+e.Mandatory		tkdjenis MANDATORY
+e.Mandatory		tkdstr1 MANDATORY_IF cuniversitas
+e.Mandatory		tkdsisstr MANDATORY_IF cubahpend
+e.Mandatory		tkdstr3 MANDATORY_IF csekolah4
+e.Mandatory		tkdstr4 MANDATORY_IF csekolah3
+e.Mandatory		tkdstr2 MANDATORY_IF csekolah3
+e.Validate tkdstr1 VALIDATE_IF cuniversitas tbddatkodidx mtbd_jnsuniv stbd {Pgv_dttabel} {Pgv_personal} {Pledu21}
+e.Validate tkdstr2 VALIDATE_IF cuniversitas tbtdattypkod  mtbt_ijazah2 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pledu21} {Ptkdstr1}
+e.Validate tkdstr3 VALIDATE tbtdattypkod  mtbt_ijazah stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {Pgv_pendidikan} {Pljns_pendidikan}
+e.Validate tkdstr4 VALIDATE tbddatkodidx  mtbd_thn stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdstr1	DO_SKIP_IF csekolah
+BEFORE_INPUT    cur_field=tkdstr3	DO_SKIP_IF ctubahpend
+BEFORE_INPUT    cur_field=tkdstr4	DO_SKIP_IF ctubahpend
+BEFORE_INPUT    cur_field=tkdstr2	DO_SKIP_IF ctubahpend
+BEFORE_INPUT    cur_field=tkdsisstr	DO_SKIP_IF ctubahpend
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW misipend
+AFTER_INPUT     cur_field=tkdstr1     	DO_MAP SHOW mtbd_ijazah
+AFTER_INPUT     cur_field=tkdjenis      DO_MAP SHOW
+                IF cwjbyapend mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DataSblmKsngWajibPilYa
+
+AFTER_INPUT     cur_field=tkdsisstr      DO_MAP SHOW
+                IF cpendsama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JnjngPendSamaPilihTDK
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cwjbyapend mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DataSblmKsngWajibPilYa
+
+CLICKED         cur_field=ltombolx       DO_SPCALCS supddelapr
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD hrmdvs2
+SFL_UPLFLD  tkdnoll hrmthbl
+SFL_UPLFLD_DBCALCS dupdtkdijz
+SFL_UPL_DELCOND chpsftijz
+SFL_TARGET
+tkdbukidx	hrmnobuk gv_OPEN gv_int1

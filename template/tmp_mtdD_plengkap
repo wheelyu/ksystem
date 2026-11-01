@@ -1,0 +1,79 @@
+DBCALCS(djoinpptu2)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	pptbukotodat   mtdnobuk mtdoto
+        DBC_MAP         mjoinpptu
+
+IMAGE(tmptranst) 
+/=====t===================t=======t=======\
+|i.No | i.Kode            |i.Jml  | i.Trm |
+\=====.===================.=======.=======/
+
+IMAGE(tmptrans) 
+|_____|___________________|_______|_______|
+    
+FIELD(tmptrans)
+   sgmurt           PROTECT 		INPUTRI     1 
+   sgmtbl           PROTECT SCROLL	INPUTRI     2 
+   sgmhrg1          PROTECT        	INPUTRI     3 
+   sgmhrg2          NUMERIC        	INPUTRI     4 
+
+CALCS()
+cjmltrm		sgmhrg1 * mtdjml
+ctrmkrgsama	sgmhrg2 <= sgmhrg1
+
+DEFAULTS(tmptrans)
+sgmhrg1	INIT 	{cjmltrm}
+
+EDITS(tmptrans)
+i.KodeBrgTdkAda sgmtbl VALIDATE brgdatkodidx mbrgPlk 0 {Pgv_dtbarang}
+
+MAP(mbrgPlk)
+brgbbmprs	brgbbmprs	REPLACE
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=sgmhrg2	DO_MAP SHOW
+		IF ctrmkrgsama mdum
+		ELSE HKCURSOR STAY
+		     HKMSG Jumlah terima melebihi standart
+CALCS()
+cjmlsama    	brgytplk == "Y" && dbscanppt == mtdjml && djoinpptPlk == 0
+
+SUBFILE(tmptrans)
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+SFL_COND cjmlsama
+SFL_LINES(10)    
+
+SFL_TARGET
+sgmdabrplgtb   gv_dtplengkap gv_plengkap mtdbrg
+
+/*---------------daddppt---------------*/
+CALCS()
+cjoinpptu2      djoinpptu2  == 1 
+cjoinpptu20     djoinpptu2  == 0 
+cmshdimd	mtdgrup == "MD"
+
+MAP(maddppt)
+    mtdnobuk             pptnobuk           REPLACE
+    mtdoto               pptppdoto          REPLACE 
+    mtdbrg		 pptjns   	    REPLACE  /* Kode barang*/
+    sgmtbl		 pptbrg   	    REPLACE  /* Barang plengkapan*/
+    gv_dtplengkap        pptdata            REPLACE 
+    brgbbmprs 		 pptnobbm   	    REPLACE  
+    c1		 	 pptnourt           DO_CALC_IF cjoinpptu20
+    curutppt	 	 pptnourt           DO_CALC_IF cjoinpptu2
+    sgmhrg1		 pptdf1		    REPLACE  /* Jml Seharusnya terima */
+    sgmhrg2		 pptjml		    REPLACE  /* Jml Terima */
+    gv_OPEN		 pptsts		    REPLACE
+    mtdgrup		 pptnopol	    REPLACE_IF cmshdimd
+
+DBCALCS(daddppt)
+	DBC_COMMAND	ADD
+	DBC_FILE        ppt
+	DBC_MAP         maddppt
+
+SPCALCS(sptrans)
+daddppt
+
+POSTING(trans2g1)
+PST_COMMAND sptrans

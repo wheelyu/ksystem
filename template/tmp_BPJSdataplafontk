@@ -1,0 +1,333 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.PlafonBpjsTK                                                           |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               |                   |
+|       !t.Nip        : __________ t.gol   _____ t.Pt ______ !                   |
+|       !t.TglLhr     : __________                           !                   |
+|       !t.Usia       : __________ t.Th                      !                   |
+|       !t.Pbpuyt     : __________                           !                   |
+|       !t.CbgAsl     : __________ _________________________ !                   |
+|       !t.UmrCabAs   : ______________________               !                   |
+|       !t.Upah       : ______________________               !                   |
+|       !t.LapUpah    : ______________________               !                   |
+|       !t.JhtKry     : ______________________               !                   |
+|       !t.JpKry      : ______________________               !                   |
+|       !t.BebanKry   : ______________________               !                   |
+|       !t.JkkPrs     : ______________________               !                   |
+|       !t.JkmPrs     : ______________________               !                   |
+|       !t.JhtPrs     : ______________________               !                   |
+|       !t.JpPrs      : ______________________               !                   |
+|       !t.BebanPrs   : ______________________               !                   |
+|       !t.TOTIUR     : ______________________               !                   |
+|       !t.Tgl        : _____________                        !                   |
+|       !t.Potongyt   : ______________                       !                   |
+|       !t.Ket        : ______________                       !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode              PROTECT  SCROLL          INPUTRI 1
+psdkode                 NOCHANGE SCROLL          INPUTRI 2
+psigol                  PROTECT                  INPUTRI 3
+lkodePT                 PROTECT                  INPUTRI 4
+psmtgllahir              PROTECT {DD-MM-YYYY}     INPUTRI 5 
+ljmlthn                 NOCHANGE                 INPUTRI 6
+psdstr4                 NOCHANGE                 INPUTRI 7
+
+psdstr2                 PROTECT SCROLL          INPUTRI 8
+lcbgasal                PROTECT SCROLL          INPUTRI 9
+
+psdtot                  NUMERIC                 INPUTRI 10
+psdtot6                 NUMERIC                 INPUTRI 11
+psdtot2                 NUMERIC                 INPUTRI 12
+
+
+ljhtkry                 NUMERIC                 INPUTRI 13
+ljpkry                  NUMERIC                 INPUTRI 14
+psdtot4                 NUMERIC                 INPUTRI 15
+
+ljkkprs                 NUMERIC                 INPUTRI 16
+ljkmprs                 NUMERIC                 INPUTRI 17
+ljhtprs                 NUMERIC                 INPUTRI 18
+ljpprs                  NUMERIC                 INPUTRI 19
+psdtot5                 NUMERIC                 INPUTRI 20
+
+psdtot3                 NUMERIC                 INPUTRI 21
+
+
+psdtgl1                 PROTECT NOLIMIT {DD-MM-YY} INPUTRI 22
+
+
+psdtype2		NOCHANGE		INPUTRI 23
+psdstr3			NOCHANGE		INPUTRI 24
+
+DBCALCS(djoinpsmdt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	psdkode
+
+
+CALCS()
+c2potong		psdtype2 == "POTONG"
+c2tdkpotong	psdtype2 == "TIDAK"
+cjmlharimin	DO_LIB ap_slshr(&lDD,g_tgltrn,psmtgllahir,lplus3,lmin3,&lslsbl2,&ljmlhari);
+cjmlharipls	DO_LIB ap_slshr(&lDD,psmtgllahir,g_tgltrn,lplus3,lmin3,&lslsbl2,&ljmlhari);
+cadapsmdt	djoinpsmdt ==1
+
+cmin		hrmtgl  >   psitglawl 
+cpls		hrmtgl  <=  psitglawl
+cjmlbln		lslsbl2 / 12
+cpbpunoblank    psdstr4 != BLANKS
+
+
+DEFAULTS(tmptranst)
+psdtype2	DFALT_SCAN_BLANKS POTONG TIDAK
+IF c2potong	psdstr3 DFALT_SCAN_BLANKS TERDAFTAR INPROGRES
+IF c2tdkpotong	psdstr3 DFALT_SCAN_BLANKS KELUAR TERDAFTAR
+psdtgl1		INIT   {g_tgltrn}
+/*psdstr4		DFALT_SCAN BLANKS PBPU*/
+
+
+EDITS(tmptranst)
+t.Validate              psdstr2 VALIDATE cabkodidx m2caba
+t.Validate              psdstr2 VALIDATE cabkodidx mbpjstk
+t.Validate              psdkode VALIDATE psikodidx m2psi2g3
+t.Validate              psdkode VALIDATE_IF cadapsmdt  psmkodidx m2psm2g3
+t.Validate		psdstr2 VALIDATE caddatkodcab m2cad2g3 {Pgt_DTGAJI} {PlUMR} {Spsicabasal} 
+t.Validate              psdstr4 VALIDATE_IF cpbpunoblank tbddatkodidx mpbpu stbd {Pgv_dttabel} {PlHRD} {PlMASTERPOTNPP}
+                               /*          caddatkodcab caddata cadtype cadkode cadkdcab 
+*/
+e.Mandatory		psdtot6	MANDATORY
+
+MAP(m2cad2g3)
+cadtot1		psdtot		REPLACE
+
+MAP(mjointbdjabatan)
+tbdlv3		llevel 			REPLACE
+
+DBCALCS(djointbdjabatan)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_personal gv_jabatan lpsijabatan
+        DBC_MAP         mjointbdjabatan
+
+MAP(mjointbdLevel)
+tbddf1          ltbddf1         REPLACE
+tbddf2          ltbddf2         REPLACE
+
+DBCALCS(djointbdLevel)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lPLAFONMAXBPJS llevel
+        DBC_MAP         mjointbdLevel
+
+/*MAP(mjointbdnpp)
+tbddf1          ljhtkry2        REPLACE
+tbddf2          ljpkry2         REPLACE
+tbddf3          ljkkprs2        REPLACE
+tbddf4          ljkmprs2        REPLACE 
+tbddf5          ljhtprs2        REPLACE
+tbddf6          ljpprs2         REPLACE
+
+DBCALCS(djointbdnpp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lMASTERNPP psdstr4
+        DBC_MAP         mjointbdnpp*/
+
+CALCS()
+cjointbdjabatan		djointbdjabatan ==1 && djointbdLevel ==1
+	
+
+MAP(m2psi2g3)
+psicabasal	psdstr2		REPLACE
+psijabatan	lpsijabatan	REPLACE
+llevel		llevel		REPLACE_IF cjointbdjabatan
+cjmlharimin	ljmlhari	DO_CALC_IF cmin
+cjmlharipls	ljmlhari	DO_CALC_IF cpls
+cjmlbln		ljmlthn		DO_CALC
+
+MAP(m2psm2g3)
+psmlokjl	psmlokjl 	REPLACE
+
+MAP(m2caba)
+cabkode                 psdstr2 REPLACE
+cabnama                 lcbgasal REPLACE
+
+MAP(mjointbdpensiun)
+tbddf1          lumurpensiun         REPLACE
+
+DBCALCS(djointbdpensiun)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel lHRD lUSIAPENSIUN ltahunhun
+        DBC_MAP         mjointbdpensiun
+
+CALCS()
+cgolpbpu	psdstr4 == "PBPU"
+cgolpbpuM	psdstr4 == "PBPU" && (psinpwp == "MAGANG_UMR" || psinpwp == "MAGANG_UANG_SAKU")
+/*cgolpbpuK	psdstr4 == "PBPU" && psinpwp == "KONTRAK"*/
+
+/*cjhtkry		(psdtot2 * 2) / 100
+cjpkry		(psdtot2 * 1) / 100*/
+
+cjhtkry2        (psdtot2 * ljhtkry2) / 100
+cjpkry2		(psdtot2 * ljpkry2) / 100
+cbebankry	ljhtkry + ljpkry
+cbebankry2	ljkkprs + ljkmprs
+
+cjkkprs2	(psdtot2 * ljkkprs2) / 100
+cjkmprs2	(psdtot2 * ljkmprs2) / 100
+cjhtprs2	(psdtot2 * ljhtprs2) / 100
+cjpprs2		(psdtot2 * ljpprs2) / 100
+cbebanprs	ljkkprs + ljkmprs + ljhtprs + ljpprs
+
+/*	
+cjkkprs		(psdtot2 * 0.24) / 100
+cjkkprs08	(psdtot2 * 0.89) / 100
+cjkkprspbpu	10000
+cjkmprs		(psdtot2 * 0.30) / 100
+cjkmprspbpu	6800
+cjhtprs		(psdtot2 * 3.70) / 100
+cjpprs 		(psdtot2 * 2   ) / 100
+cbebanprs08	(psdtot2 * 6.89) / 100
+cbebanprspbpu	16800
+cpt08		psmlokjl == "PT08"*/	
+
+ctotiur		ljhtkry + ljpkry + ljkkprs + ljkmprs + ljhtprs + ljpprs
+/*ctotiur08	ljhtkry + ljpkry + ljkkprs + ljkmprs + ljhtprs + ljpprs
+ctotiurpbpu	16800*/
+cjadi0		0
+cpensiun	djointbdpensiun ==1 && ljmlthn >= lumurpensiun
+
+cjoincad1	djoincad ==1
+/*cjointbdnpp     psdstr4 != BLANKS && djointbdnpp == 1 */
+ctahunhun       DO_LIB ap_thbln(g_tgltrn,ltahunhun,ln6);
+
+
+MAP(mbpjstk)
+psigol		l2psigol	REPLACE
+lcadtot1        psdtot          REPLACE_IF cjoincad1
+lcadtot1        psdtot7         REPLACE
+
+/*cjhtkry         ljhtkry         DO_CALC
+cjpkry          ljpkry          DO_CALC
+cbebankry       psdtot4         DO_CALC
+
+
+ctotiurpbpu     psdtot4         DO_CALC_IF cgolpbpuM
+
+
+cjkkprs         ljkkprs         DO_CALC
+cjkkprs08       ljkkprs         DO_CALC_IF cpt08
+cjkkprspbpu     ljkkprs         DO_CALC_IF cgolpbpu
+cjkmprs         ljkmprs         DO_CALC
+cjkmprspbpu     ljkmprs         DO_CALC_IF cgolpbpu
+cjhtprs         ljhtprs         DO_CALC
+cjpprs          ljpprs          DO_CALC
+
+cbebanprs       psdtot5         DO_CALC
+cbebanprs08     psdtot5         DO_CALC_IF cpt08
+cbebanprspbpu   psdtot5         DO_CALC_IF cgolpbpuK
+
+ctotiur         psdtot3         DO_CALC
+ctotiur08       psdtot3         DO_CALC_IF cpt08
+ctotiurpbpu     psdtot3         DO_CALC_IF cgolpbpu*/
+
+
+cjhtkry2         ljhtkry         DO_CALC
+cjpkry2          ljpkry          DO_CALC
+
+cjkkprs2         ljkkprs         DO_CALC
+cjkmprs2         ljkmprs         DO_CALC
+cjhtprs2         ljhtprs         DO_CALC
+cjpprs2          ljpprs          DO_CALC
+ljkmprs2         ljkmprs         REPLACE_IF cgolpbpu
+ljkkprs2         ljkkprs         REPLACE_IF cgolpbpu
+
+/*cjadi0          ljhtkry         DO_CALC_IF cgolpbpu
+cjadi0          ljpkry          DO_CALC_IF cgolpbpu
+cjadi0          psdtot4         DO_CALC_IF cgolpbpuK*/
+
+cjadi0          ljhtprs         DO_CALC_IF cgolpbpu
+cjadi0          ljpprs          DO_CALC_IF cgolpbpu
+ctahunhun       ltahunhun      DO_CALC
+cjadi0          ljpkry          DO_CALC_IF cpensiun
+cjadi0          ljpprs          DO_CALC_IF cpensiun
+
+cbebankry        psdtot4         DO_CALC
+cbebankry2       psdtot4         DO_CALC_IF cgolpbpuM
+cbebanprs        psdtot5         DO_CALC
+
+cjadi0          psdtot5         DO_CALC_IF cgolpbpuM
+
+ctotiur         psdtot3         DO_CALC
+
+
+
+
+MAP(m2tipe)
+cblanks		psdstr3		DO_CALC
+
+MAP(mnip)
+hrmnip1		psdpsmkode	REPLACE
+hrmnip1		psdkode		REPLACE
+
+MAP(mpbpu)
+tbdkode         psdstr4         REPLACE
+tbddf1          ljhtkry2        REPLACE
+tbddf2          ljpkry2         REPLACE
+tbddf3          ljkkprs2        REPLACE
+tbddf4          ljkmprs2        REPLACE 
+tbddf5          ljhtprs2        REPLACE
+tbddf6          ljpprs2         REPLACE
+tbdlv1          lkodePT         REPLACE
+
+psigol		l2psigol	REPLACE
+lcadtot1        psdtot          REPLACE_IF cjoincad1
+lcadtot1        psdtot7         REPLACE
+
+cjhtkry2         ljhtkry         DO_CALC
+cjpkry2          ljpkry          DO_CALC
+
+cjkkprs2         ljkkprs         DO_CALC
+cjkmprs2         ljkmprs         DO_CALC
+cjhtprs2         ljhtprs         DO_CALC
+cjpprs2          ljpprs          DO_CALC
+ljkmprs2         ljkmprs         REPLACE_IF cgolpbpu
+ljkkprs2         ljkkprs         REPLACE_IF cgolpbpu
+
+cjadi0          ljhtprs         DO_CALC_IF cgolpbpu
+cjadi0          ljpprs          DO_CALC_IF cgolpbpu
+cjadi0          ljpkry          DO_CALC_IF cpensiun
+cjadi0          ljpprs          DO_CALC_IF cpensiun
+
+cbebankry        psdtot4         DO_CALC
+cbebankry2       psdtot4         DO_CALC_IF cgolpbpuM
+cbebanprs        psdtot5         DO_CALC
+
+cjadi0          psdtot5         DO_CALC_IF cgolpbpuM
+
+ctotiur         psdtot3         DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdkode DO_MAP SHOW mnip
+AFTER_INPUT cur_field=psdtot6	DO_MAP SHOW mbpjstk
+AFTER_INPUT cur_field=psdtot2	DO_MAP SHOW mbpjstk
+AFTER_INPUT cur_keybd=EN    	DO_MAP SHOW mbpjstk
+AFTER_INPUT cur_field=psdtype2	DO_MAP SHOW m2tipe
+AFTER_INPUT cur_field=psdstr4   DO_MAP SHOW mpbpu
+
+
+CALCS()
+c2transa                 g_grpnam=="CMBNSPV" ||g_grpnam=="CMBNHEAD" ||g_usrkode=="1004315" || g_usrkode =="1021723" || g_usrkode =="2492032" || g_usrkode =="2221048" || g_usrkode =="2581460"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        c2transa
+SFL_TARGET
+psddattypidx   lPLFBPJSTK lPLFBPJSTK hrmnip1 hrmnip1
+
+SFL_MAP
+lPLFBPJSTK 	psddata		REPLACE
+lPLFBPJSTK 	psdtype 	REPLACE
+hrmnip1		psdpsmkode	REPLACE
+hrmnip1		psdkode   	REPLACE

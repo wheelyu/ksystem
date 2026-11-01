@@ -1,0 +1,130 @@
+LOCAL
+PGM_FIELDS
+
+lSYSTIME	TIME	4
+
+MAP(mjoinsviprob)
+svinourt                lurut           REPLACE
+
+DBCALCS(djoinsviprob)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp            lPICAREV  tlmnobuk lPROBLEM
+        DBC_MAP         mjoinsviprob
+
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoBuk   : _________________ __ ||
+||t.Status  : __________           ||
+||spasi                            ||
+||t.Ket                            ||
+|| _______________________________ ||
+||t.Ket2                           ||
+|| _______________________________ ||
+||t.Ket3                           ||
+|| _______________________________ ||
+||            ___                  ||
+|\---------------------------------/|
+|/---------s.UPLOAD----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.Tgl     : _________            ||
+||t.Jam     : _________            ||
+||          _____________          ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk               PROTECT                 INPUTRI         1       /*nobuk co n co */
+svinourt               PROTECT                 INPUTRI         1       /*nobuk co n co */
+svitype2               PROTECT                 INPUTRI         2       /*jumlah poin*/
+
+sviket                 TEXTAREA                INPUTRI         3	/*keterangan sales*/
+sviket2                TEXTAREA                INPUTRI         4       /*hasil co n co bm*/     
+sviket3                TEXTAREA                INPUTRI         5       /*hasil co n co bm*/     
+lOK		       NOCHANGE		INPUTRI		6
+svitgl1                NONE NOLIMIT {DD-MM-YYYY} PROTECT INPUTRI       6         /*hasil co n co bm*/     
+svistr1		       PROTECT		INPUTRI		7
+ltombok                TOMBOL                          INPUTRI 13
+
+DEFAULTS(tmptranst)
+lPROBLEM		INIT		PROBLEM
+lOK			INIT		OK
+ltombok			INIT		UPLOAD_OK
+svitype2		INIT		OPEN
+svitgl1			INIT		{g_tgltrn}
+lSYSTIME		INIT		SYSTIME
+
+CALCS()
+ckosong			tlmstsapr == BLANKS
+cno1                    1
+curut                   lurut + 1
+ctambah1                g_curcmd == 1 && djoinsviprob == 0
+ctambah2                g_curcmd == 1 && djoinsviprob == 1
+cwaktu         		lSYSTIME               
+cswaktu        		FLD_TO_STRING(lwaktu)
+
+EDITS(tmptranst)
+e.Mandatory     sviket          MANDATORY
+
+
+
+MAP(mmapmap1)
+cno1                    svinourt        DO_CALC_IF ctambah1
+curut                   svinourt        DO_CALC_IF ctambah2
+cwaktu          lwaktu          DO_CALC
+cswaktu         lswaktu         DO_CALC
+lswaktu		svistr1		REPLACE
+
+MAP(mupdsviprob)
+cfotolat1       svidf1          DO_CALC
+cfotolon1       svidf2          DO_CALC
+g_fotodate1     svitgl1         REPLACE
+g_fototime1     svidf3          REPLACE
+cY		sviyt1		DO_CALC
+
+DBCALCS(dbgpscariprob)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviprob
+
+SPCALCS(supdfoto1)
+        dbgpscariprob
+
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket         DO_MAP SHOW mmapmap1
+CLICKED         	cur_field=ltombok     	 DO_SPCALCS supdfoto1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND	ckosong
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tlmnobuk svitype
+
+SFL_TARGET      svidatbuktyp   lPICAREV  tlmnobuk lPROBLEM
+
+SFL_MAP    
+tlmnobuk	svinobuk	REPLACE
+lPICAREV 	svidata		REPLACE
+lPROBLEM	svitype		REPLACE
+lOK		sviyt1		REPLACE
+
+ 
+PERMIT(tmptrans)
+        PMT_ADD_COND    copen  
+	PMT_UPDALL_COND copen     
+	PMT_DEL_COND	c0      
+
+

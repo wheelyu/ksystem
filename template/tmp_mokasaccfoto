@@ -1,0 +1,112 @@
+CALCS()
+cTACCsvi      svistr2 == "TACC"
+
+
+
+MAP(mjoinmokas9)
+c1                    laccho       DO_CALC_IF cTACCsvi
+
+DBCALCS(djoinmokas9)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp   lFOTOMOKAS  bkmnobuk  
+        DBC_SUM_MAP     mjoinmokas9
+
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+
+/--------------------------------------------------------------------------------------\
+|/------------------------------------------------------------------------------------\|
+|||spasi                                                                              ||
+|||t.NoBuk       : _____________________________                                      ||
+|||spasi                                                                              ||
+|||t.ADHHO       : ________ ____________________                                      ||
+|||t.Acctacc     : _____________________________                                      ||
+|||t.tgljamjwb   : ________ ____________________                                      ||
+|||t.Keterangan  :                                                                    ||
+|||_________________________________________________________________                  ||
+|||spasi                                                                              ||
+|||spasi                                                                              ||
+|||spasi                                                                              ||
+|\------------------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        svinobuk                PROTECT                 INPUTRI         1
+	svistr1         	PROTECT SCROLL       INPUTRI            2
+	lnamaadhho      	PROTECT SCROLL       INPUTRI            3
+	svistr2         	ALLCAPS SCROLL       INPUTRI            4
+	svitgl1         	PROTECT {DD-MM-YYYY} INPUTRI            5
+	ljamacc         	PROTECT NONE {99:99} INPUTRI            6
+	sviket          	ALLCAPS SCROLL       INPUTRI            7
+
+CALCS()
+cTACCHO     ( laccho == 1)    
+cACCHO      (laccho == 0)
+
+
+
+DEFAULTS(tmptranst)
+
+IF cTACCHO  svistr2    DFALT_SCAN        BLANKS
+                                         TACC
+
+IF cACCHO  svistr2    DFALT_SCAN         BLANKS
+                                         ACC
+                                         TACC
+
+
+svidata    INIT	              SRHTERIMA
+svitype    INIT		      SRHTERIMA
+
+svistr1    INIT           {g_usrkode}
+svistr1    INIT_UPDATE    {g_usrkode}
+svitgl1    INIT           {g_tgltrn}
+svitgl1    INIT_UPDATE    {g_tgltrn}
+ljamacc    INIT            SYSTIME
+ljamacc    INIT_UPDATE     SYSTIME
+
+CALCS()
+cTACC2               svistr2 == "TACC"
+cACC3                svistr2 == "ACC"
+cADHHO3            ( bkmsts == "CLS4" || bkmsts == "CLS5") && (g_grpnam == "ADHJR" || g_grpnam == "GM" || g_grpnam == "RASSPV")  || g_grpnam == "RI"
+/*cSD1                g_usrkode == svistr1 */
+
+EDITS(tmptranst)
+e.isi_acc            svistr2              MANDATORY_IF cADHHO
+e.isi_alasantacc     sviket               MANDATORY_IF cTACC2
+e.nip_ADHHO          svistr1              VALIDATE psmkodidx mpsmup2
+
+
+MAP(mpsmup2)
+psmkode              svistr1              REPLACE
+psmnama              lnamaadhho           REPLACE
+
+
+MAP(misibuk)
+bkmnobuk       svinobuk      REPLACE
+bkddf1	       ljamupload    REPLACE
+bkddep         luploadoke    REPLACE
+ljamacc        svidf2        REPLACE
+lnamaadhho     lnamaadhho    REPLACE
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	 cur_field=svistr2		DO_SCAN djoinmokas9
+BEFORE_INPUT     cur_field=svistr2              DO_MAP SHOW misibuk
+BEFORE_INPUT     cur_field=sviket               DO_SKIP_IF cACC3       
+/*AFTER_INPUT      cur_field=svistr2            DO_LIB_IF cSD1 ap_ceksj(svistr1);*/
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp   lSRHTERIMA  bkmnobuk  lSRHTERIMA     
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cADHHO3
+  PMT_UPDALL_COND cADHHO3
+  PMT_DEL_COND  c0
+                  

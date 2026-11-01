@@ -1,0 +1,92 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+| t.SertiKerja                           |
+|/--------------------------------------\|
+||                     t.TglMengerjakan ||
+||                          ___________ ||
+|| spasi                                ||
+|| t.NipPenginput ________              ||
+|| t.NmaPenginput __________________    ||
+|| t.Upload       __                    ||
+|\--------------------------------------/|
+|/-----------------s.UPLOAD-------------\|
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+||                                      ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1             PROTECT {DD-MM-YY}              INPUTRI 1
+psdstr1             NOCHANGE                        INPUTRI 2
+lnmapnrma           PROTECT                         INPUTRI 3           
+psdtype2            NOCHANGE                        INPUTRI 4
+
+DEFAULTS(tmptranst)
+psdtgl1     INIT_ADD	{g_tgltrn}
+psdstr1     INIT_ADD    {g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory   psdstr1   MANDATORY
+e.ValidatePsi psdstr1   VALIDATE psikodidx mpsisertija  0
+
+HOOKS(tmptranst)
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW misitype
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW misipsd
+
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW     
+                    IF clevelSertija	mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Level Jabatan Terlalu Kecil
+
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW
+                    IF clevelSertija    mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG Level Jabatan Terlalu Kecil
+
+AFTER_INPUT         cur_field=psdstr1   DO_MAP SHOW     
+                    IF cnipinpg	        mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG NIP Penginput harus INPG 
+
+AFTER_INPUT         cur_keybd=EN        DO_MAP SHOW     
+                    IF cnipinpg	        mdum
+                    ELSE HKCURSOR STAY
+                    HKMSG NIP Penginput harus INPG 
+
+MAP(mupdpsdUPLStj)
+cYx          psdtype2     DO_CALC
+
+DBCALCS(dupdpsdUPLStj)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      psdprmidx   psdprm  
+        DBC_MAP         mupdpsdUPLStj
+
+CALCS()
+cSertSdm            tmpkode == "FORMSRTJ"
+cUpldSertSdm        (hrmjmltlk != BLANKS || mtsjmlctk != BLANKS)
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD psdnourt
+SFL_LINES(1)
+SFL_UPL_DIRFLD mtstgl
+SFL_UPLFLD  psdpsmkode psddata
+SFL_UPLFLD_DBCALCS dupdpsdUPLStj
+SFL_UPL_COND cUpldSertSdm
+SFL_UPL_COND_MSG Cetak Form Sertija Terlebih dahulu
+SFL_TITLE(tmptranst)
+SFL_COND cSertSdm
+SFL_TARGET_IF   cMTSKRY    psddatpsmkod   lFORMSRTJ    mtsnobuk                    
+SFL_TARGET_IF   cPRMSIKRY  psddatpsmkod   lFORMSRTJ    hrmnobuk                    
+SFL_TARGET_IF   cRSGNKRY   psddatpsmkod   lFORMSRTJ    hrmnobuk                    
+
+SFL_MAP	
+lFORMSRTJ        psddata        REPLACE
+lnobuksertija    psdpsmkode     REPLACE
+lnipsertija      psdkode        REPLACE

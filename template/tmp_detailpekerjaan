@@ -1,0 +1,180 @@
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------------------------\|
+||                      _____________   __                                                      ||
+|| t.Namaperusahaan   : ______________________________________________________                  ||
+|| i.Pekerjaan        : ____  ____ ____________________________________________                 ||
+|| t.Subkerja         : _______ __ ____________________________________________                 ||
+|| t.KatPekerjaan     : _  ________ ___________________________________________                 ||
+|| t.BidUsh           : _  ________ ___________________________________________                 ||
+|| i.Industri         : __________ ____________________________________________                 ||
+|| t.KategoriUsaha    : ____  ________________________                                          ||
+|| t.JenisPekerjaan   : _______________________                                                 ||
+|| i.Gaji             : _____________.__                                                        ||
+|| i.Skalabisnis      : _____________                                                           ||
+|| i.Jmlkaryawan      : ______    i.Orang                                                       ||
+|| i.Statuskerja      : _________________                                                       ||
+|| i.Lamakerja        : ______ i.Tahun _____ i.Bln                                              ||
+|| t.PeriodeKontrak   : __________ i.Sd __________                                              ||
+|| i.Jmltanggung      : ______    i.Orang                                                       ||
+|| t.NoTelpKantor     : _____________                                                           ||
+|\----------------------------------------------------------------------------------------------/|
+\------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lpekerjaan11            NOCHANGE        INPUTRI         1
+g_usrkode               PROTECT UNSEEN  INPUTRI         1
+
+sviket                  PROTECT                         INPUTRI 2
+lsvistr23d              PROTECT                         INPUTRI 4
+svistr1                 PROTECT UNSEEN                  INPUTRI 4
+lketpekerjaan1          PROTECT                         INPUTRI 4 /*subpekerjaan1*/
+lsvitype3d		PROTECT                         INPUTRI 4
+svitype3                PROTECT UNSEEN                  INPUTRI 4
+lnamajabatan3d          PROTECT                         INPUTRI 4
+svistr2                 ALLCAPS SCROLL                  INPUTRI 5 /*subpekerjaan*/
+svistr3                 PROTECT                         INPUTRI 6 /*subpekerjaan1*/
+lketpekerjaan2          PROTECT                         INPUTRI 7 /*subpekerjaan1*/
+svistr4                 ALLCAPS SCROLL                  INPUTRI 8 /*subpekerjaan1*/
+svistr5                 PROTECT                         INPUTRI 9 /*subpekerjaan1*/
+lketpekerjaan3          PROTECT                         INPUTRI 10 /*subpekerjaan1*/
+
+svistr6                 ALLCAPS SCROLL                  INPUTRI 11 /*subpekerjaan2*/
+svinama                 PROTECT                         INPUTRI 12
+svistr31		NOCHANGE			INPUTRI	13
+lkategoriusaha		PROTECT				INPUTRI	13
+svistr7                 ALLCAPS SCROLL                  INPUTRI 13
+svidf1                  PROTECT                         INPUTRI 14
+svistr8                 NOCHANGE                        INPUTRI 15
+svidf2                  NUMERIC                         INPUTRI 16
+svistr9                 PROTECT                         INPUTRI 17
+svidf3                  PROTECT                         INPUTRI 18
+svidf4                  PROTECT                         INPUTRI 19
+svitgl1                 NONE    {DD-MM-YYYY} NOLIMIT           INPUTRI 20
+svitgl2                 NONE    {DD-MM-YYYY} NOLIMIT           INPUTRI 21
+svidf5                  PROTECT                         INPUTRI 22
+svistr10                PROTECT ALPHANUMERIC            INPUTRI 23
+
+DEFAULTS(tmptranst)
+lpekerjaan3             INIT            PEKERJAAN3
+
+svistr31		DFALT_SCAN_BLANKS	1 "USAHA BESAR"
+						2 "USAHA MIKRO"
+						3 "USAHA KECIL"
+						4 "USAHA MENENGAH"
+						5 "KATEGORI LAIN/NON PRODUKTIF"
+
+svistr8                 DFALT_SCAN_BLANKS	TIDAK_ADA ""
+						RUMAHAN ""
+						LOKAL_DAERAH ""
+						NASIONAL ""
+						INTERNASIONAL ""
+svistr9                 DFALT_SCAN_BLANKS 	KONTRAK ""
+						MAGANG ""
+						TETAP ""
+
+CALCS()
+cvalidasipekerjaan3d      svistr1!="MF" && svistr1!="PE" && svistr1!="NB"
+cvalidasipekerjaan3dir      svistr1!="MF" && svistr1!="PE" && svistr1!="NB" && svistr1!="IR"
+clsubpekerjaan3d          "SUBPEKERJAAN2"+STRIP(svistr1)
+cdjoinsvicapacityd1     djoinsvicapacityd==1
+
+cisi1		svistr31=="1"
+cisi2		svistr31=="2"
+cisi3		svistr31=="3"
+cisi4		svistr31=="4"
+cisi5		svistr31=="5"
+
+cUSAHAKECIL		"Usaha Kecil"
+cUSAHAMIKRO		"Usaha Mikro"
+cUSAHAMENENGAH		"Usaha Menengah"
+cUSAHABESAR		"Usaha Besar"
+cUSAHALAIN		"Kategori Lain/Non Peoduktif"
+cpekswkntrk             svistr1=="SW" && svistr9=="KONTRAK"
+
+EDITS(tmptranst)
+e.Mandatory             svistr1         MANDATORY
+e.Mandatory             svistr2         MANDATORY
+e.Mandatory             svistr4         MANDATORY_IF cvalidasipekerjaan3d
+e.Mandatory             svistr6         MANDATORY_IF cvalidasipekerjaan3d
+e.Mandatory             svistr7         MANDATORY
+e.Mandatory             svistr8         MANDATORY
+e.Mandatory             svidf1          MANDATORY_IF cvalidasipekerjaan3dir
+e.Mandatory             sviket          MANDATORY_IF cvalidasipekerjaan3dir
+e.Mandatory		svistr31	MANDATORY
+e.Mandatory             svitgl1         MANDATORY_IF cpekswkntrk
+e.Mandatory             svitgl2         MANDATORY_IF cpekswkntrk
+t.Validate              g_usrkode       VALIDATE usrkodidx mtbm3d
+t.ValidatePekerjaan     lsvistr23d      VALIDATE tbldtdtmkod mtblkerja {Pgv_dttabel} {Pgv_pekerjaan21}
+t.ValidatePekerjaan     svistr2         VALIDATE tbddatkodidx mtbdkerja stbd {Pgv_dttabel} {Pgv_pekerjaan21} {Plsvistr23d}
+t.ValidatePekerjaan     svistr4         VALIDATE_IF cvalidasipekerjaan3d tbddatkodidx mtbdkerja2 stbd {Pgv_dttabel} {Pgv_pekerjaan2} {Psvistr3}
+t.ValidatePekerjaan     svistr6         VALIDATE_IF cvalidasipekerjaan3d tbddatkodidx mtbdkerja3 stbd {Pgv_dttabel} {Plpekerjaan3} {Psvistr5}
+e.validate              lsvitype3d      VALIDATE_IF cvalidasipekerjaan3d tbddatkodidx mtbd2_3d stbd {Pgv_dttabel} {Pgv_survey21} {Plsubpekerjaan3d}
+
+MAP(mtbm3d)
+lsvistr23d	        svistr1         REPLACE_IF cdjoinsvicapacityd1
+lkdpekslk               svitype3        REPLACE_IF cdjoinsvicapacityd1
+lsvistr93d      	svistr9         REPLACE_IF cdjoinsvicapacityd1
+lsvidf13d       	svidf3          REPLACE_IF cdjoinsvicapacityd1
+lsvidf23d       	svidf4          REPLACE_IF cdjoinsvicapacityd1
+lsvidf43d       	svidf5          REPLACE_IF cdjoinsvicapacityd1
+lsvistr83d      	svistr10        REPLACE_IF cdjoinsvicapacityd1
+lsvinama		sviket		REPLACE_IF cdjoinsvicapacityd1
+lsvidf53d               svidf1          REPLACE_IF cdjoinsvicapacityd1
+
+cUSAHAKECIL		lkategoriusaha	DO_CALC_IF cisi1
+cUSAHAMIKRO		lkategoriusaha	DO_CALC_IF cisi2
+cUSAHAMENENGAH		lkategoriusaha	DO_CALC_IF cisi3
+cUSAHABESAR		lkategoriusaha	DO_CALC_IF cisi4
+cUSAHALAIN		lkategoriusaha	DO_CALC_IF cisi5
+
+MAP(mtblkerja)
+tblkode                 svistr1         REPLACE
+tblket                  lketpekerjaan1  REPLACE
+clsubpekerjaan3d        lsubpekerjaan3d DO_CALC
+
+MAP(mtbd2_3d)
+tbdkode         	svitype3      	REPLACE
+tbdket          	lnamajabatan3d  REPLACE
+
+MAP(mtbdkerja)
+tbdkode                 svistr2         REPLACE
+tbdlv2                  svistr3         REPLACE
+tbdket                  lketpekerjaan2  REPLACE
+
+MAP(mtbdkerja2)
+tbdkode                 svistr4         REPLACE
+tbdlv2                  svistr5         REPLACE
+tbdket                  lketpekerjaan3  REPLACE
+
+MAP(mtbdkerja3)
+tbdkode                 svistr6         REPLACE
+tbdket                  svinama         REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT cur_field=lpekerjaan11 	DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN 		DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk lpekerjaan11
+SFL_MAP
+gv_datasurvey           svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+gv_pekerjaan            svitype                 REPLACE
+gv_pekerjaan            svikode                 REPLACE
+l111			svinourt		REPLACE
+

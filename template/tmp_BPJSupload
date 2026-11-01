@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------\
+|t.UploadKTP                                                                      |
+|/--s.UPLOAD----------------------\/---------------------------------------------\|
+||                                ||t.Tgl     : __________                       ||
+||                                ||t.Nip     : __________                       ||
+||                                ||t.Nama    : ______________________________   ||
+||                                ||t.Ktp     : ______________________________   ||
+||                                ||t.OkUp    : __________                       ||
+||                                |\---------------------------------------------/|
+||                                |                                               |
+|\--------------------------------/                                               |
+\---------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 1
+psdstr1			PROTECT			INPUTRI	2
+psdket 			ALLCAPS SCROLL          INPUTRI 3
+psdstr2			ALLCAPS			INPUTRI	4
+psdtype2		PROTECT			INPUTRI 5
+
+DEFAULTS(tmptranst)
+l_count3	INIT		1
+psdstr1		INIT_ADD	{g_usrkode}
+psdtgl1		INIT_ADD	{g_tgltrn}
+
+CALCS()
+cOK		"OK"
+caccblanks	psdtype2==BLANKS
+
+EDITS(tmptranst)
+t.Mandatory psdket MANDATORY
+t.Mandatory psdstr2 MANDATORY
+
+
+MAP(mupdpsdsdm21)
+cOK		psdtype2		DO_CALC
+g_usrkode	psdstr1		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+DBCALCS(dupdpsdsdm21)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdpsdsdm21
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPL_DIRFLD psdtgl1
+SFL_UPLFLD  lBPJSTK  psdpsmkode  psdkode      
+SFL_UPLFLD_DBCALCS dupdpsdsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_SHOW_NEXT
+SFL_TARGET
+	psddatpsmkod  lBPJSTK hrmnobuk  hrmnip1 gv_sfktpsdm11                
+
+SFL_MAP
+lBPJSTK        		psddata		REPLACE
+hrmnobuk		psdpsmkode	REPLACE
+hrmnip1			psdkode		REPLACE
+gv_sfktpsdm11  		psdtype		REPLACE
+g_usrkode		psdstr5		REPLACE
+

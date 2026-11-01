@@ -1,0 +1,201 @@
+LOCAL
+PGM_FIELDS
+ltomboldet      STRING  21
+
+
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|/----------------------------------------------------\|
+|!t.UpdStsClnKry ________________________             !|
+|!t.TglInp     : ___________                          !|
+|!t.User       : ___________ __________________       !|
+|!t.StsSblm    : ________________                     !|
+|!t.StsSsdh    : ________________ _                   !|
+|!t.Alasan     : _____________________                !|
+|!t.Ket        : ___________________________________  !|
+|!             : ___________________________________  !|
+|!t.AccHrd     : ______ ___________ ________________  !|
+|\----------------------------------------------------/|
+|/----------------UPLOAD----------------\	       |
+||                                      |	       |
+||                                      |              |
+||                                      |              |
+||                                      |              |
+|\--------------------------------------/              |
+| __________                                           |
+|                                                      |
+\------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnobuk        PROTECT                 INPUTRI 1
+tldtglfak       PROTECT {DD-MM-YY}      INPUTRI 2
+tldkat          PROTECT SCROLL          INPUTRI 3
+lnama_user      PROTECT SCROLL          INPUTRI 4
+tldplg          PROTECT SCROLL          INPUTRI 5
+tldnoll         NOCHANGE SCROLL         INPUTRI 6
+lenter          NOCHANGE                INPUTRI 7
+tldbisnis       NOCHANGE SCROLL         INPUTRI 8
+tldket          TEXTAREA ALLCAPS        INPUTRI 9
+tldket2         TEXTAREA ALLCAPS        INPUTRI 9
+tldukrwrn       NOCHANGE SCROLL         INPUTRI 10
+tldnobbm        PROTECT SCROLL          INPUTRI 11
+lnamahrd        PROTECT SCROLL          INPUTRI 12
+ltomboldet      TOMBOL          	INPUTRI 13
+
+DEFAULTS(tmptranst)
+tldtglfak       INIT_ADD        {g_tgltrn}
+tldkat          INIT_ADD        {g_usrkode}
+tldukrwrn       DFALT_SCAN_BLANKS ACC TACC
+ltomboldet      INIT            "UPLOAD_OK"
+
+CALCS()
+cjikaopen       (btmsts=="134" && btmsurveyor=="OPEN") || btmsurveyor=="TES"
+
+cjikaopenx      (btmsts=="137" && (btmsurveyor=="NAMAKTP" || btmsurveyor=="BERKAS" || btmsurveyor=="SURVEY" || btmsurveyor=="CEKREK" ||
+                btmsurveyor=="TACCREK" || btmsurveyor=="ACCREK" || btmsurveyor=="TABI")) ||
+                (btmsts=="138" && (btmsurveyor=="ACC_GAJI" || btmsurveyor=="CETAK_SPK")) ||
+                (btmsts=="139" && (btmsurveyor=="FOTO" || btmsurveyor=="REVFOTO" )) ||
+                (btmsts=="140" && (btmsurveyor=="ACC_FOTO" || btmsurveyor=="ACC_FOTO_ADH" || btmsurveyor=="SDK_JARI"))
+
+cpilbknmdf      tldnoll!="MD"
+cpilmdf         tldnoll=="MD"
+
+EDITS(tmptranst)
+t.Mandatory tldnoll MANDATORY
+t.Mandatory tldket MANDATORY
+t.Mandatory tldukrwrn MANDATORY
+t.Mandatory tldbisnis MANDATORY_IF cpilmdf
+t.Validate tldnoll VALIDATE_IF cjikaopen tbddatkodidx mtbd_buktam stbd {Pgv_dttabel} {Pgv_personal} {PlBUKUTAMU21}
+t.Validate tldnoll VALIDATE_IF cjikaopenx tbddatkodidx mtbd_buktam stbd {Pgv_dttabel} {Pgv_personal} {PlBUKUTAMU2_21}
+t.Validate tldbisnis VALIDATE tbddatkodidx mtbd_md stbd {Pgv_dttabel} {Pgv_personal} {PljwbFU134}
+t.Validate tldnobbm VALIDATE psikodidx mbtm4
+
+MAP(mtbd_buktam)
+tbdkode         tldnoll         REPLACE
+
+MAP(mbtm4)
+psikode         tldnobbm        REPLACE
+psinama         lnamahrd        REPLACE
+
+MAP(mtbd_md)
+tbdkode         tldbisnis       REPLACE
+
+CALCS()
+csdhuplbr	(tldnoll=="BFRA" && tldukrwrn=="ACC" && tldsisbrg=="OK")
+ctbh1           lnourt+1
+cjointldbukutam0        djointldbukutam==0 && g_curcmd==1
+cjointldbukutam1        djointldbukutam==1 && g_curcmd==1
+cadaisi         tldnoll!=""
+
+
+/*cjika134      btmsts=="134" && ((tldukrwrn=="ACC" && (tldplg =="VOID" || tldplg =="TACC_BERKAS")) || (tldplg !="OPEN" && tldplg !="INTERVIEW" && tldplg!="BERKAS" && tldplg!="SURVEY" && tldplg!="CETAK_SPK" && tldplg!="ACC_GAJI" && tldplg !="VOID" && tldplg !="TACC_BERKAS" && tldplg!="FOTO"))*/
+cjikacovid      (tldplg=="REAKTIF_COVID" && tldnoll=="NEGATIF_COVID19") || (tldplg!="REAKTIF_COVID" && tldnoll!="NEGATIF_COVID19")
+cbkn_hrdx        g_grpnam!="RI" && g_grpnam!="HRDHEAD" && djointbdakshrdheada==0 && djointbdakshrdheadb==0 && g_grpnam!="HRDREC" && g_grpnam!="HRDRECAREA" && g_grpnam!="SPVMPP" && g_grpnam!="HRDSPV" &&
+                g_grpnam!="B.IVAROHRD" && g_grpnam!="B.PARTHRD" && g_grpnam!="IT"
+cpilvoidbuktam     (tldnoll==gv_VOID && (djointbddtlbuktamuvoid == 1 || g_grpnam == "IT")) || tldnoll!=gv_VOID
+cpilmdbuktam     (tldnoll==lMD && (djointbddtlbuktamumd == 1 || g_grpnam == "IT" || g_grpnam == "RI")) || tldnoll!=lMD
+cpilnrbuktam     (tldnoll==lNORESPON && (djointbddtlbuktamunr == 1 || g_grpnam == "IT")) || tldnoll!=lNORESPON
+cpilbfra	(tldnoll=="BFRA" && (g_grpnam == "HRDHEAD" || g_grpnam == "SUPPORT" || g_grpnam == "RI")) || tldnoll!="BFRA"
+
+MAP(msebelum)
+c1              tldnourt        DO_CALC_IF cjointldbukutam0
+ctbh1           tldnourt        DO_CALC_IF cjointldbukutam1
+btmsurveyor     tldplg          REPLACE
+
+MAP(mniphrd)
+g_usrkode       tldnobbm        REPLACE_IF cadaisi
+
+MAP(mupdbtm134br)
+tldnoll                 btmsurveyor     REPLACE
+g_tgltrn                btmtglpros2     REPLACE
+DEBUG           ldum    ldum    REPLACE
+
+
+SPCALCS(sptransbr)
+DO_LIB_IF csdhuplbr ap_dbclc(DNAME dupdbtm134br,DCOMMAND UPDATE,DTARGET btmbukidx tldnobuk,DMAP mupdbtm134br);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltomboldet    DO_SPCALCS sptransbr
+
+BEFORE_INPUT    cur_field=tldnoll       DO_MAP SHOW msebelum
+BEFORE_INPUT    cur_field=tldukrwrn     DO_SKIP_IF cbkn_hrdx
+BEFORE_INPUT    cur_field=tldbisnis     DO_SKIP_IF cpilbknmdf
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW mniphrd
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cjikacovid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JikaCovidHrsCovid
+                
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cpilvoidbuktam mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilVoidHanyaHrd
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cpilmdbuktam mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilMDHanyaHrd
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cpilnrbuktam mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilNoResponHanyaHrd
+
+AFTER_INPUT     cur_field=tldnoll       DO_MAP SHOW
+                IF cpilbfra mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilBFRAHanyaHrdhead/Support
+
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cjikacovid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JikaCovidHrsCovid
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cpilvoidbuktam mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilVoidHanyaHrd
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cpilmdbuktam mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilMDHanyaHrd
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cpilnrbuktam mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PilNoResponHanyaHrd
+
+CALCS()
+cbukantlls      btmsurveyor!="TLLS"
+cjikaaccbr	tldukrwrn=="ACC"
+
+MAP(mupdbtmbrfa)
+cOK             tldsisbrg       DO_CALC_IF cjikaaccbr
+DEBUG           ldum    ldum    REPLACE
+
+DBCALCS(dupdbtmbrfa)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx   tldprm
+        DBC_MAP         mupdbtmbrfa
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cbukantlls
+SFL_UPLFLD  tldnobuk
+SFL_UPLFLD_DBCALCS dupdbtmbrfa
+SFL_SORT_BY_FIELD tldoto
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+        tldbukbrgoto   btmnobuk gv_CLSD gv_tmpbukutamu
+
+SFL_MAP
+btmnobuk        tldnobuk        REPLACE
+btmplg          tldlok2         REPLACE
+gv_CLSD         tldsts          REPLACE
+gv_tmpbukutamu  tldbrg          REPLACE
+

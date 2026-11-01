@@ -1,0 +1,147 @@
+LOCAL
+PGM_FIELDS
+lPAKETUMROH		STRING		11
+ltglpo14		DATE		4
+ltglpo			DATE		4
+ltipe			STRING		21
+lhrmin14		INT2		3
+lpatokan		INT2		3
+ltgmHK			STRING		21
+ltgmhreff		INT2		2
+ltglhkrangejln		DFLOAT		8
+ltglhlrangejln		DFLOAT		8
+ltgm1type		STRING		21
+lurut			STRING		3
+
+CALCS()
+ctypeHK		tgmtype=="HK"
+ctypeHL		tgmtype=="HL"
+
+MAP(mjointgm)
+tgmtype         ltgmHK  REPLACE
+tgmhreff        ltgmhreff       REPLACE
+DBCALCS(djointgm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx    gv_TGL tldtglfak
+	DBC_MAP		mjointgm
+
+MAP(mscantgm)
+c1		ltglhkrangejln		DO_CALC_IF ctypeHK
+c1		ltglhlrangejln		DO_CALC_IF ctypeHL
+DBCALCS(dscantgm)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tgmdattglidx gv_TGL ltglpo14 
+	DBC_LAST_TARGET	tgmdattglidx gv_TGL tldtglfak 
+	DBC_SUM_MAP	mscantgm
+
+MAP(mjointgm1)
+tgmtype		ltgm1type	REPLACE
+DBCALCS(djointgm1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx    gv_TGL ltglpo
+	DBC_MAP		mjointgm1
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.no 	     : ___		  ||
+||i.Travel   : __________________ ||
+||i.Paket    : __________________ ||
+||i.NamaPkt  : __________________ ||
+||i.TglPergi : __________________ ||
+||t.TglPO    : __________________ ||
+||i.Lamapergi: ________ t.Hari    ||
+||i.Pesawat  : _________________  ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.HtlMedinah			  ||
+||t.NamaHotel : __________________||
+||t.Bintang   : __________________||
+||t.HtlMekkah			  ||
+||t.NamaHotel : _________________ ||
+||t.Bintang   : _________________ ||
+||t.Harga     : _________________ ||
+||spasi				  ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt	 	PROTECT		INPUTRI 1
+tldbrg               	PROTECT 	INPUTRI 1
+tldukrwrn             	PROTECT         INPUTRI 2
+tldket                	ALLCAPS         INPUTRI 3
+tldtglfak               NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 5
+tldtgl2			NONE NOLIMIT {DD-MM-YYYY} 	INPUTRI 6
+tldsat	             	NUMERIC         INPUTRI 7
+tldcab                  ALLCAPS         INPUTRI 8
+
+tldgrup                 ALLCAPS         INPUTRI 12
+tldjml2              	NUMERIC         INPUTRI 13
+tldgrup2                ALLCAPS         INPUTRI 14
+tldjml3                 NUMERIC         INPUTRI 15
+tldhrg			NUMERIC		INPUTRI 16
+
+DEFAULTS(tmptranst)
+lPAKETUMROH		INIT		PAKETUMROH
+ltipe			INIT		1
+lpatokan		INIT		3 
+lhrmin14		INIT		29
+
+
+CALCS()
+cjointgm	djointgm==1
+cscantgm	dscantgm==1 || dscantgm==0
+ctgljlnmin14	tldtglfak - 14 
+chkmin		(dscantgm==1 || dscantgm==0) && ltglhlrangejln == 2 && djointgm1==1 && ltgm1type=="HL"
+/*chkmin1		(dscantgm==1 || dscantgm==0) && ltglhlrangejln >= 2 && djointgm1==1 && ltgm1type=="HK"
+*/
+ctglpo		tldtglfak - (14 + ltglhlrangejln)
+ctglpo1		tldtglfak - (14 + ltglhlrangejln + 1)	
+ctambah		g_curcmd == 1
+
+MAP(mtglpo)
+cBLANKS		ltglpo14	DO_CALC
+ctgljlnmin14	ltglpo14	DO_CALC_IF cjointgm
+cBLANKS		ltglpo		DO_CALC
+ctglpo		ltglpo		DO_CALC_IF cscantgm
+ltglpo		tldtgl2		REPLACE
+ctglpo1		tldtgl2		DO_CALC_IF chkmin
+l1              tldnourt        REPLACE_IF cjoinpkt_0urt
+curut           tldnourt        DO_CALC_IF cjoinpkt_1urt
+tldnourt	lurut		REPLACE
+
+DEBUG		ldum	ldum	REPLACE
+
+CALCS()
+ckodepaket	"PPIU" + THBLS(tldtglfak) + STRIP(lurut)
+
+MAP(menter)
+ckodepaket	tldukrwrn	DO_CALC_IF ctambah
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=tldtglfak        DO_MAP SHOW mtglpo
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mtglpo
+AFTER_INPUT		cur_keybd=EN		DO_MAP SHOW menter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldstsbrgukr  lPAKETUMROH gv_INPG cmpkode 
+SFL_MAP
+cmpkode 	tldbrg		REPLACE
+lPAKETUMROH	tlddata		REPLACE
+gv_INPG		tldsts		REPLACE
+
+/*SPCALCS(sppo)
+	DO_LIB ap_tlrhr(lpatokan,tldtglfak,lhrmin14,&ltglpo);
+
+POSTING(tmptrans)
+	PST_ADDCMD sppo
+	PST_UPDCMD sppo
+
+
+*/

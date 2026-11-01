@@ -1,0 +1,57 @@
+
+
+IMAGE(tmptranst)
+/--------------------------------------------------------\
+|/------------------------------------------------------\|
+||t.NoBuk         ________________________________      ||
+||t.MitraBisnis   _______                               ||
+||t.TanggalJoin   ____________                          ||
+||t.Enter         _______                               ||
+|\------------------------------------------------------/|
+\--------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdpsmkode		PROTECT		INPUTRI 1
+psdkode			ALLCAPS SCROLL		INPUTRI 2
+psdtgl1			PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 3
+lenter			ALLCAPS			INPUTRI 4
+
+DEFAULTS(tmptranst)
+IF cmitram4w	psdkode		DFALT_SCAN	BLANKS
+				M2W "M2W"
+				M4W "M4W"
+				HMC "HMC"
+				UMROH "UMROH"
+IF cmitraumroh	psdkode		DFALT_SCAN 	BLANKS
+				UMROH "UMROH"
+psdtgl1		INIT_ADD	{g_tgltrn}
+
+EDITS(tmptranst)
+e.Mandatory1    psdkode          MANDATORY
+
+CALCS()
+cjoinpsdmitra0	djoinpsdmitra == 0
+cjoinpsdmitra1	djoinpsdmitra == 1
+
+MAP(mshowktp)
+psmktp		psdpsmkode	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdkode	DO_MAP SHOW mshowktp
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+ psddatpsmkod   psmdatasup  psmktp
+
+SFL_MAP
+/*psmktp          psdpsmkode      REPLACE*/
+psmdatasup      psddata	        REPLACE
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cjoinpsdmitra0
+PMT_UPDALL_COND	cjoinpsdmitra1
+PMT_DEL_COND	c0

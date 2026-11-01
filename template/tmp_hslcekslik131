@@ -1,0 +1,90 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+||spasi                                      ||
+||t.RingkasanFasilitas      _                ||
+||t.AdaSlik                 : ___  _______   ||
+||t.PlafonEfektif           : _____________  ||
+||t.BakiDebet               : _____________  ||
+||t.Denda                   : _____________  ||
+||t.JumlahKreditur          : _____________  ||
+||t.FasilitasNunggak                         ||
+||t.HariNunggakTerlama      : _____________  ||
+||t.Kolektibilitas          : _____________  ||
+||t.Bank/LembBia                             ||
+|| ________________________________________  ||
+||t.TtlTunggPokok           : _____________  ||
+||t.TtlTunggBunga           : _____________  ||
+||t.TtlTunggDenda           : _____________  ||
+||t.TotalTunggakan          : _____________  ||
+||                          : _____________  ||
+||t.Umr                     : _____________  ||
+|\-------------------------------------------/|
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svikode       PROTECT UNSEEN             INPUTRI         1
+sviyt1        NOCHANGE                	 INPUTRI         1
+lsviyt1       PROTECT                 	 INPUTRI         1
+svidf2        NOCHANGE                   INPUTRI         2
+svidf3        PROTECT                    INPUTRI         3
+
+svidf6        PROTECT                    INPUTRI         8
+
+svidf4        PROTECT                    INPUTRI         4
+svidf1        PROTECT                    INPUTRI         5
+lkol          PROTECT                    INPUTRI         5
+svistr1       PROTECT                    INPUTRI         6
+
+svistr9        PROTECT                    INPUTRI         8
+svistr8        PROTECT                    INPUTRI         8
+svistr7        PROTECT                    INPUTRI         8
+svidtmkode     PROTECT                    INPUTRI         8
+svidf8		PROTECT			INPUTRI		8
+svistr10       PROTECT                    INPUTRI         8
+
+CALCS()
+cYAa            "YA"
+cTIDAKa         "TIDAK"
+ciyaa           sviyt1=="Y"
+ctidaka         sviyt1=="T"
+c1      1
+c2      2
+c3a     3
+c4      4
+c5      5
+ckol1   svidf1<=0
+ckol2   svidf1>=1 && svidf1<=90
+ckol3   svidf1>=91 && svidf1<=120
+ckol4   svidf1>=121 && svidf1<=180
+ckol5   svidf1>180
+
+EDITS(tmptranst)
+e.validateBtm      svikode      VALIDATE psmktpidx mpsm131
+
+MAP(mpsm131)
+cYAa            lsviyt1         DO_CALC_IF ciyaa
+cTIDAKa         lsviyt1         DO_CALC_IF ctidaka
+cblanks         lkol    DO_CALC
+c1      lkol    DO_CALC_IF ckol1
+c2      lkol    DO_CALC_IF ckol2
+c3a     lkol    DO_CALC_IF ckol3
+c4      lkol    DO_CALC_IF ckol4
+c5      lkol    DO_CALC_IF ckol5
+
+DBCALCS(djointbdslika2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel gv_personal lBCEKSLIK136 g_usrkode
+
+
+CALCS()
+cbolehakses2    djointbdslika2==1 || psikode==g_usrkode
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND        cbolehakses2
+SFL_TARGET
+svidatbuktyp   lCEKSLIK psmktp_1 lCEKSLIK
+

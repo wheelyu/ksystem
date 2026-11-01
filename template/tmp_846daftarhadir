@@ -1,0 +1,72 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+|| t.UplDOCDaftarHadir            ||
+|\--------------------------------/|
+|/-----------DOCUPLOAD------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+|| t.Nobuk    : _________________ ||
+|| t.TglUpld1 : ___________       ||
+|| t.Nip      : ______________    ||
+|| t.JnsUpld  : ___________       ||
+||		______	        	      ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk                        PROTECT                         INPUTRI 1
+tkdtgl                          PROTECT {DD-MM-YYYY}            INPUTRI 2
+tkdnoll                         PROTECT                         INPUTRI 3
+tkdjenis                        PROTECT	                 	    INPUTRI 4
+lenter                          ALLCAPS                         INPUTRI 5
+
+DEFAULTS(tmptranst)
+tkdtgl      INIT        {g_tgltrn}
+tkdnoll     INIT_ADD    {g_usrkode}
+tkdjenis    INIT        RESUME
+lenter      INIT        ENTER
+
+MAP(mupdtlm1dopening)
+tkdtgl       	tlmtgl2         REPLACE_IF ctglawld1
+tkdtgl       	tlmtgljtp       REPLACE_IF cd1
+citung1		    lhasil		    DO_CALC
+lhasil	        tlmperpph       REPLACE
+tkdtgl		    tlmtgl		    REPLACE_IF ctglawld1
+tkdnoll         tlmpst          REPLACE_IF cplg0
+tkdnoll         tlmbisnis       REPLACE_IF cplg1
+lsesuai         tlmtype1        REPLACE_IF csd2
+ltdksesuai      tlmtype1        REPLACE_IF ctdksd2
+lsesuai         tlmtype1        REPLACE_IF csd2no
+ltdksesuai      tlmtype1        REPLACE_IF ctdksd2no
+lsesuai         tlmkode         REPLACE_IF chari
+llambat         tlmkode         REPLACE_IF chrlambat
+lcepat          tlmkode         REPLACE_IF chrcepat
+DEBUG	ldum	ldum			REPLACE
+
+SPCALCS(spupdtlm4)
+	DO_LIB          ap_dbclc(DNAME dupdtlmmaster3, DCOMMAND UPDATE, DTARGET tlmotoidx   tlmoto, DMAP mupdtlm1dopening);
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_DOCUPLFLD tkdoto
+SFL_UPL_DIRFLD tlmtgl 
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tkddatbukll     lHADIR  tlmnobuk
+
+SFL_MAP
+tlmnobuk    tkdnobuk    REPLACE
+lHADIR  tkddata     REPLACE
+
+POSTING(tmptrans)
+PST_ADDCMD spupdtlm4

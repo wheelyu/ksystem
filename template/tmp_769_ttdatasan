@@ -1,0 +1,70 @@
+LOCAL
+PGM_FIELDS
+lnamaatasan	STRING	61
+
+IMAGE(tmptranst) 
+/----------------------------------\
+||            t.MENGETAHUI  ____  ||
+||  ________   _________________  ||
+|/--SIGNATURE---------------------\|
+||				  ||
+||				  ||
+||				  ||
+||				  ||
+||				  ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+    tkdjwbstr1           NOCHANGE                INPUTRI         1
+	tkdnoll				 PROTECT                 INPUTRI         1
+	lnamaatasan          PROTECT                 INPUTRI         1
+
+DEFAULTS(tmptranst)
+tkdnoll		INIT		{g_usrkode}
+tkdnoll		INIT_UPDATE	{g_usrkode}
+lnamaatasan INIT 		{g_usrnam}
+lnamaatasan INIT_UPDATE {g_usrnam}
+tkdsts		INIT		{gv_OPEN}
+
+MAP(mpsiatasan)
+psikode		tkdnoll		REPLACE
+psinama		lnamaatasan	REPLACE
+psijabatan	tkdsisstr	REPLACE
+
+EDITS(tmptranst)
+t.ValidatePsi	tkdnoll		VALIDATE psikodidx mpsiatasan 0
+
+MAP(matasaninfo)
+lDTLOCATASAN tkddata	REPLACE
+tlmnobuk	tkdnobuk	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr1	DO_MAP SHOW matasaninfo
+
+MAP(mupdttdatasan)
+cOK1		tkdjwbstr1	DO_CALC
+
+DBCALCS(dupdttdatasan)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mupdttdatasan
+
+MAP(mupddelttdatasan)
+cblanks		tkdjwbstr1	DO_CALC
+
+DBCALCS(dupddelttdatasan)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm	
+	DBC_MAP		mupddelttdatasan
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SGNFLD	tkdnobuk tkddata
+SFL_SGNFLD_DBCALCS	dupdttdatasan
+SFL_SGNFLD_DELDBCALCS dupddelttdatasan
+SFL_TARGET
+tkddatbukll lDTLOCATASAN tlmnobuk 

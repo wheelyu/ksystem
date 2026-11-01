@@ -1,0 +1,168 @@
+LOCAL
+PGM_FIELDS
+ 	ltlmsts		STRING	5
+	lsisatenor	INT2	2
+	lmtsnobukkunj	STRING	21
+	lsomnobuk	STRING	21
+	lsvistr2a	STRING	21
+	lsvistr39a	STRING	21
+	ltldlok2a	STRING	21
+	lnotelpkons	STRING	21
+	ltblkodea	STRING	21
+	ltblketa	STRING	21
+	lketlayak	STRING	21
+	lversitmp	STRING	21
+	lkorlonlat	STRING	21
+
+MAP(mmtskunj)
+mtsnobuk	lmtsnobukkunj		REPLACE
+
+DBCALCS(djoinmtskunj)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      mtsdatstsasl  gv_kunjungan11 gv_CLSD mtdbrg
+        DBC_MAP         mmtskunj
+
+MAP(msvikunj)
+svistr2		lsvistr2a	REPLACE /* PE */
+svistr39	lsvistr39a	REPLACE /* UNIT ADA */
+
+
+DBCALCS(djoinsvikunj)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp gv_kunjungan11 lmtsnobukkunj lKUNJKOL1
+        DBC_MAP         msvikunj
+
+MAP(mtldkunj)
+tldlok2		ltldlok2a	REPLACE /* KONS */
+
+DBCALCS(djointldkunj)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tldbukurtidx lmtsnobukkunj
+        DBC_MAP         mtldkunj
+	
+MAP(mjointlmsom)
+tlmsts		ltlmsts		REPLACE
+
+DBCALCS(djointlmsom)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tlmbukidx lsomnobuk
+	DBC_MAP		mjointlmsom
+
+
+CALCS()
+ckondisitelp    condata=="TELP"
+
+MAP(mjoinconhp)
+conhp           lnotelpkons     REPLACE
+
+DBCALCS(djoinconhp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    pikplg gv_INPG
+        DBC_MAP         mjoinconhp
+        DBC_SELECT      ckondisitelp
+
+MAP(mjointblpe)
+tblkode ltblkodea        REPLACE
+tblket  ltblketa        REPLACE
+
+DBCALCS(djointblpe)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbldtdtmkod   gv_dttabel gv_pekerjaan21 lsvistr2a
+        DBC_MAP         mjointblpe
+
+
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------\
+|t.StsSomTrkhr: ___________________   t.SisaTenor :_________________|_
+|t.KunjTrkhr  : ___________________   t.NoTelp    :_________________|
+|t.UntKonsAda : ________ - ________   t.KatLyk    :_________________|
+|t.JenisPek   : ___________________   t.TtlKunj   :_________________|
+|t.KorLonLat  : ___________________                                 |
+\-------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ltlmsts			NOCHANGE		INPUTRI 1
+lsisatenor		PROTECT			INPUTRI 2
+mtdbrg  		PROTECT			INPUTRI 3
+
+lmtsnobukkunj		PROTECT			INPUTRI 4
+lnotelpkons		PROTECT			INPUTRI 5
+
+lketunit		PROTECT			INPUTRI	6
+lketkons		PROTECT			INPUTRI 7
+lketlayak		PROTECT			INPUTRI 8
+
+ltblketa		PROTECT			INPUTRI	9
+pikjmlkunj		PROTECT			INPUTRI 10
+
+lkorlonlat		PROTECT			INPUTRI 11
+
+
+DEFAULTS(tmptranst)
+lversitmp	  INIT		261224v1
+
+CALCS()
+cjointlmsom	djointlmsom==1
+cjoinmtskunj	djoinmtskunj==1
+cstenor         piklama - pikkeblnll
+cbuksom		"SM" + STRIP(mtdbrg)
+cjoinconhp	djoinconhp==1
+
+cLAYAK		"LAYAK"
+cTIDAKLAYAK	"TIDAK LAYAK"
+
+cADA		"ADA"
+cTIDAKADA	"TIDAK ADA"
+
+clyk		djoinsvikunj==1 && (lsvistr2a == "D2" || lsvistr2a == "PR" || lsvistr2a == "W2" || lsvistr2a == "PN" || lsvistr2a == "TR" || lsvistr2a == "AG" || lsvistr2a == "SW" || lsvistr2a == "W1" || 		   lsvistr2a == "D1" || lsvistr2a == "TN" || lsvistr2a == "TP" || lsvistr2a == "NL" || lsvistr2a == "IR") 
+
+ctlyk		djoinsvikunj==1 && (lsvistr2a == "PE" || lsvistr2a == "MF" || lsvistr2a == "NB")
+
+cUyada		djoinsvikunj==1 && (lsvistr39a == "01" || lsvistr39a == "11" || lsvistr39a == "12" || lsvistr39a == "13" || lsvistr39a == "18")
+cUtada		djoinsvikunj==1 && (lsvistr39a == "02" || lsvistr39a == "03" || lsvistr39a == "04" || lsvistr39a == "05" || lsvistr39a == "06" || lsvistr39a == "07" || lsvistr39a == "08" || 
+		lsvistr39a == "09" || lsvistr39a == "10" || lsvistr39a == "14" || lsvistr39a == "15" || lsvistr39a == "16" || lsvistr39a == "17")
+
+cKyada		djoinsvikunj==1 && djointldkunj==1 && (ltldlok2a == "01" || ltldlok2a == "02" || ltldlok2a == "03" || ltldlok2a == "04" || ltldlok2a == "05" || ltldlok2a == "07" || ltldlok2a == "10")
+cKtada		djoinsvikunj==1 && djointldkunj==1 && (ltldlok2a == "06" || ltldlok2a == "08" || ltldlok2a == "09")
+
+cketpek		djoinmtskunj==1 && djoinsvikunj==1 && djointblpe==1
+cKOREKSI	"KOREKSI"
+ckorlonglat	djoinaktlonlat==1 && laktlok == ""
+
+EDITS(tmptranst)
+e.Validatenofaktur mtdbrg       VALIDATE pikdatbukidx mmappik1      0       {Pgv_dtpiu}
+
+MAP(mmappik1)
+pikktp		pikktp          REPLACE
+cbuksom		lsomnobuk	DO_CALC
+ltlmsts		ltlmsts		REPLACE_IF cjointlmsom
+cstenor		lsisatenor	DO_CALC
+lmtsnobukkunj	lmtsnobukkunj	REPLACE_IF cjoinmtskunj
+
+lnotelpkons	lnotelpkons	REPLACE_IF cjoinconhp
+
+cLAYAK		lketlayak	DO_CALC_IF clyk
+cTIDAKLAYAK	lketlayak	DO_CALC_IF ctlyk
+
+cADA		lketunit	DO_CALC_IF cUyada
+cTIDAKADA	lketunit	DO_CALC_IF cUtada
+
+cADA            lketkons        DO_CALC_IF cKyada
+cTIDAKADA       lketkons        DO_CALC_IF cKtada
+
+ltblketa	ltblketa	REPLACE_IF cketpek
+
+cKOREKSI	lkorlonlat	DO_CALC_IF ckorlonglat
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cm4w0
+SFL_TARGET
+	mtdotoidx   mtdoto
+
+

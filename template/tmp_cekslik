@@ -1,0 +1,174 @@
+LOCAL
+PGM_FIELDS
+lenter		STRING		11
+
+IMAGE(tmptranst)
+
+/-----------------------------------\
+|/---------------------------------\|
+||spasi                            ||
+||t.AdaSlik       : ___  _______   ||
+||t.PlafonEff     : _____________ _|| 
+||t.BakiDebet     : _____________  || 
+||spasi                            ||
+||t.BankUmum      : ___            ||
+||t.BprBprs       : ___            ||
+||t.LembagaPembia : ___            ||
+||t.Lainnya       : ___            ||
+||spasi                            ||
+||t.Lancar        : ___            ||
+||t.Nunggak30     : ___            ||
+||t.Nunggak3090   : ___            ||
+||t.Nunggak90     : ___            ||
+||t.PinjLunas     : ___            ||
+||spasi                            ||
+||t.Analisa                        ||
+|| ________________________________||
+||spasi                            || 
+||t.Rekomendasi   : _____          ||
+||                      _______    ||
+|\---------------------------------/|
+| t.UplFotoSlik                     |
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviyt1		NOCHANGE		INPUTRI		1
+lsviyt1		PROTECT			INPUTRI		1
+svidf1		NUMERIC			INPUTRI		2
+svinobuk        PROTECT UNSEEN        INPUTRI         3
+svidf2		NUMERIC			INPUTRI		4
+
+svistr1		NUMERIC			INPUTRI		5
+svistr2		NUMERIC                 INPUTRI         6
+svistr3		NUMERIC                 INPUTRI         7
+svistr4		NUMERIC                 INPUTRI         8
+
+svistr9		NUMERIC			INPUTRI		9
+svistr5		NUMERIC                 INPUTRI         10
+svistr6         NUMERIC                 INPUTRI         10
+svistr7		NUMERIC                 INPUTRI         11
+svistr8		NUMERIC			INPUTRI		12
+sviket		TEXTAREA ALLCAPS	INPUTRI		13
+svitype2	NOCHANGE		INPUTRI		14
+lenter		NOCHANGE		INPUTRI		15
+
+DEFAULTS(tmptranst)
+sviyt1	DFALT_SCAN BLANKS
+			Y " "
+			T " "
+svitype2 DFALT_SCAN BLANKS ACC "ACC"
+			   TACC "TACC"
+
+lenter		INIT	"ENTER"
+
+CALCS()
+cYA		"YA"
+cTIDAK		"TIDAK"
+ciya		sviyt1=="Y"
+ctidak		sviyt1=="T"
+
+EDITS(tmptranst)
+e.Mandatory	svidf1	MANDATORY_IF ciya
+e.Mandatory	svidf2	MANDATORY_IF ciya
+e.Mandatory	sviyt1	MANDATORY
+e.Mandatory	sviket	MANDATORY
+e.Mandatory	svitype2 MANDATORY
+e.validate	svinobuk VALIDATE tlmbukidx mtlm
+
+MAP(mtlm)
+cYA		lsviyt1		DO_CALC_IF ciya
+cTIDAK		lsviyt1		DO_CALC_IF ctidak
+
+CALCS()
+ctidakadaslik	sviyt1=="T"
+cBLANKS		BLANKS
+
+MAP(mkosong)
+cBLANKS		svidf1		DO_CALC
+cBLANKS		svidf2		DO_CALC
+cBLANKS		svistr1		DO_CALC
+cBLANKS		svistr2		DO_CALC
+cBLANKS		svistr3		DO_CALC
+cBLANKS		svistr4		DO_CALC
+cBLANKS		svistr5		DO_CALC
+cBLANKS		svistr6		DO_CALC
+cBLANKS		svistr7		DO_CALC
+cBLANKS		svistr8		DO_CALC
+cBLANKS		svistr9		DO_CALC
+cBLANKS		sviket		DO_CALC
+cBLANKS		svitype2	DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviyt1       DO_MAP SHOW mkosong
+BEFORE_INPUT cur_field=svidf1		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svidf2		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr1 		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr2 		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr3		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr4		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr5		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr6		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr7		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr8		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr9          DO_SKIP_IF ctidakadaslik
+
+CALCS()
+cOK		"OK"
+
+MAP(mupdfotoslik)
+cOK		tlmtype1	DO_CALC
+g_tgltrn	tlmtgljtp2	REPLACE
+
+DBCALCS(dupdfotoslik)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tlmbukidx   svinobuk
+	DBC_MAP		mupdfotoslik
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdfotoslik
+SFL_UPLFLD tlmnobuk tlmdata
+SFL_TARGET
+	svidatbuktyp   lCEKSLIK  tlmnobuk lCEKSLIK l1
+SFL_MAP
+lCEKSLIK	svidata		REPLACE
+lCEKSLIK	svitype		REPLACE
+tlmnobuk	svinobuk	REPLACE
+gv_INPG		svists		REPLACE
+tlmnoasal	svikode		REPLACE
+l1		svinourt	REPLACE
+
+MAP(mupdtlmmaster)
+svitype2	tlmtypbrg	REPLACE
+g_usrkode	tlmdari		REPLACE
+g_tgltrn	tlmtgl2		REPLACE
+
+SPCALCS(sptrans)
+DO_LIB ap_dbclc (DNAME dupdtlmmaster,DCOMMAND UPDATE,DTARGET tlmbukidx   svinobuk,DMAP mupdtlmmaster);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptrans
+        PST_UPDCMD sptrans
+
+
+CALCS()
+cdjoinsvi0	djoinsvi==0 && tlmsts=="INPG"
+cdjoinsvi1	(djoinsvi==1 && tlmsts=="INPG" && tlmdari!="" && tlmdari==g_usrkode) || (djoinsvi==1 && tlmsts=="INPG" && tlmdari=="")
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cdjoinsvi0
+  PMT_UPDALL_COND cdjoinsvi1
+  PMT_DEL_COND  c0
+

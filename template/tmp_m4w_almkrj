@@ -1,0 +1,78 @@
+LOCAL 
+PGM_FIELDS
+lpropinsi3		STRING		31
+lkota3			STRING		31
+lkec3			STRING		31
+lkel3			STRING		31
+
+DBCALCS(djoinalmkrj)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almotodatidx btmplg gv_psmkerja
+
+IMAGE(tmptranst) 
+/-----------------------------------------------------------------------------\ 
+| i.Ktp       : _______________                                               |
+| i.Alamatkrj : _____________________________________________________________ |
+| i.Propinsi  : _______________ _____________________________________________ |
+| i.Kota      : _______________ _____________________________________________ |
+| i.Kec       : _______________ _____________________________________________ |
+| i.Kel       : _______________ _____________________________________________ |
+| i.KodePos   : ________                                                      |
+\-----------------------------------------------------------------------------/ 
+
+FIELD(tmptranst)
+almbukoto		PROTECT				INPUTRI 1
+almjalan		TEXTAREA			INPUTRI 2
+almprop			ALLCAPS SCROLL			INPUTRI 3
+lpropinsi3		PROTECT QPROTECT		INPUTRI 4
+almkota			ALLCAPS SCROLL			INPUTRI 5
+lkota3			PROTECT QPROTECT 		INPUTRI 6
+almkec			ALLCAPS SCROLL			INPUTRI 7
+lkec3			PROTECT QPROTECT		INPUTRI 8
+almkel			ALLCAPS SCROLL			INPUTRI 9
+lkel3			PROTECT QPROTECT		INPUTRI 10
+almkdpos		ALLCAPS SCROLL			INPUTRI 11
+
+IMAGE(tmptrans) 
+
+EDITS(tmptranst)
+e.validatePropinsi3	almprop VALIDATE dtmdtkodidx  mdtm3 sdtm {Pgv_dtkota}
+e.validateKota3		almkota VALIDATE tbldtdtmkod mtbl3 stbl {Pgv_dtkota} {Palmprop}
+e.validateKec3		almkec VALIDATE tbddatkodidx mtbd3 stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.validateKel3		almkel VALIDATE tbtdattypkod mtbt3 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(mtbt3)
+tbtkode			almkel 			REPLACE
+tbtket			lkel3			REPLACE
+
+MAP(mtbd3)
+tbdkode			almkec 			REPLACE
+tbdket			lkec3			REPLACE
+
+MAP(mtbl3)
+tblkode			almkota 		REPLACE
+tblket			lkota3			REPLACE
+
+MAP(mdtm3)
+dtmkode			almprop 		REPLACE
+dtmket			lpropinsi3		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	 almotodatidx	btmplg gv_psmkerja
+
+SFL_MAP
+gv_psmkerja	almdata		REPLACE
+btmplg		almbukoto	REPLACE
+
+CALCS()
+calm_edit0		(btmsts == "701" || g_grpnam == "B.M4WMSPV") && djoinalmkrj == 0
+calm_edit1		(btmsts == "701" || g_grpnam == "B.M4WMSPV") && djoinalmkrj == 1
+cri			 g_grpnam == "RI"
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  	calm_edit0
+  PMT_UPDALL_COND 	calm_edit1
+  PMT_DEL_COND  	cri

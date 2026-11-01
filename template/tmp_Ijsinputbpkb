@@ -1,0 +1,99 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------\
+|t.InputBpkb  _________________ ___________                                                      |
+|--------------t-----------------------t--------t------t---------------------t-------------------|
+|t.Input       | t.Isi                 |t.Yt1   |t.Yt2 | t.KetYt1            | t.KetYt2          |
+\--------------.-----------------------.--------.------.---------------------.-------------------/
+
+
+IMAGE(tmptrans)
+|______________|_______________________|  ____  |  ___ |_____________________|___________________|
+
+FIELD(tmptranst)
+tldnobuk	PROTECT SCROLL		INPUTRI 1
+tldtglfak	PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+
+FIELD(tmptrans)
+tldlok		PROTECT SCROLL		INPUTRI 1
+tldsat		ALLCAPS SCROLL          INPUTRI	2
+tldtydis	NOCHANGE SCROLL		INPUTRI 3
+tlddk		NOCHANGE SCROLL		INPUTRI 4
+tldket		ALLCAPS SCROLL		INPUTRI 5
+tldlok2		ALLCAPS SCROLL		INPUTRI 6
+
+CALCS()
+ctahun		tldlok=="TAHUN"
+cmilik		tldlok=="MILIK"
+cmerk		tldlok=="MERK"
+cjenis		tldlok=="JENIS"
+ctidak		tldtydis=="T"
+ctidak1		tlddk=="T"
+cbukan_kirim	hrmcab2!="TERIMA_CAB"
+cbukan_T	tldtydis!="" || hrmket2=="CTK_SRT" || hrmket2=="BERKAS"
+cbukan_T1	tlddk!="T"
+cbukan_pinjamx	hrmcab2!="PEMINJAMAN" && hrmstsapr!="IN" && hrmket2!="KONF_BERKAS"
+cpinjam_x	hrmcab2=="ACC_BERKAS" || (hrmcab2=="PEMINJAMAN" && hrmstsapr=="IN")
+cpinjam_y	hrmcab2=="TERIMA_CAB" 
+cbhn_bkr	tldlok=="BAHAN_BAKAR"
+cisi		tldsat!="" && hrmket2=="BERKAS"
+	
+DEFAULTS(tmptrans)
+tldtydis	DFALT_SCAN_BLANKS Y T
+tlddk		DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptrans)
+t.Mandatory tldlok2 MANDATORY_IF ctidak1
+t.Validate tldsat VALIDATE_IF ctahun tbddatkodidx mtbd_thn stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun} 
+t.Validate tldsat VALIDATE_IF cmilik tbddatkodidx mtbd_thn stbd {Pgv_dttabel} {Pgv_personal} {Plmilik21} 
+t.Validate tldsat VALIDATE_IF cmerk  tbddatkodidx mtbd_thn stbd {Pgv_dttabel} {Pgv_personal} {Pgv_MERK}
+t.Validate tldsat VALIDATE_IF cbhn_bkr tbddatkodidx mtbd_thn stbd {Pgv_dttabel} {Pgv_personal} {Plbhnbkr21}
+t.Validate tldsat VALIDATE_IF cjenis  tbddatkodidx mtbd_thn stbd {Pgv_dttabel} {Pgv_personal} {Pgv_jenis}
+t.Validate tldlok2 VALIDATE_IF ctahun tbddatkodidx mtbd_thn2 stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun} 
+t.Validate tldlok2 VALIDATE_IF cmilik tbddatkodidx mtbd_thn2 stbd {Pgv_dttabel} {Pgv_personal} {Plmilik21} 
+t.Validate tldlok2 VALIDATE_IF cmerk  tbddatkodidx mtbd_thn2 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_MERK}
+t.Validate tldlok2 VALIDATE_IF cjenis  tbddatkodidx mtbd_thn2 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_jenis}
+t.Mandatory tldsat 	MANDATORY_IF cberkas
+t.Mandatory tldtydis	MANDATORY_IF cpinjam_x 
+t.Mandatory tlddk	MANDATORY_IF cpinjam_y
+
+MAP(mtbd_thn)
+tbdkode		tldsat   	REPLACE
+
+MAP(mtbd_thn2)
+tbdkode		tldlok2   	REPLACE
+
+MAP(mblanks)
+cBLANKS		tldket		DO_CALC_IF ctidak
+cBLANKS		tldtydis	DO_CALC_IF cisi
+
+MAP(mblanks1)
+cBLANKS		tldsat		DO_CALC_IF ctidak
+
+CALCS()
+cboleh1		(hrmcab=="KOLEKTOR" && tldsat>="2017") || ((hrmcab=="SALESPART" || hrmcab=="SALESMANMMJM"|| hrmcab=="PART&EKSPEDISISALES") && tldsat>="2010") || g_grpnam=="HRDSPV" || g_grpnam=="HRDHEAD" || g_grpnam=="HRD" || tldsat!="TAHUN"
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldsat	DO_SKIP_IF cpinjam_lebih
+BEFORE_INPUT	cur_field=tldtydis	DO_SKIP_IF cbukan_pinjamx
+BEFORE_INPUT	cur_field=tlddk		DO_SKIP_IF cbukan_kirim
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF cbukan_T
+BEFORE_INPUT	cur_field=tldlok2	DO_SKIP_IF cbukan_T1
+AFTER_INPUT	cur_field=tldsat	DO_MAP SHOW mblanks
+AFTER_INPUT	cur_field=tldtydis	DO_MAP SHOW mblanks1
+AFTER_INPUT	cur_field=tldsat	DO_MAP SHOW
+		IF cboleh1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.UtkKol2017Sls2010
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD tldlok 
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tldbukbrgoto lnobuk  gv_CLSD lpinjambpkb                           
+
+SFL_MAP
+lnobuk   tldnobuk REPLACE                    
+gv_CLSD  tldsts      REPLACE
+lpinjambpkb	tldbrg	REPLACE
+

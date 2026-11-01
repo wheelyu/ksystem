@@ -1,0 +1,136 @@
+LOCAL
+PGM_FIELDS
+	lnamaacc	STRING		61
+	lktpacc		STRING		21
+	lcugacc		STRING		21
+
+CALCS()
+cnomor_cug	condata == "TELP" && congrup == "CUG"
+
+MAP(mjoinpsmacc)
+psmktp		lktpacc		REPLACE
+
+DBCALCS(djoinpsmacc)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	cadarea
+	DBC_MAP		mjoinpsmacc
+
+MAP(mjoinconacc)
+conhp		lcugacc		REPLACE
+
+DBCALCS(djoinconacc)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx	lktpacc gv_INPG
+	DBC_SELECT	cnomor_cug
+	DBC_MAP		mjoinconacc
+
+IMAGE(tmptranst)
+/---------t-------t-------------t-----------------t-------------t------------------------t-----------------\
+|i.Pst    |i.Urt  |i.Type       |i.Jabatan        |i.Nip        |i.Nama                  |t.Cug            |
+\---------.-------.-------------.-----------------.-------------.------------------------.-----------------/
+
+IMAGE(tmptrans)
+|_________|_______|_____________|_________________|_____________|________________________|_________________|
+
+FIELD(tmptrans)
+cadkdcab	PROTECT		INPUTRI		1
+cadtot1		NOCHANGE	INPUTRI		1
+cadkode		PROTECT		INPUTRI		2
+cadkolek	ALLCAPS		INPUTRI		3
+cadarea		ALLCAPS		INPUTRI		4
+lnamaacc	PROTECT		INPUTRI		5
+lcugacc		PROTECT		INPUTRI		6
+
+CALCS()
+cjoinpsmacc	djoinpsmacc == 1
+cjoinconacc	djoinpsmacc == 1 && lktpacc != BLANKS && djoinconacc == 1
+
+EDITS(tmptrans)
+t.MandatoryJabatan	cadkolek	MANDATORY
+t.MandatoryNipAcc	cadarea		MANDATORY
+
+t.ValidateJabatan	cadkolek	VALIDATE tbddtmstidx mtbdacc stbdtype {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} {Plfintax} {Pltax}
+t.ValidateNipAcc	cadarea		VALIDATE psistsjabkod mpsiacc spsiKod {Pgv_INPG} {Pcadkolek}
+
+MAP(mtbdacc)
+tbdkode		cadkolek	REPLACE
+
+MAP(mpsiacc)
+psikode		cadarea		REPLACE
+psinama		lnamaacc	REPLACE
+lktpacc		lktpacc		REPLACE_IF cjoinpsmacc
+lcugacc		lcugacc		REPLACE_IF cjoinconacc
+
+CALCS()
+cjoincadpjacc04	djoincadpjacc04 == 1
+cpjaccv1	"PJACC0" + FLD_TO_STRING(lcadtot1_int2a)
+cpjaccv2	"PJACC" + FLD_TO_STRING(lcadtot1_int2a)
+curutv1a	cadtot1 >= 1 && cadtot1 <= 9
+curutv2a	cadtot1 >= 10 && cadtot1 <= 99
+cpjaccdup01	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadkode != cadkode)) && djoincadpjacc01 == 0) || (g_curcmd == 2 && ~cadkode == cadkode))
+cpjaccdup02	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadarea != cadarea)) && djoincadpjacc02 == 0) || (g_curcmd == 2 && ~cadarea == cadarea))
+cpjaccdup03	((g_curcmd == 1 && djoincadpjacc03 == 0 && cadtot1 == 1) || (g_curcmd == 1 && djoincadpjacc03 == 1) || (g_curcmd != 1))
+cpjaccdup04	(((g_curcmd == 1 || (g_curcmd == 2 && ~cadtot1 != cadtot1)) && cadtot1 == lcadtot1_04a + 1) || (g_curcmd == 2 && ~cadtot1 == cadtot1))
+ccadtot1a	lcadtot1_04a + 1
+curutpjacc01	g_curcmd == 1 && djoincadpjacc04 == 0
+curutpjacc02	g_curcmd == 1 && djoincadpjacc04 == 1
+
+MAP(misipjacc)
+cadtot1		lcadtot1_int2a	REPLACE
+cpjaccv1	cadkode		DO_CALC_IF curutv1a
+cpjaccv2	cadkode		DO_CALC_IF curutv2a
+
+MAP(murutpjacc)
+cnominal0	lcadtot1_04a	DO_CALC
+lcadtot1_04a	lcadtot1_04a	REPLACE_IF cjoincadpjacc04
+c1		cadtot1		DO_CALC_IF curutpjacc01
+ccadtot1a	cadtot1		DO_CALC_IF curutpjacc02
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=cadtot1	DO_MAP murutpjacc
+AFTER_INPUT	cur_field=cadtot1	DO_MAP misipjacc
+AFTER_INPUT	cur_keybd=EN		DO_MAP misipjacc
+
+AFTER_INPUT	cur_field=cadtot1	DO_MAP SHOW
+		IF cpjaccdup01 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Nomor Urut NIP Penanggung Jawab Pajak ini Sudah terisi
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpjaccdup01 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Nomor Urut NIP Penanggung Jawab Pajak ini Sudah terisi
+AFTER_INPUT	cur_field=cadarea	DO_MAP SHOW
+		IF cpjaccdup02 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG NIP ini Sudah Pernah Diinput
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpjaccdup02 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG NIP ini Sudah Pernah Diinput
+AFTER_INPUT	cur_field=cadtot1	DO_MAP SHOW
+		IF cpjaccdup03 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Dulu Urutan Pertama NIP Penanggung Jawab Pajak
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpjaccdup03 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Dulu Urutan Pertama NIP Penanggung Jawab Pajak
+AFTER_INPUT	cur_field=cadtot1	DO_MAP SHOW
+		IF cpjaccdup04 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Nomor Urut secara berurutan dari nomor terakhir ditambah satu
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cpjaccdup04 mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Isi Nomor Urut secara berurutan dari nomor terakhir ditambah satu
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND cdealer2
+SFL_TARGET
+	cadcabdtidx	cabpst lpjacc11 lpjacc21
+SFL_MAP
+cabpst		cadkdcab	REPLACE
+lpjacc11	caddata		REPLACE
+lpjacc21	cadtype		REPLACE

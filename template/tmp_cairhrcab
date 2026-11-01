@@ -1,0 +1,57 @@
+LOCAL
+PGM_FIELDS
+lnamapk11       STRING          61
+
+DBCALCS(djoinakt11)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx	piknobtm gv_historisdm l714
+
+MAP(mjoinpsm11)
+psmnama         lnamapk11       REPLACE
+DBCALCS(djoinpsm11)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmkodidx       pikplg
+        DBC_MAP         mjoinpsm11
+
+IMAGE(tmptranst)
+/---------------t----------------t----------t-------t---------------t----------------t--------\
+|t.Nobuk        |t.Nobuk2        |t.Dvs     |t.Sts  |t.NoPK         |t.NamaPK        |t.Tgl   |
+\---------------.----------------.----------.-------.---------------.----------------.--------/
+
+IMAGE(tmptrans)
+|_______________|________________|__________|_______|_______________|________________|________|
+
+FIELD(tmptrans)
+piknobuk        PROTECT         INPUTRI         1
+piknobtm	NOCHANGE		INPUTRI		2
+pikdvs          PROTECT         INPUTRI         3
+piksts          PROTECT         INPUTRI         4
+pikplg          PROTECT         INPUTRI         5
+lnamapk11       PROTECT         INPUTRI         6
+piktglfak       PROTECT         INPUTRI         7
+
+EDITS(tmptrans)
+e.Validatebuk11	piknobuk VALIDATE pikdatbukidx mpik11 {Pgv_dtpiu}
+
+CALCS()
+cjoinpsm1_11	djoinpsm11 == 1
+cjoinpsm0_11	djoinpsm11 == 0
+
+MAP(mpik11)
+piknobuk	piknobuk	REPLACE
+lnamapk11       lnamapk11       REPLACE_IF cjoinpsm1_11
+cBLANKS         lnamapk11       DO_CALC_IF cjoinpsm0_11
+
+CALCS()
+ccond11         (cabusaha == "FINCO")
+cselect11       pikca == "CAIR" && djoinakt11 == 1
+
+SUBFILE(tmptrans)
+SFL_LINES(11)
+SFL_TITLE(tmptranst)
+SFL_COND        ccond11
+SFL_SELECT      cselect11
+SFL_TARGET_GTE	pikdatpiutgl	gv_dtpiu cabkode ltgl1 {gv_dtpiu} {cabkode} {ltgl2}
+
+
+

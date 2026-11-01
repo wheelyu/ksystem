@@ -1,0 +1,247 @@
+LOCAL
+PGM_FIELDS
+	ltldbrgGC	STRING		21
+	ltldlok2GC	STRING		21
+	ltldsatGC	STRING		21
+	ltldlokGC	STRING		21
+	ltldhrgGC	DFLOAT		8
+	lbuttonGC	STRING		31
+	
+	lbrchrgjlGC	DFLOAT		8
+	lbrchrgjl2GC	DFLOAT		8
+	lbrgnamaGC	STRING		21
+	
+	l4397GC		INT2		2
+	lm4397GC	STRING		11
+	ldumGC		STRING		2
+	
+MAP(mjointldGC)
+tldbrg		ltldbrgGC	REPLACE
+tldlok2		ltldlok2GC	REPLACE
+tldsat		ltldsatGC	REPLACE
+tldlok		ltldlokGC	REPLACE
+tldhrg		ltldhrgGC	REPLACE
+
+DBCALCS(djointldGC)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldotoidx	btdlok
+	DBC_MAP		mjointldGC
+
+MAP(mjoinbrcGC)
+brchrgjl	lbrchrgjlGC	REPLACE
+brchrgjl2	lbrchrgjl2GC	REPLACE
+
+DBCALCS(djoinbrcGC)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brcdttypidx   gv_dtbarang btdnorangka btdcab lspm gv_BARU btdnomesin
+	DBC_MAP		mjoinbrcGC
+
+MAP(mjoinbrgGC)
+brgnama		lbrgnamaGC	REPLACE
+
+DBCALCS(djoinbrgGC)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brgdatkodidx	gv_dtbarang btdnorangka
+	DBC_MAP		mjoinbrgGC
+
+DBCALCS(djoinbtpstnkGC)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btpdatbuktgl gv_historisdm btdnobuk gv_dtanstnk
+
+CALCS()
+cwarnasamaGC	sgmstr5 == btmwrn && g_tgltrn >= sgmtgl1 && g_tgltrn <= sgmtgl2
+
+DBCALCS(djoinsgmProGC)
+	DBC_COMMAND     JOIN
+	DBC_TARGET      sgmdatstrbrg   gv_subsidi btdcab btdth gv_INPG21 btmnomesin btdnorangka
+	DBC_SELECT	cwarnasamaGC
+
+CALCS()
+cfilenhmGC	"nhm"
+
+MAP(m4397GC)
+nhmnobuk	r_string1	REPLACE
+cfilenhmGC	r_string2	DO_CALC
+btmnomesin	r_string3	REPLACE
+btmposjmn	r_string4	REPLACE
+btmnorangka	r_string5	REPLACE
+btmtypmtr	r_string6	REPLACE
+btmtypmtr2	r_string7	REPLACE
+btmthn		r_string9	REPLACE
+btmwrn		r_string10	REPLACE
+btmstr2		r_string11	REPLACE
+btmcab		r_string12	REPLACE
+nhmprogjl	r_string13	REPLACE
+btmbisnisjl	r_string14	REPLACE
+btmkdmaxc	r_string17	REPLACE
+btmcabjl	r_string18	REPLACE
+nhmkodass	r_string19	REPLACE
+nhmjns		r_string20	REPLACE
+nhmtenor	r_double1	REPLACE
+nhmbsrang	r_double2	REPLACE
+nhmumasal	r_double3	REPLACE
+nhmperpok	r_double4	REPLACE
+nhmtotdis	r_double5	REPLACE
+nhmbiamklr	r_double6	REPLACE
+nhmbiaplwil	r_double7	REPLACE
+nhmperbg	r_double9	REPLACE
+nhmestimasi	r_double10	REPLACE
+nhmumriil	r_double11	REPLACE
+nhminsales	r_double14	REPLACE
+
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||t.NoPk    _________________________ ||
+||i.Cab     _________________________ ||
+||i.Brg     _________________________ ||
+||i.Thn     _________________________ ||
+||t.KdHrg   _________________________ ||
+||i.Oto     _________________________ ||
+||i.Hrg     ____________________.____ ||
+||i.Disc    ____________________.____ ||
+||t.PlWil   ____________________.____ ||
+||i.TotPok  ____________________.____ ||
+||          _________________________ ||
+||          _________________________ ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnobuk	NOCHANGE	INPUTRI		1
+btdcab		PROTECT		INPUTRI		2
+btdnorangka	ALLCAPS		INPUTRI		3
+btdth		PROTECT		INPUTRI		4
+btdnomesin	PROTECT		INPUTRI		5
+btdlok		PROTECT		INPUTRI		6
+btdjml		PROTECT		INPUTRI		7
+btdtotdis	PROTECT		INPUTRI		8
+btdperdis	PROTECT		INPUTRI		9
+btdtothrg	PROTECT		INPUTRI		10
+lenter		NOCHANGE	INPUTRI		11
+lbuttonGC	TOMBOL		INPUTRI		12
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+lbuttonGC	INIT		"Perbaikan Kode Mtr"
+l4397GC		INIT		4397
+lm4397GC	INIT		"m4397GC"
+
+CALCS()
+cjoinbrgGC	djoinbrgGC == 1
+cjoinbrcGC	djoinbrcGC == 1
+
+EDITS(tmptranst)
+e.Mandatory	btdnorangka	MANDATORY
+e.Validate	btdnorangka	VALIDATE tldbukbrglok mtldGC stldgc2 {Pbtmnokk} {Sbtmcabjl} {Sbtdlok}
+
+MAP(mtldGC)
+tldbrg		btdnorangka	REPLACE
+tldlok		btdcab		REPLACE
+tldoto		btdlok		REPLACE
+tldsat		btdth		REPLACE
+tldlok2		btdnomesin	REPLACE
+tldtotdis	btdtotdis	REPLACE
+tldhrgnet	btdtothrg	REPLACE
+tldtmp1		btdperdis	REPLACE
+tldhrg		btdjml		REPLACE
+cBLANKS		lbrgnamaGC	DO_CALC
+lbrgnamaGC	lbrgnamaGC	REPLACE_IF cjoinbrgGC
+c0		lbrchrgjlGC	DO_CALC
+lbrchrgjlGC	lbrchrgjlGC	REPLACE_IF cjoinbrcGC
+c0		lbrchrgjl2GC	DO_CALC
+lbrchrgjl2GC	lbrchrgjl2GC	REPLACE_IF cjoinbrcGC
+
+CALCS()
+cjointldGC	djointldGC == 1
+
+MAP(mmapinitkorbtd)
+ltldbrgGC	ltldbrgGC	REPLACE_IF cjointldGC
+ltldsatGC	ltldsatGC	REPLACE_IF cjointldGC
+ltldlok2GC	ltldlok2GC	REPLACE_IF cjointldGC
+ltldlokGC	ltldlokGC	REPLACE_IF cjointldGC
+ltldhrgGC	ltldhrgGC	REPLACE_IF cjointldGC
+
+MAP(mkorbtd)
+ltldbrgGC	btdnorangka	REPLACE
+ltldlok2GC	btdnomesin	REPLACE
+ltldsatGC	btdth		REPLACE
+ltldlokGC	btdcab		REPLACE
+ltldhrgGC	btdjml		REPLACE
+
+SPCALCS(spkorbtd)
+DO_LIB	ap_dbclc(DNAME dmapinitkorbtd,DCOMMAND MAPMAP,DMAP mmapinitkorbtd);
+DO_LIB	ap_dbclc(DNAME dkorbtd,DCOMMAND MAPMAP,DMAP mkorbtd);
+
+MAP(mdumGC)
+ldumGC		ldumGC		REPLACE
+
+CALCS()
+cjoinsgmProGC	((btmsts == "611" && btmnomesin != BLANKS && lMD != "ASTRAKEDU" && djoinsgmProGC == 1) || lMD == "ASTRAKEDU" || btmnomesin == BLANKS || btmsts != "611")
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=btdnorangka	DO_MAP SHOW
+		IF cjoinsgmProGC mdumGC
+		ELSE HKCURSOR STAY
+		HKMSG t.Buat1409Dulu
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cjoinsgmProGC mdumGC
+		ELSE HKCURSOR STAY
+		HKMSG t.Buat1409Dulu
+
+CLICKED		cur_field=lbuttonGC	DO_SPCALCS spkorbtd
+
+CALCS()
+clihatGC	btmsoa == "GC"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND clihatGC
+SFL_TARGET
+	btdbuktypidx	btmnobuk btmnokk
+
+CALCS()
+csdh611		(btmsts == "611" && btmnomesin != BLANKS)
+
+MAP(mmapinitGC)
+lbrgnamaGC	lbrgnamaGC	REPLACE_IF cjoinbrgGC
+lbrchrgjlGC	lbrchrgjlGC	REPLACE_IF cjoinbrcGC
+lbrchrgjl2GC	lbrchrgjl2GC	REPLACE_IF cjoinbrcGC
+
+MAP(mupdtkdGC)
+btdlok		tkdjwbstr1	REPLACE
+
+MAP(mupdbtmGC)
+btdnorangka	btmtypmtr	REPLACE
+lbrgnamaGC	btmtypmtr2	REPLACE
+btdth		btmthn		REPLACE
+btdnomesin	btmkdmaxc	REPLACE
+btdjml		btmhrg		REPLACE
+
+MAP(mupdnhmGC)
+btdjml		nhmhrgotr	REPLACE
+btdjml		nhmhrgpasar	REPLACE
+btdjml		nhmcairpinj	REPLACE
+lbrchrgjl2GC	nhmhrgoff	REPLACE
+btdjml		nhmtotpok	REPLACE
+
+SPCALCS(spubhmtrGC)
+DO_LIB ap_dbclc(DNAME dmapinitGC,DCOMMAND MAPMAP,DMAP mmapinitGC);
+DO_LIB ap_dbclc(DNAME dupdtkdGC,DCOMMAND UPDATE,DTARGET tkdotoidx btdbrdoto,DMAP mupdtkdGC);
+DO_LIB ap_dbclc(DNAME dupdbtmGC,DCOMMAND UPDATE,DTARGET btmbukidx btdnobuk,DMAP mupdbtmGC);
+DO_LIB ap_dbclc(DNAME dupdnhmGC,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_bukutamu btdnobuk,DMAP mupdnhmGC);
+DO_LIB_IF csdh611 ap_nxpst(l4397GC,lm4397GC);
+
+POSTING(tmptrans)
+PST_UPDCMD	spubhmtrGC
+
+CALCS()
+cubhmtrGC	btmsoa == "GC" && (btmsts == "OPEN" || (btmsts == "611" && djoinbtpstnkGC == 0))
+
+PERMIT(tmptrans)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND	cubhmtrGC
+PMT_DEL_COND	c0

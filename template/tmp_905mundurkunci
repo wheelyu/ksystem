@@ -1,0 +1,95 @@
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|/----------------------------------------------------\|
+|!t.Tanggal    : ___________                          !|
+|!t.Nip        : ___________                          !|
+|!t.TglMunKunc : ___________                          !|
+|!t.Alasan     : ___________________________________ _!|
+|\----------------------------------------------------/|
+\------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl2			PROTECT {DD-MM-YYYY} 		INPUTRI 1
+psdstr1		PROTECT		INPUTRI 1
+psdtgl1                 NONE {DD-MM-YYYY} 	INPUTRI 2
+psdket			TEXTAREA NONE		INPUTRI	3
+ldum            NOCHANGE    INPUTRI 4
+
+DEFAULTS(tmptranst)
+psdstr1     INIT    {g_usrkode}
+
+
+
+
+MAP(mscanpsdmundurkunci)
+c1		ltotMundurKunci		DO_CALC
+
+DBCALCS(dbscanpsdmundurkunci)
+		DBC_COMMAND		SCANSCAN
+		DBC_TARGET		psddatpsmurt   lmund905 tlmnobuk
+		DBC_SUM_MAP		mscanpsdmundurkunci
+
+CALCS()
+cpsdkode        STRIP(tlmnobuk) + FLD_TO_STRING(lnourtkunci)
+/*ctglbesok       g_tgltrn+1
+cmunduratasan   tlmtype2=="TTDATASAN1" || tlmtype2=="TTDATASAN2"*/
+cscanpsdkunci   dbscanpsdmundurkunci!=0 || dbscanpsdmundurkunci==0
+cnourtkunci     ltotMundurKunci + 1
+ctotkunci       ltotMundurKunci +1
+ctglsama        psdtgl1>g_tgltrn
+ctglsebelum     psdtgl1>=g_tgltrn
+cbtsmundursdm   (psdtgl1<=ltlgmmaxmund)
+ctglmaxmund     DO_LIB ap_jtpkr(ltipe1,g_tgltrn,l3,&ltlgmmaxmund);
+
+
+EDITS(tmptranst)
+e.Mandatory	psdtgl1 MANDATORY
+e.Mandatory	psdket MANDATORY
+t.ValidatePsi3   psdstr1  VALIDATE_IF cotY psikodidx misipsdkunci 0
+
+MAP(misipsdkunci)
+g_tgltrn     psdtgl2     REPLACE_IF cotY
+/*ctglbesok   psdtgl1     DO_CALC_IF  cmunduratasan*/
+ltotMundurKunci      ltotMundurKunci      REPLACE_IF cscanpsdkunci
+cnourtkunci psdnourt    DO_CALC
+ctotkunci   lnourtkunci DO_CALC
+cpsdkode    psdkode     DO_CALC
+ctglmaxmund   ltlgmmaxmund  DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdtgl1	DO_MAP SHOW misipsdkunci
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF ctglsama mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Bisa Input Tanggal Yang Sama 
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF ctglsebelum mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Bisa Input Tanggal Yang Sudah Lewat           
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cbtsmundursdm mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur 3 Hari
+
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cbtsmundursdm mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur 3 Hari
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)               
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD psdprm
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+psddatpsmurt   lmund905 tlmnobuk 
+SFL_MAP
+tlmnobuk	psdpsmkode	REPLACE
+lmund905	psddata		REPLACE

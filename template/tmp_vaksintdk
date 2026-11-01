@@ -1,0 +1,96 @@
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+|! t.KetTdkBoleh1                  !|
+|! t.KetTdkBoleh2                  !|
+|! t.KetTdkBoleh3                  !|
+|! t.KetTdkBoleh4                  !|
+|! i.Ket          : _______________!|
+|! i.Tanggal      : _______________!|
+|! i.Nip          : _______________!|
+|! i.Ket          : _______________!|
+|! i.Sts          : _______________!|
+|! t.StsUpload    : _______________!|
+|! t.AccFoto      : ________       !|
+|! t.NipACC       : _______________!|
+|! t.JikaTaccTambahLagi            !|
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg                  PROTECT                  INPUTRI         1
+tldtglfak               PROTECT  NOLIMIT {DD-MM-YY}      INPUTRI		 2
+tldgrup                 NOCHANGE                 INPUTRI         3
+tldket                  TEXTAREA                INPUTRI         4
+tldsts                  PROTECT                  INPUTRI        5 
+tldsisbrg               PROTECT                  INPUTRI        6 
+tldtydis                NOCHANGE                 INPUTRI        7 
+tldlok2                 NOCHANGE                 INPUTRI        9 
+
+EDITS(tmptranst)
+e.Mandatory tldbrg      MANDATORY
+e.Mandatory tldtglfak      MANDATORY
+e.Mandatory tldket         MANDATORY
+
+DEFAULTS(tmptranst)
+tldsts          INIT_ADD                OPEN
+tldbrg		INIT_ADD		{tmpkode}
+tldgrup		INIT_ADD		{g_usrkode}
+tldtglfak	INIT_ADD		{g_tgltrn}
+tldtydis	DFALT_SCAN		BLANKS
+					ACC "ACC"
+					TACC "TACC"
+					FRAU "FRAUD"
+
+CALCS()
+cselainOPEN		tldsts !="OPEN"
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT      cur_field=tldtydis       DO_SKIP_IF cdet2OPEN
+BEFORE_INPUT      cur_field=tldket         DO_SKIP_IF cselainOPEN
+AFTER_INPUT      cur_field=tldtydis       DO_MAP SHOW mnipacc
+
+MAP(mupdtldfototdk)
+cY              tldsisbrg       DO_CALC
+
+DBCALCS(dupdtldfototdk)
+        DBC_COMMAND     UPDATE
+        DTARGET         tldprmidx tldprm
+        DMAP            mupdtldfototdk
+
+CALCS()
+ccondtdk		tmpkode =="TDK_BOLEH"
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        ccondtdk
+SFL_UPLFLD_DBCALCS dupdtldfototdk
+SFL_UPLFLD hrmnobuk tldbrg  
+
+SFL_TARGET
+	tldbukbrglok   hrmnobuk  tmpkode 
+
+SFL_MAP
+hrmdata         tlddata         REPLACE
+hrmnobuk        tldnobuk        REPLACE
+tmpkode		tldbrg  	REPLACE
+
+
+
+
+
+
+

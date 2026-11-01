@@ -1,0 +1,116 @@
+IMAGE(tmptranst)
+/----------------------------------------------------\
+ /--------------------------------------------------\
+  t.Pilihan   	    : _____________
+  t.Tanggal   	    : _____________
+  t.TanggalReminder : _____________
+  t.NipPengoreksi   : _______ ____________________
+  t.Alasan    	    : _____________________
+                      ______            
+ \--------------------------------------------------/
+\----------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+akttype         NOCHANGE                        INPUTRI 			1
+aktcrttgl       PROTECT NOLIMIT {DD-MM-YY}      INPUTRI             		2
+akttgl2         PROTECT NOLIMIT {DD-MM-YY}      INPUTRI             		2
+aktkode2        NOCHANGE                        INPUTRI 			3
+lnamauser       PROTECT        	                INPUTRI 			4
+aktket          TEXTAREA                        INPUTRI 			7
+lenterkrs       NOCHANGE                        INPUTRI 			10
+
+DEFAULT(tmptranst)
+akttype         DFALT_SCAN      UBAH_CLSD
+				MUNDUR_CLSD
+aktcrttgl       INIT_ADD        {g_tgltrn}
+aktkode2        INIT_ADD        {g_usrkode}
+lenterkrs       INIT_LABEL      Enter
+
+
+EDITS(tmptranst)
+e.Mandatory akttype MANDATORY
+e.Mandatory aktket MANDATORY
+t.ValidateNip2          aktkode2        VALIDATE  psikodidx mpsic2 0
+
+MAP(mpsic2)
+psikode         aktkode2        REPLACE
+psinama         lnamauser       REPLACE
+
+CALCS()
+cmundurclsd	akttype == "MUNDUR_CLSD"
+
+MAP(mtglreminder)
+cbesok		akttgl2		DO_CALC_IF cmundurclsd
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=akttype	DO_MAP SHOW mtglreminder
+AFTER_INPUT     cur_field=aktket        DO_MAP SHOW
+                IF c0 mdum
+                ELSE HKCURSOR NOSTAY
+                HKMSG t.EnterJkYakinInginCLSDorMundurCLSD
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD aktprm
+SFL_LINES(1)
+SFL_TARGET
+        aktkodtypidx    tlmnobuk tlmdata
+
+SFL_MAP
+tlmnobuk        aktkode         REPLACE
+tlmdata         aktdata         REPLACE
+tlmnobuk        aktnobuk        REPLACE
+tlmnobuk        aktbrg          REPLACE
+
+CALCS()
+cCLSDRESIGN      akttype  == "UBAH_CLSD"
+cCLSDRESIGN1      akttype  == "UBAH_CLSD" && djoinpsdSMSC == 1
+cresignjabSM     akttype  == "UBAH_CLSD" && djoinpsi == 1 && ((lpsijabatan == "MKTLAPANGANHMC" || lpsijabatan == "KBANMCOFFICER" || lpsijabatan == "SALESNMC" || lpsijabatan == "SALESMANHMC" || lpsijabatan == "MKTKBAHMC" ))
+cresignjabSC     akttype  == "UBAH_CLSD" && djoinpsi == 1 && ((lpsijabatan == "COUNTERSALESNMC" || lpsijabatan == "MKTCOUNTERHMC"))
+cMUNDURCLSD	akttype == "MUNDUR_CLSD"
+
+callR     psdtot - 1
+cactsmR   psdtot2 - 1
+cactscR   psdtot3 - 1
+
+MAP(mupdtlmb)
+gv_CLSD         tlmsts          REPLACE
+lpsdtot2          tlmjml             REPLACE/*act sm*/
+lpsdtot3          tlmperdis       REPLACE/*act sc*/
+
+MAP(mupdpsdSMSC)
+callR                psdtot         	     DO_CALC
+cactsmR              psdtot2                 DO_CALC_IF cresignjabSM
+cactscR              psdtot3                 DO_CALC_IF cresignjabSC
+DEBUG ldum ldum REPLACE
+
+MAP(mupdpsi)
+cblanks   psinoidll2 DO_CALC
+
+MAP(mupdabk)
+gv_CLSD		abksts		REPLACE
+
+CALCS()
+cabkinph	abksts == "INPH"
+
+
+MAP(mupdabkHOHOLD)
+cbesok         abktgl          DO_CALC_IF cabkinph
+
+SPCALCS(saddtransa)
+DO_LIB_IF cCLSDRESIGN      		ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN11 tlmnobuk,DMAP mupdabk);
+DO_LIB_IF cCLSDRESIGN   ap_dbclc(DNAME dupdpsdsmsc, DCOMMAND UPDATE, DTARGET psddatpsmkod lDAFTARSMSC lcabpst2  lcabpst2 lDAFTARSMSC,DMAP mupdpsdSMSC);
+DO_LIB_IF cCLSDRESIGN1  ap_dbclc(DNAME dupdbukb,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmb);
+DO_LIB_IF cCLSDRESIGN   ap_dbclc(DNAME dupdpsismsc, DCOMMAND UPDATE, DTARGET psikodidx  tlmplg,DMAP mupdpsi);
+DO_LIB_IF cMUNDURCLSD	ap_dbclc(DNAME dupdabkinph,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN11 tlmnobuk,DMAP mupdabkHOHOLD);
+
+
+/*DO_LIB      ap_dbclc(DNAME dupdbukb1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN11 tlmnobuk,DMAP mupdabk);*/
+
+
+
+POSTING(tmptrans)
+        PST_ADDCMD saddtransa
+

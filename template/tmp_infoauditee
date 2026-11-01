@@ -1,0 +1,72 @@
+
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+||t.Auditee			       ||
+||   t.Nip   : _____________________   ||
+||   t.Nama  : _____________________   ||
+||   t.Tgl   : _____________________   ||
+|| 				       ||
+||t.Konfirmasi			       ||
+||   t.Tgl   : _____________________   ||
+||   t.Konfir: _____________________   ||
+|| 				       ||
+|\-------------------------------------/|
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+svikode		ALLCAPS			INPUTRI 1
+svinama		PROTECT	 		INPUTRI 2
+svitgl1		PROTECT			INPUTRI 3
+svitgl2		PROTECT			INPUTRI 4
+sviket		TEXTAREA		INPUTRI 5
+
+CALCS()
+cketpjg21        DO_LIB ap_strln (sviket,&lpanjangket21);
+cpanjangket21     lpanjangket21 >= 20
+
+DEFAULTS(tmptranst)
+svitgl1		INIT	 {g_tgltrn}
+svitgl2		INIT	 {g_tgltrn}
+
+EDITS(tmptranst)
+e.ValidateNIP       svikode          VALIDATE psmkodidx maddpsm2
+
+MAP(maddpsm2)
+psmkode          svikode          REPLACE
+psmnama          svinama          REPLACE
+
+MAP(mcek21t)
+cketpjg21         lpanjangket21  DO_CALC
+
+MAP(mdumtld21)
+lpanjangket21	lpanjangket21	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviket      DO_MAP  SHOW    mcek21t
+AFTER_INPUT     cur_field=sviket      DO_MAP  SHOW    
+                                    IF cpanjangket21 mdumtld21
+                                    ELSE HKCURSOR STAY
+                                    HKMSG t.Minimal20Karakter
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_TARGET
+	svidatbuktyp  linfoaudit tlmnobuk linfoaudit
+SFL_MAP
+linfoaudit        svidata
+tlmnobuk       	  svinobuk
+linfoaudit        svitype
+
+
+PERMIT(tmptrans)
+PMT_DEL_COND    c0
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    cOPEN
+

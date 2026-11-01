@@ -1,0 +1,95 @@
+LOCAL
+PGM_FIELDS
+lktp            STRING  21
+lpsmnama      STRING  61
+lPSMKTP         STRING  11
+
+MAP(mjoinpsm)
+psmnama         lpsmnama      REPLACE
+
+DBCALCS(djoinpsm)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              psmktpidx       lktp
+        DBC_MAP                 mjoinpsm
+
+MAP(mjoinalm)
+almkec          lalmkec       REPLACE
+
+DBCALCS(djoinalm)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              almotodatidx    lktp lPSMKTP
+        DBC_MAP                 mjoinalm
+
+
+IMAGE(tmptranst)
+/-----------------------------------\
+| /--------------------------------\|
+| | t.Layar    : ____ _____________||
+| | t.NoInvent : __________________||
+| | t.NoFaktur : __________________||
+| | t.NamaKons : __________________||
+| | t.Kecamatan: __________________||
+| | i.AngKe    : __________________||
+| | t.BsrAngsur: __________________||
+| | t.Sispok   : __________________||
+| | t.Denda    : __________________||
+| | t.Rugi     : __________________||
+| | t.Ket      : __________________||
+| | t.SdhUpl   : ___________	   ||
+| \--------------------------------/|
+| /--UPLOAD------------------------\|
+| |                                ||
+| |                                ||
+| |                                ||
+| |                                ||
+| |                                ||
+| |                                ||
+| |                                ||
+| \--------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldtydis        PROTECT           INPUTRI 1
+tldlok          PROTECT           INPUTRI 2
+tldsat          PROTECT           INPUTRI 3
+tldkat          PROTECT           INPUTRI 4
+lnamakons       PROTECT           INPUTRI 5
+tldgrup         PROTECT           INPUTRI 6
+tldjml          PROTECT           INPUTRI 7
+tldhrg          PROTECT           INPUTRI 8
+tldsubtot       PROTECT           INPUTRI 9
+tldperdis       PROTECT           INPUTRI 10
+tldsatbsr       PROTECT           INPUTRI 11
+tldket          PROTECT	          INPUTRI 12
+tlmtotppn	NOCHANGE	  INPUTRI 13
+
+DEFAULTS(tmptranst)
+lPSMKTP         INIT                    PSMKTP
+
+CALCS()
+cdjoinpsm       djoinpsm==1
+cdjoinalm       djoinalm==1
+
+EDITS(tmptranst)
+e.Validate      tldkat   VALIDATE pikdatbukidx mpik1 spik {Pgv_dtpiu}
+
+MAP(mpik1)
+piknobuk      tldkat          REPLACE
+piksispok     tldsubtot       REPLACE
+pikangbl      tldhrg          REPLACE
+pikplg        lktp            REPLACE
+lpsmnama      lnamakons       REPLACE_IF cdjoinpsm
+lalmkec       tldgrup         REPLACE_IF cdjoinalm
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ctransa2g
+SFL_UPLFLD tlmnobuk
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD_DBCALCS dupdfoto
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        tldstsbrgukr   lLEGAL gv_OPEN tlmnoasal lFAKTUR

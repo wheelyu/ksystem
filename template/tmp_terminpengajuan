@@ -1,0 +1,72 @@
+IMAGE(tmptranst)
+/-----------------------------------------\ 
+ /----------------DOCUPLOAD--------------\
+
+ \---------------------------------------/
+ /---------------------------------------\
+  t.Tgl: ______________
+  t.Ok : ___ 
+         ______
+ \---------------------------------------/
+\-----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdtgl		NOCHANGE {DD-MM-YYYY}	INPUTRI 1
+tkdnoll		PROTECT SCROLL		INPUTRI 2
+ltomdetpng	TOMBOL			INPUTRI 3
+
+DEFAULTS(tmptranst)
+tkdtgl	INIT_ADD	{g_tgltrn}
+
+CALCS()
+cmskalura	mtsdari=="BLAKT_NL" || mtsdari=="PBK" || mtsdari=="TPDPN_ADA" || mtsdari=="TT_ADA"
+cmskalurb	mtsdari=="TPDPN_BARU" || mtsdari=="TT_BARU" || mtsdari=="GG" || mtsdari=="RNV" || mtsdari=="BLAKT_AL"
+cjwbga		"PENGAJUAN_PERMINTAAN"
+ccrvnd		"CARI_VENDOR"
+cabk1		"PENGAJUAN PERMINTAAN"
+
+MAP(mupdmtspsg1)
+ccrvnd	mtspst	DO_CALC_IF cmskalura
+cjwbga	mtspst	DO_CALC_IF cmskalurb
+
+MAP(maddabkuplpengajuan)
+lKUNCIABSEN	abkdata		REPLACE
+mtsnobuk	abknobuk	REPLACE
+cabk1		abkkym2		DO_CALC
+l825		abkscr		REPLACE
+mtsusrapr	abkkym		REPLACE
+g_tgltrn	abktgl		REPLACE_IF cbwh3
+cpl1		abktgl		DO_CALC_IF cats3
+gv_INPG		abksts		REPLACE_IF cbwh3
+gt_RINP		abksts		REPLACE_IF cats3
+
+SPCALCS(spupljwbga)
+DO_LIB ap_dbclc(DNAME dupdabkclsd1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN mtsnobuk,DMAP mclsdall);
+DO_LIB ap_dbclc(DNAME daddabk1,DCOMMAND ADD,DFILE abk,DMAP maddabkuplpengajuan);
+DO_LIB ap_dbclc(DNAME dupdmtspsg1,DCOMMAND UPDATE_RANGE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmtspsg1);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltomdetpng	DO_SPCALCS spupljwbga
+
+MAP(mupdtkddocx)
+cOK	tkdnoll		DO_CALC
+DBCALCS(dupdtkddocx)
+DBC_COMMAND	UPDATE
+DBC_TARGET	tkdotoidx tkdoto
+DBC_MAP		mupdtkddocx
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPL_DELCOND c0
+SFL_DOCUPLFLD mtsnobuk tmpkode
+SFL_DOCUPLFLD_DBCALCS dupdtkddocx
+SFL_UPL_DIRFLD tkdtgl
+SFL_TARGET
+	tkddatbukll lPENGAJUAN	mtsnobuk
+SFL_MAP
+	lPENGAJUAN	tkddata		REPLACE
+	mtsnobuk	tkdnobuk	REPLACE
+	gv_OPEN		tkdsts		REPLACE

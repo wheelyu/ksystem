@@ -1,0 +1,61 @@
+SCREEN  3045  APPLICATION_TYPE  s.Posting3174
+
+LOCAL
+PGM_FIELDS
+   lrekening			STRING		21
+   lbiadata			STRING		11
+   lbiajns			STRING		21
+
+IMAGE(master) 
+/---------------------------------------\ 
+|  /----------------------------------\ |
+|  |  i.Rek : ______________________  | | 
+|  \----------------------------------/ |
+\---------------------------------------/
+
+FIELD(master)
+   lrekening           NOCHANGE          NONE     1 
+
+DEFAULTS(master)
+  lrekening		INIT   {r_string1}
+  lbiadata		INIT	DTBANK
+  lbiajns		INIT	NSC
+
+EDITS(master)
+e.MANDATORY	lrekening	MANDATORY
+
+IMAGE(transt)
+/-------------------t----------------t---------t----------\
+|i.NoBuk            |                | i.DrScr |t.Type    |
+\-------------------.----------------.---------.----------/
+
+IMAGE(trans)
+|___________________|________________|_________|__________|
+
+FIELD(trans)
+biakode      NOCHANGE                   INPUTRI    1
+biadata      PROTECT                    INPUTRI    2
+biajns       PROTECT                    INPUTRI    3
+biasts       PROTECT                    INPUTRI    3
+
+SUBFILE(trans)
+SFL_TITLE(transt)
+SFL_LINES(15)
+
+SFL_TARGET
+biadatstskod   lbiadata lbiajns gv_OPEN lrekening
+
+MAP(mupdbbg)
+bianobbm	bbggol3		REPLACE
+
+MAP(mupdbia)
+gv_INPG		biasts		REPLACE
+
+SPCALCS(spcal1)
+  DO_LIB ap_dbclc(DNAME dupdbia,DCOMMAND UPDATE,DBC_TARGET biaprmidx biaprm,DMAP mupdbia);
+  DO_LIB ap_dbclc(DNAME dupdbbg,DCOMMAND UPDATE,DBC_TARGET bbgnoidx biakode,DMAP mupdbbg);
+				
+POSTING(trans)
+	PST_COMMAND spcal1
+
+END_SCREEN

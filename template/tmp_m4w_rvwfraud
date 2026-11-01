@@ -1,0 +1,165 @@
+LOCAL
+PGM_FIELDS
+lnam		    STRING	51
+lnam2		    STRING      51
+lnam3               STRING      51
+ltomrvwfrd          STRING      21
+
+IMAGE(tmptranst) 
+/-------------------------------------------------------------\
+|/-----------------------------------------------------------\|
+||t.NoBuk    ___________________________________             ||
+||                                                           ||
+||spasi                                                      ||
+||                                                           ||
+||t.BM                                                       ||
+||                                                           ||
+||t.Nip      ___________________________________             ||
+||t.Nama     ___________________________________             ||
+||t.HslSrvy  __________                                      ||
+||t.HslRsvy  __________                                      ||
+||                                                           ||
+|| spasi                                                     ||
+|\-----------------------------------------------------------/|
+|/-----------------------------------------------------------\|
+|| t.FotoSSgmaps                                             ||
+|| /---s.UPLOAD----------------------\                       ||
+|| |                                 |                       ||
+|| |                                 |                       ||
+|| |                                 |                       ||
+|| |                                 |                       ||
+|| |                                 |                       ||
+|| |                                 |                       ||
+|| |                                 |                       ||
+|| \---------------------------------/                       ||
+|\-----------------------------------------------------------/|
+spasi
+|/-----------------------------------------------------------\|
+|| spasi                                                     ||
+||                                                           ||
+||t.RM                                                       ||
+||                                                           ||
+||t.Nip      ___________________________________             ||
+||t.Nama     ___________________________________             ||
+||t.Aproval  _____                                           ||
+||t.Alasan   ___________________________________             ||
+||                                                           ||
+|| spasi                                                     ||
+||                                                           ||
+||t.HOCOLL                                                   ||
+||                                                           ||
+||t.Nip      ___________________________________             ||
+||t.Nama     ___________________________________             ||
+||t.Aproval  _____                                           ||
+||t.Alasan   ___________________________________             ||
+||                                                           ||
+||                                                 ______    ||
+|\-----------------------------------------------------------/|
+\-------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spknobuk                PROTECT                     INPUTRI  1
+spkkat3                 PROTECT                     INPUTRI  1
+lnam3                   PROTECT                     INPUTRI  1
+spktgg3                 NOCHANGE                    INPUTRI  1
+spktgg4                 NOCHANGE                    INPUTRI  1
+
+spkkat                  PROTECT                     INPUTRI  1
+lnam                    PROTECT                     INPUTRI  1
+spktgg                  NOCHANGE                    INPUTRI  1
+spkreview               TEXTAREA     ALLCAPS        INPUTRI  1
+
+spkkat2                 PROTECT                     INPUTRI  1
+lnam2                   PROTECT                     INPUTRI  1
+spktgg2                 NOCHANGE                    INPUTRI  1
+spkreview2              TEXTAREA     ALLCAPS        INPUTRI  1
+
+ltomrvwfrd              NOCHANGE                    INPUTRI  2
+
+CALCS()
+cbm4w           g_grpnam=="B.M4WBM"
+crm4w           g_grpnam=="B.M4WRM" && (spktgg3!=BLANKS && spktgg4!=BLANKS)
+cpjcoll4w       (mtsjmltlk>=2 && (g_grpnam=="B.M4WCSPV" || g_grpnam=="B.M4WDPH") && (spktgg3!=BLANKS && spktgg4!=BLANKS && spktgg!=BLANKS))
+cbm4wb          g_grpnam!="B.M4WBM"
+crm4wb          g_grpnam!="B.M4WRM" || (g_grpnam=="B.M4WRM" && (spktgg3==BLANKS && spktgg4==BLANKS))
+cpjcoll4wb      mtsjmltlk==1 || (g_grpnam!="B.M4WCSPV" && g_grpnam!="B.M4WDPH") || ((g_grpnam=="B.M4WCSPV" || g_grpnam=="B.M4WDPH") && (spktgg3==BLANKS && spktgg4==BLANKS && spktgg==BLANKS))
+
+
+DEFAULTS(tmptranst)
+ltomrvwfrd              INIT            ENTER
+ltomrvwfrd              INIT_UPDATE     ENTER
+spktgg                  DFALT_SCAN      BLANKS
+                                        ACC
+                                        TACC
+spktgg2                 DFALT_SCAN      BLANKS
+                                        ACC
+                                        TACC
+spktgg3                 DFALT_SCAN      BLANKS
+                                        SESUAI
+                                        TIDAK
+spktgg4                 DFALT_SCAN      BLANKS
+                                        SESUAI
+                                        TIDAK
+IF cbm4w                spkkat3 INIT_UPDATE     {g_usrkode}
+IF crm4w                spkkat  INIT_UPDATE     {g_usrkode}
+IF cpjcoll4w            spkkat2 INIT_UPDATE     {g_usrkode}
+
+
+EDITS(tmptranst)
+e.MANDATORY                spktgg          MANDATORY_IF crm4w
+e.MANDATORY                spktgg2         MANDATORY_IF cpjcoll4w
+e.MANDATORY                spktgg3         MANDATORY_IF cbm4w
+e.MANDATORY                spktgg4         MANDATORY_IF cbm4w
+e.MANDATORY                spkreview       MANDATORY_IF crm4w
+e.MANDATORY                spkreview2      MANDATORY_IF cpjcoll4w
+t.ValidatePsmBm            spkkat3         VALIDATE psmkodidx mpsmbm        0
+t.ValidatePsmRm            spkkat          VALIDATE psmkodidx mpsmrm        0
+t.ValidatePsmHoColl        spkkat2         VALIDATE psmkodidx mpsmhocoll    0
+e.Validate                 spknobuk        VALIDATE mtsbukidx mspkprm       0
+
+MAP(mpsmbm)
+psmnama         lnam3    REPLACE
+
+MAP(mpsmrm)
+psmnama         lnam     REPLACE
+
+MAP(mpsmhocoll)
+psmnama         lnam2    REPLACE
+
+MAP(mspkprm)         
+spkprm          lspkprm  REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=spktgg3        DO_SKIP_IF cbm4wb
+BEFORE_INPUT    cur_field=spktgg4        DO_SKIP_IF cbm4wb
+BEFORE_INPUT    cur_field=spktgg         DO_SKIP_IF crm4wb
+BEFORE_INPUT    cur_field=spkreview      DO_SKIP_IF crm4wb
+BEFORE_INPUT    cur_field=spktgg2        DO_SKIP_IF cpjcoll4wb
+BEFORE_INPUT    cur_field=spkreview2     DO_SKIP_IF cpjcoll4wb
+
+MAP(muplbrd)
+cY		spkhasil        DO_CALC
+
+DBCALCS(dbsdhuplssgmaps)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkdatbuktyp    spkdata spknobuk lRVWFRAUD
+        DBC_MAP         muplbrd
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS      dbsdhuplssgmaps
+SFL_UPLFLD              spktype lspkprm
+SFL_UPL_COND            cbm4w
+SFL_UPL_COND_MSG IF     cbm4wb Hanya BM dapat upload foto
+SFL_UPL_DIRFLD mtstgl
+SFL_SHOW_NEXT
+
+SFL_TARGET
+        spkdatbuktyp   mtsdata mtsnobuk lRVWFRAUD
+SFL_MAP
+mtsnobuk        spknobuk        REPLACE
+mtsdata         spkdata         REPLACE
+mtsnoasal       spknoasal       REPLACE

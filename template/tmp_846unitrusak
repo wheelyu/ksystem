@@ -1,0 +1,90 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|                                              t.UplBuktiFotoRusak                  |
+| /-------------------------------------\/----------------s.UPLOAD----------------\ |                                       
+| | t.NoMesin  : __________________     ||                                        | |
+| | t.NoRangka : _____________________  ||                                        | |
+| | t.KodePart : _________________      ||                                        | |
+| | t.HppPart  : ___________            ||                                        | |
+| | t.HppTam   : ___________            ||                                        | |
+| | t.KetRusak : _____________________  ||                                        | |
+| | t.PotenLos : _________________      ||                                        | |
+| |              _________              ||                                        | |
+| \-------------------------------------/|                                        | |
+|                                        \----------------------------------------/ |
+|                                                        /------\                   |
+|                                                          ____                     |
+|                                                        \------/                   |
+\-----------------------------------------------------------------------------------/
+
+                                            
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tkmplg          PROTECT SCROLL                 INPUTRI 1
+tkmbuk1         PROTECT SCROLL                 INPUTRI 2
+tkmbuk2         ALLCAPS                        INPUTRI 3
+tkmdf1          PROTECT                        INPUTRI 4
+tkmdf2          DIGITS                         INPUTRI 5
+tkmket          TEXTAREA                       INPUTRI 6
+tkmdf3          PROTECT                        INPUTRI 7    
+lenter          NOCHANGE                       INPUTRI 8
+tkmtype         PROTECT                        INPUTRI 8
+
+EDITS(tmptranst)
+e.Mandatoryftrsk    tkmtype         MANDATORY        
+
+DEFAULTS(tmptranst)
+lenter          INIT                    "OK"
+
+MAP(mupdtkmrsk)
+lOK         tkmtype          REPLACE
+
+DBCALCS(dupdtkmrsk)
+    DBC_COMMAND     UPDATE
+    DBC_TARGET      tkmprmidx   tkmprm 
+    DBC_MAP         mupdtkmrsk
+
+MAP(mjoinbrdrsk)
+brdhrg        lhrgbrgpart          REPLACE
+
+DBCALCS(djoinbrdrsk)
+        DBC_COMMAND    JOIN_LAST_SFL
+        DBC_TARGET     brdbrglokoto  gv_INPG tkmbuk2 tlmcab
+        DBC_MAP        mjoinbrdrsk
+
+CALCS()
+cjoinbrdrsk     djoinbrdrsk == 1
+cpotenlos       tkmdf1 + tkmdf2
+
+MAP(mpotenlos)
+cpotenlos     tkmdf3        DO_CALC
+
+MAP(misitkm)
+lhrgbrgpart     tkmdf1  REPLACE_IF cjoinbrdrsk
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD      tkmnobuk
+SFL_UPLFLD_DBCALCS      dupdtkmrsk
+SFL_TITLE(tmptranst)
+
+
+SFL_TARGET
+tkmdtkdstlok   lUNITRUSAK tlmnobuk gv_OPEN  
+
+SFL_MAP
+tlmnobuk    tkmkode     REPLACE
+lUNITRUSAK  tkmdata     REPLACE
+gv_OPEN     tkmsts      REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkmbuk2	DO_MAP SHOW misitkm
+AFTER_INPUT cur_field=tkmdf2    DO_MAP SHOW mpotenlos
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cOPEN

@@ -1,0 +1,88 @@
+LOCAL
+PGM_FIELDS
+lurte           INT2            2
+
+MAP(mjointlde)
+tldnourt        lurte           REPLACE
+DBCALCS(djointlde)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tldbukbrglok    tlmnobuk
+        DBC_MAP         mjointlde
+
+IMAGE(tmptranst)
+/-------t----------------------t------------t------------\
+|t.No   |t.NoPol               |t.Latitude  |t.Longitude |
+\-------.----------------------.------------.------------/
+IMAGE(tmptrans)
+|_______|______________________|___.________|___.________|
+
+FIELDS(tmptrans)
+tldnourt        PROTECT                 INPUTRI         1
+tldnobbm        ALLCAPS SCROLL          INPUTRI         2
+tldperdis4      PROTECT                 INPUTRI         4
+tldperdis5      PROTECT                 INPUTRI         4
+
+DEFAULTS(tmptrans)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg          INIT_ADD        {g_usrkode}
+
+EDITS(tmptrans)
+e.Mandatory	tldnobbm	MANDATORY
+e.Dupkey        tldnobbm        DUPKEY          tldbukbbmidx {Ptlmnobuk} {Stlmcab} {Stlddvs}
+
+CALCS()
+curte           lurte + 1
+cjointld0e      djointlde == 0 && g_curcmd == 1
+cjointld1e      djointlde == 1 && g_curcmd == 1
+cbknSISTEMe     tldsat != "SISTEM"
+
+
+MAP(murte)
+gv_int1         tldnourt        REPLACE_IF cjointld0e
+curte           tldnourt        DO_CALC_IF cjointld1e
+
+
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tldnobbm      DO_MAP SHOW murte
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT      cbknSISTEMe
+SFL_COND	cstnk
+SFL_LINES(10)
+SFL_TARGET
+tldbukurtidx    tlmnobuk   
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+tlmcab          tldcab          REPLACE
+tlmtype1        tldgrup         REPLACE
+g_lat       	tldperdis4      REPLACE
+g_lon         	tldperdis5      REPLACE
+
+
+CALCS()
+cplus1d		tlmtotal + 1
+cmins1d		tlmtotal - 1
+
+
+MAP(mupdtlmaddd)
+cplus1d		tlmtotal	DO_CALC
+
+MAP(mupdtlmupdd)
+cmins1d		tlmtotal	DO_CALC
+
+
+SPCALCS(sptrans2addd)
+DO_LIB		ap_dbclc(DNAME dupdtlmaddd, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmaddd);
+
+SPCALCS(sptrans2updd)
+DO_LIB		ap_dbclc(DNAME dupdtlmupdd, DCOMMAND UPDATE, DTARGET tlmbukidx tldnobuk, DMAP mupdtlmupdd);
+
+POSTING(tmptrans)
+	PST_ADDCMD	sptrans2addd
+	PST_DELCMD	sptrans2updd
+
+

@@ -1,0 +1,100 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+| t.UplFotoFuByPhone               |
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|         ___________________      |
+|t.StsUpl   ________________       |
+|t.TglFt    ________________       |
+|t.Jam      __.__                  |
+|t.Lat    _____________.______     |
+|t.Long   _____________.______     |
+|                                  |
+|t.LonLatUpload                    |
+|t.Lat    _____________.______     |
+|t.Long   _____________.______     |
+|t.Jar               ____.__ t.M   |
+|                                  |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+lUplFtbyhp              TOMBOL                  INPUTRI         1
+svistr1                 NOCHANGE        	INPUTRI         2
+svitgl1			PROTECT			INPUTRI		3
+ljamftbyhp              PROTECT                 INPUTRI         4
+svidf1                  PROTECT                 INPUTRI         5
+svidf2                  PROTECT                 INPUTRI         6
+svidf3                  PROTECT                 INPUTRI         7
+svidf4                  PROTECT                 INPUTRI         8
+svidf5                  PROTECT                 INPUTRI         9
+
+MAP(mupdsviftbyhp2)
+g_fotolat1      svidf1          REPLACE
+g_fotolon1      svidf2          REPLACE
+llatfoto	svidf3		REPLACE
+llonfoto	svidf4		REPLACE
+cUPLOADOK       svistr1         DO_CALC_IF cadafoto
+
+MAP(mapjarak2)
+cjarak2		ljarak2         DO_CALC_IF cadajarak2
+
+DBCALCS(dmapmapjarak2)
+        DBC_COMMAND     MAPMAP
+        DBC_MAP         mapjarak2
+
+MAP(mupdsviftbyhp3)
+ljarak2         svidf5          REPLACE_IF cadajarak2
+
+CALCS()
+csdhupl			sviyt1=="Y"
+
+SPCALCS(supdftbyhp)
+        DO_LIB_IF csdhupl ap_dbclc(DNAME dupdsviftbyhp2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdsviftbyhp2);
+        DO_LIB_IF cadajarak2 ap_dsGPS(svidf1,svidf2,llatfoto,llonfoto,&ljarak2);
+        dmapmapjarak2
+        DO_LIB_IF csdhupl ap_dbclc(DNAME dupdsviftbyhp3,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdsviftbyhp3);
+
+HOOKS(tmptranst)
+   CLICKED      cur_field=lUplFtbyhp DO_SPCALCS supdftbyhp
+
+MAP(mupdsviftbyhp)
+gv_Y            sviyt1          REPLACE
+csystime        svidf6          DO_CALC
+csystime	ljamftbyhp	DO_CALC
+g_tgltrn        svitgl1         REPLACE
+
+DBCALCS(dupdsviftbyhp)
+        DCOMMAND        UPDATE
+        DTARGET         sviotoidx svioto
+        DMAP            mupdsviftbyhp
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csdhambil
+SFL_UPLFLD_DBCALCS dupdsviftbyhp
+SFL_UPL_DIRFLD mtstgl
+SFL_UPLFLD      svitype svinobuk
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND c0
+SFL_TARGET
+svidatbuktyp    gv_datasurvey mtsnobuk lkunjftbyhp
+SFL_MAP
+gv_datasurvey		svidata		REPLACE
+mtsnobuk		svinobuk 	REPLACE
+lkunjftbyhp		svitype		REPLACE
+lkunjftbyhp     	svikode         REPLACE
+mtsnoasal       	svidtmkode      REPLACE
+c1              	svinourt        DO_CALC
+

@@ -1,0 +1,112 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------\
+|/--------s.UPLOAD--------------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+|/------------------------------------\|
+||t.KlikUploadOkSemua                 ||
+||i.Ket       : ______________________||
+!!t.TglFt     : __________            ||
+!!t.Jam       : __________            ||
+!!t.Lat       : ___.__________________||
+!!t.Lon       : ___.__________________||
+||t.HasilVerif: ____________          ||
+||              ______________________||
+||t.NipVerif  : ________  ____________||
+||t.TglVer    : ___________           ||
+||t.JamVerif  : ______                ||
+||              _______________      _||
+|\------------------------------------/|
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+ljamfoto714             PROTECT                 INPUTRI         5
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         6
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         7
+svistr1                 NOCHANGE                INPUTRI         8
+svistr2                 ALLCAPS                 INPUTRI         9
+svistr3                 PROTECT                 INPUTRI         10
+lnipver                 PROTECT                 INPUTRI         11
+ltglverif               PROTECT {DD-MM-YYYY}            INPUTRI         13
+ljamverif               PROTECT                 INPUTRI         14
+luplokok		TOMBOL			INPUTRI		14
+svinobuk                PROTECT UNSEEN          INPUTRI         15
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msvift724b
+e.Validate      svistr3         VALIDATE psikodidx mpsi724b
+
+MAP(mpsi724b)
+psikode         svistr3         REPLACE
+psinama         lnipver         REPLACE
+
+MAP(msvift724b)
+cblanks         ljamfoto714     DO_CALC
+svidf8          ljamfoto714     REPLACE
+cblanks         ljamverif       DO_CALC
+svidf8          ljamfoto714     REPLACE
+svidf5          ljamverif       REPLACE
+svistr4         ltglverif       REPLACE
+
+
+CALCS()
+cselaincekkerja	svikode != "CEKKERJA"
+ccekkerja	svikode == "CEKKERJA"
+
+MAP(mupdsviperbaikan)
+cBLANKS		svistr1		DO_CALC_IF cselaincekkerja
+cBLANKS		svitype3	DO_CALC_IF cselaincekkerja
+cBLANKS		svistr10	DO_CALC_IF ccekkerja
+
+cBLANKS         svistr4         DO_CALC
+cBLANKS         svidf5          DO_CALC
+cBLANKS         svistr3         DO_CALC
+cBLANKS         svistr2         DO_CALC
+cBLANKS         svistr33        DO_CALC
+cBLANKS         svistr5         DO_CALC
+
+CALCS()
+cuntukfoto	svikode=="RMHKANAN" || svikode=="RMHKIRI" || svikode=="RMHDPN" || svikode=="FTSELFPMH" || svikode=="FTSELFPJM" || svikode == "CEKKERJA"
+cselainfoto     svikode!="RMHKANAN" && svikode!="RMHKIRI" && svikode!="RMHDPN" && svikode!="FTSELFPMH" && svikode!="FTSELFPJM" && svikode != "CEKKERJA"
+
+MAP(mupdsviperbaikanklik)
+cBLANKS		sviyt2		DO_CALC_IF cselainfoto
+cBLANKS		svistr31	DO_CALC_IF cuntukfoto
+
+DBCALCS(dupdsviperbaikan)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviotoidx	svioto
+	DBC_MAP		mupdsviperbaikan
+
+MAP(mupdabktgjawab)
+gv_CLSD		abksts		REPLACE_IF cbukakunci
+
+SPCALCS(spcalcuploadok)
+DO_LIB_IF csudahuploadulang ap_dbclc(DNAME dupdsviperbaikanklik,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdsviperbaikanklik);
+DO_LIB_IF csudahuploadulang ap_dbclc(DNAME dupdabktgjawab,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabktgjawab);
+DO_LIB_IF csudahuploadulang ap_dbclc(DNAME daddabkam,DCOMMAND ADD,DFILE abk,DMAP maddabkam);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luplokok       DO_SPCALCS IF csudahuploadulang spcalcuploadok
+
+SUBFILE(tmptrans)
+SFL_LINES(3)
+SFL_TITLE(tmptranst)
+SFL_SELECT ctolakansaja
+SFL_UPLFLD_DBCALCS dupdsviperbaikan
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svikode
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk
+

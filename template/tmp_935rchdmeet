@@ -1,0 +1,208 @@
+CALCS()
+ckunciguidmeet			abktype == "GUIDMEET" && (abksts == "RINP" || abksts == "INPG") 
+ckuncirmdrmeet			abktype == "RMDRMEET" && (abksts == "RINP" || abksts == "INPG")
+ckunciupldmeet			abktype == "UPLDMEET" && (abksts == "RINP" || abksts == "INPG")
+ckuncimeetsendev		abktype == "JDWLMEET" && abkkym == lnipsendev
+ckuncimeetpicdev		abktype == "JDWLMEET" && abkkym == lnippicdev
+ckuncimeetpiccoe		abktype == "JDWLMEET" && abkkym == lnippiccoe
+
+DBCALCS(djoinabkguidmeet)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		abkdatbukidx lKUNCIABSEN tlmnobuk
+	DBC_SELECT		ckunciguidmeet
+
+DBCALCS(djoinabkrmdrmeet)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		abkdatbukidx lKUNCIABSEN tlmnobuk
+	DBC_SELECT		ckuncirmdrmeet
+
+DBCALCS(djoinabkupldmeet)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		abkdatbukidx lKUNCIABSEN tlmnobuk
+	DBC_SELECT		ckunciupldmeet
+
+DBCALCS(djoinabkmeetsendev)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		abkdatbukidx lKUNCIABSEN tlmnobuk
+	DBC_SELECT		ckuncimeetsendev
+
+DBCALCS(djoinabkmeetpicdev)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		abkdatbukidx lKUNCIABSEN tlmnobuk
+	DBC_SELECT		ckuncimeetpicdev
+
+DBCALCS(djoinabkmeetpiccoe)
+	DBC_COMMAND		JOIN
+	DBC_TARGET		abkdatbukidx lKUNCIABSEN tlmnobuk
+	DBC_SELECT		ckuncimeetpiccoe
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.RecheduleMeeting                ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.StsUbah    : ___________________ ||
+||t.Tanggal    : ___________________ ||
+||t.WktMulai   : ___________________ ||
+||t.WktSeles   : ___________________ ||
+||t.JdlMeet    : ___________________ ||
+||t.KetMeet    : ___________________ ||
+||t.Tempat     : ___________________ ||
+||               	  __________ ||
+||spasi				     ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdjenis	NOCHANGE			INPUTRI	1
+tkdtgl		NONE NOLIMIT {DD-MM-YYYY}	INPUTRI	2
+tkdjwbstr1	NOCHANGE			INPUTRI	3
+tkdjwbstr2	NOCHANGE			INPUTRI	4
+tkdsisstr	ALLCAPS				INPUTRI	5
+tkdket		TEXTAREA ALLCAPS		INPUTRI	6
+tkdstr1		NOCHANGE			INPUTRI	7
+lenter		ALLCAPS				INPUTRI	8
+
+DEFAULTS(tmptranst)
+tkdjenis	DFALT_SCAN	BLANKS
+				BATAL
+				GANTITGL
+tkdstr1		DFALT_SCAN	BLANKS
+				ONLINE
+				OFFLINE
+
+CALCS()
+cbtlmeet		tkdjenis == "BATAL"
+crchdmeet		tkdjenis == "GANTITGL"
+cupdtglmeet		(tkdjenis == "GANTITGL" && (tkdtgl - g_tgltrn) >= 0) ||
+			(tkdjenis == "BATAL")
+
+chmin7guidmeet		(tlmtgl2 - tkdtgl) == 7 && djoinabkguidmeet == 1
+chmin7rmdrmeet		(tlmtgl2 - tkdtgl) == 7 && djoinabkrmdrmeet == 1
+chmin7upldmeet		(tlmtgl2 - tkdtgl) == 7 && djoinabkupldmeet == 1
+
+chmin3meetsendev	(tlmtgl2 - tkdtgl) == 3 && djoinabkmeetsendev == 0
+chmin3meetpicdev	(tlmtgl2 - tkdtgl) == 3 && djoinabkmeetpicdev == 0
+chmin3meetpiccoe	(tlmtgl2 - tkdtgl) == 3 && djoinabkmeetpiccoe == 0
+
+cnipguidance		abktype == "GUIDMEET" && abkkym == lnippdcadir	
+cniprmdrmeet		abktype == "RMDRMEET" && 
+			(abkkym == lnippiccoe || abkkym == lnippdcadir || abkkym == lnippicpdca || abkkym == lnippdcadiv ||
+			 abkkym == lnipsendev || abkkym == lnipdev1    || abkkym == lnipdev2    /* || abkkym == lnipdev3 */ || abkkym == lnippicdev)
+cnipupldmeet		abktype == "UPLDMEET" &&
+			(abkkym == lnipsendev || abkkym == lnipdev1    || abkkym == lnipdev2    /* || abkkym == lnipdev3 */ )
+
+crchdmin6		tkdtgl - 6
+crchdmin5		tkdtgl - 5
+crchdmin4		tkdtgl - 4
+crchdmin2		tkdtgl - 2
+
+EDITS(tmptranst)
+e.Validate Jam Mulai		tkdjwbstr1		VALIDATE_IF crchdmeet tbddatkodidx mjamtelpd1 stbd {Pgv_dttabel} {PlSCT935} {PlJAMMEETING}
+e.Validate Jam Selesai		tkdjwbstr2 		VALIDATE_IF crchdmeet tbddatkodidx mjamtelpd2 stbd {Pgv_dttabel} {PlSCT935} {PlJAMMEETING}
+
+MAP(mjamtelpd1)
+tbdkode		tkdjwbstr1		REPLACE
+
+MAP(mjamtelpd2)
+tbdkode		tkdjwbstr2		REPLACE
+
+MAP(misimeeting)
+tlmtgl2		tkdtgl			REPLACE
+tlmkode		tkdjwbstr1		REPLACE
+tlmpst		tkdjwbstr2		REPLACE	
+tlmdari		tkdsisstr		REPLACE
+tlmuntuk	tkdstr1			REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT		cur_field=tkdjenis	IF cbtlmeet DO_MAP SHOW misimeeting
+BEFORE_INPUT		cur_field=tkdjwbstr1	DO_MAP SHOW
+			IF cupdtglmeet		mdum
+			ELSE HKCURSOR
+			HKMSG Tanggal Tidak Boleh Kurang Dari Hari Ini
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cjoinpeserta935
+SFL_TARGET	tkddatbukll lRSCHMEET tlmnobuk
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+lRSCHMEET	tkddata		REPLACE
+
+MAP(mbatalmeeting)
+gv_VOID		tlmsts		REPLACE
+DEBUG ldum	ldum		REPLACE
+
+MAP(mbukaabkbtlmeet)
+gv_VOID		abksts		REPLACE
+
+MAP(mupdmeetguidance)
+gt_RINP		abksts		REPLACE_IF cnipguidance
+crchdmin6	abktgl		DO_CALC_IF cnipguidance
+
+MAP(mupdmeetreminder)
+gt_RINP		abksts		REPLACE_IF cniprmdrmeet
+crchdmin5	abktgl		DO_CALC_IF cniprmdrmeet
+
+MAP(mupdmeetupldmeet)
+gt_RINP		abksts		REPLACE_IF cnipupldmeet
+crchdmin4	abktgl		DO_CALC_IF cnipupldmeet
+
+MAP(maddmeeting)
+lKUNCIABSEN	abkdata		REPLACE
+tlmnobuk	abknobuk	REPLACE
+lINPH		abksts		REPLACE
+l935		abkscr		REPLACE
+crchdmin2	abktgl		DO_CALC
+lnipsendev	abkkym		REPLACE
+lketmeeting	abkkym2		REPLACE
+lJDWLMEET	abktype		REPLACE
+DEBUG ldum	ldum		REPLACE
+
+MAP(maddmeeting2)
+lKUNCIABSEN	abkdata		REPLACE
+tlmnobuk	abknobuk	REPLACE
+lINPH		abksts		REPLACE
+l935		abkscr		REPLACE
+crchdmin2	abktgl		DO_CALC
+lnippicdev	abkkym		REPLACE
+lketmeeting	abkkym2		REPLACE
+lJDWLMEET	abktype		REPLACE
+
+MAP(maddmeeting3)
+lKUNCIABSEN	abkdata		REPLACE
+tlmnobuk	abknobuk	REPLACE
+lINPH		abksts		REPLACE
+l935		abkscr		REPLACE
+crchdmin2	abktgl		DO_CALC
+lnippiccoe	abkkym		REPLACE
+lketmeeting	abkkym2		REPLACE
+lJDWLMEET	abktype		REPLACE
+
+MAP(mupdjdwlmeet)
+tkdtgl		tlmtgl2		REPLACE
+tkdjwbstr1	tlmkode		REPLACE
+tkdjwbstr2	tlmpst		REPLACE
+
+SPCALCS(sprechedule)
+DO_LIB_IF cbtlmeet		ap_dbclc(DNAME dbatalmeeting,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mbatalmeeting);
+DO_LIB_IF cbtlmeet		ap_dbclc(DNAME dbukaabkbtlmeet,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mbukaabkbtlmeet);/*buka kunci semua meeting*/
+
+/*update kuncian jika H-7 dari tgl meeting terbaru*/
+DO_LIB_IF chmin7guidmeet	ap_dbclc(DNAME drchdmeetguid,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdmeetguidance);	/*update kunci Guidance Bersama Direksi*/
+DO_LIB_IF chmin7rmdrmeet	ap_dbclc(DNAME drchdrmdrmeet,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdmeetreminder);	/*update kunci Reminder Meeting*/
+DO_LIB_IF chmin7upldmeet	ap_dbclc(DNAME drchdupldmeet,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdmeetupldmeet);	/*update kunci Upload Bahan Meeting*/
+
+/*update kuncian jika H-3 dari tgl meeting terbaru*/
+DO_LIB_IF chmin3meetsendev	ap_dbclc(DNAME daddmeeting,DCOMMAND ADD,DFILE abk,DMAP maddmeeting);		/*reminder jadwal meeting H-2 Senior Dev*/
+DO_LIB_IF chmin3meetpicdev	ap_dbclc(DNAME daddmeeting2,DCOMMAND ADD,DFILE abk,DMAP maddmeeting2);		/*reminder jadwal meeting H-2 Pic Dev*/
+DO_LIB_IF chmin3meetpiccoe	ap_dbclc(DNAME daddmeeting3,DCOMMAND ADD,DFILE abk,DMAP maddmeeting3);		/*reminder jadwal meeting H-2 Pic Coe*/
+
+/*update master meeting*/
+DO_LIB_IF crchdmeet		ap_dbclc(DNAME dupdjdwlmeeting,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdjdwlmeet);
+
+
+POSTING(tmptrans)
+PST_ADDCMD	sprechedule

@@ -1,0 +1,85 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------\
+|t.UplIjsKmbl                                               |
+|__ _____________________________                           |                          
+|/--s.UPLOAD----------------------\/-----------------------\|
+||                                ||t.Tgl     : __________ ||
+||                                ||t.Nippic  : __________ ||
+||                                ||t.Niphrd  : __________ ||
+||                                ||t.OkUp    : __________ ||
+||                                ||t.AccHrd  : __________ ||
+||                                || ______ ______         ||
+||                                |\-----------------------/|
+||                                |                         |
+|\--------------------------------/                         |
+|i.Ket : ___________________________________________________|
+\-----------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdnourt		PROTECT			INPUTRI 1
+psdket			PROTECT			INPUTRI 2
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 3
+psdstr1			PROTECT			INPUTRI	4
+psdstr2			PROTECT			INPUTRI 5
+psdtype			PROTECT			INPUTRI	6
+psdtype2		PROTECT			INPUTRI 7
+luploadtacc5		TOMBOL			INPUTRI 8
+luploadacc5		TOMBOL			INPUTRI 9
+psdket2  		ALLCAPS SCROLL		INPUTRI 10 
+
+DEFAULTS(tmptranst)
+luploadtacc5	INIT		TACC
+luploadacc5	INIT		ACC
+l_count6	INIT		1
+
+MAP(mupdmtssdm21c)
+cOK		psdtype		DO_CALC
+g_usrkode	psdstr1		REPLACE
+g_tgltrn	psdtgl1		REPLACE
+
+DBCALCS(dupdmtssdm21c)
+DBC_COMMAND	UPDATE
+DBC_TARGET	psdprmidx	psdprm
+DBC_MAP		mupdmtssdm21c
+
+MAP(mupdmtssdm2x)
+ctacc1          psdtype2        DO_CALC
+cBLANKS         psdtype         DO_CALC
+g_usrkode       psdstr2         REPLACE
+
+MAP(mupdmtssdm3x)
+cacc1           psdtype2        DO_CALC
+cacc1           psdtype         DO_CALC
+g_usrkode       psdstr2         REPLACE
+g_tgltrn        psdtgl2         REPLACE
+
+CALCS()
+cada_kirim2x     (UPLEXIST(l_count6) == 1  || UPLEXIST(l_count6) == 0) && (g_grpnam=="HRDHEAD"|| g_grpnam=="HRDSPV" || g_grpnam=="FINARSIP" || g_usrkode=="1802178") && hrmcab2=="PENGEMBALIAN" && hrmket2=="ACC_BERKAS"
+
+SPCALCS(supdpsd2mtsx)
+        DO_LIB_IF cada_kirim2x ap_dbclc(DNAME dupdmtssdm2x,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdmtssdm2x);
+
+SPCALCS(supdpsd3mtsx)
+        DO_LIB_IF cada_kirim2x ap_dbclc(DNAME dupdmtssdm3x,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdmtssdm3x);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtacc5	DO_SPCALCS supdpsd2mtsx 
+CLICKED		cur_field=luploadacc5	DO_SPCALCS supdpsd3mtsx 
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF cbkn_accfoto
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD  psdpsmkode psdket
+SFL_UPLFLD_DBCALCS dupdmtssdm21c
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+	psddatpsmkod  lfoto4          hrmnobuk                           
+
+SFL_MAP
+lfoto4         		psddata		REPLACE
+hrmnobuk		psdpsmkode	REPLACE
+gv_dtijazah21		psdkode		REPLACE

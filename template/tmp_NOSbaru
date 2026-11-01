@@ -1,0 +1,66 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------\
+|                                                 t.FotoHarusHorizontal           |
+|/--------------------------------------------\/------------s.UPLOAD-------------\|
+|| t.Indikator  : ___ _______________________ ||                                 ||
+|| t.HasilObv   : ___________________________ ||                                 ||
+||                                   	      ||                                 ||
+||                                   	      ||                                 ||
+||                                   	      ||                                 ||
+|\--------------------------------------------/\---------------------------------/|
+\---------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tldbrdoto	ALLCAPS			INPUTRI 1
+tldbrg         PROTECT                 INPUTRI 2
+tldket          TEXTAREA                INPUTRI 3
+
+
+CALCS()
+cketpjg11        DO_LIB ap_strln (tldket,&lpanjangket1);
+cpanjangket11     lpanjangket1 >= 20
+
+EDITS(tmptranst)
+e.Validate      tldbrdoto        VALIDATE tbddatkodidx mtbd6_6 stbd {Pgv_dttabel} {Plaudit} {Plnosnew}
+
+MAP(mtbd6_6)
+tbdkode         tldbrdoto     REPLACE
+tbdket          tldbrg       REPLACE
+
+
+MAP(mcek201)
+cketpjg11         lpanjangket1  DO_CALC
+
+MAP(mdumtld1)
+lpanjangket1     lpanjangket1     REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldket      DO_MAP  SHOW    mcek201
+AFTER_INPUT     cur_field=tldket      DO_MAP  SHOW
+                                    IF cpanjangket11 mdumtld1
+                                    ELSE HKCURSOR STAY
+                                    HKMSG t.Minimal20Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD tldoto 
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        tldbukbbmidx    tlmnobuk  lNOSnew
+
+SFL_MAP
+tlmnobuk        tldnobuk
+lNOSnew       	tldnobbm
+lNOSbaru        tlddata
+
+PERMIT(tmptrans)
+PMT_DEL_COND    cIT
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    cOPEN
+

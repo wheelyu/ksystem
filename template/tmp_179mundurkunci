@@ -1,0 +1,145 @@
+IMAGE(tmptranst)
+/------------------------------------------------------\
+|/----------------------------------------------------\|
+|!t.TipeKunci  : ___________ ___________              !|
+|!t.Nip        : ___________                          !|
+|!t.TglMunKunc : ___________                          !|
+|!t.Alasan     : ___________________________________ _!|
+|\----------------------------------------------------/|
+\------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr2			PROTECT		INPUTRI 1
+psdstr3			PROTECT		INPUTRI 1
+psdstr1		PROTECT		INPUTRI 1
+psdtgl1                 NONE {DD-MM-YYYY} 	INPUTRI 2
+psdket			TEXTAREA NONE		INPUTRI	3
+ldum            NOCHANGE    INPUTRI 4
+
+DEFAULTS(tmptranst)
+psdstr1     INIT    {g_usrkode}
+
+CALCS()
+cpsdkode        STRIP(tlmnobuk) + FLD_TO_STRING(lnourtkunci)
+/*ctglbesok       g_tgltrn+1
+cmunduratasan   tlmtype2=="TTDATASAN1" || tlmtype2=="TTDATASAN2"*/
+cscanpsdkunci   dbscanpsdmundurkunci!=0 || dbscanpsdmundurkunci==0
+cnourtkunci     lhitkunci + 1
+ctotkunci       ltotMundurKunci +1
+ctglsama        psdtgl1>g_tgltrn
+ctglsebelum     psdtgl1>=g_tgltrn
+
+EDITS(tmptranst)
+e.Mandatory	psdtgl1 MANDATORY
+e.Mandatory	psdket MANDATORY
+t.ValidatePsi3   psdstr1  VALIDATE_IF cotY psikodidx misipsdkunci 0
+
+MAP(misipsdkunci)
+tlmgrup     psdstr2     REPLACE_IF cotY
+tlmtype2    psdstr3     REPLACE_IF cotY
+/*ctglbesok   psdtgl1     DO_CALC_IF  cmunduratasan*/
+ltotMundurKunci      ltotMundurKunci      REPLACE_IF cscanpsdkunci
+cnourtkunci psdnourt    DO_CALC
+ctotkunci   lnourtkunci DO_CALC
+cpsdkode    psdkode     DO_CALC
+
+CALCS()
+cbtsmundursdm   djointbdJab==1 && djointbdlvlasal==1 && (( (tlmtype2==BLANKS || tlmtype2=="IPP") && (psdtgl1-g_tgltrn<=3)) || (tlmtype2!="IPP" && tlmtype2!=BLANKS))
+cbtsmundurats   djointbdJab==1 && djointbdlvlasal==1 && (( (tlmtype2=="TTDATASAN1" || tlmtype2=="TTDATASAN2") && (psdtgl1-g_tgltrn<=3)) || (tlmtype2!="TTDATASAN1" && tlmtype2!="TTDATASAN2"))
+cats1mundipp    (tlmgrup=="IPP" && tlmtype2=="TTDATASAN1" && psdtgl1<=20260613) || tlmtype2!="TTDATASAN1"
+cats2mundipp    (tlmgrup=="IPP" && tlmtype2=="TTDATASAN2" && psdtgl1<=20260618) || tlmtype2!="TTDATASAN2"
+/*
+cbtsmundursdmpen   djointbdJab==1 && djointbdlvlasal==1 && ((tlmtype2=="NILAI_SDM" &&((lurutanasal>=5 && psdtgl1<=20251205))) || lurutanasal<5 || tlmtype2!="NILAI_SDM")
+
+cbtsmundursdm1   djointbdJab==1 && djointbdlvlasal==1 && ((tlmtype2==BLANKS || tlmtype2=="IPP" && ((lurutanasal<5 && psdtgl1<=20251128) )) || lurutanasal>=5 || tlmtype2!="IPP")
+
+cbtsmundursdmpen1   djointbdJab==1 && djointbdlvlasal==1 && ((tlmtype2=="NILAI_SDM" &&((lurutanasal<5 && psdtgl1<=20251212) )) || lurutanasal>=5 ||tlmtype2!="NILAI_SDM")
+*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdtgl1	DO_MAP SHOW misipsdkunci
+/*BEFORE_INPUT    cur_field=psdtgl1	DO_SKIP_IF cmunduratasan*/
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cbtsmundursdm mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur 3 Hari
+
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cbtsmundursdm mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur 3 Hari
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cbtsmundurats mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur 3 Hari
+
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cbtsmundurats mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur 3 Hari
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cats1mundipp mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 13 Juni
+
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cats1mundipp mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 13 Juni
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cats2mundipp mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 18 Juni
+
+AFTER_INPUT     cur_keybd=EN	DO_MAP SHOW
+                IF cats2mundipp mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 18 Juni
+
+
+/*
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cbtsmundursdmpen mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 5 Desember
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cbtsmundursdm1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 28 November
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF cbtsmundursdmpen1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Max Mundur Tanggal 12 Desember*/
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF ctglsama mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Bisa Input Tanggal Yang Sama 
+
+AFTER_INPUT     cur_field=psdtgl1	DO_MAP SHOW
+                IF ctglsebelum mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Bisa Input Tanggal Yang Sudah Lewat           
+
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)               
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD psdprm
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+psddatpsmurt   lmundaprs tlmnobuk 
+SFL_MAP
+tlmnobuk	psdpsmkode	REPLACE
+lmundaprs	psddata		REPLACE

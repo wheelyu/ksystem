@@ -1,0 +1,236 @@
+LOCAL
+PGM_FIELDS
+lsvistr31lprn       STRING  21
+lsvistr32lprn       STRING  21
+lsvistr33lprn       STRING  21
+lsvidflprn1         INT2    2
+lsvidflprn2         INT2    2
+lsvidflprn3         INT2    2
+l301             INT2    2
+l4201            INT2    2
+ltotalmenit1    INT2    2
+lnobukresch4    STRING	21
+ltombolok4      STRING   31
+
+MAP(mjoinsvilaporanprogh)
+svistr31        lsvistr31lprn       REPLACE
+svistr32        lsvistr32lprn       REPLACE
+svistr33        lsvistr33lprn       REPLACE
+svidf1          lsvidflprn1         REPLACE
+svidf2          lsvidflprn2         REPLACE
+svidf3          lsvidflprn3         REPLACE
+
+DBCALCS(djoinsvilaporanprogh)
+        DBC_COMMAND JOIN
+        DBC_TARGET      svidatbuktyp    tlmdata tlmnobuk lINFODATA
+        DBC_MAP     mjoinsvilaporanprogh
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|t.PembuatanData                                                              |
+|/---------------------------------------------------------------------------\|
+||t.NoUrt          :__                                                       ||
+||t.NoBuk          :_________________                                        ||
+||                                                                           ||
+||spasi                                                                      ||
+||t.FormatLap      :__ ___________________________________ ___               || /*FORMAT_LAPORAN*/
+||t.SrcLap         :__ ___________________________________ ___               || /*SOURCE_LAPORAN*/
+||t.SuatLap        :__ ___________________________________ ___               || /*SOS_UAT_LAPORAN*/
+||                                                                           ||
+||spasi                                                                      ||
+||t.MenitTotal     :_________________                                        ||
+||t.Keterangan     :________________________________________                 ||
+||t.PilRcldl       :_________________                                        ||
+||t.TglRcld        :_________________                                        ||
+||t.KetPilRcldl    :________________________________________                 ||
+||spasi                                                                      ||
+||t.StsRcldl       :_________________ ___                                    ||
+||spasi                                                                      ||
+||                                                                           ||
+|/--------------------------DOCUPLOAD----------------------------------------\|
+||                                                                           ||
+||                                                                           ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+||spasi __                                                                   ||
+||                                                                           ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnourt                  PROTECT                 INPUTRI 1
+tldnobuk                  PROTECT                 INPUTRI 2
+svistr31                  PROTECT                 INPUTRI 5
+ltbtket1_2                PROTECT                 INPUTRI 6
+svidf1                    NUMERIC                 INPUTRI 6
+svistr32                  PROTECT                 INPUTRI 7
+ltbtket2_2                PROTECT                 INPUTRI 7
+svidf2                    NUMERIC                 INPUTRI 8
+svistr33                  PROTECT                 INPUTRI 9
+ltbtket3_2                PROTECT                 INPUTRI 10
+svidf3                    NUMERIC                 INPUTRI 11
+svidf8                    PROTECT                 INPUTRI 12
+sviket                    TEXTAREA                INPUTRI 20
+svistr10                  NOCHANGE                INPUTRI 21
+svitgl2                   NOLIMIT {DD-MM-YYYY}    INPUTRI 22
+sviket2                   TEXTAREA                INPUTRI 23
+svitype2                  NOCHANGE                INPUTRI 24
+ltombolok4			TOMBOL			INPUTRI		99
+lenter                    NOCHANGE                INPUTRI 29
+
+CALCS()
+cisilaporan     djoinsvilaporanprogh == 1
+cisilaporan1    djoinsvilaporanprogh == 1 && lsvidflprn1 != BLANKS
+cisilaporan2    djoinsvilaporanprogh == 1 && lsvidflprn2 != BLANKS
+cisilaporan3    djoinsvilaporanprogh == 1 && lsvidflprn3 != BLANKS
+
+DEFAULTS(tmptranst)
+lFORMAT_LAPORAN2         INIT "FORMAT_LAPORAN"
+lSOURCE_LAPORAN2         INIT "SOURCE_LAPORAN"
+lSOS_UAT_LAPORAN2        INIT "SOS_UAT_LAPORAN"
+l301                    INIT    30
+l4201                   INIT    420
+svistr31 DFALT_SCAN	        BLANKS
+                	        Y
+                                T
+svistr32 DFALT_SCAN	        BLANKS
+                	        Y
+                                T
+svistr33 DFALT_SCAN	        BLANKS
+                	        Y
+                                T
+svistr3 DFALT_SCAN	        BLANKS
+                	        Y
+                                T    
+ltbtket1_2        INIT "PEMBUATAN FORMAT LAPORAN"
+ltbtket2_2        INIT "PENENTUAN SUMBER LAPORAN"
+ltbtket3_2       INIT "SOSIALISASI SISTEM BARU DAN UAT PERBAIKAN"
+
+svistr10        DFALT_SCAN      BLANKS
+                                 AddOnPrioritas
+                                  NotDone
+svitype2        DFALT_SCAN      BLANKS
+                                OK
+                                TIDAK
+ltombolok4		INIT OK
+                        
+
+CALCS()
+creschedule4     svistr10 == "AddOnPrioritas" || svistr10 == "NotDone"
+cskiptgl4        svistr10 == BLANKS
+cskipket5         svistr10 == BLANKS && svitgl2 == BLANKS
+chitungmenit4    svidf1+svidf2+svidf3
+chitungtotal1    ltotalmenit1 >= 420
+chead_laporan           tlmdari == g_usrkode && svistr10 != BLANKS && svitgl2 != BLANKS
+cnobukresch4		STRIP(tlmnobuk) + FLD_TO_STRING(svinourt)
+
+
+EDITS(tmptranst)
+i.Mandatory         sviket           MANDATORY
+i.Date              svitgl2          MANDATORY_IF creschedule4
+i.Mandatory         sviket2          MANDATORY_IF creschedule4
+i.MandatoryHead     svitype2         MANDATORY_IF chead_laporan
+
+CALCS()
+claporan2                       tlmgrup2 == "PROJECT_SISTEM" && tlmkode == "LAPORAN"
+chrsisi6                         (sviket != BLANKS && svitgl2 != BLANKS && svidf8 > 0) || (sviket != BLANKS && svidf8 > 0)
+cskipdflprn1                                djoinsvilaporanprogh == 1 && lsvidflprn1 == BLANKS
+cskipdflprn2                                djoinsvilaporanprogh == 1 && lsvidflprn2 == BLANKS
+cskipdflprn3                                djoinsvilaporanprogh == 1 && lsvidflprn3 == BLANKS
+cskipstatus_lprn                             svistr10 == BLANKS && svitgl2 == BLANKS 
+cskipbukanhead_lprn                          tlmdari != g_usrkode
+clebihdr420lprn_1                           svidf1 <= 420 
+clebihdr420lprn_2                           svidf2 <= 420
+clebihdr420lprn_3                           svidf3 <= 420
+cskip_update_lprn                                   g_curcmd == 2 && tlmdari == g_usrkode
+
+MAP(mhitungmenit4)
+chitungmenit4            ltotalmenit1           DO_CALC
+ltotalmenit1             svidf8                 REPLACE
+l4201                    svidf8                 REPLACE_IF chitungtotal1
+
+MAP(mprojectlprn)
+lsvistr31lprn               svistr31        REPLACE_IF cisilaporan
+lsvistr32lprn               svistr32        REPLACE_IF cisilaporan
+lsvistr33lprn               svistr33        REPLACE_IF cisilaporan
+
+MAP(mprojectlprn2)
+lsvidflprn1             svidf1                  REPLACE_IF cisilaporan1
+lsvidflprn2             svidf2                  REPLACE_IF cisilaporan2
+lsvidflprn3             svidf3                  REPLACE_IF cisilaporan3
+
+MAP(mmapabkresch5)
+cnobukresch4	lnobukresch4	DO_CALC
+
+MAP(mupdabkresch4)
+gv_CLSD			abksts			REPLACE
+
+SPCALCS(spabkresch4)
+DO_LIB_IF crescdev	    ap_dbclc(DNAME dmapabkresch4,DCOMMAND MAPMAP, DMAP mmapabkresch5);
+DO_LIB_IF crescdev      ap_dbclc(DNAME dupdabkhead7,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx   lKUNCIABSEN lnobukresch4,DMAP mupdabkresch4);
+
+HOOKS(tmptranst)
+AFTER_INPUT      cur_field=tldnobuk     DO_MAP SHOW mprojectlprn
+AFTER_INPUT      cur_field=tldnobuk     DO_MAP SHOW mprojectlprn2
+BEFORE_INPUT     cur_field=svidf1       DO_SKIP_IF cskipdflprn1
+BEFORE_INPUT     cur_field=svidf2       DO_SKIP_IF cskipdflprn2
+BEFORE_INPUT     cur_field=svidf3       DO_SKIP_IF cskipdflprn3
+
+BEFORE_INPUT    cur_field=svidf1        DO_SKIP_IF cskip_update_lprn
+BEFORE_INPUT    cur_field=svidf2        DO_SKIP_IF cskip_update_lprn
+BEFORE_INPUT    cur_field=svidf3        DO_SKIP_IF cskip_update_lprn
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cskip_update_lprn
+BEFORE_INPUT    cur_field=svistr10        DO_SKIP_IF cskip_update_lprn
+BEFORE_INPUT    cur_field=svitgl2        DO_SKIP_IF cskip_update_lprn
+BEFORE_INPUT    cur_field=sviket2        DO_SKIP_IF cskip_update_lprn
+
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cskipstatus_lprn
+BEFORE_INPUT    cur_field=svitype2      DO_SKIP_IF cskipbukanhead_lprn
+
+AFTER_INPUT    cur_field=svidf1         DO_MAP SHOW
+		IF clebihdr420lprn_1 mdum
+                ELSE HKCURSOR STAY
+		HKMSG harus isi < 420
+AFTER_INPUT    cur_field=svidf2         DO_MAP SHOW
+		IF clebihdr420lprn_2 mdum
+                ELSE HKCURSOR STAY
+		HKMSG harus isi < 420
+AFTER_INPUT    cur_field=svidf3         DO_MAP SHOW
+		IF clebihdr420lprn_3 mdum
+                ELSE HKCURSOR STAY
+		HKMSG harus isi < 420
+
+BEFORE_INPUT     cur_field=sviket      DO_MAP SHOW mhitungmenit4
+
+BEFORE_INPUT   cur_field=svitgl2       DO_SKIP_IF cskiptgl4
+BEFORE_INPUT   cur_field=sviket2        DO_SKIP_IF cskipket5
+AFTER_INPUT    cur_field=lenter         DO_MAP SHOW
+			IF chrsisi6	mdum
+			ELSE HKCURSOR STAY
+			HKMSG harus isi Keterangan atau jadwal reschedule atau total menit > 0
+CLICKED		cur_field=ltombolok4			 DO_SPCALCS spabkresch4
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND claporan2
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD svioto
+SFL_DOCUPLFLD_DBCALCS dupdsvifoto
+SFL_SHOW_NEXT
+SFL_TARGET
+svidatbuktyp  tlddata tldnobuk lPROGH tldnourt
+SFL_MAP
+tlddata         svidata         REPLACE
+tldnobuk        svinobuk        REPLACE
+lPROGH          svitype         REPLACE
+tldnourt        svinourt        REPLACE
+gv_INPG     svists      REPLACE
+
+POSTING(tmptrans)
+PST_ADDCMD      supdprogh
+PST_UPDCMD      supdprogh

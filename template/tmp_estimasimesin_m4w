@@ -1,0 +1,123 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||          t.DetailMesin             ||
+|\------------------------------------/|
+|/------------------------------------\|
+||t.Nilai      _____________          ||
+||t.Mesin    t.Pilihan                || 
+||t.ACCU      :__  ______ _________.__||
+||t.FisikMesin:__  ______ _________.__||
+||t.Radiator  :__  ______ _________.__||
+||t.Total     :____________.__        ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+mtdnobuk        PROTECT INPUTRI 1
+mtdhrg          NOCHANGE        INPUTRI         2
+lket1b          PROTECT         INPUTRI         3
+mtdperdis1      NUMERIC         INPUTRI         4
+mtdperdis       NOCHANGE        INPUTRI         5
+lket2b          PROTECT         INPUTRI         6
+mtdperdis2      NUMERIC         INPUTRI         7
+mtdtotdis       NOCHANGE        INPUTRI         8
+lket3b          PROTECT         INPUTRI         9
+mtdperdis3      NUMERIC         INPUTRI         10
+mtdjml          PROTECT         INPUTRI         11
+
+EDITS(tmptranst)
+t.Mandatory     mtdhrg          MANDATORY
+t.Mandatory     mtdperdis       MANDATORY
+t.Mandatory     mtdtotdis       MANDATORY
+e.Validate1     mtdnobuk        VALIDATE tlmbukidx mmtd_d3
+t.Mandatory     mtdperdis1      MANDATORY_IF cpil1ax
+t.Mandatory     mtdperdis2      MANDATORY_IF cpil2ax
+t.Mandatory     mtdperdis3      MANDATORY_IF cpil3ax
+
+
+DEFAULTS(tmptranst)
+mtddvs          INIT		M4W
+mtdsts          INIT_ADD        MSIN
+mtddata         INIT_ADD        1169MSIN
+mtdbisnis       INIT_ADD        PIUT3
+mtdhrg          DFALT_SCAN      BLANKS 1 "Hidup"
+                                2 "Mati"
+                                3 "Karat"
+mtdperdis       DFALT_SCAN      BLANKS 1 "Hidup"
+                                2 "Mati"
+                                3 "Karat"
+mtdtotdis       DFALT_SCAN      BLANKS 1 "Hidup"
+                                2 "Mati"
+                                3 "Karat"
+
+CALCS()
+chidup2          "Hidup"
+cmati2           "Mati"
+ckarat2          "Karat"
+
+MAP(mmtd_d3)
+tlmnobuk        mtdnobuk        REPLACE
+chidup2          lket1b          DO_CALC_IF cpil1a
+cmati2           lket1b          DO_CALC_IF cpil1b
+ckarat2          lket1b          DO_CALC_IF cpil1c
+chidup2          lket2b          DO_CALC_IF cpil2a
+cmati2           lket2b          DO_CALC_IF cpil2b
+ckarat2          lket2b          DO_CALC_IF cpil2c
+chidup2          lket3b          DO_CALC_IF cpil3a
+cmati2           lket3b          DO_CALC_IF cpil3b
+ckarat2          lket3b          DO_CALC_IF cpil3c
+
+MAP(mket1b)
+chidup2          lket1b          DO_CALC_IF cpil1a
+cmati2           lket1b          DO_CALC_IF cpil1b
+ckarat2          lket1b          DO_CALC_IF cpil1c
+
+MAP(mket2b)
+chidup2          lket2b          DO_CALC_IF cpil2a
+cmati2           lket2b          DO_CALC_IF cpil2b
+ckarat2          lket2b          DO_CALC_IF cpil2c
+
+MAP(mket3b)
+chidup2          lket3b          DO_CALC_IF cpil3a
+cmati2           lket3b          DO_CALC_IF cpil3b
+ckarat2          lket3b          DO_CALC_IF cpil3c
+
+MAP(mjumtot3)
+ctotal34        mtdjml          DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=mtdhrg           DO_MAP SHOW mket1b
+AFTER_INPUT  cur_field=mtdperdis        DO_MAP SHOW mket2b
+AFTER_INPUT  cur_field=mtdtotdis        DO_MAP SHOW mket3b
+AFTER_INPUT  cur_keybd=EN               DO_MAP SHOW mjumtot3
+AFTER_INPUT  cur_field=mtdhrg     DO_MAP SHOW
+             IF cd3sudahada           mdum
+             ELSE HKCURSOR STAY
+             HKMSG Rekord Detail Sudah ada, Tekan U untuk Ubah
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET      mtdbukurtidx   tlmnobuk l3
+SFL_MAP
+tlmnobuk	mtdnobuk	REPLACE
+tlmdari		mtdbrg		REPLACE
+tlmnoasal	mtdoto		REPLACE
+tlmcab		mtdcab		REPLACE
+tlmnobuk	mtdnobbm	REPLACE
+l3		mtdnourt	REPLACE
+
+CALCS()
+caddtmptrans       tlmsts=="OPEN" && (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WCSPV" || g_grpnam=="BM") 
+		   && djoin3d==0
+cupdtmptrans       tlmsts=="OPEN" && (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.M4WBM" || g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WCSPV" || g_grpnam=="BM")
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    caddtmptrans
+        PMT_UPDALL_COND cupdtmptrans
+        PMT_DEL_COND    c0
+

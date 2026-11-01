@@ -1,0 +1,208 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.AccDispo                                                               |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               !                   |
+|       !t.TglLoc     : ___________                          !                   |
+|       !t.Ket        : ____________________________________ !                   |
+|       !t.AccPic     : ______ ___________ _________________ !                   |
+|       !t.AccHead    : ______ ___________ _________________ !                   |
+|       !t.AccGmDiv   : ______ ___________ _________________ !                   |
+|       !t.AccGmHrd   : ______ ___________ _________________ !                   |
+|       !t.Ket        : ____________________________________ !                   |
+|       \----------------------------------------------------/                   |
+|       /----------------------------------------------------\                   |
+|       !t.Banding?   : ______ ___________ _________________ !                   |
+|       \----------------------------------------------------/                   |
+|       t.KetDispo1                                                              |
+|       t.KetDispo2                                                              |
+|       t.KetDispo3                                                              |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        NOCHANGE                INPUTRI 1
+tldtglfak        PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 2
+tldket          ALLCAPS SCROLL          INPUTRI 3
+
+tlddk           NOCHANGE                INPUTRI 4
+tldsat          NOCHANGE                INPUTRI 5
+laccpic         PROTECT SCROLL          INPUTRI 6
+
+tldtydis        NOCHANGE                INPUTRI 7
+tldkat          NOCHANGE                INPUTRI 8
+lacchead        PROTECT SCROLL          INPUTRI 9
+
+tldsisbrg       NOCHANGE                INPUTRI 10
+tldplg          NOCHANGE                INPUTRI 11
+laccgmdiv          PROTECT SCROLL		INPUTRI 12
+
+tldth           NOCHANGE                INPUTRI 13
+tldgrup         NOCHANGE SCROLL         INPUTRI 14
+laccgmhrd       PROTECT SCROLL          INPUTRI 15
+tldket2		TEXTAREA ALLCAPS	INPUTRI	16
+
+tldbisnis	NOCHANGE		INPUTRI 16
+tldgrup2	NOCHANGE SCROLL		INPUTRI 17
+lbandingpic2	PROTECT SCROLL		INPUTRI 18
+
+DEFAULTS(tmptranst) 
+tlddk           DFALT_SCAN_BLANKS Y T
+tldtydis        DFALT_SCAN_BLANKS Y T
+tldsisbrg       DFALT_SCAN_BLANKS Y T
+tldth           DFALT_SCAN_BLANKS Y T
+tldbisnis	DFALT_SCAN_BLANKS Y  
+tldtglfak	INIT_UPDATE	{g_tgltrn}
+
+CALCS()
+cbknTL		hrmstsapr!="TL" || hrmdvs2!="OPEN"
+cert		tldth=="T"
+cery		(tldth=="Y" || tldth==BLANKS)
+cbukanhrd	g_usrkode!=tldgrup
+
+EDITS(tmptranst)
+t.Validate tldsat VALIDATE psikodidx mpsia
+t.Validate tldkat  VALIDATE psikodidx mpsib
+t.Validate tldplg  VALIDATE psikodidx mpsic
+t.Validate tldgrup VALIDATE psikodidx mpsid
+t.Validate tldgrup2 VALIDATE psikodidx mpsif
+/*t.Validate tldgrup VALIDATE usrkodidx musr*/
+t.Mandatory tldket MANDATORY_IF cbknTL
+t.Mandatory tldket2 MANDATORY_IF cert
+
+MAP(mpsia)
+psikode		tldsat  	REPLACE
+psinama         laccpic         REPLACE
+
+MAP(mpsib)
+psikode		tldkat 		REPLACE
+psinama         lacchead        REPLACE
+
+MAP(mpsic)
+psikode		tldplg 		REPLACE
+psinama         laccgmdiv       REPLACE
+
+MAP(mpsid)
+psikode		tldgrup		REPLACE
+psinama         laccgmhrd       REPLACE
+psijabatan	ljabgmhrd	REPLACE
+
+MAP(mpsif)
+psikode		tldgrup2	REPLACE
+psinama		lbandingpic2	REPLACE
+
+/*
+MAP(musr)
+usrkode		tldgrup		REPLACE
+usrgrp		lgrupgmhrd	REPLACE
+*/
+
+CALCS()
+cbknpic         (g_usrkode!=tldsat && g_usrkode!="1802178") || hrmstsapr=="TL" 
+cbknmgr         (g_usrkode!=tldkat && g_usrkode!="1802178") || hrmstsapr=="TL" 
+cbkngmdiv       (g_usrkode!=tldplg && g_usrkode!="1802178") || hrmstsapr=="TL"
+cbknbueen       g_usrkode!=tldgrup && g_usrkode!="1802178"
+cjikaTL		hrmstsapr=="TL"
+/*cgmhrd		lgrupgmhrd=="HRDDVH" || ljabgmhrd=="VNT_DIVHEAD" || tldgrup==BLANKS*/
+cisi1		tlddk!=BLANKS
+cisi2		tldtydis!=BLANKS
+cisi3		tldth!=BLANKS
+ctbh1xx		tldjmlren + 1
+ctbh1yy		tldjmlpos + 1
+ctbh1zz		tldhrgnet + 1
+cbandingpic	(g_usrkode==tldsat && hrmstsapr=="TL") || hrmstsapr!="TL" || g_usrkode==tldgrup 
+	
+ckosonglg	tldth=="Y" || tldth==BLANKS
+MAP(mtld)
+hrmcab		tldcab		REPLACE
+
+MAP(mtanda)
+ctbh1xx		tldjmlren	DO_CALC_IF cisi1
+ctbh1yy		tldjmlpos	DO_CALC_IF cisi2
+ctbh1zz		tldhrgnet	DO_CALC_IF cisi3
+
+CALCS()
+csdhacc1	tlddk!=BLANKS 
+csdhacc2	tldtydis!=BLANKS
+	
+MAP(mnipbanding)
+g_usrkode	tldgrup2		REPLACE_IF cjikaTL
+
+MAP(mkosongg) 
+cBLANKS		tldket2		DO_CALC_IF ckosonglg
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldket	DO_SKIP_IF cjikaTL
+BEFORE_INPUT	cur_field=tldsat	DO_SKIP_IF cjikaTL
+BEFORE_INPUT	cur_field=tldkat	DO_SKIP_IF cjikaTL
+BEFORE_INPUT	cur_field=tldplg	DO_SKIP_IF cjikaTL
+BEFORE_INPUT	cur_field=tldgrup	DO_SKIP_IF cjikaTL
+BEFORE_INPUT	cur_field=tldket2	DO_SKIP_IF cery
+BEFORE_INPUT	cur_field=tldket2	DO_SKIP_IF cbukanhrd
+BEFORE_INPUT    cur_field=tlddk         DO_SKIP_IF cbknpic
+BEFORE_INPUT    cur_field=tldtydis      DO_SKIP_IF cbknmgr
+BEFORE_INPUT    cur_field=tldsisbrg     DO_SKIP_IF cbkngmdiv
+BEFORE_INPUT    cur_field=tldth         DO_SKIP_IF cbknbueen
+BEFORE_INPUT	cur_field=tldbisnis	DO_SKIP_IF cbknTL
+BEFORE_INPUT	cur_field=tldbisnis	DO_MAP SHOW mnipbanding
+AFTER_INPUT	cur_field=tldth		DO_MAP SHOW mkosongg
+AFTER_INPUT	cur_field=tlddk  	DO_MAP SHOW 
+		IF cbkninpg mdum
+		ELSE HKCURSOR STAY 
+		HKMSG t.StsTdkInpg           
+
+AFTER_INPUT	cur_field=tldtydis	DO_MAP SHOW
+		IF csdhacc1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HrsAccPicDulu 
+
+AFTER_INPUT	cur_field=tldtydis	DO_MAP SHOW
+		IF cbkninpg mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.StsTdkInpg        
+
+AFTER_INPUT     cur_field=tldsisbrg     DO_MAP SHOW
+                IF csdhacc2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HrsAccHeadDulu
+
+AFTER_INPUT     cur_field=tldsisbrg     DO_MAP SHOW
+                IF cbkninpg mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StsTdkInpg     
+
+AFTER_INPUT     cur_field=tldth       DO_MAP SHOW
+                IF cbkninpg mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StsTdkInpg      
+
+AFTER_INPUT	cur_field=tldbisnis	DO_MAP SHOW
+		IF cbandingpic mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.BandingHrsPic
+
+/*AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW 
+		IF cgmhrd mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.NipGmHrdBknGmHrd
+*/
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mtld
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mtanda
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND	cOPEN_tdkses
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldbukbrgoto   hrmnobuk gv_CLSD lDISPOSISI21 
+
+SFL_MAP
+hrmnobuk        tldnobuk        REPLACE
+gv_CLSD         tldsts          REPLACE
+lDISPOSISI21	tldbrg		REPLACE
+hrmnip1		tldnobbm	REPLACE
+hrmcab		tldcab		REPLACE
+hrmnip1		tlddvs		REPLACE
+

@@ -1,0 +1,97 @@
+LOCAL
+PGM_FIELDS
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.BuktiPekerjaan                 ||
+||spasi                            ||
+||t.OmzetPenjualan                 ||
+||_______________                  ||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.NamaSupplier                   ||
+||_______________________          ||
+||t.KontakSupplier                 ||
+||_______________________          ||
+||t.JadwalOperasional              ||
+||_______________________          ||
+||t.TotalPembelianBahanBaku        ||
+||_______________________          ||
+||t.LuasTempatKerja                ||
+||_______________________          ||
+||t.JumlahKaryawan                 ||
+||_______________________          ||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.NoPemberiBuktiKepemilikan      ||
+||______________                   ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ftmjml1		ALLCAPS		INPUTRI		1
+ftmnama1	ALLCAPS		INPUTRI		2
+ftmkode1	ALLCAPS		INPUTRI		3
+ftmhrg1		DIGITS		INPUTRI		4
+ftmjml2		ALLCAPS		INPUTRI		4
+ftmjml3		NUMERIC		INPUTRI		5
+ftmjml4		NUMERIC		INPUTRI		6
+ftmkode2	ALLCAPS		INPUTRI		6
+
+DEFAULTS(tmptranst)
+
+CALCS()
+cisiomzet	djoinftmcapacity==1 && (lftmdvs2=="AG" || lftmdvs2=="TN" || lftmdvs2=="TP" || lftmdvs2=="TR" || lftmdvs2=="W1" || lftmdvs2=="W2"|| lftmdvs2=="D1" || lftmdvs2=="D2" || lftmdvs2=="NL")
+cisisupplier	djoinftmcapacity==1 && (lftmdvs2=="AG" || lftmdvs2=="TN" || lftmdvs2=="TP" || lftmdvs2=="TR" || lftmdvs2=="W1" || lftmdvs2=="D2")
+cisiluasrmhjmlkry	djoinftmcapacity==1 && (lftmdvs2=="TN" || lftmdvs2=="W1" || lftmdvs2=="W2" || lftmdvs2=="D2" || lftmdvs2=="TR")
+cisijadwaloperasional	djoinftmcapacity==1 && (lftmdvs2=="AG" || lftmdvs2=="NL" || lftmdvs2=="W1" || lftmdvs2=="W2" || lftmdvs2=="D1" || lftmdvs2=="D2")
+cisibuktikepemilikan	djoinftmcapacity==1 && lftmdvs2=="TN"
+
+ctdkisiomzet	djoinftmcapacity==1 && lftmdvs2!="AG" && lftmdvs2!="TN" && lftmdvs2!="TP" && lftmdvs2!="TR" && lftmdvs2!="W1" && lftmdvs2!="W2" && lftmdvs2!="D1" && lftmdvs2!="D2"
+ctdkisisupplier	djoinftmcapacity==1 && lftmdvs2!="AG" && lftmdvs2!="TN" && lftmdvs2!="TP" && lftmdvs2!="TR" && lftmdvs2!="W1"&& lftmdvs2!="D2"
+ctdkisijadwalops	djoinftmcapacity==1 && lftmdvs2!="AG" && lftmdvs2!="NL" && lftmdvs2!="W1" && lftmdvs2!="W2" && lftmdvs2!="D1" && lftmdvs2!="D2"
+ctdkisiluasrmhjmlkry	djoinftmcapacity==1 && lftmdvs2!="TN" && lftmdvs2!="W1" && lftmdvs2!="W2" && lftmdvs2!="D2" && lftmdvs2=="TR"
+ctdkisibuktikepemilikan	djoinftmcapacity==1 && lftmdvs2!="TN"
+
+EDITS(tmptranst)
+e.mandatory	ftmjml1		MANDATORY_IF cisiomzet
+
+e.mandatory	ftmnama1	MANDATORY_IF cisisupplier
+e.mandatory	ftmkode1	MANDATORY_IF cisisupplier
+e.Mandatory	ftmhrg1		MANDATORY_IF cisijadwaloperasional
+e.mandatory	ftmjml2		MANDATORY_IF cisisupplier
+e.Mandatory	ftmjml3		MANDATORY_IF cisiluasrmhjmlkry
+e.Mandatory	ftmjml4		MANDATORY_IF cisiluasrmhjmlkry
+
+e.mandatory	ftmkode2	MANDATORY_IF cisibuktikepemilikan
+
+HOOKS(tmptranst)
+
+BEFORE_INPUT	cur_field=ftmjml1	DO_SKIP_IF ctdkisiomzet
+
+BEFORE_INPUT    cur_field=ftmnama1	DO_SKIP_IF ctdkisisupplier
+BEFORE_INPUT    cur_field=ftmkode1	DO_SKIP_IF ctdkisisupplier
+BEFORE_INPUT	cur_field=ftmhrg1	DO_SKIP_IF ctdkisijadwalops
+BEFORE_INPUT    cur_field=ftmjml2	DO_SKIP_IF ctdkisiluasrmhjmlkry
+BEFORE_INPUT	cur_field=ftmjml3	DO_SKIP_IF ctdkisiluasrmhjmlkry
+BEFORE_INPUT	cur_field=ftmjml4	DO_SKIP_IF ctdkisiluasrmhjmlkry
+
+BEFORE_INPUT    cur_field=ftmkode2	DO_SKIP_IF ctdkisibuktikepemilikan
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_COND	cisiomzet
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+	ftmdatbukidx   lbuktipekerjaan btmnobuk
+	/*svidatbuktyp   gv_datasurvey btmnobuk lbuktipekerjaan*/
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  cisiomzet
+  PMT_DEL_COND  c0
+

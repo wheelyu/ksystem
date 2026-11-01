@@ -1,0 +1,119 @@
+IMAGE(tmptranst)
+/-----------------------------t------t--------------t--------------------------------------------------------\
+|t.KelengkapanBerkas          |t.Y/T |t.TglDiterima |t.Keterangan                                            |
+\-----------------------------.------.--------------.--------------------------------------------------------/
+
+IMAGE(tmptrans)
+|_____________________________|______|______________|________________________________________________________|
+
+FIELDS(tmptrans)
+sviket		PROTECT         	 	INPUTRI		1
+svistr32	NOCHANGE			INPUTRI		2
+svitgl2		NONE NOLIMIT {DD-MM-YYYY}		INPUTRI		3
+sviket2		ALLCAPS	SCROLL			INPUTRI		4
+
+DEFAULTS(tmptrans)
+svikode		INIT_UPDATE	{g_usrkode}
+svitgl1		INIT_UPDATE	{g_tgltrn}
+svistr32	DFALT_SCAN_BLANKS	Y T
+
+CALCS()
+cmandtgl	svistr32!="T" && svistr31!="06" && svistr31!="07"
+cskiptgl	svistr32=="T" || svistr31=="06" || svistr31=="07"
+condy		tlmdvs!="M4W" && sviket=="STNK" && svistr32=="Y" && ~svistr32 != svistr32
+condt		tlmdvs!="M4W" && sviket=="STNK" && svistr32=="T" && ~svistr32 != svistr32
+ctotya		tlmtotal + 100000
+ctottdk		tlmtotal - 150000		
+/*
+cb1		tlmtotpph + 1
+cb10		tlmtotpph + 10
+cb100		tlmtotpph + 100
+cb1000		tlmtotpph + 1000
+cb10000		tlmtotpph + 10000
+cb100000	tlmtotpph + 100000
+cb1000000	tlmtotpph + 1000000
+condcb1		svistr31=="01" && ~svistr32==BLANKS && svistr32!=BLANKS
+condcb2		svistr31=="02" && ~svistr32==BLANKS && svistr32!=BLANKS
+condcb3		svistr31=="03" && ~svistr32==BLANKS && svistr32!=BLANKS
+condcb4		svistr31=="04" && ~svistr32==BLANKS && svistr32!=BLANKS
+condcb5		svistr31=="05" && ~svistr32==BLANKS && svistr32!=BLANKS
+condcb6		svistr31=="06" && ~svistr32==BLANKS && svistr32!=BLANKS
+condcb7		svistr31=="07" && ~svistr32==BLANKS && svistr32!=BLANKS
+*/
+
+
+
+EDITS(tmptrans)
+e.Mandatory		svistr32	MANDATORY
+Tanggal Harus Diisi	svitgl2		MANDATORY_IF cmandtgl
+Keterangan Harus Diisi	sviket2		MANDATORY
+
+HOOKS(tmptrans)
+BEFORE_INPUT		cur_field=svitgl2	DO_SKIP_IF cskiptgl
+
+/*
+MAP(mupdkelberkas)
+cb1		tlmtotpph	DO_CALC_IF condcb1
+cb10		tlmtotpph	DO_CALC_IF condcb2 
+cb100		tlmtotpph	DO_CALC_IF condcb3  
+cb1000		tlmtotpph	DO_CALC_IF condcb4
+cb10000		tlmtotpph	DO_CALC_IF condcb5
+cb100000	tlmtotpph	DO_CALC_IF condcb6
+cb1000000	tlmtotpph	DO_CALC_IF condcb7
+
+SPCALCS(spkelberkas)
+DO_LIB ap_dbclc(DNAME dupdkelberkas,DCOMMAND UPDATE,DTARGET tlmbukidx svinobuk,DMAP mupdkelberkas);
+
+POSTING(tmptrans)
+	PST_UPDCMD spkelberkas
+*/
+
+MAP(mupdstnk)
+ctotya		tlmtotal	DO_CALC_IF condy
+ctottdk		tlmtotal	DO_CALC_IF condt
+
+CALCS()
+cppskomystnk	lppstotal - 100000
+cppskomtstnk	lppstotal + 150000
+
+MAP(mupdppskomtrkmtr3)
+cppskomystnk    ppstotal        DO_CALC_IF condy
+cppskomtstnk    ppstotal        DO_CALC_IF condt
+cppskomystnk    ppssisa         DO_CALC_IF condy
+cppskomtstnk    ppssisa         DO_CALC_IF condt
+ppssisa         ppssisprc       REPLACE
+cppskomystnk    ppshrg          DO_CALC_IF condy
+cppskomtstnk    ppshrg          DO_CALC_IF condt
+tlmtotal        ppsdf1          REPLACE
+
+MAP(mupdrptkomtrkmtr3)
+tlmtotal        rptbl2          REPLACE
+
+SPCALCS(spkelberkas)
+DO_LIB ap_dbclc(DNAME dupdkelberkas,DCOMMAND UPDATE,DTARGET tlmbukidx svinobuk,DMAP mupdstnk);
+DO_LIB_IF cjoinppskomtrk2 ap_dbclc(DNAME dupdpps5,DCOMMAND UPDATE,DBC_TARGET ppsdattypbuk gv_dthut lhutkol gv_INPG lnobuk739,DMAP mupdppskomtrkmtr3);
+DO_LIB_IF cjoinrptkomtrk2 ap_dbclc(DNAME dupdrpt5,DCOMMAND UPDATE_RANGE,DBC_TARGET rptdttypkod lKOMTRKMTR lths2 lthbl3 lKOMTRKMTR1 tlmnoasal,DMAP mupdrptkomtrkmtr3);
+
+POSTING(tmptrans)
+	PST_UPDCMD spkelberkas
+
+
+SUBFILE(tmptrans)
+SFL_LINES(7)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp   tlmdata tlmnobuk lKELBERKAS
+SFL_MAP
+tlmnobuk	svinobuk	REPLACE
+tlmdata		svidata		REPLACE
+lKELBERKAS 	svitype		REPLACE
+
+CALCS()
+cupdtmptrans	tlmsts=="OPEN" && tlmsts2=="BRKS" && 
+				(tlmdvs != "M4W" && (( sviket=="STNK" && svistr32 == BLANKS) || sviket != "STNK" || g_usrkode == "1085482")) || 
+				tlmdvs == "M4W"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	cupdtmptrans
+	PMT_DEL_COND	c0

@@ -1,0 +1,98 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------\
+|/----------------------------------------------------------------------------\|
+||                         t.Awal                                             ||
+||-------------t--------------------------------------------------------------||
+||i.Nip        | __________                                                   ||
+||i.BisAwl     | ________                                                     ||
+||i.DvsTuj     | ________________________                                     ||
+||i.DepTuj     | ________________________________                             ||
+||i.JabTuj     | ____________________________________                         ||
+|\-------------.--------------------------------------------------------------/|
+\------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   mtdplg       NOCHANGE                INPUTRI          1 /*Nip*/
+   mtdlok2      PROTECT                 INPUTRI          2 /*Bisnis*/
+   mtdlok       PROTECT                 INPUTRI          3 /*div   */
+   mtdgrup2     PROTECT                 INPUTRI          4 /*Dep   */
+   mtdkat       ALLCAPS                 INPUTRI          5  /*Jabatan*/
+
+EDITS(tmptranst)
+e.Mandatory mtdkat MANDATORY
+e.ValidateTbdJab mtdkat VALIDATE tbddtmstidx mtbdJab stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} {Pmtdlok} {Pmtdgrup2}
+
+CALCS()
+csalesfreelance1			"SALESFREELANCEHMC"
+csalesfreelance2			"SALESFREELANCEM2W"
+cNEWMOTOR				"NEWMOTORCYCLE"
+cMULTI2WHEELS				"MULTI2WHEELS"
+cOPRNMC					"OPERASIONALNMC"
+cOPRM2W					"OPERASIONALREFIMOTOR"
+cHMC				mtdlok2 =="HMC" || mtdlok2=="H1" || mtdlok2=="H2"
+cM2W				mtdlok2 =="M2W"
+
+MAP(mniptujF)
+mtsuntuk        mtdplg          REPLACE
+mtsdvs           mtdlok2         REPLACE              /*Bisnis*/
+lpsidep          mtdbrg          REPLACE              /*Divisi*
+llevel 		mtdbisnis	REPLACE_IF cjointbdx
+lpsishift	lpsishift	REPLACE              /*Shift*/
+cNEWMOTOR		mtdlok			DO_CALC_IF cHMC
+cOPRNMC  		mtdgrup2		DO_CALC_IF cHMC
+csalesfreelance1		mtdkat		DO_CALC_IF cHMC
+
+cMULTI2WHEELS		mtdlok			DO_CALC_IF cM2W
+cOPRM2W  		mtdgrup2		DO_CALC_IF cM2W
+csalesfreelance2		mtdkat		DO_CALC_IF cM2W
+
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=mtdplg        DO_MAP SHOW mniptujF
+BEFORE_INPUT	cur_field=mtdkat	DO_SKIP_IF cAC
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cgrupada mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JabGrpLoginBlmAda
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cpelatihan mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JnsLatihTdkBsBedaJab
+
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cbeda mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JkAntarBagHrsBeda
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF cjkMT mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.JkMtTdkBsMt
+
+AFTER_INPUT	cur_field=mtdkat	DO_MAP SHOW
+		IF chanyaTRN mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HnyTrnYgBsMtsMt
+
+AFTER_INPUT   cur_field=mtdkat       DO_MAP SHOW
+                IF ccbg_induk mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JabIniHrsInduk
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        mtdbukurtidx   mtsnobuk           
+
+SFL_MAP
+mtssts		     mtdsts		REPLACE
+mtsnobuk             mtdnobuk           REPLACE
+mtsdata              mtddata            REPLACE
+mtsuntuk             mtdplg             REPLACE
+

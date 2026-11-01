@@ -1,0 +1,83 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+|/------------------------------------\|
+||t.NoPk      ________________________||
+||i.Urt       ____                    ||
+||i.Tgl       ____________            ||
+||t.HslCallWa _______________________ ||
+||t.HslCallGsm_______________________ ||
+||t.TglRsvUlg ____________            ||
+||            ____________            ||
+|\------------------------------------/|
+|t.TbhDuluUtkIsiHslCall                |
+\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnoll		PROTECT				INPUTRI		1
+tldnourt	NOCHANGE			INPUTRI		1
+tldtglfak	PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI		2
+tldgrup		NOCHANGE			INPUTRI		4
+tldgrup2	NOCHANGE			INPUTRI		5
+tldtgl2		PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI		6
+lenter		NOCHANGE			INPUTRI		7
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT			{g_tgltrn}
+tldgrup		DFALT_SCAN_BLANKS	TERHUBUNG
+					TDK_AKTIF
+					AKTIF_TDK_DIANGKAT
+tldgrup2	DFALT_SCAN_BLANKS	TERHUBUNG
+					TDK_AKTIF
+					AKTIF_TDK_DIANGKAT
+
+lenter		INIT_LABEL	ENTER
+
+CALCS()
+ccallwainactive	tldgrup != "TERHUBUNG"
+ccallwaactive	tldgrup == "TERHUBUNG"
+cjointldU0	g_curcmd == 1 && djointldcallU == 0
+cjointldU1	g_curcmd == 1 && djointldcallU == 1
+curut		lurut + 1
+ceffplus1_ok	djointgmeffplus1 == 1 && g_ipname != "172.17.0.1"
+cblnplus1_ok	djointgmeffplus1 == 0 && djointgmblnplus1 == 1  && g_ipname != "172.17.0.1"
+
+EDITS(tmptranst)
+t.MandatoryCallWa	tldgrup		MANDATORY
+t.MandatoryCallGsm	tldgrup2	MANDATORY_IF ccallwainactive
+
+MAP(murut)
+c1		tldnourt	DO_CALC_IF cjointldU0
+curut		tldnourt	DO_CALC_IF cjointldU1
+
+MAP(mcallgsm)
+cblanks		tldgrup2	DO_CALC_IF ccallwaactive
+
+MAP(misitglresv)
+ltgleffplus1	tldtgl2		REPLACE_IF ceffplus1_ok
+ltglblnplus1	tldtgl2		REPLACE_IF cblnplus1_ok
+ctglplus1_lcl	tldtgl2		DO_CALC_IF clocal
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tldgrup2	DO_SKIP_IF ccallwaactive
+
+BEFORE_INPUT	cur_field=tldnourt	DO_MAP murut
+AFTER_INPUT	cur_field=tldgrup	DO_MAP mcallgsm
+AFTER_INPUT	cur_keybd=EN		DO_MAP mcallgsm
+AFTER_INPUT	cur_keybd=EN		DO_MAP misitglresv
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(3)
+SFL_SHOW_NEXT
+SFL_TARGET
+	tldllbrgurt	tkmkode lHASILCALL tkmcab tkmnobuk
+SFL_MAP
+tkmdata		tlddata		REPLACE
+tkmnobuk	tldnobuk	REPLACE
+tkmkode		tldnoll		REPLACE
+tkmcab		tldlok		REPLACE
+lHASILCALL	tldbrg		REPLACE
+gv_OPEN		tldsts		REPLACE

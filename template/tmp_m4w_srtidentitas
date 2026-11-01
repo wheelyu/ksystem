@@ -1,0 +1,95 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+ t.SrtBedaIdentitas ____              
+ t.Nama         ______________________
+ t.Alamat       ______________________
+ t.TempatLahir  ______________________
+ t.TanggalLahir ______________________
+ t.Status       ______________________
+ t.Tandatangan  ______________________
+ /--SIGNATURE------------------------\ 
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ \-----------------------------------/
+ t.Lain         ______________________
+                ________
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviyt1		NOCHANGE			INPUTRI	1
+svinama		ALLCAPS				INPUTRI	2
+sviket		TEXTAREA ALLCAPS		INPUTRI 3
+svistr1		ALLCAPS				INPUTRI	4
+svitgl1		NONE NOLIMIT {DD-MM-YYYY}	INPUTRI	5
+svistr2		ALLCAPS				INPUTRI 6
+svistr3		ALLCAPS				INPUTRI 7
+svistr4		ALLCAPS				INPUTRI 8
+lenter		ALLCAPS				INPUTRI	9 
+
+DEFAULT(tmptranst)
+sviyt1		DFALT_SCAN_BLANKS	Y T
+
+CALCS()
+cbedaiden0	sviyt1=="T"
+ckodettd	STRIP(btmnobuk) + "BIDEN"
+
+EDITS(tmptranst)
+e.Mandatory	sviyt1		MANDATORY
+
+MAP(mbedaiden)
+cBLANKS		svinama		DO_CALC_IF cbedaiden0
+cBLANKS		sviket 		DO_CALC_IF cbedaiden0
+cBLANKS		svistr1		DO_CALC_IF cbedaiden0
+cBLANKS		svitgl1		DO_CALC_IF cbedaiden0
+cBLANKS		svistr2		DO_CALC_IF cbedaiden0
+cBLANKS		svistr3		DO_CALC_IF cbedaiden0
+cBLANKS		svistr4		DO_CALC_IF cbedaiden0
+ckodettd	svikode		DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svinama	DO_SKIP_IF cbedaiden0
+BEFORE_INPUT	cur_field=sviket 	DO_SKIP_IF cbedaiden0
+BEFORE_INPUT	cur_field=svistr1	DO_SKIP_IF cbedaiden0
+BEFORE_INPUT	cur_field=svitgl1	DO_SKIP_IF cbedaiden0
+BEFORE_INPUT	cur_field=svistr2	DO_SKIP_IF cbedaiden0
+BEFORE_INPUT	cur_field=svistr3	DO_SKIP_IF cbedaiden0
+BEFORE_INPUT	cur_field=svistr4	DO_SKIP_IF cbedaiden0
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mbedaiden
+
+MAP(mupdttdbiden)
+cY		sviyt2		DO_CALC
+
+DBCALCS(dupdttdbiden)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviprmidx sviprm
+	DBC_MAP		mupdttdbiden
+
+MAP(mupdttdbidenx)
+cBLANKS		sviyt2		DO_CALC
+
+DBCALCS(dupdttdbidenx)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviprmidx sviprm
+	DBC_MAP		mupdttdbidenx
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_SGNFLD svikode
+SFL_SGNFLD_DBCALCS dupdttdbiden
+SFL_SGNFLD_DELDBCALCS dupdttdbidenx
+SFL_UPL_DIRFLD btmtgl
+SFL_TARGET
+svidatbuktyp btmdata btmnobuk lBEDAIDEN
+SFL_MAP
+btmdata		svidata		REPLACE
+btmnobuk	svinobuk	REPLACE
+lBEDAIDEN	svitype		REPLACE

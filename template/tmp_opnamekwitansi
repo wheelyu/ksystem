@@ -1,0 +1,57 @@
+LOCAL
+PGM_FIELDS
+lurtg           INT2            2
+
+MAP(mjointkdg)
+tkdnourt        lurtg           REPLACE
+DBCALCS(djointkdg)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      tkdbukidx       tlmnobuk
+        DBC_MAP         mjointkdg
+
+IMAGE(tmptranst)
+/------t-------------------t-------------------t---------------\
+|t.No  |t.KwiAwl           |t.KwiAkh           |t.Kondisi      |
+\------.-------------------.-------------------.---------------/
+IMAGE(tmptrans)
+|______|___________________|___________________|_______________|
+
+FIELDS(tmptrans)
+tkdnourt                PROTECT                 INPUTRI         1
+tkdnoll                 ALLCAPS SCROLL          INPUTRI         2
+tkdjenis                ALLCAPS SCROLL          INPUTRI         3
+tkdsisstr               NOCHANGE                INPUTRI         4
+
+DEFAULT(tmptrans)
+tkdsisstr	DFALT_SCAN_BLANKS	INPG "BAIK"
+					RUSK "RUSAK"
+					HLNG "HILANG"
+
+CALCS()
+cbknSISTEMf     tkdjwbstr1 != "SISTEM"
+curtg           lurtg + 1
+cjointkd0g      djointkdg == 0 && g_curcmd == 1
+cjointkd1g      djointkdg == 1 && g_curcmd == 1
+cINPUT		"INPUT"
+
+MAP(murtg)
+gv_int1         tkdnourt        REPLACE_IF cjointkd0g
+curtg           tkdnourt        DO_CALC_IF cjointkd1g
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tkdnoll      DO_MAP SHOW murtg
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_SELECT	cbknSISTEMf
+SFL_COND	ckwitansi
+SFL_TARGET
+tkdbukidx       tlmnobuk
+
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+tlmdata         tkddata         REPLACE
+tlmtype1        tkdrek          REPLACE
+cINPUT		tkdjwbstr1	DO_CALC

@@ -1,0 +1,86 @@
+LOCAL
+PGM_FIELDS
+lcabsdm  	STRING	21
+
+IMAGE(tmptranst)
+/---------t---------------------t------------t----------------t------------t--------t--------t-------t----------t---------\
+|t.NipSDM |t.Nama               |t.Subdept   |t.Penanggungjwb |t.Lok 	   |t.EstBia|t.totbud|t.actPK|t.tgtHadir|t.acthdir|
+\---------.---------------------.------------.----------------.------------.--------.--------.-------.----------.---------/
+
+IMAGE(tmptrans)
+|_________|_____________________|____________|________________|____________|________|________|_______|__________|_________|
+
+FIELD(tmptrans)
+tldplg			ALLCAPS SCROLL		INPUTRI	1
+lnamasdm		PROTECT			INPUTRI	1
+tldgrup			PROTECT			INPUTRI	1
+tldgrup2		NOCHANGE		INPUTRI	1
+tldlok2			NOCHANGE		INPUTRI	1
+tldjml2			PROTECT			INPUTRI	1
+tldhrg			PROTECT			INPUTRI	1
+tldtmp1			PROTECT			INPUTRI	1
+tldjmlren		PROTECT			INPUTRI	1
+tldtmp2			PROTECT			INPUTRI	1
+
+EDITS(tmptrans)
+e.Mandatory	tldplg  	MANDATORY
+e.Mandatory	tldgrup 	MANDATORY_IF cm2wbtlx
+e.Mandatory	tldgrup2	MANDATORY_IF cm2wbtlx
+e.Mandatory	tldlok2 	MANDATORY_IF cm2wbtlx
+t.KryNull  	tldplg  	VALIDATE psikodidx    mpsiSL spsiKod
+
+DEFAULTS(tmptrans)
+tldgrup2	DFALT_SCAN_BLANKS
+				PENANGGUNG_JWB
+				PESERTA
+tldlok2		DFALT_SCAN_BLANKS
+				BURU_LAPAK
+				BURU_PENGUNJUNG
+				JAGA_MEJA
+				JAGA_PARKIR
+
+MAP(mpsiSL)
+psikode         tldplg          REPLACE
+psinama		lnamasdm 	REPLACE
+psijabatan      tldgrup         REPLACE
+psicabskr	lcabsdm		REPLACE
+
+MAP(murut)
+c1		tldnourt	DO_CALC_IF cdjointldx0
+curttld		tldnourt	DO_CALC_IF cdjointldx1
+
+MAP(mkodez)
+cthblz		tldukrwrn	DO_CALC
+tldplg		tldnoll		REPLACE
+
+MAP(mtldplg)
+tldplg		ltldplg		REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldplg	DO_MAP SHOW murut
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mkodez
+AFTER_INPUT     cur_field=tldplg	DO_MAP SHOW mtldplg
+AFTER_INPUT     cur_field=tldplg	DO_MAP SHOW
+		IF cblmdiinput mjual
+		ELSE HKCURSOR STAY
+		HKMSG t.PesertaSudahDiInput
+
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW
+		IF csdmcabang	mjual
+		ELSE HKCURSOR STAY
+		HKMSG t.HarusSdmSesuaiCabangEvent
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND	cbkntrain
+SFL_TARGET	tldbukbrglok	tlmnobuk lPESERTA lPESERTA
+SFL_MAP
+tlmnobuk	tldnobuk	REPLACE
+tlmtgl2		tldtglfak   	REPLACE
+tlmdata		tlddata		REPLACE
+lPESERTA	tldbrg		REPLACE
+lPESERTA	tldlok		REPLACE
+tlmnobuk        tldsat          REPLACE
+gv_OPEN		tldsts		REPLACE
+tldplg		tldnoll		REPLACE

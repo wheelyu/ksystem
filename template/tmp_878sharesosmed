@@ -1,0 +1,230 @@
+LOCAL 
+PGM_FIELDS
+lREV878		STRING		21
+ljam00		TIME		4
+lbhtglakhb	DATE		4
+lbhtglmin3	DATE		4
+lblmin3         DATE            4
+lbhnobuk	STRING		21
+lbhnobuk2       STRING          21
+lbhhari		INT2		2
+lbhminggu	INT2		2
+lbhhrnama	STRING		11
+
+MAP(mbhtgm)
+tgmke		lbhhari		REPLACE
+tgmminggu	lbhminggu	REPLACE
+
+DBCALCS(djoinbhtgm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx	gv_TGL tkmtgl
+	DBC_MAP		mbhtgm
+
+CALCS()
+cabkclsd    abknoll == "BAHANSHARESOSMED" && abkkym2 == "UPLOAD BAHAN SOSMED" && abksts == "CLSD"
+
+DBCALCS(djoinabk)
+    DBC_COMMAND JOIN
+    DBC_TARGET  abkdatbukidx lKUNCIABSEN lbhnobuk
+    DBC_SELECT  cabkclsd
+
+DBCALCS(djoinabk2)
+    DBC_COMMAND JOIN
+    DBC_TARGET  abkdatbukidx lKUNCIABSEN lbhnobuk2
+
+IMAGE(tmptranst)
+/-------------------------------------\
+ /-----------------------------------\
+                 ____
+  t.Tgl		: ___________________
+  t.JnsSosmed	: ___________________
+  t.JamPst	: ___________________
+  t.NamaAkun	: ___________________
+  t.TipeSharing	: __________________
+  t.JmlPeserta	: __________________
+  t.LinkBukti	: ___________________
+  t.CaptionC	: ___________________
+                  _______
+ \-----------------------------------/
+  t.BuktiShare       t.RefGambar
+  /---s.UPLOAD----\  /---s.UPLOAD2---\
+  |               |  |               |
+  |               |  |               |
+  |               |  |               |
+  |               |  |               |
+  |               |  |               |
+  \---------------/  \---------------/
+ /-----------------------------------\
+  t.Review
+  t.FotoBuktiShare : _______
+		     _______
+ \-----------------------------------/	
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spknobuk        PROTECT UNSEEN          INPUTRI 1
+spktgl		PROTECT {DD-MM-YYYY}	INPUTRI	2
+spknoasal	PROTECT			INPUTRI	3
+spkjam          ALLCAPS 		INPUTRI 4
+spknama		ALLCAPS SCROLL		INPUTRI	5
+spkkat		ALLCAPS SCROLL		INPUTRI	6
+spkkat2		ALLCAPS SCROLL		INPUTRI 7
+spkkat3		ALLCAPS SCROLL		INPUTRI	9
+spkket		TEXTAREA ALLCAPS	INPUTRI	10
+lENTER2		NOCHANGE		INPUTRI	11
+spkkode9	ALLCAPS SCROLL		INPUTRI	12
+lENTER		NOCHANGE		INPUTRI	13
+
+CALCS()
+ctipegrup      	spkkat != "GRUP/KOMUNITAS"
+ctipegrup2     	spkkat == "GRUP/KOMUNITAS"
+crevatasan	spkkode9 == "T"
+crevatasan2	spkkode9 == "Y"
+crevatasan3	spkkode9 == "T" && tkmsts == "INPG"
+cbesok		g_tgltrn + 1
+cpulang		djoinabdDTG == 1 && (labdtype == "HADIR" || labdtype == "HADIR129")
+cblmpulang	djoinabdDTG == 1 && labdtype == "DATANG"
+cnobukss	abknobuk == tkmnobuk
+cpjgjam		spkjam > ljam00
+cbhakhb	        DO_LIB ap_akhbl(tkmtgl,&lbhtglakhb);
+cblmin3	        ststglprjgl - 3
+cbhmin3	        lbhtglakhb - 3
+cjoinabklalu	djoinabk == 0 && djoinabk2 == 1
+cbhnobuk	"SOSMED" + THBLS_DD(lbhtglmin3) + THBLS_MM(lbhtglmin3) + THBLS_YYYY(lbhtglmin3)
+cbhnobuk2	"SOSMED" + THBLS_DD(lblmin3) + THBLS_MM(lblmin3) + THBLS_YYYY(lblmin3)
+cbhhr1	        djoinbhtgm == 1 && lbhhari == 1
+cbhhr2	        djoinbhtgm == 1 && lbhhari == 2
+cbhhr3	        djoinbhtgm == 1 && lbhhari == 3
+cbhhr4	        djoinbhtgm == 1 && lbhhari == 4
+cbhhr5	        djoinbhtgm == 1 && lbhhari == 5
+cbhhr61	        djoinbhtgm == 1 && lbhhari == 6 && lbhminggu == 1
+cbhhr62	        djoinbhtgm == 1 && lbhhari == 6 && lbhminggu == 2
+cbhhr63	        djoinbhtgm == 1 && lbhhari == 6 && lbhminggu == 3
+cbhhr64	        djoinbhtgm == 1 && lbhhari == 6 && lbhminggu == 4
+cbhhr65         djoinbhtgm == 1 && lbhhari == 6 && lbhminggu == 5
+
+DEFAULT(tmptranst)
+lbhtglakhb	                INIT	{cbhakhb}
+lbhtglmin3	                INIT	{cbhmin3}
+lblmin3                         INIT    {cblmin3}
+lbhnobuk	                INIT	{cbhnobuk}
+lbhnobuk2                       INIT    {cbhnobuk2}
+IF cjoinabklalu	lbhtglmin3	INIT	{cblmin3}
+IF cjoinabklalu	lbhnobuk	INIT	{cbhnobuk2}
+IF cbhhr1	lbhhrnama	INIT	"SENIN"
+IF cbhhr2	lbhhrnama	INIT	"SELASA"
+IF cbhhr3	lbhhrnama	INIT	"RABU"
+IF cbhhr4	lbhhrnama	INIT	"KAMIS"
+IF cbhhr5	lbhhrnama	INIT	"JUMAT"
+IF cbhhr61	lbhhrnama	INIT	"SABTU13"
+IF cbhhr62	lbhhrnama	INIT	"SABTU24"
+IF cbhhr63	lbhhrnama	INIT	"SABTU13"
+IF cbhhr64	lbhhrnama	INIT	"SABTU24"
+IF cbhhr65      lbhhrnama       INIT    "SABTU13"
+spktgl          INIT_UPDATE     {g_tgltrn}
+spkkode9        DFALT_LIST      BLANKS  Y
+                                        T
+spkjam          INIT_LABEL      JAM:MENIT
+lREV878         INIT            "REV 878 SHARE MEDSOS"
+ljam00		INIT		00:00:00
+
+EDITS(tmptranst)
+e.Mandatory1	spkjam		MANDATORY_IF cred
+e.Mandatory2	spknama		MANDATORY_IF cred
+e.Mandatory3	spkkat		MANDATORY_IF cred
+e.Mandatory4	spkkat2		MANDATORY_IF ctipegrup2
+e.Mandatory5	spkkat3		MANDATORY_IF cred
+e.Mandatory6	spkket		MANDATORY_IF cred
+e.Mandatory7	spkkode9	MANDATORY_IF catasanshrmed
+
+e.Validate	spkkat		VALIDATE tbddatkodidx mtbtshare stbdapk {Pgv_dttabel} {PlSPK21} {PlTIPESHARING} 
+e.Validate	spkkat2		VALIDATE tbddatkodidx mtbdjmlpeserta stbdapk {Pgv_dttabel} {PlSPK21} {PlJMLPESERTA}
+
+MAP(mtbtshare)
+tbdkode		spkkat		REPLACE
+
+MAP(mtbdjmlpeserta)
+tbdkode		spkkat2		REPLACE
+
+MAP(mupdabkrevatasan)
+gv_CLSD         abksts          REPLACE_IF cnobukss
+DEBUG	ldum	ldum	REPLACE
+
+MAP(mupdtkmsharesos)
+gv_CLSD         tkmsts          REPLACE
+
+MAP(mupdtkmsharesos2)
+gv_OPEN         tkmsts          REPLACE
+cbesok          tkmtgl          DO_CALC_IF cpulang
+
+MAP(mupdabkkoreksiss)
+gt_RINP		abksts		REPLACE_IF cpulang
+gv_INPG		abksts 		REPLACE_IF cblmpulang
+cbesok		abktgl		DO_CALC_IF cpulang
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mupdspksharesos)
+cBLANKS		spkfoto		DO_CALC
+DEBUG		ldum	ldum	REPLACE
+
+MAP(mblanksss2)
+cBLANKS		spkkat2		DO_CALC
+
+SPCALCS(supdabkatasan)
+	DO_LIB_IF crevatasan	ap_dbclc(DNAME dupdabksharesos, DCOMMAND UPDATE_RANGE, DTARGET abkdatstskym lKUNCIABSEN gv_CLSD tkmplg l8785 g_tgltrn tkmnobuk, DMAP mupdabkkoreksiss);
+        DO_LIB_IF catasanshrmed ap_dbclc(DNAME dupdabkrevatasan,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lKUNCIABSEN gv_INPG lREV878 l8785 g_tgltrn,DMAP mupdabkrevatasan);
+	DO_LIB_IF crevatasan    ap_dbclc(DNAME dupdtkmsharesos2,DCOMMAND UPDATE, DTARGET tkmbukidx tkmnobuk,DMAP mupdtkmsharesos2);
+        DO_LIB_IF crevatasan2   ap_dbclc(DNAME dupdtkmsharesos,DCOMMAND UPDATE, DTARGET tkmbukidx tkmnobuk,DMAP mupdtkmsharesos);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkkat2	DO_SKIP_IF ctipegrup
+BEFORE_INPUT	cur_field=spkjam	DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=spknama       DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=spkkat        DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=spkkat2       DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=spkkat3       DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=spkket        DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=lENTER2       DO_SKIP_IF catasanshrmed
+BEFORE_INPUT    cur_field=spkkode9      DO_SKIP_IF cred
+BEFORE_INPUT    cur_field=lENTER        DO_SKIP_IF cred
+
+AFTER_INPUT     cur_field=spkjam               DO_MAP SHOW
+                IF cpjgjam     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JamHarusLebihdari00:00:00
+
+AFTER_INPUT	cur_field=spkkat	DO_MAP SHOW IF ctipegrup mblanksss2
+AFTER_INPUT     cur_field=spkkode9      DO_MAP SHOW IF crevatasan3 mupdspksharesos
+
+AFTER_INPUT	cur_keybd=EN		DO_SPCALCS supdabkatasan
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tkmcab
+SFL_UPLFLD  spknobuk spkfoto
+SFL_UPLFLD_DBCALCS  dupdspksosmed
+SFL_UPL_DELCOND	c0
+SFL_UPL_DIRFLD2		lbhtglmin3
+SFL_UPL_READONLY2
+SFL_UPLFLD2		lbhnobuk lbhhrnama
+SFL_TARGET
+spkdatbuktyp   lSPKLCK tkmnobuk lHASILSPK
+SFL_MAP
+tkmnobuk        spknobuk        REPLACE
+tkmkode		spknoasal	REPLACE
+lSPKLCK         spkdata         REPLACE
+lHASILSPK       spktype         REPLACE
+
+CALCS()
+cupdtranssosa	tkmtgl == g_tgltrn && (tkmsts=="OPEN" && (tkmplg==g_usrkode || g_grpnam=="RI" || g_grpnam=="RAS" || g_grpnam=="IT")) 
+                || (tkmsts == "INPG" && (g_grpnam == "TLDDTN" || g_grpnam == "MSOHEAD" || g_grpnam == "PICMKTM2W" || g_grpnam == "M2WAM" || g_grpnam == "RI" || g_grpnam == "IT"))
+
+POSTING(tmptrans)
+	PST_UPDCMD	supdabkatasan
+
+PERMIT(tmptrans)
+    PMT_ADD_COND    c0
+    PMT_UPDALL_COND cupdtranssosa
+    PMT_DEL_COND    c0

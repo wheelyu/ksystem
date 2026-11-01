@@ -1,0 +1,89 @@
+LOCAL
+PGM_FIELDS
+lfinbunga       STRING          21
+lawlbunga       STRING          21
+lfinltv         STRING          21
+lawlltv         STRING          21
+
+
+MAP(mjoindevbunga)
+svistr3         lfinbunga               REPLACE
+svistr4         lawlbunga               REPLACE
+DBCALCS(djoindevbunga)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp gt_deviasibr11 btmnobuk gv_BUNGA
+        DBC_MAP         mjoindevbunga 
+
+
+MAP(mjoindevltv)
+svistr3         lfinltv                 REPLACE
+svistr4         lawlltv                 REPLACE
+DBCALCS(djoindevltv)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp gt_deviasibr11 btmnobuk gt_LTV   
+        DBC_MAP         mjoindevltv   
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------------\
+  t.Wilayah   : ________ t.Jarak  ___.__
+  t.Merk      : ______________________ _
+  t.Tipe      : _______________________
+  t.Model     : _______________________
+  t.NamaMbl   : ________________________
+  t.Tahun     : ______ ________ ________
+  t.AprLtv    : ___________ ____________ 
+  t.AprRate   : ___________ ____________ 
+  i.Ltv       : ______.__ i.Pltv:____.__
+  i.Pbtsltv   : ______.__ t.Bts :____.__
+  i.Banu      : ______.__i.Bflat :____.__
+\-----------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+nhmgrup_3       PROTECT          SCROLL         INPUTRI 2
+btmdf1          PROTECT          SCROLL         INPUTRI 3
+astmerk         PROTECT          SCROLL         INPUTRI 4
+nhmjns_3        PROTECT UNSEEN   SCROLL         INPUTRI 2
+asttype         PROTECT          SCROLL         INPUTRI 5
+astbrg          PROTECT          SCROLL         INPUTRI 6
+astnama         PROTECT          SCROLL         INPUTRI 9
+astth           PROTECT          SCROLL         INPUTRI 10
+nhmprogjl_3     PROTECT          SCROLL         INPUTRI 13
+btmnonnm        PROTECT          SCROLL         INPUTRI 14
+lfinbunga       PROTECT          SCROLL         INPUTRI 14
+lawlbunga       PROTECT          SCROLL         INPUTRI 14
+lfinltv         PROTECT          SCROLL         INPUTRI 14
+lawlltv         PROTECT          SCROLL         INPUTRI 14
+nhmtotpok_3     PROTECT          SCROLL         INPUTRI 16
+nhmperpok_3     PROTECT          SCROLL         INPUTRI 17
+nhmmaxcair_3    PROTECT          SCROLL         INPUTRI 18
+nhmangstd_3     PROTECT          SCROLL         INPUTRI 19
+nhmbgstd_3      PROTECT          SCROLL         INPUTRI 20
+nhmbgflat_3     PROTECT          SCROLL         INPUTRI 21
+
+EDITS(tmptranst)
+e.Validateasset         nhmjns_3        VALIDATE astdatkodidx   mast2 sast {Pgv_dtassets} {Pbtmplg} {Pgv_bpkb}
+
+CALCS()
+cjoinbunga        djoindevbunga == 1
+cjoinltv          djoindevltv == 1
+
+MAP(mast2)
+astkode                 nhmjns_3        REPLACE
+lfinbunga               lfinbunga       REPLACE_IF cjoinbunga
+lawlbunga               lawlbunga       REPLACE_IF cjoinbunga
+lfinltv                 lfinltv         REPLACE_IF cjoinltv
+lawlltv                 lawlltv         REPLACE_IF cjoinltv
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+btmbukidx   btmnobuk
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+

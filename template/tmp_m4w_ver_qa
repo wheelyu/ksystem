@@ -1,0 +1,125 @@
+LOCAL 
+PGM_FIELDS
+lurut_verqaho           INT2            2
+lok			STRING		4
+
+MAP(mjoinsviverqaho)
+svinourt                lurut_verqaho                REPLACE
+
+DBCALCS(djoinsviverqaho)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp   lVERQA	btmnobuk lVERQAHO
+        DBC_MAP         mjoinsviverqaho   
+
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------------------\|
+||                                     t.Detailverifikasiadh                             ||
+|\---------------------------------------------------------------------------------------/|
+|/---------------------------------------------------------------------------------------\|
+||t.NoBuk                                                            : ________________  ||
+||t.adh1                                                             : _________         ||
+||t.adh2                                                             : _________         ||
+||t.adh3                                                             : _________________ ||
+||t.adh4                                                             : ______________.__ ||
+||t.adh5                                                             : ______________.__ ||
+||t.adh6                                                             : ______________.__ ||
+||t.adh7                                                             : _________         ||
+||t.adh8                                                             : _________         ||
+||t.Tglstnk1                                                         : __________        ||
+||t.HasilRekomenA      : __________________   ___________                                ||
+||t.Faktor3            : __                                                              ||
+||t.Ket	               : ______________________________________________________________  ||
+||                                                                                       ||
+||                                          ___                                ________  ||
+|\---------------------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk                NOCHANGE                INPUTRI         1       /*Nobuk                                 */
+svistr5                 NOCHANGE                INPUTRI         1       /*Konsumen Mengambil Kredit di NSC      */
+svistr6                 NOCHANGE                INPUTRI         2       /*Apakah Unit Benar                     */
+svistr10                ALLCAPS SCROLL          INPUTRI         3       /*Sudah Berapa Lama Konsumen            */
+svidf1                  NUMERIC                 INPUTRI         4       /*Berapa Besar DP                       */
+svidf2                  NUMERIC                 INPUTRI         5       /*Berapa Besar Pembelian                */
+svidf3                  NUMERIC                 INPUTRI         6       /*Besar Nilai Pencairan                 */
+svistr8                 NOCHANGE                INPUTRI         7       /*Benar Take Over                       */
+svistr9                 NOCHANGE                INPUTRI         8       /*Nomor Rekening                        */
+svitgl1                 NOCHANGE NOLIMIT {DD-MM-YYYY}   INPUTRI 8       /*Tanggal STNK                          */
+svistr1                 NOCHANGE                INPUTRI         9       /*Nomor Rekening                        */
+svitgl2                 PROTECT NOLIMIT {DD-MM-YY}      INPUTRI         9
+svistr3                 NOCHANGE                INPUTRI         10      /*Nomor Rekening                        */
+sviket                  TEXTAREA ALLCAPS        INPUTRI         11      /*Nomor Rekening                        */
+lok                             NOCHANGE                INPUTRI        12
+svitype2                       NOCHANGE                INPUTRI        12
+
+
+DEFAULTS(tmptranst)
+svidata                 INIT                    VERQA      
+svitype                 INIT                    VERQAHO      
+svitype2                 INIT                   {g_usrkode}     
+svitype2		INIT_UPDATE		{g_usrkode}
+svitgl1                 INIT                    SYSDATE
+svitgl2                 INIT                    SYSDATE
+svitgl2                 INIT_UPDATE             SYSDATE
+svinourt                INIT                    1
+lok			INIT			OK
+svistr5                 DFALT_LIST              YA TIDAK
+svistr6                 DFALT_LIST              YA TIDAK
+svistr8                 DFALT_LIST              YA TIDAK
+svistr9                 DFALT_LIST              YA TIDAK
+svistr3                 DFALT_LIST              Y T
+svistr1                 DFALT_SCAN              BLANKS ACC BATAL PENDING
+
+
+EDITS(tmptranst)
+e.Mandatory             svistr5                 MANDATORY
+e.Mandatory             svistr6                 MANDATORY
+e.Mandatory             svistr10                MANDATORY
+e.Mandatory             svidf3                  MANDATORY
+e.Mandatory             svistr8                 MANDATORY
+e.Mandatory             svistr9                 MANDATORY
+e.Mandatory             svistr1                 MANDATORY
+
+
+CALCS()
+cverqaho0              g_curcmd == 1 && djoinsviverqaho == 0
+cverqaho1             g_curcmd == 1 && djoinsviverqaho == 1
+curutverqaho            lurut_verqaho + 1
+cverqahox             1
+
+MAP(murut_verqaho)
+cverqahox             svinourt                DO_CALC_IF cverqaho0
+curutverqaho          svinourt                DO_CALC_IF cverqaho1
+
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW murut_verqaho
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	   svidatbuktyp   lVERQA  btmnobuk  lVERQAHO    
+
+SFL_MAP
+lVERQA                svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+lVERQAHO              svitype                 REPLACE
+lPENCAIRAN            svikode                 REPLACE
+g_usrkode               svitype2                REPLACE
+
+
+CALCS()
+cQA                (g_grpnam == "RI" || g_grpnam == "ADHSPV" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "B.M4WQA" || g_usrkode == "1630290" || g_grpnam == "B.M4WCA" || g_grpnam == "B.M4WCM" )
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cQA       
+  PMT_UPDALL_COND  cQA             
+  PMT_DEL_COND  cQA        
+
+
+

@@ -1,0 +1,101 @@
+SCREEN 3020 APPLICATION_TYPE s.ImportData
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+/* doda symbol name		field type	field length */
+	ltmpfilnam		STRING	            20 
+	lfilnam			STRING	            4 
+	ldelimiter		INT2		    2
+	ldefdte   		INT2  		    2
+	lmap   		        STRING		    31
+
+IMAGE(master) {BASE_ROW=2} 
+/--------------------------------------------------------------------------\
+	i.NamaFile    : _______________  i.AllUntukSemuaFile  
+
+	i.Pembatas    : _
+
+	i.FormatTgl   : _
+\--------------------------------------------------------------------------/
+FIELD(master)
+   ltmpfilnam          NONE             INPUTRI            1 /* file name */
+   ldelimiter          PROTECT         	INPUTRI            2 /* Delimiter */
+   ldefdte             NOCHANGE	        INPUTRI            3 
+
+
+EDITS(master)
+Harus masukkan nama file ltmpfilnam  MANDATORY
+Harus masukkan character pembatas ldelimiter  MANDATORY
+Harus masukkan pilihan ldefdte  MANDATORY
+
+DEFAULTS(master)
+ldelimiter	INIT      1 
+ldefdte		DFALT_SCAN	1 "DDMMYY "
+				2 "MMDDYY "
+				3 "YYMMDD "
+	        		4 "YYYYMMDD"
+	        		5 "DDMMYYYY"
+
+MAP(mfile)
+ltmpfilnam	lfilnam		REPLACE
+
+HOOKS(master)
+AFTER_INPUT	cur_field=ltmpfilnam	DO_MAP SHOW mfile
+
+CALCS()
+cpsm		lfilnam == "psm" 
+cpsi		lfilnam == "psi" 
+cbtm		lfilnam == "btm" 
+/* cang		lfilnam == "ang"  */
+cmappsm		"mmappsm"
+cmappsi		"mmappsi"
+cmapbtm		"mmapbtm"
+/* cmapang		"mmapang" */
+cpsmOPEN	psmsts =="OPEN"
+cpsiOPEN	psists =="OPEN"
+cbtmOPEN	btmsts =="OPEN"
+/* cangCLSD	angsts =="CLSD" */
+cbtmmsn_ksg	btmnomesin == BLANKS
+
+cpsmXBRT	psmcab == "XBRT"
+cpsmAGEN	psmstsplg == "AGEN"
+cpsmRI  	psmstsplg == "RI"
+cBIAYA		"BIAYA"
+cKS		"KS"
+/* c0		0 */
+
+MAP(mmapmap)
+cmappsm		lmap		DO_CALC_IF cpsm
+cmappsi		lmap		DO_CALC_IF cpsi
+cmapbtm		lmap		DO_CALC_IF cbtm
+/* cmapang		lmap		DO_CALC_IF cang */
+
+MAP(mmappsm)
+gv_INPG		psmsts		REPLACE_IF cpsmOPEN
+psmstsplg	psmdataplg	REPLACE_IF cpsmAGEN
+cKS      	psmdataplg	DO_CALC_IF cpsmRI  
+cBIAYA		psmdataplg	DO_CALC_IF cpsmXBRT
+cKS		psmcab		DO_CALC_IF cpsmXBRT
+
+/* 
+MAP(mmapang)
+c0		angsispok	DO_CALC_IF cangCLSD
+c0		angsisbg	DO_CALC_IF cangCLSD
+*/
+
+MAP(mmappsi)
+gv_INPG		psists		REPLACE_IF cpsiOPEN
+
+MAP(mmapbtm)
+gv_INPG		btmsts		REPLACE_IF cbtmOPEN
+btmnorangka	btmnomesin	REPLACE_IF cbtmmsn_ksg
+
+SPCALCS(spcal)
+DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB ap_flimp(ltmpfilnam,ldelimiter,ldefdte,lmap);
+
+POSTING(master)
+   PST_COMMAND     spcal       /* APPLICATION_TYPE */
+				
+END_SCREEN

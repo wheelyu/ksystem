@@ -1,0 +1,114 @@
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+|| spasi                                     ||
+|| t.Indikator     t.Bobot                   ||
+|| _______________  ______                   ||
+|| _______________  ______                   ||
+|| _______________  ______                   ||
+|| spasi                                     ||
+|| t.Totalbobot   ___                        ||
+||                                           ||
+|| t.PedomanActiv _______  ________________  ||
+|| t.Activity     ________________           ||
+|| t.TargetMid    _____  t.TargetEnd _____   ||
+|| t.Bobot        _______                    ||
+|\-------------------------------------------/|
+|spasi                                        |
+|t.TekanTbhUntukMengisiActivity               |
+|t.Pesan2InputResult                          |
+|t.Pesan3InputResult                          |
+|t.Pesan4InputResult                          |
+\---------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+ketstr1_1     PROTECT     INPUTRI     1
+ketdf1_1      PROTECT     INPUTRI     2
+ketstr2_1     PROTECT     INPUTRI     1
+ketdf2_1      PROTECT     INPUTRI     2
+ketstr3_1     PROTECT     INPUTRI     1
+ketdf3_1      PROTECT     INPUTRI     2
+tlmjml      NOCHANGE    INPUTRI     3
+tldkat      NOCHANGE    INPUTRI     4
+tldsat      ALLCAPS     INPUTRI     4
+tldket      TEXTAREA    INPUTRI     4
+tldperdis1  DIGITS      INPUTRI     5
+tldperdis2  DIGITS      INPUTRI     6
+tldjml      DIGITS      INPUTRI     7
+
+DEFAULTS(tmptranst)
+ltotalbobot     INIT    {tlmjml}
+IF cnohmcm2w    tldkat INIT MANDIRI
+
+
+
+
+EDITS(tmptranst)
+e.Mandatory tldkat  MANDATORY
+e.Mandatory tldket  MANDATORY
+e.Mandatory tldsat  MANDATORY_IF chmcm2w1
+e.Mandatory tldjml  MANDATORY
+e.Mandatory tldperdis1  MANDATORY
+e.Mandatory tldperdis2  MANDATORY
+e.VALIDATE  tldkat VALIDATE_IF chmcm2w tbtdattypkod mtbtact stbtpros {Pgv_dttabel} {Pgv_dttabel21} {PlHRD} {PlACT179} {Plgrupjab179}
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tlmjml   DO_MAP SHOW misiindikator
+/*BEFORE_INPUT    cur_field=tldket    DO_SKIP_IF chmcm2w*/
+BEFORE_INPUT    cur_field=tldsat    DO_SKIP_IF chmcm2w
+BEFORE_INPUT    cur_field=tldsat    DO_SKIP_IF cnohmcm2w
+BEFORE_INPUT    cur_field=tldkat    DO_SKIP_IF cnohmcm2w
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW misiindikator
+AFTER_INPUT     cur_field=tldkat    DO_MAP SHOW mcekactivity
+AFTER_INPUT     cur_field=tldjml        DO_MAP SHOW
+                IF ckonMandiri mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bobot Maksimal 30
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF ckonMandiri mdum
+                ELSE HKCURSOR STAY
+                HKMSG Bobot Maksimal 30
+
+AFTER_INPUT     cur_field=tldkat        DO_MAP SHOW
+                IF ccekmandiri mdum
+                ELSE HKCURSOR STAY
+                HKMSG Maksimal 1 Tipe MANDIRI
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF ccekmandiri mdum
+                ELSE HKCURSOR STAY
+                HKMSG Maksimal 1 Tipe MANDIRI
+
+
+AFTER_INPUT     cur_field=tldkat        DO_MAP SHOW
+                IF chitnonmandiri mdum
+                ELSE HKCURSOR STAY
+                HKMSG Wajib Input 2 Pedoman Activity Sebelum Input Mandiri
+
+AFTER_INPUT     cur_keybd=EN         DO_MAP SHOW
+                IF chitnonmandiri mdum
+                ELSE HKCURSOR STAY
+                HKMSG Wajib Input 2 Pedoman Activity Sebelum Input Mandiri
+
+AFTER_INPUT     cur_field=tldkat        DO_MAP SHOW
+                IF ccekkodeact mdum
+                ELSE HKCURSOR STAY
+                HKMSG Tidak Bisa Input Pedoman Activity Yang Sama
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_TARGET
+tldstsbrgukr   tlmdata gv_OPEN tlmnobuk lRESULT
+
+SFL_MAP
+tlmdata     tlddata
+tlmnobuk    tldnobuk
+tlmnobuk    tldbrg
+gv_OPEN     tldsts
+lRESULT     tldukrwrn

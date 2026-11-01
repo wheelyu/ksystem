@@ -1,0 +1,151 @@
+LOCAL
+PGM_FIELDS
+lAKTVBP			STRING		11
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||             ___ ____  ___      ||
+||t.NoBukti  : __________________ ||
+||t.Aktivitas: __________________ ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.Tgl      : _____________      ||
+||t.Lat      : ________.____      ||
+||t.Long     : ________.____      ||
+||t.UploadOk : ____               ||
+|\--------------------------------/|
+|/--------------------------------\|
+||/--------s.UPLOAD--------------\||
+|||                              |||
+|||                              |||
+|||                              |||
+|||                              |||
+|||                              |||
+|||                              |||
+|||                              |||
+||\------------------------------/||
+|\--------------------------------/|
+|/--------------------------------\|
+|| ______________________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt                PROTECT                 INPUTRI         1
+svitype2           PROTECT                 INPUTRI         1
+svidf8 			PROTECT NUMERIC		INPUTRI		2
+svinobuk                PROTECT                 INPUTRI         1
+svistr1			ALLCAPS SCROLL 		INPUTRI		2
+svitgl1			PROTECT  {DD-MM-YYYY}	INPUTRI 	6
+svidf1			NOCHANGE		INPUTRI		6
+svidf2			NOCHANGE		INPUTRI		6
+svistr38		PROTECT			INPUTRI		7
+ltombok1		TOMBOL			INPUTRI		8
+
+DEFAULTS(tmptranst)
+svitype		INIT		AKTIVBP   
+lAKTVBP 	INIT		AKTIVBP   
+svitype2	INIT		OPEN
+svistr1		DFALT_SCAN	BLANKS
+				KANVASING "KANVASING"
+				KUNJ_MITRA  "KUNJUNGAN MITRA"
+				TELP_MITRA   "TELEPON MITRA"
+				CARI_MITRA "CARI MITRA BARU"				
+				NEW_DATABASE "CARI NEW DATABASE"
+
+
+ltombok1	INIT		"UPLOAD OK"
+
+EDITS(tmptranst)
+e.MANDATORY	svistr1		MANDATORY
+
+MAP(mupdsvibpY)
+cY              sviyt1          DO_CALC
+g_fotodate1     svitgl1         REPLACE
+cfotolat1      	svidf1          DO_CALC
+cfotolon1      	svidf2          DO_CALC
+
+DBCALCS(dbgpsbp1)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvibpY
+
+
+MAP(mupdtkmbp1)
+ctamfuro	tkmtotal	DO_CALC
+
+DBCALCS(dbgpsbptkm)
+        DCOMMAND UPDATE
+        DTARGET tkmprmidx tkmprm
+        DMAP mupdtkmbp1
+CALCS()
+ctambah1bp                g_curcmd == 1 && djoinsvidetbp == 0 
+ctambah2bp                g_curcmd == 1 && djoinsvidetbp == 1 
+cdet1cmobp		FLD_TO_STRING(svinourt)+"DETBP1"
+cisibp                  tkmtotal > 0 
+
+MAP(misiurutbp1)
+c1                   svinourt        DO_CALC_IF ctambah1bp
+curut                svinourt        DO_CALC_IF ctambah2bp
+cdet1cmobp 	     svistr2	     DO_CALC
+
+
+SPCALCS(supdbpsaja)
+        dbgpsbp1            
+        dbgpsbptkm          
+
+MAP(mdeltotalbp)
+cdel            tkmtotal        DO_CALC_IF cisibp 
+
+DBCALCS(ddeltotalbp1)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tkmprmidx tkmprm
+        DBC_MAP         mdeltotalbp  
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW misiurutbp1
+CLICKED         cur_field=ltombok1      DO_SPCALCS supdbpsaja   
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbgpsbp1   
+SFL_UPLFLD      tkmnobuk svistr2
+SFL_UPL_DELCOND c0
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        svidatbuktyp	tkmtype tkmnobuk lAKTVBP    
+SFL_MAP
+tkmnobuk	svinobuk	REPLACE
+tkmtype		svidata		REPLACE
+gv_OPEN		svitype2	REPLACE
+lAKTVBP    	svitype		REPLACE
+
+CALCS()
+cAKTVBP         "AKTIV_BP"
+
+MAP(maddakbp)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cAKTVBP         akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_usrkode       aktkode2        REPLACE
+cAKTVBP         aktbrg          DO_CALC
+
+
+SPCALCS(spdetailbp)
+	DO_LIB ap_dbclc(DNAME dupdtkmbp1t,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP mupdtkmbp1);
+	DO_LIB ap_dbclc(DNAME daddakbp1,DCOMMAND ADD,DFILE akt,DMAP maddakbp);
+
+SPCALCS(sdeldetilbp)
+        ddeltotalbp1
+
+POSTING(tmptrans)
+        PST_ADDCMD      spdetailbp
+	PST_DELCMD      sdeldetilbp  
+
+

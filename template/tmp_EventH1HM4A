@@ -1,0 +1,96 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+ t.Actual Biaya
+/--------------------t--------t-------------t-------------t--------t----------\
+|t.KeteranganBiaya   |t.Jumlah|t.HargaSatuan|t.JumlahBiaya| t.info | __ __ __ |
+\--------------------.--------.-------------.-------------.--------.----------/
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+|____________________|________|_____________|_____________|___________________|
+
+FIELD(tmptranst)
+ltombol1tacc     TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombol1acc      TOMBOL UNSEEN_IF chidetomaproval        INPUTRI 1
+ltombolhm4aok   TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 2
+
+FIELD(tmptrans)
+tkdjenis 	ALLCAPS	 	INPUTRI	1
+tkdjml	        NUMERIC          INPUTRI	1
+tkdjml2         NUMERIC                 INPUTRI 1
+tkdjml3         NUMERIC                 INPUTRI	1
+tkdrek          PROTECT                 INPUTRI 3
+
+DEFAULTS(tmptrans)
+tkdsts INIT            {gv_OPEN}
+
+EDITS(tmptrans)
+e.Mandatory             tkdjenis        MANDATORY
+e.Mandatory             tkdjml          MANDATORY
+e.Mandatory             tkdjml2         MANDATORY
+e.Mandatory             tkdjml3         MANDATORY
+
+CALCS()
+cselisihjumlahbiayact   tkdjml3 - ~tkdjml3
+cupdatebiayaact         tlmtotal + lselisihjumlahbiaya 
+cdetailhm4aok           tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdjenis != ""
+
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_field=tkdjml     DO_MAP SHOW mjumlahbiaya
+AFTER_INPUT             cur_field=tkdjml2    DO_MAP SHOW mjumlahbiaya
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=ltombol1tacc   DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=ltombol1acc    DO_SKIP_IF camkawil
+CLICKED         cur_field=ltombolhm4aok DO_SPCALCS spdetailokhm4a
+
+CLICKED         cur_field=ltombol1tacc   DO_SPCALCS IF camkawilin staccdetailrinci
+CLICKED         cur_field=ltombol1acc	DO_SPCALCS IF camkawilin saccdetailrinci      
+
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNH1AHM4 tlmnobuk
+
+SFL_MAP
+        tlmnobuk tkdnobuk
+        lEVNH1AHM4 tkddata
+
+MAP(mupdtlmmasterbiayaact)
+cBLANKS                 lselisihjumlahbiaya     DO_CALC
+cselisihjumlahbiayact   lselisihjumlahbiaya     DO_CALC
+cupdatebiayaact         tlmtotal               DO_CALC
+gv_int1         tlmjml          REPLACE_IF ckrg50
+ctgtpk          tlmjml          DO_CALC_IF clbh50
+ctgtpkbulat     tlmjml          DO_CALC
+tlmjml          ltgtpkx         REPLACE
+ctgtjual        tlmjml2         DO_CALC
+ctgtjlbulat     tlmjml2         DO_CALC
+DEBUG ldum              ldum                    REPLACE
+
+MAP(mupdinfodetailhm4a)
+lMINIMAL1RINCIBIAYA     tkdrek          REPLACE_IF ctidakadarincianbiaya
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokhm4a)
+        DO_LIB_IF cdetailhm4aok   ap_dbclc(DNAME dupddetailreqhm4a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm4a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm4a, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm4a,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll tkddata tkdnobuk, DMAP mupdinfodetailhm4a);
+
+SPCALCS(sptambahhm4a)
+        DO_LIB                  ap_dbclc(DNAME dupdbiayatambahhm4a,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterbiayaact);
+SPCALCS(spubahhm4a)
+        DO_LIB                  ap_dbclc(DNAME dupdbiayaubahhm4a,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterbiayaact);
+SPCALCS(sphapushm4a)
+        DO_LIB                  ap_dbclc(DNAME dresetjumlahbiayahapushm4a, DCOMMAND MAPMAP, DMAP mresetjumlahbiaya);
+        DO_LIB                  ap_dbclc(DNAME dupdbiayahapushm4a,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmasterbiayaact);
+
+POSTING(tmptrans)
+        PST_ADDCMD sptambahhm4a
+        PST_UPDCMD spubahhm4a
+        PST_DELCMD sphapushm4a

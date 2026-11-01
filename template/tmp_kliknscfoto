@@ -1,0 +1,453 @@
+LOCAL
+PGM_FIELDS
+lVERIFAGEN	STRING	11
+lVERIFAGEN21	STRING	21
+ltotal		INT2	2
+ltotalx		INT2	2
+ltotalisi	INT2	2
+lvalid		STRING	21
+lrekvalid	INT2	2
+lBUKTIREK	STRING	21
+lBUKTIREKPIC	STRING	21
+lBUKTITELP	STRING	21
+lFOTOKTP	STRING	21
+lket1		STRING	21
+lket2		STRING	21
+lketals1	STRING	61
+lketals2	STRING	61
+lnamaverif	STRING	61
+lnamadigmkt	STRING	61
+lloginverif	STRING	21
+llogindigmkt	STRING	21
+ljmltlk		INT2	2
+ljmltlkx	INT2	2
+lnipdigmkt	STRING	21
+lDIGMKT		STRING	21
+lpsdtot		INT2	2
+lpsdtot3	INT2	2
+lpsdtot5	INT2	2
+lSYSTIME        TIME    4
+ljam16          TIME    4
+ljampic		TIME	4
+ljamdigmkt	TIME	4
+lsdhupl		INT2	2
+ltombol		STRING	21
+lnobukkliknsc	STRING	21
+lstsagen	STRING	21
+lminat		STRING	21
+lminatx		INT2	2
+
+CALCS()
+c1		1
+cOK		"OK"
+csesuai		psdtot == 1
+csesuaix	psdtot3	== 1
+cminat		psdtot5 == 1
+cisi		psdtot != BLANKS
+crektdksesuai	psdnourt != 3 && psdtot == 2
+ctdksesuai	psdtot == 2
+ctdksesuaix	psdtot3 == 2
+ckuncianopen	abkkym2 == "VERIFIKASI AGEN" && abksts == "INPG"
+cOKrekktp	psdtype3 == "OK" && (psdket == "FOTO KTP" || psdket == "BUKTI REKENING")
+
+MAP(mjoinpsmagen)
+psmstssup		lstsagen	REPLACE
+
+DBCALCS(djoinpsmagen)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	psdstr1
+	DBC_MAP		mjoinpsmagen
+
+MAP(mjoinsgmdigmkt)
+sgmstr5		lnipdigmkt	REPLACE
+
+DBCALCS(djoinsgmdigmkt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth     gv_dtpiccab     ldvs      psmcab      lthbl   lDIGMKT
+	DBC_MAP		mjoinsgmdigmkt
+
+DBCALCS(djoinabkx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx    lKUNCIABSEN     psmkode2
+	DBC_SELECT	ckuncianopen
+
+DBCALCS(djoinabk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN	psmkode2
+
+MAP(mscanpsd)
+c1		ltotalisi	DO_CALC_IF	cisi
+c1		ltotal		DO_CALC_IF	csesuai
+c1		lrekvalid	DO_CALC_IF	crektdksesuai
+c1		ljmltlk		DO_CALC_IF	ctdksesuai
+
+c1		ltotalx		DO_CALC_IF	csesuaix
+c1		ljmltlkx	DO_CALC_IF	ctdksesuaix
+c1		lminatx		DO_CALC_IF	cminat
+DEBUG	c1	lsdhupl		DO_CALC_IF 	cOKrekktp
+
+DBCALCS(dscanpsd)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	psddatkodidx   lVERIFAGEN       psmkode2
+	DBC_SUM_MAP	mscanpsd
+
+MAP(mupdpsd1)
+cOK		psdtype3	DO_CALC	
+
+DBCALCS(dupdpsd1)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      psdprmidx	psdprm
+	DBC_MAP         mupdpsd1
+
+MAP(mjoinusr)
+usrgrp		lloginverif	REPLACE		
+
+DBCALCS(djoinusr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	usrkodidx	psdstr3
+	DBC_MAP		mjoinusr
+
+MAP(mjoinusr2)
+usrgrp		llogindigmkt	REPLACE
+
+DBCALCS(djoinusr2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	usrkodidx	psdstr4
+	DBC_MAP		mjoinusr2
+
+DBCALCS(djoinabkagen)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx    lKUNCIABSEN lnobukkliknsc
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/-----------s.UPLOAD--------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.VerifOlehPIC/BUM		   ||
+||t.TglVerif	: ________________ ||
+||t.JamVerif	: ________________ ||
+||t.NIP		: ________________ ||
+||t.Nama	: ________________ ||
+||t.Group	: ________________ ||
+||t.Mnt		: ___ ____________ ||
+||t.NamaSesuai	: ___ ____________ ||
+||t.Alasan	: ___ ____________ ||
+||t.VerifOlehDIGMKT		   ||
+||t.TglVerif	: ________________ ||
+||t.JamVerif	: ________________ ||
+||t.NIP		: ________________ ||
+||t.Nama	: ________________ ||
+||t.Group	: ________________ ||
+||t.NamaSesuai	: ___ ____________ ||
+||t.Alasan	: ___ ____________ ||
+|\---------------------------------/|
+|t.Ket	    _________________	    |
+|t.UplFoto  _________________	    |
+|	    _______ _________	    |
+\-----------------------------------/
+IMAGE(tmptrans)
+
+IMAGE(transfooter)
+/-----------------------------------\
+| _________________________________ |
+\-----------------------------------/
+
+FIELD(tmptranst)
+psdtgl1		PROTECT		INPUTRI 1
+ljampic		PROTECT		INPUTRI 1
+psdstr3		PROTECT		INPUTRI 2
+lnamaverif	PROTECT		INPUTRI 3
+lloginverif	PROTECT		INPUTRI	4
+psdtot5		NOCHANGE	INPUTRI	4 /* Minat agen / tdk */
+lminat		PROTECT		INPUTRI 4
+psdtot		NOCHANGE	INPUTRI	5 /* Verif sesuai / tdk */
+lket1		PROTECT		INPUTRI	5	
+psdstr2		ALLCAPS		INPUTRI	6
+lketals1	PROTECT		INPUTRI	6
+
+psdtgl2		PROTECT		INPUTRI	7
+ljamdigmkt	PROTECT		INPUTRI 7
+psdstr4		PROTECT		INPUTRI	8
+lnamadigmkt	PROTECT		INPUTRI	9
+llogindigmkt	PROTECT		INPUTRI	10
+psdtot3		NOCHANGE	INPUTRI	11
+lket2		PROTECT		INPUTRI	11
+psdstr5		ALLCAPS		INPUTRI	12
+lketals2	PROTECT		INPUTRI	12
+
+psdket		NOCHANGE	INPUTRI	13
+psdtype3	PROTECT 	INPUTRI	14
+psdtype2	NOCHANGE	INPUTRI	15
+psdstr1		PROTECT UNSEEN	INPUTRI 16
+
+FIELD(transfooter)
+ltombol		TOMBOL		INPUTRI	1
+
+CALCS()
+cSESUAI		"SESUAI"
+cTIDAKSESUAI	"TIDAK_SESUAI"
+cFotoKTP	psdket == "FOTO KTP"
+cBuktiTelp	psdket == "BUKTI TELEPON"
+cBuktiRek	psdket == "BUKTI REKENING"
+cPICBUM		g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS"
+cbknPICBUM	g_grpnam != "DIGMKTSPV" && g_grpnam != "PICMKT" && g_grpnam != "TLDHMC" && g_grpnam != "PICMKTM2W" && g_grpnam != "BUM" && g_grpnam != "MSOHEAD" && g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "BM" && g_grpnam != "ADH" && g_grpnam != "CMS"
+cPICBUMx	(g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS") && psdtot == 2
+cDIGMKT		g_grpnam == "DIGMKT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVAREA" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM"
+cbknDIGMKT	g_grpnam != "DIGMKT" && g_grpnam != "KLIKNSCHMCHEAD" && g_grpnam != "SPVAREA" && g_grpnam != "HMCAM" && g_grpnam != "M2WAM"
+cDIGMKTx	(g_grpnam == "DIGMKT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVAREA" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM") && psdtot3 == 2
+cdjoinusr1	djoinusr == 1
+cdjoinusr2	djoinusr2 == 1
+cisiSesuai	psdtot == 1
+cisiTdkSesuai	psdtot == 2
+cisiSesuaix	psdtot3 == 1
+cisiTdkSesuaix	psdtot3 == 2
+cYA		"YA"
+cTIDAK		"TIDAK"
+cisiMinat	psdtot5 == 1
+cisiTdkMinat	psdtot5 == 2
+
+DEFAULTS(tmptranst)
+ltombol		INIT		"UPLOAD_OK"
+lSYSTIME        INIT            SYSTIME
+ljam16          INIT            1600
+IF cPICBUM	psdtgl1		INIT_UPDATE	{g_tgltrn}
+IF cDIGMKT	psdtgl2		INIT_UPDATE	{g_tgltrn}
+IF cPICBUM	psdstr3		INIT_UPDATE	{g_usrkode}
+IF cDIGMKT	psdstr4		INIT_UPDATE	{g_usrkode}
+IF cPICBUM	psdtot2		INIT_UPDATE	{lSYSTIME}
+IF cDIGMKT	psdtot4		INIT_UPDATE	{lSYSTIME}
+IF cPICBUM	ljampic		INIT_UPDATE	{lSYSTIME}
+IF cDIGMKT	ljamdigmkt	INIT_UPDATE	{lSYSTIME}
+
+psdtot          DFALT_SCAN      BLANKS  
+				1 "SESUAI"  
+				2 "TIDAK_SESUAI"
+psdtot3         DFALT_SCAN      BLANKS  
+				1 "SESUAI"  
+				2 "TIDAK_SESUAI"
+
+lVERIFAGEN	INIT		VERIFAGEN
+lVERIFAGEN21	INIT		VERIFAGEN
+lFOTOKTP	INIT		FOTO_KTP
+lBUKTITELP	INIT		BUKTI_TELP
+lBUKTIREK	INIT		BUKTI_REK
+lBUKTIREKPIC	INIT		BUKTI_REKPIC
+lDIGMKT		INIT		DIGMKT
+psdtot5		DFALT_SCAN	BLANKS
+				1 "YA"
+				2 "TIDAK"
+
+EDITS(tmptranst)
+e.Mandatory	psdtot		MANDATORY_IF cPICBUM
+e.Mandatory	psdtot3		MANDATORY_IF cDIGMKT
+e.Mandatory	psdstr2		MANDATORY_IF cPICBUMx
+e.Mandatory	psdstr5		MANDATORY_IF cDIGMKTx
+e.Mandatory	psdtot5		MANDATORY_IF cPICBUM
+
+e.Validate2	psdstr3		VALIDATE psikodidx mpsi1 0
+e.Validate3	psdstr4		VALIDATE psikodidx mpsi2 0
+
+e.Validate4	psdstr2		VALIDATE_IF cFotoKTP   tbddatkodidx mtbd1x stbd {Pgv_dttabel} {PlVERIFAGEN21} {PlFOTOKTP}
+e.Validate5	psdstr2		VALIDATE_IF cBuktiTelp tbddatkodidx mtbd1x stbd {Pgv_dttabel} {PlVERIFAGEN21} {PlBUKTITELP}
+e.Validate6	psdstr2		VALIDATE_IF cBuktiRek  tbddatkodidx mtbd1x stbd {Pgv_dttabel} {PlVERIFAGEN21} {PlBUKTIREKPIC}
+
+e.Validate7	psdstr5		VALIDATE_IF cFotoKTP   tbddatkodidx mtbd2x stbd {Pgv_dttabel} {PlVERIFAGEN21} {PlFOTOKTP}
+e.Validate8	psdstr5		VALIDATE_IF cBuktiTelp tbddatkodidx mtbd2x stbd {Pgv_dttabel} {PlVERIFAGEN21} {PlBUKTITELP}
+e.Validate9	psdstr5		VALIDATE_IF cBuktiRek  tbddatkodidx mtbd2x stbd {Pgv_dttabel} {PlVERIFAGEN21} {PlBUKTIREK}
+
+MAP(mtbd1x)
+tbdkode		psdstr2		REPLACE
+tbdket		lketals1	REPLACE
+
+MAP(mtbd2x)
+tbdkode		psdstr5		REPLACE
+tbdket		lketals2	REPLACE
+
+MAP(mpsi1)
+psikode		psdstr3		REPLACE
+psinama		lnamaverif	REPLACE
+lloginverif	lloginverif	REPLACE_IF cdjoinusr1
+cblank		lket1		DO_CALC
+cblank		lket2		DO_CALC
+cblank		lketals1	DO_CALC
+cblank		lketals2	DO_CALC
+cblank		lnamadigmkt	DO_CALC
+cblank		llogindigmkt	DO_CALC
+cblank		lnamaverif	DO_CALC
+cblank		lloginverif	DO_CALC
+cblank		ljampic		DO_CALC
+cblank		ljamdigmkt	DO_CALC
+cblank		lminat		DO_CALC
+cSESUAI		lket1		DO_CALC_IF cisiSesuai      
+cTIDAKSESUAI	lket1		DO_CALC_IF cisiTdkSesuai
+cSESUAI		lket2		DO_CALC_IF cisiSesuaix
+cTIDAKSESUAI	lket2		DO_CALC_IF cisiTdkSesuaix
+psdtot2		ljampic		REPLACE
+psdtot4		ljamdigmkt	REPLACE
+cYA		lminat		DO_CALC_IF cisiMinat
+cTIDAK		lminat		DO_CALC_IF cisiTdkMinat
+
+MAP(mpsi2)
+psikode		psdstr4		REPLACE
+psinama		lnamadigmkt	REPLACE
+llogindigmkt	llogindigmkt	REPLACE_IF cdjoinusr2
+
+CALCS()
+cVALID		"VALID"
+cINVALID	"INVALID"
+cbenarsemua	dscanpsd >= 0 && (ltotal >= 2 && psdtot == 1 && (g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W" || g_grpnam == "BUM"  || g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS")) || (ltotalx >= 2 && psdtot3 == 1 && (g_grpnam == "DIGMKT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVAREA" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM"))
+cY		"Y"
+csudahupdate	psdtype3 != BLANKS && psdtot != BLANKS
+cupdate2	djoinabk == 1 && dscanpsd >= 0 && (((psdtot == 2 || (ltotal >= 2 && psdtot == 1)) && (g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W" || g_grpnam == "BUM"  || 
+		g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS")) ||
+		((psdtot3 == 2 || (ltotalx >= 2 && psdtot3 == 1)) && (g_grpnam == "DIGMKT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVAREA" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM")) ||
+		((psdtot5 == 1 && lminatx >= 2) || psdtot5 == 2))
+cbuat		djoinabkx == 0 && dscanpsd >= 0 && ltotal >= 2 && psdtot == 1  && (g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W" || g_grpnam == "BUM"  || g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || 
+		g_grpnam == "ADH" ||  g_grpnam == "CMS")
+chasilinvalid	psdket != "BUKTI REKENING" && dscanpsd >= 0 && ((psdtot == 2 && (g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W" || g_grpnam == "BUM"  || g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS")) || 
+		(psdtot3 == 2 && (g_grpnam == "DIGMKT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVAREA" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM")) ||
+		psdtot5 == 2)
+chasilinvalidx	psdket != "BUKTI REKENING" && dscanpsd >= 0 && ((lpsdtot == 2 && (g_grpnam == "DIGMKTSPV" || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "PICMKTM2W"  || g_grpnam == "BUM"  || g_grpnam == "MSOHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS")) || 
+		(lpsdtot3 == 2 && (g_grpnam == "DIGMKT" || g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "SPVAREA" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM")) ||
+		lpsdtot5 == 2)
+cverifagen	abkkym2 == "VERIFIKASI AGEN"
+ccocok		(psdtot == 1 || (g_grpnam != "DIGMKTSPV" && g_grpnam != "PICMKT" && g_grpnam != "TLDHMC"  && g_grpnam != "PICMKTM2W" && g_grpnam != "BUM" && g_grpnam != "MSOHEAD" &&  g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "BM" && g_grpnam != "ADH" && g_grpnam != "CMS"))
+ccocokx		(psdtot3 == 1 || (g_grpnam != "DIGMKT" && g_grpnam != "KLIKNSCHMCHEAD" && g_grpnam != "SPVAREA" && g_grpnam != "HMCAM" && g_grpnam != "M2WAM"))
+c3203		"3203"
+cket            "VERIFIKASI AGEN"
+cdjoinsgmdigmkt	djoinsgmdigmkt == 1
+csdhjam16       lSYSTIME >= ljam16
+cblmjam16       lSYSTIME < ljam16
+csdhupl2	lsdhupl	>= 2 && (psdtot5 == 1 || lpsdtot5 == 1)
+csdhupl2y	lsdhupl	>= 2 && djoinabkx == 0 && djoinpsmagen == 1  && (lstsagen == "INPG" || lstsagen == "OPEN")
+csdhupl2x	lsdhupl	>= 2 && djoinabkagen == 1
+cnobukkliknsc   STRIP(psmkdtmp2) + "CRAGEN" + THBLS_YY(g_tgltrn) + THBLS_MM(g_tgltrn) + THBLS_DD(g_tgltrn)
+cpickosong      (ldvs != "HMC" && djoinsgmpic == 0 && lnippic == BLANKS && djoinsgmbum == 1) || (ldvs == "HMC" && djoinsgmbum == 1)
+ccabangpst30    djoinsgmspvarea == 1 && lnipspvarea != BLANKS && psmcab == "PST30"
+cdjoinsgmpic	djoinsgmpic == 1
+cpsminpg	psmsts == "INPG"
+cktpsesuai	psdpsmkode == psmkode2	
+
+MAP(mmapmap2)
+cblank		lpsdtot		DO_CALC
+cblank		lpsdtot3	DO_CALC
+cblank		lpsdtot5	DO_CALC
+cblank		lvalid		DO_CALC
+psdtot		lpsdtot		REPLACE
+psdtot3		lpsdtot3	REPLACE
+psdtot5		lpsdtot5	REPLACE
+cINVALID	lvalid		DO_CALC
+cVALID		lvalid		DO_CALC_IF cbenarsemua
+
+MAP(mupdpsm1)
+lvalid		psmstsbill2	REPLACE_IF cpsminpg
+gv_INPG		psmsts		REPLACE_IF csdhupl2
+gv_INPG		psmstssup	REPLACE_IF csdhupl2
+gv_INPG		psmstsplg	REPLACE_IF csdhupl2
+gv_VOID         psmsts          REPLACE_IF chasilinvalid
+gv_VOID         psmstssup       REPLACE_IF chasilinvalid
+gv_VOID         psmstsplg       REPLACE_IF chasilinvalid
+
+MAP(mupdpsd2)
+gv_INPG		psdsts		REPLACE_IF csdhupl2
+gv_VOID		psdsts		REPLACE_IF chasilinvalidx
+
+MAP(mmapmap)
+cY		psdtype2	DO_CALC_IF csudahupdate	
+
+MAP(mupdabk)
+gv_CLSD		abksts		REPLACE
+
+MAP(misi)
+cblank		psdstr2		DO_CALC
+
+MAP(misix)
+cblank		psdstr5		DO_CALC
+
+MAP(maddabkdigmkt)
+gv_INPG         abksts          REPLACE_IF cblmjam16
+gt_RINP         abksts          REPLACE_IF csdhjam16
+lKUNCIABSEN     abkdata         REPLACE
+lnipdigmkt      abkkym          REPLACE_IF cdjoinsgmdigmkt
+psdpsmkode      abknobuk        REPLACE
+g_tgltrn        abktgl          REPLACE
+cket            abkkym2         DO_CALC
+c3203           abkscr          DO_CALC
+
+MAP(maddabkverif)
+gv_INPG         abksts          REPLACE_IF cblmjam16
+gt_RINP         abksts          REPLACE_IF csdhjam16
+lKUNCIABSEN     abkdata         REPLACE
+lnippic 	abkkym          REPLACE_IF cdjoinsgmpic
+lnipbum	        abkkym          REPLACE_IF cpickosong
+lnipspvarea     abkkym          REPLACE_IF ccabangpst30
+psdpsmkode      abknobuk        REPLACE
+g_tgltrn        abktgl          REPLACE
+cket            abkkym2         DO_CALC
+c3203           abkscr          DO_CALC
+
+MAP(mmapmap3)
+cnobukkliknsc   lnobukkliknsc   DO_CALC
+
+SPCALCS(sptmptrans)
+	DO_LIB			ap_dbclc(DNAME dscanpsd2, DCOMMAND SCANSCAN,DTARGET psddatkodidx lVERIFAGEN psmkode2,DBC_SUM_MAP mscanpsd);
+	DO_LIB			ap_dbclc(DNAME dmapmap, DCOMMAND MAPMAP, DMAP mmapmap2);
+	DO_LIB			ap_dbclc(DNAME dupdpsm1,DCOMMAND UPDATE_RANGE,DTARGET	psmkodidx   psmkode, DMAP mupdpsm1);
+	DO_LIB			ap_dbclc(DNAME dupdpsd2,DCOMMAND UPDATE_RANGE,DTARGET psddatstr1ur lDTAGEN psmkode, DBC_COND cktpsesuai, DMAP mupdpsd2);
+	DO_LIB_IF cupdate2	ap_dbclc(DNAME dupdabk,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx  lKUNCIABSEN  psdpsmkode, DMAP mupdabk, DBC_COND cverifagen);	
+	DO_LIB_IF cbuat		ap_dbclc(DNAME daddabkdigmkt,DCOMMAND ADD, DFILE abk, DMAP maddabkdigmkt);
+
+SPCALCS(sptransfooter)
+	DO_LIB			ap_dbclc(DNAME dmapmap3, DCOMMAND MAPMAP, DMAP mmapmap2);
+	DO_LIB			ap_dbclc(DNAME dmapmap2, DCOMMAND MAPMAP, DMAP mmapmap3);
+        DO_LIB                  ap_dbclc(DNAME dscanpsd3, DCOMMAND SCANSCAN,DTARGET psddatkodidx lVERIFAGEN psmkode2,DBC_SUM_MAP mscanpsd);
+	DO_LIB_IF csdhupl2	ap_dbclc(DNAME dupdpsm2,DCOMMAND UPDATE_RANGE,DTARGET psmkodidx   psmkode, DMAP mupdpsm1);
+	DO_LIB_IF csdhupl2      ap_dbclc(DNAME dupdpsd3,DCOMMAND UPDATE_RANGE,DTARGET psddatstr1ur lDTAGEN psmkode, DBC_COND cktpsesuai, DMAP mupdpsd2);
+	DO_LIB_IF csdhupl2x 	ap_dbclc(DNAME dupdabkagen, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN lnobukkliknsc, DMAP mupdabk);
+	DO_LIB_IF csdhupl2y	ap_dbclc(DNAME dupdabkagenx, DCOMMAND ADD, DFILE abk, DMAP maddabkverif);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW	
+		IF csudahupdate		mmapmap
+AFTER_INPUT	cur_field=psdtot	DO_MAP SHOW
+		IF ccocok		misi
+AFTER_INPUT	cur_field=psdtot3	DO_MAP SHOW
+		IF ccocokx		misix
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF ccocok
+BEFORE_INPUT	cur_field=psdstr5	DO_SKIP_IF ccocokx
+BEFORE_INPUT	cur_field=psdtot	DO_SKIP_IF cbknPICBUM
+BEFORE_INPUT	cur_field=psdtot3	DO_SKIP_IF cbknDIGMKT
+
+HOOKS(transfooter)
+CLICKED		cur_field=ltombol	DO_SPCALCS sptransfooter
+		   
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_FOOTER(transfooter)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdpsd1
+SFL_UPLFLD 	psdkode psdtype
+SFL_UPL_DIRFLD	psmtgl
+SFL_TARGET	psddatkodidx   lVERIFAGEN psmkode2
+
+CALCS()
+cupldl		(psmstssup == "INPG" || psmstssup == "OPEN") && ((psdnourt == 3 && psdtype3 != BLANKS) || psdnourt == 1 || psdnourt == 2) && ((djoinpsiupline == 1 && djoinsgmdigmkt == 1 && g_usrkode == lnipdigmkt) || (djoinsgmspvarea == 1 && g_usrkode == lnipspvarea) || 
+		(djoinsgmbum == 1 && g_usrkode == lnipbum) || (djoinsgmpic == 1 && g_usrkode == lnippic) ||  g_grpnam == "KLIKNSCHMCHEAD" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "RAS" || g_grpnam == "PICMKTM2W" ||
+		g_grpnam == "TLDHMC" || g_grpnam == "BUM"  || g_grpnam == "MSOHEAD" || g_grpnam == "DIGMKT" || g_grpnam == "BM" || g_grpnam == "ADH" || g_grpnam == "CMS" || g_grpnam == "HMCAM" || g_grpnam == "M2WAM" || g_grpnam == "BMMM2W" || g_grpnam == "DIGMKTSPV")
+cblmupl		psdtype3 == BLANKS
+cIT		g_grpnam == "IT" || g_grpnam == "RI"
+
+POSTING(tmptrans)
+	PST_UPDCMD 	sptmptrans
+
+PERMIT(tmptrans)
+	PMT_UPDALL_COND cupldl
+	PMT_ADD_MSG     IF cblmupl   t.UploadFotoDulu
+	PMT_DEL_COND  cIT
+	PMT_ADD_COND	c0

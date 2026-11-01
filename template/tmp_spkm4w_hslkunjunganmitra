@@ -1,0 +1,127 @@
+LOCAL
+PGM_FIELDS
+lnobukktp       	STRING  	21
+lnobukmitra     	STRING  	21
+lpsmtglkun              DATE            4
+ltglktp         	DATE    	4
+ltglmitra       	DATE    	4
+lflagsdm        	INT2      	2
+lenterhsl               STRING          11
+
+CALCS()
+caprTACC                svistr35 == "T" && tkmtgl >= ltglawlbln && tkmtgl <= g_tgltrn
+
+MAP(mscanaprkun)
+c1                      lflagsdm        DO_CALC_IF caprTACC
+DBCALCS(dscanaprkun)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktgl    tkmtype tkmnobuk
+        DBC_SUM_MAP     mscanaprkun
+
+MAP(mjoinpsdmitra)
+psdpsmkode              lnobukmitra       REPLACE
+psdtgl1                 ltglmitra         REPLACE
+DBCALCS(djoinpsdmitra)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddatpsmkod lKATMITRA svikode
+        DBC_MAP         mjoinpsdmitra
+
+MAP(mjoinpsmmitra)
+psmtgl                  lpsmtglkun      REPLACE
+DBCALCS(djoinpsmmitra)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmktpidx svikode
+        DBC_MAP         mjoinpsmmitra
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------------------------------------\
+|___ t.FtKunMit                               t.FtKtpMit		               t.FtMitra  	                 |
+\------------------------------------------------------------------------------------------------------------------------/
+/----s.UPLOAD---------------------------\/----s.UPLOAD2--------------------------\/----s.UPLOAD3-------------------------\
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+|                                       ||                                       ||                                      |
+\---------------------------------------/\---------------------------------------/\--------------------------------------/
+/---------------------------------------\/---------------------------------------\/--------------------------------------\
+|   spasi                               ||   spasi                               ||   spasi                              |
+| t.buk         _________________       || t.buk         _________________       || t.buk         _________________      |
+| t.TglFt       ___________             || t.TglFt       ___________             || t.TglFt       ___________            |
+|   spasi                               ||   spasi                               ||   spasi                              |
+|   spasi                               ||   spasi                               ||   spasi                              |
+| t.approval    ______                  ||   spasi                               ||   spasi                              |
+| t.flagsdm     ________ ______         ||   spasi                               ||   spasi                              |
+\---------------------------------------/\---------------------------------------/\--------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt        PROTECT                 INPUTRI  1 /*Nomor Urut*/
+svinobuk        PROTECT                 INPUTRI  2 /*Nobuk Foto Kunjungan*/
+svikode         PROTECT                 INPUTRI  3 /*Nobuk Foto KTP*/
+lnobukmitra     PROTECT                 INPUTRI  4 /*Nobuk Foto Mitra*/
+svitgl1         PROTECT {DD-MM-YYY}     INPUTRI  5 /*Tanggal Foto Kunjugan*/
+ltglktp         PROTECT {DD-MM-YYY}     INPUTRI  6 /*Tanggal Foto KTP*/
+ltglmitra       PROTECT {DD-MM-YYY}     INPUTRI  7 /*Tanggal Foto Mitra*/
+
+svistr35        NOCHANGE                INPUTRI  8 /*Tanda Approval*/
+lflagsdm        PROTECT                 INPUTRI  9 /*Flag SDM*/
+lenterhsl       NOCHANGE                INPUTRI  10
+
+
+CALCS()
+cbolehlihat             g_grpnam =="B.M4WSPV" || g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "IT" || g_grpnam == "RI"
+cjoinpsmmitra           djoinpsmmitra == 1
+cjoinpsdmitra1          djoinpsdmitra == 1
+cscanaprkun             dscanaprkun == 0 || dscanaprkun == 1
+
+DEFAULTS(tmptranst)
+lenterhsl               INIT                    ENTER
+lKATMITRA               INIT                    KATMITRA
+lIMGSELF		INIT		        IMGSELFI
+lVISIT1HASIL		INIT		        VISIT1
+svistr35                DFALT_SCAN_BLANKS       Y "ACC"
+                                                T "TACC"
+EDITS(tmptranst)
+e.ValidateKTP           svikode         VALIDATE psmktpidx mpsdhslkun 
+
+MAP(mpsdhslkun)
+psmktp                  svikode         REPLACE
+psmtgl                  ltglktp         REPLACE
+svikode                 lnobukktp       REPLACE
+lnobukktp               lnobukmitra     REPLACE_IF cjoinpsdmitra1
+ltglktp                 ltglmitra       REPLACE_IF cjoinpsdmitra1
+lpsmtglkun              lpsmtglkun      REPLACE_IF cjoinpsmmitra
+lflagsdm                lflagsdm        REPLACE_IF cscanaprkun
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbolehlihat
+SFL_UPL_DIRFLD   tkmtgl
+SFL_UPL_DIRFLD2  psmtgl
+SFL_UPL_DIRFLD3  psmtgl
+SFL_UPLFLD       tkmnobuk svistr6       /*ID FOTO HASIL KUNJUNGAN*/
+SFL_UPLFLD2      svikode                /*ID FOTO KTP MITRA*/
+SFL_UPLFLD3      svikode lIMGSELF       /*ID FOTO MITRA*/
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp	tkmtype tkmnobuk lVISIT1HASIL    
+
+/*MAP(mupdaprhasil)
+svistr35        svistr35        REPLACE
+
+SPCALCS(spupdhasilapr)
+DO_LIB        ap_dbclc(DNAME dupdaprhasil,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdaprhasil);
+
+POSTING(tmptrans)
+PST_UPDCMD      spupdhasilapr*/
+
+
+

@@ -1,0 +1,795 @@
+SCREEN 879 QUERY_TYPE t.LayarMasterCOE
+SCR_FILE tkm
+SCR_LOGFLD tkmnobuk
+SCR_NXT_POSTING 4542
+SCR_NXT_COND cposting
+SCR_NXT_MAP mnext
+SCR_NXT_MSG     IF cpostingopen t.HarusPIC/NSOCabangTerkaitSaatStatusOPEN
+                IF cevent1dkosong t.IsiEvent1d
+                IF cinpgplankurangtargetho t.AdaRencanaEventYangBelumSesuaiDenganTargetHO,SesuaikanLagiUrgentEventUntukMemenuhiTarget
+                IF cplankurangtargetho t.AdaRencanaEventYangBelumSesuaiDenganTargetHO
+                IF creviewopen t.BeriReviewACC/TACCDiMasterCOE
+                IF curgenteventperlureview t.TungguReviewUrgentEventOlehAM/KAWIL
+                IF copenurgenteventkosong t.IsiSalahSatuAtauLebihUrgentEventDenganStatusOPEN
+                IF ctidakadaurgenteventperlureview t.TidakAdaUrgentEventPerluReview
+                IF cadaurgenteventperlureview t.BeriReviewSemuaUrgentEventACC/TACC
+                IF cevent1dperlureview t.TungguReviewEvent1dOlehAM/KAWIL
+                IF cstatusapprtacc t.BisaPostingKalauReviewACC
+                IF camkawilbelumreview t.AM/KAWILBelumReview1d
+                IF cpostingapprinpg t.HarusPihakTerkaitSaatStatusAPPR/INPG
+SCR_AUTO_QRYFLD tkmnobuk
+SCR_AUTO_EQLFLD r_string1
+SCR_AUTO_QRYFLD_FLYONLY
+
+LOCAL
+PGM_FIELDS
+lAPPR                                   STRING  5
+lversi                                  STRING  11
+lEVENTH1                                STRING  11
+lTAMBAHAN                               STRING  11
+lREVISI                                 STRING  11
+lDTCOEH1                                STRING  11
+lpil				        INT2	2
+ltglawlrpt  			        DATE   	4
+ltglakhrpt 			        DATE 	4
+lxslx                                   STRING  11
+lKUNCIABSEN	                        STRING	11
+lTGTMKTHMC                              STRING  11
+lthbl				        STRING  11
+lthblplus111                            STRING  11
+lDTPICCAB                               STRING  11
+ltglmulai11baru                         STRING  11
+ltglmulai11lama                         STRING  11
+ltipeeventbaru                          STRING  21
+ltipeeventlama                          STRING  21
+lthblplus121                            STRING  21
+ltglmulai21baru                         STRING  21
+ltglmulai21lama                         STRING  21
+lnipmkthead                              STRING  21
+lakttype                                STRING  21
+lMKTHEAD                                STRING  21
+lTMPURGENTEVENT		                STRING	21
+lTIPEAKTIVITAS                          STRING  21
+lTGTEVNHMC                              STRING  21
+lCOEBTL                                 STRING  21
+lPAMERAN                                STRING  21
+lMINIEVENT                              STRING  21
+lPPRT                                   STRING  21
+lSHOWEVENT                              STRING  21
+lVISITINSTANSI                          STRING  21
+lBLANKS                                 STRING  21
+lnamapicnso		                STRING	61
+ltomdet1		                STRING	31
+ltomdet2		                STRING	31
+ltomdet3		                STRING	31
+ltomdet1d                               STRING  31
+lenter                                  STRING  3
+ltglawl                                 DATE    4
+ltglakh                                 DATE    4
+ltglawlblsekarang                       DATE    4
+ltglawlblplus1                          DATE    4
+ltglakhblplus1                          DATE    4
+ltglblplus1                             DATE    4
+ljamsekarang                            TIME    4
+ljam2siang                              TIME    4
+lcektanggaleventtidakok                 INT2    2
+lpanjangalasan                          INT2    2
+ljumlahevent1dappr                      INT2    2
+ljumlahreviewtambahurgenteventopen      INT2    2
+ljumlahreviewtambahurgenteventappr      INT2    2
+ljumlahreviewtambahurgenteventtacc      INT2    2
+ljumlahreviewtambahurgenteventreviewopen INT2   2
+lplankurangtargetho                     INT2    2
+l2                                      INT2    2
+lH1                                     STRING 21
+
+MAP(mnext)
+tkmnobuk                                r_string1       REPLACE
+lnipmkthead                             r_string2       REPLACE
+ljumlahreviewtambahurgenteventopen      r_double1       REPLACE
+ljumlahreviewtambahurgenteventappr      r_double2       REPLACE
+ljumlahreviewtambahurgenteventtacc      r_double3       REPLACE
+
+CALCS()
+cBLANKS                         BLANKS
+c0                              0
+c1                              1
+cactualplankurangdaritargetho   cadtot3 < cadtot1
+ctanggaleventtidakok            (ltglawl != BLANKS && ltglakh != BLANKS && tldtgl2 >= ltglawl && tldtgl2 <= ltglakh && tldtgl3 >= ltglawl && tldtgl3 <= ltglakh) ||
+                                (ltglawl != BLANKS && ltglawl >= tldtgl2 && ltglawl <= tldtgl3) || 
+                                (ltglakh != BLANKS && ltglakh >= tldtgl2 && ltglakh <= tldtgl3)
+cseltambahevent                 tldstr3 != lAPPR
+cselrevisiurgentevent           tldlok != BLANKS && (((tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI") && (tldstr3 != lAPPR || tldkat == lREVISI)) || ((tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode) && tldstr3 == lAPPR && tldkat == lREVISI))
+ccondtambahurgentevent          tmpkode == "TMBHEVN"
+cseltambahurgentevent           tldstr3 == lAPPR && tldkat == lTAMBAHAN
+cselscanstsaprurgentevent       tldstr3 == lAPPR && (tldkat == lTAMBAHAN || tldkat == lREVISI)
+ccondrevvoidurgentevent         tmpkode == "REVEVN"
+ceventopen                      tldsts == gv_OPEN
+camkawilakseseventopen          (tkmlok1 == g_usrkode || tkmlok2 == g_usrkode) && tldsts == gv_OPEN
+ceventappr                      tldsts == lAPPR
+ceventreviewopen                tldstr1 == gv_OPEN || tldstr2 == gv_OPEN || tldukrwrn == gv_OPEN
+curgenteventtacc                (tldhrg == 0 || (tldhrg == 1 && tldsts == gv_OPEN)) && (tldstr1 == gv_TACC || tldstr2 == gv_TACC || tldukrwrn == gv_TACC)
+
+MAP(mscantargetevent)
+        gv_int1         lplankurangtargetho    REPLACE_IF cactualplankurangdaritargetho
+DBCALCS(dbscantargetevent)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      caddatcabare   lTGTMKTHMC tkmcab lTGTEVNHMC lthblplus121
+        DBC_SUM_MAP     mscantargetevent
+
+MAP(mscantambahevent)
+        gv_int1         lcektanggaleventtidakok         REPLACE_IF ctanggaleventtidakok
+        gv_int1         ljumlahevent1dappr              REPLACE_IF ceventappr
+
+DBCALCS(dbscantambahevent)
+        DBC_COMMAND     SCANSCAN
+        DBC_SELECT      cseltambahevent
+        DBC_TARGET      tldbukurtidx tkmnobuk
+        DBC_SUM_MAP     mscantambahevent
+
+DBCALCS(djointambahevent)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      cseltambahevent
+        DBC_TARGET      tldbukurtidx tkmnobuk
+      
+MAP(mscantambahurgentevent)
+        gv_int1         ljumlahreviewtambahurgenteventopen    REPLACE_IF ceventopen
+        gv_int1         ljumlahreviewtambahurgenteventappr    REPLACE_IF ceventappr
+        gv_int1         ljumlahreviewtambahurgenteventtacc    REPLACE_IF curgenteventtacc
+        gv_int1         ljumlahreviewtambahurgenteventreviewopen REPLACE_IF ceventreviewopen
+DBCALCS(dbscantambahurgentevent)
+        DBC_COMMAND     SCANSCAN
+        DBC_SELECT      cselscanstsaprurgentevent
+        DBC_TARGET      tldbukurtidx tkmnobuk
+        DBC_SUM_MAP     mscantambahurgentevent
+
+CALCS()
+cselaktcoeh1 aktkode == tlmnobuk
+DBCALCS(djoinaktcoeh1)
+        DBC_COMMAND     JOIN
+        DBC_SELECT      cselaktcoeh1
+        DBC_TARGET      aktkod2typid tkmnobuk lDTCOEH1
+
+MAP(mjoinaktdetailcoe)
+        akttype         lakttype       REPLACE
+DBCALCS(djoinaktdetailcoe)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx tlmnobuk lDTCOEH1
+        DBC_MAP         mjoinaktdetailcoe
+
+DBCALCS(djoineventbtlopen)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmdatstsbuk lEVENTH1 gv_OPEN tldlok
+
+MAP(mjoinsgmhohmc)
+sgmstr5  	lnipmkthead  		REPLACE
+
+DBCALCS(djoinsgmhohmc)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth lDTPICCAB lH1 tkmcab lthbl lMKTHEAD
+        DBC_MAP         mjoinsgmhohmc
+
+CALCS()
+cdjoinsgmhohmc djoinsgmhohmc == 1
+cseljoinevent871tidakopen       tlmsts != gv_OPEN
+DBCALCS(djoinevent871tidakopen)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmbukidx tldlok
+        DBC_SELECT      cseljoinevent871tidakopen
+
+CALCS()
+cposting                        dbscantargetevent >= 0 && lplankurangtargetho == 0 &&
+                                ((tkmsts == gv_OPEN && djointambahevent == 1 && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")) ||
+                                (tkmsts == lAPPR && (g_grpnam == "IT" || g_grpnam == "RI" || (tkmtype == gt_ACC && (tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode)) || (tkmtype == gv_TACC && tkmplg == g_usrkode && dbscantambahevent >= 0 && ljumlahevent1dappr == 0))) ||
+                                (tkmsts == gv_INPG && tkmtype == gt_ACC && dbscantambahurgentevent >= 0 && ((ljumlahreviewtambahurgenteventopen >= 1 && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")) || (ljumlahreviewtambahurgenteventappr >= 1 && ljumlahreviewtambahurgenteventreviewopen == 0 && ((tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode) || g_grpnam == "IT" || g_grpnam == "RI")))))
+cpostingopen                    tkmsts == gv_OPEN && tkmplg != g_usrkode
+cevent1dkosong                  tkmsts == gv_OPEN && djointambahevent == 0
+cinpgplankurangtargetho         tkmsts == gv_INPG && dbscantargetevent >= 0 && lplankurangtargetho > 0
+cplankurangtargetho             dbscantargetevent >= 0 && lplankurangtargetho > 0
+creviewopen                     (tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode) && tkmsts == lAPPR && tkmtype == gv_OPEN
+cstatusopenappr                 tkmsts == gv_OPEN || tkmsts == lAPPR
+cstatusopen                     tkmsts == gv_OPEN
+cstatusinpg                     tkmsts == gv_INPG
+cstatusclsd                     tkmsts == gv_CLSD
+cstatusappracc                  tkmsts == lAPPR && tkmtype == gt_ACC
+cstatusapprtacc                 tkmsts == lAPPR && tkmtype == gv_TACC
+camkawilbelumreview             tkmsts == lAPPR && tkmtype == gv_OPEN
+cpostingapprinpg                (tkmsts == lAPPR || tkmsts == gv_INPG) && (tkmlok1 != g_usrkode || tkmlok2 != g_usrkode || tkmplg != g_usrkode)
+curgenteventperlureview         tkmsts == gv_INPG && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventappr >= 1 && tkmplg == g_usrkode
+copenurgenteventkosong          tkmsts == gv_INPG && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventopen == 0 && tkmplg == g_usrkode
+ctidakadaurgenteventperlureview tkmsts == gv_INPG && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventappr == 0 && (tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode)
+cadaurgenteventperlureview      tkmsts == gv_INPG && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventreviewopen >= 1 && (tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode)
+cevent1dperlureview             tkmsts == lAPPR && dbscantambahevent >= 0 && ljumlahevent1dappr >= 1 && tkmplg == g_usrkode
+cseldetailcoe                   djoinaktcoeh1 == 1
+ctgleventok                     dbscantambahevent >= 0 && lcektanggaleventtidakok == 0
+ctglmulaislsok                  ltglawl != BLANKS && ltglakh != BLANKS && ltglawl <= ltglakh
+ctkmtypevalid                   tkmplg == g_usrkode || tkmtype == gt_ACC || tkmtype == gv_TACC
+ctldstr1valid                   tkmplg == g_usrkode || tldstr1 == gt_ACC || tldstr1 == gv_TACC
+ctldstr2valid                   tkmplg == g_usrkode || tldstr2 == gt_ACC || tldstr2 == gv_TACC || lnipmkthead == g_usrkode
+ctldukrwrnvalid                 tkmplg == g_usrkode || tldukrwrn == gt_ACC || tldukrwrn == gv_TACC || tkmlok1 == g_usrkode || tkmlok2 == g_usrkode
+ctkmtypeok                      tkmtype == gt_ACC
+ctkmtypetacc                    tkmtype == gv_TACC
+ctldstr1okatauopen              tldstr1 == gt_ACC || (tldsts == gv_OPEN && tldstr1 == gv_OPEN)
+ctldstr1tacc                    tldstr1 == gv_TACC
+ctldstr2okatauopen              tldstr2 == gt_ACC || (tldsts == gv_OPEN && tldstr1 == gv_OPEN)
+ctldukrwrnokatauopen            tldukrwrn == gt_ACC || (tldsts == gv_OPEN && tldstr1 == gv_OPEN)
+ctldstr2tacc                    tldstr2 == gv_TACC
+cpicnsobelumappr                tkmplg == g_usrkode && tldstr3 != lAPPR
+cpicnso                         tkmplg == g_usrkode
+cpicnsoho                       tkmplg == g_usrkode || lnipmkthead == g_usrkode
+cbukanpicnso                    tkmplg != g_usrkode
+cammktgkawil                    tkmlok1 == g_usrkode || tkmlok2 == g_usrkode
+cmkthead                        tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || tkmplg == g_usrkode
+cmktheadho                      lnipmkthead == g_usrkode
+cbukanammktgkawil               tkmlok1 != g_usrkode && tkmlok2 != g_usrkode
+cubahmasterok                   tkmsts == lAPPR && dbscantambahevent >= 0 && ljumlahevent1dappr >= 1 && ((tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode) || g_grpnam == "IT" || g_grpnam == "RI")
+ccondcrudevent                  (tkmsts == gv_OPEN || (tkmsts == lAPPR && tkmtype == gv_TACC)) && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")
+ccondaddurgentevent             tkmsts == gv_INPG && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventappr == 0 && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")
+ctambahurgentprosesreview       tldnourt == 1
+cconddelurgentevent             tkmsts == gv_INPG && tldsts == gv_OPEN && tldnourt == 0 && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventappr == 0 && (tkmplg == g_usrkode || g_grpnam == "IT" || g_grpnam == "RI")
+ccondupdtambahurgentevent       tkmsts == gv_INPG && (((tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode) && tldkat == lTAMBAHAN && tldsts == lAPPR) || (tkmplg == g_usrkode && (tldsts == gv_OPEN || tldsts == gv_INPG) && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventappr == 0) || g_grpnam == "IT" || g_grpnam == "RI")
+ccondupdrevisiurgentevent       tkmsts == gv_INPG && tldsts != gv_TACC && (((tkmlok1 == g_usrkode || tkmlok2 == g_usrkode || lnipmkthead == g_usrkode) && tldkat == lREVISI && tldsts == lAPPR) || (tkmplg == g_usrkode && (tldsts == gv_OPEN || tldsts == gv_INPG) && djoineventbtlopen == 1 && dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventappr == 0) || g_grpnam == "IT" || g_grpnam == "RI")
+cstatusurgenteventtacc          tldsts == gv_TACC    
+creviewpertama                  tkmjmltlk == 0
+csekalitolak                    tkmjmltlk == 1
+csekalitolakreviewok            tkmjmltlk == 0 || (tkmjmltlk == 1 && tkmtype == gt_ACC)
+cpanjangalasantkmket            DO_LIB ap_strln(tkmket,&lpanjangalasan);
+cpanjangalasantldstr4           DO_LIB ap_strln(tldket,&lpanjangalasan);
+cpanjangalasantldstr5           DO_LIB ap_strln(tldket2,&lpanjangalasan);
+cpanjangalasanmasterok          tkmplg == g_usrkode || tkmtype == gt_ACC || (tkmtype == gv_TACC && lpanjangalasan >= 10)
+cpanjangalasantambahurgentok    tkmplg == g_usrkode || tldstr1 == gt_ACC || (tldstr1 == gv_TACC && lpanjangalasan >= 10)
+cpanjangalasanrevisiurgentok    tkmplg == g_usrkode || tldstr2 == gt_ACC || (tldstr2 == gv_TACC && lpanjangalasan >= 10) || lnipmkthead == g_usrkode
+cpanjangalasanrevisiurgentokho    tkmplg == g_usrkode || tldukrwrn == gt_ACC || (tldukrwrn == gv_TACC && lpanjangalasan >= 10) || tkmlok1 == g_usrkode || tkmlok2 == g_usrkode 
+cdjoinaktdetailcoe              djoinaktdetailcoe == 1
+cevent871tidakopen              djoinevent871tidakopen == 1
+cREVISICOE879                   "REVISI COE 879"
+c879                            "879"
+cthbl                           THBLS(g_tgltrn)
+chplus1  	                g_tgltrn + 1
+ctglhmin14                      tldtgl2 - tldtglfak >= 14
+chminevent                      tldtgl2 - tldtglfak
+ctglblplus1                     DO_LIB ap_tambl(tkmtgl,gv_int1,&ltglblplus1);
+ctglawlblsekarang               DO_LIB ap_awlbl(tkmtgl,&ltglawlblsekarang);
+cthblplus1                      THBLS(ltglawlblplus1)
+cthbltglmulaibaru               THBLS(tldtgl2)
+cthbltglmulailama               THBLS(~tldtgl2)
+ctglawlblplus1                  DO_LIB ap_awlbl(ltglblplus1,&ltglawlblplus1);
+ctglakhblplus1                  DO_LIB ap_akhbl(ltglblplus1,&ltglakhblplus1);
+crentangblplus1ok               tldtgl2 >= ltglawlblplus1 && tldtgl2 <= ltglakhblplus1 && tldtgl3 >= ltglawlblplus1 && tldtgl3 <= ltglakhblplus1
+
+IMAGE(master)
+/------------------------------------------\
+ /----------------------------------------\
+ t.NoBuk      : _________________________
+ t.Nama       : _________________________
+ t.Nip        : _________________________
+ t.Tgl        : _________  t.Thbl  :_____ 
+ t.TglDateline: _________________________
+ t.Status     : _________________________
+ t.Cabang     : _________________________
+ t.Dealer     : _________________________
+ t.AM         : _______ t.KAWIL  :_______
+ t.NipApr1    : _______ t.Review :_______
+ t.Alasan     : _________________________
+ i.TekanEnter : ______
+ __________________    __________________
+ __________________
+ \----------------------------------------/
+\------------------------------------------/
+_
+
+FIELD(master)
+tkmnobuk	PROTECT QNONMANDATORY           INPUTRI		1
+lnamapicnso	PROTECT			        INPUTRI		1
+tkmplg		PROTECT	QNONMANDATORY		INPUTRI		1
+tkmtgl		PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI		1
+tkmthbl         PROTECT QNONMANDATORY		INPUTRI	        1
+tkmtgl2  	PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI		1
+tkmsts		PROTECT QNONMANDATORY		INPUTRI		1
+tkmcab          PROTECT QNONMANDATORY		INPUTRI		1
+tkmdvs          PROTECT QNONMANDATORY		INPUTRI		1
+tkmlok1         PROTECT QNONMANDATORY		INPUTRI		1
+tkmlok2         PROTECT QNONMANDATORY		INPUTRI		1
+tkmbuk1         PROTECT QNONMANDATORY		INPUTRI		1
+tkmtype         ALLCAPS                         INPUTRI		2
+tkmket          TEXTAREA                        INPUTRI         3
+lenter          NOCHANGE                        INPUTRI         4
+
+ltomdet1	TOMBOL				INPUTRI		50
+ltomdet2	TOMBOL				INPUTRI		50
+ltomdet3	TOMBOL				INPUTRI		50
+tkmdata		PROTECT QPROTECT	        INPUTRI		60
+
+EDITS(master)
+t.ValidatePsi	tkmplg		VALIDATE psikodidx mpsipicnso 0
+e.Mandatory     tkmtype         MANDATORY
+e.Mandatory     tkmket          MANDATORY_IF ctkmtypetacc
+
+MAP(mpsipicnso)
+lnipmkthead             lnipmkthead             REPLACE_IF cdjoinsgmhohmc
+psinama	                lnamapicnso	        REPLACE
+ctglblplus1             ltglblplus1             DO_CALC
+ctglawlblsekarang       ltglawlblsekarang       DO_CALC
+ctglawlblplus1          ltglawlblplus1          DO_CALC
+ctglakhblplus1          ltglakhblplus1          DO_CALC
+cthblplus1              lthblplus111            DO_CALC
+cthblplus1              lthblplus121            DO_CALC
+
+MAP(mhitungpanjangalasantkmket)
+cpanjangalasantkmket      lpanjangalasan   DO_CALC
+MAP(mhitungpanjangalasantldstr4)
+cpanjangalasantldstr4     lpanjangalasan   DO_CALC
+MAP(mhitungpanjangalasantldstr5)
+cpanjangalasantldstr5     lpanjangalasan   DO_CALC
+
+MAP(mtgl)
+chminevent      tldjml          DO_CALC
+tldtgl2         ltglawl 	REPLACE
+tldtgl3         ltglakh	        REPLACE
+
+MAP(mtipeevent)
+tbdkode tldbrg REPLACE
+
+MAP(mentermaster)
+DEBUG gv_int1         tkmjmltlk       REPLACE_IF ctkmtypetacc
+g_usrkode       tkmbuk1         REPLACE_IF cammktgkawil
+cBLANKS         tkmket          DO_CALC_IF ctkmtypeok
+MAP(mentertambahurgentevent)
+g_usrkode       tldplg          REPLACE_IF cammktgkawil
+cBLANKS         tldket          DO_CALC_IF ctldstr1okatauopen
+
+MAP(menterrevisiurgentevent)
+lREVISI         tldkat          REPLACE
+gv_OPEN         tldstr2         REPLACE_IF cpicnsobelumappr
+gv_OPEN         tldukrwrn       REPLACE_IF cpicnsobelumappr
+lAPPR           tldstr3         REPLACE
+gv_OPEN         tldsts          REPLACE_IF cpicnso
+g_usrkode       tldplg          REPLACE_IF cammktgkawil
+cBLANKS         tldket2         DO_CALC_IF ctldstr2okatauopen
+cBLANKS         tldket          DO_CALC_IF ctldukrwrnokatauopen
+
+MAP(mdum)
+lAPPR           lAPPR           REPLACE
+HOOKS(master)
+AFTER_INPUT     cur_field=tkmtype       DO_MAP SHOW
+                IF ctkmtypevalid mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.Review Harus ACC atau TACC
+AFTER_INPUT     cur_field=tkmket        DO_MAP SHOW mhitungpanjangalasantkmket
+AFTER_INPUT	cur_field=tkmket        DO_MAP
+		IF cpanjangalasanmasterok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Beri Alasan Minimal 10 Karakter Jika TACC
+AFTER_INPUT	cur_keybd=EN            DO_MAP
+		IF cpanjangalasanmasterok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Beri Alasan Minimal 10 Karakter Jika TACC
+AFTER_INPUT	cur_keybd=EN            DO_MAP
+		IF csekalitolakreviewok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.Sudah 1x Review, Review harus ACC
+AFTER_INPUT	cur_keybd=EN            DO_MAP mentermaster
+
+DEFAULTS(master)
+tkmnobuk        INIT_QUERY	{r_string1}
+lAPPR           INIT            APPR
+lversi          INIT            "30062026v1"
+lEVENTH1        INIT            EVENTH1
+lDTPICCAB			INIT		DTPICCAB
+lH1             INIT            H1
+lthbl				INIT		{cthbl}
+lMKTHEAD        INIT            MKTHEAD
+lTAMBAHAN       INIT            TAMBAHAN
+lREVISI         INIT            REVISI
+lDTCOEH1        INIT            DTCOEH1
+lKUNCIABSEN	INIT	        KUNCIABSEN
+lTGTMKTHMC	INIT            TGTMKTHMC
+lTMPURGENTEVENT INIT            TMPURGENTEVENT
+lTIPEAKTIVITAS  INIT            TIPEAKTIVITAS
+lTGTEVNHMC      INIT            TGTEVNHMC
+lCOEBTL         INIT            COEBTL
+lPAMERAN        INIT            PAMERAN
+lMINIEVENT      INIT            MINI_EVENT
+lPPRT           INIT            PPRT
+lSHOWEVENT      INIT            SHOW_EVENT
+lVISITINSTANSI  INIT            VISIT_INSTANSI
+lBLANKS         INIT            ""
+lnamapicnso     INIT            ""
+lnamapicnso	INIT_QUERY      ""
+IF creviewpertama tkmtype       DFALT_LIST      ACC TACC
+IF csekalitolak   tkmtype       DFALT_LIST      ACC
+ltomdet1	INIT		1d. Tambah Event
+ltomdet2	INIT		2d. Detail COE
+ltomdet3	INIT		3d. Urgent Event
+ltomdet1d       INIT            "d.UntukMelihatDetil"
+tkmdata         INIT_QUERY      {lDTCOEH1}
+tkmdata		INIT		{lDTCOEH1}
+l2              INIT            2
+ljamsekarang    INIT            SYSTIME
+ljam2siang      INIT            1400
+
+IMAGE(transt)
+/-----------------------------------------------------\
+|____________________                                 |
+|------------------t-------t-------t---------t--------|
+| i.KeteranganEvent|i.TgtHO|i.TgtMD|i.ActPlan|i.Act871|
+\------------------.-------.-------.---------.--------/
+FIELD(transt)
+ltomdet1d               TOMBOL                          INPUTRI 1
+
+IMAGE(trans)
+|__________________|_______|_______|_________|________|
+
+FIELD(trans)
+cadtype                 NOCHANGE                        INPUTRI 1
+cadtot1                 PROTECT SCROLL                  INPUTRI 1
+cadtot2                 PROTECT SCROLL                  INPUTRI 1
+cadtot3                 PROTECT SCROLL                  INPUTRI 1
+cadtot4                 PROTECT SCROLL                  INPUTRI 1
+
+CALCS()
+cseltrans cadthbl == lthblplus111
+SUBFILE(trans)
+SFL_LINES(5)
+SFL_TITLE(transt)
+SFL_SELECT cseltrans
+SFL_TARGET
+        caddatcabare   lTGTMKTHMC tkmcab lTGTEVNHMC lthblplus121
+
+SUBFILE(trans2)
+SFL_TEMPLATE(tmp_879_planevent)
+
+SUBFILE(transa)
+SFL_TEMPLATE(tmp_879_event874)
+
+IMAGE(transbt)
+/----------------------------------\
+|____________________              |
+|--------------t-------------------|
+| i.Detil      | i.Keterangan      |
+\--------------.-------------------/
+FIELD(transbt)
+ltomdet1d               TOMBOL                          INPUTRI 1
+
+IMAGE(transb)
+|______________|__________________________|
+
+FIELD(transb)
+tmpkode                 NOCHANGE                        INPUTRI 1
+tmpket                  PROTECT SCROLL                  INPUTRI 2
+
+SUBFILE(transb)
+SFL_LINES(5)
+SFL_TITLE(transbt)
+SFL_TARGET
+        tmpdatkodurt   gv_dttemplate lTMPURGENTEVENT
+
+SUBFILE(transb2)
+SFL_TEMPLATE(tmp_879_tambahurgentevent)
+
+SUBFILE(transb2g1)
+SFL_TEMPLATE(tmp_879_revisiurgentevent)
+
+PERMIT(master)
+PMT_ADD_COND c0
+PMT_UPDALL_COND cubahmasterok
+PMT_UPD_MSG     IF cstatusclsd t.Status CLSD
+                IF cstatusinpg t.Aproval Lakukan U di 3d
+                IF cstatusopen t.Tunggu PIC/NSO Mengerjakan 1d dan GY 
+                IF cbukanammktgkawil t.Hanya AMMKTG/KAWIL Terkait Bisa U
+PMT_DEL_COND c0
+
+PERMIT(trans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+
+PERMIT(trans2)
+PMT_ADD_COND ccondcrudevent
+PMT_ADD_MSG     IF cstatusclsd t.Status CLSD, Tambah Plan Event di Nobuk Master COE Bulan Selanjutnya
+                IF cstatusinpg t.Tambah Urgent Event di 3d
+                IF camkawilbelumreview t.Tunggu Review Event Oleh AM/KAWIL Sebelum Tambah Plan Event Lain
+                IF cstatusappracc t.Plan Event Sudah ACC, Tunggu AM/KAWIL GY
+                IF cbukanpicnso t.Hanya PIC/NSO Terkait Bisa T
+PMT_UPDALL_COND ccondcrudevent
+PMT_UPD_MSG     IF cstatusclsd t.Status CLSD
+                IF cstatusinpg t.Revisi Urgent Event di 3d
+                IF camkawilbelumreview t.Tunggu Review Event Oleh AM/KAWIL Sebelum Ubah Plan Event Ini
+                IF cstatusappracc t.Plan Event Sudah ACC, Tunggu AM/KAWIL GY
+                IF cbukanpicnso t.Hanya PIC/NSO Terkait Bisa U
+PMT_DEL_COND ccondcrudevent
+PMT_DEL_MSG     IF cstatusclsd t.Status CLSD
+                IF cstatusinpg t.Void Event di 874 2d
+                IF camkawilbelumreview t.Tunggu Review Event Oleh AM/KAWIL Sebelum Hapus Plan Event Ini
+                IF cstatusappracc t.Plan Event Sudah ACC, Tunggu AM/KAWIL GY
+                IF cbukanpicnso t.Hanya PIC/NSO Terkait Bisa H
+
+PERMIT(transa)
+PMT_ADD_COND c0
+PMT_ADD_MSG     IF cstatusclsd t.Status CLSD
+                IF cstatusopenappr t.Tambah Plan Event di 1d
+                IF cstatusinpg t.Tambah Urgent Event di 3d
+PMT_UPDALL_COND c0
+PMT_UPD_MSG     IF cstatusclsd t.Status CLSD
+                IF cstatusopenappr t.Ubah Plan Event di 1d
+                IF cstatusinpg t.Revisi Urgent Event di 3d
+PMT_DEL_COND c0
+PMT_DEL_MSG     IF cstatusclsd t.Status CLSD
+                IF cstatusinpg t.Void Event di 874 2d
+
+PERMIT(transb)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+
+PERMIT(transb2)
+PMT_ADD_COND ccondaddurgentevent
+PMT_ADD_MSG     IF curgenteventperlureview t.Tunggu Review Urgent Event Oleh AM/KAWIL Sebelum Tambah Urgent Event Lain
+                IF cstatusopenappr t.Tambah Plan Event di 1d
+                IF cbukanpicnso t.Hanya PIC/NSO Terkait Bisa T
+PMT_UPDALL_COND ccondupdtambahurgentevent
+PMT_UPD_MSG     IF camkawilakseseventopen t.Status OPEN, Bukan Event yang Perlu di Review / Tunggu Perbaikan dari PIC/NSO
+                IF cstatusopenappr t.Ubah Plan Event di 1d
+                IF c1 t.Hanya Pihak Terkait Saat Status COE INPG Bisa U, PIC/NSO Saat Status OPEN atau AMMKTG/KAWIL Saat Status APPR
+PMT_DEL_COND cconddelurgentevent
+PMT_DEL_MSG     IF curgenteventperlureview t.Tunggu Review Urgent Event Oleh AM/KAWIL Sebelum Tambah Urgent Event Lain
+                IF ctambahurgentprosesreview t.Urgent Event Sudah Ke Tahap Review, Silahkan Ubah Sesuai Alasan Review
+                IF cbukanpicnso t.Hanya PIC/NSO Terkait Bisa T
+                IF c1 t.Hanya PIC/NSO Terkait Saat Status Tambah Urgent Event Masih OPEN
+
+PERMIT(transb2g1)
+PMT_ADD_COND c0
+PMT_UPDALL_COND ccondupdrevisiurgentevent
+PMT_UPD_MSG     IF cstatusurgenteventtacc t.Status Event TACC, Tidak Bisa Revisi
+                IF cevent871tidakopen t.Event Sudah Dikerjakan di 871, Tidak Bisa Revisi
+                IF curgenteventperlureview t.Tunggu Review Urgent Event Oleh AM/KAWIL Sebelum Revisi Urgent Event Lain
+                IF camkawilakseseventopen t.Status OPEN, Bukan Event yang Perlu di Review / Tunggu Perbaikan dari PIC/NSO
+                IF c1 t.Hanya PIC/NSO Terkait atau AMMKTG/KAWIL Pada Event Dengan Tipe Revisi = REVISI Saat Status INPG, Ubah Langsung di 1d Jika Status OPEN/APPR
+PMT_DEL_COND c0
+
+
+IMAGE(report)
+/------------------------------------------\
+|/----------------------------------------\|
+||i.Pil    : ___	t.XLSX: ________  || 
+||t.Tanggal: __________ t.sd  : __________||
+|\----------------------------------------/|
+\------------------------------------------/
+
+FIELD(report)
+lpil            NOCHANGE                INPUTRI 1
+lxslx	        NONE                    INPUTRI 2
+ltglawlrpt      ALLCAPS {DD-MM-YYYY}    INPUTRI 3  
+ltglakhrpt   	ALLCAPS {DD-MM-YYYY}    INPUTRI 4
+
+EDITS(report)
+e.Mandatory	lpil				MANDATORY
+e.Mandatory     ltglawlrpt   			MANDATORY
+e.Mandatory     ltglakhrpt 			MANDATORY
+e.Mandatory     lxslx      			MANDATORY
+
+DEFAULTS(report)
+lpil            DFALT_SCAN_BLANKS 	1 "Laporan Rekap Master COE"
+                                  	2 "Laporan Rinci Master COE"
+lxslx    	DFALT_LIST     		YA TIDAK
+ltglawlrpt      INIT            	{ctglawlblsekarang}
+ltglakhrpt      INIT            	{g_tgltrn}
+
+CALCS()         
+cpil1xlsx     	lpil == 1 && lxslx == "YA"
+cpil1bukanxlsx 	lpil == 1 && lxslx == "TIDAK"
+cpil2xlsx     	lpil == 2 && lxslx == "YA"
+cpil2bukanxlsx 	lpil == 2 && lxslx == "TIDAK"
+
+MAP(mreportparam)
+ltglawlrpt      ltglawlrpt     	REPLACE
+ltglakhrpt      ltglakhrpt     	REPLACE
+
+RTREE(report_masterxls)
+RT_COND cpil1xlsx
+USES_SCRIPT(scr951-p1.rptdesign)
+RT_MAP mreportparam
+RT_XLSX
+
+RTREE(report_masterhtml)
+RT_COND cpil1bukanxlsx
+USES_SCRIPT(scr951-p1.rptdesign)
+RT_MAP mreportparam
+RT_HTML
+
+RTREE(report_detailxls)
+RT_COND cpil2xlsx
+USES_SCRIPT(scr951-p2.rptdesign)
+RT_MAP mreportparam
+RT_PRINT_BACKUP
+RT_XLSX
+
+RTREE(report_detailhtml)
+RT_COND cpil2bukanxlsx
+USES_SCRIPT(scr951-p2.rptdesign)
+RT_MAP mreportparam
+RT_PRINT_BACKUP
+RT_HTML
+
+MAP(mmapresettipeevent)
+cBLANKS         ltglmulai11baru                 DO_CALC
+cBLANKS         ltglmulai21baru                 DO_CALC
+cBLANKS         ltglmulai11lama                 DO_CALC
+cBLANKS         ltglmulai21lama                 DO_CALC
+cBLANKS         ltipeeventbaru                  DO_CALC
+cBLANKS         ltipeeventlama                  DO_CALC
+
+CALCS()
+/*New*/
+cPAP    tldbrg == "PAP"
+cPLP    tldbrg == "PLP"
+cPMR    tldbrg == "PMR"
+cPTH    tldbrg == "PTH"
+
+cGPR    tldbrg == "GPR"
+cJUMBA  tldbrg == "JUMBA"
+cKBR    tldbrg == "KBR"
+cKVSINS tldbrg == "KVS_INS"
+cSKM    tldbrg == "SKM"
+cSKR    tldbrg == "SKR"
+cSPR    tldbrg == "SPR"
+
+cPPR    tldbrg == "PPR"
+cRSM    tldbrg == "RSM"
+
+cSRE    tldbrg == "SRE"
+
+cVISITINSTANSI  tldbrg == lVISITINSTANSI
+
+/*Old*/
+cAWALPAP    ~tldbrg == "PAP"
+cAWALPLP    ~tldbrg == "PLP"
+cAWALPMR    ~tldbrg == "PMR"
+cAWALPTH    ~tldbrg == "PTH"
+
+cAWALGPR    ~tldbrg == "GPR"
+cAWALJUMBA  ~tldbrg == "JUMBA"
+cAWALKBR    ~tldbrg == "KBR"
+cAWALKVSINS ~tldbrg == "KVS_INS"
+cAWALSKM    ~tldbrg == "SKM"
+cAWALSKR    ~tldbrg == "SKR"
+cAWALSPR    ~tldbrg == "SPR"
+
+cAWALPPR    ~tldbrg == "PPR"
+cAWALRSM    ~tldbrg == "RSM"
+
+cAWALSRE    ~tldbrg == "SRE"
+
+cAWALVISITINSTANSI  ~tldbrg == lVISITINSTANSI
+
+ctambahactualplanevent          cadtot3 + 1
+ckurangactualplanevent          cadtot3 - 1
+
+MAP(mmapsettipeevent)
+cthbltglmulaibaru   ltglmulai11baru                     DO_CALC
+cthbltglmulaibaru   ltglmulai21baru                     DO_CALC
+cthbltglmulailama   ltglmulai11lama                     DO_CALC
+cthbltglmulailama   ltglmulai21lama                     DO_CALC
+
+lPAMERAN        ltipeeventbaru                  REPLACE_IF cPAP
+lPAMERAN        ltipeeventbaru                  REPLACE_IF cPLP
+lPAMERAN        ltipeeventbaru                  REPLACE_IF cPMR
+lPAMERAN        ltipeeventbaru                  REPLACE_IF cPTH
+
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cGPR
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cJUMBA
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cKBR
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cKVSINS
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cSKM
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cSKR
+lMINIEVENT      ltipeeventbaru                  REPLACE_IF cSPR
+
+lPPRT           ltipeeventbaru                  REPLACE_IF cPPR
+lPPRT           ltipeeventbaru                  REPLACE_IF cRSM
+
+lSHOWEVENT      ltipeeventbaru                  REPLACE_IF cSRE
+
+lVISITINSTANSI  ltipeeventbaru                  REPLACE_IF cVISITINSTANSI
+
+
+lPAMERAN        ltipeeventlama                  REPLACE_IF cAWALPAP
+lPAMERAN        ltipeeventlama                  REPLACE_IF cAWALPLP
+lPAMERAN        ltipeeventlama                  REPLACE_IF cAWALPMR
+lPAMERAN        ltipeeventlama                  REPLACE_IF cAWALPTH
+
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALGPR
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALJUMBA
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALKBR
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALKVSINS
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALSKM
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALSKR
+lMINIEVENT      ltipeeventlama                  REPLACE_IF cAWALSPR
+
+lPPRT           ltipeeventlama                  REPLACE_IF cAWALPPR
+lPPRT           ltipeeventlama                  REPLACE_IF cAWALRSM
+
+lSHOWEVENT      ltipeeventlama                  REPLACE_IF cAWALSRE
+
+lVISITINSTANSI  ltipeeventlama                  REPLACE_IF cAWALVISITINSTANSI
+
+MAP(mupdtambahtgtevnhmc)
+ctambahactualplanevent  cadtot3     DO_CALC
+
+MAP(mupdkurangtgtevnhmc)
+ckurangactualplanevent  cadtot3     DO_CALC
+
+MAP(mupdabkclsd)
+gv_CLSD		abksts		REPLACE
+
+MAP(mupdtldplanevent)
+gv_OPEN        tldsts           REPLACE
+
+CALCS()
+cbelumjam2siang         ljamsekarang < ljam2siang
+clewatjam2siang         ljamsekarang >= ljam2siang
+MAP(maddabkpicnsomastertacc)
+gv_INPG                 abksts          REPLACE_IF cbelumjam2siang
+gt_RINP                 abksts          REPLACE_IF clewatjam2siang
+lKUNCIABSEN             abkdata         REPLACE
+tkmplg                  abkkym          REPLACE
+tkmnobuk                abknobuk        REPLACE
+g_tgltrn                abktgl          REPLACE_IF cbelumjam2siang    
+chplus1                 abktgl          DO_CALC_IF clewatjam2siang
+cREVISICOE879           abkkym2         DO_CALC
+DEBUG c879                    abkscr          DO_CALC
+
+SPCALCS(spmaster)
+        DO_LIB_IF ctkmtypetacc  ap_dbclc(DNAME dupdkunci879,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tkmnobuk,DMAP mupdabkclsd);
+        DO_LIB_IF ctkmtypetacc  ap_dbclc(DNAME dupdtldplanevent,DCOMMAND UPDATE_RANGE,DTARGET tldbukurtidx tkmnobuk,DMAP mupdtldplanevent);
+	DO_LIB_IF ctkmtypetacc 	ap_dbclc(DNAME daddabklck, DCOMMAND ADD, DFILE abk, DMAP maddabkpicnsomastertacc);
+POSTING(master)
+	PST_UPDCMD spmaster
+
+SPCALCS(sptambahdetailevent)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventtambah, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventtambah, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdtambahtgtevnhmctambah,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdtambahtgtevnhmc);
+SPCALCS(spubahdetailevent)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventubah, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventubah, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdtambahtgtevnhmcubah,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdtambahtgtevnhmc);
+        DO_LIB  ap_dbclc(DNAME dupdkurangtgtevnhmcubah,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventlama ltglmulai11lama ltglmulai21lama, DMAP mupdkurangtgtevnhmc);
+SPCALCS(sphapusdetailevent)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventhapus, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventhapus, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdkurangtgtevnhmchapus,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdkurangtgtevnhmc);
+POSTING(trans2)
+        PST_ADDCMD sptambahdetailevent
+        PST_UPDCMD spubahdetailevent
+        PST_DELCMD sphapusdetailevent
+
+CALCS()
+ctambahurgenteventtacckosong dbscantambahurgentevent >= 0 && ljumlahreviewtambahurgenteventtacc == 0
+SPCALCS(sptambahurgenteventbaru)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventtambahurgenteventbaru, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventtambahurgenteventbaru, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdtambahtgtevnhmctambahurgenteventbaru,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdtambahtgtevnhmc);
+SPCALCS(spubahurgenteventbaru)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventubahurgenteventbaru, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventubahurgenteventbaru, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdtambahtgtevnhmcubahurgenteventbaru,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdtambahtgtevnhmc);
+        DO_LIB  ap_dbclc(DNAME dupdkurangtgtevnhmcubahurgenteventbaru,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventlama ltglmulai11lama ltglmulai21lama, DMAP mupdkurangtgtevnhmc);
+SPCALCS(sphapusurgenteventbaru)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventhapusurgenteventbaru, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventhapusurgenteventbaru, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdkurangtgtevnhmchapusurgenteventbaru,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdkurangtgtevnhmc);
+        DO_LIB_IF ctambahurgenteventtacckosong ap_dbclc(DNAME dupdkunci879hapusurgenteventbaru,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tkmnobuk,DMAP mupdabkclsd);
+POSTING(transb2)
+        PST_ADDCMD sptambahurgenteventbaru
+        PST_UPDCMD spubahurgenteventbaru
+        PST_DELCMD sphapusurgenteventbaru
+
+SPCALCS(spubahurgenteventrevisi)
+        DO_LIB  ap_dbclc(DNAME dmapresettipeeventubahurgenteventrevisi, DCOMMAND MAPMAP, DMAP mmapresettipeevent);
+        DO_LIB  ap_dbclc(DNAME dmapsettipeeventubahurgenteventrevisi, DCOMMAND MAPMAP, DMAP mmapsettipeevent);
+        DO_LIB  ap_dbclc(DNAME dupdtambahtgtevnhmcubahurgenteventrevisi,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventbaru ltglmulai11baru ltglmulai21baru, DMAP mupdtambahtgtevnhmc);
+        DO_LIB  ap_dbclc(DNAME dupdkurangtgtevnhmcubahurgenteventrevisi,DCOMMAND UPDATE_RANGE,DTARGET cadcabthkod tkmcab lTGTMKTHMC ltipeeventlama ltglmulai11lama ltglmulai21lama, DMAP mupdkurangtgtevnhmc);
+POSTING(transb2g1)
+        PST_UPDCMD spubahurgenteventrevisi
+
+END_SCREEN

@@ -1,0 +1,96 @@
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.DetailAtasan                        ||
+||t.NoBuk        : _________________    ||
+||spasi                                 ||
+||t.Atasan1 	 : ___________          ||
+||t.Nama         : ___________________  ||
+||t.Atasan2 	 : ___________          ||
+||t.Nama         : ___________________  ||
+||                 ___________          ||   
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+hrmnobuk        	NOCHANGE                		INPUTRI 1
+psdstr1         	ALLCAPS                 		INPUTRI 2
+lnamaatasan1		PROTECT SCROLL               	INPUTRI 3
+psdstr2    			ALLCAPS SCROLL	               	INPUTRI 4
+lnamaatasan2		PROTECT SCROLL	               	INPUTRI 5
+lenter     			NOCHANGE SCROLL	               	INPUTRI 6
+
+DEFAULTS(tmptranst)
+lenter		INIT		ENTER
+psdtype		INIT_ADD	ATASANMD
+
+CALCS()
+/*Tambahan kondisi Yoel & Pak Redi*/
+cjoinsgmpic	djointbd2==1 && djointbdlvljab==1 && djoinsgmpic==1 && djoincab==1 && (lcabpos!="PST" && lcabdealer!="IVR" && lcabdealer!="DLP" && hrmdvs!="AHM") && djoinabdlayer1 == 1 && g_grpnam!="HRDSPV" && g_grpnam!="HRDER" && g_usrkode!="2221048" && g_usrkode!="2130879"
+cjoinsgmhead djointbd2==1 && djointbdlvljab==1 && djoinsgmhead==1 && djoincab==1 && (lcabpos!="PST" && lcabdealer!="IVR" && lcabdealer!="DLP" && hrmdvs!="AHM") && djoinabdlayer2 == 1 && g_grpnam!="HRDSPV" && g_grpnam!="HRDER" && g_usrkode!="2221048" && g_usrkode!="1604848" && hrmdvs2!="TRAININGAREA" && g_usrkode!="2130879"
+/*----------------*/
+/*Tambahan kondisi Pak Redi*/
+cjikapakredi 	g_grpnam!="HRDSPV" && g_grpnam!="HRDER" && g_usrkode!="2221048" && hrmdvs2=="TRAININGAREA" && g_usrkode!="2130879"
+cpakredi "2181387"
+cjikatrnarea 	hrmdvs2=="TRAININGAREA" && g_grpnam!="HRDSPV" && g_grpnam!="HRDER" && g_usrkode!="2221048" && g_usrkode!="2130879"
+/*----------------*/
+cbukanHO	djoincab==1 && (lcabpos!="PST" && lcabdealer!="IVR" && lcabdealer!="DLP" && hrmdvs!="AHM") && g_grpnam!="IT" && g_grpnam!="RI" && g_grpnam!="HRDSPV" && g_grpnam!="HRDER" && g_usrkode!="2221048" && g_usrkode!="2130879"
+/*Validate Jika NIP yang di input asal*/
+cnipkosong	g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="HRDSPV" || g_grpnam=="HRDER" || g_usrkode=="2221048" || g_usrkode=="2130879"
+/*------------------------------------*/
+
+EDITS(tmptranst)
+e.ValidateAtasan psdstr1 VALIDATE_IF cjikaHO psistsjabkod mpsiatasan1a spsiJab {Pgv_INPG} {Platasanlayer1}
+e.ValidateAtasan psdstr2 VALIDATE_IF cjikaHO psistsjabkod mpsiatasan2a spsiJab {Pgv_INPG} {Platasanlayer2}
+/*Validate Jika NIP yang di input asal*/
+e.ValidateNIP	 psdstr1 VALIDATE_IF cnipkosong	psikodidx mdum 0
+e.ValidateNIP	 psdstr2 VALIDATE_IF cnipkosong	psikodidx mdum 0
+/*------------------------------------*/
+
+MAP(mpsiatasan1a)
+psikode		psdstr1	REPLACE
+psinama		lnamaatasan1	REPLACE
+
+MAP(mpsiatasan2a)
+psikode		psdstr2	REPLACE
+psinama		lnamaatasan2	REPLACE
+
+MAP(mstrukturcabang)
+latasancab1     latasancab1     REPLACE_IF cjikacabLayer1
+latasancab2     latasancab2     REPLACE_IF cjikacabLayer2
+latasancab3		latasancab3		REPLACE_IF cjikacabLayer3
+latasancab1     latasancab1     REPLACE_IF cjikacabLayer1bis
+latasancab2     latasancab2     REPLACE_IF cjikacabLayer2bis
+latasancab3		latasancab3		REPLACE_IF cjikacabLayer3bis
+lnip_pic	psdstr1		REPLACE_IF cjoinsgmpic
+lnip_head	psdstr2		REPLACE_IF cjoinsgmhead
+lnip_head	psdstr1		REPLACE_IF clayer1cuti
+lnip_layer3	psdstr2		REPLACE_IF clayer2cuti
+lnip_layer3	psdstr1		REPLACE_IF clayer12cuti
+/*Tambahan kondisi Pak Redi*/
+cpakredi	psdstr2		DO_CALC_IF cjikapakredi
+/*----------------*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cbukanHO
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cbukanHO
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cjikatrnarea
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mstrukturcabang
+
+CALCS()
+cTdk	tmpkode != "HISTORISEXTERNAL" && tmpkode!="FORMSRTJ" && tmpkode!="LISTSERTIJA" && tmpkode!="PENSERTIJA" 
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_LINES(1)
+SFL_COND	cTdk
+SFL_TARGET
+	psddattypidx hrmdata lATASANMD hrmnobuk hrmnip1
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+hrmdata         psddata         REPLACE
+lATASANMD       psdtype         REPLACE
+hrmnip1		psdkode		REPLACE

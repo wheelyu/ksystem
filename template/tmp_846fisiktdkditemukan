@@ -1,0 +1,260 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------\
+|                                                            t.UplBuktiFoto                         |
+| /-----------------------------------------------------\/----------------s.UPLOAD----------------\ | 
+| |                                                     ||                                        | |              
+| | t.NoMesin         : ________________                ||                                        | |
+| | t.NoRangka        : ________________                ||                                        | |
+| | t.KetUnit         : _________________               ||                                        | |
+| | t.NoSTPL/Fak/Nik  : ________________ ______ ____    ||                                        | |
+| | t.NamaKons        : ________________                ||                                        | |
+| | t.TglBatas        : _________                       ||                                        | |
+| | t.TglHilang       : _________                       ||                                        | |
+| | t.NomPembelian    : ________________                ||                                        | |
+| | t.NamaBrg         : ________________                ||                                        | |
+| | t.NomHpp          : ________________                ||                                        | |
+| | t.LokMotor        : _________                       ||                                        | |
+| | t.NipCabang       : ______  _____________           ||                                        | |
+| | t.HasilVerif      : _____________________           ||                                        | |
+| | t.AccSpv          : _____________________           ||                                        | |
+| |             _________                               ||                                        | |
+| \-----------------------------------------------------/|                                        | |
+|                                                        |                                        | |
+|                                                        \----------------------------------------/ |
+|                                                                        /--------\                 |
+|                                                                         ________                  |
+|                                                                        \--------/                 |
+\---------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+tkdnobuk            PROTECT                         INPUTRI 1
+tkdjwbstr2          PROTECT                         INPUTRI 2
+tkdtmp1             NOCHANGE                        INPUTRI 3
+tkdjwbstr1          ALLCAPS                         INPUTRI 4
+tkdstr1             PROTECT                         INPUTRI 4
+tkdstr2             PROTECT                         INPUTRI 4
+lnamakons           PROTECT                         INPUTRI 4
+tkdtgl2             NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 5
+tkdtgl              NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 6
+tkdjml2             DIGITS                          INPUTRI 7
+tkdstr3             ALLCAPS                         INPUTRI 8
+tkdjml              PROTECT                         INPUTRI 8
+tkdstr4             ALLCAPS                         INPUTRI 9
+tkdtmp2             ALLCAPS                         INPUTRI 10
+lnamapjcab          PROTECT                         INPUTRI 11
+tkdket              TEXTAREA                        INPUTRI 12
+tkdtype             NOCHANGE                        INPUTRI 13                        
+lenter              NOCHANGE                        INPUTRI	14
+tkdsts              PROTECT                         INPUTRI 15
+
+DEFAULTS(tmptranst)
+lenter      INIT                "OK"
+tkdtmp1     DFALT_SCAN_BLANKS  HILANG_ADA_STPL
+                               HILANG_T_ADA_STPL
+                               EVENT/PAMERAN
+                               KIRIM_KE_KONSUMEN
+                               PENJUALAN_MANUAL
+tkdtype     DFALT_SCAN_BLANKS  ACC
+                               TACC
+
+CALCS()
+cbkntadastpl    tkdtmp1 != "HILANG_T_ADA_STPL"
+cbknadstpl      tkdtmp1 != "HILANG_ADA_STPL" && tkdtmp1 != "HILANG_T_ADA_STPL"
+ctdkev          tkdtmp1 != "EVENT/PAMERAN"
+cbknjlmn        tkdtmp1 != "PENJUALAN_MANUAL"
+chlgtstpl       tkdtmp1 == "HILANG_T_ADA_STPL"
+chlg            tkdtmp1 == "HILANG_ADA_STPL"
+chlg2           tkdtmp1 == "HILANG_T_ADA_STPL" || tkdtmp1 == "HILANG_ADA_STPL"
+cnosinppd       ppdnomesin == tkdnobuk
+cnosinbrd       brdnomesin == tkdnobuk 
+cnobrgtkt       btmtypmtr == lnobrg
+cpnjlmn         tkdtmp1 == "PENJUALAN_MANUAL"
+ckrkons         tkdtmp1 == "KIRIM_KE_KONSUMEN"
+cevent          tkdtmp1 == "EVENT/PAMERAN"
+cbukanspv       g_grpnam != "AUDITSPV" && g_grpnam != "RI"
+cspv            (g_grpnam == "AUDITSPV"|| g_grpnam == "RI")
+
+EDITS(tmptranst)
+e.MandatoryNik      tkdjwbstr1       MANDATORY_IF cpnjlmn
+e.ValidateNIP       tkdtmp2          VALIDATE psikodidx mpsicab 0
+e.Mandatoryhlg      tkdtgl2          MANDATORY_IF chlgtstpl
+e.Mandatoryhlg1     tkdjwbstr1       MANDATORY_IF chlg
+e.Mandatoryhlg2     tkdtgl           MANDATORY_IF chlg2 
+e.Mandatoryfthlg    tkdsts           MANDATORY
+e.MandatoryVerif    tkdket           MANDATORY
+
+MAP(mpsmcab)
+psmnama          lnamakons        REPLACE_IF cpnjlmn
+
+MAP(mpsicab)
+psinama          lnamapjcab       REPLACE
+
+DBCALCS(djoinpsmtdtmu)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      psmkodidx   tkdjwbstr1
+    DBC_MAP         mpsmcab
+
+MAP(mjoinppdtdktmu)
+ppdnobuk        lnofakppd      REPLACE  
+ppdbrg          lnobrg         REPLACE
+ppdtotfak       lnombeli       REPLACE
+
+DBCALCS(djoinppdtdktmu)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      ppddatcabtgl   lDATAPIU 
+    DBC_SELECT      cnosinppd
+    DBC_MAP         mjoinppdtdktmu
+
+MAP(mjoinbrdtdktmu)
+brdbrg          lnobrg         REPLACE
+
+DBCALCS(djoinbrdtdktmu)
+    DBC_COMMAND    JOIN
+    DBC_TARGET     brdstscabbrg   gv_INPG  
+    DBC_SELECT     cnosinbrd
+    DBC_MAP        mjoinbrdtdktmu
+
+MAP(mjoinppmtdktmu)
+ppmsts      lstsppm     REPLACE
+ppmstskrm   lstskrmppm  REPLACE
+ppmplg      lkodekons   REPLACE
+
+DBCALCS(djoinppmtdktmu)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      ppmbukidx   lnofakppd
+    DBC_MAP         mjoinppmtdktmu
+
+MAP(mpsmkons)
+psmnama          lnamakons       REPLACE_IF ckrkons
+
+DBCALCS(djoinpsmtdtmukrkon)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      psmkodidx   lkodekons
+    DBC_MAP         mpsmkons
+
+MAP(mjoinbtmtdktmu)
+btmtypmtr2      lnamamtr        REPLACE
+
+DBCALCS(djoinbtmtdktmu)
+    DBC_COMMAND     JOIN
+    DBC_TARGET      btmdatstsoto   lBUKUTAMU gv_INPG
+    DBC_SELECT      cnobrgtkt
+    DBC_MAP         mjoinbtmtdktmu 
+
+MAP(mupdtkdtmp1)
+lOK         tkdsts                REPLACE
+
+DBCALCS(dupdtkdtmp1)
+    DBC_COMMAND     UPDATE
+    DBC_TARGET      tkdprmidx   tkdprm   
+	DBC_MAP         mupdtkdtmp1
+
+CALCS()
+cppdtdkktm      djoinppdtdktmu == 1 && tkdtmp1 == "KIRIM_KE_KONSUMEN"
+cppmtdkktm      djoinppmtdktmu == 1 && tkdtmp1 == "KIRIM_KE_KONSUMEN"
+cbtmtdkktm      djoinbtmtdktmu == 1 || djoinbrdtdktmu == 1
+cjoinpsmkrkon   djoinpsmtdtmukrkon == 1
+cjoinpsmtdtmu   djoinpsmtdtmu == 1
+cststkdmobar    tlmsts == "INPG" && g_curcmd == 2 && tkdtype != BLANKS
+cupdabkjr       tlmsts == "INPG" && g_curcmd == 2
+cabkmesin       abknoll == tkdnobuk
+ctacc3d         tkdtype == "TACC"
+cterisi         tkdket != BLANKS && tkdtype == BLANKS 
+
+MAP(mubah)
+cBLANKS     lkodekons     DO_CALC_IF cubah
+cBLANKS     lnamakons     DO_CALC_IF cubah
+cBLANKS     lnamapjcab    DO_CALC_IF cubah
+cBLANKS     lnombeli      DO_CALC_IF cubah
+
+MAP(mdarisis)
+lnofakppd   tkdjwbstr1  REPLACE_IF cppdtdkktm
+lstsppm     tkdstr1     REPLACE_IF cppmtdkktm
+lstskrmppm  tkdstr2     REPLACE_IF cppmtdkktm
+lnamakons   lnamakons   REPLACE_IF cjoinpsmkrkon
+lnamamtr    tkdstr3     REPLACE_IF cbtmtdkktm
+lnombeli    tkdjml2     REPLACE_IF ckrkons
+
+MAP(mjualmanual)
+lnamakons   lnamakons   REPLACE_IF cjoinpsmtdtmu
+
+MAP(maddabkacc3dmobar)
+lKUNCIABSEN		abkdata			REPLACE
+tlmnobuk		abknobuk		REPLACE
+tkdnobuk        abknoll         REPLACE
+gt_RINP			abksts			REPLACE
+l846			abkscr			REPLACE
+tlmbrdoto		abkkym			REPLACE
+cplus1  		abktgl			DO_CALC
+lketspv3dmobar  abkkym2			REPLACE
+DEBUG	ldum	ldum			REPLACE
+
+MAP(mupdabktdkktm)
+gv_CLSD         abksts          REPLACE_IF cabkmesin
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD      tkdnobuk
+SFL_UPLFLD_DBCALCS      dupdtkdtmp1 
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+tkddatllidx   lTDKKTEMU    tlmnobuk 
+
+SFL_MAP
+lTDKKTEMU   tkddata     REPLACE
+tlmnobuk    tkdnoll     REPLACE
+
+MAP(mupdtkdhpsapr)
+cBLANKS     tkdtype     DO_CALC
+DEBUG ldum	ldum		REPLACE
+
+MAP(maddabkrev3dmobar)
+lKUNCIABSEN		abkdata			REPLACE
+tlmnobuk		abknobuk		REPLACE
+tkdnobuk        abknoll         REPLACE
+gv_INPG			abksts			REPLACE
+l846			abkscr			REPLACE
+tlmpst			abkkym			REPLACE
+g_tgltrn		abktgl			REPLACE
+lkettes6		abkkym2			REPLACE
+DEBUG	ldum	ldum			REPLACE
+
+SPCALCS(spaddupdabk)
+    DO_LIB_IF   cupdabkjr   ap_dbclc(DNAME dupdabkaudjr3dmobar,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdabktdkktm/*,DBC_SELECT cabkmesin*/);
+    DO_LIB_IF   cterisi     ap_dbclc(DNAME daddabkaudspv,DCOMMAND ADD,DFILE abk,DMAP maddabkacc3dmobar);
+    DO_LIB_IF   ctacc3d     ap_dbclc(DNAME daddabkrev3dmobar,DCOMMAND ADD,DFILE abk,DMAP maddabkrev3dmobar);
+
+SPCALCS(spupdtkd)
+   	DO_LIB_IF cststkdmobar	ap_dbclc(DNAME dupdtkdhpsapr,DCOMMAND UPDATE,DTARGET tkddatbukll lTDKKTEMU tkdnobuk tlmnobuk,DMAP mupdtkdhpsapr);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdtmp1       DO_MAP SHOW mubah
+AFTER_INPUT     cur_field=tkdtmp1       DO_MAP SHOW mdarisis
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF  cevent
+AFTER_INPUT     cur_field=tkdjwbstr1    DO_MAP SHOW mjualmanual
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF  chlgtstpl
+BEFORE_INPUT    cur_field=tkdtgl2       DO_SKIP_IF  cbkntadastpl
+BEFORE_INPUT    cur_field=tkdtgl        DO_SKIP_IF  cbknadstpl
+BEFORE_INPUT    cur_field=tkdjml2       DO_SKIP_IF  cbknjlmn
+BEFORE_INPUT    cur_field=tkdstr4       DO_SKIP_IF  ctdkev
+BEFORE_INPUT    cur_field=tkdtype       DO_SKIP_IF  cbukanspv
+BEFORE_INPUT    cur_field=tkdtmp1       DO_SKIP_IF  cspv
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_SKIP_IF  cspv  
+BEFORE_INPUT    cur_field=tkdtgl2       DO_SKIP_IF  cspv
+BEFORE_INPUT    cur_field=tkdtgl        DO_SKIP_IF  cspv
+BEFORE_INPUT    cur_field=tkdjml2       DO_SKIP_IF  cspv
+BEFORE_INPUT    cur_field=tkdstr3       DO_SKIP_IF  cspv   
+BEFORE_INPUT    cur_field=tkdstr4       DO_SKIP_IF  cspv
+BEFORE_INPUT    cur_field=tkdtmp2       DO_SKIP_IF  cspv
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF  cspv
+AFTER_INPUT     cur_field=tkdket        DO_SPCALCS  spupdtkd
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS  spaddupdabk
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cINPG

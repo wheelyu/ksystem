@@ -1,0 +1,328 @@
+SCREEN 3012 QUERY_TYPE s.DaftarTable
+SCR_FILE dtm
+SCR_LOGFLD dtmkode  
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+l0		INT2		2
+ltomdet_d    	STRING		30
+ltomdet_2d    	STRING		40
+
+lgab_field    		STRING		100
+lenter 			STRING	        4
+lesc   			STRING	        4
+lfile_dtm		STRING	        4
+lfile_tmp		STRING	        4
+lfile_tbl		STRING	        4
+lfile_tbd		STRING	        4
+lfile_tbt		STRING	        4
+lfile_rmd		STRING	        4
+
+lcalc_dtm		STRING	        30
+lcalc_tmp		STRING	        30
+lcalc_tbl		STRING	        30
+lcalc_tbd		STRING	        30
+lcalc_tbt		STRING	        30
+lcalc_rmd		STRING	        30
+
+ldelimiter		INT2   		2
+ldefdte   		INT2  		2
+lrata                   INT2            2
+
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /-----------------------------------------------------------------------------------------------\|
+| | i.Typ          : __________                                                                   ||
+| | i.KodeData     : ____________________                                                         ||
+| | i.Keterangan   : ______________________________                                               ||
+| \-----------------------------------------------------------------------------------------------/|
+|  __________________  _____________________________                                               |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+   dtmdata           PROTECT QPROTECT	INPUTRI   	 1 
+   dtmkode           ALLCAPS          	INPUTRI          2 
+   dtmket            ALLCAPS          	INPUTRI          4 
+   ltomdet_d  	     TOMBOL	 	INPUTRI     	 5 /* Tombol Detil d*/
+   ltomdet_2d  	     TOMBOL	 	INPUTRI     	 6 /* Tombol Detil d*/
+
+DEFAULTS(master)
+ltomdet_d    	INIT   		"1d.Input Type"
+ltomdet_2d    	INIT   		"2d.Input Type Barang Ber Level"
+dtmdata         INIT            DTTABEL
+dtmdata     	INIT_QUERY	DTTABEL
+dtmscr          INIT            {g_scrnumstr} 
+dtmtglcrt	INIT		{g_tgltrn}
+dtmusrcrt 	INIT		{g_usrkode}
+l0		INIT		0
+
+
+EDITS(master)
+i.Mandatory dtmkode MANDATORY
+i.Dupkey dtmkode DUPKEY dtmdtkodidx {Pdtmdata} 
+i.Mandatory dtmket MANDATORY
+
+IMAGE(transt) 
+/--------------t------------------------------t----t-------------t-------------t-------------t---------\
+|i.Kode        | i.Keterangan                 |t.MD|  i.KodeLV1  |  i.KodeLV2  |  i.KodeLV3  |t.Nominal|
+\--------------.------------------------------.----.-------------.-------------.-------------.---------/
+
+IMAGE(trans) 
+|______________|______________________________|____|_____________|_____________|_____________|_________|
+    
+FIELD(trans)
+tblkode			NONE SCROLL			INPUTRI 1
+tblket			ALLCAPS SCROLL			INPUTRI 2
+tbltype2	        NOCHANGE      			INPUTRI 3
+tbllv1  	        ALLCAPS       			INPUTRI 4
+tbllv2  	        ALLCAPS       			INPUTRI 5
+tbllv3  	        ALLCAPS       			INPUTRI 6
+tbljml  	        NUMERIC       			INPUTRI 7
+
+DEFAULTS(trans)
+tblusrcrt		INIT		{g_usrkode}
+tblusrcrt		INIT_UPDATE	{g_usrkode}
+tbltype2                DFALT_SCAN      BLANKS
+                                        MD "MD  "
+
+CALCS()
+cbknPROMO 	dtmkode != "PROMOJUAL" 
+cbknY  		tblyt != "Y"
+
+
+EDITS(trans)
+i.Mandatory tblkode MANDATORY
+i.Mandatory tblket  MANDATORY
+i.Dupkey tblkode DUPKEY tbldtdtmkod {Ptbldata} {Ptbldtmkode}
+
+SUBFILE(trans)
+SFL_LINES(10) 
+SFL_TITLE(transt)
+SFL_SELECT cbknY
+SFL_COND cbknPROMO 
+
+SFL_TARGET
+tbldtdtmkod		dtmdata  dtmkode
+
+SFL_MAP
+dtmdata             tbldata       REPLACE
+dtmkode             tbldtmkode    REPLACE
+dtmscr              tblscr        REPLACE
+
+IMAGE(transg1t) 
+/--------------t------------------------------t--------\
+|i.Kode        | i.Keterangan                 |i.Typ   |
+\--------------.------------------------------.--------/
+
+IMAGE(transg1) 
+|______________|______________________________|________|
+    
+FIELD(transg1)
+tblkode			ALLCAPS SCROLL			INPUTRI 1
+tblket			ALLCAPS SCROLL			INPUTRI 2
+tbltype2		NOCHANGE      			INPUTRI 3
+
+CALCS()
+cPROMO 		dtmkode == "PROMOJUAL"
+
+DEFAULTS(transg1)
+tbltype2	DFALT_LIST	DISC_M DISC_D HC PROMO
+tbltglcrt	INIT		{g_tgltrn}
+tblusrcrt 	INIT		{g_usrkode}
+
+
+EDITS(transg1)
+i.Mandatory tblkode MANDATORY
+i.Mandatory tblket  MANDATORY
+i.Dupkey tblkode DUPKEY tbldtdtmkod {Ptbldata} {Ptbldtmkode}
+
+SUBFILE(transg1)
+SFL_LINES(10) 
+SFL_TITLE(transg1t)
+SFL_SELECT cbknY
+SFL_COND cPROMO 
+
+SFL_TARGET
+tbldtdtmkod		dtmdata  dtmkode
+
+SFL_MAP
+dtmdata             tbldata       REPLACE
+dtmkode             tbldtmkode    REPLACE
+dtmscr              tblscr        REPLACE
+
+IMAGE(transat) 
+/--------------t------------------------------t---------t---------t---------t---------\
+|i.Kode        | i.Keterangan                 |i.Level1 |i.Level2 |i.Level3 |i.Level4 |
+\--------------.------------------------------.---------.---------.---------.---------/
+
+IMAGE(transa) 
+|______________|______________________________|_________|_________|_________|_________|
+    
+FIELD(transa)
+tblkode			ALLCAPS SCROLL			INPUTRI 1
+tblket			ALLCAPS SCROLL			INPUTRI 2
+tbllv1			ALLCAPS SCROLL			INPUTRI 4
+tbllv2			ALLCAPS SCROLL			INPUTRI 5
+tbllv3			ALLCAPS SCROLL			INPUTRI 6
+tbllv4			ALLCAPS SCROLL			INPUTRI 7
+
+DEFAULTS(transa)
+tblyt   	INIT      	Y /* Beberapa Level*/
+tbltglcrt	INIT		{g_tgltrn}
+tblusrcrt 	INIT		{g_usrkode}
+
+EDITS(transa)
+i.Mandatory tblkode MANDATORY
+i.Mandatory tblket  MANDATORY
+i.Dupkey tblkode DUPKEY tbldtdtmkod {Ptbldata} {Ptbldtmkode}
+i.Validate tbllv1 VALIDATE_BUF3 tbldtdtmkod mtbl1 stbl {Pdtmdata} {Pdtmkode} 
+i.Validate tbllv2 VALIDATE_BUF3 tbldtdtmkod mtbl2 stbl {Pdtmdata} {Pdtmkode} 
+i.Validate tbllv3 VALIDATE_BUF3 tbldtdtmkod mtbl3 stbl {Pdtmdata} {Pdtmkode} 
+i.Validate tbllv4 VALIDATE_BUF3 tbldtdtmkod mtbl4 stbl {Pdtmdata} {Pdtmkode} 
+
+MAP(mtbl1)
+#tblkode	tbllv1		REPLACE
+
+MAP(mtbl2)
+#tblkode	tbllv2		REPLACE
+
+MAP(mtbl3)
+#tblkode	tbllv3		REPLACE
+
+MAP(mtbl4)
+#tblkode	tbllv4		REPLACE
+
+CALCS()
+cBARANG		dtmkode == "BARANG " || dtmkode =="LEGAL"
+cY		tblyt == "Y"
+
+SUBFILE(transa)
+SFL_LINES(10) 
+SFL_TITLE(transat)
+SFL_SELECT cY
+SFL_COND cBARANG
+
+SFL_TARGET
+tbldtdtmkod		dtmdata  dtmkode
+
+SFL_MAP
+    dtmdata             tbldata       REPLACE
+    dtmkode             tbldtmkode    REPLACE
+    dtmscr              tblscr        REPLACE
+
+IMAGE(trans2t) 
+/--------------------t---------------------------------------t------------------------------\
+|   i.Kode           | i.Keterangan                          |  i.DipakaiUtk                |
+\--------------------.---------------------------------------.------------------------------/
+
+
+IMAGE(trans2) 
+|____________________|_______________________________________|______________________________|
+    
+FIELD(trans2)
+   tbdkode       ALLCAPS 		INPUTRI     2 
+   tbdket        ALLCAPS SCROLL		INPUTRI     3 
+   tbdkettype    ALLCAPS SCROLL		INPUTRI     3 
+
+SUBFILE(trans2)
+SFL_LINES(3)       
+SFL_TITLE(trans2t)
+
+SFL_TARGET
+tbddtmstidx    		 tbldata tbldtmkode tblkode    
+
+SFL_MAP
+    tbldata              tbddata       REPLACE  
+    tbldtmkode           tbddtmkode    REPLACE
+    tblkode              tbdtblkode    REPLACE
+    tblket               tbdtblket     REPLACE
+
+CALCS()
+c0		0
+
+PERMIT(trans2)
+	PMT_ADD_COND    c0
+	PMT_UPDALL_COND    c0
+	PMT_DEL_COND    c0
+					     
+
+IMAGE(report) 
+/------------------------------------------------------\                      
+|   i.Enter     : ________________                     |
+|                                                      |
+|   i.Esc       : _                                    |
+\------------------------------------------------------/
+
+FIELD(report)
+    lenter          NOCHANGE           INPUTRI ZERO     10
+    lesc            NOCHANGE           INPUTRI ZERO     11
+
+
+DEFAULTS(report)
+ldelimiter	INIT      	1
+ldefdte		DFALT_LIST	1 
+lrata		DFALT_LIST	0
+
+CALCS()
+cdtm       	"dtm"
+ctmp       	"tmp"
+ctbl       	"tbl"
+ctbd       	"tbd"
+ctbt       	"tbt"
+crmd       	"rmd"
+cBLANKS		BLANKS
+cdtm_ok		dtmdata == gv_dttabel
+ctmp_ok		tmpdata == gv_dttabel
+ctbl_ok		tbldata == gv_dttabel
+ctbd_ok		tbddata == gv_dttabel
+ctbt_ok		tbtdata == gv_dttabel
+crmd_ok		rmddata == gv_dttabel
+cldtm 		"cdtm_ok"
+cltmp 		"ctmp_ok"
+cltbl 		"ctbl_ok"
+cltbd 		"ctbd_ok"
+cltbt 		"ctbt_ok"
+clrmd 		"crmd_ok"
+
+MAP(mmap)
+cdtm       lfile_dtm       DO_CALC
+cldtm	   lcalc_dtm	   DO_CALC
+ctmp       lfile_tmp       DO_CALC
+cltmp	   lcalc_tmp	   DO_CALC
+ctbl       lfile_tbl       DO_CALC
+cltbl	   lcalc_tbl	   DO_CALC
+ctbd       lfile_tbd       DO_CALC
+cltbd	   lcalc_tbd	   DO_CALC
+ctbt       lfile_tbt       DO_CALC
+cltbt	   lcalc_tbt	   DO_CALC
+crmd       lfile_rmd       DO_CALC
+clrmd	   lcalc_rmd	   DO_CALC
+
+HOOKS(report)
+AFTER_INPUT	cur_field=lenter	DO_MAP SHOW mmap
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_dtm,ldelimiter,ldefdte,lrata,lcalc_dtm,lgab_field,g_scrnumstr,g_strksg,l0);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tmp,ldelimiter,ldefdte,lrata,lcalc_tmp,lgab_field,g_scrnumstr,g_strksg,l0);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tbl,ldelimiter,ldefdte,lrata,lcalc_tbl,lgab_field,g_scrnumstr,g_strksg,l0);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tbd,ldelimiter,ldefdte,lrata,lcalc_tbd,lgab_field,g_scrnumstr,g_strksg,l0);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tbt,ldelimiter,ldefdte,lrata,lcalc_tbt,lgab_field,g_scrnumstr,g_strksg,l0);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_rmd,ldelimiter,ldefdte,lrata,lcalc_rmd,lgab_field,g_scrnumstr,g_strksg,l0);
+
+END_SCREEN

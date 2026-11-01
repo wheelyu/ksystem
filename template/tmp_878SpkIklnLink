@@ -1,0 +1,144 @@
+LOCAL
+PGM_FIELDS
+/* lUploadOKE      STRING          11 */
+/* l4666ikln       INT2            2 */
+/* lm4666ikln      STRING          15 */
+
+DBCALCS(djoinabkiklnmedsosrev)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx	lKUNCIABSEN spknobuk
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload    : ______
+  t.TglFt     : _______________
+  t.Link      : _______________
+  t.NmGrup    : _______________
+  t.Acc       : _____ ____
+  t.NipAcc    : _______________
+  t.Alasan    : _________________
+  t.Ket       : _________________
+  t.Enter     : _______ 
+ \------------------------------/
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+spkfoto         PROTECT             INPUTRI 1 
+spktglft        PROTECT             INPUTRI 2
+spkket			    TEXTAREA 3 ALLCAPS  INPUTRI	3 /* Link */
+spkket2         ALLCAPS             INPUTRI 4
+spkhasil2       NOCHANGE            INPUTRI 5 /* ACC/TACC */ 
+spkhasil        PROTECT             INPUTRI 6
+spkkode         PROTECT             INPUTRI 7 /* NIP ACC */ 
+spkkat          NOCHANGE ALLCAPS    INPUTRI 8 /* Alasan */
+spkreview2      TEXTAREA 3 ALLCAPS  INPUTRI 9 /* Ket Lainnya */
+lENTER          NOCHANGE            INPUTRI 10
+
+CALCS()
+cIklanMedsos            tkmkode=="POSTING_IKLAN"
+cOKE                    "OK"
+ctkmopen                tkmsts == "OPEN"
+ctkminpg                tkmsts == "INPG"
+cbisaupd                tkmsts != "CLSD" && ((tkmsts == "OPEN" && (g_usrkode == tkmplg || g_grpnam == "IT" || g_grpnam == "RI")) || (tkmsts == "INPG" && g_usrkode != tkmplg && (g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "KDH" || g_grpnam == "RAS" || g_grpnam=="TLDHMC" || g_grpnam=="TLDDTN" || g_grpnam == "BUM" || g_grpnam == "MSOHEAD" || g_grpnam == "PICMKT" || g_grpnam == "PICMKTM2W" || g_grpnam == "M2WAM"))) && djointkmspk == 1 && ltkmscr != "REVY"
+ctkmclsd1               tkmsts == "CLSD"
+cdjoinabkiklnmedsosrev	djoinabkiklnmedsosrev == 1
+cacc                    spkhasil2 == "ACC"
+ctacc                   spkhasil2 == "TACC" 
+ciklnfb                 tkmkode == "POSTING_IKLAN" && tkmtype == "FB"
+cbkniklnfb              tkmkode == "POSTING_IKLAN" && tkmtype != "FB"
+calsnlain               spkkat == "LAINNYA"
+cbknalsnlain            spkkat != "LAINNYA"
+charshttp               lspkkethttps == "HTTPS"
+
+EDITS(tmptranst)
+e.Mandatory     spkhasil2       MANDATORY_IF ctkminpg
+e.Mandatory     spkkat          MANDATORY_IF ctacc
+e.Mandatory     spkket          MANDATORY 
+e.Mandatory     spkket2         MANDATORY_IF ciklnfb 
+t.Validate7     spkkat          VALIDATE tbddatkodidx mtbdtdkacc stbdon {Pgv_dttabel} {PlSPK21} {PlALSNTDKACCIKLN}
+e.Mandatory     spkreview2      MANDATORY_IF calsnlain
+
+DEFAULTS(tmptranst)
+/* lUploadOKE      INIT            UPLOAD_OK */
+spkhasil2       DFALT_SCAN      ACC
+                                TACC
+IF ctkminpg spkkode INIT_UPDATE {g_usrkode}
+/* l4666ikln       INIT            4666 */
+/* lm4666ikln      INIT            m4666ikln */
+
+MAP(mket)
+spkket lspkkethttps  REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=spkhasil2	DO_SKIP_IF ctkmopen
+BEFORE_INPUT	cur_field=spkket	DO_SKIP_IF ctkminpg 
+BEFORE_INPUT	cur_field=spkket2     	DO_SKIP_IF cbkniklnfb 
+BEFORE_INPUT    cur_field=spkket2     	DO_SKIP_IF ctkminpg 
+BEFORE_INPUT	cur_field=spkkat	DO_SKIP_IF ctkmopen
+BEFORE_INPUT    cur_field=spkkat      	DO_SKIP_IF cacc 
+BEFORE_INPUT    cur_field=spkreview2  	DO_SKIP_IF ctkmopen
+BEFORE_INPUT    cur_field=spkreview2  	DO_SKIP_IF cbknalsnlain
+AFTER_INPUT	cur_field=spkket	DO_MAP SHOW mket
+AFTER_INPUT     cur_field=spkket      	DO_MAP SHOW
+                IF charshttp mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.HarusdiawaliHTTPS
+
+MAP(mtbdtdkacc)
+tbdkode         spkkat         	REPLACE
+
+MAP(mupdspkiklnmedsos)
+g_fotodate1     spktgl       REPLACE
+g_tgltrn        spktglft     REPLACE
+cOKE            spkfoto      DO_CALC
+g_usrkode       spknama2     REPLACE
+
+DBCALCS(dupdspkfotiklnmedsos)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      spkdatbuktyp   lSPKLCK tkmnobuk lHASILSPK
+        DBC_MAP         mupdspkiklnmedsos
+
+MAP(mupdabkiklnmedsos)
+gv_CLSD         abksts          REPLACE
+
+/* MAP(m4666ikln)
+tkmnobuk        r_string1       REPLACE
+spktglft6	r_string3	      REPLACE
+spkreview3	r_string4	      REPLACE */
+
+SPCALCS(sptmpreviklnmedsos) 
+	DO_LIB_IF cdjoinabkiklnmedsosrev	ap_dbclc(DNAME dupdabkiklnmedsosrev,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN spknobuk,DMAP mupdabkiklnmedsos);
+	/*DO_LIB  ap_nxpst(l4666ikln,lm4666ikln);*/
+  	DO_LIB  ap_dbclc(DNAME dupdtkmiklnmedsosrevrev,DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkmmaster);
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPL_DELCOND c0
+SFL_UPLFLD tkmnobuk lKONTENSLS
+SFL_UPL_COND    ctkmopen
+SFL_UPL_COND_MSG IF  cacc      t.BisaUploadSaatOPEN 
+SFL_UPLFLD_DBCALCS dupdspkfotiklnmedsos
+SFL_COND cIklanMedsos 
+SFL_TARGET spkdatbuktyp   lSPKLCK tkmnobuk lHASILSPK
+
+POSTING(tmptrans)
+PST_UPDCMD      sptmpreviklnmedsos
+PST_COND        ctkminpg  
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	cbisaupd
+	PMT_UPD_MSG	IF ctkmclsd1	SPK sudah CLSD, tidak bisa diubah
+	PMT_DEL_COND	c0

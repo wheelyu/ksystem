@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+
+lnipdriver	STRING		21
+lnamadriver	STRING		21
+lnipakl		STRING		21
+lnamaakl	STRING		21
+lmtdnobuk	STRING		21
+lnominaltk	DFLOAT		8
+
+/*----------JOIN------------*/
+
+MAP(mmtdkirim)
+mtdnobuk          lmtdnobuk            REPLACE
+
+DBCALCS(djoinmtdkirim)
+DBC_COMMAND     JOIN
+DBC_TARGET      mtdstskodbrg gv_krmhutbrg gv_CLSD ppmplg
+DBC_MAP         mmtdkirim
+
+MAP(mmtskirim)
+mtsplg          lnipdriver      REPLACE
+mtsuntuk	lnipakl		REPLACE
+
+DBCALCS(djoinmtskirim)
+DBC_COMMAND     JOIN
+DBC_TARGET      mtsbukidx lmtdnobuk
+DBC_MAP         mmtskirim
+
+MAP(mjoinpsmdriver)
+psmnama         lnamadriver       REPLACE
+
+DBCALCS(djoinpsmdriver)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmkodidx       lnipdriver
+DBC_MAP         mjoinpsmdriver
+
+MAP(mjoinpsmakl)
+psmnama         lnamaakl      REPLACE
+
+DBCALCS(djoinpsmakl)
+DBC_COMMAND     JOIN
+DBC_TARGET      psmkodidx       lnipakl
+DBC_MAP         mjoinpsmakl
+
+
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||i.NoFak        : __________________||
+||t.StsKrm       : __________        ||
+||t.TglKrm       : __________        ||
+||t.NipDriver    : __________        ||
+||t.Nama         : _________________ ||
+||t.NipAkl       : __________        ||
+||t.Nama         : _________________ ||
+||t.Nominal      : _________         ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   ppmnobuk         NOCHANGE SCROLL            INPUTRI         1
+   ppmstskrm        NOCHANGE SCROLL            INPUTRI         2
+   ppmtglbyrakh     PROTECT {DD-MM-YY}         INPUTRI         3
+   lnipdriver       NOCHANGE SCROLL            INPUTRI         4
+   lnamadriver      NOCHANGE SCROLL            INPUTRI         5
+   lnipakl          NOCHANGE SCROLL            INPUTRI         6
+   lnamaakl         NOCHANGE SCROLL            INPUTRI         7
+   lnominaltk       PROTECT NUMERIC            INPUTRI         8
+
+
+CALCS()
+ctagihkrm	ppmscr== "614" && ppmstskrm == "KR" && ppmsisa > 0 && ppmsisaum > 0
+cjoindriver	djoinmtdkirim == 1 && djoinmtskirim == 1 && djoinpsmdriver == 1
+cjoinakl	djoinmtdkirim == 1 && djoinmtskirim == 1 && djoinpsmakl == 1
+cTunai		ppmtk == "T"
+cKredit		ppmtk == "K"
+
+EDITS(tmptranst)
+e.Validate ppmnobuk  VALIDATE ppmbukidx mppmkrm 0
+
+MAP(mppmkrm)
+ppmnobuk        ppmnobuk        REPLACE
+ppmsisa		lnominaltk	REPLACE_IF cTunai
+ppmsisaum	lnominaltk	REPLACE_IF cKredit
+lnipdriver	lnipdriver	REPLACE_IF cjoindriver
+lnipakl		lnipakl		REPLACE_IF cjoinakl
+lnamadriver	lnamadriver	REPLACE_IF cjoindriver
+lnamaakl	lnamaakl	REPLACE_IF cjoinakl
+
+
+SUBFILE(tmptrans)
+SFL_LINES(2)
+SFL_TITLE(tmptranst)
+SFL_SELECT ctagihkrm
+SFL_TARGET ppmdtcpostgl gv_dtpiu cabkode
+
+

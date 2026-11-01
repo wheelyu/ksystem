@@ -1,0 +1,105 @@
+LOCAL
+PGM_FIELDS
+	ltypehp		STRING		21
+	lSURVEY		STRING		21
+	lJAMTELPON	STRING		21
+	lfungsihp	STRING		21
+	ltype21		STRING		21
+	lketfungsi	STRING		61
+	
+MAP(mjointbdfungsihp)
+tbdket		lketfungsi		REPLACE
+
+DBCALCS(djointbdfungsihp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx	gv_dttabel gv_infoumum lfungsihp ltype21
+	DBC_MAP		mjointbdfungsihp
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||i.Data       : ___________________ ||
+||t.Kode       : ___________________ ||
+||i.Handphone  : ___________________ ||
+||i.Sts        : ___________________ ||
+||t.GsmWa      : _____________  ____ ||
+||               ___________________ ||
+|| spasi			     ||
+||               ___________________ ||
+|\-----------------------------------/|
+\-------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+condata		PROTECT	SCROLL		INPUTRI	3
+conkode         PROTECT SCROLL          INPUTRI 2
+conhp           DIGITS SCROLL          INPUTRI 1
+consts		PROTECT SCROLL		INPUTRI 5
+congrup		ALLCAPS SCROLL  	INPUTRI 6
+conurtstr	PROTECT			INPUTRI	7
+lketfungsi	PROTECT			INPUTRI	7
+lenter		NOCHANGE		INPUTRI	7
+
+CALCS()
+cjointbdfungsihp	djointbdfungsihp == 1
+
+EDITS(tmptranst)
+e.Dupkeyhp              conhp   DUPKEY condathpidx {PlTELP}
+e.Mandatory		conhp	MANDATORY
+e.Mandatory 		congrup MANDATORY
+e.Validate              congrup VALIDATE tbddatkodidx mtypehp stbd {Pgv_dttabel} {Pgv_infoumum} {Pltypehp}
+
+MAP(mtypehp)
+tbdkode		congrup		REPLACE
+tbdyt		conurtstr	REPLACE
+tbdyt		ltype21		REPLACE
+lketfungsi	lketfungsi	REPLACE_IF cjointbdfungsihp
+
+
+DEFAULTS(tmptranst)
+condata   INIT   TELP
+condata   INIT_UPDATE   TELP
+ltypehp		INIT	TYPEHP
+lSURVEY		INIT	SURVEY
+lJAMTELPON	INIT	JAMTELPON
+lfungsihp	INIT	FUNGSIHP
+
+CALCS()
+cpanjangnom             DO_LIB ap_strln(conhp,&ljumlahnomor);
+cHP			(condata==lTELP || condata==BLANKS) && congrup != "CUG"
+cbmmmnsohead		g_curcmd==2 && (g_grpnam =="BUM" || g_grpnam=="ARDVH" || g_grpnam=="KAWIL")
+cadaNIK			btmplg != BLANKS
+ctdkadaNIK		btmplg == BLANKS
+
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln1i,ln1,&ldigit1);
+AFTER_INPUT             cur_field=conhp       DO_LIB ap_amstr(conhp,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=conhp       DO_MAP SHOW mpanjangnom
+
+BEFORE_INPUT		cur_field=conhp		DO_SKIP_IF cbmmmnsohead
+
+AFTER_INPUT             cur_field=conhp DO_MAP SHOW
+                        IF cbukan08 mdumstr
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        /* Jml record yang kelihatan di layar */
+SFL_SELECT cHP
+
+SFL_TARGET_IF cadaNIK
+conkodstsidx   btmplg gv_INPG
+
+SFL_TARGET_IF ctdkadaNIK
+conkodstsidx   btmnobuk gv_INPG
+
+SFL_MAP
+btmplg          conkode                 REPLACE
+gv_INPG         consts                  REPLACE
+lTELP           condata                 REPLACE
+

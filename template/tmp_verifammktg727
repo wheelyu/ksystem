@@ -1,0 +1,93 @@
+IMAGE(tmptranst)
+/---------------------------------------\
+|/-------------------------------------\|
+|| t.Userinput     : __________        ||
+|| t.Nama          : __________________||
+|| t.Rekomendasi   : ______            ||
+|| t.Keterangan    : __________________||
+|\-------------------------------------/|
+|/-----------s.UPLOAD------------------\|
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+||                                     ||
+|\-------------------------------------/|
+|                ___________  ________  |
+\---------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1        PROTECT           INPUTRI 1
+lnamaammktg    PROTECT		 INPUTRI 1
+svitype3       NOCHANGE          INPUTRI 2
+sviket3        TEXTAREA          INPUTRI 3
+luplokok       TOMBOL            INPUTRI 4
+lent           NOCHANGE          INPUTRI 5
+
+DEFAULTS(tmptranst)
+svistr1         INIT_UPDATE     {g_usrkode}
+svitype3	DFALT_SCAN BLANKS       ACC
+                                        TACC
+
+
+EDITS(tmptranst) 
+e.Mandatory     svitype3                MANDATORY
+e.Mandatory     sviket3                 MANDATORY
+e.Validate      svistr1	VALIDATE psikodidx mpsiammktg
+
+MAP(mpsiammktg)
+psinama         lnamaammktg		REPLACE
+
+CALCS()
+ckonaddam    	  djoinsviammktg==0 && 
+		  ((djoinsgmkawil==1 && lnipkawil==g_usrkode && ((btmdvs=="HMC" && djoinsgmamhmc==1 && djoinabdamhmc==1 && labdtypeamhmc=="WFO") || (btmdvs=="M2W" && djoinsgmamm2w==1 && djoinabdamm2w==1 && labdtypeamm2w=="WFO"))) || 
+		  (djoinsgmamhmcm2w==1 && lnipamhmcm2w==g_usrkode) || 
+		  (djoinsgmamhmc==1 && lnipamhmc == g_usrkode) || ( djoinsgmamm2w==1 && lnipamm2w == g_usrkode) || 
+                  (btmdvsjl =="M2W4W" && (g_grpnam == "M2WAM" || g_grpnam == "B.M4WCSPV" || g_grpnam =="BMMM2W")) ||
+		  (djointbtikklik==1 && djointbdikklik==1) || g_grpnam=="DIGMKTDVH" ||
+                  g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RI") && 
+		  btmsts=="727"
+ckonupdtam    	  djoinsviammktg==1 && 
+		  ((djoinsgmkawil==1 && lnipkawil==g_usrkode && ((btmdvs=="HMC" && djoinsgmamhmc==1 && djoinabdamhmc==1 && labdtypeamhmc=="WFO") || (btmdvs=="M2W" && djoinsgmamm2w==1 && djoinabdamm2w==1 && labdtypeamm2w=="WFO"))) || 
+		  (djoinsgmamhmcm2w==1 && lnipamhmcm2w==g_usrkode) || 
+		  (djoinsgmamhmc==1 && lnipamhmc == g_usrkode) || ( djoinsgmamm2w==1  && lnipamm2w == g_usrkode) || 
+                  (btmdvsjl =="M2W4W" && (g_grpnam == "M2WAM" || g_grpnam == "B.M4WCSPV" || g_grpnam =="BMMM2W")) ||
+		  (djointbtikklik==1) && djointbdikklik==1 || g_grpnam=="DIGMKTDVH" ||
+                  g_grpnam == "ROOT" || g_grpnam == "IT" || g_grpnam == "RI") && 
+		  btmsts=="727"
+
+
+MAP(mupdsviuplammkt)
+cY              sviyt1          DO_CALC
+g_tgltrn        svitgl2         REPLACE
+
+DBCALCS(dupdsviuplammkt)
+        DCOMMAND UPDATE
+        DTARGET sviotoidx svioto
+        DMAP mupdsviuplammkt
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SHOW_NEXT
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdsviuplammkt
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svitype
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk lverammktg 
+SFL_MAP
+gv_datasurvey 		 svidata         REPLACE
+btmnobuk       		 svinobuk        REPLACE
+lverammktg       	 svitype         REPLACE
+lverammktg        	 svikode         REPLACE
+l1			 svinourt	 REPLACE
+g_usrkode       	 svistr1         REPLACE
+
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ckonaddam
+        PMT_UPDALL_COND ckonupdtam
+        PMT_DEL_COND    c0

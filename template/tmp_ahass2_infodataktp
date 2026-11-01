@@ -1,0 +1,252 @@
+LOCAL
+PGM_FIELDS
+lalmjalanKtp		STRING		251 
+lalmpropKtp     	STRING		21
+lalmnampropKtp  	STRING		31
+lalmkecKtp      	STRING		21
+lalmnamkecKtp   	STRING		31
+lalmkelKtp      	STRING		21
+lalmnamkelKtp   	STRING		31
+lalmkotaKtp     	STRING		21
+lalmnamkotaKtp  	STRING		31
+lalmrtKtp       	STRING		21
+lalmrwKtp       	STRING		21
+lalmkdposKtp    	STRING		11
+lNEW			STRING		21
+lDTMITRA		STRING		21
+lKONSUMEN		STRING		21
+lpsmins2		STRING		21
+
+MAP(mjoinpsmKons)
+psmins		lpsmins2	REPLACE
+
+
+DBCALCS(djoinpsmKons)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmktpidx	tkdnoll
+	DBC_MAP		mjoinpsmKons
+
+DBCALCS(djoinppmInstansi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppmbukidx	btmkdkms
+
+
+MAP(mjoinalmPsmKtp)
+almjalan	lalmjalanKtp		REPLACE
+almprop		lalmpropKtp		REPLACE
+almnamprop	lalmnampropKtp		REPLACE
+almkec		lalmkecKtp		REPLACE
+almnamkec	lalmnamkecKtp		REPLACE
+almkel		lalmkelKtp		REPLACE
+almnamkel	lalmnamkelKtp		REPLACE
+almkota		lalmkotaKtp		REPLACE
+almnamkota	lalmnamkotaKtp		REPLACE
+almrt		lalmrtKtp		REPLACE
+almrw		lalmrwKtp		REPLACE
+almkdpos	lalmkdposKtp		REPLACE
+
+DBCALCS(djoinalmPsmKtp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almdatotobuk	lPSMKTP	tkdnoll
+	DBC_MAP		mjoinalmPsmKtp
+
+DBCALCS(djoinalmPsmAhass)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	almdatbukidx	lPSMAHASS btmnobuk
+
+DBCALCS(djoinast620)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	astdatkodidx lasset tkdnobuk gv_bpkb btmkdsam
+
+CALCS()
+ckondTelp2               condata == "TELP"
+ckondTelpAHS2            condata == "TELPAHS"
+
+DBCALCS(djoinconPembawa)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    btmnobuk gv_INPG
+        DBC_SELECT      ckondTelp2
+
+DBCALCS(djoinconAHS)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      conkodstsidx    btmnobuk gv_INPG
+        DBC_SELECT      ckondTelpAHS2
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||i.JnsDeb   : _________________  ||__
+||i.Ktp      : __________________ ||
+||i.Nama     : __________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdjenis		NOCHANGE			INPUTRI	1
+tkddata			PROTECT				INPUTRI	2
+tkdnoll			DIGITS SCROLL	QNONMANDATORY	INPUTRI 3
+tkdrek			ALLCAPS	SCROLL			INPUTRI	4
+
+DEFAULT(tmptranst)
+tkdsts			INIT		INPG
+tkdtgl			INIT		{g_tgltrn}
+tkdnourt		INIT		99
+tkddata			INIT		PSMKTP
+lDTMITRA		INIT		DTMITRA
+lKONSUMEN		INIT		KONSUMEN
+lNEW			INIT		NEW
+
+tkdjenis	DFALT_SCAN_BLANKS	PERORANGAN
+                                       	INSTANSI
+                                        EKITAP
+                                        NPWP
+
+EDITS(tmptranst)
+e.Mandatory		tkdjenis	MANDATORY
+e.MandatoryKTP		tkdnoll		MANDATORY
+e.MandatoryNama		tkdrek		MANDATORY
+
+CALCS()
+/*ctdkKtp		tkdnoll != BLANKS && g_curcmd == 2*/
+cdjoinpsmKons0	djoinpsmKons == 0
+cdjoinpsmKons1	djoinpsmKons == 1
+cdjoinalmPsmKtp1 djoinalmPsmKtp == 1
+cdjoinast620_1	djoinast620 == 1
+cdjoinppmInstansi	djoinppmInstansi == 1
+cdjoinalmPsmAhass_1	djoinalmPsmAhass == 1
+cdjoinconPembawa_1	djoinconPembawa == 1
+cdjoinconAHS_1		djoinconAHS == 1
+cpanjang2	DO_LIB ap_strln(tkdnoll,&lpanjang);
+cpjgktp2	((lpanjang == 15 || lpanjang == 16) && tkdjenis == "PERORANGAN") || tkdjenis != "PERORANGAN"
+cpjgnpwp2	(lpanjang == 15 && (tkdjenis == "INSTANSI" || tkdjenis == "NPWP" || tkdjenis == "EKITAP")) ||
+		(tkdjenis!="INSTANSI" && tkdjenis!="EKITAP")
+cHnyaInstansi	btmguna == "INSTANSI" && btmtypdeb == "INSTANSI"
+
+MAP(mpanjangktp2)
+cpanjang2	lpanjang	DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdnoll	DO_MAP SHOW mpanjangktp2
+
+AFTER_INPUT   	cur_field=tkdnoll       DO_MAP SHOW
+              	IF cpjgktp2 mdumstr
+              	ELSE HKCURSOR STAY
+              	HKMSG t.KtpLimit16Digits
+
+AFTER_INPUT     cur_field=tkdnoll       DO_MAP SHOW
+                IF cpjgnpwp2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.NpwpLimit15Digits
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cpjgktp2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.KtpLimit16Digits
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF cpjgnpwp2 mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.NpwpLimit15Digits
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll	lPSMKTP	btmnobuk
+
+SFL_MAP
+btmnobuk	tkdnobuk	REPLACE
+
+
+MAP(mupdbtmKtp)
+tkdnoll		btmplg		REPLACE
+lpsmins2	btmguna		REPLACE
+
+MAP(maddpsmKons)
+tkdjenis	psmins		REPLACE
+tkdnoll		psmktp		REPLACE
+tkdnoll		psmkode		REPLACE
+tkdrek		psmnama		REPLACE
+lNEW		psmstsbill	REPLACE
+gv_INPG		psmstsplg	REPLACE
+lDTMITRA	psmdatasup	REPLACE
+lKONSUMEN	psmdataplg	REPLACE
+gv_OPEN		psmstssup	REPLACE
+g_tgltrn	psmtgl		REPLACE
+DEBUG   ldumstr ldumstr                 REPLACE
+
+MAP(mmapalmPsmAhass)
+lalmjalanKtp	lalmjalanKtp            REPLACE_IF cdjoinalmPsmKtp1
+lalmpropKtp	lalmpropKtp             REPLACE_IF cdjoinalmPsmKtp1
+lalmnampropKtp	lalmnampropKtp          REPLACE_IF cdjoinalmPsmKtp1
+lalmkecKtp	lalmkecKtp              REPLACE_IF cdjoinalmPsmKtp1
+lalmnamkecKtp	lalmnamkecKtp           REPLACE_IF cdjoinalmPsmKtp1
+lalmkelKtp	lalmkelKtp              REPLACE_IF cdjoinalmPsmKtp1
+lalmnamkelKtp	lalmnamkelKtp           REPLACE_IF cdjoinalmPsmKtp1
+lalmkotaKtp	lalmkotaKtp             REPLACE_IF cdjoinalmPsmKtp1
+lalmnamkotaKtp	lalmnamkotaKtp          REPLACE_IF cdjoinalmPsmKtp1
+lalmrtKtp	lalmrtKtp		REPLACE_IF cdjoinalmPsmKtp1
+lalmrwKtp	lalmrwKtp		REPLACE_IF cdjoinalmPsmKtp1
+lalmkdposKtp	lalmkdposKtp		REPLACE_IF cdjoinalmPsmKtp1
+lpsmins2	lpsmins2		REPLACE_IF cdjoinpsmKons1
+DEBUG   ldumstr ldumstr                 REPLACE
+
+MAP(maddalmPsmAhass)
+btmnobuk	almnobuk	REPLACE
+btmplg		almbukoto	REPLACE
+lPSMAHASS	almdata		REPLACE
+lPSMAHASS	almnama		REPLACE
+lalmjalanKtp	almjalan	REPLACE
+lalmrtKtp	almrt		REPLACE
+lalmrwKtp	almrw		REPLACE
+lalmpropKtp	almprop		REPLACE
+lalmkotaKtp	almkota		REPLACE
+lalmkecKtp	almkec		REPLACE
+lalmkelKtp	almkel		REPLACE
+lalmkdposKtp	almkdpos	REPLACE
+DEBUG   ldumstr ldumstr                 REPLACE
+
+MAP(mupdast620)
+btmplg		astpsmkode	REPLACE
+DEBUG   ldumstr ldumstr                 REPLACE
+
+MAP(mupdalmPsmAhass)
+btmplg		almbukoto	REPLACE
+DEBUG   ldumstr ldumstr                 REPLACE
+
+MAP(mupdconPembawa)
+btmplg		conkode		REPLACE
+
+MAP(mupdconAHS)
+btmplg		conkode		REPLACE
+DEBUG   ldumstr ldumstr                 REPLACE
+
+MAP(mupdppmInstansi)
+btmplg		ppmplg		REPLACE_IF cHnyaInstansi
+DEBUG   ldumstr ldumstr                 REPLACE
+
+
+SPCALCS(spaddtmptransa)
+DO_LIB ap_dbclc(DNAME dmapalmPsmAhass,DCOMMAND MAPMAP,DMAP mmapalmPsmAhass);
+DO_LIB ap_dbclc(DNAME daddbtmKtp,DCOMMAND UPDATE,DTARGET btmotoidx btmoto,DMAP mupdbtmKtp);
+DO_LIB_IF cdjoinpsmKons0 ap_dbclc(DNAME daddpsmKons,DCOMMAND ADD,DFILE psm, DMAP maddpsmKons);
+DO_LIB_IF cdjoinalmPsmKtp1 ap_dbclc(DNAME daddalmpsmAhass,DCOMMAND ADD,DFILE alm, DMAP maddalmPsmAhass);
+DO_LIB_IF cdjoinast620_1 ap_dbclc(DNAME dupdast620,DCOMMAND UPDATE,DTARGET astdatkodidx lasset tkdnobuk gv_bpkb btmkdsam,DMAP mupdast620);
+
+DO_LIB_IF cdjoinalmPsmAhass_1 ap_dbclc(DNAME dupdalmPsmAhass,DCOMMAND UPDATE,DTARGET almdatbukidx lPSMAHASS btmnobuk,DMAP mupdalmPsmAhass);
+DO_LIB_IF cdjoinconPembawa_1 ap_dbclc(DNAME dupdconPembawa,DCOMMAND UPDATE,DTARGET conkodstsidx btmnobuk gv_INPG,DMAP mupdconPembawa);
+
+DO_LIB_IF cdjoinconAHS_1 ap_dbclc(DNAME dupdconAHS,DCOMMAND UPDATE,DTARGET conkodstsidx btmnobuk gv_INPG,DMAP mupdconAHS);
+DO_LIB_IF cdjoinppmInstansi ap_dbclc(DNAME dupdppmInstansi,DCOMMAND UPDATE,DTARGET ppmbukidx btmkdkms,DMAP mupdppmInstansi);
+
+
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtmptransa
+PST_UPDCMD      spaddtmptransa
+

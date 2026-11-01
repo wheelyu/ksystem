@@ -1,0 +1,108 @@
+/******************** Trans Info Request Mekanik  ************************/
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/-Detail Request Mekanik ---------\|
+|| i.NoBuk      : _________________||
+|| i.Typ 	: ________________ ||
+|| t.Nobuk620   : ________________ ||
+|| i.NoPol	: _________________||
+|| t.Mekanik    : ________________ ||
+|| t.Nama	: _________________||
+|| i.Tgl	: _________________||
+||                       _________ ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+aktnobuk 	PROTECT         	INPUTRI 1	/* Nobuk 620	  */
+akttype		NOCHANGE		INPUTRI 2	/* Type Request   */
+aktbrg		ALLCAPS			INPUTRI	3	/* Nobuk 620 Lama */
+aktlok		PROTECT			INPUTRI 4	/* Nopol Lama     */
+aktkode2        ALLCAPS SCROLL  	INPUTRI 5	/* NIP Mekanik	  */
+lnamaMek	PROTECT			INPUTRI 6	/* Nama Mekanik   */
+akttgl          PROTECT {DD-MM-YY}     	INPUTRI 7	/* Tanggal AKT	  */
+lenter          NOCHANGE        	INPUTRI 8
+
+CALCS()
+/*cCmnMekanik	lpsijabatan == "AHASSMEKANIK"*/
+cCmnTambahan	((btmstr2 == "TAMBAHAN" && akttype == "TAMBAHAN") || (btmstr2 != "TAMBAHAN" && akttype != "TAMBAHAN"))
+cTambahan	akttype == "TAMBAHAN"
+cRequest	akttype == "REQUEST"
+cNopolBeda	((akttype == "TAMBAHAN" && #btmkdsam == btmkdsam) || akttype != "TAMBAHAN")
+
+DEFAULTS(tmptranst)
+akttype		DFALT_SCAN_BLANKS	TAMBAHAN  "UE TAMBAHAN"
+					REQUEST   "REQUEST MEKANIK"
+					OPEN_LAGI "OPEN KEMBALI"
+
+EDITS(tmptranst)
+e.MandatoryTyp	akttype		MANDATORY
+e.MandatoryNobuk aktbrg 	MANDATORY_IF cTambahan
+e.MandatoryNopol aktlok		MANDATORY_IF cTambahan
+e.MandatoryNip	aktkode2	MANDATORY
+e.ValidateNobuk	aktbrg		VALIDATE_BUF3 btmbukidx mbtm2 0
+e.validateNip	aktkode2	VALIDATE psistscabkod mpsi2 spsiBKL3 {Pgv_INPG} {Pbtmcab}
+
+MAP(mdumtmp)
+DEBUG	ldumstr	ldumstr		REPLACE
+
+MAP(mbtm2)
+#btmnobuk	aktbrg		REPLACE
+#btmkdsam	aktlok		REPLACE
+#btmsales	aktkode2	REPLACE
+
+MAP(mpsi2)
+psikode		aktkode2	REPLACE
+psinama		lnamaMek	REPLACE
+psijabatan	lpsijabatan	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=aktbrg 	DO_SKIP_IF cRequest
+BEFORE_INPUT	cur_field=aktkode2 	DO_SKIP_IF cTambahan
+
+AFTER_INPUT     cur_field=aktbrg	DO_MAP
+                IF cNopolBeda mdumtmp
+                ELSE HKCURSOR STAY
+                HKMSG t.DataLamaBerbeda
+/*
+AFTER_INPUT	cur_field=aktkode2	DO_MAP
+		IF cCmnMekanik mdumtmp
+		ELSE HKCURSOR STAY
+		HKMSG t.HnyaBlhMekanik
+*/
+AFTER_INPUT     cur_field=akttype      DO_MAP
+                IF cCmnTambahan mdumtmp
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyaBlhTambahan
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP
+                IF cNopolBeda mdumtmp
+                ELSE HKCURSOR STAY
+                HKMSG t.DataLamaBerbeda
+/*
+AFTER_INPUT     cur_keybd=EN		DO_MAP
+                IF cCmnMekanik mdumtmp
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyaBlhMekanik
+*/
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cCmnTambahan mdumtmp
+                ELSE HKCURSOR STAY
+                HKMSG t.HnyaBlhTambahan
+		
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+aktkodtypidx	btmnobuk	lDTREQMEKA
+
+SFL_MAP
+btmnobuk	aktnobuk	REPLACE
+btmnobuk	aktkode		REPLACE
+lDTREQMEKA	aktdata		REPLACE
+g_tgltrn	akttgl		REPLACE
+lSYSTIME	aktcrtjam	REPLACE

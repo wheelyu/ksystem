@@ -1,0 +1,99 @@
+ 	
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------------------\
+|  t.HargaOtr            ____________________                                                                   |
+|t.HargaOtrSystem        _________________.__                                                                   |
+|t.HargaTerendah         _________________.__                                                                   |
+|t.%StdLtvMaxA           ___.__                                                                                 |
+|t.%StdLtvMaxB           ___.__        ___.__                                                                   |
+|t.HargaPasarTerkini   t.SumberInfo                    t.Nmpemilik                    t.NoTelp                  |
+|t.1 ________________  _______________________________ ______________________________ _________________________ |
+|t.2 ________________  _______________________________ ______________________________ _________________________ |
+|t.3 ________________  _______________________________ ______________________________ _________________________ |
+\---------------------------------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk                        PROTECT                         INPUTRI         1
+nhmhrgpasar_3                   PROTECT                         INPUTRI         2
+svidf5                          PROTECT                         INPUTRI         5
+svidf1                          PROTECT                         INPUTRI         3
+svidf7                          PROTECT                         INPUTRI         6
+svidf6                          PROTECT                         INPUTRI         6
+svidf2                          NUMERIC                         INPUTRI         7
+sviket                          ALLCAPS                         INPUTRI         8
+svinama                         ALLCAPS                         INPUTRI         9
+svikode                         ALLCAPS                         INPUTRI         10
+svidf3                          NUMERIC                         INPUTRI         11
+sviket2                         ALLCAPS                         INPUTRI         12
+svistr1                         ALLCAPS                         INPUTRI         13
+svistr2                         ALLCAPS                         INPUTRI         14
+svidf4                          NUMERIC                         INPUTRI         15
+sviket3                         ALLCAPS                         INPUTRI         16
+svistr3                         ALLCAPS                         INPUTRI         17
+svistr4                         ALLCAPS                         INPUTRI         18
+
+DEFAULTS(tmptranst)
+svidata                 INIT    HRGOTR
+svitype                 INIT    HRGOTR
+svinourt                INIT    100
+lHRGOTR			INIT	HRGOTR
+
+
+CALCS()
+csvidf5a                svidf2
+csvidf5b                svidf3
+csvidf5c                svidf4
+
+ckond1                  svidf2 <= svidf3 && svidf2 <= svidf4
+ckond2                  svidf3 <= svidf4 && svidf3 <= svidf2
+ckond3                  svidf4 <= svidf2 && svidf4 <= svidf3
+cltvbaru                ((svidf1 * svidf5)  / (svidf1 * nhmhrgpasar_3)) * svidf1
+ckond4                  svidf1 * nhmhrgpasar_3 !=0 && svidf5 < nhmhrgpasar_3
+
+EDITS(tmptranst)
+e.Mandatory     sviket    MANDATORY
+e.Mandatory     sviket2    MANDATORY
+e.Mandatory     sviket3    MANDATORY
+e.Mandatory     svinama   MANDATORY
+e.Mandatory     svikode   MANDATORY
+e.Mandatory     svistr1   MANDATORY
+e.Mandatory     svistr2   MANDATORY
+e.Mandatory     svistr3   MANDATORY
+e.Mandatory     svistr4   MANDATORY
+e.Validate      svinobuk  VALIDATE btmbukidx mbtm  
+
+MAP(mbtm)
+btmnobuk  svinobuk      REPLACE
+
+MAP(mhitf)
+btmnobuk		svinobuk        REPLACE
+svidf7                  svidf1          REPLACE
+csvidf5a                svidf5          DO_CALC_IF ckond1
+csvidf5b                svidf5          DO_CALC_IF ckond2
+csvidf5c                svidf5          DO_CALC_IF ckond3
+cltvbaru                svidf6          DO_CALC_IF ckond4
+svidf6                  svidf7          REPLACE_IF ckond4
+
+HOOKS(tmptranst)
+AFTER_INPUT    cur_keybd=EN  DO_MAP SHOW mhitf
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp   lHRGOTR btmnobuk lHRGOTR         
+
+SFL_MAP
+lHRGOTR               svidata         REPLACE
+btmnobuk                svinobuk        REPLACE
+lHRGOTR               svikode         REPLACE
+
+CALCS()
+cdel_tmphrgotr          (btmsts == "702" && (g_grpnam == "MO" || g_grpnam == "BM")) || g_usrkode == "1717091" 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND          cdel_tmphrgotr    
+  PMT_UPDALL_COND       cdel_tmphrgotr    
+  PMT_DEL_COND          cdel_tmphrgotr    
+

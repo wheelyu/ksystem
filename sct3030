@@ -1,0 +1,1802 @@
+SCREEN 3030 QUERY_TYPE s.Penjualan
+SCR_FILE ppm 
+SCR_JRNFLD ppmnobuk ppmtglfak
+SCR_LOGFLD ppmnobuk 
+SCR_NXT_POSTING_IF cjoinppd1_piu 4502 cjoinppd1_sjl 4505 
+SCR_NXT_MAP mnext
+
+CALCS()
+cppm		"ppm"
+
+MAP(mnext)
+ppmnobuk    	r_string1    	REPLACE
+cppm  		r_string4 	DO_CALC
+ppmscr		r_string5 	REPLACE
+
+LOCAL
+PGM_FIELDS
+ltomDISCd 	STRING		30
+l4507           INT2            2
+lm4507          STRING          15
+l4536           INT2            2
+l4537           INT2            2
+lm4536          STRING          15
+lnamtrnjml      STRING          21
+ljmltrm       	DFLOAT 		8
+lmtdtmp2      	DFLOAT 		8
+ltldtmp2      	DFLOAT 		8
+lnamidx		STRING		30
+lbrctype	STRING		21
+ltarget		STRING		65
+lnamfieldren	STRING		30
+lnamfieldjml	STRING		30
+lnamfieldpos	STRING		30
+lnamfile    	STRING		30
+lnammap     	STRING		30
+lBU         	STRING		21
+lmtdhrg      	DFLOAT 		8
+lmtddk		STRING		2
+lmtdlok		STRING		21
+ltldhrg      	DFLOAT 		8
+ltlddk		STRING		2
+ltldlok		STRING		21
+ladbtf_1	INT2  		2
+lcablok      	STRING		21
+
+lmapbtf         STRING          30   
+lcabkdfak       STRING          5   
+lkodebukti	STRING		21
+ldipenuhi     	DFLOAT          8
+ltothpp       	DFLOAT          8
+lhrgrata        DFLOAT          8  /* Untuk Kondisi hookS lihat */
+lkettotal       STRING          16  
+ljmlbrdsat      DFLOAT          8
+ljmlbrdsatA     DFLOAT          8
+
+lpil            INT2         	2
+ldumstr         INT2         	2
+lurut           INT2   		2
+ltomdet_d    	STRING		30
+ltomdet_2d    	STRING		30
+ltomdet_3d    	STRING		30
+ltomdet_4d    	STRING		30
+lmsttomTERM  	STRING		30
+lmsttomLAIN	STRING		30
+lurutbim	INT2		2
+lbrchrgjl  	DFLOAT		8
+lbrchrgjl2  	DFLOAT		8
+lnammap_aftbtf	STRING		30
+lppdperdis  	DFLOAT		8
+lperdis1    	DFLOAT		8
+lperdis2    	DFLOAT		8
+lperdis3    	DFLOAT		8
+lperdis4    	DFLOAT		8
+lperdis5    	DFLOAT		8
+lperdis6    	DFLOAT		8
+lperdis7    	DFLOAT		8
+
+/****************Field utk Approval****************/
+lnamafldsts       STRING		13
+lnamafldfak       STRING		13
+lnamaidxfak       STRING		13
+lnamakode         STRING		13
+lfldtotal         STRING		13
+
+/*---------------djoinbimu--------------*/
+MAP(mjoinbimu)
+bimnourt     	lurutbim  REPLACE
+
+DBCALCS(djoinbimu)
+DBC_COMMAND	JOIN_LAST_SFL
+DBC_TARGET      bimbukurtidx   ppmnobuk
+DBC_MAP         mjoinbimu
+
+/*--------------djoinbimDISC--------------*/
+DBCALCS(djoinbimDISC)
+DBC_COMMAND	JOIN
+DBC_TARGET 	bimbukotoidx   ppmnobuk 
+
+DBCALCS(dbscanppm)
+   	DBC_COMMAND     SCANSCAN
+	DBC_SCAN	sppm
+   	DBC_TARGET      ppmplgstsbuk   ppmplg gv_INPG
+
+/*---------------djoinbrc1--------------*/
+MAP(mjoinbrc)
+brchrgjl	lbrchrgjl	REPLACE
+brchrgjl2	lbrchrgjl2	REPLACE
+
+DBCALCS(djoinbrcU1)  /*Cabang saja*/
+DBC_COMMAND	JOIN
+DBC_TARGET	brcdttypidx   gv_dtbarang ppdbrg ppmcab 
+DBC_MAP 	mjoinbrc
+
+DBCALCS(djoinbrcU2)  /*Cabang Dan Suplier*/
+DBC_COMMAND	JOIN
+DBC_TARGET	brcdttypidx   gv_dtbarang ppdbrg ppmcab gv_dtbarang21 ppmplg
+DBC_MAP 	mjoinbrc
+
+DBCALCS(djoinppd)
+DBC_COMMAND	JOIN
+DBC_TARGET 	ppdbukurtidx    	ppmnobuk 
+
+DBCALCS(djointcm)
+DBC_COMMAND	JOIN
+DBC_TARGET 	tcmbukurtidx            ppmnobuk 
+
+DBCALCS(djoinhrt)
+DBC_COMMAND	JOIN
+DBC_TARGET 	hrtbrgcabidx   		ppdbrg 
+
+/*---------------djoinppdu--------------*/
+MAP(mjoinppdu)
+ppdnourt2     	lurut  		REPLACE
+
+DBCALCS(djoinppdu)
+DBC_COMMAND	JOIN_LAST_SFL
+DBC_TARGET      ppdbukurtidx   ppmnobuk
+DBC_MAP         mjoinppdu
+
+/*--------------djoinubr--------------*/
+DBCALCS(djoinubr)
+DBC_COMMAND	JOIN
+DBC_TARGET 	ubrbrgdatkod   ppdbrg gv_dtukrwrn 
+
+MAP(mjoinbimD)
+bimjml       	lppdperdis	REPLACE
+bimperdis1   	lperdis1	REPLACE 
+bimperdis2   	lperdis2	REPLACE 
+bimperdis3   	lperdis3	REPLACE 
+bimperdis4   	lperdis4	REPLACE 
+bimperdis5   	lperdis5	REPLACE 
+bimperdis6   	lperdis6	REPLACE 
+bimperdis7   	lperdis7	REPLACE 
+
+DBCALCS(djoinbimDISC_D)  /*Disc yg Detil*/
+DBC_COMMAND	JOIN
+DBC_TARGET	bimbuksts2id   ppmnobuk gv_DISCD
+DBC_MAP 	mjoinbimD
+
+CALCS()
+ctype4T		ppmtk == "T" 
+cppmtothrga     ppmtothrg + ppdtotfak
+cppmtothrgu     ppmtothrg - ~ppdtotfak 
+cppmtothrgd     ppmtothrg - ppdtotfak
+cppmtothrgRO    ppmtothrg + (ljmltrm * lmtdhrg) 
+cppmtothrgBK    ppmtothrg + (ljmltrm * ltldhrg) 
+ctgljtp         ppmtglfak + ppmsyr
+
+cjoinppd1_piu	ppmdata == gv_dtpiu && ppmsts == "OPEN" && djoinppd == 1 && CHKTG(ppmtglfak) == 1 && (stsjualrugi =="Y" || ppmtothrg > ppmhpp) && ((ppmtk == "T" && ppmtotbyr != 0.0 && ppmtotbyr - ppmtotfak == 0.0) || (ppmtk == "U" && ppmtotbyr != 0.0) || ppmtk != "T" )
+cjoinppd1_sjl	ppmdata == gv_dtsjl && ppmsts == "OPEN" && djoinppd == 1 && CHKTG(ppmtglfak) == 1 && (stsjualrugi =="Y" || ppmtothrg > ppmhpp) && ppmnobrgsjl != BLANKS && ((ppmtk == "T" && ppmtotbyr != 0.0 && ppmtotbyr - ppmtotfak == 0.0) || (ppmtk == "U" && ppmtotbyr != 0.0) || ppmtk != "T" )
+cupd		g_curcmd == 2
+
+MAP(m4507)
+ppmscr          r_string10 	REPLACE
+ppmnobuk	r_string11	REPLACE
+ppmplg		r_string12	REPLACE
+ppmdata     	r_string13	REPLACE
+cabkdfak    	r_string14	REPLACE
+ppmtglfak      	r_date1    	REPLACE
+
+MAP(m4536)
+ppmnobuk	r_string15	REPLACE
+ppmdata     	r_string16	REPLACE
+ppdoto		r_string17	REPLACE
+ppdbrg		r_string18	REPLACE
+
+/*--------------djoinditDis--------------*/
+DBCALCS(djoinditDis)
+DBC_COMMAND	JOIN
+DBC_TARGET 	ditdatkodidx   gv_displg ppmplg 
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+|/------------------\/-------------------------------------\/--------------------\/---------------\|
+||i.LokJl:_________ ||i.NoBuk: _______________             ||i.Tgl    :__________||i.TypB :____   ||
+||i.Cab  :_________ ||i.Pil  : _______________             ||i.Sales  :__________||i.YtPpn:___    ||
+||i.Dvs  :_________ ||i.Plg  : __________________________  ||i.Sts    :_________ ||i.%Ppn :___    ||
+||i.Bis  :_________ ||i.Nama : __________________________  ||i.KdApr  :_________ ||i.Npwp :_______||
+||spasi             ||i.Alm  : __________________________  ||          _________ ||spasi          ||
+|\------------------/\-------------------------------------/\--------------------/\---------------/|
+|  spasi                                                                                           |
+|  __________ _______________ ____________ _____________ ____________ ________  __ __ ______ ____  |
+|  spasi                                                                                           |
+|/------------------------------------------------------------------------------------------------\|
+||  _________________ __________________________________________________________________________  ||
+||                                                                                                ||
+||                                                                                                ||
+|\------------------------------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(master)
+   ppmgrup          ALLCAPS 	    	    INPUTRI   	    1 
+     ppmnobuk         ALLCAPS                 INPUTRI          6 /* No. Faktur */
+        ppmtglfak       NONE {DD-MM-YY}        INPUTRI   	  11 /* Tgl Faktur */
+          ppmtk      	  NOCHANGE 		    INPUTRI   	       60 /* Tunai OR Ptg */
+
+   ppmcab           PROTECT 	    	    INPUTRI   	    2 
+     ppmsup           NOCHANGE                INPUTRI          7 /* Pilihan */
+        ppmsales        ALLCAPS SCROLL          INPUTRI   	  12 /* Sales */
+          ppmytppn        NOCHANGE  		  INPUTRI              61 
+
+   ppmdvs        ALLCAPS 	    	    INPUTRI   	    3 /* Divisi */
+     ppmplg         ALLCAPS SCROLL            INPUTRI          8 /* pelanggan */
+        ppmsts          PROTECT SCROLL          INPUTRI             14 /* Status */
+          ppmperppn       NUMERIC  		  INPUTRI             62 
+
+   ppmbisnis       PROTECT                  INPUTRI         4   /* Bisnis */
+     ppmnama         ALLCAPS SCROLL           INPUTRI          9  /* nama plg */
+       ppmkodeapr       PROTECT SCROLL          INPUTRI          15  /* Kode Approval */
+          ppmnpwp         ALLCAPS                 NONE                63 /* NPWP   */
+   
+     ppmket           ALLCAPS                 NONE             10  /* Alamat */
+       ppmstsapr        PROTECT                 INPUTRI          16 /* Status Approval */
+
+   ltomdet_d  	  TOMBOL	      	    INPUTRI	66 /* Tombol Detil d*/
+   ltomdet_2d  	  TOMBOL	    	    INPUTRI	67 
+   ltomdet_3d  	  TOMBOL	    	    INPUTRI	68 
+   ltomdet_4d  	  TOMBOL	    	    INPUTRI	69 
+
+   lmsttomTERM    TOMBOL		    INPUTRI     70
+   lmsttomLAIN 	  TOMBOL		    INPUTRI     71
+   ppmscr         PROTECT UNSEEN QPROTECT   INPUTRI   	72 /* Dolar yg Diterima*/
+   ppmfr          PROTECT UNSEEN QPROTECT   NONE      	73 /* Type F */
+   ppmnopjk 	  PROTECT SCROLL  ALLCAPS   INPUTRI   	74 /* No.Pajak */
+   ppmdata         PROTECT QPROTECT UNSEEN SCROLL  NONE  75 
+
+   lkettotal      PROTECT                   BIG       	75 /* Disc 1 Rupiah */
+   ppmtotfak      PROTECT                   BIG       	76 /* Netto */
+
+CALCS()
+cgsglbisdvs1	g_sglbisdvs == 1 && g_sglcab == 1
+cgsglcabbisdvs1	g_sglcabbisdvs == 1 
+cgsglcab1	g_sglcab == 1 
+cOnY		stssetcabon == "Y" 
+cOnT		stssetcabon != "Y"
+cstsSJL 	stsfaksjl == "SJL"
+cstsFAK 	stsfaksjl == "FAK"
+cstsRO		stsbkro == "RO" || stsbkro == BLANKS
+cstsBK		stsbkro == "BK"
+cppmRO		ppmndk == "RO"
+cppmBK		ppmndk == "BK"
+cthbl		THBLS(ppmtglfak)
+
+DEFAULTS(master)
+ppmsts     	INIT         	OPEN 
+lnamafldsts	INIT		"ppmstsapr"
+lnamafldfak	INIT		"ppmnobuk"
+lnamaidxfak	INIT		"ppmbukidx"
+lnamakode  	INIT		"ppmkodeapr"
+lfldtotal  	INIT		"ltotalrugi"
+
+ltomdet_d    	INIT   		"1d.Isi Barang"
+IF cstsRO ltomdet_2d  INIT   	"2d.Pilih Brg RO"
+IF cstsBK ltomdet_2d  INIT   	"2d.Pilih Brg Booking"
+ltomdet_3d    	INIT   		"3d.Isi Kas/Bank"
+ltomdet_4d    	INIT   		"4d.HC-Biaya Lain"
+lmsttomTERM   	INIT   		"5.Syarat Piu "
+lmsttomLAIN 	INIT		"6.Info Lain "
+l4507		INIT		4507
+lm4507		INIT		m4507
+l4537		INIT		4537
+l4536		INIT		4536
+lm4536		INIT		m4536
+lkettotal     	INIT         	NETTO 
+ladbtf_1	INIT		1
+
+IF cgsglbisdvs1  ppmdvs  	INIT  	{g_grpbisdvs}
+IF cgsglcab1  ppmgrup  	INIT  	{g_grpcab}
+IF cgsglcab1  ppmcab   	INIT  	{g_grpcab}
+IF cstsFAK ppmdata	INIT	{gv_dtpiu}
+IF cstsSJL ppmdata	INIT	{gv_dtsjl}
+ppmscr       	INIT            {g_scrnumstr}
+ppmscr       	INIT_QUERY      {g_scrnumstr}
+ppmndk		INIT		{stsbkro}
+ppmmua	   	INIT		{stsmua}
+ppmsyr	   	INIT		30
+ppmkurs    	INIT         	1
+ppmtglfak  	INIT         	{g_tgltrn}
+ppmfr    	INIT_QUERY   	F
+ppmfr    	INIT_ADD     	F
+ppmthbl		INIT		{cthbl}
+IF cOnT ppmtk   DFALT_SCAN_BLANKS	T  "Jual Tunai"
+			       		PR "Promosi "
+
+IF cOnY ppmtk   DFALT_SCAN_BLANKS    	T  "Jual Tunai"
+					PR "Promosi"
+ppmytppn	DFALT_LIST		Y T
+ppmsup		DFALT_SCAN_BLANKS	HGA "Honda Genuine Accesories"
+
+CALCS()
+cBLANKS     	BLANKS
+ctotfak2    	ppmtothrg - ppmtotdis2
+ctotfak1        ppmtotaftdis + ppmtotppn
+cppmsisa  	ppmtotfak - ppmtotbyr
+c0		0
+ctotppn     	(ppmtotaftdis * ppmperppn) / 100
+
+MAP(mperppn)
+ctotfak2   	ppmtotaftdis   	DO_CALC
+ctotppn	        ppmtotppn     	DO_CALC 
+ctotfak1	ppmtotfak     	DO_CALC
+cppmsisa        ppmsisa       	DO_CALC  
+
+CALCS()
+/*cytsalesY	stsytsales == "Y"*/
+csalesT_PSN1	stsytsales == "T" || ppmnoll != BLANKS
+cRO		stsbkro == "RO" 
+cBK_1  		stsytsjl == "1" && stsbkro != BLANKS
+cBK_2  		stsytsjl == "2" && stsbkro != BLANKS
+cBKplg_isi	stsbkro == "BK" && ppmplg != BLANKS
+cBKplg_ksg	stsbkro == "BK" && ppmplg == BLANKS
+cbknRP		ppmmua != stsmua  && ppmmua != " " 
+cdet0		djoinppdu == 0
+cppmBT		ppmndk == "BT"
+cppnT           ppmytppn =="T"
+cppnY           ppmytppn =="Y"
+
+EDITS(master)
+/*
+Jumlah master tidak sama detil1 ppmtothrg CHECKSFL_IF cstsOPEN SFLNAME=trans SFLFIELD=ppdtotfak dupdppmadd
+cstsOPEN	ppmsts == "OPEN"
+*/
+Tombol TERM lmsttomTERM SHOW_IMAGE imsttomTERM
+Tombol TERM lmsttomLAIN SHOW_IMAGE imsttomLAIN
+e.MandatoryType ppmtk MANDATORY
+e.MandatoryBuk ppmnobuk MANDATORY 
+e.MandatoryPlg ppmplg MANDATORY
+e.MandatoryDvs ppmdvs MANDATORY
+e.MandatoryLokJl diisi ppmgrup MANDATORY
+e.MandatoryCab diisi ppmcab MANDATORY
+e.DupkeyPpm ppmnobuk DUPKEY ppmbukidx
+e.DupkeyPmb ppmnobuk DUPKEY pmbbukidx
+e.DupkeyMts ppmnobuk DUPKEY mtsbukidx
+e.MandatoryTgl ppmtglfak MANDATORY
+e.MandatoryNpwp ppmnpwp MANDATORY_IF cppnY
+t.ValidatePlg ppmplg VALIDATE psmplgstsktp mpsmplg 0 {Pgv_dtkonsumen} {Pgv_INPG}
+/*e.MandatorySales ppmsales MANDATORY_IF cytsalesY*/
+/*e.ValidatePsi ppmsales VALIDATE psistsdepkod mpsiSL spsi {Pgv_INPG} {Pgv_SALES} */
+e.ValidateLokJl ppmgrup VALIDATE cabstskodidx mcabLok scab {Pgv_INPG}
+e.ValidateCab ppmcab VALIDATE cabstskodidx mcab scab {Pgv_INPG}
+e.ValidateDvs ppmdvs VALIDATE cadcabdtidx mcadDV scad {Pppmcab} {Pgv_cabbis} {Pppmcab}
+e.ValidateDvs ppmdvs VALIDATE dtmkodidx mdtmDV 0
+e.ValidateNpwp ppmnpwp VALIDATE_DUP almdatotobuk malmNP salm {Pgv_NPWP} {Pppmplg}
+
+MAP(malmNP)
+almnobuk	ppmnpwp		REPLACE
+/*
+MAP(mpsiSL)
+psikode       	ppmsales       REPLACE
+*/
+CALCS()
+cbisdvs_nopiut	DO_LIB ap_amdvs(gv_dtdivisi21,gv_piudag,ppmnobbm); 
+cbisdvs_nosjl	DO_LIB ap_amdvs(gv_dtdivisi21,gv_brgsjl,ppmnobbm); 
+crekhutbrg      DO_LIB ap_amdvs(gv_dtdivisi21,gv_hutbrg,ppdnobbm);
+cbisdvs_piu	ppmdvs != BLANKS && ppmdata == gv_dtpiu
+cbisdvs_sjl	ppmdvs != BLANKS && ppmdata == gv_dtsjl
+cbknPRG		lBU != "PRG "
+cJS		ppdjasbrg == "JE" || ppdjasbrg == "JI"
+cJE		ppdjasbrg == "JE" 
+cJI		ppdjasbrg == "JI" 
+ctypeSCAB	cabpos == "SCAB"
+ctypeCAB	cabpos != "SCAB"
+
+MAP(mcadDV)
+cadkode		ppmdvs		REPLACE
+cbisdvs_nopiut  ppmnobbm   	DO_CALC_IF cbisdvs_piu
+cbisdvs_nosjl   ppmnobbm   	DO_CALC_IF cbisdvs_sjl
+
+MAP(mdtmDV)
+dtmcab		ppmbisnis	REPLACE 
+dtmtypejl	ppmgrup2	REPLACE  /* Tampilan Jual */
+/*
+MAP(mcmpPLG)
+cmpkode      	ppmplg       	REPLACE
+cmpnama      	ppmnama      	REPLACE_IF cbknPRG
+cmpytppn2	ppmytppn	REPLACE
+cmpperppn2	ppmperppn	REPLACE
+cmpytdis	cmpytdis	REPLACE
+cmpbu		lBU   		REPLACE
+*/
+
+MAP(mpsmplg)
+psmktp		ppmplg		REPLACE
+psmnama		ppmnama		REPLACE
+
+MAP(mcmpHL)
+cmpkode      	ppdlok       	REPLACE
+cmpbbmhl  	ppdnobbm  	REPLACE_IF cJE
+
+MAP(mcabLok)
+cabkode		ppmgrup		REPLACE
+cabpst2		ppmcab		REPLACE_IF ctypeSCAB
+cabkode  	ppmcab		REPLACE_IF ctypeCAB
+cabpst 		ppmpst		REPLACE
+
+MAP(mcab)
+cabkode        	ppmcab	 	REPLACE   
+cabpst 		ppmpst		REPLACE
+cabkdfak	cabkdfak	REPLACE
+cabkdfak	lcabkdfak	REPLACE
+g_cabbisdvs	ppmdvs		REPLACE_IF cgsglcabbisdvs1
+
+HELP(master)
+Tekan Spasi untuk memilih Type Penjualan [P]Piutang / [T]unai ppmtk
+Isi Kode Salesman jika ada salesman, atau tekan "?" untuk melihat daftar ppmsales
+
+CALCS()
+cotY       	stsotobukti == "Y"
+cotYdet1       	stsotobukti == "Y" || djoinppd == 1
+cnomer     	STRIP(lkodebukti) + THBLS(ppmtglfak) + STRIP(lcabkdfak) +  "-"
+cjointcm1  	ppmtk == ~ppmtk || ppmtk == "K" || djointcm == 0
+csatu          	1
+csettglmmT      stssettglmm == "T"
+cadd_otY	stsotobukti == "Y" && g_curcmd == 1 
+cadd    	g_curcmd == 1
+cadd_otYbisdvs1	stsotobukti == "Y" && g_curcmd == 1 && ppmdvs != BLANKS
+cbisdvs1	ppmdvs != BLANKS && ppmcab != BLANKS && ppmdvs != BLANKS
+ckodebukti	DO_LIB ap_amdvs(ppmdvs,ppmscr,lkodebukti); 
+cdtsjlJS        ppmdata == gv_dtsjl || ppdjasbrg == "JE" || ppdjasbrg == "JI"
+
+MAP(mnomer)
+ckodebukti	lkodebukti	DO_CALC_IF cadd_otYbisdvs1
+cnomer          ppmnobuk 	DO_CALC_IF cadd_otY      
+c0           	ppmperppn    	DO_CALC_IF cppnT
+
+CALCS()
+cjoinppd1	ppmsts == "OPEN" && djoinppd == 1 && CHKTG(ppmtglfak) == 1 && ppmtothrg > ppmhpp
+cupd16T		g_curcmd == 2 && stssettglmm == "T" && ppmsts == "OPEN"
+cPL_cabbeda	ppmtk != "C" || ppmplg != ppmcab
+
+MAP(msyr0)
+c0		ppmsyr			DO_CALC
+
+MAP(mupdtgl)
+g_tgltrn	ppmtglfak		REPLACE_IF cupd16T
+
+MAP(mtgljtp)
+ctgljtp          ppmtgljtp        	DO_CALC
+ppmtglfak        ppmtglbyrsbl     	REPLACE
+  
+MAP(mdumstr)
+ldumstr         ldumstr      	REPLACE
+
+CALCS()
+cdvsFIN    	ppmgrup2 == "FIN" 
+cdvsPSNMUA    	ppmgrup2 == "PSNMUA" 
+ctipepromo	ppmtk == "PR"
+cbukanpromo	ppmtk != "PR"
+ctidak		"T"
+cisi0		0
+
+MAP(mfillppn)
+ctidak		ppmytppn	DO_CALC_IF ctipepromo
+cisi0		ppmperppn	DO_CALC_IF ctipepromo
+
+HOOKS(master)
+BEFORE_INPUT   cur_field=ppmplg         DO_MAP SHOW mupdtgl
+BEFORE_INPUT   cur_field=ppmsales       DO_SKIP_IF csalesT_PSN1  
+BEFORE_INPUT   cur_field=ppmgrup   	DO_SKIP_IF cgsglcab1  
+BEFORE_INPUT   cur_field=ppmdvs   	DO_SKIP_IF cgsglcabbisdvs1  
+BEFORE_INPUT   cur_field=ppmdvs      	DO_SKIP_IF cjoinppd1
+BEFORE_INPUT   cur_field=ppmtglfak      DO_SKIP_IF csettglmmT
+BEFORE_INPUT   cur_field=ppmplg         DO_SKIP_IF cjoinppd1
+BEFORE_INPUT   cur_field=ppmplg         DO_SKIP_IF cupd /*Krn ada pengesetan yg berhub dgn 4d*/ 
+BEFORE_INPUT   cur_field=ppmnobuk       DO_SKIP_IF cotYdet1  
+BEFORE_INPUT   cur_field=ppmnama        DO_SKIP_IF cbknPRG
+BEFORE_INPUT   cur_field=ppmytppn       DO_SKIP_IF ctipepromo
+BEFORE_INPUT   cur_field=ppmperppn      DO_SKIP_IF ctipepromo
+BEFORE_INPUT   cur_field=ppmnpwp	DO_SKIP_IF ctipepromo
+
+AFTER_INPUT    cur_field=ppmplg         DO_IMAGE_IF cdvsFIN img_FIN
+AFTER_INPUT    cur_field=ppmdvs         DO_IMAGE_IF cdvsPSNMUA img_PSNMUA    
+AFTER_INPUT    cur_field=ppmtglfak      DO_MAP SHOW IF cbisdvs1 mnomer
+AFTER_INPUT    cur_field=ppmplg         DO_MAP SHOW IF cbisdvs1 mnomer
+AFTER_INPUT    cur_field=ppmgrup         DO_MAP SHOW IF cbisdvs1 mnomer
+AFTER_INPUT    cur_field=ppmtk          DO_MAP SHOW IF cbisdvs1 mnomer
+AFTER_INPUT    cur_field=ppmdvs         DO_MAP SHOW mnomer
+AFTER_INPUT    cur_field=ppmsales       DO_SCAN F2 dbscanppm
+AFTER_INPUT    cur_field=ppmtglfak  DO_MAP SHOW mtgljtp
+AFTER_INPUT    cur_field=ppmtk   DO_MAP SHOW IF ctype4T msyr0
+AFTER_INPUT    cur_field=ppmtk   DO_MAP SHOW mfillppn
+AFTER_INPUT    cur_field=ppmtk   DO_MAP SHOW
+                   IF cjointcm1 mdumstr
+                   ELSE  HKCURSOR STAY   
+                         HKMSG Detil Kas/Bank harap dihapus dulu !!!
+AFTER_INPUT	cur_field=ppmplg  	DO_MAP SHOW 
+                IF cPL_cabbeda mdumstr
+                ELSE HKCURSOR STAY
+                     HKMSG Khusus Penjualan ke Cabang, Cabang Beli hrs beda dgn Cabang
+AFTER_INPUT	cur_field=ppmgrup  	DO_MAP SHOW 
+                IF cPL_cabbeda mdumstr
+                ELSE HKCURSOR STAY
+                     HKMSG Khusus Penjualan ke Cabang, Cabang Beli hrs beda dgn Cabang
+
+AFTER_INPUT   cur_keybd=EN  	    DO_MAP SHOW mperppn
+AFTER_INPUT   cur_keybd=EN  	    DO_MAP SHOW mnomer
+AFTER_INPUT   cur_keybd=EN  	    DO_MAP SHOW mtgljtp
+
+CALCS()
+cBI      	ppdjasbrg == "BI"
+cBI_CB      	ppdjasbrg == "BI" || ppdjasbrg == "CB"
+cBRBI_tdkB   	(ppdjasbrg == "BR" || ppdjasbrg == "BI") && ppdkb != "B" 
+
+cBR		ppdjasbrg == "BR" || ppdjasbrg == "BI" 
+cl_BR		~ppdjasbrg == "BR" || ~ppdjasbrg == "BI" 
+cBRB2		(ppdjasbrg == "BR" || ppdjasbrg == "BI") && ppdkb == "B" 
+cBRB2l		(~ppdjasbrg == "BR" || ~ppdjasbrg == "BI") && ~ppdkb == "B" 
+cl_JS		~ppdjasbrg == "JE" || ~ppdjasbrg == "JI"
+ctypeB          ppdkb == "B" 
+ctypeB_BK  	ppdkb == "B" || ppmndk == "BK"  
+ctypeB_BK_JS  	ppdkb == "B" || ppmndk == "BK" || ppdjasbrg == "JE" || ppdjasbrg == "JI"
+csdakh0		ppdlok == BLANKS
+csdakh1		ppdlok != BLANKS || ppdjasbrg == "JE" || ppdjasbrg == "JI"
+
+IMAGE(img_FIN)
+/--------------------------------------\
+|/------------------------------------\|
+|| i.Finco    : ___________________   ||
+|| i.Um       : ________________.__   ||
+|| i.Lama     : ________________.__   ||
+|| i.Angs     : ________________.__   ||
+|\------------------------------------/|
+\--------------------------------------/
+
+FIELD(img_FIN)
+  ppmfinco       ALLCAPS SCROLL          INPUTRI   	    12 /* Sales */
+  ppmsisumprc    NUMERIC                 INPUTRI   	    13 /* Sales */
+  ppmlamabln     NUMERIC                 INPUTRI   	    14 /* Sales */
+  ppmangbln      NUMERIC                 INPUTRI   	    15 /* Sales */
+
+EDITS(img_FIN)
+e.ValidateCmp ppmfinco VALIDATE cmpdtbuplidx mcmpFIN scmpFIN {Pgv_DTPL} {Pgv_finco}
+
+MAP(mcmpFIN)
+cmpkode		ppmfinco	REPLACE
+
+IMAGE(img_PSNMUA)
+/--------------------------------\
+|/------------------------------\|
+||i.NoPsn : ________________    ||
+||i.Mua   : __________          ||
+||i.Kurs  : ________.__         ||
+||i.Ttl$  : ________________.__ ||
+|\------------------------------/|
+\--------------------------------/
+
+FIELD(img_PSNMUA)
+  ppmnoll          ALLCAPS                INPUTRI   	    10   /* No Pesanan */
+  ppmmua           ALLCAPS                NONE       45 
+  ppmkurs          PROTECT                NONE      	     46 
+  ppmtotas         PROTECT                INPUTRI                  32 /* Total AS */
+
+EDITS(img_PSNMUA)
+e.MandatoryBook ppmnoll MANDATORY_IF cBK_1
+e.Mandatory ppmmua  MANDATORY
+e.ValidatetlmBk ppmnoll VALIDATE_IF cBKplg_isi tlmstsplgbuk mtlmM stlm  {Pgv_INPG} {Pgv_booking} {Pppmplg}
+e.ValidatetlmBk2 ppmnoll VALIDATE_IF cBKplg_ksg tlmdatstsbuk mtlmM stlm2  {Pgv_booking} {Pgv_INPG}
+e.ValidatemtdRo2 ppmnoll VALIDATE_IF cRO mtsstsplgbuk mmtsM smtsSLM  {Pgv_INPG} {Pgv_DTRO} {Pppmplg}
+e.ValidateMua ppmmua VALIDATE_IF cbknRP dtmdtkodidx mdtmVL sdtm {Pgv_dtvaluta}
+
+MAP(mdtmVL)
+dtmkode         ppmmua     	REPLACE
+dtmbsrkurs      ppmkurs     	REPLACE_IF cdet0
+
+MAP(mmtsM)
+mtsnobuk	ppmnoll		REPLACE
+mtsuntuk	ppmsales	REPLACE
+mtsplg  	ppmplg		REPLACE
+
+MAP(mtlmM)
+tlmnobuk	ppmnoll		REPLACE
+tlmuntuk	ppmsales	REPLACE
+tlmplg		ppmplg		REPLACE
+
+HOOKS(img_PSNMUA)
+BEFORE_INPUT   cur_field=ppmnoll        DO_SKIP_IF cBK_2  
+
+IMAGE(imsttomTERM)
+/--------------------------------\
+| /--------i.LmTerm------------\ |
+| | i.Tgl         : __________ | |
+| | i.Lama        : ____       | |
+| | i.TglJtp      : __________ | |
+| \----------------------------/ |
+\--------------------------------/
+
+FIELD(imsttomTERM)
+ppmtglfak    PROTECT {DD-MM-YY} 	INPUTRI   21 
+ppmsyr       NUMERIC 			INPUTRI    22 
+ppmtgljtp    NONE NOLIMIT {DD-MM-YY} 	INPUTRI   23 
+
+HOOKS(imsttomTERM)
+AFTER_INPUT    cur_field=ppmsyr     DO_MAP SHOW mtgljtp
+
+IMAGE(imsttomLAIN)
+/---------------------------------------------------------\
+|/-------------------------------------------------------\|
+||i.Total   : _______________     i.Disc: ______________ ||
+||i.PPN     : _______________     i.HC  : ______________ ||
+||i.DiscRO  : _______________     i.HcRo: ______________ ||
+|\-------------------------------------------------------/|
+| spasi                                                   |
+|/-------------------------------------------------------\|
+||i.DiskM   : ___.__ %                                   ||
+||i.DiskD   : ___.__ %                                   ||
+|\-------------------------------------------------------/|
+| spasi                                                   |
+|/----------------------------t--------------------------\|
+||i.Sisa    : _______________ | i.Cek   : _______________||
+||i.SisPrc  : _______________ |                          ||
+||i.Ttl$    : ____________.__ | i.Net$  : ____________.__||
+|\----------------------------.--------------------------/|
+\---------------------------------------------------------/
+
+FIELD(imsttomLAIN)
+   ppmtothrg      NOCHANGE                  NONE      	21 
+   ppmtotdis      NOCHANGE                  NONE      	22 
+   ppmtotppn      NOCHANGE                  NONE      	23 
+   ppmtothutll    NOCHANGE                  NONE      	24 
+   ppmtotdis2       PROTECT             INPUTRI         25 /* Disc 1 Rupiah */
+   ppmtothut2       PROTECT             INPUTRI   	26 /* HC 2*/
+
+   ppmperdis      NOCHANGE                  NONE      	28 
+   ppmperdisd     NOCHANGE                  NONE      	31 
+
+   ppmsisa        NOCHANGE                  NONE      	32 
+   ppmcek         PROTECT                   NONE      	33
+
+   ppmsisprc      NOCHANGE                  NONE      	34 
+
+   ppmtotas       PROTECT                   INPUTRI   	35 
+   ppmsisas       PROTECT                   INPUTRI   	36 
+
+
+/*****************************************DETIL1**********************************/
+IMAGE(transt) 
+/--------------------------------------------------------------------------------------------------\
+|i.Brg : ___________________________  i.Sjl:__________________                   ___________       |
+|--t---------t---t----t----------------t---t----t-----t---t-------t-----------t-----t--------------|
+|No|i.NoPsn  |B/J|Kat |i.Brg           |Kb |Lok |i.Ukr|Sat|i.Jml  | i.Hrg     |%Dis | i.Sub        |
+\--.---------.---.----.----------------.---.----.-----.---.-------.-----------.-----.--------------/
+
+FIELD(transt)
+   brgnama    PROTECT           INPUTRI            2 
+   ppdnobuk2  PROTECT           INPUTRI            3 
+   ltomDISCd  TOMBOL		INPUTRI     	   5
+
+DEFAULTS(transt)
+ltomDISCd	INIT	a.Disc
+
+EDITS(transt)
+i.Tombol ltomDISCd SHOW_IMAGE itomDISCd   
+
+IMAGE(trans) 
+|__|_________|___|____|________________|__ |____|_____|___|_______|___________|__.__|______________|
+												   
+    
+FIELD(trans)
+   ppdnourt2     NOCHANGE	        INPUTRI     1 
+   ppdnobuk2     ALLCAPS SCROLL        	INPUTRI     3  
+   ppdjasbrg     NOCHANGE 	        INPUTRI     4 /* Jasa / barang */
+
+   ppdkat        PROTECT SCROLL 	INPUTRI     5  
+   ppdbrg        ALLCAPS SCROLL 	INPUTRI     6  /* kode barang */
+   ppdkb         NOCHANGE 	  	INPUTRI     8  /* Kirim/Belum */
+   ppdlok        ALLCAPS SCROLL 	INPUTRI     9  /* Lokasi */
+
+   ppdukrwrn     ALLCAPS SCROLL         INPUTRI    11  /* Satuan */
+   ppdsat        ALLCAPS SCROLL         INPUTRI    12  /* Satuan */
+
+   ppdjml     	 NUMERIC                INPUTRI    13  /* Jumlah */
+   ppdhrg        NUMERIC                INPUTRI    14 /* harga satuan */
+   ppdperdis  	 NUMERIC                INPUTRI    15  /* Jumlah */
+   ppdtotfak 	 PROTECT       	        INPUTRI    17 /* total bruto */
+
+CALCS()
+cyt23R			stssetsisbrg == "R"
+
+DEFAULTS(trans)   
+ppdsatbsr		INIT		1
+ppddk        		INIT         	K
+ppdsisbrg		INIT		{stssetsisbrg}
+lnamtrnjml		INIT		"ppdjml"
+ppdjasbrg		DFALT_SCAN	BR "Barang Baru"
+                         		BK "Barang Bekas"
+					JI "Jasa Intern"
+					JE "Jasa Extern"
+					BI "Biaya "
+ppdkb       		DFALT_LIST   	K B
+IF cyt23R lhrgrata      INIT		1 /* Untuk mengeset supaya btfhrg = Rata2 */
+lmapbtf			INIT		mapbtf
+
+CALCS()
+cjmlpos          	ppdjml > 0.0 
+chrgpos          	ppdhrg >0.0 || brgytjlnol == "Y" || brgjaba == "PL" || ppmtk == "PR"
+cupdate         	g_curcmd == 2 || ppdnobuk2 != BLANKS
+cjoinppdu0      	djoinppdu == 0 && g_curcmd == 1 && ppdnourt2 == 0
+cjoinppdu1      	djoinppdu == 1 && g_curcmd == 1 && ppdnourt2 == 0
+curut2          	lurut + 1
+csaldobrd1      	ppdjasbrg == "JE" || ppdjasbrg == "JI" || ppdkb == "B" || ljmlbrdsat + ~ppdjml >= ppdjml || ppmndk == "BK"
+cK              	"K"
+cB	        	"B"
+chrgbeli 		ppdsisbrg == "R" || brghrgbeli == 0 || ppdhrg >= brghrgbeli || brgytrugi =="Y" || g_usrpos == "manager" 
+chrgatasbl 		((ppdhrg * ppmkurs) >= brghrgbeli)  || ppdjasbrg == "JE" || ppdjasbrg == "JI"  || brgytrugi == "Y" 
+
+ccmpytpsnY    		cmpytpsn == "Y"
+cBkroKsg 		cmpytpsn != "Y" || stsbkro == BLANKS || ppmnoll != BLANKS
+cRObuk2_isi		ppmndk =="RO" && ppdnobuk2 != BLANKS 
+cRObuk2_isiu		ppmndk =="RO" && ~ppdnobuk2 != BLANKS 
+cBKbuk2_isi		ppmndk =="BK" && ppdnobuk2 != BLANKS 
+cBKbuk2_isiu		ppmndk =="BK" && ~ppdnobuk2 != BLANKS 
+cbuk2_isi		ppdnobuk2 != BLANKS || ppmpry != BLANKS
+cFIFOO 			ppdjasbrg != "JE" && ppdjasbrg != "JI" && (ppdsisbrg == "O" || ppdsisbrg == "R") && ppmndk != "BK" && ppdkb == "K"
+cFIFOM 			ppdjasbrg != "JE" && ppdjasbrg != "JI" && ppdsisbrg == "M" && ppmndk != "BK" && ppdkb == "K"
+cBK_ubr0 		djoinubr == 0 || ppmndk == "BK"
+cjoinubr1		djoinubr == 1 
+cbknJS			ppdjasbrg != "JE" && ppdjasbrg != "JI"
+cbknJSKatKsg		ppdjasbrg != "JE" && ppdjasbrg != "JI" && ppdkat == BLANKS
+cbknJSKatIsi		ppdjasbrg != "JE" && ppdjasbrg != "JI" && ppdkat != BLANKS
+cJEkatisi     		ppdkat != BLANKS && ppdjasbrg =="JE" 
+cJIkatisi     		ppdkat != BLANKS && ppdjasbrg =="JI" 
+cjmlBK			tldjml - tldjmlren - tldjmlpos
+cbedaBK			ppdjml == 0 && ppdpsnoto != ^ppdpsnoto
+ckbB			ppdkb == "B"
+cbrgkirim		ppdkb == "K" && ppdjasbrg != "JE" && ppdjasbrg != "JI"
+chrg0T			brgytjlnol != "Y" && brgjaba != "PL" && ppmtk != "PR"
+
+EDITS(trans)
+e.MandatoryUrt ppdnourt2 MANDATORY
+e.MandatoryBrg ppdbrg MANDATORY
+e.MandatoryLok ppdlok MANDATORY_IF cBRBI_tdkB   
+e.MandatorySat ppdsat MANDATORY_IF cBR
+e.MandatoryJml ppdjml MANDATORY
+e.MandatoryHrg ppdhrg MANDATORY_IF chrg0T
+e.MandatoryUkr ppdukrwrn MANDATORY_IF cjoinubr1
+e.MandatoryBuk ppdnobuk2 MANDATORY_IF ccmpytpsnY
+
+e.ValidatemtdRo2 ppdnobuk2 VALIDATE_IF cppmRO mtsstsplgbuk mmts smtsSLM  {Pgv_INPG} {Pgv_DTRO} {Pppmplg}
+e.ValidatetlmBk ppdnobuk2 VALIDATE_IF cppmBK tlmstsplgbuk mtlm stlm  {Pgv_INPG} {Pgv_booking} {Pppmplg}
+
+e.ValidateKatbrg ppdkat VALIDATE_IF cbknJS tbddatkodidx  mkat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_kategori} /*kategori*/
+e.ValidateKatjs ppdkat VALIDATE_IF cJE tbddatkodidx  mkat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_katjasaex} /*kategori Jasa*/
+e.ValidateKatjs ppdkat VALIDATE_IF cJI tbddatkodidx  mkat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_katjasain} /*kategori Jasa*/
+
+/* ppmndk ROBK*/
+e.ValidatemtdBrg ppdbrg VALIDATE_IF cRObuk2_isi mtdbukbrgoto mmtd smtd {Pgv_INPG} {Pppdnobuk2} {Sppdpsnoto}
+e.ValidatetldBrg ppdbrg VALIDATE_IF cBKbuk2_isi tldbukbrgoto mtld stld {Pppdnobuk2} {Pgv_INPG} {Sppdpsnoto2}
+
+e.ValidateppdBrg ppdbrg VALIDATE_IF cbknJSKatKsg brgstsdatbrg mbrg sbrg {Pgv_INPG} {Pgv_dtbarang}
+e.ValidateppdBrg ppdbrg VALIDATE_IF cbknJSKatIsi brgstdtkatbr mbrg sbrgKat {Pgv_INPG} {Pgv_dtbarang} {Pppdkat}
+
+e.ValidateKatBrg ppdbrg VALIDATE_IF cJEkatisi brgstdtkatbr mbrg sbrgJsKatIsi {Pgv_INPG} {Pgv_jasaex} {Pppdkat}
+e.ValidateKatBrg ppdbrg VALIDATE_IF cJIkatisi brgstdtkatbr mbrg sbrgJsKatIsi {Pgv_INPG} {Pgv_jasain} {Pppdkat}
+
+e.ValidateBrg ppdbrg VALIDATE_IF cJE brgstsdatbrg mbrg sbrgJsKatKsg {Pgv_INPG} {Pgv_jasaex}
+e.ValidateBrg ppdbrg VALIDATE_IF cJI brgstsdatbrg mbrg sbrgJsKatKsg {Pgv_INPG} {Pgv_jasain}
+
+e.ValidatebrdLok ppdlok VALIDATE_RKP_IF cFIFOO brdbrglokoto mbrdLok  sbrdLok {Pgv_INPG} {Pppdbrg} {Pppdcab} 
+e.ValidateLok ppdlok VALIDATE_IF cBR tbddtmstidx mtbdLK2 stbdLok {Pgv_dttabel} {Pgv_barang} {Pgv_lokasi} {Pgv_BR} {Pppmcab} 
+
+e.ValidateUkr ppdukrwrn VALIDATE_RKP_IF cFIFOO brdstbrlkust mbrdUkr  sbrdUkr {Pgv_INPG} {Pppdbrg} {Pppdlok} 
+e.ValidateUkrWrn ppdukrwrn VALIDATE_IF cFIFOM brdbrglokoto mbrdUkrM sbrd2 {Pgv_INPG} {Pppdbrg} {Pppmcab} {Pppdlok} {Sppdsat} {Sppdbrdoto}
+e.ValidateUkr ppdukrwrn VALIDATE_IF ckbB ubrbrgdatkod mubr subr {Pppdbrg} {Pgv_dtukrwrn}
+e.ValidatebrdSat ppdsat VALIDATE_RKP_IF cFIFOO brdstbrlkust mbrdSat  sbrdSat {Pgv_INPG} {Pppdbrg} {Pppdlok} {Pppdukrwrn}
+e.ValidateSat ppdsat VALIDATE_IF cBR tbddatkodidx mtbdSat stbd {Pgv_dttabel} {Pgv_barang} {Pgv_satuan} 
+
+MAP(mkat)
+tbdkode		ppdkat   	REPLACE
+
+CALCS()
+cM		"M"
+cRM2		brgytseri == "Y"
+cbknRM		brgytseri != "Y"
+
+MAP(mbrg)
+brgytseri	brgytseri	REPLACE
+brgkode		ppdbrg		REPLACE
+brgbbmprs       ppdnobbm	REPLACE_IF cbrgkirim
+crekhutbrg      ppdnobbm	DO_CALC_IF ctypeB
+brgsat		ppdsat		NO_REPLACE
+brgytplk	brgytplk	REPLACE
+brgjaba		brgjaba		REPLACE
+brgytjlnol	brgytjlnol	REPLACE
+cM		ppdsisbrg	DO_CALC_IF cRM2
+stssetsisbrg	ppdsisbrg	REPLACE_IF cbknRM
+
+
+MAP(mbrdLok)
+brdlok		ppdlok		REPLACE
+
+MAP(mubr)
+ubrkode		ppdukrwrn	REPLACE
+
+MAP(mbrdUkr)
+brdukrwrn	ppdukrwrn	REPLACE
+
+MAP(mbrdUkrM)
+brdukrwrn	ppdukrwrn	REPLACE
+brdoto   	ppdbrdoto	REPLACE
+brdsat   	ppdsat   	REPLACE
+brdnorangka	ppdnorangka   	REPLACE
+brdnomesin 	ppdnomesin    	REPLACE
+brdsisprc	ljmlbrdsat	REPLACE
+brdthbrg	ppdthbrg	REPLACE
+
+MAP(mbrdSat)
+brdsat   	ppdsat		REPLACE
+brdsisprc	ljmlbrdsat	REPLACE
+
+MAP(mtbdLK2)
+tbdkode		ppdlok		REPLACE
+
+MAP(mtbdSat)
+tbdkode		ppdsat		REPLACE
+tbddf1		ppdsatbsr	REPLACE  /* Jumlah x Satuan Besar */
+
+MAP(mmtd)
+mtdbrg		ppdbrg		REPLACE
+mtdhrg		ppdhrg		NO_REPLACE
+mtdperdis	ppdperdis	NO_REPLACE
+mtdtotdis	ppdtotdis	NO_REPLACE
+mtdperdism	ppdperdism	REPLACE
+mtdjmlren	mtdjmlren	REPLACE
+mtdsat		ppdsat		REPLACE
+mtdukrwrn	ppdukrwrn	REPLACE
+mtdnobuk	ppdnopsn	REPLACE  /* No Pesanan */
+mtdoto		ppdpsnoto	REPLACE  /* No Oto Pesanan */
+
+MAP(mtld)
+tldbrg		ppdbrg		REPLACE
+tldnobuk	ppdnokrm	REPLACE  /* No.Booking-No Kirim */
+tldoto		ppdpsnoto2	REPLACE  /* No.Oto Booking */
+tldlok		ppdlok		REPLACE
+tldsat		ppdsat		REPLACE
+tldkat		ppdkat		REPLACE
+tldukrwrn	ppdukrwrn	REPLACE
+tldhrg		ppdhrg		NO_REPLACE
+tldperdis	ppdperdis	NO_REPLACE
+tldtotdis	ppdtotdis	NO_REPLACE
+tldperdism	ppdperdism	REPLACE
+tldjmlren	tldjmlren	REPLACE
+cjmlBK		ppdjml		DO_CALC_IF cbedaBK
+tldnoll		ppdnopsn	REPLACE   /* No Pesanan / mtsnobuk */
+tldppdoto	ppdpsnoto 	REPLACE   /* No Oto Pesanan per Barang - mtdoto */
+
+MAP(mmts)
+mtsnobuk	ppdnobuk2	REPLACE
+
+MAP(mtlm)
+tlmnobuk	ppdnobuk2	REPLACE
+
+CALCS()
+chrgrata1	djoinhrt == 1 || ppdsisbrg != "R"
+cppdsubtot      ppdjml * (ppdhrg * ppmkurs) 
+cppdtotfak	ppdjml * ppdhrgnet
+cSo_ok	   	ppdnobuk2 == BLANKS || (ppmndk == "RO" && ppdnobuk2 != BLANKS && (stssetjlpsn =="Y" || (ppdjml <= (mtdjml - mtdjmlren - mtdjmlpos) + ~ppdjml))) || (ppmndk == "BK" && ppdnobuk2 != BLANKS && (ppdjml <= (tldjml - tldjmlren - tldjmlpos) + ~ppdjml))  || ppmndk == BLANKS || ppmndk == "BT"
+cjoinbrcU1	mtdhrg == 0 && djoinbrcU1 == 1  
+cjoinbrcU2   	mtdhrg == 0 && djoinbrcU2 == 1  
+cppdhrgnet	(ppdhrg - ppdtotdis) * ppmkurs
+cppmnoll1	ppmnoll != BLANKS
+cdism_1		ppdperdism > 0
+cppdtotdism	(ppdperdism / 100) * ppdtotfak
+cdiscount 	(ppdperdis/100) * ppdhrg 
+cdisd1		ppdperdis != 0
+cjoinbimD1	djoinbimDISC_D == 1 
+
+MAP(mNO)
+csatu           ppdjml        	DO_CALC_IF cJS
+c0		lppdperdis	DO_CALC
+c0		lperdis1	DO_CALC
+c0		lperdis2	DO_CALC
+c0		lperdis3	DO_CALC
+c0		lperdis4	DO_CALC
+c0		lperdis5	DO_CALC
+c0		lperdis6	DO_CALC
+c0		lperdis7	DO_CALC
+lppdperdis	ppdperdis	REPLACE_IF cjoinbimD1
+lperdis1	ppdperdis1	REPLACE
+lperdis2	ppdperdis2	REPLACE
+lperdis3	ppdperdis3	REPLACE
+lperdis4	ppdperdis4	REPLACE
+lperdis5	ppdperdis5	REPLACE
+lperdis6	ppdperdis6	REPLACE
+lperdis7	ppdperdis7	REPLACE
+
+MAP(murut)
+csatu       	ppdnourt2     	DO_CALC_IF cjoinppdu0
+curut2      	ppdnourt2     	DO_CALC_IF cjoinppdu1
+ppdnourt2   	ppdnourt      	REPLACE
+ppmnoll		ppdnobuk2	REPLACE_IF cppmnoll1
+ppmcab		ppdcab		REPLACE
+ppmbisnis	ppdbisnis	REPLACE
+ppmdvs    ppddvs    REPLACE
+
+MAP(msubtot)
+cB		ppdkb		DO_CALC_IF csdakh0
+cK		ppdkb		DO_CALC_IF csdakh1
+cBLANKS		ppdlok		DO_CALC_IF ctypeB
+cdiscount       ppdtotdis	DO_CALC_IF cdisd1  /* hrg bsr*/
+cppdhrgnet	ppdhrgnet	DO_CALC
+cppdsubtot	ppdsubtot	DO_CALC
+cppdtotfak	ppdtotfak	DO_CALC
+cppdtotdism	ppdtotdism	DO_CALC_IF cdism_1
+
+MAP(mKB)
+cK           	ppdkb     	DO_CALC_IF cdtsjlJS 
+
+MAP(mnol)
+c0   	ppdperdis  	DO_CALC           
+c0   	ppdtotdis  	DO_CALC           
+c0   	ppdsubtot  	DO_CALC           
+c0   	ppdtotfak  	DO_CALC           
+c0   	ppdhrg     	DO_CALC           
+
+MAP(mhrgprice)
+lbrchrgjl     	lbrchrgjl  	REPLACE_IF cjoinbrcU1
+lbrchrgjl     	lbrchrgjl  	REPLACE_IF cjoinbrcU2
+lbrchrgjl    	ppdhrg     	REPLACE_IF cbukanpromo
+ppmplg          ppdplg		REPLACE
+
+MAP(mautokat)
+ppmsup		ppdkat		REPLACE
+
+HOOKS(trans)
+BEFORE_INPUT 	cur_field=ppdkat     	DO_SKIP_IF  cbuk2_isi
+BEFORE_INPUT 	cur_field=ppdnobuk2     DO_SKIP_IF  cBkroKsg 
+BEFORE_INPUT 	cur_field=ppdhrg    	DO_SKIP_IF  cBI_CB       
+BEFORE_INPUT 	cur_field=ppdukrwrn    	DO_SKIP_IF  cBK_ubr0     
+BEFORE_INPUT    cur_field=ppdsat     	DO_SKIP_IF  ctypeB_BK_JS  
+BEFORE_INPUT    cur_field=ppdkb 	DO_SKIP_IF  cdtsjlJS
+BEFORE_INPUT 	cur_field=ppdjasbrg  	DO_SKIP_IF  cupdate       
+BEFORE_INPUT 	cur_field=ppdlok     	DO_SKIP_IF  ctypeB_BK
+BEFORE_INPUT 	cur_field=ppdjml     	DO_SKIP_IF  cppmBT
+
+BEFORE_INPUT 	cur_field=ppdkb 	DO_MAP SHOW mKB
+BEFORE_INPUT 	cur_field=ppdnourt2     DO_MAP SHOW murut  
+AFTER_INPUT  	cur_field=ppdjasbrg  	DO_MAP SHOW IF cBI mnol
+AFTER_INPUT  	cur_field=ppdjasbrg  	DO_MAP SHOW mNO
+AFTER_INPUT	cur_field=ppdbrg  	DO_IMAGE_IF cJS img_JS 
+AFTER_INPUT  	cur_field=ppdbrg        DO_MAP SHOW mhrgprice
+AFTER_INPUT	cur_field=ppdjasbrg	DO_MAP SHOW mautokat
+AFTER_INPUT  	cur_field=ppdjml 	DO_MAP SHOW 
+               	IF cjmlpos  msubtot
+                  ELSE HKCURSOR STAY
+		  HKMSG  Jumlah Barang Harus Diisi Positif           
+AFTER_INPUT  	cur_field=ppdhrg 	DO_MAP SHOW 
+               	IF chrgpos  msubtot
+                  ELSE HKCURSOR STAY
+		  HKMSG Harga Barang Harus Diisi Positif           
+AFTER_INPUT     cur_field=ppdjml        DO_MAP SHOW 
+                   IF cSo_ok  mdumstr
+                   ELSE HKCURSOR STAY
+                        HKMSG h.JmlTrmLbhSo 
+
+/**************Pesan Untuk Jumlah barang*********/ 
+AFTER_INPUT    cur_field=ppdjml    DO_MAP SHOW
+		IF csaldobrd1  mdumstr
+		ELSE HKCURSOR STAY 
+		HKMSG Jumlah Dalam satuan ini tidak cukup
+
+/*---------------------------------------------------------------*/
+AFTER_INPUT  cur_field=ppdhrg     DO_MAP SHOW 
+	     IF chrgatasbl mdumstr
+	     ELSE HKCURSOR STAY
+	     HKMSG Harga Harus di atas harga beli terakhir
+
+/*------------------CEK harga -----------------------------*/
+AFTER_INPUT cur_keybd=EN DO_MAP 
+	IF chrgbeli mdumstr
+	ELSE  HKCURSOR STAY
+              HKMSG  Harga Netto tidak boleh dibawah Price List Beli
+
+AFTER_INPUT 	cur_keybd=EN DO_MAP SHOW   /* Untuk Umum */
+		IF csaldobrd1  mdumstr
+		ELSE HKCURSOR STAY 
+		HKMSG Jumlah Dalam satuan ini tidak cukup
+
+AFTER_INPUT 	cur_keybd=EN 	DO_MAP SHOW   /* Untuk Umum */
+		IF chrgrata1  mdumstr
+		ELSE HKCURSOR STAY 
+		HKMSG Brg ini blm ada data hrg ratanya2, proses dulu harga rata2nya
+
+IMAGE(itomDISCd)
+/------------------------------------------------------------------------\
+|/----------------------------\ /---------------------------------------\|
+|| i.Disc1       : ____.__    | |i.Disc  : ___________.______           ||
+|| i.Disc2       : ____.__    | |                                       ||
+|| i.Disc3       : ____.__    | |                                       ||
+|| i.Disc4       : ____.__    | |                                       ||
+|| i.Disc5       : ____.__    | |                                       ||
+|| i.Disc6       : ____.__    | |                                       ||
+|| i.Disc7       : ____.__    | |                                       ||
+|\----------------------------/ \---------------------------------------/|
+\------------------------------------------------------------------------/
+
+FIELDS(itomDISCd)
+ppdperdis1	NUMERIC		INPUTRI		1
+ppdperdis    	PROTECT		BIG    		9
+ppdperdis2	NUMERIC		INPUTRI		3
+ppdperdis3	NUMERIC		INPUTRI		4
+ppdperdis4	NUMERIC		INPUTRI		5
+ppdperdis5	NUMERIC		INPUTRI		6
+ppdperdis6	NUMERIC		INPUTRI		7
+ppdperdis7	NUMERIC		INPUTRI		8
+
+MAP(mppddis)
+ppdperdis	ppdperdis	REPLACE
+
+HOOKS(itomDISCd)
+AFTER_INPUT	cur_field=ppdperdis1	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis2	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis3	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis4	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis5	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis6	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis7	DO_LIB ap_akdis(&ppdperdis,ppdperdis1,ppdperdis2,ppdperdis3,ppdperdis4,ppdperdis5,ppdperdis6,ppdperdis7);
+AFTER_INPUT	cur_field=ppdperdis1	DO_MAP SHOW mppddis
+AFTER_INPUT	cur_field=ppdperdis2	DO_MAP SHOW mppddis
+AFTER_INPUT	cur_field=ppdperdis3	DO_MAP SHOW mppddis
+AFTER_INPUT	cur_field=ppdperdis4	DO_MAP SHOW mppddis
+AFTER_INPUT	cur_field=ppdperdis5	DO_MAP SHOW mppddis
+AFTER_INPUT	cur_field=ppdperdis6	DO_MAP SHOW mppddis
+AFTER_INPUT	cur_field=ppdperdis7	DO_MAP SHOW mppddis
+
+/***************imgJS****************/
+IMAGE(img_JS)
+/------------------------------------\
+|/--------i.InfoJasa----------------\|
+|| i.KodeHL   : _____________       ||
+|| i.Hpp      : ________________.__ ||
+|| i.HrgJual  : ________________.__ ||
+|\----------------------------------/|
+\------------------------------------/
+
+FIELD(img_JS)
+ppdlok        ALLCAPS INPUTRI    1 /* % Card  */
+ppdhpp        NUMERIC  INPUTRI   2 /* Kota Bank */
+ppdhrg        NUMERIC  INPUTRI   3 /* Total */
+
+DEFAULTS(img_JS)
+ppdjml	INIT 	1
+
+EDITS(img_JS)
+e.MandatoryHL   ppdlok MANDATORY
+e.MandatoryHpp	ppdhpp MANDATORY
+e.MandatoryHrg  ppdhrg MANDATORY
+e.ValidateCmpHl ppdlok VALIDATE_IF cJS cmphlkodidx mcmpHL scmpDTHL {Pgv_DTHL} 
+
+MAP(mhrgJS)
+ppdhrg		ppdhrgnet	REPLACE
+cppdsubtot	ppdsubtot	DO_CALC
+cppdtotfak	ppdtotfak	DO_CALC
+
+MAP(mhrgJSHpp)
+ppdhpp		ppdtothpp	REPLACE
+
+HOOKS(img_JS)
+AFTER_INPUT	cur_field=ppdhpp  	DO_MAP SHOW mhrgJSHpp
+AFTER_INPUT	cur_field=ppdhrg  	DO_MAP SHOW mhrgJS
+
+SUBFILE(trans)
+SFL_LINES(5)   
+SFL_TITLE(transt)
+
+SFL_TARGET
+    ppdbukurtidx             ppmnobuk 
+
+SFL_MAP
+    ppmnobuk                  ppdnobuk
+    ppmmua                    ppdkdmua
+    ppmtglfak                 ppdtglfak
+    ppmsts                    ppdsts
+    ppmscr                    ppdscr   
+    ppmdata		      ppddata
+    ppmgrup                   ppdgrup
+    ppmcab                    ppdcab
+    ppmbisnis		      ppdbisnis
+    ppmdvs   		      ppddvs   
+
+IMAGE(transat) 
+/----------------t------------------t-------t-------t---------t----t-------t---------t-------------\
+|i.KodeBrg       |  i.NamaBrg       |i.Ukr  |i.Sat  |i.JmlSJ  | Kb | i.Lok |i.JmlKrm |i.Hrg        |
+\----------------.------------------.-------.-------.---------.----.-------.---------.-------------/
+
+IMAGE(transa) 
+|________________|__________________|_______|_______|_________| __ |_______|_________|_____________|
+    
+
+FIELD(transa)
+   mtdbrg           PROTECT SCROLL	      INPUTRI     1 
+   brgnama          PROTECT SCROLL	      INPUTRI     1 
+   mtdukrwrn        PROTECT                   INPUTRI     2 
+   mtdsat           PROTECT                   INPUTRI     3 
+   mtdtmp1          PROTECT                   INPUTRI     4 
+   mtddk            NOCHANGE                  INPUTRI     5 
+   mtdlok           ALLCAPS                   INPUTRI     7 
+   mtdtmp2          NUMERIC                   INPUTRI     8 
+   mtdhrg           NUMERIC NOREKAP           INPUTRI     9 
+
+HELP(transa)
+h.SbKrm mtddk
+
+CALCS()
+cjml		mtdjml - mtdjmlren - mtdjmlpos
+cjmlok		mtdtmp2 <= mtdtmp1
+cmtddkK		mtddk == "K"
+cmtddkB_Ksg	mtddk == "B" || mtddk == BLANKS
+cmtddkB		mtddk == "B" 
+cmtddkKsg	mtddk == BLANKS
+cbknKSG		mtddk != BLANKS
+cjmlbrd_ok      mtddk == BLANKS || mtddk == "B" || ljmlbrdsatA >= mtdtmp2
+
+DEFAULTS(transa)
+mtdtmp1		INIT		{cjml}	    
+mtddk		DFALT_LIST	BLANKS K B
+
+EDITS(transa)
+e.Validatebrg mtdbrg VALIDATE brgdatkodidx mbrg2 0 {Pgv_dtbarang}
+e.MandatoryJml mtdtmp2 MANDATORY_IF cbknKSG
+e.MandatoryHrg mtdhrg MANDATORY
+e.MandatoryLok mtdlok MANDATORY_IF cmtddkK
+e.ValidatebrdLok mtdlok VALIDATE_RKP_IF cFIFOO brdbrglokoto mbrdLokA  sbrdLok {Pgv_INPG} {Pmtdbrg} {Pppmcab} 
+e.ValidateLok mtdlok VALIDATE tbddtmstidx mtbdLK2a stbdLok {Pgv_dttabel} {Pgv_barang} {Pgv_lokasi} {Pgv_BR} {Pppmcab} 
+
+
+MAP(mbrdLokA)
+brdlok		mtdlok		REPLACE
+brdsisprc	ljmlbrdsatA	REPLACE
+
+MAP(mtbdLK2a)
+tbdkode		mtdlok		REPLACE
+
+MAP(mbrg2)
+brgnama    	brgnama    	REPLACE      
+brgbbmprs  	brgbbmprs  	REPLACE
+
+MAP(mjml)
+mtdtmp1		mtdtmp2		REPLACE
+
+HOOKS(transa)
+BEFORE_INPUT	cur_field=mtdlok	DO_SKIP_IF cmtddkB_Ksg
+BEFORE_INPUT	cur_field=mtdtmp2	DO_SKIP_IF cmtddkKsg
+AFTER_INPUT	cur_field=mtddk  	DO_MAP SHOW IF cmtddkB mjml    
+AFTER_INPUT	cur_field=mtdtmp2  	DO_MAP SHOW 
+		IF cjmlok mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Jumlah Terima Lebih Besar Dari PS 
+AFTER_INPUT	cur_field=mtdtmp2  	DO_MAP SHOW 
+		IF cjmlbrd_ok mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Jumlah Barang melebihi Stok
+
+CALCS()
+cmtdstsINPG	mtdsts == "INPG" && mtdjml - mtdjmlren - mtdjmlpos > 0 && (ppmnoll == BLANKS || ppmnoll == mtdnobuk)
+
+SUBFILE(transa)
+SFL_APP_TYPE
+SFL_LINES(8)       /* Rumusnya : 22 - base_row trans */
+SFL_SELECT cmtdstsINPG
+SFL_COND cppmRO
+SFL_TITLE(transat)
+SFL_REKAP mtdbrg 
+SFL_REKAP2 mtdukrwrn 
+SFL_REKAP3 mtdsat
+
+SFL_TARGET
+mtdstsbrgukr   gv_DTRO gv_INPG ppmplg
+
+IMAGE(transag1t) 
+/----------------t------------------t-------t-------t---------t----t-------t---------t-------------\
+|i.KodeBrg       |    i.NamaBrg     |i.Ukr  |i.Sat  |i.JmlBK  | Kb | i.Lok |i.JmlKrm |i.Hrg        |
+\----------------.------------------.-------.-------.---------.----.-------.---------.-------------/
+
+IMAGE(transag1) 
+|________________|__________________|_______|_______|_________| __ |_______|_________|_____________|
+    
+
+FIELD(transag1)
+   tldbrg           PROTECT SCROLL	      INPUTRI     1 
+   brgnama          PROTECT SCROLL	      INPUTRI     1 
+   tldukrwrn        PROTECT                   INPUTRI     2 
+   tldsat           PROTECT                   INPUTRI     3 
+   tldtmp1          PROTECT                   INPUTRI     4 
+   tlddk            PROTECT                   INPUTRI     5 
+   tldlok           PROTECT                   INPUTRI     7 
+   tldtmp2          NUMERIC                   INPUTRI     8 
+   tldhrg           NUMERIC NOREKAP           INPUTRI     9 
+
+HELP(transag1)
+h.SbKrm tlddk
+
+CALCS()
+cjmltld		tldjml - tldjmlren - tldjmlpos
+cjmltldok	tldtmp2 <= tldtmp1
+ctlddkK		tlddk == "K"
+ctlddkKsg	tlddk == BLANKS
+
+DEFAULTS(transag1)
+tldtmp1		INIT		{cjmltld}	    
+tldtmp2		INIT		{cjmltld}	    
+tlddk		DFALT_LIST	K
+
+CALCS()
+cbknKSGtld	tlddk != BLANKS
+
+EDITS(transag1)
+e.Validatebrg tldbrg VALIDATE brgdatkodidx mbrg_tld2 0 {Pgv_dtbarang}
+e.MandatoryJml tldtmp2 MANDATORY_IF cbknKSGtld
+e.MandatoryHrg tldhrg MANDATORY_IF cbknKSGtld
+e.MandatoryLok tldlok MANDATORY_IF ctlddkK
+e.ValidateLok tldlok VALIDATE tbddtmstidx mtbdLK2ag stbdLok {Pgv_dttabel} {Pgv_barang} {Pgv_lokasi} {Pgv_BR} {Pppmcab} 
+
+MAP(mtbdLK2ag)
+tbdkode		tldlok		REPLACE
+
+MAP(mbrg_tld2)
+brgnama    	brgnama    	REPLACE      
+brgbbmprs  	brgbbmprs  	REPLACE
+
+HOOKS(transag1)
+BEFORE_INPUT	cur_field=tldtmp2	DO_SKIP_IF ctlddkKsg
+BEFORE_INPUT	cur_field=tldhrg 	DO_SKIP_IF ctlddkKsg
+AFTER_INPUT	cur_field=tldtmp2  	DO_MAP SHOW 
+		IF cjmltldok mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Jumlah Terima Lebih Besar Dari Booking
+
+CALCS()
+ctldstsINPG	tldsts == "INPG" && tldjml - tldjmlren - tldjmlpos > 0 && (ppmnoll == BLANKS || ppmnoll == tldnobuk)
+
+SUBFILE(transag1)
+SFL_APP_TYPE
+SFL_LINES(8)       /* Rumusnya : 22 - base_row trans */
+SFL_SELECT ctldstsINPG
+SFL_COND cstsBK
+SFL_TITLE(transag1t)
+SFL_REKAP tldbrg 
+SFL_REKAP2 tldlok    
+SFL_REKAP3 tldsat
+
+SFL_TARGET
+tldstskodbrg   gv_booking gv_INPG ppmplg
+
+SUBFILE(transb)
+SFL_TEMPLATE(tmp_tcmD)
+
+SUBFILE(transc)
+SFL_TEMPLATE(tmp_ppm_bim)
+
+SUBFILE(transcg1)
+SFL_TEMPLATE(tmp_displg)
+
+SUBFILE(trans2)
+SFL_TEMPLATE(tmp_ppd_pps)
+
+SUBFILE(trans2a)
+SFL_TEMPLATE(tmp_ppd_bim)
+
+SUBFILE(trans2b)
+SFL_TEMPLATE(tmp_ppd_bim2)
+
+CALCS()
+cppmtotdisdeta  ppmtotdisdet + ppdtotdis 
+cppmtotdisdetu  ppmtotdisdet - ~ppdtotdis 
+cppmtotdisdetd  ppmtotdisdet - ppdtotdis 
+
+caddhrgBbr	ppmbyrum + ppdtotfak
+caddhrgBbru	ppmbyrum - ~ppdtotfak
+caddhrgBbrd	ppmbyrum - ppdtotfak
+
+caddhrgbr	ppmtotbr + ppdtotfak
+cupdhrgbr	ppmtotbr - ~ppdtotfak 
+cdelhrgbr	ppmtotbr - ppdtotfak
+
+caddhrgjas	ppmtotjs + (ppdtotfak - ppdtothpp)
+cupdhrgjas	ppmtotjs - (~ppdtotfak - ~ppdtothpp)
+cdelhrgjas	ppmtotjs - (ppdtotfak - ppdtothpp)
+
+cppmtotasa	ppmtotas + (ppdhrg * ppdjml)
+cppmtotasu	ppmtotas - (~ppdhrg * ~ppdjml) 
+cppmtotasd	ppmtotas - (ppdhrg * ppdjml)
+
+caddhrgbrRO	ppmtotbr + (ljmltrm * lmtdhrg)
+caddhrgjasRO    ppmtotjs + (ljmltrm * lmtdhrg)
+caddhrgBbrRO    ppmbyrum + (ljmltrm * lmtdhrg)
+
+
+cppmsisas       ppmsisa / ppmkurs
+cas1            ppmsisa != 0.0 && ppmkurs != 0.0 && ppmtotas != 0.0
+cas0            ppmsisa <= 0.0 || ppmkurs <= 0.0 || ppmtotas <= 0.0
+cppmhppa	ppmhpp + ppdtothpp
+cppmhppu	ppmhpp - ~ppdtothpp 
+cppmhppd	ppmhpp - ppdtothpp
+cppmtotdis_ma	ppmtotdis2 + ppdtotdism 
+cppmtotdis_mu	ppmtotdis2 - ~ppdtotdism
+cppmtotdis_md	ppmtotdis2 - ppdtotdism 
+
+
+MAP(mupdppma)
+    cppmtothrga       ppmtothrg     DO_CALC 		     /*Total Seluruhnya Sebelum Bulat*/
+    cppmtotdis_ma     ppmtotdis2    DO_CALC
+    ctotfak2   	      ppmtotaftdis  DO_CALC                  /* Total Faktur setelah Dis 2 */
+    ctotppn	      ppmtotppn	    DO_CALC 		     /* Total PPN Dari Faktur setelah diskon2*/
+    ctotfak1	      ppmtotfak	    DO_CALC
+    cppmsisa          ppmsisa       DO_CALC             
+
+    caddhrgbr	      ppmtotbr	    DO_CALC_IF cBR	     /*Total BR*/
+    caddhrgjas 	      ppmtotjs	    DO_CALC_IF cJS  	     /*Total JS */
+    caddhrgBbr	      ppmbyrum	    DO_CALC_IF cBRB2  	     /*Total Barang belum di kirim */
+
+    cppmtotasa	      ppmtotas      DO_CALC_IF cbknRP        /*Jual Pakai Mt asing tanpa Diskon*/
+    cppmsisas         ppmsisas      DO_CALC_IF cas1          /*Sisa Piu Rp/Kurs= Piu Asing*/ 
+    c0		      ppmsisas      DO_CALC_IF cas0
+
+    cppmtotdisdeta    ppmtotdisdet  DO_CALC 	     /* Hanya Informasi Total Diskon Detil*/
+    cppmhppa	      ppmhpp	    DO_CALC	
+    
+
+MAP(mupdppmu)
+    cppmtothrgu       ppmtothrg      	DO_CALC 		     /*Total Seluruhnya Sebelum Bulat*/
+    cppmtotdis_mu     ppmtotdis2    	DO_CALC
+    ctotfak2   	      ppmtotaftdis   	DO_CALC                  /* Total Faktur setelah Dis 2 */
+    ctotppn	      ppmtotppn	    	DO_CALC 		     /* Total PPN Dari Faktur setelah diskon2*/
+    ctotfak1	      ppmtotfak	    	DO_CALC
+    cppmsisa          ppmsisa       	DO_CALC             
+
+    cupdhrgbr	      ppmtotbr	    	DO_CALC_IF cl_BR
+    cupdhrgjas 	      ppmtotjs	    	DO_CALC_IF cl_JS  		
+    caddhrgBbru	      ppmbyrum	    	DO_CALC_IF cBRB2l  		/*Total Barang belum di kirim */
+
+    cppmtotasu	      ppmtotas      	DO_CALC_IF cbknRP   	/*Jual Pakai Mt asing tanpa Diskon*/
+    cppmsisas         ppmsisas      	DO_CALC_IF cas1     	/*Sisa Piu Rp/Kurs= Piu Asing*/ 
+    c0		      ppmsisas    	DO_CALC_IF cas0
+
+    cppmtotdisdetu    ppmtotdisdet    	DO_CALC 	/* Hanya Informasi Total Diskon Detil*/
+    cppmhppu	      ppmhpp	    	DO_CALC	
+
+MAP(mupdppmd)
+    cppmtothrgd       ppmtothrg     	DO_CALC 		     
+    cppmtotdis_md     ppmtotdis2	DO_CALC
+    ctotfak2   	      ppmtotaftdis  	DO_CALC                 
+    ctotppn	      ppmtotppn	    	DO_CALC 		    
+    ctotfak1	      ppmtotfak	    	DO_CALC
+    cppmsisa          ppmsisa       	DO_CALC             
+
+    cdelhrgbr	      ppmtotbr	    	DO_CALC_IF cBR
+    cdelhrgjas 	      ppmtotjs	    	DO_CALC_IF cJS  		
+    caddhrgBbrd	      ppmbyrum	    	DO_CALC_IF cBRB2  	
+
+    cppmtotasd	      ppmtotas      	DO_CALC_IF cbknRP   	/*Jual Pakai Mt asing tanpa Diskon*/
+    cppmsisas         ppmsisas      	DO_CALC_IF cas1     	/*Sisa Piu Rp/Kurs= Piu Asing*/ 
+    c0		      ppmsisas      	DO_CALC_IF cas0
+
+    cppmtotdisdetd    ppmtotdisdet  	DO_CALC 	/* Hanya Informasi Total Diskon Detil*/
+    cppmhppd	      ppmhpp	    	DO_CALC	
+
+/********************PENAMBAHAN NOMOR OTOMATIS ****************/
+CALCS()
+ctothpp			ppdtothpp / ppdjml
+ctothpp1		ppdtothpp != 0  && ppdjml != 0
+
+MAP(maddsub)
+ppmnobuk   	ppmnobuk  	REPLACE
+
+MAP(mmapppd)
+ppdjml   		ppdjmlawl	REPLACE  /* Pada saat diisi Operator */
+ldipenuhi		ppdjml		REPLACE
+ltothpp			ppdtothpp	REPLACE
+ctothpp			ppdhpp   	DO_CALC_IF ctothpp1
+ltothpp			ppdhrg		REPLACE_IF ctipepromo
+cppdsubtot              ppdsubtot     	DO_CALC
+cppdtotfak	    	ppdtotfak  	DO_CALC_IF cbukanpromo
+cppdsubtot		ppdtotfak	DO_CALC_IF ctipepromo
+ppmtk			lbrctype	REPLACE
+
+DBCALCS(dmapppd)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapppd
+
+MAP(mmapppd2)
+c0            		ppdhpp      	DO_CALC
+c0            		ppdtothpp      	DO_CALC
+ppmtk			lbrctype	REPLACE
+
+DBCALCS(dmapppd2)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapppd2
+
+CALCS()
+cmtdjmlrena	mtdjmlren + ppdjml
+cmtdjmlrenu	mtdjmlren - ~ppdjml
+cmtdjmlrend	mtdjmlren - ppdjml
+
+MAP(mupdmtda)
+cmtdjmlrena	mtdjmlren	DO_CALC
+
+MAP(mupdmtdu)
+cmtdjmlrenu	mtdjmlren	DO_CALC
+
+MAP(mupdmtdd)
+cmtdjmlrend	mtdjmlren	DO_CALC
+
+CALCS()
+ctldjmlrena	tldjmlren + ppdjml
+ctldjmlrenu	tldjmlren - ~ppdjml
+ctldjmlrend	tldjmlren - ppdjml
+
+MAP(mupdtlda)
+ctldjmlrena	tldjmlren	DO_CALC
+
+MAP(mupdtldu)
+ctldjmlrenu	tldjmlren	DO_CALC
+
+MAP(mupdtldd)
+ctldjmlrend	tldjmlren	DO_CALC
+
+CALCS()
+cmtdkirim	lmtddk == "K" 
+ctldkirim	ltlddk == "K" 
+cytppnI		ppmytppn == "I" && ppmperppn > 0
+cindex		"mtdstskodbrg"
+ctarget		gv_DTRO + gv_INPG + mtdplg + mtdbrg + mtdukrwrn + mtdsat
+cnamfieldjml	"mtdjml"
+cnamfieldren	"mtdjmlren"
+cnamfieldpos	"mtdjmlpos"
+cnamfile    	"ppd"
+cnammap     	"maddppd"
+cnammap_aftbtf 	"mmapppd"
+
+chrgnetPPN      (ppdhrg - ppdtotdis) - ((ppdhrg - ppdtotdis) * (ppmperppn/110))
+
+MAP(maddppd)
+ppmnobuk     	ppdnobuk	REPLACE
+ppmplg		ppdplg		REPLACE
+ppmtglfak	ppdtglfak	REPLACE
+ppmsts         	ppdsts		REPLACE
+ppmcab		ppdcab		REPLACE			
+ppmscr		ppdscr		REPLACE			
+ppmdata		ppddata		REPLACE			
+ppmbisnis       ppdbisnis   	REPLACE
+ppmdvs          ppddvs   	REPLACE
+csatu       	ppdnourt2     	DO_CALC_IF cjoinppdu0
+curut2      	ppdnourt2     	DO_CALC_IF cjoinppdu1
+gv_BR		ppdjasbrg	REPLACE
+mtdnobuk     	ppdnobuk2 	REPLACE
+mtdnobuk	ppdnopsn 	REPLACE
+mtdoto		ppdpsnoto	REPLACE
+mtdkat		ppdkat          REPLACE
+mtdbrg		ppdbrg        	REPLACE
+mtdukrwrn	ppdukrwrn      	REPLACE
+mtdsat		ppdsat      	REPLACE
+g_addrk		ppdjml   	REPLACE  /* hasil adddari ksystem */
+lmtdhrg		ppdhrg		REPLACE
+lmtddk  	ppdkb 		REPLACE
+lmtdlok 	ppdlok 		REPLACE
+mtdperdis	ppdperdis	REPLACE
+mtdtotdis	ppdtotdis	REPLACE
+mtdperdism	ppdperdism	REPLACE
+cppdhrgnet	ppdhrgnet	DO_CALC
+chrgnetPPN	ppdhrgnet	DO_CALC_IF cytppnI
+cppdsubtot  	ppdsubtot     	DO_CALC
+cppdtotfak	ppdtotfak	DO_CALC
+ctothpp		ppdtothpp	DO_CALC
+brgbbmprs       ppdnobbm	REPLACE_IF cbrgkirim
+crekhutbrg      ppdnobbm	DO_CALC_IF ctypeB
+
+MAP(maddppd_tld)
+ppmnobuk     	ppdnobuk	REPLACE
+ppmplg		ppdplg		REPLACE
+ppmtglfak	ppdtglfak	REPLACE
+ppmsts         	ppdsts		REPLACE
+ppmcab		ppdcab		REPLACE			
+ppmscr		ppdscr		REPLACE			
+ppmdata		ppddata		REPLACE			
+ppmbisnis          ppdbisnis   	REPLACE
+ppmdvs             ppddvs      	REPLACE
+csatu       	ppdnourt2     	DO_CALC_IF cjoinppdu0
+curut2      	ppdnourt2     	DO_CALC_IF cjoinppdu1
+gv_BR		ppdjasbrg	REPLACE
+tldkat		ppdkat          REPLACE
+tldbrg		ppdbrg        	REPLACE
+tldukrwrn	ppdukrwrn      	REPLACE
+tldsat		ppdsat      	REPLACE
+tldnobuk     	ppdnobuk2 	REPLACE
+tldnobuk     	ppdnokrm  	REPLACE  /* No.Booking/Kirim */
+tldoto		ppdpsnoto2	REPLACE  /* Oto.Booking/Kirim */
+tldnoll		ppdnopsn	REPLACE   /* No Pesanan / mtsnobuk */
+tldppdoto	ppdpsnoto 	REPLACE   /* No Oto Pesanan per Barang - mtdoto */
+g_addrk		ppdjml   	REPLACE  /* hasil adddari ksystem */
+ltldhrg		ppdhrg		REPLACE
+ltlddk  	ppdkb 		REPLACE
+tldlok 		ppdlok 		REPLACE
+tldperdis	ppdperdis	REPLACE
+tldtotdis	ppdtotdis	REPLACE
+tldperdism	ppdperdism	REPLACE
+cppdhrgnet	ppdhrgnet	DO_CALC
+chrgnetPPN	ppdhrgnet	DO_CALC_IF cytppnI
+cppdsubtot  	ppdsubtot     	DO_CALC
+cppdtotfak	ppdtotfak	DO_CALC
+ctothpp		ppdtothpp	DO_CALC
+brgbbmprs       ppdnobbm	REPLACE_IF cbrgkirim
+crekhutbrg      ppdnobbm	DO_CALC_IF ctypeB
+
+MAP(mmapmtd)
+mtdtmp2  	ljmltrm  	REPLACE
+mtdhrg		lmtdhrg		REPLACE
+mtddk 		lmtddk 		REPLACE
+mtdlok		lmtdlok		REPLACE
+cindex		lnamidx		DO_CALC
+ctarget		ltarget		DO_CALC
+mtdtmp2		lmtdtmp2	REPLACE
+cnamfieldjml	lnamfieldjml	DO_CALC
+cnamfieldren	lnamfieldren	DO_CALC
+cnamfieldpos	lnamfieldpos	DO_CALC
+cnamfile    	lnamfile        DO_CALC
+cnammap     	lnammap         DO_CALC
+cBLANKS		lnammap_aftbtf	DO_CALC
+cnammap_aftbtf  lnammap_aftbtf  DO_CALC_IF cmtdkirim
+
+DBCALCS(dmapmtd)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmapmtd
+
+CALCS()
+cindex_tld		"tldstskodbrg"
+ctarget_tld		gv_booking + gv_INPG + tldplg + tldbrg + tldlok + tldukrwrn + tldsat
+cnamfieldjml_tld	"tldjml"
+cnamfieldren_tld	"tldjmlren"
+cnamfieldpos_tld	"tldjmlpos"
+cnammap_tld    		"maddppd_tld"
+
+MAP(mmaptld)
+tldtmp2  		ljmltrm  	REPLACE
+tldhrg			ltldhrg		REPLACE
+tlddk 			ltlddk 		REPLACE
+tldlok			ltldlok		REPLACE
+cindex_tld		lnamidx		DO_CALC
+ctarget_tld		ltarget		DO_CALC
+tldtmp2			ltldtmp2	REPLACE
+cnamfieldjml_tld	lnamfieldjml	DO_CALC
+cnamfieldren_tld	lnamfieldren	DO_CALC
+cnamfieldpos_tld	lnamfieldpos	DO_CALC
+cnamfile        	lnamfile        DO_CALC
+cnammap_tld    		lnammap         DO_CALC
+cBLANKS			lnammap_aftbtf	DO_CALC
+cnammap_aftbtf      	lnammap_aftbtf  DO_CALC_IF ctldkirim
+
+DBCALCS(dmaptld)
+DBC_COMMAND MAPMAP
+DBC_MAP     mmaptld
+
+MAP(mupdppmaRO)
+    cppmtothrgRO      ppmtothrg     	DO_CALC 		     /*Total Seluruhnya Sebelum Bulat*/
+    ctotfak2   	      ppmtotaftdis   	DO_CALC                  /* Total Faktur setelah Dis 2 */
+    ctotppn	      ppmtotppn	    	DO_CALC 		     /* Total PPN Dari Faktur setelah diskon2*/
+    ctotfak1	      ppmtotfak	    	DO_CALC
+    cppmsisa          ppmsisa       	DO_CALC             
+
+    caddhrgbrRO	      ppmtotbr	    	DO_CALC_IF cBR	     /*Total BR*/
+    caddhrgjasRO      ppmtotjs	    	DO_CALC_IF cJS  	     /*Total JS */
+    caddhrgBbrRO      ppmbyrum	    	DO_CALC_IF cBRB2  	     /*Total Barang belum di kirim */
+
+    cppmtotasa	      ppmtotas      	DO_CALC_IF cbknRP        /*Jual Pakai Mt asing tanpa Diskon*/
+    cppmsisas         ppmsisas      	DO_CALC_IF cas1          /*Sisa Piu Rp/Kurs= Piu Asing*/ 
+    c0		      ppmsisas      	DO_CALC_IF cas0
+
+    cppmtotdisdeta    ppmtotdisdet  	DO_CALC 	     	     /* Hanya Informasi Total Diskon Detil*/
+    cppmhppa	      ppmhpp	    	DO_CALC	
+    
+MAP(mupdppmaBK)
+    cppmtothrgBK      ppmtothrg     	DO_CALC 		     /*Total Seluruhnya Sebelum Bulat*/
+    ctotfak2   	      ppmtotaftdis   	DO_CALC                  /* Total Faktur setelah Dis 2 */
+    ctotppn	      ppmtotppn	    	DO_CALC 		     /* Total PPN Dari Faktur setelah diskon2*/
+    ctotfak1	      ppmtotfak	    	DO_CALC
+    cppmsisa          ppmsisa       	DO_CALC             
+
+    caddhrgbrRO	      ppmtotbr	    	DO_CALC_IF cBR	     /*Total BR*/
+    caddhrgjasRO      ppmtotjs	    	DO_CALC_IF cJS  	     /*Total JS */
+    caddhrgBbrRO      ppmbyrum	    	DO_CALC_IF cBRB2  	     /*Total Barang belum di kirim */
+
+    cppmtotasa	      ppmtotas      	DO_CALC_IF cbknRP        /*Jual Pakai Mt asing tanpa Diskon*/
+    cppmsisas         ppmsisas      	DO_CALC_IF cas1          /*Sisa Piu Rp/Kurs= Piu Asing*/ 
+    c0		      ppmsisas      	DO_CALC_IF cas0
+
+    cppmtotdisdeta    ppmtotdisdet  	DO_CALC 	     	     /* Hanya Informasi Total Diskon Detil*/
+    cppmhppa	      ppmhpp	    	DO_CALC	
+    
+CALCS()
+cY		dityt == "Y"
+ckirim		ppdkb == "K" && ppdjasbrg != "JE" && ppdjasbrg != "JI"
+ckirimBK	ppmndk == "BK" && ppdkb == "K" && ppdjasbrg != "JE" && ppdjasbrg != "JI"
+clkirimBK	ppmndk == "BK" && ~ppdkb == "K" && ~ppdjasbrg != "JE" && ppdjasbrg != "JI"
+ckirimbknBK	ppmndk != "BK" && ppdkb == "K" && ppdjasbrg != "JE" && ppdjasbrg != "JI"
+clkirimbknBK	ppmndk != "BK" && ~ppdkb == "K" && ~ppdjasbrg != "JE" && ppdjasbrg != "JI"
+cjoinbimDISC1	djoinbimDISC == 1
+cplengkapY    	brgytplk == "Y" 
+
+MAP(mapbtf)
+ppmplg		btfplg		REPLACE
+ppmtglfak	btftglfak	REPLACE
+ppdhrgnet	btfhrgjl	REPLACE
+
+/*======================================================*/
+SPCALCS(sptransadd)
+DO_LIB_IF ckirimBK ap_adbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,ppdnokrm,ppdpsnoto2,lmapbtf,g_str_empty,lcablok,ppmtglfak);
+DO_LIB_IF ckirimbknBK ap_adbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,ppmtglfak);
+DO_LIB_IF cRObuk2_isi ap_dbclc(DNAME dupdmtdadd,DCOMMAND UPDATE,DTARGET mtdotoidx ppdpsnoto,DMAP mupdmtda);
+DO_LIB_IF cBKbuk2_isi ap_dbclc(DNAME dupdtldadd,DCOMMAND UPDATE,DTARGET tldotoidx ppdpsnoto2,DMAP mupdtlda);
+IF ckirim dmapppd
+IF ctypeB dmapppd2
+DO_LIB ap_dbclc(DNAME dupdppmadd,DCOMMAND UPDATE,DTARGET ppmprmidx ppmprm,DMAP mupdppma);
+DO_LIB_IF cjoinbimDISC1 ap_nxpst(l4536,lm4536);
+DO_LIB_IF cplengkapY ap_nxpst(l4537,lm4536);  /* Add perpelangkapan*/
+
+/*======================================================*/
+SPCALCS(sptransupd)
+DO_LIB_IF clkirimBK ap_dlbtf(ppdsisbrg,~ppdbrdoto,ppmnobuk,~ppdbrg,~ppdlok,ppdoto,~ppdukrwrn,~ppdsat,~ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,~ppdnokrm,~ppdpsnoto2,lmapbtf,g_str_empty,lnamtrnjml);
+DO_LIB_IF ckirimBK ap_adbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,ppdnokrm,ppdpsnoto2,lmapbtf,g_str_empty,lcablok,ppmtglfak);
+
+DO_LIB_IF clkirimbknBK ap_dlbtf(ppdsisbrg,~ppdbrdoto,ppmnobuk,~ppdbrg,~ppdlok,ppdoto,~ppdukrwrn,~ppdsat,~ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lnamtrnjml);
+DO_LIB_IF ckirimbknBK ap_adbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,ppmtglfak);
+
+DO_LIB_IF cRObuk2_isiu ap_dbclc(DNAME dupdmtdupd,DCOMMAND UPDATE,DTARGET mtdotoidx ~ppdpsnoto,DMAP mupdmtdu);
+DO_LIB_IF cRObuk2_isi ap_dbclc(DNAME dupdmtdadd2,DCOMMAND UPDATE,DTARGET mtdotoidx ppdpsnoto,DMAP mupdmtda);
+DO_LIB_IF cBKbuk2_isiu ap_dbclc(DNAME dupdtldupd,DCOMMAND UPDATE,DTARGET tldotoidx ~ppdpsnoto2,DMAP mupdtldu);
+DO_LIB_IF cBKbuk2_isi ap_dbclc(DNAME dupdtldadd2,DCOMMAND UPDATE,DTARGET tldotoidx ppdpsnoto2,DMAP mupdtlda);
+IF ckirim dmapppd
+IF ctypeB dmapppd2
+DO_LIB ap_dbclc(DNAME dupdppmupd,DCOMMAND UPDATE,DTARGET ppmprmidx ppmprm,DMAP mupdppmu);
+DO_LIB ap_dbclc(DNAME dupdppmadd2,DCOMMAND UPDATE,DTARGET ppmprmidx ppmprm,DMAP mupdppma);
+DO_LIB_IF cjoinbimDISC1 ap_nxpst(l4536,lm4536);
+
+/*======================================================*/
+SPCALCS(sptransdel)
+DO_LIB_IF ckirimBK ap_dlbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,ppdnokrm,ppdpsnoto2,lmapbtf,g_str_empty,lnamtrnjml);
+DO_LIB_IF ckirimbknBK ap_dlbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lnamtrnjml);
+
+DO_LIB_IF cRObuk2_isi ap_dbclc(DNAME dupdmtddel,DCOMMAND UPDATE,DTARGET mtdotoidx ppdpsnoto,DMAP mupdmtdd);
+DO_LIB_IF cBKbuk2_isi ap_dbclc(DNAME dupdtlddel,DCOMMAND UPDATE,DTARGET tldotoidx ppdpsnoto2,DMAP mupdtldd);
+DO_LIB ap_dbclc(DNAME dupdppmdel,DCOMMAND UPDATE,DTARGET ppmprmidx ppmprm,DMAP mupdppmd);
+DO_LIB_IF cjoinbimDISC1 ap_nxpst(l4536,lm4536);
+
+SPCALCS(sadd)
+DO_LIB_IF cotY	ap_dbclc(DNAME daddsub,DCOMMAND ADD_SUB,DFILE ppm,DLTARGET ppmbukidx ppmnobuk,DLLEN {stspjbuk},DMAP maddsub);
+
+SPCALCS(sptransa)
+dmapmtd
+DO_LIB ap_addrk(lnamidx,ltarget,lnamfieldjml,lnamfieldpos,lnamfieldren,ljmltrm,lmtdhrg,lnamfile,lnammap,ladbtf_1,lnammap_aftbtf);
+DO_LIB_IF cmtdkirim ap_adbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_str_empty,lcablok,ppmtglfak);
+DO_LIB ap_dbclc(DNAME dupdppmaRO,DCOMMAND UPDATE,DTARGET ppmprmidx ppmprm,DMAP mupdppmaRO);
+
+SPCALCS(sptransag1)
+dmaptld
+DO_LIB ap_addrk(lnamidx,ltarget,lnamfieldjml,lnamfieldpos,lnamfieldren,ljmltrm,ltldhrg,lnamfile,lnammap,ladbtf_1,lnammap_aftbtf);
+DO_LIB_IF ctldkirim ap_adbtf(ppdsisbrg,ppdbrdoto,ppmnobuk,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,ppdnokrm,ppdpsnoto2,lmapbtf,g_str_empty,lcablok,ppmtglfak);
+DO_LIB ap_dbclc(DNAME dupdppmaBK,DCOMMAND UPDATE,DTARGET ppmprmidx ppmprm,DMAP mupdppmaBK);
+
+CALCS()
+cmtdtmp21	mtddk != BLANKS
+ctldtmp21	tlddk != BLANKS
+cjoindit1	cmpytpsn != "Y" && djoinditDis == 1 /* dit adalah detil diskon per pelanggan dari scr3121 */
+
+SPCALCS(spmadd)
+DO_LIB_IF cjoindit1 ap_nxpst(l4507,lm4507);
+
+POSTING(master)
+PST_UPD_DET_COND    csatu
+PST_ADDCMD spmadd
+PST_SUB_ADDCMD sadd
+
+POSTING(trans)
+PST_ADDCMD sptransadd
+PST_UPDCMD sptransupd
+PST_DELCMD sptransdel
+
+POSTING(transa)
+PST_COMMAND sptransa
+PST_COND cmtdtmp21
+
+POSTING(transag1)
+PST_COMMAND sptransag1
+PST_COND ctldtmp21
+
+/*******master map ini dipakai khusus data IMPT/ODUP dari scr293?********/
+CALCS()
+csat_sama	ppdsat == #ppdsat && ppdukrwrn == #ppdukrwrn
+
+DBCALCS(dbscanbrd)
+   	DBC_COMMAND     SCANSCAN
+   	DBC_TARGET      brdstbrlkust   gv_INPG ppdbrg ppdlok ppdukrwrn ppdsat 
+        DBC_SUM_FIELD   brdsisprc 
+
+DBCALCS(dbscanppd)
+   	DBC_COMMAND     SCANSCAN_BUF3
+   	DBC_TARGET      ppdbukbrglok   ppdnobuk ppdbrg ppdlok  
+	DBC_SCAN_COND   csat_sama  
+        DBC_SUM_FIELD   ppdjml
+
+CALCS()
+cjmlokMP	ppdjasbrg == "JE" || ppdjasbrg == "JI"|| dbscanbrd >= dbscanppd 
+
+MASTER_MP(trans)
+MST_DETCOND   cjmlokMP
+MST_EXE_TIME  BEFORE_POSTING
+
+CALCS()
+cppmOPEN  ppmsts == "OPEN" && ppmfr == "F" 
+cppmT   ((djoinppd == 1 && ppmtk == "T" && ppmtotbyr != 0.0 && ppmtotbyr - ppmtotfak == 0.0) || ppmtk != "T") || ((djoinppd == 1 && ppmtk == "U" && ppmtotbyr != 0.0) || ppmtk != "U") || djoinppd == 0 || ppmdata == gv_dtsjl
+ctot0byr0  djoinbimu == 0 /*djoinppdu == 0 && djointcmu == 0 && djoinbimu == 0 && ppmsts == "OPEN"*/
+ccmpY	 cmpytdis == "T" && ppmsts == "OPEN"
+
+PERMIT(master)
+PMT_UPDALL_COND    	cppmOPEN
+PMT_DEL_COND    	cppmOPEN
+PMT_IGNDET_COND 	ctot0byr0
+PMT_EXIT_COND   	cppmT
+PMT_EXIT_MOV_COND  	cppmT
+PMT_EXIT_MSG    	Jika Tunai Isi detil-Kas-Bank / Jika PJ jumlah harus ada Isinya 
+
+PERMIT(trans)
+	PMT_ADD_COND	cppmOPEN
+	PMT_UPDALL_COND	cppmOPEN
+        PMT_IGNDET_COND cppmOPEN 
+	PMT_DEL_COND	cppmOPEN
+
+PERMIT(transc)
+	PMT_ADD_COND	cppmOPEN
+	PMT_UPDALL_COND	ccmpY
+	PMT_DEL_COND	cppmOPEN
+
+    /*i.NoBuk     : ______________*/
+
+IMAGE(report) 
+/--------------------------------------------------\                         
+    i.Pil       : _   	1. Invoice 
+			2. Kirim Barang
+    i.NoBuk     : _______________        
+
+\--------------------------------------------------/                         
+
+
+FIELD(report)
+    lpil	    NOCHANGE	       NONE		1	
+    ppmnobuk        PROTECT            NONE             4
+
+
+DEFAULTS(report)
+lpil    DFALT_LIST            1 2 
+
+MAP(mparam)
+ppmnobuk        r_string1       REPLACE
+
+CALCS()
+cr1    g_print 
+ctam2  ppmjmlctk + 1  /* Faktur */
+
+MAP(mupdlap1)
+   ctam2		ppmjmlctk	   DO_CALC
+
+DBCALCS(dupdlap1)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET      ppmprmidx ppmprm
+	DBC_MAP         mupdlap1
+	DBC_COND        cr1
+
+CALCS(report)
+c1  lpil == 1 
+c2  lpil == 2 
+
+RTREE(report1)
+RT_COND c1
+USES_SCRIPT(scr603.rptdesign)
+RT_DBCALCS dupdlap1
+RT_MAP mparam
+
+RTREE(report2)
+RT_COND c2
+USES_SCRIPT(scr603.rptdesign)
+RT_MAP mparam
+                   
+END_SCREEN

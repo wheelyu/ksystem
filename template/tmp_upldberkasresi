@@ -1,0 +1,77 @@
+LOCAL
+PGM_FIELDS
+
+luplok1		STRING	11
+lenter1		STRING	21
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||i.Upload	  : ___		    ||
+||i.Tgl           : _________       ||
+||		       ______	    ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT   INPUTRI 1
+aktdk		PROTECT	  INPUTRI 2
+akttgl          PROTECT   INPUTRI 3
+lenter1		NOCHANGE  INPUTRI 4
+luplok1		TOMBOL    INPUTRI 8
+
+
+DEFAULTS(tmptranst)
+lenter1		INIT		ENTER
+luplok1		INIT		UPLOAD_OK
+lRESI		INIT		RESI
+
+CALCS()
+cdjoinaktkpb1 	(tkmsts == "INPG" || tkmsts == "CLSD") && (g_grpnam == "ADH" || g_grpnam == "ADHSPV" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || 
+		g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "AHASSHEAD" || g_grpnam == "AHASSSPV" || 
+		g_usrkode == "1901491" || g_usrkode == "2068738") && tkmkode == "AD"
+cY1             "Y"
+cfotobaru1      akttgl == g_tgltrn    
+
+MAP(mupdaktresi)
+g_tgltrn	akttgl	REPLACE
+cY1             aktdk   DO_CALC_IF cfotobaru1
+
+DBCALCS(dupdfoto2)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktresi
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cdjoinaktkpb1
+SFL_UPL_DELCOND chnyaHO
+SFL_UPLFLD tkmnobuk	akttype
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD_DBCALCS dupdfoto2
+/*SFL_UPL_CAMERAONLY*/
+SFL_TARGET
+aktkodtypidx       tkmnobuk tkmdata lRESI
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND c0
+

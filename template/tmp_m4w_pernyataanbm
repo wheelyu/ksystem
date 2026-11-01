@@ -1,0 +1,147 @@
+DBCALCS(djoinsvipernyataan1) 
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	svidatbuktyp	lDT704  btmnobuk lACCBM
+
+IMAGE(tmptranst) 
+/------------------------------------------------------------------------------------------------------------\
+ /----------------------------------------------------------------------------------------------------------\
+  i.Suratpernyataanbm           : _________________________
+  i.t
+  i.Bahwasaya                   : _________________________
+  i.Nip                         : _________________________
+  i.SDep                        : _________________________
+  i.Grup                        : _________________________
+  t.newpernyataanbm1a                                                                 
+  i.Pernyataan2                          : _______________________ i.Atasnama : _________________________
+       t.newpernyataanbm1b                                                                 
+       t.newpernyataanbm1c                                                                 
+  t.2  t.newpernyataanbm2a                                                                 
+       t.newpernyataanbm2b                                                                 
+       t.newpernyataanbm2c                                                                 
+       t.newpernyataanbm2d                                                                 
+       t.newpernyataanbm2e                                                                 
+  t.3  t.newpernyataanbm3a                                                                 
+       t.newpernyataanbm3b                                                                 
+       t.newpernyataanbm3c                                                                 
+       t.newpernyataanbm3d                                                                 
+       t.newpernyataanbm3e                                                                 
+  t.4  t.newpernyataanbm4a                                                                 
+       t.newpernyataanbm4b                                                                 
+       t.newpernyataanbm4c                                                                 
+       t.newpernyataanbm4d                                                                 
+       t.newpernyataanbm4e                                                                 
+       t.newpernyataanbm4f                                                                 
+       t.newpernyataanbm4g                                                                 
+  t.5  t.newpernyataanbm5a                                                                 
+       t.newpernyataanbm5b                                                                 
+       t.newpernyataanbm5c                                                                 
+       t.newpernyataanbm5d                                                                 
+       t.newpernyataanbm5e                                                                 
+       t.newpernyataanbm5f                                                                 
+       t.newpernyataanbm5g                                                                 
+       t.newpernyataanbm5h                                                                 
+  t.6  t.newpernyataanbm6a                                                                 
+       t.newpernyataanbm6b                                                                 
+       t.newpernyataanbm6c                                                                 
+       t.newpernyataanbm6d                                                                 
+       t.newpernyataanbm6e                                                                 
+       t.newpernyataanbm6f                                                                 
+       t.t                                                                                 
+  t.newpernyataanbm7a                                                                      
+  t.newpernyataanbm7b                                                                      
+  t.newpernyataanbm7c                                                                      
+  i.Menyatakan                  : ____ ____
+ \----------------------------------------------------------------------------------------------------------/
+\------------------------------------------------------------------------------------------------------------/
+
+FIELD(tmptranst)
+svistr1			PROTECT SCROLL		INPUTRI 1
+svistr2			PROTECT SCROLL		INPUTRI 2
+svikode			PROTECT SCROLL		INPUTRI 3
+svistr4			PROTECT SCROLL 		INPUTRI 4
+svistr5			PROTECT SCROLL 		INPUTRI 5
+svistr6			PROTECT SCROLL 		INPUTRI 6
+svinama			PROTECT SCROLL 		INPUTRI	7
+sviyt1			ALLCAPS SCROLL		INPUTRI 8
+lOK			ALLCAPS			INPUTRI 9
+
+
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+sviyt1			DFALT_SCAN		BLANKS
+						Y ""
+						T ""
+
+/*
+
+EDITS(tmptranst)
+e.Validatesdep		svikode		VALIDATE psikodidx mpsi spsi
+
+MAP(mpsi)
+psikode			svikode		REPLACE
+psisdep			svistr4		REPLACE
+psidep			svistr5		REPLACE
+*/
+
+CALCS()
+cnourt1                 1
+cnourt2                 svinourt + 1
+cjoinsvisrtp0   	djoinsvipernyataan1 == 0
+cjoinsvisrtp1  		djoinsvipernyataan1 == 1
+
+
+MAP(misikok)
+lDT704		svidata			REPLACE
+btmnobuk		svinobuk		REPLACE
+lACCBM		svitype			REPLACE
+btmnobuk		svistr1			REPLACE
+btmnobuk		svistr6			REPLACE
+
+MAP(mnourtsvi)
+cnourt1                 svinourt        DO_CALC_IF cjoinsvisrtp0
+cnourt2                 svinourt        DO_CALC_IF cjoinsvisrtp1
+g_usrnam		svistr2			REPLACE
+g_usrkode		svikode			REPLACE
+g_grpnam		svistr4			REPLACE
+g_grpnam		svistr5			REPLACE
+psmnama_2		svinama			REPLACE
+
+CALCS()
+cmansj2          g_grpnam!="RI" && g_usrkode != "1711158" && g_usrkode != "1524099"
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=sviyt1        DO_MAP SHOW mnourtsvi
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW mnourtsvi
+AFTER_INPUT             cur_keybd=EN            DO_LIB_IF cmansj2  ap_ceksj(svikode);
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW misikok       
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)       
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	svidatbuktyp   lDT704 btmnobuk lACCBM
+SFL_MAP
+g_usrnam                svistr2                 REPLACE
+g_usrkode               svikode                 REPLACE
+g_grpnam                svistr4                 REPLACE
+g_grpnam                svistr5                 REPLACE
+psmnama_2               svinama                 REPLACE
+lDT704			svidata			REPLACE
+lACCBM			svitype			REPLACE
+
+
+
+
+CALCS()
+cadd_pernyataan1		 btmsts == "701" && btmflag1 == "BM" &&  djoinsvipernyataan1 == 0 && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WADH" ) || g_grpnam == "RI"
+cupd_pernyataan1		btmsts == "701"  && btmflag1 == "BM" &&  djoinsvipernyataan1 == 1 && (g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WADH" ) || g_grpnam == "RI"
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cadd_pernyataan1	
+  	PMT_UPDALL_COND cupd_pernyataan1
+  	PMT_DEL_COND  	cupd_pernyataan1
+
+

@@ -1,0 +1,124 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/-----------s.UPLOAD-------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||____________________            ||
+||t.PilUpld  : __________________ ||
+||t.jlsknhsl :                    ||
+||                                ||
+||                                ||
+|| ______________________________ ||
+||t.hasil     ___________________ ||
+||t.alsnfrd   ___________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnobuk                NOCHANGE        	INPUTRI	        1
+tldtydis		PROTECT			INPUTRI		2
+tldket	      	        TEXTAREA                INPUTRI		3
+tldstr2                 ALLCAPS         	INPUTRI         4
+tldket2                 ALLCAPS                 INPUTRI         5
+
+DEFAULTS(tmptranst)
+tldstr2          DFALT_SCAN      FRAUD
+                                 TIDAKFRAUD
+tldket2          DFALT_SCAN      DILUAR_ZDEN_RO_Pernah_Tarik_WO_atau_INPG
+                                 Pemakaian_Motor/Dana_Orang_Lain,Teman_Family_Lain
+                                 Pekerjaan_Pengangguran
+                                 Penjamin_tidak_Bersedia_Tanda_Tangan_Kontrak
+                                 NoticeSTNK_Lebih_Dari_4_Tahun
+                                 Pemohon_Tidak_Pernah_Bermohon
+                                 Pemohon_Tidak_Tinggal_Di_Alamat_Tagih
+                                 Pemohon/Penjamin_Sebelum_Akad_Kredit
+                                 Pemohon/Penjamin_Dalam_Penjara
+                                 Status_Rumah_TDK_SESUAI_SYSTEM
+                                 Pekerjaan_Pemohon_Tidak_Sesuai
+                                 Pekerjaan_Penjamin_Tidak_Sesuai
+                                 Pekerjaan_Mafia
+                                 Longlat_Tidak_Sesuai
+
+CALCS()
+cisitdkfrd      tldstr2=="TIDAKFRAUD"
+cisifrd		tldstr2=="FRAUD"
+
+EDITS(tmptranst)
+e.Mandatory1    tldket        MANDATORY
+e.Mandatory2    tldstr2       MANDATORY
+e.Mandatory3    tldket2       MANDATORY_IF cisifrd
+
+MAP(muplftbm)                 
+cUplOk              tldtydis       DO_CALC
+g_fotolat1          tldperdis1     REPLACE
+g_fotolon1          tldperdis2     REPLACE
+g_tgltrn            tldtgl2        REPLACE
+
+DBCALCS(dupduplftbm)
+    DBC_COMMAND     UPDATE
+    DBC_TARGET      tldprmidx   tldprm
+    DBC_MAP         muplftbm
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldket2      DO_SKIP_IF cisitdkfrd
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tldnobuk tldbrg
+SFL_UPLFLD_DBCALCS	dupduplftbm
+SFL_UPL_DELCOND chapusfoto1
+SFL_UPL_DIRFLD tkmtgl
+SFL_TARGET
+tldbukbrgoto   tkmnobuk gv_INPG lACCBM
+
+SFL_MAP
+tkmnobuk        tldnobuk   REPLACE
+gv_INPG         tldsts     REPLACE
+
+CALCS()
+cupd757a        (mtsdvs_1=="HMC" || mtsdvs_1=="M2W") && djoinabk757==1 && tkmlok1!="" && tldtydis!=""
+cubaha          abktype=="BM" && tkmlok1!=""
+caddNSO         (mtsdvs_1=="HMC" || mtsdvs_1=="M2W") && (djoinabkNSO==0 || (djoinabkNSO==1)) && tkmlok1!="" && tldtydis!="" && tkmsts == "OPEN"
+cupdtkmttmprans	djointkmtld==1 
+
+MAP(mupdabk757a)
+gv_CLSD         abksts          REPLACE_IF cstsabkCLSD
+DEBUG ldum      ldum            REPLACE
+
+MAP(maddabkNSO)
+tkmnobuk        abknobuk        REPLACE
+lkunciabsen     abkdata         REPLACE
+lnipCMS         abkkym          REPLACE
+cketabk757      abkkym2         DO_CALC
+ctglbsk         abktgl          DO_CALC
+gt_RINP         abksts          REPLACE
+l757            abkscr          REPLACE
+l757NSO         abktype         REPLACE
+DEBUG ldum      ldum            REPLACE
+
+MAP(mupdtkmtmptrans)
+tldstr2		tkmlok1		REPLACE
+
+
+SPCALCS(spupdtmptrans)
+DO_LIB_IF cupdtkmttmprans ap_dbclc(DNAME dupdtkmtmptrans,DCOMMAND UPDATE,DTARGET tkmbukidx tldnobuk,DMAP mupdtkmtmptrans);
+DO_LIB_IF cupd757a ap_dbclc(DNAME dupdabk757a,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tkmnobuk,DMAP mupdabk757a,DBC_COND cubaha);
+DO_LIB_IF caddNSO ap_dbclc(DNAME daddabkNSO,DCOMMAND ADD,DFILE abk,DMAP maddabkNSO);
+
+POSTING(tmptrans)
+PST_UPDCMD spupdtmptrans
+ 

@@ -1,0 +1,111 @@
+IMAGE(tmptranst) 
+/---------t---------t--------------t-----------------t----------t----------t----t--------t------t---------\ 
+|t.Data   |t.Nip    | t.Rupiah     | t.Ket           | t.Grup   |t.Grup2   |t.Pt|t.Bisnis|t.Tipe|t.Tanggal|
+\---------.---------.--------------.-----------------.----------.----------.----.--------.------.---------/ 
+
+IMAGE(tmptrans) 
+|_________|_________|______________|_________________|__________|__________|____|________|______|_________|
+
+
+FIELD(tmptrans)
+   gjddata      PROTECT          	INPUTRI          1
+   gjdkode      NOCHANGE        	INPUTRI          2
+   gjdtotal     NUMERIC         	INPUTRI          3
+   gjdket       ALLCAPS         	INPUTRI          4
+   gjdgrup      NOCHANGE        	INPUTRI          5
+   gjdgrup2     PROTECT	        	INPUTRI          6
+   gjdpjk       PROTECT	        	INPUTRI          7
+   psidvs       PROTECT	        	INPUTRI          8
+   gjdtype      PROTECT         	INPUTRI          9
+   gjdtgl       NOLIMIT {DD-MM-YYYY}	INPUTRI          10
+
+DEFAULTS(tmptrans)
+gjddata		INIT	DTGAJI
+gjdtglpros	INIT	{g_tgltrn}
+gjdgrup		DFALT_SCAN BLANKS KOMISI GAJI UANGMAKAN UANGSAKU TRANSPORT BITRANSFER LEMBUR PESANGON CLAIM TLKTLP 
+
+CALCS()
+cjoinpsm	 djoinpsm == 1
+
+EDITS(tmptrans)
+e.Mandatory1		gjdtotal	MANDATORY
+e.Mandatory2		gjdket  	MANDATORY
+e.Mandatory3		gjdgrup 	MANDATORY
+e.MandatoryBank 	gjdgrup2 	MANDATORY
+e.MandatoryPT     	gjdpjk 		MANDATORY
+e.Validate4		gjdkode		VALIDATE             psikodidx mpsie
+e.Validate5		gjdkode		VALIDATE_IF cjoinpsm psmkodidx mpsme
+
+MAP(mpsme)
+psmlokjl	gjdpjk		REPLACE
+psmbank		gjdgrup2	REPLACE
+psmnama		gjdnama		REPLACE
+
+MAP(mpsie)
+psicabskr	gjdcab		REPLACE
+psikode		gjdkode		REPLACE
+psicabskr	gjdcab		REPLACE
+psists		gjdtype2	REPLACE
+
+MAP(mtmptrans)
+psikode		gjdkode		REPLACE
+
+
+
+CALCS()
+cKOM	"KOM"
+cGJI	"GAJI"
+cMAK	"MAK"
+cTRN	"TRN"
+cLEM	"LEM"
+cPSG	"PSG"
+cCLA	"CLA"
+cSKU 	"SKU"
+c10	10
+cdariKOMISI	gjdgrup == "KOMISI"
+cdariGAJI  	gjdgrup == "GAJI"  
+cdariUANGMAKAN 	gjdgrup == "UANGMAKAN"
+cdariTRANSPORT 	gjdgrup == "TRANSPORT"
+cdariLEMBUR    	gjdgrup == "LEMBUR"    
+cdariPESANGON  	gjdgrup == "PESANGON" 
+cdariCLAIM     	gjdgrup == "CLAIM"    
+cdariUANGSAKU  	gjdgrup == "UANGSAKU" 
+cdariBITRANSFER	gjdgrup == "BITRANSFER"
+cdariTLKTLP    	gjdgrup == "TLKTLP"    
+
+MAP(misie)
+cKOM		gjdtype		DO_CALC_IF cdariKOMISI
+cGJI		gjdtype		DO_CALC_IF cdariGAJI  
+cGJI		gjdtype		DO_CALC_IF cdariBITRANSFER
+cMAK		gjdtype		DO_CALC_IF cdariUANGMAKAN
+cTRN		gjdtype		DO_CALC_IF cdariTRANSPORT
+cLEM		gjdtype		DO_CALC_IF cdariLEMBUR   
+cPSG		gjdtype		DO_CALC_IF cdariPESANGON 
+cCLA		gjdtype		DO_CALC_IF cdariCLAIM    
+cSKU		gjdtype		DO_CALC_IF cdariUANGSAKU 
+cGJI		gjdtype		DO_CALC_IF cdariTLKTLP   
+gjdgrup		gjdkodegj	REPLACE
+c10		gjdurt1		DO_CALC
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=gjdgrup	DO_MAP SHOW misie
+AFTER_INPUT     cur_field=gjdgrup       DO_LIB ap_akhbl(g_tgltrn,&gjdtgl);
+BEFORE_INPUT	cur_field=gjdkode	DO_MAP SHOW mtmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(10)   
+SFL_TITLE(tmptranst)
+SFL_TARGET
+gjdkodidx   psikode ltglakhbl gt_DTGAJI
+
+SFL_MAP	
+psikode		gjdkode		REPLACE
+psmlokjl	gjdpjk		REPLACE
+psmbank		gjdgrup2	REPLACE
+psmnama		gjdnama		REPLACE
+psicabskr	gjdcab		REPLACE
+psists		gjdtype2	REPLACE
+
+
+
+

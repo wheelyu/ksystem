@@ -1,0 +1,702 @@
+SCREEN 3004 QUERY_TYPE s.SetupAwalPerusahaan
+SCR_FILE sts
+SCR_LOGFLD stskode  
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+ltomdet_d    STRING	    30
+ltomdet_2d   STRING	    30
+ltombol4     STRING	    30
+ltombol5     STRING	    30
+ltombol6     STRING	    30
+ltombol7     STRING	    30
+ldum         STRING	    3 
+lurtlcl      INT2	    2
+/*
+lnobbm       STRING	    21
+lyt          STRING	    3
+*/
+
+/* ------------------ djoinsts --------------*/
+DBCALCS(djoinsts)
+	DBC_COMMAND	JOIN
+	DBC_TARGET    stsprmidx              stsprm 
+
+/*------------------djoindtm--------------*/
+DBCALCS(djoindtm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET    dtmdtkodidx             gv_dtvaluta stsmua 
+
+/*---------------djoinlclu--------------*/
+MAP(mjoinlclu)
+lclnourt  lurtlcl    REPLACE
+
+DBCALCS(djoinlclu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET      lcldaturtidx   gv_dtdivisi 
+        DBC_MAP         mjoinlclu
+
+/*-----------------djointbl--------------*/
+DBCALCS(djointbl)
+DBC_COMMAND	JOIN
+DBC_TARGET 	tbldtkodidx   gv_kdbukti tblkode
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /--------------------------------------------------------------\ /------------------------------\|
+| |i.Nama     : ________________________________________________ | |i.UangDn         : __________ ||
+| |i.Alamat   : ________________________________________________ | |i.AktifPrg       : __________ ||
+| |i.Kota     : ___________________                              | |i.TtpHarian      : ________   ||
+| |i.Telp     : ______________                                   | |i.TglBisaMundur  : ________   ||
+| |i.NoPrtPlg : ____                                             | |i.TglProsesHari  : __________ ||
+| |i.Programer: ______________                                   | |i.TglPrmj        : __________ ||
+| |spasi                                                         | |i.TglPrjTh       : __________ ||
+| |i.SisUsh   : ________________                                 | |i.TglTrnMun      : __________ ||
+| |i.NrcHari  : __                                               | |i.NrcPer         : __________ ||
+| |i.SeriPjk  : ____                                             | |i.TglAwlGaji     : __________ ||
+| |t.ThblJrn  : __                                               | |t.IpSolr         : __________ ||
+| |t.LamaPwd  : ___                                              | |                              ||
+| \--------------------------------------------------------------/ \------------------------------/|
+|_________________ _______________ __________ ____________ _________ ________________              |
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(master)
+   stspersh          ALLCAPS              	INPUTRI     1 
+   stsmua            ALLCAPS              	INPUTRI         24 
+
+   stsalamat         ALLWORDCAPS                INPUTRI     2 
+   stsaktif          NONE SCROLL               	INPUTRI         25 
+
+   stskota           ALLWORDCAPS                INPUTRI     3 
+   ststrntoday       NOCHANGE             	INPUTRI         26 
+
+   ststelp           ALLCAPS              	INPUTRI     4 
+   stssettglmm       NOCHANGE             	INPUTRI          29 
+
+   stsplg            ALLCAPS              	INPUTRI     5 
+   ststglproses      NONE NOLIMIT {DD-MM-YY}    INPUTRI          30 
+   
+   stspel            ALLWORDCAPS SCROLL         INPUTRI     6 
+   ststglprjgl       NONE NOLIMIT {DD-MM-YY}    INPUTRI          32 
+   ststglprjth       NONE NOLIMIT {DD-MM-YY}    INPUTRI          33 
+
+   stssistem         NOCHANGE                   INPUTRI     7 
+   ststglmun         NONE NOLIMIT {DD-MM-YY}    INPUTRI          34 
+   stsnrchari        NOCHANGE                   INPUTRI     8 
+   stssetnrc         NOCHANGE                   INPUTRI          35
+   stsseripjk        ALLCAPS                    INPUTRI     9 
+   ststglgj          NONE NOLIMIT {DD-MM-YY}    INPUTRI          36 
+   stsjrnthbl        ALLCAPS                    INPUTRI     10
+   stsipsolr         ALLCAPS                    INPUTRI          37
+   stslamapwd        NUMERIC                    INPUTRI          37
+
+   ltomdet_d   	     TOMBOL		  INPUTRI     56
+   ltomdet_2d  	     TOMBOL		  INPUTRI     57
+   ltombol4    	     TOMBOL		  INPUTRI     52
+   ltombol5    	     TOMBOL		  INPUTRI     53
+   ltombol6    	     TOMBOL		  INPUTRI     54
+   ltombol7    	     TOMBOL		  INPUTRI     55
+
+DEFAULTS(master)
+ltomdet_d    INIT   	     "1d.Template Setup Jurnal"
+ltomdet_2d    INIT   	     "2d.Template No.Bukti"
+ltombol4      INIT   	     "4.Setup Umum"
+ltombol5      INIT   	     "5.Setup Pembelian"
+ltombol6      INIT   	     "6.Setup Jual"
+ltombol7      INIT   	     "7.Setup Barang-Produksi"
+stsmua	      INIT	     RP
+stsaktif      INIT	     aktif.var
+stskode       INIT           Y 
+stskode       INIT_UPDATE    Y 
+stsprog       INIT           Susan H.K    
+stsprog       INIT_UPDATE    Susan H.K    
+stssettglmm   DFALT_SCAN_BLANKS   
+			     T "Tanggal Tidak Bisa Mundur"
+			     Y "Tanggal Bisa Mundur Hingga Bulan lalu"
+			     B "Tanggal Bisa Mundur Dalam Bulan Ini"
+stssetnrc     DFALT_SCAN     CAB "Neraca Per Cabang "
+			     PST "Neraca Per Pusat "
+
+stssetjlmtr   DFALT_SCAN     T "Hanya Tunai/di Leasingkan"
+			     K "ada Kredit Dana Sendiri"
+stssiskas     DFALT_SCAN     0 "Saat Keluar Rek.Kas Saldo boleh 0" 
+		   	     1 "Saat Keluar Rek.Kas Hrs Ada Saldo"
+ststrntoday   DFALT_LIST     Y T
+stsnrchari    DFALT_LIST     T Y
+stssistem     DFALT_SCAN     UMUM   "Distributor/Toko/Perusahaan Umum"
+			     DEALER "Sistem Untuk Dealer"
+		  	     BPR    "Sistem Untuk BPR / Koperasi"
+			     HOSPITAL "Sistem Untuk Rumah Sakit"
+			     PABRIK "Sistem Barang Produksi"
+stssetcabon   DFALT_LIST     T Y
+
+stshrgpoisi   DFALT_LIST     Y T
+stsjrnthbl    DFALT_SCAN     B "Bukti, thbl dari jrntgl(tgl Bukti)"
+			     P "Posting, thbl dari jrncrttgl(tgl Posting)"
+
+/* stsytlr       DFALT_SCAN     T "Laba Rugi Hanya Per Cabang"
+			     Y "Ada Laba Rugi selain per Cabang"
+stssetscab    DFALT_SCAN     T "Tidak ada Sub.Cab "
+			     Y "Ada Sub.Cab dan ada Neraca Per Sub"
+*/
+
+CALCS()
+cbknri          g_grpnam != "RI " && g_grpnam != "ROOT "
+
+EDITS(master)
+Tombol ltombol4 SHOW_IMAGE imtombol1
+Tombol ltombol5 SHOW_IMAGE imtombol2
+Tombol ltombol6 SHOW_IMAGE imtombol3
+Tombol ltombol7 SHOW_IMAGE imtombol4
+e.Mandatory stspersh MANDATORY
+e.Mandatory stspel MANDATORY
+e.Mandatory stssistem MANDATORY
+e.Mandatory4 stsplg MAND_FILL
+
+CALCS()
+ctglm1		SYSDATE - 1
+ctglksg		ststglproses == BLANKS && ststrntoday == "Y"
+cbknDEALER	stssistem != "DEALER"
+
+MAP(mtglpros)
+ctglm1 		ststglproses		DO_CALC_IF ctglksg
+
+HOOKS(master)
+BEFORE_INPUT   cur_field=ststrntoday    DO_SKIP_IF cbknri
+BEFORE_INPUT   cur_field=ststglproses   DO_SKIP_IF cbknri
+BEFORE_INPUT   cur_field=ststglprjgl    DO_SKIP_IF cbknri
+AFTER_INPUT    cur_field=stspersh       DO_MAP SHOW mtglpros
+
+
+/**********************************TOMBOL 1**********************************************/
+IMAGE(imtombol1) 
+/---------------------------------------------------------------------------------------\
+| /---------------------------------\ /-----------------------------------------------\ |
+| |i.SisByr  : __________           | |i.CabOn          : _____                       | |
+| |i.UrlBirt : __________________   | |i.SisKas         : _____                       | |
+| |i.UsrSql  : __________________   | |i.%Ppn           : __                          | |
+| |i.PwdSql  : __________________   | |i.LokPos         : _________                   | |
+| \---------------------------------/ \-----------------------------------------------/ |
+| /---------------------------------\ /-----------------------------------------------\ |
+| |i.PjgNoBuk       : ___           | |i.SaldoAwalOk  : __                            | |
+| |i.SetHariLibur   : ___           | |i.SisBtlVoid   : ___         i.1Btl   i.2Void  | |
+| |i.YtApproval    : ___            | |i.YtUrutApr    : ___                           | |
+| \---------------------------------/ \-----------------------------------------------/ |
+| /---------------------------------\ /-----------------------------------------------\ |
+| |i.BukBeliOtomatis    : ___       | |i.AdaPlafonObat: ___                           | |
+| |i.BukNotBeliOtomatis : ___       | |i.Toleransi1   : __._____                      | |
+| |i.KdPlgKryOtomatis   : ___       | |i.Tolenansi2   : __._____                      | |
+| \---------------------------------/ \-----------------------------------------------/ |
+\---------------------------------------------------------------------------------------/
+
+FIELD(imtombol1)
+   stssetjlmtr       NOCHANGE             INPUTRI          1 
+   stssetcabon       NOCHANGE             INPUTRI          2 
+
+   stsurlbirt        NONE                 INPUTRI          3 
+   stssiskas         NOCHANGE             INPUTRI          4 
+
+   stsusrsql         NONE                 INPUTRI          5 
+   stsperppn         NONE                 INPUTRI          6 
+
+   stspwdsql         NONE                 INPUTRI          7    
+   stslokpos         NONE                 INPUTRI          8    
+
+   stspjbuk          NUMERIC              INPUTRI          9 	/* Pjg no.bukti */
+   stsprjblok  	     NOCHANGE             INPUTRI          10  
+
+   stssethrlbr       NOCHANGE             INPUTRI           11  	/* hari libur */
+   stsbtlpst  	     NOCHANGE    	  INPUTRI           12   /* Sistem Batal/Void*/
+
+   stssetapr         NOCHANGE             INPUTRI           13  	
+   stsyturutapr      NOCHANGE             INPUTRI           14  	
+
+   stsotobeli  	     NOCHANGE             INPUTRI           21  /* Bukti Beli otomatis */
+   stsytobat   	     NOCHANGE             INPUTRI           22  /* Bukti Beli otomatis */
+
+   stsotobukti 	     NOCHANGE             INPUTRI           23  /* Bukti Selain Beli otomatis */
+   stsnol            NOCHANGE             INPUTRI           24
+   stsotonip   	     NOCHANGE             INPUTRI           25  /* Bukti Selain Beli otomatis */
+   stsnolsp2         NOCHANGE             INPUTRI           26 
+
+DEFAULTS(imtombol1)
+stspjbuk     	INIT	     16
+stsnol        	DFALT_SCAN      0.01 "Nilai Paling kecil 0.01"
+			        0.05 "Nilai Paling kecil 0.01"
+				0.001 "Nilai Paling kecil 0.01"
+				0.005 "Nilai Paling kecil 0.01"
+				0.01 "Nilai Paling kecil 0.01"
+				0.1  "Nilai Paling kecil 0.01"
+				0.5  "Nilai Paling kecil 0.01"
+stsnolsp2      	DFALT_LIST     1 0.5 0.1 0.001 0.005 
+stssethrlbr   	DFALT_SCAN     1 "Minggu Libur"
+			       2 "Sabtu & Minggu Libur"
+stssetapr     	DFALT_LIST     T Y
+stsyturutapr   	DFALT_LIST     T Y
+stsprjblok     	DFALT_LIST     BLANKS Y
+
+stsbtlpst  	DFALT_LIST    	1 2
+
+stsotobeli 	DFALT_LIST	Y T
+stsotobukti	DFALT_LIST	Y T
+stsotonip  	DFALT_LIST	Y T
+stsytobat  	DFALT_LIST	Y T
+
+EDITS(imtombol1)
+Harus Masukkan Jumlah Digit stspjbuk MANDATORY
+e.ValidateLok stslokpos VALIDATE tbddatkodidx mtbdLK stbd {Pgv_dttabel} {Pgv_barang} {Pgv_lokasi}
+
+MAP(mtbdLK)
+tbdkode		stslokpos	REPLACE
+
+CALCS()
+clen_ok		stspjbuk <= 16
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+HOOKS(imtombol1)
+BEFORE_INPUT   cur_field=stssetjlmtr    DO_SKIP_IF cbknDEALER
+AFTER_INPUT	cur_field=stspjbuk	DO_MAP SHOW
+		IF clen_ok  mdum
+		ELSE HKCURSOR STAY
+		HKMSG Panjang Bukti max 17
+
+/******************TOMBOL 3*************************/
+IMAGE(imtombol2) 
+/--------------------------------------------------------------------------------------------------\
+| /--------i.SetBeli-Jual--------------------\ /-------------------------------------------------\ |
+| |                                          | | i.CekTrmAdaNoAc                  : ___          | |
+| \------------------------------------------/ \-------------------------------------------------/ |
+| /--------i.SetBeli-------------------------\ /---------------i.SetBeli-------------------------\ |
+| |i.PoHrsIsi                          : ___ | | i.JmlTrmBrgHrsKclPo              : ___          | |
+| |i.JmlPoBisaLbhMax                   : ___ | | i.SistemJtpPo                    : ___          | |
+| |i.TypeBeli                          : ___ | | i.BiEksDiBebankanKeBrg           : ___          | |
+| |i.HrgTrmBrgSmDgnHrgPo               : ___ | |                                                 | |
+| |i.UkrBrgOtoTamMst                   : ___ | | i.HrgPoHrsDiIsi                  : ___          | |
+| \------------------------------------------/ \-------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(imtombol2)
+   stsaccektrm       NOCHANGE 		  INPUTRI     1 
+
+   stshrspo          NOCHANGE      	  INPUTRI     5 
+        stsbelipo    NOCHANGE      	  INPUTRI           13 
+   stsmaxpo          NOCHANGE      	  INPUTRI     6 
+        stssispo     NOCHANGE      	  INPUTRI           14 
+   stssisbeli        NOCHANGE      	  INPUTRI     7 
+        stssisbiaex  NOCHANGE      	  INPUTRI           15 
+        stshrgblpo   NOCHANGE       	  INPUTRI           16 
+   stssetukrbrg      NOCHANGE       	  INPUTRI     9 
+        stshrgpoisi  NOCHANGE       	  INPUTRI           17
+
+
+DEFAULTS(imtombol2)
+stsmaxpo  	DFALT_LIST    T Y
+stshrspo  	DFALT_LIST    T Y K
+stssisbeli   	DFALT_SCAN_BLANKS    D "Pembelian DN saja" 
+				     C "Pembelian DN dan Antar Cabang" 
+				     L "Pembelian DN,LN dan Antar Cabang"
+stssetukrbrg    DFALT_LIST    T 
+
+stsbelipo   	DFALT_LIST    Y T
+stssispo  	DFALT_SCAN_BLANKS    1 "PO hanya berlaku 1x terima" 
+				     2 "PO berlaku sesuai JTP" 
+				     3 "PO ditutup manual" 
+stssisbiaex	DFALT_LIST    Y T
+stshrgblpo     	DFALT_SCAN      T "Tidak harus sama" 
+				Y "Hrg hrs = PO dan Hrg bisa dilihat"
+				X "Hrg hrs = PO dan Hrg tdk bisa dilihat"
+stsaccektrm    DFALT_LIST     T Y
+
+
+IMAGE(imtombol3)  
+/--------i.SetupJual-------------------------------------------------------------------------------\
+| /-----------------i.Umum-------------------\ /---i.Umum----------------------------------------\ |
+| |i.JlBkRo                      : _____     | | i.BsrBlt                   : __.__		 | |
+| |i.BkPsn                       : _____     | | i.HrgJlHrgPsn              : ____ 		 | |
+| |i.JlBk                        : ___       | | i.JlSllAdaSales            : ___  		 | |
+| |i.TypeBlt                     : ___       | | i.JlFakSjl                 : ___                | |
+| |i.JmlJualLbhPsn               : ___ i.Yt  | | i.FakturBisaRugi           : ___ i.Yt           | |
+| |i.BtsTglKredit                : ___       | |                                                 | |
+| \------------------------------------------/ \-------------------------------------------------/ |
+| /----------------s.Dealer----------------------------------------------------------------------\ |
+| |i.KodePlgKtp                   : ___          i.AdaMohonFaktur           : ___                | |
+| |i.HrgSvCab                     : ___          i.DvsFinIn                 : __________         | |
+| |i.SetSub                       : ___                                                          | |
+| \----------------------------------------------------------------------------------------------/ |
+| /------------s.Finco---------------------------------------------------------------------------\ |
+| |i.SurveiHrsIsi                 : ___          i.1Kwi1Ang                 : ___                | |
+| |i.AdaValHrgJmn                 : ___                                                          | |
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(imtombol3)
+   stsbkro           NOCHANGE 		  INPUTRI     20 
+        stsbsrblt    NOCHANGE 		  INPUTRI           35 
+   stsytpsn          NOCHANGE 		  INPUTRI     21 
+        stshrgjlpsn  NOCHANGE 		  INPUTRI           36 
+   stsytsjl          NOCHANGE 		  INPUTRI     22 
+        stsytsales   NOCHANGE 		  INPUTRI           37 
+   ststypeblt        NOCHANGE 		  INPUTRI     23 
+   stsfaksjl         NOCHANGE 		  INPUTRI           38 
+
+   stssetjlpsn  NOCHANGE 		  INPUTRI     30     
+   stsjualrugi       NOCHANGE 		  INPUTRI     31 
+   stsbtstgl         NUMERIC		  INPUTRI     32
+
+   stsplgktp         NOCHANGE 		  INPUTRI     42 
+   stssetmhnfk       NOCHANGE             INPUTRI     43            
+
+   stsytppn          NOCHANGE             INPUTRI     44            /* Hrg Servis Per cabang*/
+   stsbufinco   ALLCAPS        	  INPUTRI     45
+   stssetsub    NOCHANGE       	  INPUTRI     46
+
+   stssetsurvei      NOCHANGE             INPUTRI     47              
+   stssetkwi         NOCHANGE 		  INPUTRI     48  
+   stsytvalhrg       NOCHANGE 		  INPUTRI     49  
+
+DEFAULTS(imtombol3)
+stsytpsn       DFALT_SCAN     RO1 "1 Bukti 1 Pesanan "
+			      RO2 "1 Bukti Banyak Pesanan "
+
+stsytsjl       DFALT_SCAN     1 "Penjualan 1 Pesanan/Booking "
+			      2 "Penjualan > 1 Pesanan/Booking "
+
+stsfaksjl      DFALT_SCAN     FAK "Penjualan Sbg Faktur/Invoice "
+			      /*SJL "Penjualan Sbg  Srt Jalan"*/
+
+stssetsub      DFALT_SCAN     B "Setup Subsidi Per Barang"
+			      C "Setup Subsidi Per Cabang"
+
+stshrgjlpsn    DFALT_LIST     T Y
+stsplgktp      DFALT_LIST     Y T
+stsytppn       DFALT_LIST     T Y
+stsytvalhrg    DFALT_LIST     T Y
+stsbsrblt      DFALT_LIST     50.0 100.0 25.0 5.0
+ststypeblt     DFALT_SCAN     N "Pembulatan Normal"
+			      D "Pembulatan ke bawah"
+			      U "Pembulatan ke atas"
+stssetkwi      DFALT_SCAN     A "1 kwi, 1 Angsuran "
+			      B "1 Kwi, 1 Bukti (bisa banyak Angs)"
+stsytsales     DFALT_LIST     Y T 
+stsjualrugi    DFALT_LIST     Y T
+stsbkro        DFALT_SCAN     BK "Penjualan Berdasarkan Booking"
+			      RO "Penjualan Berdadasarkan RO"
+			      BLANKS "Penjualan Tdk Ada RO atau BK"
+stssetsurvei   DFALT_LIST     T Y
+stssetmhnfk    DFALT_LIST     T Y
+stssetjlpsn    DFALT_LIST     T Y
+
+IMAGE(imtombol4) 
+/------SETUP BARANG & PRODUKSI-------------------------------------------\
+| /---i.Brg------------------------------------------------------------\ |
+|  i.SistemStok                  : ____                                  |                       
+|  i.InfoHrgBrgPerCab            : ____                                  |
+| \--------------------------------------------------------------------/ | 
+| /---i.Prod-----------------------------------------------------------\ | 
+|  i.ProsProdDgnPsn              : ____                                  |
+|  i.AdaJrnSlsHrgStd             : ____                                  |                  
+|  i.AdaSubKatProsPrd            : ____                                  |                  
+| \--------------------------------------------------------------------/ |
+\------------------------------------------------------------------------/
+
+/*
+|  i.RakitBykBrgAdaMstPerHppJadi : ____                                  |
+|  i.MtsGdgSbgProsProd           : ____                                  |
+   stsperhppjd       NOCHANGE             INPUTRI     3 
+   stsmutprod        NOCHANGE             INPUTRI     4 
+stsperhppjd 	DFALT_LIST   	T Y
+stsmutprod     	DFALT_LIST   	T Y
+|  i.ProsDiMsnLok                : ___                                   |
+   stsprodml         NOCHANGE     	INPUTRI     29 
+*/
+
+FIELD(imtombol4)
+   stssetsisbrg      NOCHANGE             INPUTRI     2 
+   stssishrgcab      NOCHANGE             INPUTRI     5 
+
+   stsprodpsn        NOCHANGE     	INPUTRI     27 
+   stsytjrnsel       NOCHANGE     	INPUTRI     30 
+   stsprodml         NOCHANGE     	INPUTRI     29 
+
+DEFAULTS(imtombol4)
+stssetsisbrg DFALT_SCAN    O "FIFO "
+			   R "Rata-Rata"
+			   L "LIFO"
+			   M "FIFO Manual"
+/*M "FIFO manual "*/			 
+			   
+stssishrgcab 	DFALT_SCAN    	1 "Tdk Berdasarkan Suplier"
+			   	2 "Berdasarkan Suplier"
+			   
+stsprodpsn     	DFALT_LIST      BLANKS P S
+stsprodml      	DFALT_LIST      T Y
+stsytjrnsel 	DFALT_LIST      T Y
+
+/*
+IMAGE(transt) 
+/-----t------------t---------------------------t--------t----------t---------------------t---------\
+|i.Urt|   i.Kode   | i.Keterangan              |i.Typ   |i.Rek     | i.KetRek            |i.KodeGv |
+\-----.------------.---------------------------.--------.----------.---------------------.---------/
+
+IMAGE(trans) 
+|_____|____________|___________________________|________|__________|_____________________|_________|
+    
+FIELD(trans)
+   dtdnourt          PROTECT 		INPUTRI     1 
+   dtdkode           ALLCAPS SCROLL 	INPUTRI     2 
+   dtdket            PROTECT SCROLL	INPUTRI     3 
+   dtdtype           PROTECT SCROLL	INPUTRI     4 
+   dtdno             ALLCAPS SCROLL     INPUTRI     5 
+   bbgket            PROTECT SCROLL     INPUTRI     6 
+   dtdtblkode        PROTECT SCROLL     INPUTRI     7 
+
+CALCS()
+cdtdytY		dtdyt == "Y"
+
+EDITS(trans)
+e.Mandatory dtdno MANDATORY_IF cdtdytY
+e.Dupkey dtdkode DUPKEY dtddatkodidx {Pgv_dtdivisi} {Pgv_dtdivisi21}
+e.Validate dtdkode VALIDATE_DUP lcldatisiidx mlcl slcl {Pgv_dtdivisi} 
+e.Validate dtdno VALIDATE bbgbbtnoidx mbbg sbbg {Pdtdtype}
+
+MAP(mbbg)
+bbgno	        dtdno	        REPLACE
+bbgket	        bbgket	        REPLACE
+
+MAP(mlcl)
+lclkode		dtdtblkode 	REPLACE
+lclisi 		dtdkode   	REPLACE
+lclnourt   	dtdnourt	REPLACE
+lcltype2	dtdtype 	REPLACE
+lclket     	dtdket	 	REPLACE
+lcldata  	dtdtype2  	REPLACE
+lclyt		dtdyt		REPLACE
+
+CALCS()
+cjoindtd1	djoindtd == 1 
+cdtdivisi	dtdtype2== gv_dtdivisi
+
+SUBFILE(trans)
+SFL_LINES(10)       
+SFL_COND cjoindtd1
+SFL_TITLE(transt)
+SFL_SELECT cdtdivisi
+
+SFL_TARGET
+dtdkodurtidx   gv_dtdivisi21 
+
+SFL_MAP
+    gv_dtdivisi          dtddata       REPLACE
+    gv_dtdivisi          dtdtype2      REPLACE
+    gv_dtdivisi21        dtddtmkode    REPLACE
+
+IMAGE(transg1t) 
+/-----t--------------------t---------------------------------t------t----t-----------------------\
+|i.Urt|      i.Kode        |i.Keterangan                     |i.Typ |i.Yt|i.RekBbm               |
+\-----.--------------------.---------------------------------.------.----.-----------------------/
+
+IMAGE(transg1) 
+|_____|____________________|_________________________________|______|____|_______________________|
+    
+FIELD(transg1)
+lclnourt	PROTECT SCROLL			INPUTRI 1
+lclisi  	PROTECT SCROLL			INPUTRI 2
+lclket  	PROTECT SCROLL			INPUTRI 3
+lcltype2	PROTECT  SCROLL			INPUTRI 4
+lclyt   	PROTECT  SCROLL			INPUTRI 4
+lclno   	ALLCAPS SCROLL			INPUTRI 5
+
+DEFAULTS(transg1)
+lclisi		INIT 		{lclisi}
+
+CALCS()
+cytY		lclyt == "Y"
+
+EDITS(transg1)
+e.Mandatory lclno MANDATORY_IF cytY
+e.Validate lclno VALIDATE bbgbbtnoidx mbbgg1 sbbg {Plcltype2}
+
+MAP(mbbgg1)
+bbgno		lclno		REPLACE
+
+CALCS()
+cjoindtd0		djoindtd == 0 
+csistemok		lclsistem == BLANKS || lclsistem == stssistem
+
+SUBFILE(transg1)
+SFL_APP_TYPE
+SFL_TITLE(transg1t)
+SFL_COND cjoindtd0
+SFL_SELECT csistemok
+SFL_LINES(10)    
+
+SFL_TARGET
+lcldaturtidx   gv_dtdivisi
+*/
+
+IMAGE(transt) 
+/----t-----------------t-----------------------t--------------------t------------t-----t--------\
+|i.No|   i.KodeGv      | i.Keterangan          |   i.Isi            | i.Typ      |i.Yt |i.SisUsh|
+\----.-----------------.-----------------------.--------------------.------------.-----.--------/
+
+IMAGE(trans) 
+|____|_________________|_______________________|____________________|____________|_____|________|
+    
+FIELD(trans)
+lclnourt	NUMERIC       			INPUTRI 1
+lclkode 	NONE SCROLL			INPUTRI 2
+lclket  	ALLCAPS SCROLL			INPUTRI 3
+lclisi  	ALLCAPS SCROLL			INPUTRI 4
+lcltype2	ALLCAPS SCROLL			INPUTRI 5
+lclyt    	NOCHANGE       			INPUTRI 6
+lclsistem	NOCHANGE       			INPUTRI 7
+
+DEFAULTS(trans)
+lclsistem	DFALT_LIST  BLANKS DEALER BPR HOSPITAL
+lclyt    	DFALT_LIST  Y T
+lcltype		INIT 	STRING 
+lclpjg		INIT	21
+lclscr		INIT	{g_scrnumstr}
+
+EDITS(trans)
+i.Mandatory lclkode MANDATORY
+i.Mandatory lcltype2 MANDATORY
+i.Mandatory lclisi MANDATORY
+i.Mandatory lclket MANDATORY
+i.Dupkey lclkode DUPKEY  lclkodeidx 
+i.Dupkey lclisi DUPKEY lcldatisiidx  {Pgv_dtdivisi}
+e.Validate lcltype2 VALIDATE tbldtdtmkod mtblK stbl {Pgv_datatype} {Pgv_bbmbbantu} 
+
+MAP(mtblK)
+tblkode  	lcltype2	REPLACE
+
+CALCS()
+cjoinlclu0      djoinlclu == 0 && g_curcmd == 1
+cjoinlclu1      djoinlclu == 1 && g_curcmd == 1
+curutlcl        lurtlcl + 1
+csatu		1
+
+MAP(murutlcl)
+csatu         	lclnourt   	DO_CALC_IF cjoinlclu0
+curutlcl       	lclnourt   	DO_CALC_IF cjoinlclu1
+
+HOOKS(trans)
+BEFORE_INPUT	cur_field=lclnourt	DO_MAP SHOW murutlcl
+
+SUBFILE(trans)
+SFL_LINES(10) 
+SFL_TITLE(transt)
+
+SFL_TARGET
+lcldaturtidx   gv_dtdivisi 
+
+SFL_MAP
+    gv_dtdivisi           lcldata        REPLACE
+
+IMAGE(transat) 
+/--------------t-----------------------t--------------------\
+|   i.NoScr    | i.Keterangan          |   i.KodeBukti      |
+\--------------.-----------------------.--------------------/
+
+IMAGE(transa) 
+|______________|_______________________|____________________|
+    
+FIELD(transa)
+tblkode 	ALLCAPS SCROLL			INPUTRI 2
+tblket  	ALLCAPS SCROLL			INPUTRI 3
+tbldtmkode	ALLCAPS SCROLL			INPUTRI 4
+
+DEFAULTS(transa)
+tbljmltlk	INIT	21
+tblscr		INIT	{g_scrnumstr}
+tbldata		INIT	{gv_kdbukti}
+
+EDITS(transa)
+i.Mandatory tblkode MANDATORY
+i.Mandatory tbldtmkode MANDATORY
+i.Mandatory tblket MANDATORY
+i.Dupkey tblkode DUPKEY tbldtdtmkod {Ptbldata} {Ptbldtmkode}
+
+CALCS()
+cdjointbl0	djointbl == 0 || tblkode ==  ~tblkode 
+
+HOOKS(transa)
+AFTER_INPUT	cur_field=tblkode	DO_MAP SHOW
+		IF cdjointbl0 mdum
+		ELSE HKCURSOR STAY
+			HKMSG Nomer scr ini sdh ada
+
+SUBFILE(transa)
+SFL_LINES(10) 
+SFL_TITLE(transat)
+
+SFL_TARGET
+tbldtkodidx   gv_kdbukti
+
+SFL_MAP
+    gv_kdbukti        tbldata        REPLACE
+
+/* ------------------- dadddtm ---------------*/
+MAP(madddtm)
+   stsmua		dtmkode   	REPLACE
+   csatu		dtmbsrkursp	DO_CALC
+   csatu		dtmbsrkurs 	DO_CALC
+
+DBCALCS(dadddtm)
+	DBC_COMMAND	ADD
+	DBC_FILE        dtm
+	DBC_MAP         madddtm
+
+CALCS()
+cri        	g_grpnam == "RI" && g_usrpos != "asisten"
+cjoinsts0  	djoinsts == 0
+cjoinsts1  	djoinsts == 1
+cjoindtm0 	djoindtm == 0
+
+PERMIT(master)
+	PMT_ADD_COND    cjoinsts0
+	PMT_DEL_COND    cri
+	PMT_UPDALL_COND    cri
+	PMT_EXIT_COND   cjoinsts1
+	PMT_EXIT_MSG    Harus ada satu record
+
+SPCALCS(spa)
+IF cjoindtm0 dadddtm
+
+POSTING(master)
+PST_ADDCMD spa
+
+/*
+MAP(madddtd)
+   lcldata		dtddata  	REPLACE
+   lcldata		dtdtype2  	REPLACE
+   lcldata  		dtdkdpm   	REPLACE
+   lclnourt   		dtdnourt	REPLACE
+   gv_dtdivisi21	dtddtmkode	REPLACE
+   lclisi 		dtdkode		REPLACE
+   lclkode		dtdtblkode	REPLACE
+   lcltype2		dtdtype 	REPLACE
+   lclket     		dtdket	 	REPLACE
+   lclno   		dtdno  		REPLACE
+   lclyt   		dtdyt  		REPLACE
+
+
+MAP(mmapmap)
+lclyt	lyt	REPLACE
+lclno 	lnobbm	REPLACE
+
+SPCALCS(sptrans)
+DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB ap_dbclc(DNAME dadddtd,DCOMMAND ADD,DFILE dtd,DMAP madddtd);
+
+POSTING(transg1)
+PST_COMMAND sptrans
+*/
+
+END_SCREEN
+

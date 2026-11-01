@@ -1,0 +1,229 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.No        _____  t.Status _____||
+||t.Jtp1      _____________________||
+||t.Tglakh    _____________________||
+||t.HutPen    _____________________||
+||t.Lamakerja2_____________________||
+||t.Thp       _____________________||
+||t.Psg       _____________________||
+||t.Pmk       _____________________||
+||t.RpPensiun _____________________||
+||t.Angsuran  _____________________||
+||t.Tenor     _____________________||
+||t.Perdp     _____________________||
+||t.ByrKe1    _____________________||
+||t.Sisa      _____________________||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtdnourt    	NOCHANGE      	 	INPUTRI 1
+mtdsts      	PROTECT       	 	INPUTRI 2
+
+mtdtglfak	NONE {DD-MM-YYYY} NOLIMIT	INPUTRI	3
+mtdtgl2  	PROTECT {DD-MM-YYYY} NOLIMIT	INPUTRI	4
+mtdnoll      	ALLCAPS       	 	INPUTRI 5
+
+mtdjml3        	NUMERIC       	 	INPUTRI 6
+mtdsubtot      	NUMERIC       	 	INPUTRI 6
+
+mtdtmp1        	NUMERIC       	 	INPUTRI 6
+mtdtmp2        	NUMERIC       	 	INPUTRI 6
+
+mtdhrg       	NUMERIC       	 	INPUTRI 6
+
+mtdjml     	NUMERIC       	 	INPUTRI 6
+mtdjml2    	NUMERIC       	 	INPUTRI 6
+mtdperdis      	NUMERIC       	 	INPUTRI 7
+mtdtotdis      	NUMERIC       	 	INPUTRI 7
+mtdsatbsr      	NUMERIC       	 	INPUTRI 7
+
+DEFAULTS(tmptranst)
+mtdsts		INIT		INPG
+mtdsts		INIT_UPDATE		INPG
+
+EDITS(tmptranst)
+e.ValidatePmb  mtdnoll	VALIDATE pmbsupstsbuk mpmb3 spmb {PlPENSIUN} {Pgv_INPG} {PlBIAYA23} {Ptkmcab}
+
+MAP(mpmb3)
+pmbnobuk	mtdnoll 	REPLACE
+
+
+CALCS()
+cisimtd13		1
+ctammtd13		lmtdnourt + 1
+cdjoinmtd03	djoinmtd2 == 0 && g_curcmd == 1
+cdjoinmtd13	djoinmtd2 == 1 && g_curcmd == 1
+
+csudahinput3	djoinmtd3 == 0 || g_curcmd == 2	
+clmtdnourt03 	lmtdnourt == 0
+
+chlkurang3	pmbsisprc >= mtdhrg
+c49		49
+ctambl4          DO_LIB ap_tambl(mtdtglfak,lmtdjml2,&mtdtgl2);
+
+cmtdperdis	30
+cmtdtotdis	(mtdperdis * mtdhrg) / 100
+cmtdsatbsr	mtdhrg - mtdtotdis
+cmtdjml		mtdsatbsr / (mtdjml2 - 1)  
+                /* 48x, 1 nya dp */
+cadatenor	mtdjml2 != 0
+clamakerja	(g_tgltrn - psitglawl) / 365
+
+
+MAP(murut3)
+cisimtd13        mtdnourt        DO_CALC_IF cdjoinmtd03
+ctammtd13        mtdnourt        DO_CALC_IF cdjoinmtd13
+
+tkmdata		mtddata		REPLACE
+tkmbuk2		mtdbrg		REPLACE
+tkmtype		mtdukrwrn	REPLACE
+tkmtype		mtdsat   	REPLACE
+
+MAP(mtotal3)
+cmtdperdis	mtdperdis	DO_CALC
+cmtdtotdis	mtdtotdis	DO_CALC
+cmtdsatbsr	mtdsatbsr	DO_CALC
+cmtdjml		mtdjml		DO_CALC_IF cadatenor
+ctambl4		mtdtgl2  	DO_CALC
+
+MAP(mcaritgl3)
+c0		mtdtglfak	DO_CALC_IF clmtdnourt03
+lmtdtgl2	lmtdtgl2	REPLACE_IF cdjoinmtd13
+c49		mtdjml2		DO_CALC
+c49		lmtdjml2	DO_CALC
+ctambl4		mtdtgl2  	DO_CALC
+clamakerja	mtdjml3		DO_CALC
+
+
+CALCS()
+cadagaji	gjmnilai > 0 && gjmkodegj != "T.COP" && gjmkodegj != "U.RWTCOP" &&  gjmkodegj != "TUNJ.JMSTK" && gjmkodegj != "UM/HARI"
+cpsg01		mtdsubtot * 1.75 * 1
+cpsg02		mtdsubtot * 1.75 * 2
+cpsg03		mtdsubtot * 1.75 * 3
+cpsg04		mtdsubtot * 1.75 * 4
+cpsg05		mtdsubtot * 1.75 * 5
+cpsg06		mtdsubtot * 1.75 * 6
+cpsg07		mtdsubtot * 1.75 * 7
+cpsg08		mtdsubtot * 1.75 * 8
+cpsg09		mtdsubtot * 1.75 * 9
+
+cpmk01           0
+cpmk02           mtdsubtot * 2
+cpmk03           mtdsubtot * 3
+cpmk04           mtdsubtot * 4
+cpmk05           mtdsubtot * 5
+cpmk06           mtdsubtot * 6
+cpmk07           mtdsubtot * 7
+cpmk08           mtdsubtot * 8
+cpmk09           mtdsubtot * 10
+
+
+cusiakerja01      mtdjml3 < 1
+cusiakerja02      mtdjml3 >= 1 && mtdjml3 < 2
+cusiakerja03      mtdjml3 >= 2 && mtdjml3 < 3
+cusiakerja04      mtdjml3 >= 3 && mtdjml3 < 4
+cusiakerja05      mtdjml3 >= 4 && mtdjml3 < 5
+cusiakerja06      mtdjml3 >= 5 && mtdjml3 < 6
+cusiakerja07      mtdjml3 >= 6 && mtdjml3 < 7
+cusiakerja08      mtdjml3 >= 7 && mtdjml3 < 8
+cusiakerja09      mtdjml3 >= 8
+
+cusiakerja01pmk      mtdjml3 <  3
+cusiakerja02pmk      mtdjml3 >= 3 && mtdjml3 < 6
+cusiakerja03pmk      mtdjml3 >= 6 && mtdjml3 < 9
+cusiakerja04pmk      mtdjml3 >= 9 && mtdjml3 < 12
+cusiakerja05pmk      mtdjml3 >= 12 && mtdjml3 < 15
+cusiakerja06pmk      mtdjml3 >= 15 && mtdjml3 < 18
+cusiakerja07pmk      mtdjml3 >= 18 && mtdjml3 < 21
+cusiakerja08pmk      mtdjml3 >= 21 && mtdjml3 < 24
+cusiakerja09pmk      mtdjml3 >= 24
+
+crppensiun	mtdtmp1 + mtdtmp2
+
+MAP(mscangjm)
+gjmnilai	lupah            REPLACE_IF cadagaji
+gjmnilai	mtdsubtot        REPLACE_IF cadagaji
+
+DBCALCS(dbscangjm)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      gjmkodgjidx tkmkode gt_DTGAJI  
+        DBC_LAST_TARGET gjmkodgjidx tkmkode gt_DTGAJI   
+        DBC_SUM_MAP     mscangjm
+
+MAP(mrppensiun)
+cpsg01		mtdtmp1		 DO_CALC_IF cusiakerja01
+cpsg02		mtdtmp1		 DO_CALC_IF cusiakerja02
+cpsg03		mtdtmp1		 DO_CALC_IF cusiakerja03
+cpsg04		mtdtmp1		 DO_CALC_IF cusiakerja04
+cpsg05		mtdtmp1		 DO_CALC_IF cusiakerja05
+cpsg06		mtdtmp1		 DO_CALC_IF cusiakerja06
+cpsg07		mtdtmp1		 DO_CALC_IF cusiakerja07
+cpsg08		mtdtmp1		 DO_CALC_IF cusiakerja08
+cpsg09		mtdtmp1		 DO_CALC_IF cusiakerja09
+	
+cpmk01		mtdtmp2		 DO_CALC_IF cusiakerja01pmk
+cpmk02		mtdtmp2		 DO_CALC_IF cusiakerja02pmk
+cpmk03		mtdtmp2		 DO_CALC_IF cusiakerja03pmk
+cpmk04		mtdtmp2		 DO_CALC_IF cusiakerja04pmk
+cpmk05		mtdtmp2		 DO_CALC_IF cusiakerja05pmk
+cpmk06		mtdtmp2		 DO_CALC_IF cusiakerja06pmk
+cpmk07		mtdtmp2		 DO_CALC_IF cusiakerja07pmk
+cpmk08		mtdtmp2		 DO_CALC_IF cusiakerja08pmk
+cpmk09		mtdtmp2		 DO_CALC_IF cusiakerja09pmk
+
+crppensiun	mtdhrg		DO_CALC
+
+
+MAP(mdum3)
+ldum		ldum		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=mtdnourt	DO_MAP SHOW murut3
+AFTER_INPUT	cur_field=mtdnourt	DO_MAP SHOW mcaritgl3
+AFTER_INPUT	cur_field=mtdnourt	DO_SCAN dbscangjm
+AFTER_INPUT	cur_field=mtdjml3 	DO_MAP SHOW mrppensiun
+
+AFTER_INPUT	cur_field=mtdjml2  	DO_MAP SHOW mtotal3
+AFTER_INPUT	cur_field=mtdhrg	DO_MAP SHOW mtotal3
+AFTER_INPUT	cur_keybd=EN       	DO_MAP SHOW mtotal3
+
+
+
+
+AFTER_INPUT	cur_field=mtdnourt	DO_MAP SHOW
+		IF csudahinput3 mdum3
+		ELSE HKCURSOR STAY
+		     HKMSG Pensiun ini sudah pernah diinput di No.Id yang sama
+
+AFTER_INPUT	cur_keybd=EN    	DO_MAP SHOW
+		IF csudahinput3 mdum3
+		ELSE HKCURSOR STAY
+		     HKMSG Pensiun ini sudah pernah diinput di No.Id yang sama
+
+AFTER_INPUT	cur_field=mtdhrg    	DO_MAP SHOW
+		IF chlkurang3 mdum3
+		ELSE HKCURSOR STAY
+		     HKMSG Cadangan Pensiun Tidak Cukup
+
+AFTER_INPUT	cur_keybd=EN        	DO_MAP SHOW
+		IF chlkurang3 mdum3
+		ELSE HKCURSOR STAY
+		     HKMSG Cadangan Pensiun Tidak Cukup
+
+SUBFILE(tmptrans)
+SFL_LINES(1)      
+SFL_TITLE(tmptranst)
+SFL_TARGET	
+mtdbukurtidx   tkmnobuk
+
+SFL_MAP	
+tkmdata		mtddata		REPLACE
+tkmnobuk	mtdnobuk 	REPLACE
+tkmtype		mtdplg		REPLACE
+tkmcab		mtdcab		REPLACE
+
+

@@ -1,0 +1,118 @@
+LOCAL
+PGM_FIELDS
+lbanding      STRING           11
+lbanding21    STRING           21
+lbandings     STRING           21
+lnobuktos     STRING           21
+lSLIK21       STRING           21
+
+
+
+
+
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |_________ ________  _____ _____||
+| |_______________________________||
+| |_____________  ________________||
+| |_                              ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        akttgl          PROTECT NONE NOLIMIT {DD-MM-YYYY}     INPUTRI 2
+        aktjam          PROTECT NONE NOLIMIT                  INPUTRI 2
+        akttype2        PROTECT                   INPUTRI 2
+        aktnobuk        PROTECT QPROTECT UNSEEN   INPUTRI 1
+        aktket          TEXTAREA ALLCAPS          INPUTRI 3
+        aktcrtusr       ALLCAPS                   INPUTRI 4
+        aktbrg          ALLCAPS                   INPUTRI 5
+        ldum            NOCHANGE                  INPUTRI 6
+
+CALCS()
+cjoinslik          djoinsviposslik == 1 
+cras               g_grpnam == "RASDVH" || g_grpnam == "RAS" ||  g_grpnam == "IT" ||  g_grpnam == "RI"
+c701               btmsts == "701" && (g_grpnam == "RASDVH" || g_grpnam == "RAS" ||  g_grpnam == "IT" ||  g_grpnam == "RI")
+
+DEFAULTS(tmptranst)
+aktcrtusr          DFALT_SCAN_BLANKS DEVIASI LANJUT
+lbanding           INIT              BANDING 
+lbanding21         INIT              BANDING 
+lbandings          INIT              BANDINGSLIK
+lSLIK21            INIT              SLIK       
+akttgl             INIT              {g_tgltrn}
+aktjam             INIT              SYSTIME     
+
+
+EDITS(tmptranst)
+e.Validate      aktbrg          VALIDATE tbddatkodidx mtbd stbd {Pgv_dttabel} {Plbanding21} {Plbandings}
+
+MAP(mtbd)
+tbdkode         aktbrg          REPLACE
+
+MAP(mmapmap7)
+ldum            ldum              REPLACE
+nhmfinco_2      lnobuktos         REPLACE   
+
+MAP(mbanding)
+DEBUG            ldum   ldum      REPLACE
+aktcrtusr        svistr3          REPLACE
+aktbrg           svistr4          REPLACE
+
+
+SPCALCS(supdsvi)
+DO_LIB                 ap_dbclc(DNAME dmapmap7,DCOMMAND MAPMAP,DMAP mmapmap7);
+DO_LIB_IF cjoinslik    ap_dbclc(DNAME dupdbnding,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktyp lSLIK nhmfinco_2 lPOSSLIK,DMAP mbanding);
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdsvi 
+
+MAP(mupdaktftmandx)
+cOK             akttype2        DO_CALC
+
+DBCALCS(dbftupl)
+        DCOMMAND UPDATE
+        DTARGET aktprmidx aktprm
+        DMAP mupdaktftmandx
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl   
+SFL_UPLFLD btmnobuk  lbanding lSLIK21
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        aktkodtypidx btmnobuk lbanding lSLIK21   
+
+SFL_MAP
+btmnobuk        aktkode         REPLACE
+btmnobuk        aktnobuk        REPLACE
+lnobuktos       aktkode2        REPLACE
+lbanding        aktdata         REPLACE
+lSLIK           akttype         REPLACE
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cras              
+  PMT_UPDALL_COND  c701      
+  PMT_DEL_COND  c0          
+
+
+
+
+

@@ -1,0 +1,254 @@
+LOCAL
+PGM_FIELDS
+ljabpsi		STRING		21
+ldvspsi		STRING		21
+lgrpusr		STRING		21
+lusernama	STRING		21
+lkode1		STRING		21
+lkode2		STRING		21
+ltypjl		STRING		11
+
+lcabharga               STRING  21	
+lhpp_ready              DFLOAT  8
+lhpp_indent             DFLOAT  8
+lppn_net                DFLOAT  8
+luntung                 DFLOAT  8
+lspm			STRING	21
+lCABHRG			STRING	11
+lHARGA			STRING	21
+ljmlppsvcrsubs		DFLOAT	8
+
+DBCALCS(djoinbtpAN)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btpdatbuktgl gv_historisdm tlmnoasal gv_dtanstnk 
+
+MAP(mjoinbtmPK)
+btmtypmtr	lkode1		REPLACE
+btmtypjl	ltypjl		REPLACE
+DBCALCS(djoinbtmPK)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btmbukidx tlmnoasal
+	DBC_MAP		mjoinbtmPK
+
+MAP(mhrgmtr)
+brchrgbl        lhpp_indent     REPLACE
+DBCALCS(djoinbrcmtr1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      brcdttypidx   gv_dtbarang btmtypmtr lcabharga lspm gv_BARU btmkdmaxc
+	DBC_MAP		mhrgmtr
+
+MAP(mjoincadharga)
+cadarea         lcabharga       REPLACE
+DBCALCS(djoincadharga)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cadcabdtidx     btmlokjual lCABHRG lHARGA lHARGA
+        DBC_MAP         mjoincadharga
+
+
+MAP(mjoinbrgMtr)
+brgkode2	lkode2		REPLACE
+DBCALCS(djoinbrgMtr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	brgdatkodidx gv_dtbarang lkode1
+	DBC_MAP		mjoinbrgMtr
+
+CALCS()
+cdata_ok        btddata == gv_bukutamu
+
+MAP(mjoinbtdhpp)
+btdhrg                  lhpp_ready              REPLACE
+DBCALCS(djoinbtdhpp)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btdbukurtidx    tlmnoasal
+        DBC_SELECT      cdata_ok
+        DBC_MAP         mjoinbtdhpp
+
+DBCALCS(djoinbtdpdis)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      btdbuktypidx    tlmnoasal lpladis
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+||t.NoBt     ________________________||
+||t.Tanggal  ________________________||
+||t.Cabang   ________________________||
+||t.KTP      ________________________||
+||t.Nama     ________________________||
+||i.TypMtr   ________________________||
+||i.Kode2    ________________________||
+|\-----------------------------------/|
+| spasi                               |
+|/-----------------------------------\|
+||t.NipUser     _____________________||
+||t.NamaUser    _____________________||
+||t.Jab         _____________________||
+||t.GrupUser    _____________________||
+||t.Type        _____________________||
+||t.PlaDisLama  _____________________||
+||t.PlaDisbaru  _____________________||
+||t.LabaRugi    _____________________||
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnobuk	NOCHANGE			INPUTRI 1
+btdtgl1		PROTECT	{DD-MM-YY}	INPUTRI 2
+btdcab		PROTECT			INPUTRI 3
+btdbrdoto	PROTECT			INPUTRI 4	/*KTP*/
+btdukrwrn	PROTECT			INPUTRI 5	/*nama*/
+lkode1		NOCHANGE SCROLL		INPUTRI	5	/* kode motor*/
+lkode2		NOCHANGE SCROLL		INPUTRI	5	/* kode 2 */
+btdlok		PROTECT			INPUTRI 6	/*nip user*/
+lusernama	PROTECT	SCROLL		INPUTRI 7	/*nama user*/
+ljabpsi 	PROTECT SCROLL		INPUTRI 8	/*jabatan user*/
+lgrpusr		PROTECT SCROLL		INPUTRI 9	/*grup user*/
+btdkat		NOCHANGE		INPUTRI	11	/* tipe ubah struktur */
+btdperdis	NUMERIC PROTECT		INPUTRI 11	/*plafon lama*/
+btdtotdis	NUMERIC			INPUTRI 12	/*plafon perubahan*/
+btdtothrg	NUMERIC PROTECT		INPUTRI	13
+
+CALCS()
+cpladis		"PLADIS"
+c23		23
+cdjoinbtmPK	djoinbtmPK==1
+cdjoinbrgMtr	djoinbtmPK==1 && djoinbrgMtr==1
+cpkK		djoinbtmPK==1 && ltypjl=="K"
+cpkT		djoinbtmPK==1 && ltypjl=="T"
+cstruk		tlmuntuk=="STR"
+cstrukok	tlmuntuk=="STR" && tlmnobuk == btdbrg
+
+cjoinbtdhpp1    djoinbtdhpp == 1
+cjoinbrc1       djoinbtdhpp == 0 && djoinbrcmtr1 == 1
+ctunai          btmtypjl == "T" && djoinbtdhpp == 1
+ctunai2         btmtypjl == "T" && djoinbtdhpp == 0 && djoinbrcmtr1 == 1
+ckredit         btmtypjl == "K" && djoinbtdhpp == 1
+ckredit2        btmtypjl == "K" && djoinbtdhpp == 0 && djoinbrcmtr1 == 1
+cuntung_off     djoinbtdhpp == 1 && (nhmhrgoff - (lhpp_ready * (1 + (stsperppn/100))) - nhmtotdis) > 0
+cuntung_off2    djoinbtdhpp == 1 &&  (nhmhrgoff - (lhpp_ready * (1 + (stsperppn/100))) - nhmtotdis) <= 0
+cuntung_off3    djoinbtdhpp == 0 && djoinbrcmtr1 == 1 && (nhmhrgoff - (lhpp_indent * (1 + (stsperppn/100))) - nhmtotdis) > 0
+cuntung_off4    djoinbtdhpp == 0 && djoinbrcmtr1 == 1 && (nhmhrgoff - (lhpp_indent * (1 + (stsperppn/100))) - nhmtotdis) <= 0
+cppn_net        ((nhmhrgoff - (lhpp_ready * (1 + (stsperppn/100))) - nhmtotdis) / (1 + (stsperppn/100)) * (stsperppn/100))
+cppn_net2       ((nhmhrgoff - (lhpp_indent * (1 + (stsperppn/100))) - nhmtotdis) / (1 + (stsperppn/100)) * (stsperppn/100))
+cuntungT        (nhmhrgoff + nhmbbnjl) - nhmtotdis - nhmbiamklr - nhmextup - nhmbbnhpp - lhpp_ready - ((lhpp_ready * stsperppn)/100) - nhmestimasi - lppn_net
+cuntungT2       (nhmhrgoff + nhmbbnjl) - nhmtotdis - nhmbiamklr - nhmextup - nhmbbnhpp - lhpp_indent - ((lhpp_indent * stsperppn)/100) - nhmestimasi - lppn_net
+cuntungK        (nhmhrgoff + nhmbbnjl) - nhmtotdis - nhmbbnhpp - lhpp_ready - ((lhpp_ready * stsperppn)/100) - ljmlppsvcrsubs - lppn_net
+cuntungK2       (nhmhrgoff + nhmbbnjl) - nhmtotdis - nhmbbnhpp - lhpp_indent - ((lhpp_indent * stsperppn)/100) - ljmlppsvcrsubs - lppn_net
+cjoincadharga1  djoincadharga == 1
+c611AN		djoinbtpAN == 1 || djoinbtpAN == 0
+c611DPriil10	djoinbtmPK==1 && ltypjl=="K" && (btmmakelar==" " || (btmmakelar!= " " && btmstsdata =="TRF")) && ((nhmumriil_2/nhmhrgpasar_2)*100 >=10) && ((nhmumriil_2/nhmhrgpasar_2)*100 <=50) &&
+		btdtothrg<=700000
+c611pdis	(g_curcmd==1 && djoinbtdpdis==0) || g_curcmd==0
+cselpladis	btdtotdis - btdperdis
+
+CALCS()
+cvcrsubs        ppsppdoto=="SUBSIDI"
+
+MAP(mscanppsvcr)
+ppstotal        ljmlppsvcrsubs  REPLACE_IF cvcrsubs
+DBCALCS(dscanppsvcr)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      ppsdattypbuk    gv_dthut gt_hlvoucher11 gv_OPEN tlmnoasal
+        DBC_SUM_MAP     mscanppsvcr
+
+
+DEFAULTS(tmptranst)
+btdlok		INIT_ADD	{g_usrkode}
+btdsts          INIT		"INPG"
+IF cpkK btdkat	DFALT_SCAN	BLANKS
+				PLAFON_DISC "PLAFON DISKO"
+IF cpkT btdkat	DFALT_SCAN	BLANKS
+				LIMIT_DISC  "LIMIT DISC NS"
+lHARGA          INIT    	HARGA
+lspm		INIT		SPM
+lCABHRG         INIT    	CABHRG
+
+EDITS(tmptranst)
+e.Mandatory	btdtotdis	MANDATORY
+e.Mandatory	btdkat		MANDATORY
+e.Validate	btdlok		VALIDATE	psikodidx mpsibtd
+e.Validate      btdlok          VALIDATE        usrkodidx musrbtd
+e.Validate      btdnobuk        VALIDATE 	nhmdatbukidx mnhmtmp 0  {Pgv_bukutamu}
+e.Validate      btdnobuk        VALIDATE 	btmbukidx mbtmpk 0
+
+MAP(mpsibtd)
+psinama         lusernama        REPLACE
+psijabatan      ljabpsi          REPLACE
+psidvs          ldvspsi          REPLACE
+
+MAP(mbtmpk)
+btmtypjl	btmtypjl	REPLACE
+btmkdmaxc	btmkdmaxc	REPLACE
+btmtypmtr	btmtypmtr	REPLACE
+
+MAP(musrbtd)
+usrgrp   	lgrpusr         REPLACE
+
+MAP(mnhmtmp)
+nhmpladis       btdperdis       REPLACE
+nhmhrgoff	nhmhrgoff	REPLACE
+nhmtotdis	nhmtotdis	REPLACE
+nhmestimasi	nhmestimasi	REPLACE
+nhmbbnjl	nhmbbnjl	REPLACE
+nhmbbnhpp	nhmbbnhpp	REPLACE
+nhmbiamklr	nhmbiamklr	REPLACE
+nhmextup	nhmextup	REPLACE
+
+MAP(mmapinitLR)
+lcabharga	lcabharga	REPLACE_IF cjoincadharga1 
+lhpp_ready      lhpp_ready      REPLACE_IF cjoinbtdhpp1
+lhpp_indent     lhpp_indent     REPLACE_IF cjoinbrc1
+cppn_net        lppn_net        DO_CALC_IF cuntung_off
+c0              lppn_net        DO_CALC_IF cuntung_off2
+cppn_net2       lppn_net        DO_CALC_IF cuntung_off3
+c0              lppn_net        DO_CALC_IF cuntung_off4
+cuntungT        luntung         DO_CALC_IF ctunai
+cuntungT2       luntung         DO_CALC_IF ctunai2
+cuntungK        luntung         DO_CALC_IF ckredit
+cuntungK2       luntung         DO_CALC_IF ckredit2
+cselpladis	btdtothrg	DO_CALC
+
+MAP(mnobukt)
+	tlmnobuk        btdbrg          REPLACE
+	tlmtgl          btdtgl1         REPLACE
+        tlmcab          btdcab          REPLACE
+        tlmplg          btdbrdoto       REPLACE
+        tlmbisnis       btdukrwrn       REPLACE
+	tlmnoasal	btdnobuk	REPLACE
+	lkode1		lkode1		REPLACE_IF cdjoinbtmPK
+	lkode2		lkode2		REPLACE_IF cdjoinbrgMtr
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=btdnobuk      DO_MAP SHOW mnobukt
+AFTER_INPUT     cur_field=btdtotdis     DO_SCAN dscanppsvcr
+AFTER_INPUT     cur_field=btdtotdis     DO_MAP SHOW mmapinitLR
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF c611AN     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiAtasNamaBPKB/STNKDulu
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF c611DPriil10     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PersenDPrill>=10
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF c611pdis     mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.SudahPernah3502Pladis
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cstruk
+SFL_SELECT cstrukok
+SFL_TARGET
+	btdbuktypidx	tlmnoasal lpladis
+SFL_MAP
+tlmnoasal	btdnobuk	REPLACE
+tlmnobuk	btdbrg		REPLACE
+cpladis		btddata		DO_CALC
+cpladis		btdsat		DO_CALC
+c23		btdnourt	DO_CALC
+

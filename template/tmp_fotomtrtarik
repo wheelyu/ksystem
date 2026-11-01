@@ -1,0 +1,67 @@
+LOCAL
+PGM_FIELDS
+ldocdata	STRING	11
+
+IMAGE(tmptranst)
+/--------------------------------\
+|/--------s.UPLOAD--------------\| 
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+||                              ||
+|\------------------------------/|
+|/------------------------------\|
+||t.Berkas   ___________________||
+||           ___________________||
+||t.No	     ___________________||
+||           _______            ||
+|\------------------------------/|
+\--------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+docnobuk	NOCHANGE		INPUTRI	1
+docno     	PROTECT			INPUTRI	1
+doclok		PROTECT			INPUTRI	1
+docsts		PROTECT			INPUTRI	1
+
+DEFAULTS(tmptranst)
+ldocdata	INIT		FOTOMTRTRK
+
+CALCS()
+cY		"Y"
+csdhY		docsts != "Y"
+cIT		g_grpnam=="IT" || g_grpnam=="RI"
+
+MAP(mupddoc)
+cY		docsts		DO_CALC
+g_tgltrn	doctgljadi	REPLACE
+
+DBCALCS(dupddoc)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	docprmidx docprm
+	DBC_MAP		mupddoc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD docnourt
+SFL_UPL_DELCOND csdhY
+SFL_UPLFLD_DBCALCS dupddoc
+SFL_UPLFLD docnobuk doctype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_CAMERAONLY
+SFL_SHOW_NEXT
+SFL_TARGET
+        docdatbukidx	ldocdata tlmnobuk
+
+SFL_MAP
+ldocdata	docdata		REPLACE
+tlmnobuk	docnobuk	REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND		c0
+PMT_UPDALL_COND		c0
+PMT_DEL_COND		cIT

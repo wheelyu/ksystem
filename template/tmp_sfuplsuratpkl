@@ -1,0 +1,85 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|t.uplsuratpkl                                               |
+|/--s.UPLOAD----------------------\/------------------------\|
+||                                ||i.Tgl     : __________  ||
+||                                ||i.Nippic  : __________  ||
+||                                ||i.Niphrd  : __________  ||
+||                                ||                        ||
+||                                ||t.OkUp    : __________  ||
+||                                ||                        ||
+||                                ||t.AccHrd  : __________  ||
+||                                ||                        ||
+||                                ||                        ||
+||                                ||                        ||
+||                                ||                        ||
+||                                || _________  _________   ||
+|\--------------------------------/\------------------------/|
+|i.Ket : ____________________________________________________|
+\------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1                 PROTECT {DD-MM-YY}      INPUTRI 1
+psdstr1                 PROTECT                 INPUTRI 2
+psdstr2                 PROTECT                 INPUTRI 3
+psdtype                 PROTECT                 INPUTRI 4
+psdtype2                PROTECT                 INPUTRI 5
+luploadtacc             TOMBOL                  INPUTRI 6
+luploadacc              TOMBOL                  INPUTRI 7
+psdket                  ALLCAPS SCROLL          INPUTRI 8
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD        {g_tgltrn}
+psdtgl1         INIT_UPDATE     {g_tgltrn}
+luploadacc      INIT            ACC HRD
+luploadtacc     INIT            TACC HRD
+l_count10       INIT            10
+psdkode         INIT_ADD        SURATPKL
+
+MAP(mupdpsdsuratpkl)
+g_tgltrn        psdtgl1         REPLACE
+cOK             psdtype         DO_CALC
+g_usrkode       psdstr1         REPLACE
+
+DBCALCS(dupdpsdsuratpkl)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      psdprmidx       psdprm
+        DBC_MAP         mupdpsdsuratpkl
+
+MAP(mupdsrtpkl)
+ctacc1          psdtype2        DO_CALC
+cBLANKS         psdtype         DO_CALC
+g_usrkode       psdstr2         REPLACE
+
+MAP(mupdsrtpkl1)
+cacc1		psdtype2        DO_CALC
+cacc1		psdtype         DO_CALC
+g_usrkode       psdstr2         REPLACE
+
+SPCALCS(supdsrtpkl)
+        DO_LIB_IF cadasuratpkl ap_dbclc(DNAME dupdsrtpkl,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdsrtpkl);
+
+SPCALCS(supdsrtpkl1)
+        DO_LIB_IF cadasuratpkl ap_dbclc(DNAME dupdsrtpkl1,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdsrtpkl1);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploadacc    DO_SPCALCS supdsrtpkl
+CLICKED         cur_field=luploadacc    DO_SPCALCS supdsrtpkl1
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD   psdpsmkode	psdkode
+SFL_UPLFLD_DBCALCS dupdpsdsuratpkl
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+        psddatpsmkod   gv_clnkry11         btmnobuk	lsuratpkl
+
+SFL_MAP
+gv_clnkry11             psddata         REPLACE
+btmnobuk                psdpsmkode      REPLACE
+

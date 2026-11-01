@@ -1,0 +1,63 @@
+IMAGE(tmptranst)
+/---------------t------------t-------------t------------t------------------t-------------\
+| t.MedSos      |t.Ada/Tidak | t.NamaAkun  | t.Acc/Tacc | t.NipSDMAcc/Tacc | t.KetTacc	 |
+\---------------.------------.-------------.------------.------------------.-------------/
+
+IMAGE(tmptrans)
+|_______________|____________|_____________|____________|__________________|_____________|
+
+FIELD(tmptrans)
+psdkode 		PROTECT            	INPUTRI 1
+psdstr4 		NOCHANGE                INPUTRI 2
+psdstr1 		NONE 	                INPUTRI 3
+psdstr2  		NOCHANGE                INPUTRI 4
+psdstr3  		PROTECT                 INPUTRI 5
+psdket			ALLCAPS			INPUTRI 6
+
+
+DEFAULTS(tmptrans)
+psdstr2		DFALT_SCAN_BLANKS	ACC
+					TACC
+
+
+psdstr4		DFALT_SCAN_BLANKS	ADA
+					TIDAK
+
+
+CALCS()
+cKet		psdstr2=="TACC"
+cadamds		psdstr4=="ADA"
+ctadamds	psdstr4=="TIDAK"
+caccmds		psdstr2=="ACC"
+
+EDITS(tmptrans)
+e.Mandatory psdstr1	MANDATORY_IF cadamds
+e.Mandatory psdstr2 	MANDATORY_IF cadamds
+e.Mandatory psdstr4 	MANDATORY
+e.Mandatory psdket	MANDATORY_IF cKet
+
+MAP(macc)
+g_usrkode 	psdstr3		REPLACE
+cblanks		psdstr1		DO_CALC_IF ctadamds
+cblanks		psdstr2		DO_CALC_IF ctadamds
+cblanks		psdket		DO_CALC_IF ctadamds
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=psdstr4	DO_MAP SHOW macc
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF ctadamds
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF ctadamds
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF caccmds
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(3)
+
+SFL_TARGET
+	psddatpsmkod  lSURMEDSOS  btmplg     
+
+SFL_MAP
+lSURMEDSOS      psddata         REPLACE
+btmplg          psdpsmkode      REPLACE
+
+
+

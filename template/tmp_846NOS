@@ -1,0 +1,103 @@
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|/-------------------------------------------\/------------s.UPLOAD-------------\|
+||t.Kategori   : ___ _________________	     ||                                 ||
+||t.Indikator  : ___ ______________________  ||                                 ||
+||t.Fisik      : _______		     ||					||
+||t.Kondisi    : _______		     ||					||
+||t.HasilObv   : ___________________________ ||                                 ||
+||					     ||		               	     	||
+||                                           ||                                 ||
+||                                           ||                                 ||
+|\-------------------------------------------/\---------------------------------/|
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+
+FIELDS(tmptranst)
+svidtmkode	PROTECT 		INPUTRI 1 	/*kategori*/
+svistr1		PROTECT 		INPUTRI 2	
+svitblkode	PROTECT 		INPUTRI 3	/*indikator*/
+svistr2		PROTECT 		INPUTRI 3
+svistr3		ALLCAPS SCROLL		INPUTRI 4
+svistr4		ALLCAPS SCROLL		INPUTRI 5
+sviket		TEXTAREA		INPUTRI 6	/*hasil observasi*/
+
+DEFAULTS(tmptranst)
+svidf1 		INIT 	0
+svistr3         DFALT_SCAN_BLANKS       ADA
+                                	TIDAK
+svistr4         DFALT_SCAN_BLANKS       BAIK
+                                	RUSAK
+
+
+EDITS(tmptranst)
+e.MandatoryKondisi	svistr4		MANDATORY_IF cfisikY
+
+
+CALCS()
+cisi1                   svidf1 + 1
+cketpjg20      		DO_LIB ap_strln (sviket,&lpanjangket3);
+cpjgket		     	lpanjangket3 >= 20
+/*cuplfoto                svidf1 < 1
+cbtsfoto		svidf1 >= 1*/
+
+MAP(mupdfotoahass)
+cisi1                    svidf1      DO_CALC
+
+DBCALCS(dupdfotoahass)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx   sviprm
+        DBC_MAP         mupdfotoahass
+
+MAP(mcekpjg20)
+cketpjg20         lpanjangket3  DO_CALC
+
+MAP(mdumsvi)
+lpanjangket3     lpanjangket3     REPLACE
+
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviket      DO_MAP  SHOW    mcekpjg20
+BEFORE_INPUT	cur_field=svistr4     DO_SKIP_IF cfisikT
+BEFORE_INPUT    cur_field=sviket     DO_SKIP_IF cfisikT
+AFTER_INPUT     cur_field=sviket      DO_MAP  SHOW
+                                      IF cpjgket mdumsvi
+                                      ELSE HKCURSOR STAY
+                                      HKMSG t.Minimal20Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_UPL_DIRFLD  tlmtgl
+SFL_UPLFLD svioto 
+SFL_UPLFLD_DBCALCS dupdfotoahass
+SFL_UPL_CAMERAONLY
+/*SFL_UPL_COND	cuplfoto
+SFL_UPL_COND_MSG IF cbtsfoto t.HanyaBoleh1Foto*/
+SFL_TARGET
+        svidatbuktyp  lNOSbaru tlmnobuk lNOSbaru
+SFL_MAP
+lNOSbaru         svidata
+tlmnobuk         svinobuk
+lNOSbaru         svitype
+tlmtgl		 svitgl1
+
+PERMIT(tmptrans)
+PMT_DEL_COND    c0
+PMT_UPDALL_COND cOPEN
+PMT_ADD_COND    c0
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,77 @@
+LOCAL                                                                                               
+PGM_FIELDS
+lFID30IDK11		STRING		11
+lFID30IDK21		STRING		21
+lthblFID30IDK21		STRING		21
+ldvsFID30IDK21		STRING		21
+
+DBCALCS(djoincadfid30idk)
+DBC_COMMAND     JOIN
+DBC_TARGET      cadcabdtidx	cabkode lFID30IDK11 ldvsFID30IDK21 lthblFID30IDK21
+
+IMAGE(tmptranst)
+/----------t-------t-------t-------t----------t-----------\
+|  t.Kode  |t.Div  |i.ThBl |t.Bts  |t.ActAkhBl|t.Kategori |
+\----------.-------.-------.-------.----------.-----------/
+
+IMAGE(tmptrans)
+|__________|_______|_______|____.__|_______.__|___________|
+
+FIELD(tmptrans)
+   cadkdcab     PROTECT SCROLL          INPUTRI         1
+   cadtype	ALLCAPS			INPUTRI		3
+   cadkode      PROTECT                 INPUTRI         5
+   cadtot1      NUMERIC                 INPUTRI         7
+   cadtot2      NUMERIC                 INPUTRI         9
+   cadket	NOCHANGE		INPUTRI		11
+
+DEFAULTS(tmptrans)
+caddata         INIT            FID30IDK
+lFID30IDK11	INIT		FID30IDK
+lFID30IDK21	INIT		FID30IDK
+lthblFID30IDK21	INIT		{cthbl}
+cadkode		INIT_ADD	{cthbl}
+
+EDITS(tmptrans)
+e.Mandatory     cadtype		MANDATORY
+e.ValidateDvs	cadtype	VALIDATE dtmdtkodidx mdtmfid30idk sdtm {Pgv_bisnis}
+
+MAP(mdtmfid30idk)
+dtmkode		cadtype		REPLACE
+
+CALCS()
+cPLTFID30IDK		"PLATINUM"
+cNONFID30IDK		"NON"
+cKONDPLTFID30IDK	cadtot1 >= cadtot2
+cKONDNONFID30IDK	cadtot1 < cadtot2
+cblmadadetfid30idk	(g_curcmd == 1 && djoincadfid30idk == 0) || g_curcmd == 2
+
+MAP(misifid30idk)
+cadkode		cadthbl			REPLACE
+cadtype		ldvsFID30IDK21		REPLACE
+cPLTFID30IDK	cadket			DO_CALC_IF cKONDPLTFID30IDK
+cNONFID30IDK	cadket			DO_CALC_IF cKONDNONFID30IDK
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_keybd=EN	DO_MAP misifid30idk
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW 
+		IF cblmadadetfid30idk mdum2
+		ELSE HKCURSOR STAY
+		HKMSG Data Divisi & THBL Ini Sudah Ada
+
+SUBFILE(tmptrans)
+SFL_LINES(5)   
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD cadthbl
+SFL_SORT_UPDOWN DOWN
+
+SFL_TARGET
+cadcabdtidx	cabkode lFID30IDK11
+
+SFL_MAP
+cabkode		cadkdcab	REPLACE
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ckuotapst0
+        PMT_UPDALL_COND ckuotapst0
+        PMT_DEL_COND    ckuotapst0

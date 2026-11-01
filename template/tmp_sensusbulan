@@ -1,0 +1,108 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.NamaAktiva :__________________|
+ |t.Kepemilikan:__________________|
+ |t.KodeAktiva :__________________|
+ |t.Dipakai    :__________________|
+ |t.KetBarcode :______  __________|
+ |t.HasilSensus:______  __________|
+ |t.KodeScan   :__________________|
+ |t.Ket        :__________________|
+ |t.Lantai     :__________________|
+ |t.KodeRuangan:__________________|
+ |             :__________________|
+ |             :__                |
+ \--------------------------------/
+ /---s.UPLOAD---------------------\
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ |                                |
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tldsat          PROTECT                         INPUTRI         1
+        lbrgsat4        PROTECT                         INPUTRI         2
+        tldbrg          PROTECT                         INPUTRI         3
+        tldstr2         NOCHANGE                        INPUTRI         4
+        tldukrwrn       NOCHANGE                        INPUTRI         5
+        lketkode        PROTECT                         INPUTRI         6
+        tldjasbrg       NOCHANGE                        INPUTRI         7
+        tldkat          PROTECT                         INPUTRI         8
+        tldplg          QRCODE                          INPUTRI         9
+        tldket          TEXTAREA ALLCAPS SCROLL         INPUTRI         10
+        tldgrup2        ALLCAPS                         INPUTRI         11
+        tldgrup         ALLCAPS                         INPUTRI         12
+        lenter          ALLCAPS                         INPUTRI         13
+        tldjml          PROTECT                         INPUTRI         14
+
+DEFAULTS(tmptranst)
+tldukrwrn       DFALT_SCAN_BLANKS       1 "SUDAH CETAK BARCODE"
+                                        2 "BELUM CETAK BARCODE"
+IF cdjoinseri1 tldjasbrg       DFALT_SCAN_BLANKS       A "FISIK ADA TAPI BEDA SERIAL NUMBER/MERK"
+                                        B "FISIK ADA TAPI RUSAK"
+                                        C "FISIK TIDAK ADA"
+                                        D "FISIK SAMA DENGAN SYSTEM"
+
+IF cdjoinseri0 tldjasbrg       DFALT_SCAN_BLANKS       B "FISIK ADA TAPI RUSAK"
+                                        C "FISIK TIDAK ADA"
+                                        D "FISIK SAMA DENGAN SYSTEM"
+tldstr2         DFALT_SCAN              BLANKS
+                                        DIGUNAKAN "AKTIVA DI GUNAKAN"
+                                        TIDAK "AKTIVA TIDAK DI GUNAKAN"
+
+EDITS(tmptranst)
+e.Mandatory	tldukrwrn	MANDATORY
+e.Mandatory     tldjasbrg       MANDATORY
+e.Mandatory     tldstr2         MANDATORY
+e.Mandatory     tldket          MANDATORY_IF cAC
+e.Mandatory     tldplg          MANDATORY_IF cwajibscan 
+e.Mandatory	tldgrup		MANDATORY_IF cadax
+e.Mandatory	tldgrup2	MANDATORY_IF cadax
+e.Validate	tldbrg 		VALIDATE brgdatkodidx mbrg {Pgv_dtaktiva} 
+e.Validate      tldgrup2        VALIDATE tbtdattypkod mtbt stbt {Pgv_dttabel} {PlLANTAI} {Pgv_infoumum} {Pgv_gedung} {Plcabtwr}  
+e.Validate      tldgrup         VALIDATE tbedattypkod mtbe stbeon {Pgv_dttabel} {Pgv_gedung} {PlLANTAI} {Plcabtwr} {Ptldgrup2}   
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cBD
+BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF clewatscan
+BEFORE_INPUT    cur_field=tldukrwrn     DO_SKIP_IF csudah
+BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF csudah
+AFTER_INPUT     cur_field=tldjasbrg     DO_MAP SHOW mket
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW mpanjangket
+AFTER_INPUT     cur_field=tldket        DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+
+MAP(mupdtldfoto)
+c1      tldjml  DO_CALC
+DBCALCS(dupdtldfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx       tldprm
+        DBC_MAP         mupdtldfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tldtglfak
+SFL_UPLFLD tldnobuk tldbrg
+SFL_UPLFLD_DBCALCS dupdtldfoto
+SFL_UPL_DELCOND c0
+SFL_COND        cmasuky
+SFL_TARGET
+        tldbukurtidx tlmnobuk 
+SFL_MAP
+        tlmnobuk        tldnobuk        REPLACE
+        tlmdata         tlddata         REPLACE

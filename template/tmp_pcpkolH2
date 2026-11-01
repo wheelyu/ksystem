@@ -1,0 +1,105 @@
+IMAGE(tmptranst)
+/--------t--------------------t----------------t----------------t----------------t----------------t----------------\
+|t.NipKol|t.Nama              |t.PPTGH         |t.tarik         |t.Plnsan        |t.ZDEN          |t.JlMokas       |
+\--------.--------------------.----------------.----------------.----------------.----------------.----------------/
+
+IMAGE(tmptrans)
+|________|____________________|________________|________________|________________|________________|_______________|
+
+FIELDS(tmptrans)
+        tldplg          	NOCHANGE		INPUTRI         1
+        tldket          	PROTECT			INPUTRI         2
+        
+	tldperdis               PROTECT                 INPUTRI 	2
+	tldperdis1              PROTECT                 INPUTRI 	3
+	tldperdis2              PROTECT                 INPUTRI 	4
+	tldperdis3              PROTECT                 INPUTRI 	5
+	tldperdis4              PROTECT                 INPUTRI 	6
+        
+
+DEFAULTS(tmptrans)
+lenter                  INIT            TAB
+ltglawl                 INIT            {cawlbln}
+
+EDITS(tmptrans)
+t.ValidatePsm tldplg  VALIDATE psmkodidx    mpsm2 0
+
+MAP(mpsm2)
+psmnama                 psmnama                 REPLACE
+
+
+
+CALCS()
+cactunttrkkolrem	(tlmbisnis=="Z7" || tlmbisnis=="Z8" || tlmbisnis=="Z9" || tlmbisnis=="ZA" || tlmbisnis=="ZB" ||
+                         tlmbisnis=="ZC" || tlmbisnis=="ZD" || tlmbisnis=="ZE" || tlmbisnis=="ZF" || tlmbisnis=="ZG" ||
+                         tlmbisnis=="ZH" || tlmbisnis=="ZI" || tlmbisnis=="ZJ" || tlmbisnis=="ZK" || tlmbisnis=="ZL" ||
+                         tlmbisnis=="ZM" || tlmbisnis=="ZN" || tlmbisnis=="ZO" || tlmbisnis=="ZP" || tlmbisnis=="ZQ" ||
+                         tlmbisnis=="ZR" || tlmbisnis=="ZS") && tlmdvs!="M4W" && tlmsts=="CLSD"
+
+MAP(mscantlmtrkkolrem)
+c1                      lactunttrkrem                   DO_CALC_IF cactunttrkkolrem
+
+MAP(mscanpikkolrem)
+c1                      lactzdenunitrem                 DO_CALC_IF cactzdenunitrem
+
+MAP(mscanbkmkolrem)
+c1                      lactuntbyr                      DO_CALC_IF cactbyrx
+bkmtotal                lactrpbyr                       REPLACE_IF cactbyrx
+
+c1                      lactuntplns                     DO_CALC_IF cactplnsx
+bkmtotal                lactrpplns                      REPLACE_IF cactplnsx
+
+c1                      lactuntsisadenda                DO_CALC_IF cactsisadendax
+bkmtotal                lactrpsisadenda                 REPLACE_IF cactsisadendax
+
+
+MAP(mscanppdkolrem)
+c1                      lttljlmksunitrem                DO_CALC_IF cttljlmksrem
+ppdhrg                  lttljlmkssispokrem              REPLACE_IF cttljlmksrem
+
+
+MAP(mhitungkolremH)
+cactsipokpptgh		lactsipokpptgh		DO_CALC
+lactunttrkrem		lactunittarik           REPLACE
+lactrpplns		lactunitplns            REPLACE
+lactrpsisadenda		lactsipokzden           REPLACE
+lttljlmkssispokrem 	lactsipokjlmks          REPLACE
+
+DEBUG		ldum		ldum		REPLACE
+
+
+CALCS()
+cStsOpen4               tlmgrup2=="REMHARIAN"
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cStsOpen4
+SFL_APP_TYPE
+SFL_TARGET
+        tldbukbrgoto   tlmnobuk gv_OPEN lREMHARIAN
+
+CALCS()
+cjointld2_1              djointld2==1
+
+MAP(mupdtldrem)
+cactsipokpptgh          tldperdis            DO_CALC
+lactunttrkrem           tldperdis2           REPLACE
+lactrpplns              tldperdis3           REPLACE
+lactrpsisadenda         tldperdis4           REPLACE
+lttljlmkssispokrem      tldperdis5           REPLACE
+
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dbscantlmtrkkolrem,DCOMMAND SCANSCAN,DTARGET tlmdatplgtgl   gv_estimasi  tldplg tlmtgl,DBC_SUM_MAP mscantlmtrkkolrem);
+DO_LIB ap_dbclc(DNAME dbscanpikkolrem,DCOMMAND SCANSCAN,DTARGET pikkolstsidx   tldplg,DBC_SUM_MAP mscanpikkolrem);
+DO_LIB ap_dbclc(DNAME dbscanbkmkolrem,DCOMMAND SCANSCAN,DTARGET bkmdatkodtgl   gv_dtkmpiu tldplg tlmtgl,DBC_SUM_MAP mscanbkmkolrem);
+DO_LIB ap_dbclc(DNAME dbscanppdkolrem,DCOMMAND SCANSCAN,DTARGET ppdststglsts tldplg ltglawl,DLTARGET ppdststglsts tldplg tlmtgl,DBC_SUM_MAP 
+mscanppdkolrem);
+DO_LIB ap_dbclc(DNAME dmaphitungpcprem,DCOMMAND MAPMAP,DMAP mhitungkolremH);
+DO_LIB_IF cjointld2_1 ap_dbclc(DNAME dupdtldrem,DCOMMAND UPDATE,DTARGET tldotoidx   tldoto,DMAP mupdtldrem);
+
+
+POSTING(tmptrans)
+PST_COMMAND     sptmptrans
+

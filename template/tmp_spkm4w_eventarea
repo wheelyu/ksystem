@@ -1,0 +1,262 @@
+LOCAL()
+PGM_FIELDS
+luplok		STRING		21
+ljamevent	TIME		4
+/*ljamawalevent	TIME		4
+ljamakhirevent	TIME		4
+l1menitevent	DFLOAT		8
+lmenitevent	DFLOAT		8
+
+CALCS()
+ctkdevent	tkdnoll == svitype
+*/
+
+MAP(mjointgm)
+tgmke         ltgmke        REPLACE
+
+DBCALCS(djointgm)
+DBC_COMMAND     JOIN
+DBC_TARGET      tgmdattglidx lTGL tkmtgl
+DBC_MAP         mjointgm
+
+/*MAP(mjointkdevent)
+tkdjml          ljamawalevent   REPLACE
+tkdjml2         ljamakhirevent  REPLACE
+
+DBCALCS(djointkdevent)
+DBC_COMMAND	JOIN
+DBC_TARGET	tkdbukidx svinobuk gv_OPEN svinourt
+DBC_SELECT      ctkdevent
+DBC_MAP         mjointkdevent
+*/
+
+
+
+CALCS()
+cjointgm	(djointgm == 1 && ltgmke == 6 && svistr1 == "SUDAH") || 
+		(djointgm == 1 && ltgmke != 6 && tkmtgl != svitgl2) || 
+		(tkmtgl == svitgl2 && svistr1 == "SUDAH")
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.NoBukti    __________________ ||
+||t.idref      _____________ ____ ||
+||t.Namaref    __________________ ||
+||t.NamaTempat __________________ ||
+||t.NamaAcara  __________________ ||
+||t.SdhKunjung _______ __________ ||
+||t.jmlorng    _______            ||
+||t.jmlhot     _______            ||
+||t.jmljdpk    _______            ||
+||t.Ket        __________________ ||
+||t.Lat        ________.________  ||
+||t.Lon        ________.________  ||
+||t.Tglfoto    ________		  ||
+||t.Uplok      ___  _______       ||
+|\--------------------------------/|
+|/----s.UPLOAD--------------------\|
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|  ____________	 		   |
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinobuk	PROTECT		INPUTRI 1
+svidtmkode	ALLCAPS		INPUTRI 2
+svistr10	PROTECT		INPUTRI	2
+svinama		ALLCAPS		INPUTRI 3
+sviket		ALLCAPS		INPUTRI 4
+sviket2		ALLCAPS		INPUTRI 5
+svistr1		ALLCAPS		INPUTRI 6
+svitgl1		PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 7
+svidf7 		ALLCAPS		INPUTRI 8
+svidf5 		ALLCAPS		INPUTRI 9
+svidf6 		ALLCAPS		INPUTRI 10
+sviket3		ALLCAPS		INPUTRI 11
+svidf3		PROTECT		INPUTRI 12
+svidf4		PROTECT		INPUTRI 13
+svistr2		PROTECT {DD-MM-YYYY} INPUTRI 14
+svistr3		PROTECT		INPUTRI 15
+lenter		ALLCAPS		INPUTRI 15
+luplok		TOMBOL		INPUTRI 16
+
+DEFAULTS(tmptranst)
+svistr1		DFALT_SCAN	BLANKS
+				SUDAH ""
+				/*BELUM ""*/
+luplok		INIT		"UPLOAD OK"
+svinourt	INIT_ADD	1
+ljamevent      INIT_ADD        {cSYSTIME}
+
+EDITS(tmptranst)
+e.Mandatory	svistr1		MANDATORY
+e.Mandatory	sviket3		MANDATORY
+e.Mandatory	sviket		MANDATORY
+e.Mandatory	sviket2		MANDATORY
+e.Mandatory	svidf7		MANDATORY
+e.Mandatory	svidf5		MANDATORY
+e.Mandatory	svidf6		MANDATORY
+
+CALCS()
+ctandaevent	   g_fotodate1 == g_tgltrn && svistr3 == BLANKS 
+/*cevent1menit     g_fotodate1 == g_tgltrn && djointkdevent == 1 && ((ljamakhirevent - ljamawalevent) <= 1)
+ceventdiatas1    g_fotodate1 == g_tgltrn && djointkdevent == 1 && ((ljamakhirevent - ljamawalevent) > 1 && (ljamakhirevent - ljamawalevent) <= 336)
+ceventtole       g_fotodate1 == g_tgltrn && djointkdevent == 1 && ((ljamakhirevent - ljamawalevent) > 336 && ((ljamakhirevent - ljamawalevent) <= ((lmenit420x * 0.20) + lmenit420x)))
+cselevent        ljamakhirevent - ljamawalevent*/
+
+MAP(mmapevent)
+tkmtype		svidata		REPLACE
+leventarea	svitype		REPLACE
+svitgl1		ltgllg		REPLACE
+cthblfulagi     lthbllg         DO_CALC
+tkmnobuk	svinobuk	REPLACE
+tkmplg 		svikode 	REPLACE
+
+MAP(mmapeventx)
+svidata         lmain1data      REPLACE
+svinobuk        lmain1nobuk     REPLACE
+svinourt        lmain1urt       REPLACE
+svitype         lmain1type      REPLACE
+DBCALCS(dmapevent_x)
+	DCOMMAND MAPMAP
+	DMAP     mmapeventx
+
+/*MAP(mmapjamevent)
+c1              l1menitevent    DO_CALC_IF cevent1menit
+cselevent       lmenitevent     DO_CALC_IF ceventdiatas1
+DEBUG           ldum    ldum    REPLACE
+DBCALCS(dmapjamevent)
+	DBC_COMMAND     MAPMAP
+	DBC_MAP         mmapjamevent
+
+CALCS()
+c1menitevent            tkmtotal + l1menitevent
+cmenitevent             tkmtotal + lmenitevent
+*/
+
+MAP(mupdatasevent2)
+/*c1menitevent    tkmtotal        DO_CALC_IF cevent1menit
+cmenitevent     tkmtotal        DO_CALC_IF ceventdiatas1
+*/
+cmenit420       tkmtotal        DO_CALC_IF  ctandaevent
+DEBUG           ldum    ldum    REPLACE
+
+DBCALCS(dupdatasevent2)
+DBC_COMMAND     UPDATE
+DBC_TARGET      tkmbukidx tkmnobuk
+DBC_MAP         mupdatasevent2
+
+MAP(mfotoevent)
+cY		sviyt2		DO_CALC
+g_fotodate1	svistr2		REPLACE
+g_fotolat1	svidf3		REPLACE
+g_fotolon1	svidf4		REPLACE
+cY		sviyt1		DO_CALC_IF ctglsamafu2
+DEBUG		ldum	 ldum	REPLACE
+
+DBCALCS(dbfotoevent)
+DBC_COMMAND	UPDATE
+DBC_TARGET	sviprmidx sviprm
+DBC_MAP		mfotoevent
+
+/*
+MAP(mktprefevent)
+lREFF           svistr10        REPLACE_IF cjoinrefrt
+lnmrefer	svinama		REPLACE_IF cjoinrefrt
+
+MAP(mpoinevent)
+cmenit420       tkmtotal        DO_CALC_IF ctandaevent
+DEBUG		ldum	ldum	REPLACE
+
+DBCALCS(dpoinevent)
+DBC_COMMAND	UPDATE
+DBC_TARGET	tkmotoidx tkmoto
+DBC_MAP		mpoinevent
+*/
+
+MAP(mupdeventok)
+lOK             svistr3         REPLACE_IF cadaevent
+DBCALCS(dupdeventok)
+DBC_COMMAND	UPDATE
+DBC_TARGET      sviotoidx svioto
+DBC_MAP		mupdeventok
+
+SPCALCS(supdevent)
+dmapevent_x
+/*dbfotoevent*/
+dupdjam1
+/*dmapjamevent*/
+dupdatasevent2
+/*dpoinevent*/
+dupdeventok
+
+
+HOOKS(tmptranst)
+/*AFTER_INPUT	cur_field=svidtmkode	DO_MAP SHOW mktprefevent*/
+AFTER_INPUT	cur_field=svistr1	DO_MAP SHOW
+		IF cjointgm mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HariTerakhir
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cjointgm mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HariTerakhir
+CLICKED         cur_field=luplok    DO_SPCALCS supdevent
+
+
+CALCS()
+cEVENTAR         "EVENT_AREA"
+
+MAP(maddaktevent)
+svinobuk        aktkode         REPLACE
+svidata         aktdata         REPLACE
+cEVENTAR        akttype         DO_CALC
+g_tgltrn        akttgl          REPLACE
+cSYSTIME        aktjam          DO_CALC
+g_usrkode       aktkode2        REPLACE
+cEVENTAR        aktbrg          DO_CALC
+
+MAP(maddjamevent)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+leventarea      tkdnoll         REPLACE
+svinourt        tkdnourt        REPLACE
+gv_OPEN         tkdsts          REPLACE
+ljamevent       tkdjml          REPLACE
+
+SPCALCS(sptranseventadd)
+        DO_LIB ap_dbclc(DNAME dmapeventadd,DCOMMAND MAPMAP,DMAP mmapevent);
+	DO_LIB ap_dbclc(DNAME daddakteventadd,DCOMMAND ADD,DFILE akt,DMAP maddaktevent);
+	DO_LIB ap_dbclc(DNAME daddjamevent,DCOMMAND ADD, DFILE tkd,DMAP maddjamevent);
+	
+/*
+SPCALCS(sptranseventupd)
+        DO_LIB ap_dbclc(DNAME dmapeventupd,DCOMMAND MAPMAP,DMAP mmapevent);
+        DO_LIB ap_dbclc(DNAME dmapawaleventupd,DCOMMAND MAPMAP,DMAP mapawaldet2);
+	DO_LIB ap_dbclc(DNAME daddrefeventadd,DCOMMAND ADD,DFILE svi,DMAP maddsvievent);
+	DO_LIB ap_dbclc(DNAME dmapakhireventupd,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mapakhirdet2);
+	DO_LIB ap_dbclc(DNAME dupdtkmeventupd,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP mtambpoinevent);
+	DO_LIB ap_dbclc(DNAME daddakteventadd,DCOMMAND ADD,DFILE akt,DMAP maddaktevent);
+*/
+POSTING(tmptrans)
+	PST_ADDCMD	sptranseventadd
+/*	PST_UPDCMD      sptranseventupd
+*/
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tkmnobuk
+SFL_UPLFLD_DBCALCS dbfotoevent
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPL_CAMERAONLY
+SFL_TARGET
+        svidatbuktyp    tkmtype tkmnobuk leventarea
+
+
+
+

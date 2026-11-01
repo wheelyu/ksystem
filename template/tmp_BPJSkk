@@ -1,0 +1,91 @@
+IMAGE(tmptranst)
+/---t------------------------------------------------------------------------------------\                              
+|---|--------------t------------------t----t------------t----------t-----------t---------|                              
+|Urt| i.Nik        | i.Nama           |i.Lp|i.Tmplahir  |i.Tgllahir|i.Stsnikah |i.Hubkel |                           
+\---.--------------.------------------.----.------------.----------.-----------.---------/                               
+
+
+IMAGE(tmptrans)
+|___|______________ __________________ ____ ____________  ________  ___________  ________|                                        
+FIELD(tmptrans)
+sgdurt                  PROTECT SCROLL                  INPUTRI 1
+sgdkode                 ALLCAPS SCROLL                  INPUTRI 2
+lnamaKTP                PROTECT SCROLL                  INPUTRI 3
+lgender                 PROTECT SCROLL                  INPUTRI 4
+ltmplhr                 PROTECT SCROLL                  INPUTRI 5
+ltgllhr                 PROTECT NOLIMIT {DD-MM-YY}         INPUTRI 6
+lstsnikah               PROTECT SCROLL                  INPUTRI 7
+sgdthbrg                ALLCAPS SCROLL                  INPUTRI 8
+
+EDITS(tmptrans)
+e.Mandatory sgdkode  MANDATORY
+t.Mandatory sgdthbrg MANDATORY
+t.Validate sgdkode VALIDATE kkddatbukidx msgd  {Pgt_datakk} {Ppsmnokk}
+t.Validate sgdthbrg VALIDATE tbddatkodidx mtbdhub stbd {Pgv_dttabel} {Pgv_personal} {PlHUBKEL}
+
+MAP(msgd)
+kkdktp          sgdkode         REPLACE
+kkdnama         lnamaKTP        REPLACE
+kkdlp           lgender         REPLACE
+kkdtmplhr       ltmplhr         REPLACE
+kkdtgllhr       ltgllhr         REPLACE
+kkdnikah        lstsnikah       REPLACE
+
+CALCS()
+cjoinsgd0       djoinsgd==0 && g_curcmd==1
+cjoinsgd1       djoinsgd==1 && g_curcmd==1
+ctbh1_sgd               lnourt_sgd+1
+csdh_ada2       djoinsgd_ada==0 || g_curcmd!=1
+ckrit1          (sgdurt==1 && sgdthbrg=="PESERTA") || (sgdurt!=1 && sgdthbrg!="PESERTA")
+ckrit2          (lsts_nikah=="BELUMKAWIN" && sgdurt==1) || lsts_nikah!="BELUMKAWIN"
+ckrit3          (lsts_nikah=="JANDA" && sgdthbrg!="SUAMI") || lsts_nikah!="JANDA"
+ckrit4          (lsts_nikah=="DUDA" && sgdthbrg!="ISTRI") || lsts_nikah!="DUDA"
+
+MAP(mnourt_sgd)
+c1              sgdurt          DO_CALC_IF cjoinsgd0
+ctbh1_sgd               sgdurt          DO_CALC_IF cjoinsgd1
+
+MAP(mtbdhub)
+tbdkode         sgdthbrg        REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=sgdkode       DO_MAP SHOW mnourt_sgd
+AFTER_INPUT     cur_field=sgdkode       DO_MAP SHOW
+                IF csdh_ada2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.DataSdhAda
+
+AFTER_INPUT     cur_field=sgdthbrg      DO_MAP SHOW
+                IF ckrit1 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PertamaHrsPeserta
+
+AFTER_INPUT     cur_field=sgdthbrg      DO_MAP SHOW
+                IF ckrit2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JkBlmKawinHnySatu
+
+AFTER_INPUT     cur_field=sgdthbrg      DO_MAP SHOW
+                IF ckrit3 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JkJandaTdkBsPilSuami
+
+AFTER_INPUT     cur_field=sgdthbrg      DO_MAP SHOW
+                IF ckrit4 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JkDudaTdkBsPilIstri
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD sgdurt
+SFL_LINES(6)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+        sgddatbuktyp  lKKBPJS psmnokk
+
+SFL_MAP
+psmnokk                 sgdnobuk        REPLACE
+lKKBPJS                 sgddata         REPLACE
+lKKBPJS21                       sgdtype         REPLACE
+
+

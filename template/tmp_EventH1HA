@@ -1,0 +1,95 @@
+IMAGE(tmptranst)
+/-------------------------------------------\
+ t.Foto Kegiatan Hari H
+  /--s.UPLOAD-----------------------------\
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  |                                       |
+  \---------------------------------------/
+|| i.Long          : ____________________  ||
+|| i.Lat           : ____________________  ||
+ /-----------------------------------------\
+  t.Info     : ___________________________
+  t.Status   : ___________________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________________
+  t.AlsanTacc: ___________________________
+  i.Enter    : _____
+  _________________________________________
+ \-----------------------------------------/
+\-------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnil4         PROTECT                         INPUTRI 1
+tkdnil5         PROTECT         		INPUTRI	1
+tkdrek                  PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 2
+tkdsts                  PROTECT                                 INPUTRI 2
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1                 PROTECT                                 INPUTRI 2
+tkdket                  TEXTAREA                                INPUTRI 3
+lenter                  NOCHANGE                                INPUTRI 4
+ltombolahok              TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+ltmpisidf1      INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+tkdtotsj        INIT_UPDATE     0
+
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+
+CALCS()
+cdetailahok              tlmkode == g_usrkode && tkdnourt > 0 && tkdjml3 > 0  &&
+                        (tkdsts == gv_OPEN || tkdsts == gv_TACC) 
+
+MAP(mupdinfodetailha)
+lUPLOADFOTOKEGIATAN     tkdrek          REPLACE_IF cfoto3kosong
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+
+SPCALCS(spdetailokha)
+        DO_LIB_IF cdetailahok            ap_dbclc(DNAME dupddetailreqha,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilha, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamha, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailha,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailha);
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+
+CLICKED         cur_field=ltombolahok    DO_SPCALCS spdetailokha
+
+MAP(mtambahuploadfotokegiatan)
+ctambahupload		tkdnourt	DO_CALC
+ctambahuploadfoto3      tkdjml3         DO_CALC
+g_fotolat1	        tkdnil4		REPLACE
+g_fotolon1	        tkdnil5	        REPLACE
+gv_int1                 tkdtotjsa       REPLACE
+DBCALCS(dtambahuploadfotokegiatan)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx	tkdprm
+	DBC_MAP		mtambahuploadfotokegiatan
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl 
+SFL_UPLFLD  tkdnobuk lKEGIATANHARIH
+SFL_UPLFLD_DBCALCS dtambahuploadfotokegiatan
+SFL_UPL_COND cuploadfotook       
+SFL_UPL_COND_MSG        IF cdetailsudahacc Sudah ACC tidak bisa upload
+                        IF cbukanpicnso Hanya PIC/NSO yang Bisa Upload
+                        IF cdetaildalamreview Tunggu Review Terlebih Dahulu
+                        IF cdalamkondisiupdate Tekan U Enter Dulu
+SFL_UPLFLD_DELCOND c0
+SFL_TARGET
+        tkddatbukll lEVNH1AH tlmnobuk
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailadditionalbaru

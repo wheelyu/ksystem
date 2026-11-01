@@ -1,0 +1,135 @@
+DBCALCS(djoinvalid1)
+	DBC_COMMAND     JOIN
+        DBC_TARGET      tkdbukllsts     tlmnobuk lvalid ltest01
+
+MAP(mjoinbtmpik)
+btmtypmtr2		lmotor		REPLACE
+
+DBCALCS(djoinbtmpik)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btmbukidx	lpiknobtm
+	DBC_MAP		mjoinbtmpik
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD----------------------------------\/---------------------------------\|
+| |___| |                                            ||spasi                             |
+| \---/ |                                            ||t.System                          |
+|       |                                            ||________________________          |
+|       |                                            ||________________________          |
+|       |                                            ||________________________          |
+|       |                                            ||spasi                             |
+|       |                                            ||________________________          |
+|       |                                            ||________________________          |
+|       |                                            ||__________________________________|
+|       |                                            ||________________________          |
+|       |                                            ||spasi                             |
+|       |                                            ||spasi                             |
+|       |                                            ||spasi                             |
+|       |                                            ||t.HslDcsl                         |
+|       |                                            ||________________________          |
+|       \--------------------------------------------/\---------------------------------/|
+\----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnourt        PROTECT         INPUTRI 1
+tkdsisstr       PROTECT         INPUTRI 2
+tkdjml		PROTECT		INPUTRI	3
+tkdjwbstr2	PROTECT		INPUTRI	4
+tkddata         NOCHANGE        INPUTRI 5
+tkdket          TEXTAREA	INPUTRI 6
+tkdtgl  ALLCAPS NOLIMIT {DD-MM-YY} 	INPUTRI 7
+lenter          NOCHANGE        INPUTRI 8
+tkdjwbstr1      PROTECT         INPUTRI 9
+
+DEFAULTS(tmptranst)
+tkddata         DFALT_SCAN_BLANK        YA
+                                        TIDAK
+
+CALCS()
+cvalidtelp      (djointest == 0 || djointest == 1) && djoinvalid1 == 1
+cvalidtmpa	"VALID"
+cvalidtmp1	tkddata == "YA"
+cadmintmpa	"ADMINISTRATIF"
+cadmintmp1	tkddata == "TIDAK"
+cjwb1		tkdnourt == 1 && djoinpsm == 1
+cjwb2a		tkdnourt == 2 && (tkdrek == "VALIDASIKREDIT" || tkdrek == "VALIDASITUNAI") && djoinbtm == 1 
+cjwb2b		tkdnourt == 2 && tkdrek == "VALIDASIPIUT" && djoinbtmpik == 1
+cjwb2c		tkdnourt == 2 && tkdrek == "VALIDASIGADAI" && djoinbtm == 1
+cjwb3a		tkdnourt == 3 && tkdrek == "VALIDASIKREDIT" && djoinpik == 1
+cjwb3b		tkdnourt == 3 && tkdrek == "VALIDASIPIUT" && djoinpik == 1
+cjwb3c		tkdnourt == 3 && tkdrek == "VALIDASITUNAI" && djoinkkd == 1
+cjwb3d		tkdnourt == 3 && tkdrek == "VALIDASIGADAI" && djoinpsm == 1
+cjwb4a		tkdnourt == 4 && tkdrek == "VALIDASIKREDIT" && djoinpik == 1
+cjwb4b		tkdnourt == 4 && tkdrek == "VALIDASIPIUT" && djoinpik == 1
+cjwb4c		tkdnourt == 4 && tkdrek == "VALIDASITUNAI" && djoinpsm == 1
+cjwb5a		tkdnourt == 5 && tkdrek == "VALIDASIKREDIT" && djoinkkd == 1
+cjwb5b		tkdnourt == 5 && tkdrek == "VALIDASIPIUT" && djoinpik == 1
+cjwb6a		tkdnourt == 6 && tkdrek == "VALIDASIKREDIT" && djoinpsm == 1
+cjwb6b		tkdnourt == 6 && tkdrek == "VALIDASIPIUT" && djoinkkd == 1
+cjwb7		tkdnourt == 7 && tkdrek == "VALIDASIPIUT" && djoinpsm == 1
+
+clahirgadai	THBLS_DD(ltgllahir)+"-"+THBLS_MM(ltgllahir)+"-"+THBLS_YYYY(ltgllahir)
+
+EDITS(tmptranst)
+e.Validate	tkdsisstr	VALIDATE_IF cjwb3b cabkodidx mcab1 0
+
+MAP(mcab1)
+cabnama		tkdjwbstr2	REPLACE
+
+MAP(mtmpsoal)
+cvalidtmpa	tkdjwbstr1	DO_CALC_IF cvalidtmp1
+cadmintmpa	tkdjwbstr1	DO_CALC_IF cadmintmp1
+tkdnourt	ltkdnourt	REPLACE
+tkddata		ltkddata	REPLACE
+
+MAP(mtmpjwb)
+lnama		tkdsisstr	REPLACE_IF cjwb1
+lmotor     	tkdsisstr	REPLACE_IF cjwb2a
+lmotor     	tkdsisstr	REPLACE_IF cjwb2b
+lmerkgadai	tkdsisstr	REPLACE_IF cjwb2c
+lmerkbrg	tkdsisstr	REPLACE_IF cjwb2c
+ltenor		tkdjml   	REPLACE_IF cjwb3a
+lpikcab		tkdsisstr	REPLACE_IF cjwb3b
+libu		tkdsisstr	REPLACE_IF cjwb3c
+ltmplahir	tkdsisstr	REPLACE_IF cjwb3d
+clahirgadai	tkdjwbstr2	DO_CALC_IF cjwb3d
+langsuran	tkdjml   	REPLACE_IF cjwb4a
+lpiktenor	tkdjml   	REPLACE_IF cjwb4b
+ltgllahir	tkdtgl		REPLACE_IF cjwb4c
+libu		tkdsisstr	REPLACE_IF cjwb5a
+lpikangbl	tkdjml		REPLACE_IF cjwb5b
+ltgllahir	tkdtgl		REPLACE_IF cjwb6a
+libu		tkdsisstr	REPLACE_IF cjwb6b
+ltgllahir	tkdtgl		REPLACE_IF cjwb7
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkddata	DO_MAP SHOW mtmpjwb
+AFTER_INPUT	cur_field=tkddata	DO_MAP SHOW mtmpsoal
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD      tkdjenis 
+SFL_UPLREADONLY
+SFL_COND        cvalidtelp
+SFL_TARGET
+tkdbukllsts     tlmnobuk lvalid ltest01
+
+CALCS()
+ctdkvldTelp2    (dscantelp == 0 || dscantelp != 0) && (lisino1 == 0 || lisino3 == 0 || lisino3 == 0)
+cvldTelp2       (dscantelp == 0 || dscantelp != 0) && lisino1 == 1 && lisino3 == 1 && lisino3 == 1
+
+MAP(mupdtlmy2)
+ctdkvld         tlmbisnis       DO_CALC_IF ctdkvldTelp2
+cvalid1         tlmbisnis       DO_CALC_IF cvldTelp2
+
+
+SPCALCS(supdtmptrans)
+DO_LIB  ap_dbclc(DNAME dupdtlmx2,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupdtlmy2);
+
+POSTING(tmptrans)
+PST_UPDCMD      supdtmptrans
+

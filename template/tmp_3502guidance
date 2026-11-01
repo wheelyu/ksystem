@@ -1,0 +1,109 @@
+LOCAL
+PGM_FIELDS
+    lALASANTACC     STRING  21
+    lALASANBTL      STRING  21
+    lsgmstr5rm      STRING  21
+    lsgmstr5ho      STRING  21
+    lDTPICCAB       STRING  11
+
+MAP(mupdOKtacc)
+    cOK             tldjasbrg       DO_CALC
+
+DBCALCS(dmapupdOKtacc)
+    DBC_COMMAND     UPDATE
+    DBC_TARGET      tldotoidx   tldoto
+    DBC_MAP         mupdOKtacc
+
+MAP(msgmabkrm)
+    sgmstr5		lsgmstr5rm	REPLACE
+
+DBCALCS(djoinsgmabkrm)
+	DBC_COMMAND	JOIN	
+	DBC_TARGET  sgmdatplgth lDTPICCAB 	lM4W	tlmcab	lthbl11	lRM
+	DBC_MAP		msgmabkrm
+
+IMAGE(tmptranst)
+/-------------------------------------------------------------------\
+| t.AlasanTacc/BTL : _____________________________________          |
+| t.Notelpndhbngi  : ___________________________                    |
+| t.UploadBukti        /---------------UPLOAD--------------\        |
+|                      |                                   |        |
+|                      |                                   |        |
+|                      |                                   |        |
+|                      |                                   |        |
+|                      |                                   |        |
+|                      |                                   |        |
+|                      \-----------------------------------/        |
+| t.StatusUpload   : ______________________________________________ |
+| t.Keterangan     : ______________________________________________ |
+|                    __________________                             |
+\-------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+    tldkat          ALLCAPS                     INPUTRI     1   /*Alasan TACC*/
+    tldsat          DIGITS                      INPUTRI     2   /*No telpn*/
+    tldjasbrg       PROTECT                     INPUTRI     2   /*Status Upload*/
+    tldket          TEXTAREA                    INPUTRI     3   /*Keterangan*/
+    lENTER          ALLCAPS         NOCHANGE    INPUTRI     4   /*ENTER*/
+
+DEFAULT(tmptranst)
+    lALASANTACC     INIT            ALASANTACC
+    lALASANBTL      INIT            ALASANBTL
+    lDTPICCAB       INIT            DTPICCAB
+
+CALCS()
+    cjoinsgmakbrm   djoinsgmabkrm == 1 
+    c3502TACC       "3502 VERIFIKASI TACC"
+    clihatvertacc   (tlmdvs == "M4W" && (tlmuntuk == "TACC" || tlmuntuk == "BTL") && djoincekisibm == 1 && (g_grpnam == "RI" || g_grpnam == "IT" ||
+		            g_grpnam == "B.M4WBM" || g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WDVH"  || g_grpnam == "B.M4WADHSPV" ||
+		            g_grpnam == "B.M4WADHDVH" || g_grpnam == "B.M4WCOO" ||  g_grpnam == "COO" || g_grpnam =="B.M4WRM"))
+    ctlmtacc        tlmuntuk == "TACC"
+    ctlmbtl         tlmuntuk == "BTL"
+    
+EDITS(tmptranst)
+    e.validate1     tldkat          VALIDATE_IF ctlmtacc tbtdattypkod mtldkat stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlVERIFBTLPK} {PlALASANTACC}
+    e.validate2     tldkat          VALIDATE_IF ctlmbtl tbtdattypkod mtldkat stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_personal} {PlVERIFBTLPK} {PlALASANBTL}
+    e.Mandatory		tldkat	        MANDATORY
+    e.Mandatory		tldsat	        MANDATORY
+    e.Mandatory		tldket	        MANDATORY
+
+MAP(mtldkat)
+    tbtkode         tldkat          REPLACE
+
+MAP(maddabk3502RM)
+    tlmnobuk        abknobuk        REPLACE
+    lkunciabsen     abkdata         REPLACE
+    lsgmstr5rm      abkkym          REPLACE
+    c3502TACC       abkkym2         DO_CALC
+    tlmtgl          abktgl          REPLACE
+    gv_INPG         abksts          REPLACE
+    c3502           abkscr          DO_CALC
+
+
+SPCALCS(sptmptranstacc)
+    DO_LIB_IF       cjoinsgmakbrm   ap_dbclc(DNAME daddabk3502RM, DCOMMAND ADD, DFILE abk, DMAP maddabk3502RM);
+
+POSTING(tmptrans)
+   PST_ADDCMD       sptmptranstacc
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND            clihatvertacc
+SFL_UPL_DIRFLD      tlmtgl
+SFL_UPLFLD          tldnobuk
+SFL_UPLFLD_DBCALCS  dmapupdOKtacc
+SFL_UPL_DELCOND     c0
+
+SFL_TARGET
+    tldbukbrgoto    tlmnobuk        gv_INPG     lVERTACCBM	
+
+SFL_MAP
+    tlmnobuk	    tldnobuk	    REPLACE
+    gv_INPG		    tldsts		    REPLACE
+    lVERTACCBM      tldbrg          REPLACE
+    lVERIFBTLPK11	tlddata		    REPLACE
+
+

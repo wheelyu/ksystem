@@ -1,0 +1,514 @@
+LOCAL
+PGM_FIELDS
+lketbbm 	STRING		21
+luruttcm	INT2		2
+l05            	DFLOAT		8
+lppskdpmHL	STRING		21
+lAbkmnobs 	STRING		21
+ltotalbyrhl	DFLOAT		8
+lttlkpbhso2	INT2		2
+lttlkpb1tahun	INT2		2
+lttlnsspeduli	INT2		2
+lCABANGAHASS	STRING		21
+lCABHLKPB1THN	STRING		21
+lCABNSSPEDULI	STRING		21
+lH2		STRING		21
+lKAWIL		STRING		21
+lnipkawil	STRING		21
+lthblx		STRING		11
+lnipkawil_pps	STRING		21
+
+
+DBCALCS(djointbt_cabhlkpb1thn)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdattypkod            gv_dttabel gv_dttabel21  gt_ahass   lCABANGAHASS  lCABHLKPB1THN   bkmcab
+
+DBCALCS(djointbt_cabnsspeduli)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdattypkod            gv_dttabel gv_dttabel21  gt_ahass   lCABANGAHASS  lCABNSSPEDULI   bkmcab
+
+
+MAP(mjoinsgmKAWIL)
+sgmstr5		lnipkawil	REPLACE
+
+DBCALCS(djoinsgmKAWIL)
+    	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth     	gv_dtpiccab lH2 bkmcab lthblx lKAWIL
+	DBC_MAP		mjoinsgmKAWIL
+
+MAP(mjoinsgmKAWIL_pps)
+sgmstr5		lnipkawil_pps	REPLACE
+
+DBCALCS(djoinsgmKAWIL_pps)
+    	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth     	gv_dtpiccab lH2 tcmcab lthblx lKAWIL
+	DBC_MAP		mjoinsgmKAWIL_pps
+
+MAP(mjointcmu)
+tcmnourt     luruttcm  REPLACE
+
+DBCALCS(djointcmu)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET 	tcmbukurtidx   bkmnobuk 
+        DBC_MAP         mjointcmu
+
+CALCS()
+cKPBHSO2 	 ppdsup =="KPBHSO"
+cKPB1TAHUN	 ppdsup	=="KPB1TAHUN"
+cNSSPEDULI	 ppdsup =="NSSPEDULI"
+c1_a		 1
+
+MAP(mscanppd2)
+c1_a                     lttlkpbhso2      DO_CALC_IF cKPBHSO2
+c1_a                     lttlkpb1tahun    DO_CALC_IF cKPB1TAHUN
+c1_a                     lttlnsspeduli    DO_CALC_IF cNSSPEDULI
+
+DBCALCS(dbscanppd2)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      ppdbukurtidx            bkmnobs
+        DBC_SUM_MAP     mscanppd2
+
+CALCS()
+ckodeHL		 bkmkb == "HL"
+ckodeHLNONBKL		 (bkmkb == "HL" && bkmjns == "BKL" && (lppmsup != "KPB2" && lppmsup != "KPB3" && lppmsup != "KPB4" && 
+			 lppmsup != "KPB5" && lppmsup != "KPB6" && lppmsup != "KPB7" && lppmsup != "KPBSINSEN2" && 
+			 lppmsup != "KPBSINSEN3" && lppmsup != "KPBSINSEN4" && lppmsup != "KPBTDM2" && lppmsup != "KPBTDM3" && 
+                         lppmsup != "KPBTDM4" && lppmsup != "PKTSERVICEKPB2" && lppmsup != "PKTSERVICEKPB3" && 
+			 lppmsup != "PKTSERVICEKPB4" && lppmsup != "NSSPEDULI") || bkmjns != "BKL")
+
+ckodeHLBKL		 bkmkb == "HL" && bkmjns == "BKL" && (lppmsup == "KPB2" || lppmsup == "KPB3" || lppmsup == "KPB4" || 
+			 lppmsup == "KPB5" || lppmsup == "KPB6" || lppmsup == "KPB7" || lppmsup == "KPBSINSEN2" || 
+			 lppmsup == "KPBSINSEN3" || lppmsup == "KPBSINSEN4") 
+
+ckodeHLBKL2x		 (bkmkb == "HL" && bkmjns == "BKL" && (lppmsup == "NSSPEDULI"))
+ckodeHLBKL2		 bkmkb == "HL" && bkmjns == "BKL" && (lppmsup == "KPBTDM2" || lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4" ||
+			 lppmsup == "PKTSERVICEKPB2" || lppmsup == "PKTSERVICEKPB3" || lppmsup == "PKTSERVICEKPB4") && lttlkpb1tahun == 0
+
+ckodeHLBKL2a		 bkmkb == "HL" && bkmjns == "BKL" && djointbt_cabhlkpb1thn == 0 && (lppmsup == "KPBTDM2" || lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4" ||
+			 lppmsup == "PKTSERVICEKPB2" || lppmsup == "PKTSERVICEKPB3" || lppmsup == "PKTSERVICEKPB4") && lttlkpb1tahun > 0
+
+ckodeHLBKL2b		 bkmkb == "HL" && bkmjns == "BKL" && djointbt_cabhlkpb1thn == 1 && (lppmsup == "KPBTDM2" || lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4" ||
+			 lppmsup == "PKTSERVICEKPB2" || lppmsup == "PKTSERVICEKPB3" || lppmsup == "PKTSERVICEKPB4") && lttlkpb1tahun > 0
+
+ckodeHLBKL2c		 (bkmkb == "HL" && bkmjns == "BKL" && djointbt_cabnsspeduli == 1 && lppmsup == "NSSPEDULI" && lttlnsspeduli > 0)
+
+ckodeKS		 bkmkb == "KS"
+ckodeBK		 bkmkb == "BK"
+
+
+
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+||i.Ty     : ___  ___              ||
+||i.NoCek  : ______________        || 
+||t.Kdhl   : ______________________||
+||t.NoHL   : ______________________||
+||i.KasBank: _________   _________ ||
+||i.Total  : ______________________||
+||i.Ket    : ______________________||
+||i.Total  : ______________________||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans) 
+                                    
+FIELD(tmptranst)
+   tcmtype       NOCHANGE INPUTRI         	1 /* nomor cek */
+   tcmdk         PROTECT  INPUTRI         	1 /* nomor cek */
+   tcmnocek      ALLCAPS SCROLL INPUTRI        	2 /* nomor cek */
+   tcmkode	 ALLCAPS SCROLL INPUTRI	  	3 /* Kota Bank */
+   tcmbank	 ALLCAPS SCROLL INPUTRI	  	3 /* Kota Bank */
+   tcmnobbm  	 NOCHANGE INPUTRI 	  	4 /* Nama Bank */
+   tcmtgljtp     PROTECT {DD-MM-YY} INPUTRI 	6 /* Tanggal jt */
+   tcmtotal      NUMERIC BIG  	        	7 /* Nilai faktur */
+   tcmket        ALLCAPS INPUTRI             	7 /* Nilai faktur */
+   tcmtotbuk      PROTECT INPUTRI             	7 /* Nilai faktur */
+
+HELP(tmptranst)
+h.TypeTcm tcmtype
+
+EDITS(tmptranst)
+e.Validate tcmkode VALIDATE_IF ckodeHL cmphlkodidx mcmp scmpDTHL {Pgv_DTHL}
+e.Validate tcmbank VALIDATE_IF ckodeHLNONBKL ppsstsplgdat mppshl spps3 {Pgv_INPG} {Ptcmkode} {Pgv_dthut} 
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL ppsstsplgdat mppshl sppsbklkpb {Pgv_INPG} {Ptcmkode} {Pgv_dthut}
+/*
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL2 ppsdatplgsts mppshl sppsbklkpb2 {Pgv_dthut} {Ptcmkode} {Pgv_INPG} {Pbkmcab} {Pgv_INPG}
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL2a ppsdatplgsts mppshl spps1tahuna {Pgv_dthut} {Ptcmkode} {Pgv_INPG} {Pbkmcab} {Pgv_INPG}
+*/
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL2 ppsplgstsbuk mppshl sppsbklkpb2 {Ptcmkode} {Pgv_INPG} {Pgv_dthut} {Pbkmcab}
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL2a ppsplgstsbuk mppshl spps1tahuna {Ptcmkode} {Pgv_INPG} {Pgv_dthut} {Pbkmcab}
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL2b ppsstsplgdat mppshl spps1tahunb {Pgv_INPG} {Ptcmkode} {Pgv_dthut}
+e.Validate tcmbank VALIDATE_IF ckodeHLBKL2c ppsplgstsbuk mppshl sppsnsspeduli {Ptcmkode} {Pgv_INPG} {Pgv_dthut} {Pbkmcab}
+e.MandatoryRekKasBank tcmnobbm MANDATORY
+e.MandatoryTot tcmtotal  MANDATORY
+e.Mandatorydk tcmdk  MANDATORY
+e.ValidateBbm tcmnobbm VALIDATE_IF ckodeBK bbgbbtnoidx mbbg sbbgKB {Pgv_BK}
+e.ValidateBbm tcmnobbm VALIDATE_IF ckodeKS bbgbbtnoidx mbbg sbbgKB {Pgv_KS}
+
+
+MAP(mbbg)
+bbgno		tcmnobbm	REPLACE
+bbgket		lketbbm		REPLACE
+
+MAP(mcmp)
+cmpkode		tcmkode		REPLACE
+
+CALCS()
+cthblx			THBLS(g_tgltrn)
+/* cnilok		ppssisprc + ~tcmtotal  <= tcmtotal  */
+ctotbyr			amtdf10_1
+/*cHLKPBNS_A		(bkmjns == "BKL" && bkmkb=="HL" && (lppmsup=="KPB2" || lppmsup=="KPB3" || lppmsup=="KPB4" || lppmsup=="KPB5" || lppmsup=="KPB6" || lppmsup=="KPB7" || lppmsup=="KPBSINSEN2" || lppmsup=="KPBSINSEN3" || lppmsup=="KPBSINSEN4" || lppmsup == "KPBTDM2" || lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4")) && (lppskdpmHL =="KPB2" || lppskdpmHL =="KPB3" || lppskdpmHL =="KPB4" || lppskdpmHL =="KPB5" || lppskdpmHL =="KPB6" || lppskdpmHL =="KPB7" || lppskdpmHL == "VOUCHER")*/
+
+cHLKPBNS_B		(bkmjns == "BKL" && bkmkb=="HL" && (lppmsup=="KPB2" || lppmsup=="KPB3" || lppmsup=="KPB4" || lppmsup=="KPB5" || lppmsup=="KPB6" || lppmsup=="KPB7" || lppmsup=="KPBSINSEN2" || lppmsup=="KPBSINSEN3" || lppmsup=="KPBSINSEN4") && (lppskdpmHL =="KPB2" || lppskdpmHL =="KPB3" || lppskdpmHL =="KPB4" || lppskdpmHL =="KPB5" || lppskdpmHL =="KPB6" || lppskdpmHL =="KPB7") || (lttlkpbhso2 > 0))
+
+cHLKPBNS_Bx		(bkmjns == "BKL" && tcmtype=="BI" && (lttlkpbhso2 > 0)) || (bkmjns == "BKL" && bkmkb=="HL" && (lppmsup=="NSSPEDULI" && lttlnsspeduli > 0))
+cHLKPBNS		(bkmjns == "BKL" && bkmkb=="HL" && (lppmsup=="KPB2" || lppmsup=="KPB3" || lppmsup=="KPB4" || lppmsup=="KPB5" || lppmsup=="KPB6" || lppmsup=="KPB7" || lppmsup =="KPBSINSEN2" || lppmsup == "KPBSINSEN3" || lppmsup == "KPBSINSEN4" || lppmsup == "KPBTDM2" || lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4") || (lttlkpbhso2 > 0) || (lttlkpb1tahun > 0) || (lttlnsspeduli > 0))
+
+MAP(mppshl)
+ppsnobuk	tcmbank		REPLACE
+ppsnobbm	tcmnobbm	REPLACE
+ppscab  	tcmcab          REPLACE
+ppskdpm		lppskdpmHL	REPLACE
+bkmnobs		lAbkmnobs	REPLACE
+
+/* ppssisprc	tcmtotal 	REPLACE_IF cnilok */
+
+DEFAULTS(tmptranst)
+tcmdk         	INIT            D
+l05            	INIT            0.05
+tcmdk         	INIT_UPDATE     D
+IF ckodeKS   tcmtype  	DFALT_SCAN   	KS "Terima Tunai"
+			        	CS "Terima Cek"
+IF ckodeBK   tcmtype  	DFALT_SCAN   	KS "Terima BANK"
+IF ckodeHL tcmtype  	DFALT_SCAN      HL "Ambil Titipan"
+					BI "Biaya Iklan"
+
+/*IF ckodeHL2 tcmtype  	DFALT_SCAN      HL "Ambil Titipan"*/
+
+
+tcmsts			INIT		OPEN
+lthblx			INIT		{cthblx}
+lCABANGAHASS		INIT		CABANGAHASS
+lCABHLKPB1THN		INIT		CABHLKPB1THN
+lCABNSSPEDULI		INIT		CABNSSPEDULI
+lH2			INIT		H2
+lKAWIL			INIT		KAWIL
+
+CALCS()
+cjointcmu0       djointcmu == 0 && g_curcmd == 1 && tcmnourt == 0
+cjointcmu1       djointcmu  == 1 && g_curcmd == 1 && tcmnourt == 0
+curuttcm       	 luruttcm + 1
+cCekHrsIsi  	 (tcmtype == "CS" && tcmnocek != BLANKS) || tcmtype != "CS"
+/*
+cpercard0	 tcmpercard == 0.0
+ctgljtp_ksg	 tcmtgljtp == BLANKS && tcmtype != "CS" */
+cnomer_tcm_bkm 	 FLD_TO_STRING(tcmnourt) + STRIP(bkmnobuk) 
+cnocek_ksg_bkm	 tcmnocek == BLANKS
+
+cnilai_bkm	 bkmtotal
+
+ctcmtot0_bkm	 g_scrfile == "bkm" && tcmtotal  == 0 
+
+cdvs_rekpiugr	 DO_LIB ap_amdvs(gv_dtdivisi21,gv_piugiro,tcmbbmpiugr); 
+cganti_type  	 tcmtype != ^tcmtype 
+cnoHL		 tcmtype != "HL"
+cnoCS		 tcmtype != "CS"
+cCS		 tcmtype == "CS"
+/* ctidakcukup      (bkmtype == "TN" && ppmsisprc + ~tcmtotal  >= tcmtotal ) 
+||      (bkmtype == "ANG" && piksisa + ~tcmtotal  >= tcmtotal ) 
+||	(bkmtype == "UM" && ppmsisprc + ~tcmtotal  >= tcmtotal )
+*/
+ctidakcukup1	 ((bkmjns != "BKL" && tcmtotal <= ppssisprc && tcmtype == "HL") ||
+		 (bkmjns == "BKL" && tcmtotal <= ppssisprc && tcmtype == "HL" && ((lppmsup != "KPB2" && lppmsup != "KPB3" && 
+		  lppmsup != "KPB4" && lppmsup != "KPB5" && lppmsup != "KPB6" && lppmsup != "KPB7" && lppmsup != "KPBSINSEN2" &&
+                  lppmsup != "KPBSINSEN3" && lppmsup != "KPBSINSEN4" && lppmsup != "KPBTDM2" && lppmsup != "KPBTDM3" &&
+                  lppmsup != "KPBTDM4" && lttlkpb1tahun == 0))) ||
+		 ((bkmjns == "BKL" && tcmtotal <= amtdf10_1 && tcmtotal <= ppssisprc && tcmtype == "HL") && (lppmsup == "KPB2" || 
+		  lppmsup == "KPB3" || lppmsup == "KPB4" || lppmsup == "KPB5" || lppmsup == "KPB6" || lppmsup == "KPB7" || 
+		  lppmsup == "KPBSINSEN2" || lppmsup == "KPBSINSEN3" || lppmsup == "KPBSINSEN4" || lppmsup == "KPBTDM2" || 
+		  lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4" || lttlkpb1tahun > 0)) || (tcmtype != "HL"))
+
+
+MAP(muruttcm)
+csatu       	tcmnourt   	DO_CALC_IF cjointcmu0
+curuttcm      	tcmnourt   	DO_CALC_IF cjointcmu1
+cnilai_bkm   	tcmtotbuk	DO_CALC_IF ctcmtot0_bkm   
+cdvs_rekpiugr	tcmbbmpiugr	DO_CALC_IF cCS
+cnomer_tcm_bkm 	tcmnocek       	DO_CALC_IF cnocek_ksg_bkm
+/* bkmtgl          tcmtgljtp       REPLACE_IF ctgljtp_ksg */
+
+MAP(mksg)
+cBLANKS		tcmnobbm	DO_CALC_IF cganti_type
+cBLANKS		tcmnocek	DO_CALC_IF cganti_type
+cBLANKS		tcmnocard       DO_CALC_IF cganti_type
+cBLANKS		tcmbank  	DO_CALC_IF cganti_type
+cBLANKS		tcmnamcard      DO_CALC_IF cganti_type
+cBLANKS		tcmtgljtp       DO_CALC_IF cganti_type
+cBLANKS		tcmpercard      DO_CALC_IF cganti_type
+cBLANKS		tcmkota         DO_CALC_IF cganti_type
+cBLANKS		tcmgrup         DO_CALC_IF cganti_type
+cBLANKS		tcmtotbuk        DO_CALC_IF cganti_type
+cBLANKS		tcmtotal        DO_CALC_IF cganti_type
+cBLANKS		tcmmua          DO_CALC_IF cganti_type
+cBLANKS		tcmtotas        DO_CALC_IF cganti_type
+cBLANKS		tcmkurs         DO_CALC_IF cganti_type
+
+CALCS()
+cabyrtn		bkmbkjln == "TN"
+cabyrang	bkmbkjln == "ANG"
+cabyrum		bkmbkjln == "UM"
+cabyrbkl	bkmbkjln == "BKL"
+cabyrdd		bkmbkjln == "DD"
+ckettn		"BYR TUNAI " + bkmnama
+cketang		"BYR ANGSURAN " + bkmnama
+cketum		"BYR UANG MUKA " + bkmnama
+cketbkl		"BYR TUNAI " + bkmnama
+cketdd		"BYR DENDA " + bkmnama
+
+cREK_BI		"518.01.1001"
+ckondRekBI	tcmnobbm == "518.01.1001"
+cBknRekBI	tcmnobbm != "518.01.1001"
+ckodeBI		tcmtype == "BI"
+cBI		"BI"
+cH1_a		"H1"
+
+MAP(misikas)
+cREK_BI		tcmnobbm	DO_CALC_IF ckodeBI
+ctotbyr		tcmtotal	DO_CALC_IF cHLKPBNS_Bx
+ctotbyr		tcmtotbuk	DO_CALC_IF cHLKPBNS_Bx
+ctotbyr		tcmtotal	DO_CALC_IF cHLKPBNS_B
+ctotbyr		tcmtotbuk	DO_CALC_IF cHLKPBNS_B
+psmrekkas	tcmnobbm	REPLACE_IF ckodeKS
+ckettn		tcmket		DO_CALC_IF cabyrtn
+cketang		tcmket		DO_CALC_IF cabyrang
+cketum		tcmket		DO_CALC_IF cabyrum
+cketbkl		tcmket		DO_CALC_IF cabyrbkl
+cketdd		tcmket		DO_CALC_IF cabyrdd
+cH1_a		tcmdvs		DO_CALC_IF ckondRekBI
+bkmdvs		tcmdvs		REPLACE_IF cBknRekBI
+
+
+CALCS()
+ckondbkl                g_scrnumstr =="203" && bkmjns == "BKL" && bkmkb == "HL"
+cbyrhlkpb1		(ltotalbyrhl > 0) || (lppmsup !="KPB2" && lppmsup!="KPB3" && lppmsup!="KPB4" && lppmsup!="KPB5" && lppmsup!="KPB6" && 
+			lppmsup!="KPB7" && lppmsup != "KPBSINSEN2" && lppmsup != "KPBSINSEN3" && lppmsup != "KPBSINSEN4")
+			|| (lppmsup==lppskdpmHL) || ((lppmsup == "KPBSINSEN2" && lppskdpmHL == "KPB2") 
+			|| (lppmsup == "KPBSINSEN3" && lppskdpmHL == "KPB3") || (lppmsup == "KPBSINSEN4" && lppskdpmHL == "KPB4"))
+
+cHLtdkBlh		((tcmkode == "VOUCHER" && (lppmsup == "KPBTDM2" || lppmsup == "KPBTDM3" || lppmsup == "KPBTDM4" || 
+			lppmsup == BLANKS)) || (tcmkode == "VOUCHER" && lttlkpbhso2 > 0) || (tcmkode == "VOUCHER" && lttlkpb1tahun > 0) || 
+			(tcmkode == "VOUCHER" && lttlnsspeduli > 0) || (tcmkode != "VOUCHER"))
+ 
+cAreaBeda		((bkmjns == "BKL" && tcmkode == "VOUCHER" && djointbt_cabhlkpb1thn == 1 && djoinsgmKAWIL == 1 && djoinsgmKAWIL_pps == 1 && lnipkawil == lnipkawil_pps && lttlkpb1tahun > 0) || 
+			(bkmjns == "BKL" && tcmkode == "VOUCHER" && lttlkpb1tahun ==0) || (djointbt_cabhlkpb1thn == 0) || (tcmkode != "VOUCHER" && lttlkpb1tahun ==0) || (bkmjns != "BKL"))
+
+MAP(mscanbkmbkl1)
+gv_int1	           ltotalbyrhl     REPLACE_IF ckondbkl 
+
+DBCALCS(dbscanbkmbkl1)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      bkmstsbsidx     gv_CLSD lAbkmnobs
+        DBC_SUM_MAP     mscanbkmbkl1
+
+
+/*
+MAP(mhitakh)
+tcmtotal 	tcmtotbuk	REPLACE_IF cpercard0
+*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tcmkode 	DO_SKIP_IF cnoHL
+BEFORE_INPUT	cur_field=tcmbank 	DO_SKIP_IF cnoHL
+BEFORE_INPUT	cur_field=tcmnocek 	DO_SKIP_IF cnoCS
+BEFORE_INPUT	cur_field=tcmnobbm 	DO_SKIP_IF ckodeKS
+BEFORE_INPUT	cur_field=tcmtotal 	DO_SKIP_IF cHLKPBNS_B
+BEFORE_INPUT	cur_field=tcmtotal 	DO_SKIP_IF ckodeHLBKL2x
+AFTER_INPUT     cur_field=tcmtype       DO_SCAN_IF ckodeHLBKL2 dbscanppd2
+AFTER_INPUT     cur_field=tcmtype       DO_SCAN_IF ckodeHLBKL2x dbscanppd2
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW mksg
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW misikas
+AFTER_INPUT    cur_field=tcmbank       DO_SCAN_IF cHLKPBNS dbscanbkmbkl1
+AFTER_INPUT	cur_field=tcmtype 	DO_MAP SHOW muruttcm
+
+AFTER_INPUT	cur_field=tcmkode	DO_MAP SHOW
+		IF cHLtdkBlh mdum
+		ELSE HKCURSOR STAY
+		HKMSG Tidak Boleh Pakai Kode HL Ini
+
+/*
+AFTER_INPUT	cur_field=tcmtotal 	DO_MAP SHOW 
+		IF ctidakcukup  mhitakh
+		ELSE HKCURSOR STAY
+		     HKMSG nilai piutang lebih
+*/
+AFTER_INPUT	cur_field=tcmbank  	DO_MAP SHOW 
+		IF cbyrhlkpb1    mdum
+		ELSE HKCURSOR STAY
+		     HKMSG KPBNS harus Byr Pakai HL KPBNS Sesuai dg periode KPBNS nya
+AFTER_INPUT	cur_keybd=EN 	DO_MAP SHOW 
+		IF cbyrhlkpb1    mdum
+		ELSE HKCURSOR STAY
+		     HKMSG KPBNS harus Byr Pakai HL KPBNS Sesuai dg periode KPBNS nya
+
+AFTER_INPUT     cur_field=tcmbank       DO_MAP SHOW
+                IF cAreaBeda    mdum
+                ELSE HKCURSOR STAY
+                     HKMSG Tdk 1 Area Kawil
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF cAreaBeda    mdum
+                ELSE HKCURSOR STAY
+                     HKMSG Tdk 1 Area Kawil
+
+AFTER_INPUT	cur_field=tcmtotal 	DO_MAP SHOW 
+		IF ctidakcukup1  mdum
+		ELSE HKCURSOR STAY
+		     HKMSG nilai titipan lebih
+AFTER_INPUT	cur_keybd=EN 	DO_MAP SHOW 
+		IF ctidakcukup1  mdum
+		ELSE HKCURSOR STAY
+		     HKMSG nilai titipan lebih
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF cCekHrsIsi  mdum
+		ELSE HKCURSOR STAY
+		     HKMSG No.Cek Harus Diisi
+
+
+CALCS()
+ckond_det_ok   bkmscr!= "765" && bkmnobbm == BLANKS
+
+MAP(mdet_tcm)
+     bkmnobuk         tcmnobuk          REPLACE
+     bkmtgl           tcmtgl            REPLACE
+     bkmjns           tcmtype2          REPLACE
+     bkmscr           tcmscr            REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)     /* total number of lines sfl takes up on screen  */
+SFL_TITLE(tmptranst)
+SFL_COND ckond_det_ok
+
+SFL_TARGET
+tcmbukurtidx			bkmnobuk
+
+SFL_MAP_MAP(mdet_tcm)
+
+CALCS()
+caddbkm1	   bkmtotpph + tcmtotal 
+
+cupdbkm1	   bkmtotpph + tcmtotal  - ~tcmtotal 
+
+cupdbkmd1	   bkmtotpph - tcmtotal
+
+caddbkm2           bkmdf1 + tcmtotal
+
+cupdbkm2           bkmdf1 + tcmtotal  - ~tcmtotal
+
+cupdbkmd2          bkmdf1 - tcmtotal
+
+caddbkm3           bkmtotal + tcmtotal
+
+cupdbkm3           bkmtotal + tcmtotal  - ~tcmtotal
+
+cupdbkmd3          bkmtotal - tcmtotal
+ 
+
+MAP(mupdbkma2)
+cBI		  bkmkb		DO_CALC_IF ckodeBI
+caddbkm1	  bkmtotpph	DO_CALC
+caddbkm2          bkmdf1        DO_CALC_IF cHLKPBNS
+caddbkm3          bkmtotal      DO_CALC_IF cHLKPBNS
+
+
+MAP(mupdbkmu2)
+cBI		  bkmkb		DO_CALC_IF ckodeBI
+cupdbkm1	  bkmtotpph     DO_CALC
+cupdbkm2          bkmdf1        DO_CALC_IF cHLKPBNS
+cupdbkm3          bkmtotal      DO_CALC_IF cHLKPBNS
+
+
+MAP(mupdbkmd2)
+cBI		  bkmkb		DO_CALC_IF ckodeBI
+cupdbkmd1	  bkmtotpph	DO_CALC
+cupdbkmd2         bkmdf1        DO_CALC_IF cHLKPBNS
+cupdbkmd3         bkmtotal      DO_CALC_IF cHLKPBNS
+
+
+CALCS()
+cOPENksg	bkmsts == "OPEN" && bkmnobbm == BLANKS && bkmstsapr == BLANKS
+cOPENksg2	bkmsts == "OPEN" && bkmnobbm == BLANKS && (bkmstsapr == BLANKS || bkmstsapr == "TL")
+cppmsisprca	ppmsisprc - tcmtotal 
+cppmsisprcu	ppmsisprc + ~tcmtotal  - tcmtotal 
+cppmsisprcd	ppmsisprc + tcmtotal 
+cppssisprca	ppssisprc - tcmtotal 
+cppssisprcu	ppssisprc + ~tcmtotal  - tcmtotal 
+cppssisprcd	ppssisprc + tcmtotal 
+camtdf10a	amtdf10 - tcmtotal
+camtdf10u	amtdf10 + ~tcmtotal - tcmtotal
+camtdf10d	amtdf10 + tcmtotal
+
+MAP(mupdppma)
+cppmsisprca   ppmsisprc  DO_CALC
+
+MAP(mupdppmu)
+cppmsisprcu   ppmsisprc  DO_CALC
+
+MAP(mupdppmd)
+cppmsisprcd   ppmsisprc  DO_CALC
+
+MAP(mupdppsa)
+cppssisprca	ppssisprc	DO_CALC
+gv_RCLS		ppsstsprc	REPLACE
+
+MAP(mupdppsu)
+cppssisprcu	ppssisprc	DO_CALC
+gv_RCLS		ppsstsprc	REPLACE
+
+MAP(mupdppsd)
+cppssisprcd	ppssisprc	DO_CALC
+gv_OPEN		ppsstsprc	REPLACE
+
+MAP(mupdamta)
+camtdf10a	amtdf10		DO_CALC
+
+MAP(mupdamtu)
+camtdf10u       amtdf10         DO_CALC
+
+MAP(mupdamtd)
+camtdf10d       amtdf10         DO_CALC
+
+/************SPCALS dari TRANSA***************/
+
+/************SPCALS dari TRANSA***************/
+
+CALCS()
+cbyrdealer	bkmbkjln == "TN" || bkmbkjln == "UM" || bkmbkjln == "BKL"
+
+SPCALCS(spcaladd1)
+DO_LIB ap_dbclc(DNAME dupdbkma2d,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma2);
+DO_LIB_IF cbyrdealer ap_dbclc(DNAME dupdppma2d,DCOMMAND UPDATE,DTARGET ppmbukidx bkmnobs,DMAP mupdppma);
+DO_LIB_IF ckodeHL ap_dbclc(DNAME dupdppsa2d,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdppsa);
+DO_LIB_IF ckodeHL ap_dbclc(DNAME dupdamta2d,DCOMMAND UPDATE,DTARGET amtdatotoidx bkmdata bkmnobuk ,DMAP mupdamta);
+
+SPCALCS(spcalupd1)
+DO_LIB ap_dbclc(DNAME dupdbkmu2d,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmu2);
+DO_LIB_IF cbyrdealer ap_dbclc(DNAME dupdppmu2d,DCOMMAND UPDATE,DTARGET ppmbukidx bkmnobs,DMAP mupdppmu);
+DO_LIB_IF ckodeHL ap_dbclc(DNAME dupdppsu2d,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdppsu);
+DO_LIB_IF ckodeHL ap_dbclc(DNAME dupdamtu2d,DCOMMAND UPDATE,DTARGET amtdatotoidx bkmdata bkmnobuk ,DMAP mupdamtu);
+
+SPCALCS(spcaldel1)
+DO_LIB ap_dbclc(DNAME dupdbkmd2d,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkmd2);
+DO_LIB_IF cbyrdealer ap_dbclc(DNAME dupdppmd2d,DCOMMAND UPDATE_BUF3,DTARGET ppmbukidx bkmnobs,DMAP mupdppmd);
+DO_LIB_IF ckodeHL ap_dbclc(DNAME dupdppsd2d,DCOMMAND UPDATE,DTARGET ppsbukidx tcmbank,DMAP mupdppsd);
+DO_LIB_IF ckodeHL ap_dbclc(DNAME dupdamtd2d,DCOMMAND UPDATE,DTARGET amtdatotoidx bkmdata bkmnobuk ,DMAP mupdamtd);
+
+POSTING(tmptrans)
+ 	PST_ADDCMD 	spcaladd1
+	PST_UPDCMD 	spcalupd1
+	PST_DELCMD 	spcaldel1
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	cOPENksg
+	PMT_UPDALL_COND	cOPENksg
+	PMT_DEL_COND	cOPENksg2
+

@@ -1,0 +1,227 @@
+LOCAL
+PGM_FIELDS
+lsvistr34e              STRING  11
+lsvistr35e		STRING	21
+
+IMAGE(tmptranst) 
+/-----------------------------------\
+|/---------------------------------\|
+  spasi
+  t.CekTmptKerja  __
+  spasi
+  i.Nama
+  _______________________________
+  t.Jabatan
+  _______________________________
+  t.Telp
+  ______________
+  t.tanyacek14
+  _______________________________
+  t.tanyacek15
+  _______________________________
+  t.Sudahberapalama
+  ____t.Tahun  _____t.Bulan
+  t.AlmKerjaSamaDgnTinggal
+  _____
+  t.AlamatKerja
+  _______________________________
+
+  i.Prop   : _______ _____________
+  i.Kota   : _______ _____________
+  i.Kec    : _______ _____________
+  i.Kel    : ________ ____________
+  ___  ____                        
+  t.Lat : ___.____________________  
+  t.Lon : ___.____________________
+   spasi
+  __
+|\---------------------------------/|
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+||t.CMSSesuai  __  ______	   ||
+||t.Ket        __  _______________ ||
+||t.AnalisaCMS   _________________ ||
+||		 _______ 	   ||
+||	spasi			   ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lbtmplgbaru             PROTECT UNSEEN                  INPUTRI 1
+svinama                 PROTECT SCROLL                  INPUTRI 1
+svistr1                 PROTECT SCROLL                  INPUTRI 2
+svistr2                 PROTECT                         INPUTRI 3
+svistr3                 PROTECT                         INPUTRI 4       /*Apakah benar pemohon bekerja disini ?*/
+svistr4                 PROTECT SCROLL                  INPUTRI 5
+
+svidf1                  PROTECT                         INPUTRI 6       /*Sudah berapa lama bekerja (TAHUN)*/
+svidf2                  PROTECT                         INPUTRI 7       /*Sudah berapa lama bekerja (BULAN)*/
+
+svistr31                PROTECT                         INPUTRI 8
+sviket                  PROTECT SCROLL                  INPUTRI 9
+
+svistr5                 PROTECT SCROLL                  INPUTRI 9
+lpropinsibaru           PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr6                 PROTECT SCROLL                  INPUTRI 10
+lkotabaru               PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr7                 PROTECT SCROLL                  INPUTRI 11
+lkecbaru                PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+svistr8                 PROTECT SCROLL                  INPUTRI 12
+lkelbaru                PROTECT SCROLL                  INPUTRI       29  /* nama propinsi  */
+
+sviyt1  		PROTECT           		INPUTRI 9
+sviyt2                  PROTECT                         INPUTRI 12
+
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         13
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         14
+
+
+g_usrkode		PROTECT	UNSEEN	INPUTRI		31
+
+svistr34                ALLCAPS         INPUTRI         32
+lsvistr34e              PROTECT         INPUTRI         32
+svistr35                ALLCAPS         INPUTRI         32
+lsvistr35e              NOCHANGE        INPUTRI         32
+sviket3			TEXTAREA SCROLL INPUTRI 	33
+lenter			NOCHANGE	INPUTRI		34
+
+
+DEFAULTS(tmptranst)
+svistr34        DFALT_SCAN_BLANKS       Y " "
+					T " "
+svistr35        DFALT_SCAN_BLANKS 1 "PENJAWABAN TIDAK SESUAI"
+                                  2 "FOTO TIDAK SESUAI"
+                                  3 "FOTO & PENJAWABAN TIDAK SESUAI"
+svistr3         DFALT_SCAN BLANKS
+                                  YA ""
+                                  TIDAK ""
+ljaminput1      INIT    SYSTIME
+lCEKKERJA714    INIT    "CEKKERJA714"
+
+CALCS()
+cKETIYAYAe      svistr34=="Y"
+cKETTIDAKYAe    svistr34=="T"
+cKETYAe         "YA"
+cKETTIDAKe      "TIDAK"
+cket1e          "PENJAWABAN TIDAK SESUAI"
+cket2e          "FOTO TIDAK SESUAI"
+cket3e          "FOTO & PENJAWABAN TIDAK SESUAI"
+cket1e1         svistr35=="1"
+cket2e1         svistr35=="2"
+cket3e1         svistr35=="3"
+ctolak5         svistr34=="T"
+cbenar          svistr3=="YA"
+ctidakbenar     svistr3=="TIDAK"
+
+EDITS(tmptranst)
+e.Mandatory     svistr35  MANDATORY_IF ctolak5
+e.Mandatory     svistr34 MANDATORY
+
+e.Mandatory	sviket 		MANDATORY_IF cbenar
+e.Validate 	g_usrkode	VALIDATE psikodidx	mpsie
+e.Mandatory	sviket3		MANDATORY
+/*e.Mandatory	svistr5		MANDATORY*/
+
+
+MAP(mpsie)
+cKETYAe         lsvistr34e      DO_CALC_IF cKETIYAYAe
+cKETTIDAKe      lsvistr34e      DO_CALC_IF cKETTIDAKYAe
+cket1e          lsvistr35e      DO_CALC_IF cket1e1
+cket2e          lsvistr35e      DO_CALC_IF cket2e1
+cket3e          lsvistr35e      DO_CALC_IF cket3e1
+
+MAP(mkosong1e)
+cBLANKS         svistr35        DO_CALC
+cBLANKS		lsvistr35e	DO_CALC
+
+MAP(mmapkerja)
+cblanks         svistr4         DO_CALC_IF ctidakbenar
+cblanks         svidf1          DO_CALC_IF ctidakbenar
+cblanks         svidf2          DO_CALC_IF ctidakbenar
+cblanks         sviket          DO_CALC_IF ctidakbenar
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=svistr34      DO_MAP SHOW mkosong1e
+BEFORE_INPUT    cur_field=svistr35      DO_SKIP_IF cKETIYAYAe
+
+BEFORE_INPUT            cur_field=svistr4       DO_SKIP_IF ctidakbenar
+BEFORE_INPUT            cur_field=svidf1        DO_SKIP_IF ctidakbenar
+BEFORE_INPUT            cur_field=svidf2        DO_SKIP_IF ctidakbenar
+BEFORE_INPUT            cur_field=sviket        DO_SKIP_IF ctidakbenar
+AFTER_INPUT             cur_field=svistr3       DO_MAP SHOW mmapkerja
+
+AFTER_INPUT  cur_field=sviket3 DO_MAP SHOW mhitunganalisasvi2
+
+AFTER_INPUT cur_field=sviket3 DO_MAP SHOW
+        IF canalisa50svi2   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF canalisa50svi2   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_field=svistr34 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+CALCS()
+cULANG		"ULANG"
+
+MAP(mupdfotokerjaulang)
+cULANG              svitype2          DO_CALC
+
+DBCALCS(dupdfotokerjaulang)
+        DCOMMAND	UPDATE
+        DTARGET		sviprmidx sviprm
+        DMAP		mupdfotokerjaulang
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdfotokerjaulang
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svitype
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk lcekkerjad
+
+CALCS()
+cubah_cekkerja714     btmsts=="714" && (g_scrnumstr=="714" || g_scrnumstr=="724")
+
+
+MAP(mapmapcekkerja714)
+lCEKKERJA714       l724DETAIL3        REPLACE
+
+
+SPCALCS(spcekkerja)
+DO_LIB ap_dbclc(DNAME dmapmapcekkerja714;DCOMMAND MAPMAP;DMAP mapmapcekkerja714);
+DO_LIB ap_nxpst(l4461,lm4461det3);
+
+POSTING(tmptrans)
+        PST_UPDCMD  spcekkerja
+
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    c0
+        PMT_UPDALL_COND cubah_cekkerja714
+        PMT_DEL_COND    c0
+

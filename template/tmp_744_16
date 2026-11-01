@@ -1,0 +1,102 @@
+MAP(mjoinsvikunjkemana)
+sviyt2          lsviyt2         REPLACE
+sviket          lhslreview    REPLACE
+
+DBCALCS(djoinsvikunjkemana)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lKUNJUNGAN mtsnobuk lKUNJKOL17
+        DBC_MAP         mjoinsvikunjkemana
+
+MAP(mjoinsvilonglat)
+svistr2          lhsllonglat         REPLACE
+
+DBCALCS(djoinsvilonglat)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lKUNJUNGAN mtsnobuk lKUNJKOL2
+        DBC_MAP         mjoinsvilonglat
+
+MAP(mjoinsvikettdkbyr)
+sviket          lkettdkbyr         REPLACE
+svistr33        lsvistr33          REPLACE
+
+DBCALCS(djoinsvikettdkbyr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lKUNJUNGAN mtsnobuk lKUNJKOL1
+        DBC_MAP         mjoinsvikettdkbyr
+
+MAP(mjointbdkunjugan)
+tbdket          ltbdket         REPLACE
+
+DBCALCS(djointbdkunjugan)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx   gv_dttabel lKUNJUNGAN21 lKUNJUNGKEMANA lsvistr33
+        DBC_MAP         mjointbdkunjugan
+
+MAP(mjoinpik)
+pikjmlkunj      lpikjmlkunj REPLACE
+
+DBCALCS(djoinpik)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      pikdatbukidx   gv_dtpiu mtsnoasal
+        DBC_MAP         mjoinpik
+
+
+MAP(mjoinaktkunj2)
+aktcrtusr       lhasilguid2      REPLACE
+
+DBCALCS(djoinaktkunj2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx    mtsnobuk gv_kunjungan11 lGUIDOTODET
+        DBC_MAP         mjoinaktkunj2
+
+IMAGE(tmptranst)
+/----------------t------------t----------t--------------t---------t------------t--------------t-------------t---------------\
+| t.NoBukKunj    | t.TglKunj  | t.KunjKe | t.KunjKemana | t.Sts   | t.HslGuid  | t.HslLongLat | t.KetTdkByr | t.ReviewBmSpv |
+\----------------.------------.----------.--------------.---------.------------.--------------.-------------.---------------/
+
+IMAGE(tmptrans)
+|________________|____________|__________|______________|_________|____________|______________|_____________|_______________|
+
+FIELD(tmptrans)
+mtsnobuk        NOCHANGE                INPUTRI        1
+mtstgl          PROTECT {DD-MM-YYY}    INPUTRI        2
+lpikjmlkunj     PROTECT                INPUTRI        3 /* Kunj Ke */
+ltbdket         PROTECT                INPUTRI        4
+mtssts          PROTECT                INPUTRI        5
+lhasilguid2     PROTECT                INPUTRI        6
+lhsllonglat     PROTECT                INPUTRI        7
+lkettdkbyr      PROTECT                INPUTRI        8
+lhslreview      PROTECT                INPUTRI        9
+
+DEFAULTS(tmptrans)
+ltbdket         INIT     BLANKS
+lhslreview      INIT     BLANKS
+lkettdkbyr      INIT     BLANKS
+lhsllonglat     INIT     BLANKS
+lhasilguid2     INIT     BLANKS
+
+CALCS()
+cjoinsvireview          djoinsvilonglat == 1 && djoinsvikunjkemana == 1 && djoinsvikettdkbyr == 1 && djointbdkunjugan == 1 && djoinpik == 1
+cjoinaktkunj2           djoinaktkunj2 == 1 && djoinsvilonglat == 1 && djoinsvikunjkemana == 1 && djoinsvikettdkbyr == 1 && djointbdkunjugan == 1 && djoinpik == 1
+
+EDITS(tmptrans)
+e.Validate      mtsnobuk     VALIDATE_BUF3 mtsbukidx mmtsnobuk 0
+
+MAP(mmtsnobuk)                
+mtscab          mtscab          REPLACE_IF cjoinsvireview
+cBLANKS         ltbdket         DO_CALC
+cBLANKS         lhslreview      DO_CALC
+cBLANKS         lkettdkbyr      DO_CALC
+cBLANKS         lhsllonglat     DO_CALC
+cBLANKS         lhasilguid2     DO_CALC
+ltbdket         ltbdket         REPLACE_IF cjoinsvireview
+lhslreview      lhslreview      REPLACE_IF cjoinsvireview
+lkettdkbyr      lkettdkbyr      REPLACE_IF cjoinsvireview
+lhsllonglat     lhsllonglat     REPLACE_IF cjoinsvireview
+lhasilguid2     lhasilguid2     REPLACE_IF cjoinaktkunj2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(5)
+SFL_TARGET
+        mtsdatstsasl   lKUNJUNGAN gv_CLSD piknobuk

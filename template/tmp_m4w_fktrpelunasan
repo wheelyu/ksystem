@@ -1,0 +1,109 @@
+LOCAL
+PGM_FIELDS
+lbkmscr		STRING		21
+
+
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/-----------------------------------\
+|t.Screen        : _____            |
+|t.NobukPelunasan: ________________ |
+|t.NoFaktur      : ________________ |
+|t.Status        : ______ ___ ___   |
+|t.Tanggal       : ________________ |
+|t.TglBayar      : ________________ |
+|t.TotalBayar    : _____________.__ |
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svistr4		ALLCAPS SCROLL		INPUTRI 1
+svikode		ALLCAPS SCROLL		INPUTRI 1
+svistr1		PROTECT			INPUTRI 2
+svists		PROTECT			INPUTRI 3
+svistr2		PROTECT			INPUTRI 4
+svistr3		PROTECT			INPUTRI 5
+svitgl1		PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 6
+svitgl2		PROTECT NONE NOLIMIT {DD-MM-YYYY} INPUTRI 7
+svidf1		NUMERIC			INPUTRI 8
+
+DEFAULTS(tmptranst)
+svitype		INIT		"PLNS"
+svistr4		DFALT_SCAN_BLANKS 203 "203"
+				  204 "204"
+
+
+EDITS(tmptranst)
+e.Mandatory	svikode		MANDATORY
+e.Validate	svikode		VALIDATE bkmbukidx mbkm 
+
+MAP(mbkm)
+bkmnobuk	svikode		REPLACE
+bkmnobs		svistr1		REPLACE
+bkmsts		svists		REPLACE
+bkmtotal	svidf1		REPLACE
+bkmstsapr	svistr2		REPLACE
+bkmtcm		svistr3		REPLACE
+bkmtgl		svitgl1		REPLACE
+bkmtgl1		svitgl2		REPLACE
+bkmscr		lbkmscr		REPLACE
+
+CALCS()
+cbedanofak	btmnopj == svistr1
+ctglkurang10	(lbkmscr == "204" /*&& svitgl2 - svitgl1 >= 9*/) || lbkmscr == "203"
+cbedascreen	svistr4 == lbkmscr
+cpotongbjYa     btmytbiro == "P"
+cpotongbjTdk    btmytbiro != "P"
+cpencair        (nhmhrgpasar_3 - nhmumriil_3) - nhmumasal_3 - nhmkrepok_3
+cpencair2       (nhmhrgpasar_3 - nhmumriil_3) - nhmumasal_3
+cjk643		btmsts == "643"
+
+MAP(mupdnhmplns)
+svidf1           nhmumasal_3            REPLACE
+cpencair	 nhmcairpinj_3		DO_CALC_IF cpotongbjYa
+cpencair2 	 nhmcairpinj_3		DO_CALC_IF cpotongbjTdk
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svistr1 DO_MAP SHOW
+		IF cbedascreen mdum
+		ELSE HKCURSOR STAY
+		HKMSG Nobuk Pelunasan Bukan Dari Screen Diatas
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF cbedanofak mdum
+		ELSE HKCURSOR STAY
+		HKMSG No faktur Pelunasan Berbeda dengan No Faktur Master
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+		IF ctglkurang10 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Tanggal 204 Kurang dari 10
+
+BEFORE_INPUT	cur_field=svidf1	DO_SKIP_IF cjk643
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp btmdata btmnobuk lPLNS
+
+SFL_MAP
+btmnobuk	svinobuk	REPLACE
+btmdata		svidata		REPLACE
+
+SPCALCS(spdetailplns)
+        DO_LIB ap_dbclc(DNAME dupdnhmplns,DCOMMAND UPDATE,DTARGET nhmprmidx_3 nhmprm_3,DMAP mupdnhmplns);
+
+
+POSTING(tmptrans)
+        PST_COMMAND     spdetailplns 
+        PST_UPDCMD     spdetailplns 
+CALCS()
+cubahlunas	btmsts == "643" || (btmsts == "705" && (btmflag1 == "OPE1" || btmflag1 == "OPE2") && (g_grpnam == "B.M4WQA" || g_grpnam == "ADHSPV" || g_grpnam == "B.M4WADHSPV" || g_grpnam=="B.M4WADHHEAD" || g_grpnam == "ADHHEAD" || g_grpnam == "RI"))
+cRW 		g_grpnam == "RI"
+
+
+
+PERMIT(tmptrans)
+PMT_UPDALL_COND cubahlunas 
+PMT_DEL_COND	cRW 

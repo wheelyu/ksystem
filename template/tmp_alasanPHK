@@ -1,0 +1,88 @@
+LOCAL
+PGM_FIELDS
+
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.TekanTambah                                     ||
+||t.AlasanPHK      :_______________________________ ||
+||                 :_______________________________ ||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.UplSurat                                  ____  ||
+|\--------------------------------------------------/|
+|/-------------s.UPLOAD-----------------------------\|
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketkode  		NOCHANGE                        	INPUTRI 1
+ketisi   		TEXTAREA ALLCAPS                	INPUTRI 2
+ketyt1   		PROTECT                         	INPUTRI 3
+
+EDITS(tmptranst)
+e.Mandatory ketisi   	MANDATORY
+e.Mandatory ketkode  	MANDATORY
+
+
+DEFAULTS(tmptranst)
+kettype		INIT_ADD	ALASAN
+ketkode    	DFALT_SCAN      BLANKS
+                                HS "PHK SAKIT BERKEPANJANGAN"
+                                HC "PHK TIDAK CAPAI TARGET "
+                                HM "PHK MERUGIKAN PERUSAHAAN"
+                                HD "PHK MENINGGAL DUNIA"
+                                HP "PHK PENSIUN "
+                                LL "LAIN - LAIN"
+
+CALCS()
+cALASANPHK	tmpkode=="ALASANPHK"
+cutk_OPENp      hrmsts=="OPEN"
+
+CALCS()
+cYp              "Y"
+
+MAP(mupdketfotophk)
+cYp              ketyt1          DO_CALC
+
+DBCALCS(dupdketfotophk)
+        DBC_COMMAND     UPDATE
+        DTARGET         ketprmidx ketprm
+        DMAP            mupdketfotophk
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND	cALASANPHK
+SFL_UPL_DELCOND cutk_OPENp
+SFL_UPLFLD_DBCALCS dupdketfotophk
+SFL_UPL_DIRFLD hrmdata
+SFL_UPLFLD hrmnobuk 
+SFL_LINES(1)
+
+SFL_TARGET
+	ketdatbuktgl 	hrmdata     hrmnobuk	lALASAN
+
+
+SFL_MAP
+hrmnobuk        ketnobuk        REPLACE
+hrmdata         ketdata         REPLACE
+
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cOPEN_SAJA
+        PMT_UPDALL_COND cOPEN_SAJA
+        PMT_DEL_COND    cno
+
+

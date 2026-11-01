@@ -1,0 +1,107 @@
+LOCAL
+PGM_FIELDS
+lKERJAMITRA		STRING		21
+lJABATAN   	 	STRING		21
+lKRJMITRA		STRING		11
+
+DBCALCS(djoinsvikerjamitra)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lKRJMITRA psmktp lKRJMITRA   
+
+
+CALCS()
+cm4w		(djoinpsdmitra == 1 && lpsdkode == "M4W") || (djoinuplineumroh==1 && lpsdbisnis=="UMROH")
+IMAGE(tmptranst) 
+ /----------------------------------------------------------------------------------------------\ 
+ |                      __________________________________                                      |
+ | t.NamaPerusahaan   : __________________________________                                      |
+ | t.IndPekerjaan     : ______________  __________________________                              |
+ | t.BdgPekerjaan     : ______________  __________________________                              |
+ | t.DetBidKerja      : ______________  __________________________                              |
+ | t.Jabatan          : ______________  _________________________                               |
+ | t.LamaKerja        : ______________                                                          |
+ | t.Enter            : ______________                                                          |
+ \----------------------------------------------------------------------------------------------/ 
+
+FIELD(tmptranst)
+svinobuk  	 	PROTECT 			INPUTRI 1
+sviket			ALLCAPS SCROLL			INPUTRI 1
+svistr1			ALLCAPS SCROLL			INPUTRI 2 /*pekerjaan*/
+svistr4			PROTECT SCROLL			INPUTRI 2 /*pekerjaan*/
+svistr2			ALLCAPS SCROLL			INPUTRI 3 /*subpekerjaan*/
+svistr5			PROTECT SCROLL			INPUTRI 3 /*subpekerjaan*/
+svistr3			ALLCAPS SCROLL			INPUTRI 4 /*subpekerjaan1*/
+svistr6			PROTECT SCROLL			INPUTRI 4 /*subpekerjaan1*/
+svistr7			ALLCAPS SCROLL			INPUTRI 4 /*subpekerjaan1*/
+svistr8			ALLCAPS SCROLL			INPUTRI 4 /*subpekerjaan1*/
+svistr9			ALLCAPS SCROLL			INPUTRI 4 /*subpekerjaan1*/
+lenter			ALLCAPS				INPUTRI 5
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+lKERJAMITRA		INIT		KERJAMITRA
+lJABATAN   		INIT		JABATAN   
+lKRJMITRA		INIT		KRJMITRA
+svistr9			DFALT_SCAN	<1TAHUN
+					1-2TAHUN
+					2-3TAHUN
+					3-4TAHUN
+					4-5TAHUN
+					>5TAHUN
+
+
+
+EDITS(tmptranst)
+e.Mandatory	svistr1		MANDATORY	
+e.Mandatory 	svistr2		MANDATORY	
+e.Mandatory	svistr3		MANDATORY		
+e.Mandatory	svistr7		MANDATORY		
+e.Mandatory	svistr8		MANDATORY		
+e.Mandatory	svistr9		MANDATORY		
+
+e.ValidatePekerjaan	svistr1		VALIDATE tbddatkodidx mtbdkerja2 stbdpekerjaan {Pgv_dttabel} {Pgv_infokredit} {PlKERJAMITRA} 
+e.ValidateSubkerja 	svistr2		VALIDATE tbddatkodidx mtbdsubkerja2 stbdpekerjaan {Pgv_dttabel} {PlKERJAMITRA} {Psvistr1} 
+e.ValidateJenis         svistr3         VALIDATE tbtdattypkod mtbtsub22 stbtjenis {Pgv_dttabel} {Pgv_dttabel21} {PlKERJAMITRA} {Psvistr1} {Psvistr2}
+
+e.ValidateJabatan   	svistr7		VALIDATE tbddatkodidx mtbdjabat2 stbdpekerjaan {Pgv_dttabel} {Pgv_infokredit} {PlJABATAN} 
+e.ValidateSubJabatan	svistr8		VALIDATE tbddatkodidx mtbdsubjab2   stbdpekerjaan {Pgv_dttabel} {PlJABATAN} {Psvistr7} 
+
+MAP(mtbdjabat2)
+tbdkode				svistr7		REPLACE
+
+MAP(mtbdsubjab2)
+tbdkode				svistr8		REPLACE
+
+MAP(mtbdkerja2)
+tbdkode				svistr1		REPLACE
+tbdket 				svistr4		REPLACE
+
+MAP(mtbdsubkerja2)
+tbdkode				svistr2		REPLACE
+tbdket 				svistr5		REPLACE
+
+MAP(mtbtsub22)
+tbtkode				svistr3		REPLACE
+tbtket 				svistr6		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_TITLE(tmptranst)
+SFL_COND	cm4w
+SFL_TARGET
+	svidatbuktyp   lKRJMITRA psmktp lKRJMITRA
+
+SFL_MAP
+lKRJMITRA   		svidata			REPLACE
+psmktp			svinobuk		REPLACE
+lKRJMITRA		svitype			REPLACE
+
+CALCS()
+cdel_tmpkerja		psmstssup == "OPEN" || g_grpnam == "B.M4WMSPV"
+cadd_tmpkerja		/*psmstssup == "OPEN" &&*/ djoinsvikerjamitra== 0 
+
+PERMIT(tmptrans)
+/*  PMT_UPDALL_COND  	cdel_tmpkerja*/
+  PMT_ADD_COND		cadd_tmpkerja
+  PMT_DEL_COND  	cdel_tmpkerja

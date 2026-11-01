@@ -1,0 +1,96 @@
+LOCAL
+PGM_FIELDS
+lslottrf        INT2            2
+lvertrfY        INT2            2
+
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||_______________________________ ||
+||t.FinSesuai : __                ||
+||t.KetTacc   : _________________ ||
+||                            ___ ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+svistr32                NOCHANGE                INPUTRI         2
+sviket3                 ALLCAPS SCROLL          INPUTRI         3
+lok                     NOCHANGE                INPUTRI         10
+
+DEFAULTS(tmptranst)
+svistr32        DFALT_SCAN_BLANKS       Y T
+lok             INIT                    "OK"
+
+CALCS()
+ctacc2		svistr32 == "T"
+cacc2		svistr32 == "Y"
+cselveradhtrf   (tmpkode == "UPLAJUTRANS" && svikode=="SRTSPPD") || (tmpkode == "UPLNYATATRANS" && svikode=="PERTRANSFER") || (tmpkode == "UPLBPKBTRANS" && svikode=="SRHTRMBPKB") || (tmpkode == "UPLKTPTRANS" && svikode == "KTPPMH") || (tmpkode == "UPLBPKBTRANS2" && svikode == "BKTBPKB")
+cveradhtrf	(((tmpkode == "UPLAJUTRANS"  || tmpkode == "UPLNYATATRANS" || tmpkode == "UPLBPKBTRANS" || tmpkode == "UPLBPKBTRANS2") && djointkmapr == 1) || tmpkode == "UPLKTPTRANS")
+
+EDITS(tmptranst)
+e.Mandatory     svistr32 MANDATORY
+e.Mandatory     sviket3  MANDATORY_IF ctacc2
+
+CALCS()
+cslottrf        ((svikode=="SRHTRMBPKB" && btmsoa_1 != "TOPUP") || svikode=="BKTNOREK" || svikode=="SRTSPPD" || svikode=="PERTRANSFER" || svikode == "KTPPMH")
+cvertrfY        ((svikode=="SRHTRMBPKB" && btmsoa_1 != "TOPUP") || svikode=="BKTNOREK" || svikode=="SRTSPPD" || svikode=="PERTRANSFER" || svikode == "KTPPMH") && svistr32 == "Y"
+
+MAP(mscansvifotopk)
+gv_int1         lslottrf        REPLACE_IF cslottrf
+gv_int1         lvertrfY        REPLACE_IF cvertrfY
+
+DBCALCS(dscansvifotopk)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      svidatbuktyp    gv_datasurvey bkmnobs gv_fotopk
+        DBC_LAST_TARGET svidatbuktyp    gv_datasurvey bkmnobs gv_fotopk
+        DBC_SUM_MAP     mscansvifotopk
+
+CALCS()
+caccok          lslottrf==lvertrfY
+ctaccok         svistr32 == "T"
+cBLANKS		BLANKS
+
+MAP(mupdbkmtr)
+gv_INPG         bkmstsbank      REPLACE_IF caccok
+gv_OPEN         bkmstsbank      REPLACE_IF ctaccok
+
+MAP(mkosong)
+cBLANKS		sviket3		DO_CALC_IF cacc2
+
+SPCALCS(spupdbkmtr)
+	dscansvifotopk
+        DO_LIB          ap_dbclc(DNAME dupdbkmtr, DCOMMAND UPDATE, DTARGET bkmbukidx bkmnobuk, DMAP mupdbkmtr);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=svistr32	DO_MAP SHOW mkosong
+BEFORE_INPUT	cur_field=sviket3	DO_SKIP_IF cacc2
+/*AFTER_INPUT	cur_keybd=EN		DO_SPCALCS spupdbkmtr*/
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cselveradhtrf
+SFL_COND cveradhtrf
+SFL_UPLFLD bkmnobs      svikode
+SFL_UPL_DIRFLD bkmtgl3
+SFL_UPLREADONLY
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey bkmnobs gv_fotopk 
+
+POSTING(tmptrans)
+        PST_UPDCMD	spupdbkmtr
+

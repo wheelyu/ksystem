@@ -1,0 +1,230 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------------------\
+ /---------------------------------\/---------------------------------\
+  t.Sdmterlbt: ____________________  t.Nama     : ____________________
+  t.Partner  : ____________________  t.Nama     : ____________________
+  t.Potloss  : _________________.__  t.KatSdm   : ____________________
+  t.Sisareco : _________________.__  t.Kerugian : _________________.__
+  t.Punismen1: ___________________   t.Recovery : _________________.__
+  t.TktPunis : ____________________  t.Tgl      : ________
+                                     t.Punismen2: ____________________
+                                     t.NipDCOO  : _______  ____________
+                                     t.NipPJ    : _______  ____________
+  t.Nobuk1   : ____________________  t.Nobuk2   : ____________________
+  t.NipAM    : ____________________  t.NmAM     : ____________________
+  t.JnsBaik  : ____________________  spasi 
+  t.Ket      : _______________________________________________________
+ \---------------------------------/\---------------------------------/
+\----------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldplg          ALLCAPS		                   			INPUTRI 1
+lnamasdm        PROTECT                         			INPUTRI 1
+tldbisnis       ALLCAPS	                         			INPUTRI 2
+lnamasdmpart    PROTECT                         			INPUTRI 2
+
+tldjml          NUMERIC {99.9999999999999}      SCROLL                  INPUTRI 3
+tldnoll         ALLCAPS SCROLL                         			INPUTRI 4
+
+tldsubtot       PROTECT {99.9999999999999}      SCROLL                  INPUTRI 5
+tldjml2         NUMERIC {99.9999999999999}      SCROLL                  INPUTRI 6
+tldppdoto       ALLCAPS SCROLL	               	 			INPUTRI 7
+tldhrg          NUMERIC {99.9999999999999}      SCROLL                  INPUTRI 8
+
+tldket2         TEXTAREA  SCROLL                			INPUTRI 9
+tldtglfak       ALLCAPS NOLIMIT {DD-MM-YYYY}    			INPUTRI 10
+tldkat          ALLCAPS		                 			INPUTRI 11
+
+tldlok2         ALLCAPS SCROLL  					INPUTRI 13      /*NIP DCOO*/
+lnamDCOO        PROTECT         					INPUTRI 13      /*NAMA DCOO*/
+tldukrwrn       ALLCAPS SCROLL  					INPUTRI 14      /*NIP AM*/
+lPJ             PROTECT         					INPUTRI 14      /*NAMA PJ */
+
+tldnobbm        ALLCAPS SCROLL                  			INPUTRI 12
+
+tldsat          ALLCAPS SCROLL                  			INPUTRI 15
+tldgrup         ALLCAPS SCROLL                   			INPUTRI 16 /*NIP AM*/
+
+lnamatgg        PROTECT                         			INPUTRI 17 /*NAMA AM*/
+tldgrup2        ALLCAPS  SCROLL                 			INPUTRI 18
+tldket          ALLCAPS  SCROLL                		 		INPUTRI 19
+
+DEFAULTS(tmptranst)
+tldtglfak       INIT            {g_tgltrn}
+tldtglfak       INIT_UPDATE     {g_tgltrn}
+lpunish2        INIT            PUNISH2
+lbaik           INIT            PERBAIKAN
+tldnoll         DFALT_SCAN_BLANKS       PELAKU_UTAMA "Pelaku Utama"
+                                        CONTROL "Control"
+                                        TAU_TIDAK_MELAPOR "Mengetahui Tidak Malapor"
+					PELAKU_TURUT_SERTA
+                                        SDM_HANYA_KONFIRMASI
+tldppdoto	DFALT_SCAN_BLANKS	DEMOSI
+					MUTASI
+					MD 
+					SP_1 
+					SP_2 
+					SP_3
+					LETTER_OF_COMMITMENT
+					TIDAK_ADA_TREATMENT 					
+tldkat		DFALT_SCAN_BLANKS	GANTI_RUGI
+					PELAPORAN_POLISI
+
+CALCS()
+cbkneks         (djoinsviket == 1 && lkondisi == "FRAUD") && tlmtype2 != "EXTERNAL"
+cnofin1          tldkat != BLANKS
+cspvisi         (djoinsviket == 1 && lkondisi == "FRAUD") && tlmtype2 != "EXTERNAL"
+
+
+EDITS(tmptranst)
+e.Mandatory     tldsat          MANDATORY_IF cnofin1
+
+e.Mandatory     tldtglfak       MANDATORY_IF cbkneks
+e.Mandatory     tldgrup2        MANDATORY_IF cbkneks
+e.Mandatory     tldnoll         MANDATORY_IF cbkneks
+e.Mandatory     tldlok2         MANDATORY_IF cspvisi
+e.Mandatory     tldukrwrn       MANDATORY_IF cspvisi
+e.Mandatory     tldgrup         MANDATORY_IF cspvisi
+
+e.Mandatory     tldppdoto       MANDATORY_IF cbkneks
+e.Mandatory     tldket2         MANDATORY_IF cbkneks
+e.Mandatory     tldnobbm        MANDATORY_IF cbkneks
+
+t.Validate      tldplg          VALIDATE psikodidx mpsisdmakt 0  
+t.Validate      tldbisnis       VALIDATE psikodidx mpsisdmakt2 0
+/*t.Validate      tldppdoto       VALIDATE tbtdattypkod mtbdpunis1 stbt {Pgv_dttabel} {Pgv_dttabel21} {Plaudit} {Plpunish1} {Plsubpnh}
+t.Validate      tldkat          VALIDATE tbddatkodidx mtbdpunis2 stbd1 {Pgv_dttabel} {Plaudit} {Plpunish2}*/
+t.Validate      tldgrup2        VALIDATE tbddatkodidx mtbdbaik   stbd1 {Pgv_dttabel} {Plaudit} {Plbaik}
+
+t.Validate      tldlok2         VALIDATE tbtdattypkod mtbtdcoo stbt {Pgv_dttabel} {Pgv_dttabel21} {Plaudit} {PlDCOO850} {PlDCOO}
+t.Validate      tldlok2         VALIDATE psikodidx mpsidcoo 0
+t.Validate      tldgrup         VALIDATE tbtdattypkod mtbtam stbt {Pgv_dttabel} {Pgv_dttabel21} {Plaudit} {Plnipam} {PlAM1}
+t.Validate      tldgrup         VALIDATE psikodidx mpsiam 0
+t.Validate      tldukrwrn       VALIDATE tbtdattypkod mtbtpj stbt {Pgv_dttabel} {Pgv_dttabel21} {Plaudit} {Plnippj} {Plpj}
+t.Validate      tldukrwrn       VALIDATE psikodidx mpsipj 0
+
+/*MAP(mpsisdmakt)
+cBLANKS		lnamasdm	DO_CALC
+psikode         tldplg          REPLACE
+psinama         lnamasdm        REPLACE*/
+
+/*MAP(mpsisdmakt2)
+cBLANKS		lnamasdmpart	DO_CALC
+psikode         tldbisnis       REPLACE
+psinama         lnamasdmpart    REPLACE*/
+
+MAP(mpsisdmakt)
+psikode         aktkode2        REPLACE
+psinama         lnamasdm        REPLACE
+psinpwp         ljnsdm          REPLACE
+/*ckdpun          lpunish1        DO_CALC
+clatihan        lsubpnh         DO_CALC_IF clatihan1
+creguler        lsubpnh         DO_CALC_IF creguler1
+*/
+
+MAP(mpsisdmakt2)
+psikode         aktkode2        REPLACE
+psinama         lnamasdm        REPLACE
+psinpwp         lpsinpwp        REPLACE
+/*ckdpun          lpunish1        DO_CALC
+cpartner0       lsubpnh         DO_CALC_IF cpartner1
+*/
+
+MAP(mtbdbaik)
+tbdkode         tldgrup2        REPLACE
+
+CALCS()
+ckrng           tldjml2 - tldhrg
+ckrng2          tldhrg > tldjml2
+ckrng3          tldhrg - tldjml2
+/*cdet2           (tlmsts == "OPEN" || tlmsts == "INPG" || tlmsts == "RCLS") && (g_grpnam == "AUDITSPV" || 
+		g_grpnam == "AUDITTL" || g_grpnam == "DESK" || g_grpnam == "DOC" || g_grpnam == "AUDITHEAD" || g_grpnam == "AUDDVH" || 
+		g_grpnam == "RI" || g_grpnam == "IT" || g_usrkode == tlmplg) && (tlmtype1 == "FRAUD" || tlmtype1 == "ADM") &&
+           	(tlmpst != "AUDHEAD") */
+
+cdet2ubah	(tlmsts == "INPG" && (tlmpst == "AUDSPV_POSTING" || tlmpst == "FINSPV_POSTING")) && (g_grpnam == "AUDITSPV" ||
+                g_grpnam == "AUDITTL" || g_grpnam == "DESK" || g_grpnam == "DOC" || g_grpnam == "AUDITHEAD" || g_grpnam == "AUDDVH" ||
+                g_grpnam == "RI" || g_grpnam == "IT" || g_usrkode == tlmplg) && (tlmtype1 == "FRAUD" || tlmtype1 == "ADM") 
+          
+cmasipst	tlmsts == "INPG" && (tlmpst == "AUDSPV_CEKTEMUAN" || tlmpst == "AUDSPV_ISIFRAUD")
+ctacchead2      djoinakthead == 1 && lkethead == "REVISI_PUNISHMENT" && lheadT == "T"
+cpenyelesaian	tlmpst == "AUDSPV_POSTING" || tlmpst == "FINSPV_POSTING"
+
+MAP(mhasil)
+ckrng           tldsubtot       DO_CALC
+ckrng3          tldsubtot       DO_CALC_IF ckrng2
+
+MAP(misidet2)
+cno1            tldnourt        DO_CALC_IF ctambahdet
+curut           tldnourt        DO_CALC_IF ctambahdet2
+
+/*MAP(mcek15)
+cpjg15          lpanjangp  DO_CALC*/
+
+/*MAP(mtbdpunis1)
+tbtkode         tldppdoto       REPLACE
+
+MAP(mtbdpunis2)
+tbdkode		tldkat   	REPLACE 
+
+MAP(maddaket)
+laudit11     kettype          REPLACE
+tlmdata      ketdata          REPLACE
+tlmnobuk     ketnobuk         REPLACE
+tldnourt     ketnourt         REPLACE
+*/
+
+MAP(mupdtlmmstr4)
+cBLANKS         tlmstsapr       DO_CALC_IF ctacchead2
+
+MAP(misi850selesai)
+lnipdcoo	tldlok2		REPLACE_IF cadastrukturdcoo
+lnipkawil	tldukrwrn	REPLACE_IF cadastrukturkawil
+lnipadham	tldgrup		REPLACE_IF cadastrukturadham
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tldplg	DO_MAP SHOW misi850selesai
+BEFORE_INPUT	cur_field=tldnoll	DO_MAP SHOW misidet2
+BEFORE_INPUT	cur_field=tldket2	DO_SKIP_IF cmasipst
+AFTER_INPUT     cur_field=tldhrg        DO_MAP SHOW mhasil
+AFTER_INPUT     cur_field=tldbisnis     DO_MAP SHOW
+                IF cpartner     mdum2
+                HKMSG t.SdmBukanPartnership
+/*AFTER_INPUT     cur_field=tldnobbm      DO_MAP  SHOW    mcek15
+AFTER_INPUT     cur_field=tldnobbm      DO_MAP  SHOW
+                                        IF cpanjangp mdum3
+                                        ELSE HKCURSOR STAY
+                                        HKMSG t.NoPunish15Digit*/
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldstsbrgukr    tlmdata gv_OPEN tlmnobuk
+
+SFL_MAP
+tlmdata         tlddata         REPLACE
+gv_OPEN         tldsts          REPLACE
+tlmnobuk        tldbrg          REPLACE
+tlmnobuk        tldnobuk        REPLACE
+
+/*SPCALCS(spd2to4)
+        DO_LIB          ap_dbclc(DNAME daddked4,DCOMMAND ADD,DFILE ket,DMAP maddaket);
+
+SPCALCS(spd2del4)
+        DO_LIB          ap_dbclc(DNAME deld4,DCOMMAND DELETE_RANGE,DTARGET ketbukurtidx   tlmdata tlmnobuk tldnourt);
+*/
+SPCALCS(spupd2d)
+        DO_LIB          ap_dbclc(DNAME dupdtlmmaster4,DCOMMAND UPDATE,DTARGET tlmprmidx tlmprm,DMAP mupdtlmmstr4);
+
+POSTING(tmptrans)
+/*PST_ADDCMD    spd2to4
+  PST_DELCMD    spd2del4*/
+  PST_UPDCMD    spupd2d
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cpenyelesaian
+PMT_UPDALL_COND cdet2ubah
+PMT_DEL_COND    c0

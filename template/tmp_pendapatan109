@@ -1,0 +1,45 @@
+IMAGE(tmptranst)
+/----------------t----------------------t----------t----------\
+|t.KodeAktivitas |t.Aktivitas           |t.Jumlah  |t.Menit   |
+\----------------.----------------------.----------.----------/
+
+IMAGE(tmptrans)
+!________________|______________________|__________|__________|____!
+
+FIELD(tmptrans)
+tbdkode         NOCHANGE        INPUTRI         1
+tbdket          PROTECT         INPUTRI         2
+ljumlah         ALLCAPS         INPUTRI         3
+lmenit          ALLCAPS         INPUTRI         4
+tbdtblkode      NOCHANGE UNSEEN INPUTRI         5
+
+CALCS()
+cpendmanarsip   tbdlv2 == "MANUAL"
+
+caktblmada2     djoinakt4d == 0 && g_curcmd == 0
+caktsdhada2     djoinakt4d == 1 && g_curcmd == 0
+
+cgabkode4d      STRIP(tbdkode) +STRIP(abknobuk)
+
+EDITS(tmptrans)
+e.ValidateTbl   tbdtblkode      VALIDATE tbldtdtmkod mtbl4d 0 {Pgv_dttabel} {Plarsip}
+
+MAP(mtbl4d)
+cgabkode4d      lgabkode4d      DO_CALC
+c0              ljumlah         DO_CALC_IF caktblmada2
+c0              lmenit          DO_CALC_IF caktblmada2
+laktjml         ljumlah         REPLACE_IF caktsdhada2
+lakttotal       lmenit          REPLACE_IF caktsdhada2
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tbdtblkode    DO_SKIP_IF cpendtbharsip
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_COND        cpendtbharsip
+SFL_SELECT      cpendmanarsip
+SFL_TARGET
+tbddatkodidx    gv_dttabel larsip lmenitharian
+
+

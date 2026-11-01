@@ -1,0 +1,109 @@
+IMAGE(tmptranst) 
+/----------------------------------\
+|/--------------------------------\|
+||t.HasilReviewCreditSpv          ||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||:                               ||
+||:                               ||
+||: ______________________________||
+||                                ||
+||t.HasilReviewSesuai   : ____    ||
+||t.Userinput     : _________     ||
+||t.Nama          : _____________ ||
+||t.GrpLog        : _____________ ||
+||                  _________     ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviket			TEXTAREA	INPUTRI	1
+sviket2                 TEXTAREA        INPUTRI 2
+svistr2			NOCHANGE	INPUTRI	3
+/*
+lketrvwspv		PROTECT		INPUTRI	4
+*/
+svikode			PROTECT		INPUTRI	8
+lnamarevspv             PROTECT         INPUTRI 9
+lgruprevspv             PROTECT         INPUTRI 10
+lENTER                  NOCHANGE        INPUTRI 11
+
+DEFAULT(tmptranst)
+svikode			INIT		{g_usrkode}
+svikode			INIT_UPDATE	{g_usrkode}
+svitgl2                 INIT            {g_tgltrn}
+lketrvwspv		INIT		BLANKS
+svinourt		INIT		1
+svinourt		INIT_UPDATE	1
+lket726spv		INIT		KET726SPV
+lket726spv2		INIT		KET726SPV2
+svistr2                 DFALT_SCAN      BLANKS
+                                        BENAR "BENAR"
+                                        SALAH "SALAH"
+
+EDITS(tmptranst)
+/* 
+e.Validate		svistr1		VALIDATE_IF cfaktur tbddatkodidx  mtbd4a_2 stbd {Pgv_dttabel} {Pgv_survey21} {Plket726spv}
+e.Validate		svistr1		VALIDATE_IF cpk tbddatkodidx  mtbd4a_2 stbd {Pgv_dttabel} {Pgv_survey21} {Plket726spv}
+e.Validate		svistr1		VALIDATE_IF cspk tbddatkodidx  mtbd4a_1 stbd {Pgv_dttabel} {Pgv_survey21} {Plket726spv2}
+e.Mandatory		svistr1		MANDATORY
+*/
+Nama tidak ada          svikode         VALIDATE        psikodidx mpsipic_1a 0
+Jabatan tidak ada       svikode         VALIDATE        usrkodidx musrpic_1a 0
+e.Mandatory		sviket		MANDATORY
+
+MAP(musrpic_1a)
+usrgrp                  lgruprevspv     REPLACE
+
+MAP(mpsipic_1a)
+psinama                 lnamarevspv     REPLACE
+/*
+MAP(mtbd4a_2)
+tbdkode			svistr1		REPLACE
+tbdket			lketrvwspv	REPLACE
+*/
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW mpanjangs
+AFTER_INPUT             cur_field=sviket        DO_MAP SHOW
+                        IF cpjgrvws mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG t.InputMin20
+
+AFTER_INPUT     cur_keybd=EN DO_MAP SHOW
+                IF cisirvwcreditspv mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiReviewSpv
+
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW
+                IF ccreditspv726 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.IsiSesuaiSpv
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csdhambil2
+SFL_TARGET
+        svidatbuktyp    gv_datasurvey mtsnobuk lkunjrvwcreditspv l1
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svidtmkode      REPLACE
+gv_datasurvey   svidata         REPLACE
+lkunjrvwcreditspv     svitype         REPLACE
+l1		svinourt	REPLACE
+g_usrkode	svikode		REPLACE
+
+SPCALCS(sptrans2g24)
+
+DO_LIB ap_dbclc(DNAME dmaptrans2g23,DCOMMAND MAPMAP,DMAP mmaptrans2creditspv726);
+DO_LIB_IF cdjoinabkcreditspv ap_dbclc(DNAME dupdabkspv, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnobukabkcreditspv, DMAP mupdabkcreditspv726);
+DO_LIB_IF ctambah ap_dbclc(DNAME dupdftmspv, DCOMMAND UPDATE, DTARGET ftmdatbukidx gv_datasurvey mtsnoasal, DMAP mupdftmcreditspv726);
+DO_LIB ap_dbclc(DNAME dupdmtsspv,DCOMMAND UPDATE,DTARGET mtsbukidx mtsnobuk,DMAP mupdmtscreditspv726);
+
+POSTING(tmptrans)
+PST_ADDCMD      sptrans2g24
+PST_UPDCMD      sptrans2g24

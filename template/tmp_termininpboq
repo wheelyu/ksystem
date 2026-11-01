@@ -1,0 +1,130 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ /------UPLOAD-------------------\
+
+
+
+
+
+
+
+
+ \-------------------------------/
+ /-------------------------------\
+  t.Upload     : ___
+  t.Tanggal    : ________________
+  t.Vendor     : ________________
+  t.NamaVendor : ________________                                         
+  t.Pekerjaan  : ________________                            
+  t.Spesifikasi: ________________                            
+  t.Satuan     : _______                                     
+  t.Volume     : _______                                     
+  t.HargaPerVol: ________________                            
+  t.Total      : ________________
+  t.Klarifikasi: ________________
+  t.NipKlar    : _______  
+  t.NamaKlar   : ________________
+  t.AccForm    : _______
+  ______________  ______________                          
+  ______________  ______________                          
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bidgrup   	PROTECT       		INPUTRI	1
+bidtglfak	PROTECT {DD-MM-YYYY}	INPUTRI 1
+bidrekbia       ALLCAPS			INPUTRI	2
+lnamavendor	PROTECT    		INPUTRI	3
+bidgrupbia	ALLCAPS SCROLL		INPUTRI	4
+bidket     	TEXTAREA ALLCAPS SCROLL	INPUTRI	5
+bidtype 	ALLCAPS 		INPUTRI	6
+bidjml 		NUMERIC		  	INPUTRI	7
+bidhrg   	NUMERIC 		INPUTRI	8
+bidtotal 	PROTECT			INPUTRI	9
+bidstr11 	PROTECT			INPUTRI	10
+bidplg		PROTECT			INPUTRI 11
+lnamaklar	PROTECT			INPUTRI	12
+bidsup   	PROTECT			INPUTRI	13
+ltomklarifikasi1x  TOMBOL		INPUTRI	14
+ltomklarifikasi2x  TOMBOL		INPUTRI	15
+ltomform1         TOMBOL		INPUTRI	16
+ltomform2         TOMBOL		INPUTRI	17
+
+DEFAULTS(tmptranst)
+bidtglfak	INIT_ADD	{g_tgltrn}
+ltomupl		INIT	"UPLOAD_OK"
+ltomklarifikasi1x INIT	"KLARIFIKASI ACC"
+ltomklarifikasi2x INIT	"KLARIFIKASI TACC"
+ltomform1 	 INIT	"ACC FORM"
+ltomform2 	INIT	"TACC FORM"
+
+EDITS(tmptranst)
+e.Mandatory	bidgrupbia MANDATORY
+e.Mandatory	bidket     MANDATORY
+e.Mandatory	bidtype    MANDATORY
+e.Mandatory	bidjml     MANDATORY
+e.Mandatory	bidhrg     MANDATORY
+e.VALIDATE	bidplg	   VALIDATE psikodidx mpsiklar 0
+e.Validate      bidrekbia  VALIDATE_IF cnotga cmpsuptykod mcmpz scmp {Pgv_dtsup} {PlKONTRAKTOR}
+e.Validate      bidrekbia  VALIDATE_IF cga cmpsuptykod mcmpz scmp {Pgv_dtsup} {Pgv_DN}
+
+CALCS()
+cpusatho2x	(mtsdari=="BLAKT_NL" || mtsdari=="PBK" || mtsdari=="TPDPN_ADA" || mtsdari=="TT_ADA" || mtsdari=="TPDPN_BARU" || mtsdari=="TT_BARU" || mtsdari=="GG" || mtsdari=="RNV" || mtsdari=="BLAKT_AL") && (g_grpnam=="GA" || g_grpnam=="ESTIMATOR" || g_grpnam == "IT" || g_grpnam=="RI" || g_grpnam=="REMMGR")
+
+MAP(mklaraccx)
+cklaracc	bidstr11	DO_CALC_IF cpusatho2x
+g_usrkode	bidplg		REPLACE
+
+MAP(mklartaccx)
+cklartacc	bidstr11	DO_CALC_IF cpusatho2x
+g_usrkode	bidplg		REPLACE
+
+MAP(mformaccx)
+cacc		bidsup		DO_CALC_IF cpusatho2x
+
+MAP(mformtaccx)
+ctacc		bidsup		DO_CALC_IF cpusatho2x
+
+SPCALCS(spklaraccx)
+	DO_LIB	ap_dbclc(DNAME dupdklaraccx,DCOMMAND UPDATE,DTARGET bidotoidx bidoto,DMAP mklaraccx);
+	DO_LIB  ap_dbclc(DNAME dupdabkdonezx,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN mtsnobuk,DMAP mupdabkdonex);
+	/*DO_LIB  ap_dbclc(DNAME dupdmtsboqx,DCOMMAND UPDATE,DTARGET mtsotoidx mtsoto,DMAP mupdmtsboq);*/
+	DO_LIB_IF cngadugedung ap_dbclc(DNAME daddabkboqx,DCOMMAND ADD,DFILE abk,DMAP maddabkboq);
+	DO_LIB_IF cngaduaktiva ap_dbclc(DNAME daddabkboq2x,DCOMMAND ADD,DFILE abk,DMAP maddabkboq2);
+
+SPCALCS(spklartaccx)
+	DO_LIB	ap_dbclc(DNAME dupdklartaccx,DCOMMAND UPDATE,DTARGET bidotoidx bidoto,DMAP mklartaccx);
+	DO_LIB  ap_dbclc(DNAME dupdabkdonexx,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN mtsnobuk,DMAP mupdabkdonex);
+	DO_LIB  ap_dbclc(DNAME daddabkvend2x,DCOMMAND ADD,DFILE abk,DMAP maddabkvend2);
+
+SPCALCS(spformaccx)
+	DO_LIB	ap_dbclc(DNAME dupdformaccx,DCOMMAND UPDATE,DTARGET bidotoidx bidoto,DMAP mformaccx);
+
+SPCALCS(spformtaccx)
+	DO_LIB	ap_dbclc(DNAME dupdformtaccx,DCOMMAND UPDATE,DTARGET bidotoidx bidoto,DMAP mformtaccx);
+	DO_LIB  ap_dbclc(DNAME dupdabkdoneax,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN mtsnobuk,DMAP mupdabkdone);
+	DO_LIB  ap_dbclc(DNAME daddabkvend3x,DCOMMAND ADD,DFILE abk,DMAP maddabkvend2);
+
+HOOKS(tmptranst)
+AFTER_INPUT 	cur_field=bidhrg		DO_MAP SHOW mtotalrab
+CLICKED		cur_field=ltomklarifikasi1x	DO_SPCALCS spklaraccx 
+CLICKED		cur_field=ltomklarifikasi2x	DO_SPCALCS spklartaccx
+CLICKED		cur_field=ltomform1		DO_SPCALCS spformaccx 
+CLICKED		cur_field=ltomform2		DO_SPCALCS spformtaccx
+
+CALCS()
+ckonesti	g_grpnam=="ESTIMATOR" || g_grpnam=="IT" || g_grpnam=="RI"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD bidnobuk bidrekbia
+SFL_UPL_DIRFLD bidtglfak
+SFL_UPL_COND ckonesti
+SFL_TARGET
+        bidbukstsidx mtsnobuk gv_INPG                        
+SFL_MAP
+	lDTBOQ		biddata		REPLACE
+	mtsnobuk	bidnobuk	REPLACE 
+	gv_INPG		bidsts 		REPLACE

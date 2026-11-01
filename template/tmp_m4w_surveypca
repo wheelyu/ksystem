@@ -1,0 +1,106 @@
+LOCAL
+PGM_FIELDS
+lsvitype2	STRING		21
+lsvitype3	STRING		21
+
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/-----------------------------------------------\|
+||              t.HasilSurveyPerusahaan          ||
+|\-----------------------------------------------/|
+|/-----------------------------------------------\|
+||t.NamaEksternal  :____________________________ ||
+||t.NamaDirektur   :____________________________ ||
+||t.Ktp            :____________________________ ||
+||t.npwp           :____________________________ ||
+||t.Alamat         :____________________________ ||
+||                                               ||
+||t.Prop           :________  __________________ ||
+||t.Kota           :________  __________________ ||
+||t.Kec            :________  __________________ ||
+||t.Kel            :________  __________________ ||
+||t.Nohp           :____________________________ ||
+||t.StsMilikKantor :____________________________ ||
+||t.DitempatiSejak :_____ ____  t.s/d _____ ____ ||
+||t.HslCekFinalain :____________________________ ||
+|\-----------------------------------------------/|
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinama		PROTECT			INPUTRI	1
+svidtmkode	ALLCAPS			INPUTRI	2
+svikode		NUMERIC			INPUTRI	3
+svitblkode	NUMERIC			INPUTRI	4
+sviket2		TEXTAREA ALLCAPS	INPUTRI	5
+svistr1		ALLCAPS			INPUTRI 6
+lnamaprop	PROTECT			INPUTRI 7
+svistr2		ALLCAPS			INPUTRI	8 
+lnamakota	PROTECT			INPUTRI	9 
+svistr3		ALLCAPS			INPUTRI	10
+lnamakec	PROTECT			INPUTRI	11
+svistr4		ALLCAPS			INPUTRI	12
+lnamakel	PROTECT			INPUTRI	13
+svistr6		ALLCAPS			INPUTRI	14
+svistr5		ALLCAPS			INPUTRI	15
+lsvitype2	ALLCAPS             	INPUTRI	16
+svitype2	PROTECT             	INPUTRI	16
+lsvitype3	ALLCAPS             	INPUTRI	17
+svitype3	PROTECT             	INPUTRI	17
+sviket		ALLCAPS             	INPUTRI 18
+
+DEFAULTS(tmptranst)
+svistr5		DFALT_SCAN_BLANKS Kontrak MilikSendiri
+
+EDITS(tmptranst)
+e.Validate              svistr1         VALIDATE dtmdtkodidx mprop2 sdtm {Pgv_dtkota}
+e.Validate              svistr2         VALIDATE tbldtdtmkod mkota2 stbl {Pgv_dtkota} {Psvistr1}
+e.Validate              svistr3         VALIDATE tbddatkodidx mkec2 stbd {Pgv_dtkota} {Psvistr1} {Psvistr2}
+e.Validate              svistr4         VALIDATE tbtdattypkod mkel2 stbt {Pgv_dtkota} {Pgv_dtkota21} {Psvistr1} {Psvistr2} {Psvistr3}
+Tahun Tidak Ditemukan   lsvitype2        VALIDATE tbldtdtmkod mtahun1 stbl {Pgv_dttabel} {Pgv_tahun}
+Tahun Tidak Ditemukan   lsvitype3        VALIDATE tbldtdtmkod mtahun2 stbl {Pgv_dttabel} {Pgv_tahun}
+NAMA DIREKTUR HARUS DIISI       svidtmkode      MANDATORY
+ALAMAT HARUS DIISI              sviket2         MANDATORY
+e.Mandatory                     svistr1         MANDATORY
+e.Mandatory                     svistr2         MANDATORY
+e.Mandatory                     svistr3         MANDATORY
+e.Mandatory                     svistr4         MANDATORY
+e.Mandatory                     svistr6         MANDATORY
+e.Mandatory                     svistr5         MANDATORY
+e.Mandatory                     svitype2         MANDATORY
+e.Mandatory                     svitype3        MANDATORY
+e.Mandatory                     sviket          MANDATORY
+
+MAP(msurveypca)
+psmnama_1	svinama		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=svidtmkode	DO_MAP SHOW msurveypca
+AFTER_INPUT     cur_field=svikode       DO_MAP  SHOW mlongktp
+AFTER_INPUT     cur_field=svikode       DO_MAP SHOW
+                IF clongktp16 mdum
+                ELSE HKCURSOR STAY
+                HKMSG  PANJANG KTP HARUS 16 DIGIT
+AFTER_INPUT     cur_field=svitblkode    DO_MAP  SHOW mlongnpwp
+AFTER_INPUT     cur_field=svitblkode    DO_MAP SHOW
+                IF clongnpwp15 mdum
+                ELSE HKCURSOR STAY
+                HKMSG  PANJANG NPWP HARUS 15 DIGIT
+AFTER_INPUT     cur_field=svistr6       DO_MAP  SHOW mlonghp  
+AFTER_INPUT     cur_field=svistr6       DO_MAP SHOW
+                IF clonghp10 mdum
+                ELSE HKCURSOR STAY
+                HKMSG  PANJANG NO HP MINIMAL 10 DIGIT
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+svidatbuktyp tlmdata tlmnobuk lSURVEYPCA
+SFL_MAP
+tlmdata		svidata		REPLACE
+tlmnobuk	svinobuk	REPLACE
+lSURVEYPCA	svitype		REPLACE
+psmnama_1	svinama		REPLACE
+

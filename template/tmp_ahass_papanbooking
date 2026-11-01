@@ -1,0 +1,85 @@
+IMAGE(tmptranst)
+/------------------------------------\
+|/-s.UPLOAD-------------------------\|
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|/----------------------------------\|
+||i.NoBuk         : ______________  ||
+||t.Upload        : ______          ||
+||i.Tgl           : _________       ||
+||t.JmlBkng627	  : _________	    ||
+||t.Jmlpapanbkng  : _________	    ||
+||                     	    ______  ||
+||            _________________     ||
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+aktnobuk        PROTECT          INPUTRI 1
+aktdk           PROTECT          INPUTRI 2
+akttgl          PROTECT          INPUTRI 3
+aktdf1		NOCHANGE	 INPUTRI 4
+aktdf2		NUMERIC		 INPUTRI 5
+
+lenter          NOCHANGE         INPUTRI 6
+luplok          TOMBOL           INPUTRI 8
+
+CALCS()
+cHitungTtl627	lTtlBooking627a + lTtlBooking627b + lTtlBooking627c
+cfotobaru17     akttgl == g_tgltrn
+cubhBooking	g_curcmd == 2
+cadaBooking	aktdf1 > 0
+cBedaBooking	aktdf1 == aktdf2
+
+MAP(mupdaktfoto17)
+g_tgltrn        akttgl  REPLACE
+cY1             aktdk   DO_CALC_IF cfotobaru17
+
+DBCALCS(dupdfoto17)
+DBC_COMMAND     UPDATE
+DBC_TARGET      aktprmidx   aktprm
+DBC_MAP         mupdaktfoto17
+
+EDITS(tmptranst)
+e.Mandatory	aktdf2	MANDATORY_IF cadaBooking
+
+MAP(mTtlBooking627)
+cHitungTtl627	aktdf1		DO_CALC
+g_usrkode	aktcrtusr	REPLACE_IF cubhBooking
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=aktdf1	DO_SCAN_IF cubhBooking dbscanbooking627a
+AFTER_INPUT	cur_field=aktdf1	DO_SCAN_IF cubhBooking dbscanbooking627b
+AFTER_INPUT	cur_field=aktdf1	DO_SCAN_IF cubhBooking dbscanbooking627c
+AFTER_INPUT	cur_field=aktdf1	DO_MAP SHOW mTtlBooking627
+
+AFTER_INPUT	cur_field=aktdf2	DO_MAP
+		IF cBedaBooking mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.BookingTdkSama
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cbisadetail
+SFL_UPL_DELCOND c0
+SFL_UPLFLD tlmnobuk akttype
+SFL_UPLFLD_DBCALCS dupdfoto17
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_CAMERAONLY
+SFL_UPL_DIRFLD tlmtgl
+SFL_TARGET
+aktkodtypidx       tlmnobuk tlmdata     lBOOKSIGN
+

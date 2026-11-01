@@ -1,0 +1,93 @@
+LOCAL
+PGM_FIELDS
+ln1                     INT2    2
+ln1i                    INT2    2
+ln2i                    INT2    2
+ldigit1                 STRING  2
+ldigit2                 STRING  2
+ljumlahnomor            INT2    2
+ltmplhr			STRING	21
+
+IMAGE(tmptranst)
+/-------------------------------------------------------\
+|/-----------------------------------------------------\|
+||               _________________                     ||
+|| t.EmailPrb  : _____________________________________ ||
+|| t.HpPrb     : _________________                     ||
+|| i.Tmplahir  : ________________                      ||
+|| t.PndkkanTr : ________________                      ||
+|| t.ketTmpLhr 					       ||
+|\-----------------------------------------------------/|
+\-------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnobuk 	PROTECT  SCROLL		INPUTRI		1
+tldket   	NONE SCROLL		INPUTRI		1
+tldnobbm 	DIGITS SCROLL 		INPUTRI		2
+tldstr2		ALLCAPS			INPUTRI		3
+tldstr1		ALLCAPS			INPUTRI 	4
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg		INIT_ADD	{g_usrkode}
+ln1             INIT            1
+ln1i            INIT            1
+ln2i            INIT            2
+
+EDITS(tmptranst)
+e.Mandatory     tldket          MANDATORY
+e.Mandatory     tldnobbm        MANDATORY
+e.Mandatory	tldstr2		MANDATORY
+e.Mandatory	tldstr1		MANDATORY
+t.ValidateTmpLhr tldstr2	VALIDATE tbddatkodidx mtbdtmplhr stbd {Pgv_dttabel} {Pgv_infoumum} {Pgt_kotalahir}
+e.Validate	tldstr1		VALIDATE tbddatkodidx mtdpnddkn stbd {Pgv_dttabel} {Pgv_personal} {PlJENJANGPENDIDIKAN}
+
+MAP(mtdpnddkn)
+tbdkode		tldstr1		REPLACE
+
+MAP(mtbdtmplhr)
+tbdkode		tldstr2		REPLACE
+
+MAP(mjoinpsmtmplhr)
+psmtmplahir	ltmplhr		REPLACE
+
+DBCALCS(djoinpsmtmplhr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx tlmdari
+	DBC_MAP		mjoinpsmtmplhr
+
+CALCS()
+cbukan08                ldigit1=="0" && ldigit2=="8" && ljumlahnomor>=10 && ljumlahnomor<=13
+cpanjangnom             DO_LIB ap_strln(tldnobbm,&ljumlahnomor);
+cjoinpsmtmplhr		djoinpsmtmplhr == 1
+
+MAP(mpanjangnom)
+cpanjangnom             ljumlahnomor            DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=tldket	 DO_MAP SHOW mtmplhr
+AFTER_INPUT             cur_field=tldnobbm       DO_LIB ap_amstr(tldnobbm,ln1i,ln1,&ldigit1);
+AFTER_INPUT             cur_field=tldnobbm       DO_LIB ap_amstr(tldnobbm,ln2i,ln1,&ldigit2);
+AFTER_INPUT             cur_field=tldnobbm    	 DO_MAP SHOW mpanjangnom
+
+AFTER_INPUT             cur_field=tldnobbm DO_MAP SHOW
+                        IF cbukan08 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+MAP(mtmplhr)
+ltmplhr		tldstr2		REPLACE_IF cjoinpsmtmplhr
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+tldbukurtidx    tlmnobuk   
+
+
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+tlmdata         tlddata         REPLACE
+
+

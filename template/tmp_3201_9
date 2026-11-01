@@ -1,0 +1,131 @@
+LOCAL
+PGM_FIELDS
+ltergsm		STRING		21
+lterwa		STRING		21
+ldeskcall	STRING		11
+lDTLP		STRING		21
+ltldkatx	STRING		21
+ltldlok2x	STRING		21
+ltldkat_1	STRING		21
+ltldlok2_1	STRING		21
+ltldkat_2	STRING		21
+ltldlok2_2	STRING		21
+ltldkat_3	STRING		21
+ltldlok2_3	STRING		21
+ltldkat_4	STRING		21
+ltldlok2_4	STRING		21
+
+CALCS()
+ctldnourt1		tldnourt == 1 && tldth == "MKTG"
+ctldnourt2		tldnourt == 2 && tldth == "SVY"
+ctldnourt3		tldnourt == 3 && tldth == "AKL"
+ctldnourt4		tldnourt == 4 && tldth == "873"
+
+MAP(mdjointelpx)
+tldkat		ltldkatx	REPLACE
+tldlok2		ltldlok2x	REPLACE
+
+DBCALCS(djointldtelpx)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr    ldeskcall gv_OPEN aktbukoto lDTLP
+	DBC_MAP		mdjointelpx
+
+MAP(mdjointelp)
+tldkat		ltldkat_1	REPLACE
+tldlok2		ltldlok2_1	REPLACE
+
+DBCALCS(djointldtelp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr    ldeskcall gv_OPEN aktbukoto lDTLP
+	DBC_SELECT	ctldnourt1
+	DBC_MAP		mdjointelp
+
+MAP(mdjointelp2)
+tldkat		ltldkat_2	REPLACE
+tldlok2		ltldlok2_2	REPLACE
+
+DBCALCS(djointldtelp2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr	ldeskcall gv_OPEN aktbukoto lDTLP
+	DBC_SELECT	ctldnourt2
+	DBC_MAP		mdjointelp2
+
+MAP(mdjointelp3)
+tldkat		ltldkat_3	REPLACE
+tldlok2		ltldlok2_3	REPLACE
+
+DBCALCS(djointldtelp3)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr	ldeskcall gv_OPEN aktbukoto lDTLP
+	DBC_SELECT	ctldnourt3
+	DBC_MAP		mdjointelp3
+
+MAP(mdjointelp4)
+tldkat		ltldkat_4	REPLACE
+tldlok2		ltldlok2_4	REPLACE
+
+DBCALCS(djointldtelp4)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldstsbrgukr	ldeskcall gv_OPEN aktbukoto lDTLP
+	DBC_SELECT	ctldnourt4
+	DBC_MAP		mdjointelp4
+
+
+IMAGE(tmptranst)
+/--t-------t-------t------t--------t------t--------t--------t---------t---------t--------t-------t--------t-------\                               
+|No|t.NoBuk|t.Bisnis|t.NoGsm|t.NoWa|t.Status|t.Ket |t.TglUbh|t.NipUbh|t.GroupLg|t.NipDesk|t.Pysln|t.HubGsm|t.HubWa|
+\--.-------.-------.------.--------.------.--------,--------,---------,---------,--------,-------,--------,-------/                               
+
+
+IMAGE(tmptrans) 
+|__|_______|_______|______|________|______|________|________|_________|_________|_______|________|________|_______|	
+
+FIELD(tmptrans)
+akturt          PROTECT         		INPUTRI 1  
+aktbukoto	PROTECT	SCROLL			INPUTRI 1
+aktcab		PROTECT SCROLL			INPUTRI 2 /*bisnis*/
+aktkode		PROTECT SCROLL			INPUTRI 3 /*no gsm*/
+aktkode2	PROTECT	SCROLL			INPUTRI 4 /*no wa*/
+akttype		PROTECT	SCROLL			INPUTRI 5 /*status*/
+aktbrg		PROTECT	SCROLL			INPUTRI 6 /*keterangan*/
+akttgl		PROTECT SCROLL {DD-MM-YY}	INPUTRI 7 /*tgl ubh*/
+aktcrtusr	PROTECT SCROLL			INPUTRI 8 /*nip ubh */
+aktlok		PROTECT	SCROLL			INPUTRI 9 /*group login*/
+aktscr		PROTECT SCROLL			INPUTRI 10 /*nipdesk*/
+aktket		PROTECT	SCROLL			INPUTRI 11 /*penyelesaian*/
+ltergsm		PROTECT SCROLL			INPUTRI 12
+lterwa		PROTECT	SCROLL			INPUTRI 13
+
+DEFAULTS(tmptrans)
+ldeskcall	INIT	DESKCALL
+lDTLP		INIT	DTLP
+
+CALCS()
+cselectdata	aktdata == "HSTRNOHP"
+cdjointldtelpx	djointldtelpx == 1 && (ltldkatx != BLANKS || ltldlok2x != BLANKS)
+cdjointldtelp	djointldtelp == 1 && (ltldkat_1 != BLANKS || ltldlok2_1 != BLANKS)
+cdjointldtelp2	djointldtelp2 == 1 && (ltldkat_2 != BLANKS || ltldlok2_2 != BLANKS)
+cdjointldtelp3	djointldtelp3 == 1 && (ltldkat_3 != BLANKS || ltldlok2_3 != BLANKS)
+cdjointldtelp4	djointldtelp4 == 1 && (ltldkat_4 != BLANKS || ltldlok2_4 != BLANKS)
+
+EDIT(tmptrans)
+e.validate      aktcrtusr		VALIDATE psikodidx mtld 
+
+MAP(mtld)
+ltldkatx	ltergsm		REPLACE_IF cdjointldtelpx
+ltldlok2x	lterwa		REPLACE_IF cdjointldtelpx
+ltldkat_1	ltergsm		REPLACE_IF cdjointldtelp
+ltldlok2_1	lterwa		REPLACE_IF cdjointldtelp
+ltldkat_2	ltergsm		REPLACE_IF cdjointldtelp2
+ltldlok2_2	lterwa		REPLACE_IF cdjointldtelp2
+ltldkat_3	ltergsm		REPLACE_IF cdjointldtelp3
+ltldlok2_3	lterwa		REPLACE_IF cdjointldtelp3
+ltldkat_4	ltergsm		REPLACE_IF cdjointldtelp4
+ltldlok2_4	lterwa		REPLACE_IF cdjointldtelp4
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(10)
+SFL_SELECT cselectdata
+SFL_TARGET      
+aktbukotoidx    psmktp

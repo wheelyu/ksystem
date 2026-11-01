@@ -1,0 +1,509 @@
+LOCAL
+PGM_FIELDS
+lnamakons		STRING		31
+lnomorkons735		STRING		21
+lnomorkons740		STRING		21
+
+lkethub                 STRING		31
+lketkunj                STRING		31
+lketalmt                STRING		45
+lketkeb                 STRING		45
+lketkerjakons           STRING		45
+lKUNJSPV       		STRING          11
+
+lm4752x                 STRING  	15
+
+ltldlok2735		STRING		21
+ltldjmlren735		DFLOAT		8 
+ltglawlblnll		DATE		4
+ladabyr			INT2		2
+lrmdpiutlayak2		STRING		61
+lkonslayak		STRING		21
+lkerjalayak		STRING		21
+lunitlayak		STRING		21	
+lbayarlayak		STRING		21
+
+
+lhasil1piutlayak2	DFLOAT		8
+lhasil2piutlayak2	DFLOAT		8
+lhasil3piutlayak2	DFLOAT		8
+lhasil1strpiutlayak2	STRING		21
+lhasil2strpiutlayak2	STRING		21
+
+MAP(mjoinpsm)
+psmnama		lnamakons	REPLACE
+
+DBCALCS(djoinpsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmktpidx pikplg
+	DBC_MAP		mjoinpsm
+
+CALCS()
+ckondisitelp	condata=="TELP"
+
+MAP(mjoincon)
+conhp		lnomorkons740	REPLACE
+
+DBCALCS(djoincon)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx pikplg
+	DBC_SELECT	ckondisitelp
+	DBC_MAP		mjoincon
+
+MAP(mjoinsvi1)
+svistr9		lnomorkons735	REPLACE
+
+DBCALCS(djoinsvi1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp    gv_kunjungan11 mtsnobuk lKUNJKOL1
+	DBC_MAP		mjoinsvi1
+
+CALCS()
+cadatglbyr	anhtglbyr >= ltglawlblnll && anhtglbyr <= ststglprjgl
+
+MAP(mscananh)
+c1		ladabyr		DO_CALC_IF cadatglbyr
+
+DBCALCS(dscananh)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	anhbukotourt   anhnobuk
+	DBC_SUM_MAP     mscananh
+
+DBCALCS(djoinrmdpiutlyk2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	rmdstsgabidx   gv_INPG lrmdpiutlayak2
+
+DBCALCS(djoinaktfakprio)
+	DBC_COMMAND	JOIN
+        DBC_TARGET      aktkodtypidx mtsnoasal lKUNJUNGAN2 lFKTPRIO
+
+DBCALCS(djoinaktlykkunj)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	aktkodtypidx mtsnoasal lKUNJUNGAN2 lDTLAYAKFAK
+
+MAP(mjointld735)
+tldlok2			ltldlok2735	REPLACE
+tldjmlren		ltldjmlren735	REPLACE
+
+DBCALCS(djointld735)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukurtidx mtsnobuk gv_int1
+	DBC_MAP		mjointld735
+	
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.NoFak      :___________________||
+||t.NamaKons   :___________________||
+||t.nomorkons  :___________________||
+||t.nomorkons  :___________________||
+||t.TglKunj    :___________________||
+||t.AlmtKons   :___________________||
+||t.BisaDiHub  :__ ________________||
+||t.KolAdaKunj :__ ________________||
+||t.AlmtMshSama:__ ________________||
+||t.Kebunit    :__ ________________||
+||t.PkrjKons   :__ ________________||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+mtsnoasal		ALLCAPS			INPUTRI 1
+lnamakons		PROTECT			INPUTRI	2  /*	Nama Kons	*/
+lnomorkons735		PROTECT			INPUTRI 3  /*	Nomor Telp 735	*/
+lnomorkons740		PROTECT                 INPUTRI 4  /*    Nomor Telp 740 */
+mtstgl			PROTECT {DD-MM-YYY}	INPUTRI 5  /* 	Tgl Kunj	*/
+lalamatkons		PROTECT			INPUTRI 6  /*	Alamat Kons	*/
+svidf1			NOCHANGE		INPUTRI 7  /*	Bisa Di Hub	*/
+lkethub			PROTECT			INPUTRI 7
+sviyt1			NOCHANGE		INPUTRI 8  /*	Kol Ada Kunj	*/
+lketkunj		PROTECT			INPUTRI 8
+svidf2			NOCHANGE		INPUTRI 9  /*	Almt Masih Sama	*/
+lketalmt		PROTECT			INPUTRI 9
+svidf3			NOCHANGE		INPUTRI 10 /*	Keberadaan Unit	*/
+lketkeb			PROTECT			INPUTRI	10
+svidf4			NOCHANGE		INPUTRI 11 /*	Pekerjaan Kons	*/
+lketkerjakons		PROTECT			INPUTRI 11
+
+CALCS()
+cjoinpsm	djoinpsm==1
+cjoincon	djoincon==1
+cjoinsvitelp	djoinsvi1==1
+
+DEFAULTS(tmptranst)
+lKUNJKOL1		INIT			KUNJKOL1
+lKUNJKOL31		INIT			KUNJKOL31
+lKUNJSPV        	INIT			KUNJSPV
+lm4752x                 INIT    		m4752x
+svidata			INIT			KUNJUNGAN
+svitype			INIT			KUNJKOL31
+
+svidtmkode		INIT			{g_usrkode}
+
+svidf1			DFALT_SCAN_BLANKS	1 "DAPAT DI HUB DAN DIANGKAT"
+                                                2 "DAPAT DI HUB DAN TDK DIANGKAT"
+						3 "TDK DAPAT DI HUB / TDK AKTIF"
+						4 "NOMOR TDK VALID"
+
+sviyt1                  DFALT_SCAN_BLANKS       Y "YA (VALID)"
+						T "TIDAK (TIDAK VALID)"
+
+svidf2                  DFALT_SCAN_BLANKS       1 "KONS MASIH TINGGAL DI ALAMAT TGH"
+						2 "KONS PINDAH DAN ALAMAT BARU DIKETAHUI"
+						3 "KONS PINDAH DAN ALMT BARU TKD DIKETAHUI"
+						4 "KONS MENINGGAL DUNIA/DI RMH SAKIT/DIRAWAT"
+						5 "KONS KABUR"
+
+svidf3                  DFALT_SCAN_BLANKS       1 "UNIT DI DEBITUR"
+                                                2 "UNIT DI ANGGOTA KELUARGA"
+                                                3 "UNIT DI GADAI"
+                                                4 "UNIT DI LUAR KOTA"
+						5 "UNIT DI ORMAS"
+						6 "UNIT DI ASURANSI"
+						7 "UNIT DI KEPOLISIAN"
+						8 "UNIT DI PENGADILAN"
+						9 "UNIT DI ORNG LAIN BKN KELUARGA"
+						10 "UNIT DI CURI"
+						11 "UNIT HLNG TDK ADA KETERANGAN"
+
+svidf4                  DFALT_SCAN_BLANKS       1 "AGEN"
+						2 "DAGANG JUAL JASA"
+						3 "DAGANG MAKAN KELILING"
+						4 "DAGANG MKN PNYA TMPT USAHA TTP"
+						5 "DAGANG PUNYA STOK"
+						6 "KARYAWAN NSS BLM PKT"
+						7 "KARYAWAN SWASTA"
+						8 "SERABUTAN"
+						9 "NELAYAN"
+						10 "PEGAWAI NEGERI"
+						11 "PETANI/PEKEBUN PEKERJA"
+						12 "PETANI/PEKEBUN PEMILIK"
+						13 "PROFESI"
+						14 "TERNAK"
+						15 "IBU RUMAH TANGGA"
+						16 "MAFIA"
+						17 "PENGANGGURAN"
+
+
+
+CALCS()
+ckond1		svidf1==1
+
+chub1		"DAPAT DI HUB DAN DIANGKAT"
+chub2		"DAPAT DI HUB DAN TDK DIANGKAT"
+chub3 		"TDK DAPAT DI HUB / TDK AKTIF"
+chub4 		"NOMOR TDK VALID"
+
+chub1x          svidf1==1
+chub2x          svidf1==2
+chub3x          svidf1==3
+chub4x          svidf1==4
+
+ckolY 		"YA (VALID)"
+ckolT 		"TIDAK (TIDAK VALID)"
+
+ckolYx		sviyt1=="Y"
+ckolTx		sviyt1=="T"
+
+calamatsama1	"KONS MASIH TINGGAL DI ALAMAT TGH"
+calamatsama2 	"KONS PINDAH DAN ALAMAT BARU DIKETAHUI"
+calamatsama3 	"KONS PINDAH DAN ALMT BARU TKD DIKETAHUI"
+calamatsama4 	"KONS MENINGGAL DUNIA/DI RMH SAKIT/DIRAWAT"
+calamatsama5 	"KONS KABUR"
+
+calamatsama1x	svidf2==1
+calamatsama2x	svidf2==2
+calamatsama3x	svidf2==3
+calamatsama4x	svidf2==4
+calamatsama5x	svidf2==5
+
+ckebunitkons1 	"UNIT DI DEBITUR"
+ckebunitkons2 	"UNIT DI ANGGOTA KELUARGA"
+ckebunitkons3 	"UNIT DI GADAI"
+ckebunitkons4 	"UNIT DI LUAR KOTA"
+ckebunitkons5 	"UNIT DI ORMAS"
+ckebunitkons6 	"UNIT DI ASURANSI"
+ckebunitkons7 	"UNIT DI KEPOLISIAN"
+ckebunitkons8 	"UNIT DI PENGADILAN"
+ckebunitkons9 	"UNIT DI ORNG LAIN BKN KELUARGA"
+ckebunitkons10 	"UNIT DI CURI"
+ckebunitkons11 	"UNIT HLNG TDK ADA KETERANGAN"
+
+
+ckebunitkons1x	svidf3==1
+ckebunitkons2x	svidf3==2
+ckebunitkons3x	svidf3==3
+ckebunitkons4x	svidf3==4
+ckebunitkons5x	svidf3==5
+ckebunitkons6x	svidf3==6
+ckebunitkons7x	svidf3==7
+ckebunitkons8x	svidf3==8
+ckebunitkons9x	svidf3==9
+ckebunitkons10x	svidf3==10
+ckebunitkons11x	svidf3==11
+
+cketkerja1 	"AGEN"
+cketkerja2 	"DAGANG JUAL JASA"
+cketkerja3 	"DAGANG MAKAN KELILING"
+cketkerja4 	"DAGANG MKN PNYA TMPT USAHA TTP"
+cketkerja5 	"DAGANG PUNYA STOK"
+cketkerja6 	"KARYAWAN NSS BLM PKT"
+cketkerja7 	"KARYAWAN SWASTA"
+cketkerja8 	"SERABUTAN"
+cketkerja9 	"NELAYAN"
+cketkerja10 	"PEGAWAI NEGERI"
+cketkerja11 	"PETANI/PEKEBUN PEKERJA"
+cketkerja12 	"PETANI/PEKEBUN PEMILIK"
+cketkerja13 	"PROFESI"
+cketkerja14 	"TERNAK"
+cketkerja15 	"IBU RUMAH TANGGA"
+cketkerja16 	"MAFIA"
+cketkerja17 	"PENGANGGURAN"
+
+cketkerja1x	svidf4==1
+cketkerja2x	svidf4==2
+cketkerja3x	svidf4==3
+cketkerja4x	svidf4==4
+cketkerja5x	svidf4==5
+cketkerja6x	svidf4==6
+cketkerja7x	svidf4==7
+cketkerja8x	svidf4==8
+cketkerja9x	svidf4==9
+cketkerja10x	svidf4==10
+cketkerja11x	svidf4==11
+cketkerja12x	svidf4==12
+cketkerja13x	svidf4==13
+cketkerja14x	svidf4==14
+cketkerja15x	svidf4==15
+cketkerja16x	svidf4==16
+cketkerja17x	svidf4==17
+
+cbkn1		svidf1!=1
+
+EDITS(tmptranst)
+
+e.Mandatory	svidf1	MANDATORY 
+e.Mandatory	sviyt1	MANDATORY_IF ckond1
+e.Mandatory	svidf2	MANDATORY_IF ckond1 
+e.Mandatory	svidf3	MANDATORY_IF ckond1
+e.Mandatory	svidf4	MANDATORY_IF ckond1
+
+
+e.Validatenobuk mtsnoasal VALIDATE pikdatbukidx mmap2 0 {Pgv_dtpiu} /*	Validate PIK	*/
+
+MAP(m4752x)
+mtsnobuk        r_string20       REPLACE
+lKUNJKOL31      r_string22       REPLACE
+svidf1		r_count1	 REPLACE
+
+MAP(mmap2)
+piknobuk	svikode			REPLACE
+pikplg		pikplg			REPLACE
+piknobtm	piknobtm		REPLACE
+
+lnamakons	lnamakons		REPLACE_IF cjoinpsm
+lnomorkons740	lnomorkons740		REPLACE_IF cjoincon
+lnomorkons735	lnomorkons735		REPLACE_IF cjoinsvitelp
+lalamatkons	lalamatkons		REPLACE_IF cjoinalmtgh
+
+cBLANKS		lkethub                 DO_CALC
+chub1		lkethub			DO_CALC_IF chub1x
+chub2           lkethub                 DO_CALC_IF chub2x
+chub3           lkethub                 DO_CALC_IF chub3x
+chub4           lkethub                 DO_CALC_IF chub4x
+
+cBLANKS		lketkunj                DO_CALC
+ckolY		lketkunj		DO_CALC_IF ckolYx
+ckolT		lketkunj		DO_CALC_IF ckolTx
+
+cBLANKS		lketalmt                DO_CALC
+calamatsama1	lketalmt		DO_CALC_IF calamatsama1x
+calamatsama2	lketalmt		DO_CALC_IF calamatsama2x
+calamatsama3	lketalmt		DO_CALC_IF calamatsama3x
+calamatsama4	lketalmt		DO_CALC_IF calamatsama4x
+calamatsama5	lketalmt		DO_CALC_IF calamatsama5x
+
+cBLANKS		lketkeb                 DO_CALC
+ckebunitkons1	lketkeb			DO_CALC_IF ckebunitkons1x
+ckebunitkons2	lketkeb			DO_CALC_IF ckebunitkons2x
+ckebunitkons3	lketkeb			DO_CALC_IF ckebunitkons3x
+ckebunitkons4	lketkeb			DO_CALC_IF ckebunitkons4x
+ckebunitkons5	lketkeb			DO_CALC_IF ckebunitkons5x
+ckebunitkons6	lketkeb			DO_CALC_IF ckebunitkons6x
+ckebunitkons7	lketkeb			DO_CALC_IF ckebunitkons7x
+ckebunitkons8	lketkeb			DO_CALC_IF ckebunitkons8x
+ckebunitkons9	lketkeb			DO_CALC_IF ckebunitkons9x
+ckebunitkons10	lketkeb			DO_CALC_IF ckebunitkons10x
+ckebunitkons11	lketkeb			DO_CALC_IF ckebunitkons11x
+
+cBLANKS		lketkerjakons           DO_CALC
+cketkerja1	lketkerjakons		DO_CALC_IF cketkerja1x
+cketkerja2	lketkerjakons		DO_CALC_IF cketkerja2x
+cketkerja3	lketkerjakons		DO_CALC_IF cketkerja3x
+cketkerja4	lketkerjakons		DO_CALC_IF cketkerja4x
+cketkerja5	lketkerjakons		DO_CALC_IF cketkerja5x
+cketkerja6	lketkerjakons		DO_CALC_IF cketkerja6x
+cketkerja7	lketkerjakons		DO_CALC_IF cketkerja7x
+cketkerja8	lketkerjakons		DO_CALC_IF cketkerja8x
+cketkerja9	lketkerjakons		DO_CALC_IF cketkerja9x
+cketkerja10	lketkerjakons		DO_CALC_IF cketkerja10x
+cketkerja11	lketkerjakons		DO_CALC_IF cketkerja11x
+cketkerja12	lketkerjakons		DO_CALC_IF cketkerja12x
+cketkerja13	lketkerjakons		DO_CALC_IF cketkerja13x
+cketkerja14	lketkerjakons		DO_CALC_IF cketkerja14x
+cketkerja15	lketkerjakons		DO_CALC_IF cketkerja15x
+cketkerja16	lketkerjakons		DO_CALC_IF cketkerja16x
+cketkerja17	lketkerjakons		DO_CALC_IF cketkerja17x
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=mtsnoasal	DO_SKIP_IF c1
+BEFORE_INPUT	cur_field=sviyt1	DO_SKIP_IF cbkn1
+BEFORE_INPUT	cur_field=svidf2	DO_SKIP_IF cbkn1
+BEFORE_INPUT	cur_field=svidf3	DO_SKIP_IF cbkn1
+BEFORE_INPUT	cur_field=svidf4	DO_SKIP_IF cbkn1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp    gv_kunjungan11 mtsnobuk lKUNJKOL31
+
+SFL_MAP
+mtsnobuk        svinobuk        REPLACE
+mtsnoasal       svikode		REPLACE
+l1              svinourt        REPLACE
+gv_kunjungan11  svidata         REPLACE
+lKUNJKOL31      svitype         REPLACE
+
+CALCS()
+cabktypeverifbm	abktype=="VERIFBM" && abkkym==mtstype2
+cbedaverif	svidf1!=1 && mtsdvs!="M4W"
+
+ctglawlblnll    DO_LIB ap_tambl(ltglawlbln,lmin1,&ltglawlblnll);
+
+cTDKADA		"TIDAKADA"
+cSELESAI	"SELESAI"
+
+
+crmdpiutlayak2	"PIUTLAYAK2" + STRIP(lkonslayak) + STRIP(lkerjalayak) + STRIP(lunitlayak) + STRIP(lbayarlayak)
+cusiamts	(mtsgrup2=="Z0" || mtsgrup2=="Z1" || mtsgrup2=="Z2" || mtsgrup2=="Z4" || mtsgrup2=="Z6")
+
+cadakonslyk	(svidf1==1 && (svidf2==1 || svidf2==2)) || (svidf1!=1 && (djointrans==1 && djointld735==1 && ((lsvistr4=="ISTRI" || 
+		lsvistr4=="KELUARGA" || lsvistr4=="KONSUMEN" || lsvistr4=="ORANGTUA" || lsvistr4=="SUAMI" || lsvistr4=="SAUDARAKANDUNG") || 
+		((lsvistr4=="KETUART" || lsvistr4=="KETUARW" || lsvistr4=="TETANGGA") && (ltldlok2735=="01" || ltldlok2735=="02" || 
+		ltldlok2735=="03" || ltldlok2735=="04" || ltldlok2735=="05" || ltldlok2735=="07" || ltldlok2735=="08" || ltldlok2735=="10")) 
+		|| (ltldjmlren735==2 && (ltldlok2735=="01" || ltldlok2735=="02" || ltldlok2735=="03" || ltldlok2735=="04" || 
+		ltldlok2735=="05" || ltldlok2735=="07" || ltldlok2735=="08" || ltldlok2735=="10")))))
+
+ctdkkonslyk	(svidf1==1 && (svidf2==3 || svidf2==4 || svidf2==5))|| (svidf1!=1 && (((lsvistr4=="KETUART" || lsvistr4=="KETUARW" || 
+		lsvistr4=="TETANGGA") && (ltldlok2735=="06" || ltldlok2735=="09")) || (ltldjmlren735==2 && (ltldlok2735=="06" || 
+		ltldlok2735=="09"))))
+
+cadakerjalyk	(svidf1==1 && (svidf4==1 || svidf4==2 || svidf4==3 || svidf4==4 || svidf4==5 || svidf4==6 || svidf4==7 || svidf4==8 || 
+		svidf4==9 || svidf4==10 || svidf4==11 || svidf4==12 || svidf4==13 || svidf4==14)) || 
+		(svidf1!=1 && (djointrans==1 && (lkerja1!="" && lkerja1!="IR" && lkerja1!="PE" && lkerja1!="MF")))
+
+ctdkkerjalyk	(svidf1==1 && (svidf4==15 || svidf4==16 || svidf4==17)) || (svidf1!=1 && (djointrans==1 && (lkerja1=="PE" || lkerja1=="MF" 
+		|| lkerja1=="IR")))
+
+cadaunitlyk	(svidf1==1 && (svidf3==1 || svidf3==2 || svidf3==3 || svidf3==4 || svidf3==5 || svidf3==6 || svidf3==7 || svidf3==8)) ||
+		(svidf1!=1 && (djointrans==1 && lsvistr36=="Y"))
+
+ctdkunitlyk	(svidf1==1 && (svidf3==9 || svidf3==10 || svidf3==11)) || (svidf1!=1 && (djointrans==1 && lsvistr36=="T"))
+
+cbyrselesai	(dscananh==0 || dscananh!=0) && ladabyr > 0
+cbyralir	(dscananh==0 || dscananh!=0) && ladabyr < 1
+
+cjoinrmdpiutlyk2 lrmdpiutlayak2!=BLANKS && djoinrmdpiutlyk2==1
+
+cupdaktfakprio	djoinaktfakprio==1
+caddaktfakprio	djoinaktfakprio==0
+
+cupdaktlayak	djoinaktlykkunj==1
+caddaktlayak	djoinaktlykkunj==0
+
+MAP(mupdabkverifbm)
+gv_CLSD		abksts		REPLACE_IF cabktypeverifbm
+
+MAP(mmappiutlayak2)
+cBLANKS			lkonslayak		DO_CALC
+cBLANKS			lkerjalayak		DO_CALC
+cBLANKS			lunitlayak		DO_CALC
+cBLANKS			lbayarlayak		DO_CALC
+cBLANKS			lrmdpiutlayak2		DO_CALC
+cBLANKS			ltglawlblnll		DO_CALC
+
+ctglawlblnll		ltglawlblnll		DO_CALC
+
+cADA			lkonslayak		DO_CALC_IF cadakonslyk
+cTDKADA			lkonslayak		DO_CALC_IF ctdkkonslyk
+
+cADA			lkerjalayak		DO_CALC_IF cadakerjalyk
+cTDKADA			lkerjalayak		DO_CALC_IF ctdkkerjalyk
+
+cADA			lunitlayak		DO_CALC_IF cadaunitlyk
+cTDKADA			lunitlayak		DO_CALC_IF ctdkunitlyk
+
+cSELESAI		lbayarlayak		DO_CALC_IF cbyrselesai
+cALIR			lbayarlayak		DO_CALC_IF cbyralir
+
+crmdpiutlayak2		lrmdpiutlayak2		DO_CALC_IF cusiamts
+
+DEBUG		ldum		ldum		REPLACE
+
+MAP(mmap2piutlayak2)
+lhasil1strpiutlayak2	lhasil1strpiutlayak2	REPLACE	/*	FAKPRIO		*/
+lhasil2strpiutlayak2	lhasil2strpiutlayak2	REPLACE /*	LAYAK		*/
+DEBUG		ldum		ldum		REPLACE
+
+MAP(mupdaktfakprio)
+lhasil1strpiutlayak2    aktket          REPLACE
+mtstgl			akttgl		REPLACE
+DEBUG		ldum		ldum		REPLACE
+
+MAP(maddaktfakprio)
+lKUNJUNGAN2		aktdata		REPLACE
+lFAKPRIO		akttype		REPLACE
+lFAKPRIO		aktbrg		REPLACE
+mtsnoasal		aktkode		REPLACE
+mtsgrup2		aktkode2	REPLACE
+mtstgl			akttgl		REPLACE
+lhasil1strpiutlayak2	aktket		REPLACE
+DEBUG		ldum		ldum		REPLACE
+
+MAP(mupdaktlayak)
+lhasil2strpiutlayak2	aktket		REPLACE
+mtstgl			akttgl		REPLACE
+DEBUG		ldum		ldum		REPLACE
+
+MAP(maddaktlayak)
+lKUNJUNGAN2		aktdata		REPLACE
+lDTLAYAKFAK11		akttype		REPLACE
+lDTLAYAKFAK11		aktbrg		REPLACE
+mtsnoasal		aktkode		REPLACE
+mtsgrup2		aktkode2	REPLACE
+mtstgl			akttgl		REPLACE
+lhasil2strpiutlayak2    aktket          REPLACE
+DEBUG		ldum		ldum		REPLACE
+
+SPCALCS(spaddtmptrans)
+DO_LIB ap_dbclc(DNAME dupdabkverifbm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen mtsnobuk,DMAP mupdabkverifbm);
+DO_LIB_IF cbedaverif ap_nxpst(l4752,lm4752x);
+
+DO_LIB ap_dbclc(DNAME dmappiulayak2,DCOMMAND MAPMAP,DMAP mmappiutlayak2);
+DO_LIB_IF cjoinrmdpiutlyk2 ap_ambts(gv_INPG,lrmdpiutlayak2,lNol,lNol,lNol,&lhasil1piutlayak2,&lhasil2piutlayak2,&lhasil3piutlayak2,lhasil1strpiutlayak2,lhasil2strpiutlayak2);
+DO_LIB ap_dbclc(DNAME dmap2piutlayak2,DCOMMAND MAPMAP,DMAP mmap2piutlayak2);
+
+DO_LIB_IF cupdaktfakprio ap_dbclc(DNAME dupdaktfakprio,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx mtsnoasal lKUNJUNGAN2 lFKTPRIO,DMAP mupdaktfakprio);
+DO_LIB_IF caddaktfakprio ap_dbclc(DNAME daddaktfakprio,DCOMMAND ADD,DFILE akt,DMAP maddaktfakprio);
+DO_LIB_IF cupdaktlayak ap_dbclc(DNAME dupdaktlayak,DCOMMAND UPDATE_RANGE,DTARGET aktkodtypidx mtsnoasal lKUNJUNGAN2 lDTLAYAKFAK,DMAP mupdaktlayak);
+DO_LIB_IF caddaktlayak ap_dbclc(DNAME daddaktlayak,DCOMMAND ADD,DFILE akt,DMAP maddaktlayak);
+
+
+POSTING(tmptrans)
+PST_ADDCMD spaddtmptrans
+
+

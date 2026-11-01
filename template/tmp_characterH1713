@@ -1,0 +1,274 @@
+LOCAL
+PGM_FIELDS
+lsviotocharacter714	STRING	21
+lgabhubpenj3            STRING  21
+ljumlahnomor713         INT2    2
+ldigit1713              STRING  2
+ldigit2713              STRING  2
+
+IMAGE(tmptranst) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+   t.Character
+   spasi
+   i.Statuspemohon       : _______                    
+   i.Statuspenjamin      : _______                 
+   i.Hubpmhnpnjmn        : _______                    
+   i.Pendidikan          : _______
+   i.Indikasi5m          : _____  ____________  ___________________
+   i.Telpsdrtdksrmh      : ____________
+   i.Keterangan          : ______________________________________________________________________
+   spasi
+   t.CMSSesuai           : __  ______
+   t.AnalisaCMS     : ___________________________________________________________________________
+                      ______
+| \----------------------------------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------------------------------/
+
+
+FIELD(tmptranst)
+ftmcab 		ALLCAPS  SCROLL			INPUTRI 1
+ftmdvs 		ALLCAPS SCROLL			INPUTRI 2
+ftmkat 		ALLCAPS SCROLL			INPUTRI 3
+ftmbrg 		ALLCAPS SCROLL			INPUTRI 4
+ftmtype1	ALLCAPS SCROLL			INPUTRI 6
+ftmlok          ALLCAPS SCROLL                  INPUTRI 6
+ftmno3		ALLCAPS SCROLL			INPUTRI	6
+ftmwarna	DIGITS				INPUTRI	7
+ftmnama1        ALLCAPS SCROLL                  INPUTRI 8
+
+ftmtype4        ALLCAPS SCROLL                  INPUTRI 14
+lftmtype4       NOCHANGE                        INPUTRI 15
+
+ftmalamat2      TEXTAREA SCROLL                 INPUTRI 33
+lenter          NOCHANGE                        INPUTRI 34
+
+IMAGE(tmptrans)
+
+DEFAULTS(tmptranst)
+ftmlok 		DFALT_SCAN BLANKS MADON
+				  MADAT
+				  MADON
+				  MENCARI
+				  MEMBUNUH
+
+ftmtype4        DFALT_SCAN_BLANKS       Y " "
+                                        T " "
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+lCHARACTERH1713 INIT    "CHARACTERH1713"
+
+CALCS()
+cinitdktunggal1  btmstr1=="Y"
+cini5m1		ftmtype1=="Y" && btmsts=="713" && g_scrnumstr=="687"
+cgabhubpenj3    STRIP(ftmcab) + STRIP(ftmdvs)
+cstatusdi713	btmsts=="713" && g_scrnumstr=="687" 
+
+EDITS(tmptranst)
+e.validate ftmcab VALIDATE tbddatkodidx mtbd8_1 stbd {Pgv_dttabel} {Pgv_personal} {Pgt_stsnikah} /* ok */
+e.validate ftmdvs VALIDATE tbddatkodidx mtbd8_2 stbd {Pgv_dttabel} {Pgv_personal} {Pgt_stsnikah} /* ok */
+e.validate ftmbrg VALIDATE tbddatkodidx mtbd8_3 stbd {Pgv_dttabel} {Pgv_personal} {Pgv_pendidikan} /* ok */
+e.Validate ftmkat VALIDATE_IF cstatusdi713 tbtdattypkod  mtbt8_4 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {Pgt_stsnikah} {Plgabhubpenj3}
+e.Validate ftmtype1 VALIDATE tbddatkodidx mtbd8_5 stbd {Pgv_dttabel} {Pgv_kunjungan1} {Pgv_yt21}
+
+e.Validate      ftmlok          VALIDATE_IF cini5m1 tbddatkodidx  mtbd8_6 stbd {Pgv_dttabel} {Pgv_survey21} {Pl5m}
+e.validate      ftmno3          VALIDATE_IF cini5m1 tbtdattypkod  mtbt8_7 stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_survey21} {Pl5m} {Pftmlok}
+
+e.Mandatory                     ftmcab          MANDATORY
+e.Mandatory                     ftmdvs          MANDATORY_IF cinitdktunggal1
+e.Mandatory                     ftmkat          MANDATORY_IF cinitdktunggal1
+e.Mandatory                     ftmbrg          MANDATORY
+e.Mandatory                     ftmtype1        MANDATORY_IF cstatusdi713
+e.Mandatory                     ftmwarna        MANDATORY_IF cstatusdi713
+e.Mandatory                     ftmnama1        MANDATORY_IF cstatusdi713
+t.Mandatory5m			ftmlok  	MANDATORY_IF cini5m1
+t.Mandatory5m			ftmno3		MANDATORY_IF cini5m1
+e.Mandatory                     ftmtype4        MANDATORY_IF cdi714ok
+e.Mandatory                     ftmalamat2      MANDATORY_IF cdi714ok
+
+MAP(mtbd8_1)
+tbdkode         ftmcab          REPLACE
+
+MAP(mtbd8_2)
+tbdkode         ftmdvs          REPLACE
+cgabhubpenj3    lgabhubpenj3    DO_CALC
+
+MAP(mtbd8_3)
+tbdkode         ftmbrg          REPLACE
+
+MAP(mtbt8_4)
+tbtkode         ftmkat         REPLACE
+
+MAP(mtbd8_5)
+tbdkode		ftmtype1	REPLACE
+
+MAP(mtbd8_6)
+tbdkode         ftmlok		REPLACE
+
+MAP(mtbt8_7)
+tbtkode         ftmno3		REPLACE
+
+CALCS()
+cinitunggal1	btmstr1=="T"
+ctdk5m1		ftmtype1=="T"
+ckosong1	BLANKS
+cpanjangnom713  DO_LIB ap_strln(ftmwarna,&ljumlahnomor713);
+cbukan08di713   (ldigit1713=="0" && ldigit2713=="8" && ljumlahnomor713>=10 && ljumlahnomor713<=14 && g_scrnumstr=="687") || g_scrnumstr!="713" || (djoinsvicmobaru==1 && djoinsvivermkt610==1)
+ckecuali	g_usrkode =="2261664"
+
+MAP(mkosong5m1)
+ckosong1	ftmlok 		DO_CALC
+ckosong1	ftmno3		DO_CALC
+
+MAP(mpanjangnom713)
+cpanjangnom713             ljumlahnomor713      DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT  cur_field=ftmcab  DO_MAP SHOW mmapjaminput
+
+BEFORE_INPUT cur_field=ftmdvs  DO_SKIP_IF cinitunggal1
+BEFORE_INPUT cur_field=ftmkat  DO_SKIP_IF cinitunggal1
+BEFORE_INPUT cur_field=ftmlok  DO_SKIP_IF ctdk5m1
+BEFORE_INPUT cur_field=ftmno3  DO_SKIP_IF ctdk5m1
+
+BEFORE_INPUT cur_field=ftmcab DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmdvs DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmkat DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmbrg DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmtype1 DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmlok DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmwarna DO_SKIP_IF cdi714
+BEFORE_INPUT cur_field=ftmnama1 DO_SKIP_IF cdi714
+
+BEFORE_INPUT cur_field=ftmtype4 DO_SKIP_IF cmasih713
+BEFORE_INPUT cur_field=ftmalamat2 DO_SKIP_IF cmasih713
+
+AFTER_INPUT cur_field=ftmwarna      DO_LIB ap_amstr(ftmwarna,ln1i,ln1,&ldigit1713);
+AFTER_INPUT cur_field=ftmwarna      DO_LIB ap_amstr(ftmwarna,ln2i,ln1,&ldigit2713);
+AFTER_INPUT cur_field=ftmwarna      DO_MAP SHOW mpanjangnom713
+
+AFTER_INPUT  cur_field=ftmalamat2 DO_MAP SHOW mhitunganalisa
+
+AFTER_INPUT cur_field=ftmtype1 DO_MAP SHOW mkosong5m1
+
+AFTER_INPUT cur_field=ftmtype4 DO_MAP SHOW
+        IF cdjointkmvertelOPENdi7141     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cdjointkmvertelOPENdi7141    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.IsiVerTelp
+
+AFTER_INPUT cur_field=ftmalamat2 DO_MAP SHOW
+        IF canalisa50   mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT  cur_field=ftmwarna  DO_MAP SHOW
+        IF cbukan08di713     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF canalisa50    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.AnalisaCMSMin50
+
+AFTER_INPUT cur_field=ftmtype4 DO_MAP SHOW
+        IF cfid8     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cfid8    mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Fid8HOCREDIT
+
+AFTER_INPUT  cur_keybd=EN  DO_MAP SHOW
+        IF cbukan08di713     mdum714
+        ELSE HKCURSOR STAY
+        HKMSG t.Input Nomor Telepon Yang Benar
+
+MAP(mupdftmcharacter)
+gv_Y			ftmtype12	REPLACE
+
+DBCALCS(dupdftmchar)
+        DCOMMAND        UPDATE
+        DTARGET         ftmnofakidx   ftmnofak
+        DMAP            mupdftmcharacter
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)        
+SFL_DOCUPLFLD_DBCALCS	dupdftmchar
+SFL_DOCUPLFLD btmnobuk  ftmnofak
+SFL_DOCUPL_DELCOND ckecuali
+SFL_SHOW_NEXT
+SFL_TARGET
+	ftmdatbukidx   gv_characterH1 btmnobuk	
+
+SFL_MAP
+gv_datasurvey		ftmno1			REPLACE
+btmnobuk		ftmnofak		REPLACE
+gv_characterH1		ftmno2			REPLACE
+gv_INPG			ftmsts			REPLACE
+gv_characterH1		ftmdata			REPLACE
+
+MAP(mjoinsvicharacter714)
+svioto		lsviotocharacter714	REPLACE
+
+DBCALCS(djoinsvicharacter714)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   gv_datasurvey btmnobuk gv_characterH1
+	DBC_MAP		mjoinsvicharacter714
+
+MAP(mmapmapcharacter714)
+ftmtype4	ljawaban	REPLACE
+lCHARACTERH1713 l724DETAIL3     REPLACE
+
+CALCS()
+cdjoinsvicharacter7140	djoinsvicharacter714==0 && ljawaban=="Y"
+cdjoinsvicharacter7141  djoinsvicharacter714==1 && ljawaban=="T"
+
+MAP(maddsvicharacter714)
+gv_datasurvey           svidata                 REPLACE
+btmnobuk                svinobuk                REPLACE
+gv_characterH1          svitype                 REPLACE
+gv_characterH1          svikode                 REPLACE
+
+ftmcab		svistr1		REPLACE
+ftmdvs		svistr2		REPLACE
+ftmkat		svistr3		REPLACE
+ftmbrg		svistr4		REPLACE
+ftmtype1	svistr31	REPLACE
+ftmlok		svistr6		REPLACE
+ftmwarna	svistr8		REPLACE
+ftmnama1	sviket		REPLACE
+
+
+SPCALCS(spcharacter714)
+	DO_LIB ap_dbclc (DNAME dmapcharacter714,DCOMMAND MAPMAP,DMAP mmapmapcharacter714);
+	DO_LIB_IF cdjoinsvicharacter7140 ap_dbclc (DNAME daddsvicharacter714,DCOMMAND ADD,DFILE svi,DMAP maddsvicharacter714);
+	DO_LIB_IF cdjoinsvicharacter7141 ap_dbclc (DNAME ddelsvicharacter714,DCOMMAND DELETE,DTARGET sviotoidx lsviotocharacter714);
+	DO_LIB ap_nxpst(l4461,lm4461det3);
+
+SPCALCS(spcharacter714a)
+        DO_LIB ap_nxpst(l4461,lm4461det3);
+
+POSTING(tmptrans)
+        PST_UPDCMD spcharacter714
+	PST_ADDCMD spcharacter714a
+
+CALCS()
+ctambah_character713 btmsts == "713" && djoinftmcharacter==0 && g_scrnumstr=="687" && btmbichek!="SO" && btmbichek!="SH"
+cubah_character713   ((btmsts=="713" && g_scrnumstr=="687") || (btmsts == "714" && g_scrnumstr=="714") || (btmsts == "714" && g_scrnumstr=="724")) && djoinftmcharacter==1
+chapus_character713  btmsts == "713" && djoinftmcharacter==1 && g_scrnumstr=="687"
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    ctambah_character713
+        PMT_UPDALL_COND cubah_character713
+        PMT_DEL_COND    chapus_character713
+
+

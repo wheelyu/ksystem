@@ -1,0 +1,89 @@
+LOCAL
+PGM_FIELDS
+lterlaporx	STRING	21
+lnourt		INT2	2
+lkatksus	STRING	21
+llegal11c	STRING	11
+
+MAP(mjoinnourt)
+tldnourt        lnourt          REPLACE
+
+DBCALCS(djointldnourt)
+        DBC_COMMAND             JOIN_LAST_SFL
+        DBC_TARGET              tldstsbrgukr   llegal11c gv_OPEN tlmnobuk lterlaporx
+	DBC_MAP                 mjoinnourt
+
+CALCS()
+cINTRNL         lkatksus=="INTERNAL"
+cEXTRNL         lkatksus=="EKSTERNAL"
+
+IMAGE(tmptranst)
+/----t---------t--------t---------------------------------t-----------t------------\
+|t.No|t.Int/Ext|t.Nip   |t.Nama                           |t.Pekerjaan| t.TgldiThn |
+\----.---------.--------.---------------------------------.-----------.------------/
+
+IMAGE(tmptrans)
+|____|_________|________|_________________________________|___________|____________|
+
+FIELDS(tmptrans)
+tldnourt	PROTECT		   INPUTRI 1
+tldkat		ALLCAPS		   INPUTRI 2
+tldplg		ALLCAPS		   INPUTRI 3
+tldsat		ALLCAPS		   INPUTRI 4
+tlddvs		ALLCAPS		   INPUTRI 5
+tldtgl2		PROTECT            INPUTRI 6
+
+DEFAULTS(tmptrans)
+llegal11c		INIT			LEGAL
+lterlaporx		INIT			TERLAPOR
+lkatksus		INIT			{tlmkodeapr}
+IF cINTRNL tldkat	DFALT_SCAN  		INTERNAL EXTERNAL
+IF cEXTRNL tldkat	DFALT_SCAN		EXTERNAL
+
+EDITS(tmptrans)
+e.Mandatory	tldnourt	MANDATORY
+e.Mandatory	tldplg  	MANDATORY_IF cINTRNL
+e.Mandatory	tldkat 		MANDATORY
+e.Mandatory	tldsat 		MANDATORY
+e.Mandatory	tlddvs		MANDATORY
+
+e.Validate	tldplg	VALIDATE psikodidx mpsi spsi
+e.validate      tlddvs          VALIDATE_IF cext tbldtdtmkod mtbl stbl {Pgv_dttabel} {Pgv_pekerjaan21}
+
+MAP(mpsi)
+psikode		tldplg		REPLACE
+psinama		tldsat		REPLACE_IF cINTRNL
+psijabatan	tlddvs		REPLACE_IF cINTRNL
+cBLANKS		tldplg		DO_CALC_IF cEXTRNL
+cBLANKS		tlddvs		DO_CALC_IF cEXTRNL
+
+MAP(mtbl)
+tblkode		tlddvs		REPLACE
+
+CALCS()
+cjointldnourt3          djointldnourt==0
+cjointldnourt4          djointldnourt==1
+cnourt                  lnourt +1
+
+MAP(mnourt)
+c1		tldnourt	DO_CALC_IF cjointldnourt3
+cnourt		tldnourt	DO_CALC_IF cjointldnourt4
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tldkat	DO_MAP SHOW mnourt
+BEFORE_INPUT	cur_field=tldplg	DO_SKIP_IF cext
+BEFORE_INPUT	cur_field=tldsat	DO_SKIP_IF cint
+BEFORE_INPUT	cur_field=tlddvs	DO_SKIP_IF cint
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tldstsbrgukr	llegal11c gv_OPEN tlmnobuk lterlaporx
+SFL_MAP
+tlmnobuk        tldnobuk        REPLACE
+llegal11c       tlddata         REPLACE
+gv_OPEN		tldsts		REPLACE
+tlmnobuk	tldbrg		REPLACE
+lterlaporx	tldukrwrn       REPLACE
+

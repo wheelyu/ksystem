@@ -1,0 +1,112 @@
+LOCAL
+PGM_FIELDS
+ltldnobbm	STRING	21
+ltldkat		STRING	21
+ltldplg		STRING	21
+lINFOALAMAT	STRING	21
+
+MAP(mjointld)
+tldnobbm	ltldnobbm	REPLACE
+tldkat		ltldkat		REPLACE
+tldplg		ltldplg		REPLACE
+DBCALCS(djointld)
+	DBC_COMMAND	JOIN_LAST_SFL
+	DBC_TARGET	tldbukbrgoto	btdbrdoto gv_OPEN lINFOALAMAT
+	DBC_MAP		mjointld
+
+IMAGE(tmptranst)
+/---------------------------------------------\
+|/-------------------------------------------\|
+| t.Spk            : _____________________   ||__
+| t.TipeSpk        : _____________________   ||
+| t.TipeKunjungan  : _____________________   ||
+| t.NoBukEvent	   : _____________________   ||
+| i.Tgl            : _____________________   ||
+| i.Ktp            : _____________________   ||
+| i.Nama           : _____________________   ||
+| t.Telp           : _____________________   ||
+| t.TipeAds        : _____________________   ||
+| t.NamaKonten     : _____________________   ||
+|                    _______ ________________||
+|\-------------------------------------------/|
+\---------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdbrdoto	PROTECT SCROLL		INPUTRI 1
+btdsts		PROTECT QPROTECT UNSEEN	INPUTRI	1
+btdjaba		PROTECT				INPUTRI	2
+btdno		NOCHANGE SCROLL		INPUTRI 2
+btdnomesin	PROTECT				INPUTRI	3
+btdtgl2		PROTECT  {DD-MM-YYYY}	INPUTRI	3
+btdukrwrn	NOCHANGE SCROLL		INPUTRI	4
+btdnorangka	NOCHANGE SCROLL		INPUTRI	4
+btdkat		NOCHANGE		INPUTRI	5
+btdno2		NOCHANGE SCROLL		INPUTRI 7
+btdno3		NOCHANGE SCROLL		INPUTRI 8
+
+btddata		PROTECT QPROTECT	INPUTRI	9
+btdnobuk	PROTECT QPROTECT	INPUTRI	9
+
+CALCS()
+cdjointld1	djointld==1
+
+DEFAULT(tmptranst)
+btdsat		INIT	SPK
+btdbrg		INIT	SPK
+btdlok		INIT	SPK
+lINFOALAMAT	INIT	INFOALAMAT
+btdno       DFALT_SCAN_BLANKS 	WALK_IN "DEAL DI KANTOR CABANG"
+								FU  	"DEAL DI LUAR KANTOR CABANG"
+								CIC 	"DEAL MELALUI TELEPON"
+
+EDITS(tmptranst)
+e.Mandatory	btdbrdoto		MANDATORY 
+e.Mandatory	btdnomesin		MANDATORY 
+e.MandatoryTipeKunjungan btdno MANDATORY/*_IF csoawiccic*/
+
+t.ValidateSpk	btdbrdoto		VALIDATE tkmbukidx mtkm 0
+e.validate      btdnomesin              VALIDATE tldllbrgurt mevent3 stldevent {PlEVENT21} {PlBTL} {Pbtmlokjual} {Sl0}
+
+MAP(mevent3)                                                                                       
+tldnobuk       	btdnomesin      REPLACE
+
+
+MAP(mtkm)
+tkmnobuk	btdbrdoto	REPLACE
+tkmkode		btdjaba		REPLACE
+tkmtgl		btdtgl2		REPLACE
+ltldkat		btdnorangka	REPLACE_IF cdjointld1
+ltldplg		btdukrwrn	REPLACE_IF cdjointld1
+ltldnobbm	btdkat		REPLACE_IF cdjointld1
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=btdnomesin  DO_MAP SHOW                 
+                        IF ckondnobukplg mdum                             
+                        ELSE HKCURSOR STAY                            
+                        HKMSG t.NipTidakAdaDiListPeserta
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	btdbuktypidx	btmnobuk lSPK lSPK
+
+SFL_MAP
+btmnobuk	btdnobuk	REPLACE
+g_tgltrn	btdtgl1		REPLACE
+gv_INPG		btdsts		REPLACE
+lINFOSPK	btddata		REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cjcek1dataspk
+PMT_UPDALL_COND cjcek1adadataspk
+PMT_DEL_COND    c0
+
+
+
+/***********************************************************************/
+/***********************************************************************/
+

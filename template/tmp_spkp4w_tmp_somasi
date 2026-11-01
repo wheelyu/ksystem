@@ -1,0 +1,110 @@
+LOCAL
+PGM_FIELDS
+
+
+
+IMAGE(tmptranst)
+
+/-----------------------------------\
+|/---------------------------------\|
+||t.No         : ___               ||
+||t.NoBuk      : _________________ ||
+||t.SuratSomasi: ___  ____________ ||
+||t.Alasan     : _________________ ||
+||t.Ket        : _________________ ||
+||t.Penerima   : _________________ ||
+||t.PlanByr    : ___               ||
+||t.TglJanjiBayar : ___________    ||
+||t.RencBalikUnit : ____           ||
+||t.PlanTglBalik  : ___________    ||
+||                  ___________    ||
+|\---------------------------------/|
+|t.Fotoselfietandaterima            |
+|/--------S.UPLOAD-----------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        btdnourt                NOCHANGE                        INPUTRI         1
+        btdnobuk                PROTECT                         INPUTRI         2
+        btdjaba                 NOCHANGE                        INPUTRI         3
+        lsrtsomasi              PROTECT                         INPUTRI         3
+        btdukrwrn               NOCHANGE                        INPUTRI         4
+        lketalasan              TEXTAREA ALLCAPS                INPUTRI         4
+        btdkat                  NOCHANGE                        INPUTRI         5
+        btdsisbrg               NOCHANGE                        INPUTRI         6
+        btdtgl1                 NONE {DD-MM-YY} NOLIMIT         INPUTRI         7
+        btdth                   NOCHANGE                        INPUTRI         8
+        btdtgl2                 NONE {DD-MM-YY} NOLIMIT         INPUTRI         9
+        lok                     NOCHANGE                        INPUTRI         10
+
+CALCS()
+/*cdjoinbtd     djoinbtd == 0 && g_curcmd==1
+cdjoinbtd1      djoinbtd == 1 && g_curcmd==1
+curt1           lbtdnourt + 1*/
+
+cNipOke         (tlmplg==g_usrkode || tlmdari==g_usrkode) && tlmdvs=="M4W"
+cNipTdkOke      tlmplg!=g_usrkode && tlmdari!=g_usrkode && tlmdvs=="M4W"
+
+
+
+DEFAULTS(tmptranst)
+
+lok             INIT            "OK"
+IF cNipOke btdjaba              DFALT_SCAN_BLANKS       Y "YA, DISERAHKAN KE KONS"
+                                                        T "TIDAK DISERAHKAN"
+IF cNipTdkOke btdjaba           DFALT_SCAN_BLANKS       Y "YA, DISERAHKAN KE KONS"
+                                                        T "TIDAK DISERAHKAN"
+btdukrwrn       DFALT_SCAN_BLANKS
+                                KONS_BYR     "KONS BYR ANGS SESUAI KONTRAK AWAL"
+                                RESTRUKTUR   "KONS BYR SESUAI PROGRAM RESTRUKTUR"
+                                BALIK_UNIT   "KONS MENGEMBALIKKAN UNIT"
+                                TDK_ADA_ALMT "ALAMAT TIDAK ADA"
+btdkat          DFALT_SCAN_BLANKS
+                                ATAS_NAMA "ATAS NAMA SESUAI KONTRAK"
+                                PENJAMIN  "PENJAMIN SESUAI KONTRAK"
+                                KELUARGA  "PIHAK KELUARGA"
+                                TETANGGA  "TETANGGA SETEMPAT"
+btdsisbrg       DFALT_SCAN_BLANKS
+                                Y "YA, ADA RENCANA BAYAR"
+                                T "TIDAK ADA RENCANA BAYAR"
+btdth           DFALT_SCAN_BLANKS
+                                Y "YA, RENCANA KEMBALIKKAN UNIT"
+                                T "TIDAK ADA RENCANA KEMBALIKKAN UNIT"
+
+
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_UPDOWN DOWN
+SFL_SORT_BY_FIELD btdnourt
+SFL_UPLFLD      btdnobuk 
+SFL_UPL_DIRFLD mtstgl
+SFL_UPLREADONLY
+SFL_TARGET
+btdbuktypidx    lnobuksom mtsnoasal
+
+SFL_MAP
+lnobuksom       btdnobuk      REPLACE
+mtsnoasal       btdsat        REPLACE
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+

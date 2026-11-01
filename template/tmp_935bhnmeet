@@ -1,0 +1,91 @@
+MAP(mjoinnamadev)
+psinama			lnamadev	REPLACE
+DBCALCS(djoinnamadev)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx tkdsisstr
+	DBC_MAP		mjoinnamadev
+
+IMAGE(tmptranst)
+/-------------------------------------\
+|/-----------------------------------\|
+|| t.BahanMeeting                    ||__
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.NpDev      : ______  ___________ ||
+||t.LinkDrive  : ___________________ ||
+||spasi				     ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||t.StsUpl     : ___________________ ||
+|\-----------------------------------/|
+|/----------DOCUPLOAD----------------\|
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+||                                   ||
+|\-----------------------------------/|
+|/-----------------------------------\|
+||spasi				     ||
+||t.Keterangan : ___________________ ||
+||		 	  __________ ||
+||spasi				     ||
+|\-----------------------------------/|
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnobuk		PROTECT UNSEEN			INPUTRI 1	/*nobuk*/
+tkdsisstr		PROTECT				INPUTRI 2	/*nip dev*/
+lnamadev		PROTECT				INPUTRI 3	/*nama dev*/
+tkdket			TEXTAREA			INPUTRI 4	/*link drive*/
+tkdtype			PROTECT				INPUTRI	5	/*status upload bhn meet*/
+tkdstr1			TEXTAREA ALLCAPS		INPUTRI 6	/*keterangan dev*/
+lenter			NOCHANGE			INPUTRI 7
+	
+CALCS()
+cjoinnamadev		djoinnamadev == 1
+cceknobuk		g_curcmd == 0
+cjkdev			g_grpnam == "RAS"
+
+DEFAULTS(tmptranst)
+IF cjkdev tkdsisstr	INIT_ADD	{g_usrkode}
+IF cjkdev tkdsisstr	INIT_UPDATE	{g_usrkode}
+tkdtgl			INIT		{g_tgltrn}
+tkdsts			INIT		{gv_INPG}
+tkdnoll			INIT		UPLBHNMEET
+
+EDITS(tmptranst)
+e.Validate	tkdnobuk	VALIDATE_IF cceknobuk tlmbukidx mceknobuk 0
+
+MAP(mceknobuk)
+tlmnobuk	tkdnobuk	REPLACE
+lnamadev	lnamadev	REPLACE_IF cjoinnamadev
+
+MAP(mnamadev)
+lnamadev	lnamadev	REPLACE_IF cjoinnamadev
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdket	DO_MAP SHOW mnamadev
+
+MAP(mupdtkd3)
+lOK		tkdtype		REPLACE
+DBCALCS(dupdtkd3)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkdprmidx tkdprm
+	DBC_MAP		mupdtkd3
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD tkdoto tkdnoll
+SFL_DOCUPLFLD_DBCALCS dupdtkd3
+SFL_DOCUPL_DELCOND c0
+SFL_TARGET	tkddatbukll lBHNMEET tlmnobuk
+SFL_MAP
+tlmnobuk	tkdnobuk	REPLACE
+lBHNMEET	tkddata		REPLACE

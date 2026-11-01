@@ -1,0 +1,299 @@
+IMAGE(tmptranst)
+/-------------------t----------------t-------------t-----------------t--------------\ 
+|i.Kode             |i.KeteranganCms |t.Potongan   | i.KeteranganCmo |t.Potongan    |
+\-------------------.----------------.-------------.-----------------.--------------/ 
+
+IMAGE(tmptrans)
+|___________________|________________|_____________|_________________|______________|
+FIELD(tmptrans)
+nhdkode			PROTECT	SCROLL			INPUTRI	1
+nhdnobbm		ALLCAPS SCROLL			INPUTRI	2
+nhdhrg1			PROTECT	SCROLL			INPUTRI	3
+nhdkode2		PROTECT SCROLL			INPUTRI	5
+nhdhrg2			PROTECT	SCROLL			INPUTRI	6
+/*lG			CHECKBOX			INPUTRI	3
+lL			CHECKBOX			INPUTRI	3
+lI			CHECKBOX			INPUTRI	3
+lT			CHECKBOX			INPUTRI	3*/
+
+DEFAULTS(tmptrans)
+lU                      INIT            "U"
+l1000                   INIT            1000
+l4591                   INIT            4591
+l4589                   INIT            4589
+l4588                   INIT            4588
+l4584                   INIT            4584
+lm4584                  INIT            m4584
+l4582                   INIT            4582
+lm4582                  INIT            m4582
+
+EDITS(tmptrans)
+e.Validate nhdkode	VALIDATE tbtdattypkod  mtbt stbt {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Pgv_body}  {Slsegmen}
+e.validate nhdnobbm     VALIDATE tbddatkodidx mtbd1 stbd {Pgv_dttabel} {Pgv_estimasi21} {Pgv_ganti21}
+e.Mandatory     nhdnobbm  MANDATORY
+
+CALCS()
+cganti1		nhdnobbm=="GANTI"
+cganti2		nhdnobbm=="LECET"
+cganti3		nhdnobbm=="IMITASI"
+cganti4		nhdnobbm=="TIDAKGANTI"
+ckosong		0
+/*cganti		"GANTI"
+clecet		"LECET"
+cimitasi	"IMITASI"
+ctdkganti	"TIDAKGANTI"*/
+
+MAP(mtbd1)
+tbdkode		nhdnobbm	REPLACE
+
+MAP(mtbt)
+tbttbdkode      nhdkode REPLACE
+tbttot		nhdhrg1		REPLACE_IF cganti1
+tbtdf1		nhdhrg1         REPLACE_IF cganti3
+tbtdf2		nhdhrg1         REPLACE_IF cganti2
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+/*MAP(mganti)
+cBLANKS		lL		DO_CALC
+cBLANKS		lI		DO_CALC
+cBLANKS		lT		DO_CALC
+cganti		nhdnobbm	DO_CALC
+tbttot		nhdhrg1		REPLACE_IF cganti1
+tbtdf1		nhdhrg1         REPLACE_IF cganti2
+tbtdf2		nhdhrg1         REPLACE_IF cganti3
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+MAP(mlecet)
+cBLANKS		lG		DO_CALC
+cBLANKS		lI		DO_CALC
+cBLANKS		lT		DO_CALC
+clecet		nhdnobbm	DO_CALC
+tbttot		nhdhrg1		REPLACE_IF cganti1
+tbtdf1		nhdhrg1         REPLACE_IF cganti2
+tbtdf2		nhdhrg1         REPLACE_IF cganti3
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+MAP(mimitasi)
+cBLANKS		lL		DO_CALC
+cBLANKS		lG		DO_CALC
+cBLANKS		lT		DO_CALC
+cimitasi	nhdnobbm	DO_CALC
+tbttot		nhdhrg1		REPLACE_IF cganti1
+tbtdf1		nhdhrg1         REPLACE_IF cganti2
+tbtdf2		nhdhrg1         REPLACE_IF cganti3
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+MAP(mtdkganti)
+cBLANKS		lL		DO_CALC
+cBLANKS		lI		DO_CALC
+cBLANKS		lG		DO_CALC
+ctdkganti	nhdnobbm	DO_CALC
+tbttot		nhdhrg1		REPLACE_IF cganti1
+tbtdf1		nhdhrg1         REPLACE_IF cganti2
+tbtdf2		nhdhrg1         REPLACE_IF cganti3
+ckosong		nhdhrg1		DO_CALC_IF cganti4
+
+HOOKS(tmptrans)
+CLICKED	cur_field=lG		DO_MAP SHOW mganti
+CLICKED	cur_field=lL		DO_MAP SHOW mlecet
+CLICKED	cur_field=lI		DO_MAP SHOW mimitasi
+CLICKED	cur_field=lT		DO_MAP SHOW mtdkganti*/
+
+SUBFILE(tmptrans)
+SFL_LINES(10)        
+SFL_TITLE(tmptranst)
+
+SFL_TARGET_GTE
+nhdbukidx   btmnobuk gv_estimasi l1	{btmnobuk} {gv_estimasi} {l16}
+
+
+/*----------------------------Perhitungan Ulang-------------------------------*/
+CALCS()
+cbulat                  lhasilbulat
+cBgPerbulan     nhmperbg/12
+cBgeff          lbgeff*12
+cBgFlatPerBln1a	nhmperbg*1
+cBgFlatPerBln1b	nhmperbg*2
+cBgFlatPerBln1c	nhmperbg*3
+
+/*ccairbaru             nhmcairpinj-nhmestimasi
+ctotpokbaru1            (nhmtotpok+~nhmestimasi)-nhmestimasi*/
+/*ccairbaru1              (nhmcairpinj+~nhmestimasi)-nhmestimasi*/
+ctenortdkks             nhmtenor!=0
+cperbg1			nhmbgflat != 0 && nhmtenor != 0 && nhmtotpok != 0 && btmtypbyr != "TE"
+cperbg1a		nhmbgflat != 0 && nhmtenor != 0 && nhmtotpok != 0 && btmtypbyr == "TE1"
+cperbg1b		nhmbgflat != 0 && nhmtenor != 0 && nhmtotpok != 0 && btmtypbyr == "TE2"
+cperbg1c		nhmbgflat != 0 && nhmtenor != 0 && nhmtotpok != 0 && btmtypbyr == "TE3"
+cblmada                 /*djoinmts==0 && */ lcairbaru!=lnhmcairpinj
+/*cada                  djoinmts==1*/
+
+cpok_tenor_isi1         btmtypbyr != "BGM" && nhmtotpok > 0 && nhmtenor > 0 && nhmbsrang > 0 && btmtypbyr != "TE2" && btmtypbyr != "TE3"
+cpok_tenor_isi1a        btmtypbyr != "BGM" && nhmtotpok > 0 && nhmtenor > 0 && nhmbsrang > 0 && btmtypbyr == "TE2"
+cpok_tenor_isi1b        btmtypbyr != "BGM" && nhmtotpok > 0 && nhmtenor > 0 && nhmbsrang > 0 && btmtypbyr == "TE3"
+ctotalpokok             nhmcairpinj + nhmdebpok + nhmasuransi
+cperbg1x                (((((nhmtenor * nhmbsrang) - nhmtotpok) / nhmtotpok) / nhmtenor) * 12) * 100
+cperbg1xa               (((((nhmtenor * nhmbsrang) - nhmtotpok) / nhmtotpok) / nhmtenor) * 6) * 100
+cperbg1xb               (((((nhmtenor * nhmbsrang) - nhmtotpok) / nhmtotpok) / nhmtenor) * 4) * 100
+cperbg1xB               (((((nhmtenor * lhasilbulat) - nhmtotpok) / nhmtotpok) / nhmtenor) * 12) * 100
+cperbg1xBa              (((((nhmtenor * lhasilbulat) - nhmtotpok) / nhmtotpok) / nhmtenor) * 6) * 100
+cperbg1xBb              (((((nhmtenor * lhasilbulat) - nhmtotpok) / nhmtotpok) / nhmtenor) * 4) * 100
+cang1                   (((((nhmbgflat/12)/100) * nhmtotpok) * nhmtenor) + nhmtotpok) / nhmtenor
+cang1a			(((nhmbgflat/12)/100)*nhmtotpok) + nhmtotpok
+cang1b			(((nhmbgflat/6)/100)*nhmtotpok) + nhmtotpok
+cang1c			(((nhmbgflat/4)/100)*nhmtotpok) + nhmtotpok
+
+/*
+cjoinppsAss1            djoinppsAss==1
+cjoinppsKomisi1         djoinppsKomisi==1
+cjoinppsStrbia1         djoinppsStrbia==1
+cjoinppsPromo1          djoinppsPromo==1
+cjoinppsVoucher1	djoinppsVoucher==1
+*/
+cjoinnhdPromo1          djoinnhdPromo==1
+cjoinnhdStrbia1         djoinnhdStrbia==1
+/*
+cjoinppsMklr1   djoinppsMklr==1
+cMklrY         btmmakelar != BLANKS && nhmbiamklr != BLANKS
+*/
+chrgtaksir      nhmhrgpasar - nhmestimasi - nhmbbnjl - nhmbbnhpp
+
+cscannhd1	dbscannhd!=0 || dbscannhd==0
+cBGF1		btmtypbyr == "BGF"
+cTE1		(btmtypbyr == "TE1" || btmtypbyr == "TE2" || btmtypbyr == "TE3")
+
+MAP(mmapmap)
+nhdkode		lnhdkode		REPLACE
+nhdhrg1		ltotalestimasi2		REPLACE
+ltotalestimasi	ltotalestimasi		REPLACE_IF cscannhd1
+ctotalestimasi	ltotalestimasi		DO_CALC
+ckosong         lnhmcairpinj            DO_CALC
+ckosong         ltotpokbaru             DO_CALC
+ckosong         langsuranbaru           DO_CALC
+ckosong         lcairbaru               DO_CALC
+nhmcairpinj             lnhmcairpinj    REPLACE
+ctotalpokok             ltotpokbaru     DO_CALC
+cang1                   langsuranbaru   DO_CALC_IF ctenortdkks
+/*ccairbaru1               lcairbaru       DO_CALC*/
+
+MAP(mmapmapa)
+cperbg1x                nhmperbg      DO_CALC_IF cpok_tenor_isi1
+cperbg1xa               nhmperbg      DO_CALC_IF cpok_tenor_isi1a
+cperbg1xb               nhmperbg      DO_CALC_IF cpok_tenor_isi1b
+cperbg1xB               nhmperbg      DO_CALC_IF cpok_tenor_isi1
+cperbg1xBa              nhmperbg      DO_CALC_IF cpok_tenor_isi1a
+cperbg1xBb              nhmperbg      DO_CALC_IF cpok_tenor_isi1b
+cBgPerbulan     lbgperbulan     DO_CALC
+cBgFlatPerBln1a		lbgflatperbln	DO_CALC_IF cmusim1
+cBgFlatPerBln1b		lbgflatperbln	DO_CALC_IF cmusim2
+cBgFlatPerBln1c		lbgflatperbln	DO_CALC_IF cmusim3
+
+MAP(mupdnhmeff)
+cbulat                  nhmbsrang     DO_CALC
+cperbg1x                nhmperbg      DO_CALC_IF cpok_tenor_isi1
+cperbg1xa               nhmperbg      DO_CALC_IF cpok_tenor_isi1a
+cperbg1xb               nhmperbg      DO_CALC_IF cpok_tenor_isi1b
+cperbg1xB               nhmperbg      DO_CALC_IF cpok_tenor_isi1
+cperbg1xBa              nhmperbg      DO_CALC_IF cpok_tenor_isi1a
+cperbg1xBb              nhmperbg      DO_CALC_IF cpok_tenor_isi1b
+cBgeff                  nhmbgstd        DO_CALC
+/*
+MAP(mscanpps)
+ppshrg          ltotass         REPLACE_IF chutass
+ppscair         lhppass         REPLACE_IF chutass
+
+MAP(mscannhd1)
+nhdhrg1         ltotpromo       REPLACE_IF cpromo1
+nhdhrg1         ltotcashback    REPLACE_IF ccashback1
+nhdhrg1         ltotbia         REPLACE_IF cstrbia1
+*/
+MAP(mupdnhm1)
+/*ccairbaru             nhmcairpinj     DO_CALC_IF cblmada*/
+ckosong                 nhmestimasi     DO_CALC
+ltotalestimasi          nhmestimasi     REPLACE
+ckosong                 nhmestimasi     DO_CALC_IF cpkplatinumkliknss
+ctotalpokok            nhmtotpok       DO_CALC_IF cblmada
+cang1                  nhmbsrang       DO_CALC_IF cperbg1
+cang1a                 nhmbsrang       DO_CALC_IF cperbg1a
+cang1b                 nhmbsrang       DO_CALC_IF cperbg1b
+cang1c                 nhmbsrang       DO_CALC_IF cperbg1c
+/*ccairbaru1             lcairbaru       DO_CALC*/
+ctotalpokok            nhmtotpok       DO_CALC /*_IF cada*/
+/*ccairbaru1             nhmcairpinj     DO_CALC*/
+chrgtaksir             nhmhrgpsr       DO_CALC
+
+MAP(mmapdeb)
+btmnobuk		nhdnobuk	REPLACE
+
+CALCS()
+csatux1		1
+cRANG1		"RANG"  /* Rencana Angsuran */
+cnamaidx1  	"angdatbukidx"
+cfieldfak1 	"angnobuk"
+cfieldtglang1 	"angtgljtp"  
+cfieldke1     	"angke"     
+cfieldFM1     	"angnofm"      
+cfieldRANG1    "angdata"     
+cfieldpokok1  	"angpokok"   
+cfieldbg1     	"angbunga"     
+cfieldsispokakh1 "angsispok"
+cfieldakumbgakh1 "angbyrbg"
+cfieldthbl1	"angthbl"
+
+MAP(mangsuran1)
+cRANG1        lRANG         DO_CALC   
+cnamaidx1     lnamaidx      DO_CALC
+cfieldfak1    lfieldfak     DO_CALC
+cfieldtglang1 lfieldtglang  DO_CALC
+cfieldke1     lfieldke      DO_CALC
+cfieldFM1     lfieldFM      DO_CALC
+cfieldRANG1   lfieldRANG      DO_CALC
+cfieldpokok1  lfieldpokok   DO_CALC
+cfieldbg1     lfieldbg      DO_CALC
+cfieldsispokakh1 lfieldsispokakh  DO_CALC
+cfieldakumbgakh1 lfieldakumbgakh  DO_CALC
+cfieldthbl1	lfieldthbl      DO_CALC
+csatux1		lhapusflg       DO_CALC  /* 1=dihapus jika sdh ada record, 0=tdk dihapus*/
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB ap_dbclc(DNAME dupdnhm1,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mupdnhm1);
+
+/*
+DO_LIB_IF cjoinppsAss1 ap_dbclc(DNAME ddelppsAss,DCOMMAND DELETE_RANGE,DTARGET ppsdattypbuk gv_dthut gv_hutass11 gv_OPEN btmnobuk);
+DO_LIB_IF cjoinppsKomisi1 ap_dbclc(DNAME ddelppsKomisi,DCOMMAND DELETE_RANGE,DTARGET ppsdattypbuk gv_dthut gv_komisi gv_OPEN btmnobuk);
+DO_LIB_IF cjoinppsStrbia1 ap_dbclc(DNAME ddelppsStrbia,DCOMMAND DELETE_RANGE,DTARGET  ppsdattypbuk gv_dthut gv_strbia gv_OPEN btmnobuk);
+DO_LIB_IF cjoinppsPromo1 ap_dbclc(DNAME ddelppsPromo,DCOMMAND DELETE_RANGE,DTARGET  ppsdattypbuk gv_dthut lpromom2w11 gv_OPEN btmnobuk);
+DO_LIB_IF cjoinppsVoucher1 ap_dbclc(DNAME ddelppsVoucher,DCOMMAND DELETE_RANGE,DTARGET  ppsdattypbuk gv_dthut gt_hlvoucher11 gv_OPEN btmnobuk);
+
+DO_LIB_IF cjoinppsMklr1 ap_dbclc(DNAME ddelppsMklr,DCOMMAND DELETE_RANGE,DTARGET ppsdattypbuk gv_dthut gv_hutmklr11 gv_OPEN btmnobuk);
+*/
+DO_LIB_IF cjoinnhdPromo1 ap_dbclc(DNAME ddelnhdPromo,DCOMMAND DELETE_RANGE,DTARGET nhdbukidx btmnobuk lpromom2w11);
+DO_LIB_IF cjoinnhdStrbia1 ap_dbclc(DNAME ddelnhdStrbia,DCOMMAND DELETE_RANGE,DTARGET nhdbukidx btmnobuk gv_strbia);
+
+/*DO_LIB_IF cMklrY       ap_nxpst(l4582,lm4582);*/   /* Biaya Makelar */
+
+/*DO_LIB          ap_nxpst(l4584,lm4584);*/   /* Pps Asuransi */
+/*DO_LIB   	  ap_nxpst(l4597,lm4584); */  /* Pps Program Promo Marketing */
+/*DO_LIB          ap_nxpst(l4599,lm4584); */  /* Pps Voucher */
+/*DO_LIB          ap_nxpst(l4588,lm4584);*/   /* Pps & Nhd Biaya */
+/*DO_LIB          ap_nxpst(l4591,lm4584);*/   /* Pps Komisi */
+
+DO_LIB ap_dbclc(DNAME dbscanppsASS,DCOMMAND SCANSCAN,DTARGET ppsdattypbuk gv_dthut gv_hutass11 gv_OPEN btmnobuk ,DBC_SUM_MAP mscanppsASS);
+DO_LIB ap_dbclc(DNAME dbscanppsVCR,DCOMMAND SCANSCAN,DTARGET ppsdattypbuk gv_dthut gt_hlvoucher11 gv_OPEN btmnobuk ,DBC_SUM_MAP mscanppsVCR);
+DO_LIB ap_dbclc(DNAME dscannhd,DCOMMAND SCANSCAN,DTARGET nhdbukidx btmnobuk,DBC_SUM_MAP mscannhd22);
+DO_LIB ap_dbclc(DNAME dmapupdnhm,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mmapupdnhm22);
+
+DO_LIB  ap_bulat(nhmbsrang,l1000,&lhasilbulat,lU);
+
+DO_LIB ap_dbclc(DNAME dmapmapa,DCOMMAND MAPMAP,DMAP mmapmapa);
+DO_LIB ap_bgeff(l1,lbgperbulan,nhmlmang,&lbgeff,ldf8,lint2,lint2,ldf8,&ldf8,&ldf8);
+DO_LIB ap_dbclc(DNAME dupdnhmeff,DCOMMAND UPDATE,DTARGET nhmdatbukidx gv_dtbukutamu btmnobuk,DMAP mupdnhmeff);
+DO_LIB ap_dbclc(DNAME dmapangsuran1,DCOMMAND MAPMAP,DMAP mangsuran1);
+DO_LIB_IF cBGF1 ap_htrbg(nhmnofm,lfieldFM,btmnobuk,lfieldfak,nhmtglang1,lfieldtglang,lRANG,lfieldRANG,nhmbgstd,nhmlmang,nhmtotpok,lnamaidx,lfieldpokok,lfieldbg,lfieldke,lfieldthbl,lbulanke,&lakumpokke,lnamamap,lhapusflg,lfieldsispokakh,lfieldakumbgakh);
+DO_LIB_IF cTE1 ap_htrbg(l1,lfieldFM,btmnobuk,lfieldfak,nhmtglang1,lfieldtglang,lRANG,lfieldRANG,lbgflatperbln,nhmlmang,nhmtotpok,lnamaidx,lfieldpokok,lfieldbg,lfieldke,lfieldthbl,lbulanke,&lakumpokke,lnamamap,lhapusflg,lfieldsispokakh,lfieldakumbgakh);
+
+DO_LIB ap_dbclc(DNAME dmapdeb,DCOMMAND MAPMAP,DMAP mmapdeb);
+
+POSTING(tmptrans)
+PST_UPDCMD sptmptrans
+

@@ -1,0 +1,170 @@
+LOCAL
+PGM_FIELDS
+lnama		STRING	21
+ltottools	DFLOAT	8
+ltoolstemu	DFLOAT	8
+ltoolscek       DFLOAT  8
+lprslengkap	DFLOAT	8
+ljmlbaik	DFLOAT	8
+lprsbaik	DFLOAT	8
+ljmlrusak	DFLOAT	8	
+lprsrusak	DFLOAT	8
+lkosong		INT2	2
+lbaik		INT2	2
+lrusak		INT2	2
+lsemua		INT2	2
+ltombolket	STRING	31
+l4633           INT2    2
+lm4633          STRING  15
+
+
+
+IMAGE(tmptranst)
+/----------------------------------------------------------------------------------\
+ /-------------------------------------\/-----------------------------------------\
+  t.Rekap                                t.Kondisi
+    t.NoPIT    : ____                     t.Baik
+    t.Nip      : ________                      t.JmlBaik    : _______________
+    t.Nama     : ___________________           t.PrsBaik    : _______________ %
+    t.TotTool  : ___________________      t.Rusak
+    t.ToolCek  : ___________________           t.JmlRusak   : _______________
+    t.ToolTemu : ___________________           t.PrsRusak   : _______________ %
+    t.PrsLgkp  : ___________________ %                              spasi
+        spasi                                                       ____________
+ \-------------------------------------/\-----------------------------------------/
+\----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviyt1                   ALLCAPS                        INPUTRI 1
+svikode                  ALLCAPS                        INPUTRI 1
+ljmlbaik                 PROTECT                        INPUTRI 2 /*Jml tools baik*/
+lnama                    PROTECT                        INPUTRI 3
+lprsbaik                 PROTECT                        INPUTRI 4 /*Persen tools baik = %toolstemubaik:totaltemu*/
+ltottools                PROTECT                        INPUTRI 5 /*Total Tools = 45*/
+ltoolscek                PROTECT                        INPUTRI 6 /*Tools yg ADA*/
+ljmlrusak                PROTECT                        INPUTRI 7 /*Jml tool rusak*/
+ltoolstemu               PROTECT                        INPUTRI 7 /*Tools ditemukan = hitung tool yg ada*/
+lprsrusak                PROTECT                        INPUTRI 8 /*Persen tool rusak = %toolstemurusak:totaltemu*/
+lprslengkap              PROTECT                        INPUTRI 9 /*Persen kelengkapan = %toolstemu:totaltools*/
+ltombolket               TOMBOL                         INPUTRI 10
+
+
+MAP(m4633)
+tlmnobuk         	r_string1       REPLACE
+svikode		 	r_string7	REPLACE
+svitype		 	r_string9	REPLACE
+lklik3d         	r_string15      REPLACE
+
+DEFAULT(tmptranst)
+ltombolket		INIT		CLICKED
+l4633          		INIT            4633
+lm4633		        INIT            m4633
+lnostmp			INIT		NOS
+lklik3d         	INIT            CLICKED
+
+
+CALCS()
+cketblank       ketnama == svikode
+
+
+/*DBCALCS(djoinsvi3d)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp  lTRUSTER tlmnobuk lTRUSTER 
+*/
+
+DBCALCS(djoinketblank)
+	DBC_COMMAND	JOIN
+	DBC_SELECT	cketblank 
+	DBC_TARGET	ketdatbukkod lnostmp tlmnobuk lTRUSTER21
+
+CALCS()
+ckosong         ketstr1  == "" && ketnama == svikode
+cisi3d          ketstr1  != "" && ketnama == svikode
+clengkap        (ltoolstemu/ltoolscek)*100
+cbaik           ketstr2 == "BAIK" && ketnama == svikode
+crusak          ketstr2 == "RUSAK" && ketnama == svikode
+cprbaik         (ljmlbaik/ltoolstemu)*100
+cprrusak        (ljmlrusak/ltoolstemu)*100
+ctotal		ltoolstemu > 0 && ltoolscek > 0
+ctotbaik	ljmlbaik > 0 && ltoolstemu > 0
+ctotrusak	ljmlrusak >0 && ltoolstemu > 0
+cdjoinketblank	djoinketblank == 0 && (svikode != "" || svikode != BLANKS)
+cnipsama        ketnama == svikode
+ctooltemu       ketstr1 == "ADA" && ketnama == svikode
+cpitsama 	ketyt1 == sviyt1
+
+MAP(mscanketrekap)
+gv_int1         lkosong         REPLACE_IF ckosong
+gv_int1         ljmlisi3d       REPLACE_IF cisi3d
+gv_int1         lbaik           REPLACE_IF cbaik
+gv_int1         lrusak          REPLACE_IF crusak
+gv_int1         lsemua          REPLACE_IF cnipsama
+gv_int1         ljmltemu        REPLACE_IF ctooltemu
+
+MAP(mpit3d)
+gv_int1		lisi3d		REPLACE_IF cisi3d
+
+DBCALCS(dscanketrekap)
+        DBC_COMMAND     SCANSCAN
+        DBC_SELECT 	cnipsama
+	DBC_TARGET      ketdatbukkod lNOS tlmnobuk lTRUSTER21
+        DBC_SUM_MAP     mscanketrekap
+
+DBCALCS(dscanpit)
+        DBC_COMMAND     SCANSCAN
+        DBC_SELECT      cpitsama
+        DBC_TARGET      ketdatbukkod lNOS tlmnobuk lTRUSTER21
+        DBC_SUM_MAP     mpit3d
+
+CALCS()
+cscanket        dscanketrekap == 1 || dscanketrekap == 0
+/*cadasvi	djoinsvi3d == 0 && tlmsts == "OPEN"*/ 
+cadaisi3d	(dscanpit == 1 || dscanpit == 0)  && (lisi3d >5 || svikode == "")
+
+EDITS(tmptranst)
+e.Validate	    svikode     VALIDATE_IF cscanket psikodidx  mnama 0
+
+MAP(mnama)
+psinama             lnama            	REPLACE
+lsemua		    ltottools	     	REPLACE
+ljmlisi3d           ltoolscek           REPLACE
+ljmltemu            ltoolstemu          REPLACE
+c0		    lprslengkap		DO_CALC
+c0		    ljmlbaik		DO_CALC
+c0		    ljmlrusak		DO_CALC
+c0                  lprsbaik            DO_CALC
+c0                  lprsrusak           DO_CALC
+clengkap	    lprslengkap		DO_CALC_IF ctotal
+lbaik		    ljmlbaik		REPLACE
+lrusak		    ljmlrusak		REPLACE
+cprbaik		    lprsbaik		DO_CALC_IF ctotbaik
+cprrusak	    lprsrusak		DO_CALC_IF ctotrusak	
+
+
+SPCALCS(spklik)
+	DO_LIB_IF cdjoinketblank  ap_nxpst(l4633,lm4633);
+
+HOOKS(tmptranst)
+CLICKED 	cur_field=ltombolket	DO_SPCALCS spklik
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_TARGET
+	svidatbuktyp  lTRUSTER tlmnobuk lTRUSTER  
+SFL_MAP
+lTRUSTER	svidata
+tlmnobuk	svinobuk
+lTRUSTER	svitype
+
+POSTING(tmptranst)
+        PST_COMMAND spklik
+
+PERMIT(tmptrans)
+PMT_DEL_COND	cIT
+PMT_UPDALL_COND	c0pen
+PMT_ADD_COND	cadaisi3d

@@ -1,0 +1,117 @@
+LOCAL
+PGM_FIELDS
+lhasilspkOK	STRING		21
+
+MAP(mjoinspkAm1)
+spkhasil	lhasilspkOK 	REPLACE
+DBCALCS(djoinspkAm1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      spkdatbuktyp   llegal11 tlmnobuk llegalAM1
+        DBC_MAP         mjoinspkAm1
+
+/**************************************************************************/
+IMAGE(tmptranst) 
+/---------------------------------------------------------------------------------------------------------------------\
+|						t.InfoFotoDetail						      |
+|														      |
+| t.FotoBerkas9	             t.FotoBerkas10	         t.FotoBerkas11		     t.FotoBerkas12       	      |
+|/---------s.UPLOAD--------\/---------s.UPLOAD2--------\/---------s.UPLOAD3--------\/--------s.UPLOAD4---------\      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+||                         ||                          ||                          ||                          |      |
+|\-------------------------/\--------------------------/\--------------------------/\--------------------------/      |
+|t.Kode   ___________________ t.Kode   __________________ t.Kode   __________________ t.Kode   __________________     |
+|t.TglFt  ___________________ t.TglFt  __________________ t.TglFt  __________________ t.TglFt  __________________     |
+|t.NoBuk  ___________________ t.NoBuk  __________________ t.NoBuk  __________________ t.NoBuk  __________________     |
+|t.Ket    ___________________ t.Ket    __________________ t.Ket    __________________ t.Ket    __________________     |
+\---------------------------------------------------------------------------------------------------------------------/
+/-----------------------------------------------------------------------\
+|t.Nip	        :___________________________________		        |
+|t.Nama	        :___________________________________		        |
+|t.Approval     :___________________________________		        |
+|t.KetTACC      :___________________________________		        |
+|t.JmlTACC      :___ ______                                             |
+\-----------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+spkfoto			PROTECT                 INPUTRI     1
+spkfoto2		PROTECT                 INPUTRI     2
+spkfoto3		PROTECT                 INPUTRI     3
+spkfoto4		PROTECT                 INPUTRI     4
+
+spktglft		PROTECT			INPUTRI     5
+spktglft2		PROTECT			INPUTRI	    6
+spktglft3		PROTECT			INPUTRI	    7
+spktglft4		PROTECT			INPUTRI     8
+
+spkkode			PROTECT			INPUTRI	    9
+spkkode2		PROTECT			INPUTRI	    10
+spkkode3		PROTECT			INPUTRI	    11
+spkkode4		PROTECT			INPUTRI	    12
+
+spkkat			PROTECT			INPUTRI	    17
+spkkat2			PROTECT			INPUTRI	    18
+spkkat3			PROTECT			INPUTRI	    19
+spkkat4			PROTECT			INPUTRI	    20
+
+spknohp			PROTECT			INPUTRI     24
+lnama			PROTECT			INPUTRI     24
+spkhasil		NOCHANGE		INPUTRI     24
+spkreview		TEXTAREA ALLCAPS	INPUTRI     24
+tlmjml2			PROTECT			INPUTRI     2
+lentera			NOCHANGE		INPUTRI     25
+
+DEFAULTS(tmptranst)
+spknohp			INIT_UPDATE	{g_usrkode}
+llegal11		INIT		LEGAL
+spkhasil		DFALT_SCAN      BLANKS
+                                        ACC
+                                        TACC
+
+CALCS()
+cjikaTaccAM		spkhasil == "TACC"
+cspkAM			djoinspkAm1 == 1 && lhasilspkOK == "OK" && tlmsts == "750" && ( 
+			(
+        ((tlmbisnis == "M4W") && g_grpnam == "B.M4WRM" )  || (tlmbisnis == "M2W4W" && (g_grpnam=="BMMM2W" || g_grpnam=="BM"))|| (((tlmbisnis != "M4W" && tlmbisnis != "M2W4W") && (g_grpnam == "REMAM" || g_grpnam == "ARAM")))
+        ) || g_grpnam == "RI" || g_grpnam == "IT")
+cspkAMx			djoinspkAm1 == 1 && lhasilspkOK != "OK"	
+cspkAMx2		djoinspkAm1 == 1 && (lhasilspkOK != "OK" || lhasilspkOK == "OK") && tlmsts != "750"	
+cbknaram		djoinspkAm1 == 1 && (((tlmbisnis != "M4W" && tlmbisnis != "M2W4W") && (g_grpnam != "REMAM" && g_grpnam != "ARAM")))	
+cbknrm			djoinspkAm1 == 1 && ((tlmbisnis == "M4W" ) && g_grpnam != "B.M4WRM" )
+cbknbmm2w4w		djoinspkAm1 == 1 && ((tlmbisnis == "M2W4W") && g_grpnam != "BMMM2W" && g_grpnam!="BM")
+
+EDITS(tmptranst)
+e.validate	spknohp	VALIDATE psikodidx mpsispk 0 
+t.MandatoryKet	spkreview MANDATORY_IF cjikaTaccAM
+
+MAP(mpsispk)
+psinama		lnama		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD  spktglft
+SFL_UPL_DIRFLD2 spktglft2
+SFL_UPL_DIRFLD3 spktglft3
+SFL_UPL_DIRFLD4 spktglft4
+SFL_UPLFLD      spknobuk spkkode 
+SFL_UPLFLD2	spknobuk spkkode2 
+SFL_UPLFLD3	spknobuk spkkode3 
+SFL_UPLFLD4	spknobuk spkkode4 
+SFL_UPLREADONLY
+SFL_TARGET
+	spkdatbuktyp   llegal11 tlmnobuk llegalAM2
+
+PERMIT(tmptrans)
+PMT_ADD_COND c0
+PMT_DEL_COND c0
+PMT_UPDALL_COND cspkAM
+PMT_UPD_MSG IF   cspkAMx  CEK DAHULU FOTO DI DETIL "FOTO BERKAS 1" KEMUDIAN KLIK TOMBOL "SUDAH CEK" 
+	    IF   cspkAMx2 STATUS SUDAH TIDAK 750 LAGI
+	    IF   cbknaram HANYA ARAM/REMAM YANG BOLEH U 
+	    IF   cbknrm   HANYA RM YANG BOLEH U
+	    IF   cbknbmm2w4w   HANYA BMM2W YANG BOLEH U
+	     

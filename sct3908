@@ -1,0 +1,96 @@
+SCREEN 3908 APP_TYPE api_chatkliknss
+SCR_TGLTRN_PASS_OK
+
+LOCAL
+PGM_FIELDS
+lkopi			STRING	5
+lnamfil               	STRING  31
+lrequestreply         	STRING  31
+linplabels             	STRING  3000
+linpfields             	STRING  3000
+linpmap			STRING	21
+ldatetype             	INT2    2
+lsavedata	  	INT2	2
+lmsttitle               STRING  31
+lmstlabel               STRING  100
+lmstfields              STRING  100
+lstatus			STRING	5
+
+lNoFaktur              	STRING  21
+lCHATKLIKNS		STRING	11
+
+l16			INT2	2
+lVERSI			STRING	21
+ljamskrng		TIME	4
+
+
+
+IMAGE(master) 
+/--------------------------------------------------------\
+| /----------------------------------------------------\ |
+| |i.NoBuk   : ____________________                    | |
+| \----------------------------------------------------/ |
+\--------------------------------------------------------/
+
+FIELDS(master)
+   lNoFaktur            NONE           INPUTRI          1 
+
+DEFAULTS(master)
+lkopi		INIT	SF
+l16		INIT	16
+lnamfil		INIT     {r_string1}
+ldatetype 	INIT	1
+lCHATKLIKNS	INIT	CHATKLIKNS
+
+/*
+linplabels   	INIT     "TipeRequest+TelpKons+TglStartChat+TglAkhirChat+JenisAds+TipeAds"
+linpfields   	INIT     "ftmtype1+ftmnofak+ftmtgl1+ftmtgl2+ftmket1+ftmket2"
+*/
+
+linplabels   	INIT     "api_chatkliknss:[{TipeRequest}]+Data:[{TelpKons+TglStartChat+TglAkhirChat+JenisAds+TipeAds+IdIklan}]"
+linpfields   	INIT     "ftmtype1+ftmnofak+ftmtgl1+ftmtgl2+ftmalamat1+ftmket2+ftmnobuk2"
+  
+  
+linpmap		INIT	 mmapftm 
+lrequestreply   INIT     "reply"
+lsavedata	INIT		 1
+lVERSI	        INIT	09102026
+ljamskrng	INIT	SYSTIME
+
+lmstlabel       INIT    "status"
+lmstfields      INIT    "lstatus"
+lmsttitle       INIT    ""
+
+CALCS()
+cOK		"OK"
+
+MAP(mmapftm)
+lCHATKLIKNS	ftmdata		REPLACE
+gv_INPG		ftmsts		REPLACE
+
+MAP(mstatus)
+cOK		lstatus		DO_CALC
+
+HOOKS(master)
+   /*BEFORE_INPUT cur_field=lNoFaktur DO_LIB ap_rdjsn(lnamfil,linplabels,linpfields,linpmap,g_strksg,g_strksg,g_strksg,lsavedata);*/
+   BEFORE_INPUT cur_field=lNoFaktur DO_LIB ap_rdjsa(lnamfil,linplabels,linpfields,linpmap,lsavedata);
+
+
+CALCS()
+cJDPK		"JDPK"
+
+cdarispk	ftmnofak!=BLANKS && ftmnofak != ftmlok
+ctdkjadi	ftmtype=="T"
+cjadiPK		ftmtype=="Y"
+
+
+/*---------------------------------------------------------------*/
+SPCALCS(spmaster)
+	DO_LIB	ap_dbclc(DNAME dmapmap,DCOMMAND MAPMAP,DMAP mstatus);
+	DO_LIB	ap_jsnmt(lrequestreply,lmsttitle,lmstlabel,lmstfields);
+
+POSTING(master)
+   PST_COMMAND     spmaster       
+
+
+END_SCREEN

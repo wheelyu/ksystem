@@ -1,0 +1,175 @@
+LOCAL
+PGM_FIELDS
+lcabkdfak		STRING		21
+lREKBRSDM		STRING		11
+lfototacc		INT2		2
+lada155			INT2		2
+
+MAP(mmapcab155)
+cabkdfak                lcabkdfak               REPLACE
+
+DBCALCS(djoincab155)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cabkodidx       btmlokjual
+        DBC_MAP         mmapcab155
+
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+|i.uplBukTab                                           	     |                          
+|/--s.UPLOAD----------------------\/------------------------\|
+||                                ||i.Tgl     : __________  ||
+||                                ||i.Nippic  : __________  ||
+||                                ||i.Niphrd  : __________  ||
+||				  ||t.Nipadh  : __________  ||
+||				  ||t.OkUp    : __________  ||
+||				  ||t.AccAdh  : __________  ||
+||                                ||t.AccHrd  : __________  ||
+||                                ||               	    ||
+||                                || _________  _________   ||
+||				  ||			    ||
+||                                ||			    ||
+||                                || _________	_________   ||
+|\--------------------------------/\------------------------/|
+|i.Ket : ____________________________________________________|
+|t.Nobuk155 : _____________________                          |
+|        __                                                  |
+\------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1  		PROTECT {DD-MM-YY}	INPUTRI 1
+psdstr1			PROTECT			INPUTRI	2
+psdstr2			PROTECT			INPUTRI 3
+psdstr3			PROTECT			INPUTRI 4
+psdstr4			PROTECT			INPUTRI 5
+psdtype3		PROTECT			INPUTRI 6
+psdtype2		PROTECT			INPUTRI	7
+luploadtacc1		TOMBOL			INPUTRI 8
+luploadacc1		TOMBOL			INPUTRI 9
+luploadtacc		TOMBOL			INPUTRI 10
+luploadacc		TOMBOL			INPUTRI 11
+psdket  		TEXTAREA ALLCAPS 	INPUTRI 12
+psdstr4  		PROTECT       		INPUTRI 13
+lenter                  NOCHANGE                INPUTRI 14
+
+CALCS()
+cjoincab155		djoincab155==1
+cnobuk155		"GRE"+ STRIP(lcabkdfak) + THBLS(g_tgltrn) + "-"
+ctaccfotorek		"TACC FOTO BUKU TABUNGAN"
+ctaccft139		"TACCFT139"
+cket155			"PERBAIKAN REKENING"
+c155			"155"
+ctaccfoto		lfototacc==1
+ctaccfotoa		lfototacc==1 && lada155==0
+caprhrdhead		"APR_HRDHEAD"
+cada155open		hrmsts=="OPEN"
+cdtclnkar		"DTCLNKAR"
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdtgl1		INIT_UPDATE	{g_tgltrn}
+luploadtacc1	INIT		TACC ADH
+luploadacc1	INIT		ACC ADH
+luploadtacc	INIT		TACC HRD
+luploadacc	INIT		ACC HRD
+l_count6	INIT		1
+lREKBRSDM	INIT		REKBRSDM
+
+MAP(mupdtabungan2)
+ctacc1		psdtype2	DO_CALC
+cBLANKS		psdstr4 	DO_CALC
+g_usrkode	psdstr2		REPLACE
+gv_int1		lfototacc	REPLACE
+
+MAP(mupdtabungan3)
+cacc1		psdtype2	DO_CALC
+cacc1		psdstr4 	DO_CALC
+g_usrkode	psdstr2		REPLACE
+
+MAP(mupdtabungan4)
+ctacc1          psdtype3        DO_CALC
+cBLANKS         psdstr4         DO_CALC
+g_usrkode       psdstr3         REPLACE
+
+MAP(mupdtabungan5)
+cacc1           psdtype3        DO_CALC
+cacc1           psdstr4         DO_CALC
+g_usrkode       psdstr3         REPLACE
+
+MAP(mmapmap155)
+lcabkdfak	lcabkdfak	REPLACE_IF cjoincab155
+cnobuk155	hrmnobuk	DO_CALC
+
+MAP(mscanhrm155)
+gv_int1		lada155		REPLACE_IF cada155open
+
+MAP(maddhrm155)
+hrmnobuk        hrmnobuk        REPLACE
+lREKBRSDM       hrmdata         REPLACE
+gv_OPEN         hrmsts          REPLACE
+btmkdkms        hrmnip1         REPLACE
+btmlokjual       hrmcab          REPLACE
+btmbisnis	hrmdvs		REPLACE
+ctaccft139      hrmnip2         DO_CALC
+c155            hrmscr          DO_CALC
+g_tgltrn        hrmtgl          REPLACE
+g_tgltrn        hrmtgl2         REPLACE
+btmiklan	hrmcab2         REPLACE
+ctaccfotorek    hrmket1         DO_CALC
+cdtclnkar	hrmdvs2		DO_CALC
+caprhrdhead	hrmkodeapr	DO_CALC
+btmsales	hrmkep		REPLACE
+
+MAP(maddabk155)
+gv_INPG         abksts          REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+hrmnobuk        abknobuk        REPLACE
+btmsales        abkkym          REPLACE
+g_tgltrn        abktgl          REPLACE
+c155            abkscr          DO_CALC
+cket155         abkkym2         DO_CALC
+
+SPCALCS(supdpsd2tabungan)
+	DO_LIB                  ap_dbclc(DNAME dmapmap155,DCOMMAND MAPMAP,DMAP mmapmap155);
+	DO_LIB_IF cadafoto6 ap_dbclc(DNAME dupdbtmu1,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+	DO_LIB_IF cadafoto6 ap_dbclc(DNAME dupdpsdtabungan2,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdtabungan2);
+	DO_LIB_IF ctaccfoto ap_dbclc(DNAME dbscanhrm155, DCOMMAND SCANSCAN,DTARGET hrmdatniptgl lREKBRSDM btmkdkms,DBC_SUM_MAP mscanhrm155);
+	DO_LIB_IF ctaccfotoa ap_dbclc(DNAME daddhrm155, DCOMMAND ADD, DFILE hrm, DLTARGET hrmbukidx hrmnobuk, DLLEN {stspjbuk}, DMAP maddhrm155);
+	DO_LIB_IF ctaccfotoa ap_dbclc(DNAME daddabk155,DCOMMAND ADD,DFILE abk,DMAP maddabk155);
+
+SPCALCS(supdpsd3tabungan)
+	DO_LIB_IF cadafoto6 ap_dbclc(DNAME dupdbtmu2,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+	DO_LIB_IF cadafoto6  ap_dbclc(DNAME dupdpsdtabungan3,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdtabungan3);
+
+SPCALCS(supdpsd4tabungan)
+	DO_LIB_IF cadafoto6a ap_dbclc(DNAME dupdbtmu3,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+        DO_LIB_IF cadafoto6a ap_dbclc(DNAME dupdpsdtabungan4,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdtabungan4);
+
+SPCALCS(supdpsd5tabungan)
+	DO_LIB_IF cadafoto6a ap_dbclc(DNAME dupdbtmu4,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtmd1x);
+        DO_LIB_IF cadafoto6a  ap_dbclc(DNAME dupdpsdtabungan5,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdtabungan5);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luploadtacc	DO_SPCALCS supdpsd2tabungan 
+CLICKED		cur_field=luploadacc	DO_SPCALCS supdpsd3tabungan 
+CLICKED         cur_field=luploadtacc1   DO_SPCALCS supdpsd4tabungan
+CLICKED         cur_field=luploadacc1    DO_SPCALCS supdpsd5tabungan
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_UPL_DIRFLD btmguna
+SFL_UPLFLD  gv_sftabungan11  psdpsmkode         
+SFL_UPLFLD_DBCALCS dupdpsdktpsdm21
+SFL_UPL_DELCOND caccblanks
+SFL_SORT_BY_FIELD psdnourt
+SFL_SORT_UPDOWN	DOWN
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11 btmnobuk gv_fototabungan21
+
+SFL_MAP
+gv_clnkry11      	psddata		REPLACE
+gv_fototabungan21 	psdkode		REPLACE
+btmnobuk		psdpsmkode	REPLACE

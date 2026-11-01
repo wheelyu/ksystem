@@ -1,0 +1,133 @@
+MAP(mjoinnamainput)
+psinama                 lnamainput              REPLACE
+DBCALCS(djoinnamainput)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx tkdstr1
+        DBC_MAP         mjoinnamainput
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|/--------------------------------------\|
+||t.UpdPica                             ||
+|\--------------------------------------/|
+|/--------------------------------------\|
+||___                                   ||
+||t.buk           ____________________  ||
+||t.TglInp        ____________________  ||
+||i.NipInput      ____________________  ||
+||t.Nama          ____________________  ||
+||t.Pica          __  ________________  ||
+||t.TglMunKunc    ___________________   ||
+||t.Status2       ____________________  ||
+||                       _____________  ||
+||spasi                                 ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnourt                PROTECT                         INPUTRI  1       /*no urut*/
+tkdnobuk                PROTECT                         INPUTRI  2       /*Nobuk*/
+tkdtgl                  PROTECT                         INPUTRI  3       /*tanggal input*/
+tkdstr1                 PROTECT                         INPUTRI  4       /*nip penginput*/
+lnamainput              PROTECT                         INPUTRI  5       /*nama penginput*/
+tkdnoll                 NOCHANGE                        INPUTRI  6       /*jenis pica yang terkunci*/
+ltipekunci              PROTECT                         INPUTRI  7       /*ket jenis pica yang terkunci*/
+tkdtgl2                 NONE {DD-MM-YYYY} NOLIMIT       INPUTRI  8       /*tgl mundur kuncian*/
+tlmnoasal               PROTECT                         INPUTRI  9       /*status2 akhir master*/
+lenter                  NOCHANGE                        INPUTRI 10
+
+DEFAULTS(tmptranst)
+tkdtgl                  INIT                    {g_tgltrn}
+tkdstr1                 INIT                    {g_usrkode}
+tkdnoll                 DFALT_SCAN_BLANKS       1 "CEK PESERTA MEETING" 
+                                                2 "GUIDANCE DIR MEET"
+                                                3 "REMINDER BAHAN MEET"
+                                                4 "UPLOAD BAHAN MEET"
+                                                5 "INGAT PESERTA MEET"
+                                                6 "KOREKSI BAHAN MEET"
+                                                7 "UPL ULANG BHN MEET"
+                                                8 "APPROVAL MEETING"
+                                                9 "PDCA APR BHN MEET"
+                                                10 "DCOO APR BHN MEET"
+
+EDITS(tmptranst)
+e.Isi Jenis Pica                tkdnoll         MANDATORY
+e.Isi Tanggal Mundur            tkdtgl2         MANDATORY
+e.Validate                      tkdnobuk        VALIDATE tlmbukidx mvalidatekunci935 0
+e.Sudah Pernah Mundur Pica      tkdnoll         DUPKEY tkddatbukll {PlUPDPICA935} {Ptlmnobuk}  
+
+CALCS()
+cjoinnamainput          djoinnamainput == 1
+ctipesama               abkkym2 == ltipekunci && (abksts == "INPG" || abksts == "RINP")
+ctgllbhhrini            tkdtgl2 > g_tgltrn
+cmaksmin2               (tlmtgl2 - tkdtgl2) >= 2
+ctipe1                  tkdnoll == "1"
+ctipe2                  tkdnoll == "2"
+ctipe3                  tkdnoll == "3"
+ctipe4                  tkdnoll == "4"
+ctipe5                  tkdnoll == "5"
+ctipe6                  tkdnoll == "6"
+ctipe7                  tkdnoll == "7"
+ctipe8                  tkdnoll == "8"
+ctipe9                  tkdnoll == "9"
+ctipe10                 tkdnoll == "10"
+
+MAP(mmapinputmundur)
+cnourt          tkdnourt        DO_CALC
+lnamainput      lnamainput      REPLACE_IF cjoinnamainput
+
+MAP(mvalidatekunci935)
+tlmnobuk        tkdnobuk        REPLACE
+tkdstr2         ltipekunci      REPLACE
+lnamainput      lnamainput      REPLACE_IF cjoinnamainput
+
+MAP(mmaptipekunci)
+ltipe1          ltipekunci      REPLACE_IF ctipe1
+ltipe2          ltipekunci      REPLACE_IF ctipe2
+ltipe3          ltipekunci      REPLACE_IF ctipe3
+ltipe4          ltipekunci      REPLACE_IF ctipe4
+ltipe5          ltipekunci      REPLACE_IF ctipe5
+ltipe6          ltipekunci      REPLACE_IF ctipe6
+ltipe7          ltipekunci      REPLACE_IF ctipe7
+ltipe8          ltipekunci      REPLACE_IF ctipe8
+ltipe9          ltipekunci      REPLACE_IF ctipe9
+ltipe10         ltipekunci      REPLACE_IF ctipe10
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=tkdstr1       DO_MAP SHOW mmapinputmundur
+
+AFTER_INPUT             cur_field=tkdtgl2       DO_MAP SHOW
+                        IF ctgllbhhrini         mdum
+                        ELSE HKCURSOR
+                        HKMSG Tanggal Harus Lebih Dari Hari Ini
+
+AFTER_INPUT             cur_field=tkdtgl2       DO_MAP SHOW
+                        IF cmaksmin2            mdum
+                        ELSE HKCURSOR
+                        HKMSG Maksimal Tanggal Mundur H-2
+
+AFTER_INPUT             cur_field=tkdnoll     DO_MAP SHOW mmaptipekunci
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_TARGET	tkddatbukll lUPDPICA935 tlmnobuk
+SFL_MAP
+tlmnobuk        tkdnobuk
+lUPDPICA935     tkddata
+tlmnoasal       tkdjenis
+ltipekunci      tkdstr2
+
+
+MAP(mupdkunci935)
+tkdtgl2         abktgl          REPLACE_IF ctipesama
+gt_RINP         abksts          REPLACE_IF ctipesama
+
+SPCALCS(spupdkunci935)
+DO_LIB          ap_dbclc(DNAME dupdkunci935,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN tlmnobuk,DMAP mupdkunci935);
+
+POSTING(tmptrans)
+PST_ADDCMD      spupdkunci935

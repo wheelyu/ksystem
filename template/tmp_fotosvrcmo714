@@ -1,0 +1,142 @@
+LOCAL
+PGM_FIELDS
+lsesuaiT	     STRING		21
+ljarakfoto		     DFLOAT		21
+
+lket			STRING		21			
+lcekrmh			STRING		21
+lcektg1			STRING		21
+lcektg2			STRING		21
+lcekkerja		STRING		21
+
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+!!t.Ket   : __________________    ||
+!!t.TglFt : __________________    ||
+!!t.Lat   : ___.__________________||
+!!t.Lon   : ___.__________________||
+!!t.JarakVsRt : ________.__        ||
+!!t.Sesuai/T  : __________        ||
+||                               _||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lket                    PROTECT                 INPUTRI         1
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         5 
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         6 
+ljarakfoto		PROTECT			INPUTRI		9
+lsesuaiT		PROTECT			INPUTRI		10
+svinobuk                PROTECT UNSEEN          INPUTRI         8
+
+
+CALCS()
+ccekjarak         ljarakfoto <= 500
+ccekjarakT	  ljarakfoto > 500
+
+EDIT(tmptranst)
+e.validateA      svinobuk VALIDATE  btmbukidx mbtmjarak
+
+DEFAULT(tmptranst)
+lcekrmh		INIT		RMHDPN
+lcektg1		INIT		CEKTG1
+lcektg2		INIT		CEKTG2
+lcekkerja	INIT		CEKKERJA
+
+
+CALCS()
+cfotoscmo    (svitype == "FOTOPK" && svikode=="RMHDPN") || svitype == "CEKRT" || svitype == "CEKTG1" || svitype == "CEKTG2" || svitype == "CEKKERJA"
+
+MAP(mjoinaktjarak)
+aktdf5		ljarakfoto     REPLACE
+
+DBCALCS(djoinaktcekjarak)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx    btmnobuk	lHISCEKIN     lcekrmh
+        DBC_MAP         mjoinaktjarak
+
+DBCALCS(djoinaktcektg1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx    btmnobuk      lHISCEKIN       lcektg1
+        DBC_MAP         mjoinaktjarak
+
+DBCALCS(djoinaktcektg2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx    btmnobuk      lHISCEKIN       lcektg2
+        DBC_MAP         mjoinaktjarak
+
+DBCALCS(djoinaktcekerja)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aktkodtypidx    btmnobuk      lHISCEKIN       lcekkerja
+        DBC_MAP         mjoinaktjarak
+
+CALCS()
+cketrt				svitype == "CEKRT"
+cketrmh				svitype == "FOTOPK" && svikode == "RMHDPN" && djoinaktcekjarak==1 && svitype == "FOTOPK" 
+cketrmhkiri			svitype == "FOTOPK" && svikode == "RMHKIRI"
+cketrmhkanan			svitype == "FOTOPK" && svikode == "RMHKANAN"
+ckettg1				svitype == "CEKTG1" && djoinaktcektg1==1 && svitype == "CEKTG1"
+ckettg2				svitype == "CEKTG2" && djoinaktcektg2==1 && svitype == "CEKTG2"
+cketcekkerja			svitype == "CEKKERJA" && djoinaktcekerja==1 && svitype == "CEKKERJA"
+
+
+
+ccekrt				"CEKRT"
+crmhdpn				"RMHDPN"
+crmhkiri			"RMHKIRI"
+crmhkanan			"RMHKANAN"
+ccektg1				"CEKTG1"
+ccektg2				"CEKTG2"
+ccekkerja			"CEKKERJA"
+csesuai				"SESUAI"
+ctdk				"TIDAK"
+
+MAP(mbtmjarak)
+btmnobuk        svinobuk       REPLACE
+c0		ljarakfoto     DO_CALC
+ljarakfoto      ljarakfoto     REPLACE_IF cketrmh 
+ljarakfoto      ljarakfoto     REPLACE_IF ckettg1
+ljarakfoto      ljarakfoto     REPLACE_IF ckettg2
+ljarakfoto      ljarakfoto     REPLACE_IF cketcekkerja
+
+ccekrt		lket	       DO_CALC_IF cketrt
+crmhdpn		lket	       DO_CALC_IF cketrmh
+crmhkiri	lket	       DO_CALC_IF cketrmhkiri
+crmhkanan	lket	       DO_CALC_IF cketrmhkanan 
+ccektg1         lket           DO_CALC_IF ckettg1
+ccektg2         lket           DO_CALC_IF ckettg2
+ccekkerja            lket           DO_CALC_IF cketcekkerja
+csesuai		lsesuaiT	DO_CALC_IF ccekjarak
+ctdk		lsesuaiT	DO_CALC_IF ccekjarakT
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+/*SFL_COND crmhkanan*/
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_SELECT cfotoscmo
+SFL_UPLREADONLY
+SFL_UPL_DELCOND c0
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk  
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

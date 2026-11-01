@@ -1,0 +1,205 @@
+LOCAL
+PGM_FIELDS
+lketkrm         STRING  251
+lket2krm        STRING  251
+lketisikrm      STRING  251
+lketisi2krm     STRING  251
+lT              STRING  2 
+lfotokirim21    STRING  21
+
+MAP(mjoinketkrm)
+ketisi          lketisikrm    REPLACE
+ketisi2         lketisi2krm   REPLACE
+
+DBCALCS(djoinketkrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      ketdatbukkod  tlmdata tlmnobuk lfotokirim21  
+        DBC_MAP         mjoinketkrm
+
+IMAGE(tmptranst)
+/---------------------------------------\
+ /--------s.UPLOAD---------------------\|
+ |                                     ||
+ |                                     ||
+ |                                     ||
+ |                                     ||
+ |                                     ||
+ |                                     ||
+ \-------------------------------------/|
+ /-------------------------------------\|
+ |t.NoBuk   ___________________________||
+ |t.Tipe    ___________________________||
+ |t.NoResi  ___________________________||
+ |t.Latitude_________.__               ||
+ |t.long    _________.__               || 
+ |t.Upload  __________ ___________     || 
+ |t.AprovRm ___________________________||
+ |t.Ket     ___________________________||
+ |t.AprovDh ___________________________||
+ |t.Ket     ___________________________||
+ |                                   __||
+ \-------------------------------------/| 
+\---------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+docnobuk	PROTECT		INPUTRI		1
+doclok		NOCHANGE	INPUTRI		2
+docno		ALLCAPS		INPUTRI		3
+tlmperpph	PROTECT		INPUTRI		4
+tlmtotpph	PROTECT		INPUTRI		5
+tlmtypbrg	PROTECT		INPUTRI		6
+lupload		TOMBOL		INPUTRI		99
+docsts          ALLCAPS         INPUTRI         8
+lketkrm         TEXTAREA        INPUTRI 	9
+doccab          ALLCAPS         INPUTRI 	10
+lket2krm        TEXTAREA        INPUTRI 	11
+lT              NOCHANGE        INPUTRI 	12
+
+
+DEFAULTS(tmptranst)
+doclok		DFALT_SCAN_BLANKS	PAKET KOLEKTOR
+docsts          DFALT_SCAN_BLANKS Y T
+doccab          DFALT_SCAN_BLANKS Y T
+lT              INIT                T
+lfotokirim21    INIT            FOTOKIRIM
+
+
+CALCS()
+cOK		"OK"
+cIN		"IN"
+condtl		tlmstsapr=="TL"
+ctipe1		doclok=="PAKET"
+ctipe0		doclok!="PAKET"
+csdhcetak	tlmjmlctk==1
+cupload		tlmtypbrg!=BLANKS
+cadalonlat	tlmperpph!=0 && tlmtotpph!=0
+cupdtmptrans    tlmstsapr==BLANKS && (tlmuntuk==g_usrkode || g_grpnam=="IT" || g_grpnam=="B.M4WCSPV" || g_grpnam=="RI" ||
+                                      g_grpnam == "B.M4WRM" || g_grpnam =="B.M4WDVH")
+cadaket0krm      djoinketkrm == 0
+cadaket1krm      djoinketkrm == 1 && g_curcmd != 1
+cadaket1bkrm     djoinketkrm == 1 && g_curcmd == 2
+/*csdhok           tlmtypbrg == "IN" 
+crmjawb2krm      docsts == "Y"  && (djoinabkdv == 0 || djoinabkdp == 0 )
+*/
+
+
+crmblmkrm        docsts == "Y" || g_grpnam == "B.M4WRM"
+cbknnip          tlmstsapr==BLANKS && (tlmuntuk!=g_usrkode && g_grpnam!="IT" && g_grpnam!="B.M4WCSPV" && g_grpnam!="RI" )   
+crmjawbkrm       docsts == "Y"
+cdvjawbkrm       doccab == "Y"
+
+ 
+MAP(mupdfotokirim)
+cBLANKS		tlmstsapr	DO_CALC_IF condtl
+cIN		tlmtypbrg	DO_CALC
+
+DBCALCS(dupdfotokirim)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tlmbukidx tlmnobuk
+	DBC_MAP		mupdfotokirim
+
+EDITS(tmptranst)
+e.Mandatory	doclok		MANDATORY
+e.Mandatory	docno		MANDATORY_IF ctipe1
+e.Validate      lT              VALIDATE_IF cbukanubah stskodidx mstsxkrm 0
+
+MAP(mstsxkrm)
+cBLANKS         lketkrm                 DO_CALC_IF cadaket0krm
+lketisikrm      lketkrm                 REPLACE_IF cadaket1krm
+cBLANKS         lket2krm                DO_CALC_IF cadaket0krm
+lketisi2krm     lket2krm                REPLACE_IF cadaket1krm
+
+
+
+MAP(mentertmptrans)
+cBLANKS		docno		DO_CALC_IF ctipe0
+
+MAP(mupload)
+g_fotolat1	tlmperpph	REPLACE
+g_fotolon1	tlmtotpph	REPLACE
+cOK		tlmtypbrg	DO_CALC_IF cadalonlat
+
+SPCALCS(supload)
+        /*DO_LIB_IF csdhok       ap_dbclc(DNAME daddabkrmket,DCOMMAND ADD,DFILE abk,DMAP maddabkrm);*/
+
+	DO_LIB_IF cupload ap_dbclc(DNAME dupload,DCOMMAND UPDATE,DTARGET tlmbukidx tlmnobuk,DMAP mupload);
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=docno		DO_SKIP_IF ctipe0
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW mentertmptrans
+CLICKED		cur_field=lupload	DO_SPCALCS supload
+BEFORE_INPUT    cur_field=doccab        DO_SKIP_IF cbkndvh
+BEFORE_INPUT    cur_field=lket2krm      DO_SKIP_IF cbkndvh
+BEFORE_INPUT    cur_field=docsts        DO_SKIP_IF cbknrm
+BEFORE_INPUT    cur_field=lketkrm       DO_SKIP_IF cbknrm
+BEFORE_INPUT    cur_field=doclok        DO_SKIP_IF cbknnip
+BEFORE_INPUT    cur_field=docno         DO_SKIP_IF cbknnip
+AFTER_INPUT     cur_field=doccab        DO_MAP SHOW
+                IF crmblmkrm  mdum
+                ELSE HKCURSOR STAY
+                HKMSG RM Blm Acc
+AFTER_INPUT     cur_field=doclok     DO_MAP SHOW
+                IF csdhcetak mdum
+                ELSE HKCURSOR STAY
+                HKMSG Cetak surat konfirmasi penarikan dulu
+
+MAP(mmapmapket)
+ldum            ldum              REPLACE
+
+MAP(maddketkrm)
+docnobuk        ketnobuk          REPLACE
+docdata         ketdata           REPLACE
+doctype         ketkode           REPLACE
+docnourt        ketnourt          REPLACE
+lketkrm         ketisi            REPLACE
+lket2krm        ketisi2           REPLACE
+
+
+MAP(mupdket3)
+lketkrm         ketisi            REPLACE_IF cadaket1bkrm
+ketisi          lketkrm           REPLACE_IF cadaket1krm 
+lket2krm        ketisi2           REPLACE_IF cadaket1bkrm
+ketisi2         lket2krm          REPLACE_IF cadaket1krm
+
+
+
+SPCALCS(saddket3)
+DO_LIB_IF cadaket0     ap_dbclc(DNAME dketkrm,DCOMMAND ADD,DFILE ket,DMAP maddketkrm);
+
+SPCALCS(supdket3)
+DO_LIB                 ap_dbclc(DNAME dmapmapket,DCOMMAND MAPMAP,DMAP mmapmapket);
+DO_LIB_IF cadaket0krm  ap_dbclc(DNAME dket3,DCOMMAND ADD,DFILE ket,DMAP maddketkrm);
+DO_LIB_IF cadaket1krm  ap_dbclc(DNAME dupdket3,DCOMMAND UPDATE,DTARGET ketbukurtidx tlmdata tlmnobuk docnourt,DMAP mupdket3);
+DO_LIB_IF crmjawbkrm   ap_dbclc(DNAME dupdkabkkrm,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG docnobuk2 l738,DMAP mkunci);
+/*DO_LIB_IF crmjawb2krm  ap_dbclc(DNAME daddabkdvkrm,DCOMMAND ADD,DFILE abk,DMAP maddabkdv);
+DO_LIB_IF crmjawb2krm  ap_dbclc(DNAME daddabkdpkrm,DCOMMAND ADD,DFILE abk,DMAP maddabkdp);
+*/
+DO_LIB_IF cdvjawbkrm   ap_dbclc(DNAME dupdkabk2krm,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG docnobuk2 l738,DMAP mkunci);
+
+
+SPCALCS(sdelket3)
+DO_LIB_IF cadaket1krm  ap_dbclc(DNAME ddelket3,DCOMMAND DELETE,DTARGET  ketbukurtidx tlmdata tlmnobuk docnourt);
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdfotokirim
+SFL_UPLFLD docnobuk2
+SFL_UPL_DIRFLD tlmtgl
+SFL_SHOW_NEXT
+SFL_TARGET
+        docdatbukidx	tlmdata tlmnobuk lfotokirim
+
+POSTING(tmptrans)
+        PST_ADDCMD saddket3
+        PST_UPDCMD supdket3
+        PST_DELCMD sdelket3
+
+PERMIT(tmptrans)
+PMT_ADD_COND		c0
+PMT_UPDALL_COND		cupdtmptrans
+PMT_DEL_COND		c0

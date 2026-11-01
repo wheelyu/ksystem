@@ -1,0 +1,65 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+|i.Histkesehatan                                                           |                          
+|i.Tgl          : ______________                                           |                          
+|/------------------------------------------------------------------------\|
+  i.kronis                            : _____ _____________                                  
+  i.Penyakit                          : __________________________________          
+  i.ThnRwt                            : _____                                       
+  i.NamaRS                            : __________________________________          
+|\------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1 		PROTECT {DD-MM-YY} NOLIMIT	INPUTRI 1
+
+psdtype  		NOCHANGE SCROLL      	 	INPUTRI 2
+lkronis			NOCHANGE 		INPUTRI 3
+psdket   		ALLCAPS        	 	INPUTRI 4
+psdstr1  		ALLCAPS                 INPUTRI 5 
+psdket2			ALLCAPS			INPUTRI 6
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT_ADD	{g_tgltrn}
+psdtgl1		INIT_UPDATE	{g_tgltrn}
+psdtype		DFALT_SCAN BLANKS YA 	"Ya"
+                                  TIDAK "Tidak"
+CALCS()
+cjwb_Ya1 	psdtype == "YA"
+cjwb_tdk1	psdtype == "TIDAK"
+cYA		"YA"
+cTIDAK		"TIDAK"
+ 
+EDITS(tmptranst)
+e.Mandatory psdtgl1	MANDATORY
+e.Mandatory psdtype 	MANDATORY
+e.Mandatory psdket  	MANDATORY_IF cjwb_Ya1
+e.Mandatory psdstr1  	MANDATORY_IF cjwb_Ya1
+e.Mandatory psdket2  	MANDATORY_IF cjwb_Ya1
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cjwb_tdk1
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cjwb_tdk1
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF cjwb_tdk1
+AFTER_INPUT	cur_field=psdtype	DO_MAP SHOW mkronis
+
+MAP(mkronis)
+cTIDAK		lkronis		DO_CALC_IF cjwb_tdk1
+cYA		lkronis		DO_CALC_IF cjwb_Ya1
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+
+SFL_TARGET
+	psddatpsmkod  gv_clnkry11  btmplg   gv_histkesehatan21
+
+SFL_MAP
+gv_clnkry11  		psddata		REPLACE
+btmplg  		psdpsmkode	REPLACE
+gv_histkesehatan21	psdkode		REPLACE
+g_usrkode		psdstr5		REPLACE
+

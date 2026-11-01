@@ -1,0 +1,100 @@
+LOCAL
+PGM_FIELDS
+lyes2		STRING  5
+luploktf    STRING	21
+lYoktf		STRING	5
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}   
+/----------------------------------\
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!               
+| \-------------------------------/|
+| /-------------------------------\|
+| |i.Ket    : ___________________ !|
+| |t.UplodOk: _____               ||
+| |t.Wajib  : _______             ||
+| |           ___________________ ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+    svinama                 PROTECT         INPUTRI 1
+	svistr1                 PROTECT         INPUTRI 2
+	svists                  PROTECT         INPUTRI 3        
+	luploktf                TOMBOL          INPUTRI 4
+
+DEFAULTS(tmptranst)
+lyes2		INIT		"OK"
+luploktf	INIT		"UPLOAD OK"
+lYoktf		INIT		Y
+
+MAP(moktf)
+lYoktf		sviyt1		REPLACE
+
+DBCALCS(dbfttfok)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP moktf
+
+MAP(mupdsvitf)
+lyes2	svistr1		REPLACE
+
+DBCALCS(dbfototf)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsvitf
+
+CALCS()
+chanyabuktitf	        svikode=="FPC001"
+caktupl669dp            djoinaktupl669dp == 0 && btmsts == "669" && btmflag1 == "DP" && svikode == "FPC001"
+csudahoktf	        sviyt1 == "Y" 
+
+MAP(maddaktupl669dp)
+	btmnobuk        aktkode         REPLACE
+	btmnobuk        aktnobuk        REPLACE
+	btmnobuk        aktbrg          REPLACE
+	l669         	aktkode2        REPLACE
+	lSLAUMROH       aktdata         REPLACE
+	l669UPLDP       akttype         REPLACE
+	g_tgltrn        akttgl          REPLACE
+	lsystime        aktjam          REPLACE
+	g_usrkode       aktcrtusr       REPLACE
+	btmlokjual      aktcab          REPLACE
+	l669            aktscr          REPLACE
+	lA		aktlok		REPLACE
+	l669PSTDP	aktket		REPLACE
+	l1		akturt		REPLACE
+
+SPCALCS(supdtransfer)
+	dbfototf
+	DO_LIB_IF       caktupl669dp 	ap_dbclc(DNAME daddaktupl669dp,DCOMMAND ADD,DFILE akt,DMAP maddaktupl669dp);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luploktf IF	csudahoktf  DO_SPCALCS supdtransfer
+				   ELSE t.UplFotoDulu
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+/*SFL_UPLFLD_DBCALCS dbfototf*/
+SFL_UPLFLD_DBCALCS dbfttfok
+SFL_COND	cfotoadhkrmsurat
+SFL_SELECT chanyabuktitf
+SFL_UPL_DIRFLD          btmtgl
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_DELCOND c0
+
+SFL_TARGET
+        svidatbuktyp   lFOTOADH btmnobuk lFOTOCAIR
+
+
+

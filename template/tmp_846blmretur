@@ -1,0 +1,116 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------\
+|/-------------------------------------------------------------------------\|
+|| t.NobukPenarikan : ______________                                       ||
+|| t.TipeUnit       : _____________ _____ ______ ____________              ||
+|| t.Nofaktur       : _____________________                                ||
+|| t.MAK            : _____________________                                ||
+|| t.TglFaktur      : _________ t.s/d _________ t.Lama _____ _____________ ||
+|| t.Usia           : ____  _______________                                ||
+|| t.KetUnit        : _____________________                                ||
+|| t.PlanTglTebus   : _____________________                                ||
+|| t.PlanTglRetur   : _____________________                                ||
+|| t.KetHasilKonf   : _____________________                                ||
+|| t.StsUpl         : ____                                                 ||
+||				 ______				           ||
+||                                                                         ||
+|\-------------------------------------------------------------------------/|
+|/--------------------------------\                                         |
+||t.UplDOCResume                  |                                         |
+|\--------------------------------/                                         |
+|/----------DOCUPLOAD-------------\                                         |
+||                                |                                         |
+||                                |                                         |
+|\--------------------------------/                                         |
+\---------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldsat      PROTECT                         INPUTRI 1
+
+tldkat      PROTECT                         INPUTRI 2
+tldcab      PROTECT                         INPUTRI 2
+tlddvs      PROTECT                         INPUTRI 2
+tldbisnis   PROTECT                         INPUTRI 2
+
+tldbrg      PROTECT                         INPUTRI 3
+tldkirim    PROTECT                         INPUTRI 3
+
+tldtglfak   PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 4
+tldtgl2     PROTECT NOLIMIT {DD-MM-YYYY}    INPUTRI 4
+tldjml2     PROTECT                         INPUTRI 4
+tldukrwrn   PROTECT                         INPUTRI 4
+
+tldstr1     PROTECT                         INPUTRI 4
+tldjml      PROTECT                         INPUTRI 4
+
+tldgrup     NOCHANGE                        INPUTRI 3
+tldtgl3     NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 5
+tldtgl4     NONE NOLIMIT {DD-MM-YYYY}       INPUTRI 6
+tldket      TEXTAREA                        INPUTRI 7
+tldtydis    PROTECT                         INPUTRI 7
+lenter      NOCHANGE                        INPUTRI 8
+
+DEFAULTS(tmptranst)
+lenter      INIT     "OK"
+tldgrup     DFALT_SCAN_BLANKS AKAN_RETUR
+                              AKAN_TEBUS
+
+CALCS()
+cmautebus       tldgrup == "AKAN_TEBUS"
+ctmautebus      tldgrup != "AKAN_TEBUS"
+cmauretur       tldgrup == "AKAN_RETUR"
+ctmauretur      tldgrup != "AKAN_RETUR"
+cblmadtgl       tldtgl2 == BLANKS
+clamablmrtr     tldtgl2 - tldtglfak + 1
+clebihdr7       tldjml2 > 7
+ckrgdr7         tldjml2 <= 7
+/*cdjointlm739    djointlm739 == 1*/
+
+EDITS(tmptranst)
+e.Mandatorytebus    tldtgl3      MANDATORY_IF cmautebus
+e.Mandatoryretur    tldtgl4     MANDATORY_IF cmauretur
+e.Mandatorydoc       tldtydis       MANDATORY
+/*
+MAP(musiamokas)
+lusia       tkdtype2        REPLACE_IF cdjointlm739
+*/
+
+MAP(mtglendap)
+g_tgltrn    ltglcek     REPLACE
+ltglcek     tldtgl2     REPLACE_IF cblmadtgl
+clamablmrtr tldjml2     DO_CALC
+llebihdr7   tldukrwrn   REPLACE_IF clebihdr7
+lkrgdr7     tldukrwrn   REPLACE_IF ckrgdr7
+
+MAP(mupdtldblmrtrok)
+lOK         tldtydis                  REPLACE
+
+DBCALCS(dupdtldblmrtrok)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx   tldprm 
+	    DBC_MAP         mupdtldblmrtrok
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_UPL_DIRFLD tlmtgl
+SFL_DOCUPLFLD tldbrg
+SFL_DOCUPLFLD_DBCALCS   dupdtldblmrtrok
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldstskodbrg   lBLMRETUR  gv_OPEN  tlmnobuk
+
+SFL_MAP
+lBLMRETUR   tlddata     REPLACE
+tlmnobuk    tldplg     REPLACE
+gv_OPEN     tldsts      REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldgrup   DO_MAP SHOW mtglendap
+BEFORE_INPUT    cur_field=tldtgl3   DO_SKIP_IF ctmautebus
+BEFORE_INPUT    cur_field=tldtgl4   DO_SKIP_IF ctmauretur
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND cOPEN

@@ -1,0 +1,116 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------\
+|       t.UbahRek                                                                   |
+|       /-------------------------------------------------------\                   |
+|       !_____________________     __________                   !                   |
+|       !t.User          : ___________ ________________         !                   |
+|       !t.Bank          : ___________                          !                   |
+|       !t.NoRekAsal     : ______________________________       !                   |
+|       \-------------------------------------------------------/                   |
+|       /-------------------------------------------------------\                   |
+|       |t.Bank          : ___________                          !                   |
+|       !t.NoRekTujuan   : ______________________________       !                   |
+|       \-------------------------------------------------------/                   |
+|       /-------------------------------------------------------\                   |
+|       !t.AccHrd        : ____________                         !                   |
+|       !t.Ket           : __________________________________   !                   |
+|       \-------------------------------------------------------/                   |
+\-----------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldnobuk        PROTECT                 INPUTRI 1
+tldtglfak       PROTECT NOLIMIT {DD-MM-YY} INPUTRI 2
+tldplg		PROTECT			INPUTRI 3
+lnamauser	PROTECT			INPUTRI 4
+tldkat          PROTECT                 INPUTRI 5 /*Bank*/   
+tldsat          PROTECT                 INPUTRI 6 /*NoRek*/   
+
+tldnoll         ALLCAPS                 INPUTRI 7 /*Bank*/     
+tldukrwrn       ALLCAPS SCROLL          INPUTRI 8 /*NoRek*/   
+tldsisbrg	NOCHANGE SCROLL		INPUTRI 9 /*acc tacc*/
+tldket		ALLCAPS SCROLL		INPUTRI 10 /*Ket*/
+
+DEFAULTS(tmptranst)
+tldtglfak	INIT_ADD	{g_tgltrn}
+tldplg		INIT_ADD	{g_usrkode}
+tldsisbrg       DFALT_SCAN_BLANKS Y T           
+
+EDITS(tmptranst)
+t.Mandatory     tldnoll MANDATORY
+t.Mandatory     tldukrwrn MANDATORY
+t.Validate tldplg VALIDATE psikodidx mpsirek
+t.Validate tldnoll VALIDATE tbddatkodidx mtbd_bank2 stbd {Pgv_dttabel}  {Pgv_personal} {Pgv_bank21}
+
+MAP(mpsirek)
+psikode		tldplg	REPLACE
+psinama		lnamauser	REPLACE
+
+MAP(mtbd_bank2)
+tbdkode		tldnoll		REPLACE
+
+CALCS()
+cjoinpsdbank	djoinpsd7==1       
+
+MAP(mreksebelum)
+lpsdstr1	tldkat		REPLACE_IF cjoinpsdbank
+lpsdstr2	tldsat		REPLACE_IF cjoinpsdbank
+
+MAP(mrekening2)
+psmsts                  lstssdm2         REPLACE
+
+DBCALCS(djoinrekening2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psmbankidx      tldukrwrn
+        DBC_MAP         mrekening2
+
+CALCS()
+cpanjang1        DO_LIB ap_strln(tldukrwrn,&lpanjang11);
+cbcaok1          ((tldnoll == "BCA" || tldnoll=="BSI") && lpanjang11 == 10) || (tldnoll == "BNI" && lpanjang11 >= 8 && lpanjang11 <=10) || (tldnoll == "BRI" && lpanjang11 == 15) || (tldnoll == "MANDIRI" && lpanjang11 == 13) || tldnoll == BLANKS
+cnik11           (tldnoll=="BNI" && ldigit1!="0") || tldnoll!="BNI"
+creksudahada        djoinrekening2==0 || (djoinrekening2==1 && lstssdm2!="INPG")
+
+/*Batasan Harus input angka*/
+ce1z1             tldukrwrn!="000000" && tldukrwrn!="11111111" && tldukrwrn!="2222222" && tldukrwrn!="3333333" && tldukrwrn!="4444444" && tldukrwrn!="55555555" && tldukrwrn!="66666666" && tldukrwrn!="7777777" && tldukrwrn!="888888" && tldukrwrn!="9999999"
+
+MAP(mcaripanjang1)
+cpanjang1        lpanjang11       DO_CALC
+
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldnoll       DO_MAP SHOW mreksebelum
+BEFORE_INPUT	cur_field=tldsisbrg	DO_SKIP_IF cbkn_hrd  
+BEFORE_INPUT	cur_field=tldket    DO_SKIP_IF cbkn_hrd  
+AFTER_INPUT	cur_field=tldukrwrn	DO_MAP SHOW mcaripanjang1
+AFTER_INPUT     cur_field=tldukrwrn       DO_MAP SHOW
+                IF cbcaok1 mdum
+                ELSE HKCURSOR STAY
+                        HKMSG t.Bca10DgtBRI15DgtMandiri13DgtBNI8sd10Dgt
+AFTER_INPUT    cur_field=tldukrwrn    DO_MAP SHOW
+               IF cnik11  mdum
+               ELSE HKCURSOR STAY
+                    HKMSG t.BNINolTdkPerluDitulis
+
+AFTER_INPUT     cur_field=tldukrwrn        DO_MAP SHOW
+                IF ce1z1   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.InputYgBenar
+
+AFTER_INPUT     cur_field=tldukrwrn        DO_MAP SHOW
+                IF creksudahada   mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.RekSdhAda
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD       tldnourt
+SFL_TARGET
+        tldbukbrgoto btmplg gv_CLSD lUBAHREK21
+
+SFL_MAP
+lUBAHREK21              tldbrg          REPLACE
+btmplg                  tldnobuk        REPLACE
+gv_CLSD			tldsts		REPLACE
+g_tgltrn		tldtglfak	REPLACE

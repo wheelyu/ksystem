@@ -1,0 +1,78 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7} 
+/------------------------------------------------------------------------------------------\
+ /-------s.UPLOAD----------\/-------------------------------------------------------------\
+ |                         !! i.Ket : ____________________________ __________             !
+ |                         !!                                                             !
+ |                         !!                                                             !
+ |                         !!                                                             !
+ |                         !!                                                             !
+ |                         |!                                                             !
+ \-------------------------/\-------------------------------------------------------------/
+\------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tbtket                  PROTECT                 INPUTRI         1
+        lsviyt1                 PROTECT                 INPUTRI         2
+
+DEFAULTS(tmptranst)
+lTMPQA		INIT		TMPQA
+
+CALCS()
+cY              "OK"
+chapusfoto      sviyt1 != "OK"
+
+MAP(maddsvi1)
+btmnobuk        svinobuk        REPLACE
+cY              sviyt1          DO_CALC
+lTMPQA         svidata         REPLACE
+g_tgltrn        svitgl1         REPLACE
+lTMPQA      sviket          REPLACE
+btmnobuk        svidtmkode      REPLACE
+btmnobuk        svitblkode      REPLACE
+tbtkode         svitype         REPLACE
+tbtket          sviket2         REPLACE
+cY              lsviyt1         DO_CALC
+tbtnourt        svinourt        REPLACE
+
+DBCALCS(daddsvi)
+         DCOMMAND       ADD
+         DFILE          svi
+         DMAP           maddsvi1
+
+CALCS()
+cnamadir        "upload/" + STRIP(bkmnobs) + STRIP(tbtkode)
+
+
+MAP(mcode)
+cnamadir    	lnamadir    DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tbtket 	DO_MAP SHOW mcode
+AFTER_INPUT	cur_field=tbtket 	DO_LIB ap_chkdr(lnamadir,&ldir_exist,&lfile_exist)
+CLICKED         cur_field=lsviyt1       DO_SPCALCS sptransmbj
+  
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS daddsvi
+SFL_UPLFLD btmnobuk tbtkode
+SFL_UPL_DIRFLD btmtgl
+SFL_UPL_DELCOND chapusfoto
+SFL_TARGET
+	tbtdaturtidx   	gv_dttemplate lTMPQA tmpkode tmpkode
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+
+SPCALCS(sptransmbj)
+        daddsvi
+
+
+POSTING(tmptrans)
+        PST_COMMAND             sptransmbj
+

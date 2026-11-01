@@ -1,0 +1,221 @@
+LOCAL
+PGM_FIELDS
+lvidniprm       STRING  21
+lvidnipho       STRING  21
+lnamarm         STRING  21
+lnamaho         STRING  21
+lAREAPIUTHO     STRING  21
+lketabk         STRING  21
+lREVRM          STRING  11
+lREVHO          STRING  11
+ljamsekarang    TIME     4 
+l1630           TIME     4   
+
+CALCS()
+cnipsama        abkkym  == g_usrkode  && (abktype == "REVRM" || abktype == "REVHO")
+crevrm          abktype == "REVRM"    && abkkym  == svistr1 && abksts == "CLSD"
+crevho          abktype == "REVHO"    && abkkym  == svistr2 && abksts == "CLSD"
+
+MAP(mjoinsgmrm)
+tbtcab                  lvidniprm       REPLACE
+DBCALCS(djoinsgmrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdatkodtyp   gv_dttabel lMASTERTARGET tlmdvs lAREAPIUTHO lMASTERTARGET tlmcab
+        DBC_MAP         mjoinsgmrm
+
+MAP(mjointbtho)
+tbttblket               lvidnipho       REPLACE
+DBCALCS(djointbtho)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdatkodtyp   gv_dttabel lMASTERTARGET tlmdvs lAREAPIUTHO lMASTERTARGET tlmcab
+        DBC_MAP         mjointbtho
+
+MAP(mnamarm)
+psinama                 lnamarm         REPLACE
+DBCALCS(djoinnamarm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx svistr1
+        DBC_MAP         mnamarm
+
+MAP(mnamaho)
+psinama                 lnamaho         REPLACE
+DBCALCS(djoinnamaho)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx svistr2
+        DBC_MAP         mnamaho
+
+DBCALCS(djoinabkrev)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lKUNCIABSEN svinobuk
+        DBC_SELECT      cnipsama
+
+DBCALCS(djoinabkrevrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lKUNCIABSEN svinobuk
+        DBC_SELECT      crevrm
+
+DBCALCS(djoinabkrevho)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abkdatbukidx lKUNCIABSEN svinobuk
+        DBC_SELECT      crevho
+
+MAP(mjoinnourtvid)
+svinourt                lurut           REPLACE
+DBCALCS(djoinnourtvid)
+        DBC_COMMAND     JOIN_LAST_SFL
+        DBC_TARGET      svidatbuktyp    tlmdata  tlmnobuk lVIDEST4W
+        DBC_MAP         mjoinnourtvid
+
+CALCS()
+cjoinsgmrm              djoinsgmrm  == 1
+cjointbtho              djointbtho  == 1
+cjoinnamarm             djoinnamarm == 1
+cjoinnamaho             djoinnamaho == 1
+curut                   lurut + 1
+cdjoinnourtvid          djoinnourtvid == 1
+cbknusr                 g_grpnam == "B.M4WCSPV" || g_grpnam == "B.M4WDPH" || g_grpnam == "B.M4WRM"
+cbknrm                  g_grpnam != "B.M4WRM"
+cblmrevrv               (sviyt1 != BLANKS && (g_grpnam == "B.M4WCSPV" || g_grpnam == "B.M4WDPH")) || (g_grpnam != "B.M4WCSPV" && g_grpnam != "B.M4WDPH") 
+cbknho                  (sviyt1 == BLANKS && (g_grpnam == "B.M4WCSPV" || g_grpnam == "B.M4WDPH")) || (g_grpnam != "B.M4WCSPV" && g_grpnam != "B.M4WDPH")
+ckeyrevrm               djoinabkrevrm == 0 && g_curcmd == 1 && sviket != BLANKS
+ckeyrevho               djoinabkrevho == 0 && g_grpnam == "B.M4WRM" && sviyt1 != BLANKS
+ckurang1630             ljamsekarang <= l1630
+clewat1630              ljamsekarang  > l1630
+cbalikkuncirm           djoinabkrevrm == 1 
+cbalikkunciho           djoinabkrevho == 1  
+csdhreview              djoinabkrev == 1 && ((g_usrkode == svistr1 && sviyt1 != BLANKS) || (g_usrkode == svistr2 && sviyt2 != BLANKS))
+ctambah                 g_curcmd == 1
+
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/-----------------------------------------------\|
+|                ___ _______________________      |
+| t.Link         ___________________________      |
+| t.Approval     ____________ ______________ t.RM |     
+|                ___________                      |    
+|                ___________________________      |
+|                ____________ ______________ t.HO |
+|                ___________                      |
+|                ___________________________      | 
+|\-----------------------------------------------/|
+\-------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinourt                PROTECT         INPUTRI 1       /*no urut*/
+svinobuk                PROTECT         INPUTRI 2       /*nobuk*/
+sviket                  TEXTAREA        INPUTRI 3       /*link video*/
+
+svistr1                 PROTECT         INPUTRI 4       /*nip RM*/
+lnamarm                 PROTECT         INPUTRI 4       /*nama RM*/
+sviyt1                  NOCHANGE        INPUTRI 5       /*isi review RM*/
+sviket2                 TEXTAREA        INPUTRI 6       /*textarea RM*/
+
+svistr2                 PROTECT         INPUTRI 7       /*nip HO*/
+lnamaho                 PROTECT         INPUTRI 7       /*nama HO*/
+sviyt2                  NOCHANGE        INPUTRI 8       /*isi review HO*/
+sviket3                 TEXTAREA        INPUTRI 9       /*textarea HO*/
+
+DEFAULTS(tmptranst)
+ljamsekarang            INIT                    SYSTIME
+l1630                   INIT                    1630
+lketabk                 INIT                    "REV VIDEO ESTIMASI"
+lAREAPIUTHO             INIT                    AREAPIUTHO
+lREVRM                  INIT                    REVRM
+lREVHO                  INIT                    REVHO
+sviyt1                  DFALT_SCAN_BLANKS       Y
+                                                T
+sviyt2                  DFALT_SCAN_BLANKS       Y
+                                                T
+
+EDITS(tmptranst)
+e.Wajib isi link video          sviket          MANDATORY
+e.Validate739                   svinobuk        VALIDATE tlmbukidx mbuk739 0
+
+MAP(mbuk739)
+tlmnobuk        svinobuk        REPLACE
+cBLANKS         lnamarm         DO_CALC
+cBLANKS         lnamaho         DO_CALC
+lvidniprm       svistr1         REPLACE_IF cjoinsgmrm
+lvidnipho       svistr2         REPLACE_IF cjointbtho
+lnamarm         lnamarm         REPLACE_IF cjoinnamarm
+lnamaho         lnamaho         REPLACE_IF cjoinnamaho
+lurut           lurut           REPLACE_IF cdjoinnourtvid
+
+MAP(mnourut)
+curut           svinourt        DO_CALC
+tlmnobuk        svinobuk        REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=sviket        DO_MAP SHOW IF ctambah mnourut
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknusr
+
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknrm
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cbknrm
+
+BEFORE_INPUT    cur_field=sviyt2        DO_MAP SHOW
+                IF cblmrevrv            mdum
+                ELSE HKCURSOR
+                HKMSG RM Belum Review
+
+BEFORE_INPUT    cur_field=sviyt2        DO_SKIP_IF cbknho
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cbknho
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_SORT_BY_FIELD svinourt
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+        svidatbuktyp    tlmdata  tlmnobuk lVIDEST4W
+
+SFL_MAP
+lVIDEST4W       svitype         REPLACE
+tlmdata         svidata         REPLACE
+tlmnobuk        svinobuk        REPLACE
+
+MAP(maddabkrevrm)
+lKUNCIABSEN     abkdata         REPLACE
+tlmnobuk        abknobuk        REPLACE
+gv_INPG         abksts          REPLACE_IF ckurang1630
+gt_RINP         abksts          REPLACE_IF clewat1630
+svistr1         abkkym          REPLACE
+lketabk         abkkym2         REPLACE
+l739            abkscr          REPLACE
+tlmtgl          abktgl          REPLACE
+lREVRM          abktype         REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+MAP(maddabkrevho)
+lKUNCIABSEN     abkdata         REPLACE
+tlmnobuk        abknobuk        REPLACE
+gv_INPG         abksts          REPLACE_IF ckurang1630
+gt_RINP         abksts          REPLACE_IF clewat1630
+svistr2         abkkym          REPLACE
+lketabk         abkkym2         REPLACE
+l739            abkscr          REPLACE
+tlmtgl          abktgl          REPLACE
+lREVHO          abktype         REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+MAP(mupdabkrev)
+gv_CLSD         abksts          REPLACE_IF cnipsama
+DEBUG   ldum    ldum            REPLACE
+
+MAP(mupdkunci)
+gv_INPG         abksts          REPLACE
+DEBUG   ldum    ldum            REPLACE
+
+SPCALCS(saddvidest4w)
+        DO_LIB_IF ckeyrevrm             ap_dbclc(DNAME daddabkrevrm,DCOMMAND ADD,DFILE abk,DMAP maddabkrevrm);                                                                          /*record pertama - kuncian berjenjang review RM*/
+        DO_LIB_IF cbalikkuncirm         ap_dbclc(DNAME dupdkuncirevrm,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_CLSD svistr1 l739 tlmtgl tlmnobuk,DMAP mupdkunci);            /*jika detail tambah record, kuncian berjenjang pakai ini*/
+        
+SPCALCS(supdvidest4w)       
+        DO_LIB_IF ckeyrevho             ap_dbclc(DNAME daddabkrevho,DCOMMAND ADD,DFILE abk,DMAP maddabkrevho);                                                                          /*record pertama - kuncian berjenjang review HO*/
+        DO_LIB_IF cbalikkunciho         ap_dbclc(DNAME dupdkuncirevho,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_CLSD svistr2 l739 tlmtgl tlmnobuk,DMAP mupdkunci);            /*jika detail tambah record, kuncian berjenjang pakai ini*/
+        DO_LIB_IF csdhreview            ap_dbclc(DNAME dupdabkreviewrm,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN svinobuk,DMAP mupdabkrev);                                /*buka kunci RM & HO*/
+
+POSTING(tmptrans)
+        PST_ADDCMD      saddvidest4w
+        PST_UPDCMD      supdvidest4w

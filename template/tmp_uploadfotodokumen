@@ -1,0 +1,115 @@
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket   : ______________________||
+||          ____  ____            ||
+!!t.TglFt : __________            ||
+!!t.Jam   : __________            ||
+!!t.Lat   : ___.__________________||
+!!t.Lon   : ___.__________________||
+||spasi                           ||
+||t.LonLatKecKel                  ||
+||t.Lat   : ___.__________________||
+||t.Lon   : ___.__________________||
+||t.Jar   : _______.___           ||
+||         ________________      _||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1                  ALLCAPS                 INPUTRI         2
+sviyt2                  ALLCAPS                 INPUTRI         3
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+ljamfoto714             PROTECT                 INPUTRI         5
+g_fotolat1              PROTECT NUMERIC {99,999999999}          INPUTRI         6
+g_fotolon1              PROTECT NUMERIC {99,999999999}          INPUTRI         7
+llatsvy                 PROTECT NUMERIC {99,999999999}          INPUTRI         7
+llonsvy                 PROTECT NUMERIC {99,999999999}          INPUTRI         8
+svidf5			PROTECT	NUMERIC	{99,999999999}		INPUTRI		9
+lklikft                 TOMBOL                  INPUTRI         9
+svinobuk                PROTECT UNSEEN          INPUTRI         10
+
+/*
+CALCS()
+cfotormhx       / (svitblkode == "CMS" && (svikode == "APPKR" || svikode=="FRMKOM" || svikode == "FRMSVY" || svikode == "FRMPENYIMPANGAN" || svikode=="KWIMTR" || svikode=="BKTRMH" || svikode=="SLIPGAJI")) /
+                (svitblkode == "CMS" && (svikode=="KWIMTR" || svikode=="SLIPGAJI" || svikode == "APPKR" || svikode=="FRMKOM" || svikode == "FRMSVY"))
+                || (svitblkode=="CMO" && (svikode=="RMHKANAN" || svikode=="RMHKIRI" || svikode=="RMHDPN"))
+                || svitblkode == "ALL"
+                || svitblkode == "PMO"
+                || svitblkode == "PMS"
+                || (svitblkode == "CMS" && (btmsoa=="AGEN" || btmsoa=="FREELANCE") && (svikode == "FOTOPENGHASILAN" || svikode=="FOTOMILIKRMH"))
+
+cY              "Y"
+csdhft714       sviyt1=="Y"
+cadalon714      svidf7!=0 && (g_fotodate1==g_tgltrn || g_grpnam=="RI" || g_grpnam=="IT") && g_grpnam=="tdk pakai"
+cblanks		BLANKS
+*/
+DEFAULTS(tmptranst)
+lklikft         INIT    	"UPLOAD OK"
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msvift714
+
+MAP(msvift714)
+cblanks         ljamfoto714     DO_CALC
+svidf8          ljamfoto714     REPLACE
+llatsvy         llatsvy         REPLACE_IF cdjointbtring1
+llonsvy         llonsvy         REPLACE_IF cdjointbtring1
+
+MAP(mupdsvift714ok)
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+cok             sviyt2          DO_CALC_IF cadalon714
+
+DBCALCS(dupdsvift714ok)
+        DCOMMAND        UPDATE
+        DTARGET sviotoidx svioto
+        DMAP            mupdsvift714ok
+
+SPCALCS(spcaluplft714)
+dupdsvift714ok
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lklikft       DO_SPCALCS IF csdhft714 spcaluplft714
+
+MAP(mupdsvift714)
+cY              sviyt1          DO_CALC
+csystime        svidf8          DO_CALC
+g_tgltrn        svitgl2         REPLACE
+
+DBCALCS(dupdsvift714)
+        DCOMMAND UPDATE
+        DTARGET sviotoidx svioto
+        DMAP mupdsvift714
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT cfotormhx
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD_DBCALCS dupdsvift714
+SFL_UPLFLD btmnobuk svikode
+SFL_SHOW_NEXT
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk gv_fotopk
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND cfoto714
+  PMT_DEL_COND  c0
+

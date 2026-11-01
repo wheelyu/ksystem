@@ -1,0 +1,167 @@
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |            _________ _________||
+| |             __________________||
+| |             __________________||
+| |t.krjskr     __________________||
+| |t.tlporngkntr__________________||
+| |t.UplodOk    _______  _________||_
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+| /-------------------------------\|
+| |t.divheadmkt _____             ||
+| |_______________________________||
+| |         ________  _________   ||
+| |t.divheadpiu _____             ||
+| |_______________________________||
+| |         ________  _________   ||
+| |t.DCOO       _____             ||
+| |_______________________________||
+| |_____    ________  _________   ||
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svists          PROTECT                   INPUTRI 1
+        svistr5         PROTECT                   INPUTRI 1
+        svikode         PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svidf1          PROTECT QPROTECT UNSEEN   INPUTRI 1
+        svistr2         PROTECT                   INPUTRI 1
+        svistr3         ALLCAPS                   INPUTRI 2
+        svistr1         PROTECT                   INPUTRI 3
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 4
+        svinobuk        PROTECT UNSEEN            INPUTRI 5
+        sviyt1          ALLCAPS                   INPUTRI 5
+        sviket          TEXTAREA ALLCAPS          INPUTRI 6
+        ltglcm          PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamcm          PROTECT                   INPUTRI 7
+        sviyt2          ALLCAPS                   INPUTRI 5
+        sviket2         TEXTAREA ALLCAPS          INPUTRI 6
+        ltgldvh2        PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamdvh2        PROTECT                   INPUTRI 7
+        svistr31        ALLCAPS                   INPUTRI 5
+        sviket3         TEXTAREA ALLCAPS          INPUTRI 6
+        lok             NOCHANGE                  INPUTRI 7
+        ltglcoo         PROTECT {DD-MM-YYYY}      INPUTRI 7
+        ljamcoo         PROTECT                   INPUTRI 7
+ 
+CALCS()
+ckodekontrak       svitype == "DEVKONTRAK"
+
+
+DEFAULTS(tmptranst)
+sviyt1             DFALT_SCAN_BLANKS Y T
+sviyt2             DFALT_SCAN_BLANKS Y T
+svistr31           DFALT_SCAN_BLANKS Y T
+
+EDITS(tmptranst)
+e.isiyt           sviyt1         MANDATORY_IF cbknCR1
+e.isiket          sviket         MANDATORY_IF cT           
+e.isiyt2          sviyt2         MANDATORY_IF cbknCL1
+e.isiket2         sviket2        MANDATORY_IF cT2        
+e.isiyt           svistr31       MANDATORY_IF cbknDCOO1
+e.isiket          sviket3        MANDATORY_IF cT3          
+e.stsbukan707     svikode        VALIDATE ftmdatbukidx mftm13a sftm6 {PlMULTI4W}
+
+MAP(mftm13a)
+ltglcm            ltglcm          REPLACE_IF cjoinaktcm
+ljamcm            ljamcm          REPLACE_IF cjoinaktcm
+ltgldvh2          ltgldvh2        REPLACE_IF cjoinaktdvh2
+ljamdvh2          ljamdvh2        REPLACE_IF cjoinaktdvh2
+ltglcoo           ltglcoo         REPLACE_IF cjoinaktcoo
+ljamcoo           ljamcoo         REPLACE_IF cjoinaktcoo
+
+
+MAP(mapra13)
+g_grpnam        svistr5           REPLACE
+gv_CLSD         svists            REPLACE_IF ctlk0aa
+gv_TACC         svists            REPLACE_IF ctlk1aa
+gv_RCLS         svists            REPLACE_IF ctolaka2
+
+
+MAP(mkunci13a)
+gv_CLSD         abksts            REPLACE_IF cnipsama
+
+MAP(mkunci13)
+gv_CLSD         abksts            REPLACE
+
+MAP(mmapmap13)
+ldum            ldum              REPLACE
+svinourt        lurut             REPLACE
+cnobukabk       lkunci            DO_CALC
+
+
+SPCALCS(supdabk13)
+DO_LIB                 ap_dbclc(DNAME dmapmap13,DCOMMAND MAPMAP,DMAP mmapmap13);
+DO_LIB                 ap_dbclc(DNAME dakt13,DCOMMAND ADD,DFILE akt,DMAP maddakt);
+DO_LIB_IF cbkunci      ap_dbclc(DNAME daddkunc13,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci13a);
+DO_LIB_IF cbkunci2     ap_dbclc(DNAME dupdkunc13b,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci l643,DMAP mkunci13);
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapra13
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS supdabk13
+BEFORE_INPUT    cur_field=sviyt1        DO_SKIP_IF cbknCR
+BEFORE_INPUT    cur_field=sviket        DO_SKIP_IF cbknCR
+BEFORE_INPUT    cur_field=sviyt2        DO_SKIP_IF cbknCL
+BEFORE_INPUT    cur_field=sviket2       DO_SKIP_IF cbknCL
+BEFORE_INPUT    cur_field=svistr31      DO_SKIP_IF cbknDCOO
+BEFORE_INPUT    cur_field=sviket3       DO_SKIP_IF cbknDCOO
+AFTER_INPUT     cur_field=sviket        DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket        DO_MAP
+                IF cisiket mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+AFTER_INPUT     cur_field=sviket2       DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket2       DO_MAP
+                IF cisiket2 mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+AFTER_INPUT     cur_field=sviket3       DO_MAP SHOW mlenket
+AFTER_INPUT     cur_field=sviket3       DO_MAP
+                IF cisiket3 mdum
+                ELSE HKCURSOR STAY
+                HKMSG isi 20 karakter
+
+
+
+MAP(mupdsviftmandx13a)
+cOK             svistr1           DO_CALC
+g_tgltrn        svitgl1           REPLACE
+
+
+DBCALCS(dbftupl13a)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx13a
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl13a
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT   ckodekontrak
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c02             
+  PMT_UPDALL_COND  cdevinpg
+  PMT_DEL_COND  c02      
+
+
+
+

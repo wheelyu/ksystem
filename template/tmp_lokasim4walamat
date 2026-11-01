@@ -1,0 +1,90 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+|/------------------------------------------------------------------------\|
+||                          t.AlamatLokasi                                ||
+|\------------------------------------------------------------------------/|
+|/------------------------------------------------------------------------\|
+||t.Alamat       _____________________________________                    ||
+||                t.rt _____  t.rw _____                                  ||
+||t.Provinsi      __________  ____________________________________________||
+||t.Kota          __________  ____________________________________________||
+||t.Kec           __________  ____________________________________________||
+||t.Kel           __________  ____________________________________________||
+|\------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+almjalan        TEXTAREA ALLCAPS        INPUTRI         14
+almrt           ALLCAPS                 INPUTRI         15
+almrw           ALLCAPS                 INPUTRI         16
+almprop         ALLCAPS                 INPUTRI         17
+lnamapropm      PROTECT                 INPUTRI         18
+almkota         ALLCAPS                 INPUTRI         19
+lnamakotam      PROTECT                 INPUTRI         20
+almkec          ALLCAPS                 INPUTRI         21
+lnamakecm       PROTECT                 INPUTRI         22
+almkel          ALLCAPS                 INPUTRI         23
+lnamakelm       PROTECT                 INPUTRI         24
+
+EDITS(tmptranst)
+e.Validate                      almprop         VALIDATE dtmdtkodidx mpropm sdtm {Pgv_dtkota}
+e.Validate                      almkota         VALIDATE tbldtdtmkod mkotam stbl {Pgv_dtkota} {Palmprop}
+e.Validate                      almkec         VALIDATE tbddatkodidx mkecm stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.Validate                      almkel         VALIDATE tbtdattypkod mkelm stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+Alamat Tempat Harus Diisi       almjalan     MANDATORY
+RT Tempat Harus Diisi           almrt       MANDATORY
+RW Tempat Harus Diisi           almrw       MANDATORY
+Provinsi Tempat Harus Diisi     almprop       MANDATORY
+Kab/Kota Tempat Harus Diisi     almkota       MANDATORY
+Kecamatan Tempat Harus Diisi    almkec       MANDATORY
+Kelurahan Tempat Harus Diisi    almkel       MANDATORY
+
+MAP(mpropm)
+dtmkode         almprop          REPLACE
+dtmket          lnamapropm        REPLACE
+
+MAP(mkotam)
+tblkode         almkota         REPLACE
+tblket          lnamakotam        REPLACE
+
+MAP(mkecm)
+tbdkode         almkec         REPLACE
+tbdket          lnamakecm         REPLACE
+
+MAP(mkelm)
+tbtkode         almkel         REPLACE
+tbtket          lnamakelm         REPLACE
+
+CALCS()
+chitrtm          DO_LIB ap_strln(almrt,&llongrtm);
+chitrwm          DO_LIB ap_strln(almrw,&llongrwm);
+
+MAP(mhitrtm)
+chitrtm         llongrtm        DO_CALC
+
+MAP(mhitrwm)
+chitrwm         llongrwm        DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=almrt     DO_MAP SHOW mhitrtm
+AFTER_INPUT     cur_field=almrt     DO_MAP SHOW
+                IF clongrtm mdum
+                ELSE HKCURSOR STAY
+                HKMSG  Panjang Nomor RT Harus 3 Karakter
+AFTER_INPUT     cur_field=almrw     DO_MAP SHOW mhitrwm
+AFTER_INPUT     cur_field=almrw     DO_MAP SHOW
+                IF clongrwm mdum
+                ELSE HKCURSOR STAY
+                HKMSG  Panjang Nomor RW Harus 3 Karakter
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+almdatotobuk   tlmdata tlmnobuk tlmnobuk
+SFL_MAP
+tlmdata		almdata		REPLACE
+tlmnobuk	almbukoto	REPLACE
+tlmnobuk	almnobuk	REPLACE

@@ -1,0 +1,68 @@
+IMAGE(tmptranst)
+/-----t-----------t------------t-------------------t--------------t---------\
+|t.No |  t.Tipe   |t.Divisi    |t.Departemen       |t.Jabatan     |t.TestHE |
+\-----.-----------.------------.-------------------.--------------.---------/
+
+IMAGE(tmptrans)
+! ___ |___________|____________|___________________|______________|_________|
+
+FIELD(tmptrans)
+   tldnourt     PROTECT                    INPUTRI          1
+   tldlok       PROTECT                    INPUTRI          2
+   tldsat       ALLCAPS SCROLL             INPUTRI          3
+   tldkat       ALLCAPS SCROLL             INPUTRI          4
+   tldplg       ALLCAPS SCROLL             INPUTRI          5
+   tldjml       ALLCAPS SCROLL             INPUTRI          6
+
+EDITS(tmptrans)
+t.Validate tldsat VALIDATE tbddatkodidx mtbddiv3 stbd {Pgv_dttabel} {Pgv_personal} {Pldivisi21}
+t.Validate tldkat VALIDATE tbddtmstidx mtbdDEP3 stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_DEP} {Ptldsat} {Pgv_DEP}
+t.Validate tldplg VALIDATE tbddtmstidx mtbdJAB3 stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} {Ptldsat} {Ptldkat}
+t.Mandatory tldsat MANDATORY
+t.Mandatory tldkat MANDATORY
+t.Mandatory tldplg MANDATORY
+t.Mandatory tldjml MANDATORY
+t.Mandatory tldlok  MANDATORY
+
+MAP(mtbddiv3)
+tbdkode         tldsat  REPLACE
+
+MAP(mtbdDEP3)
+tbdkode         tldkat  REPLACE
+
+MAP(mtbdJAB3)
+tbdkode         tldplg  REPLACE
+
+MAP(mnourut3)
+c1              tldnourt        DO_CALC_IF cjointld1d_0
+ctbh1dd         tldnourt        DO_CALC_IF cjointld1d_1
+tmpkode         tldlok          REPLACE
+lJABMODUL21     tldbrg          REPLACE
+lJABMODUL11     tlddata         REPLACE
+tlmnobuk        tldnobuk        REPLACE
+tlmuntuk        tldukrwrn       REPLACE
+gv_CLSD         tldsts          REPLACE
+
+HOOKS(tmptrans)
+BEFORE_INPUT    cur_field=tldkat        DO_MAP SHOW mnourut3
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF cjabada mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.JabIniSdhAda
+
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD tldnourt
+SFL_LINES(6)
+SFL_SELECT ctmp_sama
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tldstsbrgukr lJABMODUL11 gv_CLSD lJABMODUL21     tlmuntuk
+
+SFL_MAP
+lJABMODUL11       tlddata  REPLACE
+gv_CLSD         tldsts  REPLACE
+lJABMODUL21         tldbrg  REPLACE
+tlmuntuk        tldukrwrn       REPLACE
+tlmnobuk        tldnobuk        REPLACE
+tmpkode		tldlok		REPLACE

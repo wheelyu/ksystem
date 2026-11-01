@@ -1,0 +1,249 @@
+SCREEN 408 QUERY_TYPE t.PenyDirectGift
+SCR_FILE mts
+SCR_LOGFLD mtsnobuk
+SCR_NXT_POSTING 4316
+SCR_NXT_MAP mnext
+SCR_NXT_COND cmtsOK
+SCR_NXT_MSG	IF cmts01	t.StsNoOpen
+		IF cmts02	t.LokMshKsg
+		/*IF cmts03	t.LokBlmIsi	*/
+
+MAP(mnext)
+mtsnobuk	r_string1	REPLACE
+mtsnopsn	r_string2	REPLACE
+
+LOCAL
+PGM_FIELDS
+	lbutton1	STRING		30
+	ljmlppd		DFLOAT		8
+	lisilok		DFLOAT		8
+	lmapbtf		STRING		30
+	ldum		STRING		2
+	lenter		STRING		21
+
+	ldipenuhi	DFLOAT		8
+	ltothpp		DFLOAT		8
+	lhrgrata	DFLOAT		8
+	lnamtrnjml	STRING		21
+	lppmstskrm	STRING		5
+	lppmcab		STRING		21
+	lBAIK		STRING		21
+	lversi		STRING		21
+
+CALCS()
+c1up		1
+cselectbonus	(ppdkat == "BONUS" || ppdkat == "KSU")
+csudahlok	ppdlok != BLANKS
+
+MAP(mscanppdbonus)
+c1up		ljmlppd		DO_CALC
+c1up		lisilok		DO_CALC_IF csudahlok
+
+DBCALCS(dscanppdbonus)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	ppdbukurtidx	mtsnopsn
+	DBC_SELECT	cselectbonus
+	DBC_SUM_MAP	mscanppdbonus
+
+DBCALCS(djoinbtfbonus_del)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btfbrglokidx	mtsnopsn ppdbrg ~ppdlok ppdoto
+
+DBCALCS(djoinbtfbonus_add)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btfbrglokidx	mtsnopsn ppdbrg ppdlok ppdoto
+
+MAP(mjoinppm)
+ppmstskrm	lppmstskrm	REPLACE
+ppmcab		lppmcab		REPLACE
+
+DBCALCS(djoinppm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppmbukidx	mtsnopsn
+	DBC_MAP		mjoinppm
+
+CALCS()
+cpilihbonus	ppdkb == "B" && ppdsts == "HUTB" && (ppdkat == "BONUS" || ppdkat == "KSU")
+
+DBCALCS(djoinppd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppdbukurtidx	mtsnopsn
+	DBC_SELECT	cpilihbonus
+
+CALCS()
+cmtsOK		mtssts == "OPEN" && ((dscanppdbonus==0 || dscanppdbonus!=0) && lisilok != 0)
+cmts01		mtssts != "OPEN"
+cmts02		((dscanppdbonus==0||dscanppdbonus!=0)&&lisilok==0)
+/*cmts03		((dscanppdbonus==0||dscanppdbonus!=0)&&lisilok!=ljmlppd)*/
+
+MAP(mapbtf)
+ppdplg		btfplg		REPLACE
+ppdtglfak	btftglfak	REPLACE
+ppdhrg		btfhrgjl	REPLACE
+
+IMAGE(master)
+/---------------------------------\
+ i.Tgl     : _____________
+ i.Sts     : ________
+ i.NoBuk   : _____________________
+ i.Dlr     : ________
+ i.NoFak   : _____________________
+ t.LokJual : ________
+ t.CabKrm  : ________
+             _________________
+\---------------------------------/
+/---------------------------------\
+ _________________________________
+ t.SudahBisaProsesKSU
+\---------------------------------/
+__________
+
+FIELD(master)
+mtstgl		PROTECT NUMERIC NOLIMIT {DD-MM-YYYY}		INPUTRI		1
+mtssts		PROTECT						INPUTRI		2
+mtsnobuk	PROTECT						INPUTRI		3
+mtscab		ALLCAPS NOSPACE					INPUTRI		4
+mtsnopsn	ALLCAPS SCROLL					INPUTRI		5
+mtsgrup		PROTECT SCROLL					INPUTRI		6
+mtsgrup2	PROTECT SCROLL					INPUTRI		7
+lenter		NOCHANGE					INPUTRI		8
+
+lbutton1	TOMBOL						INPUTRI		51
+
+mtsdata		PROTECT QPROTECT UNSEEN				INPUTRI		99
+
+DEFAULTS(master)
+mtstgl		INIT		{g_tgltrn}
+mtstgl		INIT_QUERY	{g_tgltrn}
+mtssts		INIT		OPEN
+mtssts		INIT_QUERY	OPEN
+mtsdata		INIT		KIRIMGIFT
+mtsdata		INIT_QUERY	KIRIMGIFT
+
+lbutton1	INIT		"1d. Detail Barang"
+lmapbtf		INIT		mapbtf
+lnamtrnjml	INIT		"ppdjml"
+lenter		INIT		ENTER
+lBAIK		INIT		BAIK
+lversi		INIT		28072026
+
+EDITS(master)
+t.MandatoryDlr	mtscab		MANDATORY
+e.MandatoryFkt	mtsnopsn	MANDATORY
+
+t.ValidateDlr	mtscab		VALIDATE cabstsposidx mcabdlr scabSV {Pgv_INPG} {Pgv_CAB}
+t.ValidateJual	mtsnopsn	VALIDATE ppmbukidx mppm 0
+
+MAP(mcabdlr)
+cabkode		mtscab		REPLACE
+cabkdfak	cabkdfak	REPLACE
+
+MAP(mppm)
+ppmnobuk	mtsnopsn	REPLACE
+ppmcabpos	mtsgrup		REPLACE
+ppmcabinduk	mtsgrup2	REPLACE
+ppmcab		ppmcab		REPLACE
+
+CALCS()
+cnobuk		"DG" + STRIP(cabkdfak) + THBLS(mtstgl)
+cadd		g_curcmd == 1
+csudahkirim	djoinppm == 1 && lppmstskrm == "KR"
+cjoinppd1	djoinppd == 1
+cdlrsama	djoinppm == 1 && lppmcab == mtscab
+
+MAP(mnobuk)
+cnobuk		mtsnobuk	DO_CALC_IF cadd
+
+MAP(mdum)
+ldum		ldum		REPLACE
+
+HOOKS(master)
+AFTER_INPUT	cur_field=mtscab	DO_MAP SHOW mnobuk
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF csudahkirim mdum
+		ELSE HKCURSOR STAY
+		HKMSG Faktur Ini Belum Kirim Motor
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cjoinppd1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG Faktur Ini Tidak Ada Bonus Menyusul
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cdlrsama mdum
+		ELSE HKCURSOR STAY
+		HKMSG Faktur ini Cabang Dealer nya beda dengan yang di Master
+
+IMAGE(transt)
+/-----------t--------------------t--------t-----t--------t-----------------t----------------t---------------\
+|i.Kat      |i.Kode              |i.Sts   |t.KB |i.Jml   |i.Nominal        |i.Cab           |i.Lok          |
+\-----------.--------------------.--------.-----.--------.-----------------.----------------.---------------/
+
+IMAGE(trans)
+|___________|____________________|________|_____|________|_________________|________________|_______________|
+
+FIELD(trans)
+ppdkat		PROTECT		INPUTRI		1
+ppdbrg		PROTECT		INPUTRI		1
+ppdsts		PROTECT		INPUTRI		2
+ppdkb		PROTECT		INPUTRI		3
+ppdjml		PROTECT		INPUTRI		4
+ppdhrg		PROTECT		INPUTRI		5
+ppdcab		ALLCAPS		INPUTRI		6
+ppdlok		ALLCAPS		INPUTRI		7
+
+CALCS()
+chba		ppdkat == "HGA" || ppdkat == "BONUS" || ppdkat == "APAREL"
+
+EDITS(trans)
+e.Mandatory	ppdcab	MANDATORY
+
+e.ValidateCab ppdcab VALIDATE cabstspst2id mcab scab610 {Pgv_INPG} {Pmtscab}
+t.ValBrdBonus ppdlok VALIDATE_RKP brdbrglokoto mbrdLok sbrdLok {Pgv_INPG} {Pppdbrg} {Pppdcab}
+
+MAP(mcab)
+cabkode		ppdcab		REPLACE
+
+MAP(mbrdLok)
+brdlok		ppdlok		REPLACE
+brdukrwrn	ppdukrwrn	REPLACE_IF chba
+
+SUBFILE(trans)
+SFL_TITLE(transt)
+SFL_LINES(10)
+SFL_SELECT	cselectbonus
+SFL_TARGET
+	ppdbukurtidx	mtsnopsn
+
+MAP(maddsub)
+mtsnobuk	mtsnobuk	REPLACE
+
+CALCS()
+cjoinbtfbonus0ksu          	djoinbtfbonus_add == 0 && ppdlok != BLANKS
+cjoinbtfbonus1ksu		djoinbtfbonus_del == 1 && ~ppdlok != BLANKS
+
+SPCALCS(saddsub)
+	DO_LIB ap_dbclc(DNAME daddsub, DCOMMAND ADD_SUB, DFILE mts,DLTARGET mtsbukidx mtsnobuk,DLLEN {stspjbuk},DMAP maddsub);
+
+SPCALCS(supdtr)
+	DO_LIB_IF cjoinbtfbonus1ksu ap_dlbtf(gv_O,g_strksg,mtsnopsn,~ppdbrg,~ppdlok,~ppdoto,ppdukrwrn,~ppdsat,~ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_strksg,lnamtrnjml);
+        DO_LIB_IF cjoinbtfbonus0ksu ap_adbtf(gv_O,g_strksg,mtsnopsn,ppdbrg,ppdlok,ppdoto,ppdukrwrn,ppdsat,ppdjml,&ldipenuhi,&ltothpp,&lhrgrata,g_strksg,g_strksg,lmapbtf,g_strksg,ppdcab,mtstgl);
+
+POSTING(master)
+	PST_SUB_ADDCMD	saddsub
+
+POSTING(trans)
+	PST_UPDCMD supdtr
+
+CALCS()
+c0		0
+cblmadalok	((dscanppdbonus == 0 || dscanppdbonus != 0) && lisilok == 0) && mtssts == "OPEN"
+cmasihB		ppdkb == "B"
+
+PERMIT(master)
+	PMT_UPDALL_COND	cblmadalok
+
+PERMIT(trans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	cmasihB
+	PMT_DEL_COND	c0
+
+END_SCREEN

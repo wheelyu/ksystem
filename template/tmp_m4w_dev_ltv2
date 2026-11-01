@@ -1,0 +1,333 @@
+LOCAL 
+PGM_FIELDS
+lsvioto		STRING		21
+lsvistr1pos	STRING		21
+l2006		STRING		21
+lrm		STRING		21
+lbtmnobuk	STRING		21
+lbtmplg		STRING		21
+lsvistr1	STRING		21 
+lsviket		STRING		61
+lsvidf1		DFLOAT		8
+lsvidf2		DFLOAT		8
+lsvidf3		DFLOAT		8
+lsvidf4		DFLOAT		8
+lsvidf5dev		DFLOAT		8
+lsvitype2	STRING		11
+lsvitype3	STRING		11
+lsvitype	STRING		11
+lsvistr1debitur2         STRING  21
+lsvihasil2               STRING          21
+lurtapr2                 STRING          21
+lversi2		STRING		11
+lfinalslik	STRING		21
+lenter2          STRING         21
+l701DEVPK	STRING		21
+
+DBCALCS(djointbdmemo)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx    gv_dttabel gv_infokredit l701DEVPK btmnobuk
+
+
+CALCS()
+csdhtacc	 ((djointbdmemo==1 && btmtypdeb=="NEW") || btmnobuk=="M4W250100000077" || btmnobuk=="M4W250100000078" ||
+		 (btmtypdeb == "RO" && djoinsviwrn == 1 && ((btmstr1=="ORANGLAIN" && lsvistr1wrn == "MERAH") || lsvistr1wrn == "TACC")))
+
+/*DBCALCS(djoinrmdltv2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    lDELT   lkodegab
+*/
+
+MAP(mjoinsgmrm)
+sgmstr5                 lniprm                 REPLACE
+
+DBCALCS(djoinsgmrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg gv_dtpiccab gv_m4w21 lrm lthbl btmlokjual btmlokjual
+        DBC_MAP         mjoinsgmrm
+
+
+MAP(mjoinposdev)
+svistr1			lsvistr1pos	REPLACE
+
+DBCALCS(djoinsviposapr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp gt_deviasibr11 btmnobuk lPOSDEV l1
+	DBC_MAP		mjoinposdev
+
+MAP(mjoinsviposslik2)
+svistr1         lsvistr1debitur2         REPLACE
+svistr3         lsvihasil2               REPLACE
+svistr5         lurtapr2                 REPLACE
+svistr4		lfinalslik		REPLACE
+
+DBCALCS(djoinsviposslik2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp lSLIK nhmfinco_3 lPOSSLIK
+        DBC_MAP         mjoinsviposslik2
+
+IMAGE(tmptranst)
+/------------------------------------------------------------------------------------------\
+|t.t                                                                                       |
+|t.Nobukdev       : ____________________                                      _____  _____ |
+|i.NoBuk          : ____________________ ___________                                       |
+|i.Idpelanggan    : ________________________________                                       |
+|i.Asset          : _____________________  i.Kodeasset   : _________________________       |
+|t.Ket            : ______________________________________________________________________ |
+|                                                                                          |
+|                                                                                          |
+|i.Pltv           : ___.____                            t.Batasltv     : ___.__            |
+|t.ltvaju         : ___.____                            t.selisihltv   : ___.____          |
+|t.AprFinalLtv    : _________________                   t.AprAkhirltv  : _________________ |
+|_____________                                                                             |
+\------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinobuk                        NOCHANGE                        INPUTRI         1
+svitype2                        PROTECT                         INPUTRI         1
+svitype3                        PROTECT                         INPUTRI         1
+svikode                         PROTECT                         INPUTRI         2
+svitype				ALLCAPS				INPUTRI		3
+btmplg                          PROTECT                         INPUTRI         2
+svistr1                         ALLCAPS                         INPUTRI         3
+svistr2                         PROTECT                         INPUTRI         4
+sviket                          TEXTAREA                        INPUTRI         5
+svidf1   	 		NUMERIC				INPUTRI		 6
+svidf4				PROTECT 			INPUTRI 	6
+svidf2				PROTECT				INPUTRI		 7
+svidf3				NUMERIC 			INPUTRI		 8
+svistr3   			ALLCAPS				INPUTRI		9
+svistr4   			PROTECT				INPUTRI		9
+lenter2        			ALLCAPS                         INPUTRI 	10
+
+DEFAULT(tmptranst)
+lenter2                         INIT                    ENTER
+lrm				INIT			BM
+l2006				INIT			{cthbl}
+lLTV				INIT			LTV
+svinourt			INIT			1
+svitype3                        INIT                    OPEN
+l701DEVPK			INIT			701DEVPK
+svitype				DFALT_SCAN		BLANKS
+							TUNGGAL "TUNGGAL"
+							LTV	"LTV"
+							BUNGA	"RATE"
+ 
+IF csdhtacc svitype             DFALT_SCAN              PK      
+                                                       
+							
+lversi2				INIT			170125v1
+CALCS()
+cselisihltv			svidf2 - svidf4
+
+EDITS(tmptranst)
+e.Mandatory                     svikode                 MANDATORY
+e.Mandatory                     sviket                  MANDATORY
+e.Mandatory			svidf2			MANDATORY
+e.Mandatory			svitype			MANDATORY
+e.Validate                      svinobuk                VALIDATE btmbukidx mmts2
+e.Validate			svistr1			VALIDATE astdatkodidx mast2 sast {Pgv_dtassets} {Pbtmplg} {Pgv_bpkb}
+e.Validate			svinobuk 		VALIDATE nhmdatbukidx mnhm {Pgv_dtbukutamu}
+
+MAP(mnhm)
+nhmperpok_3			svidf1			REPLACE
+nhmperpok_3			svidf2			REPLACE
+nhmmaxcair_3			svidf4			REPLACE
+
+CALCS()
+cpjg0				astpj == 0
+cpjg1				astpj == 1
+cpjg2				astpj == 2
+cpjg3				astpj == 3
+cpjg4				astpj == 4
+c00				BLANKS 
+/*cjikaprcoo			svistr1 != "B.M4WDVH" && svistr1 != "B.M4WCOO" && svistr1 != "COO" */ /*((svitype  == "BUNGA" || svitype == "TUNGGAL" || svitype == "LTV") && djoinsviposapr == 1 && lsvistr1pos != "B.M4WCOO" && lsvistr1pos != "COO" && lsvistr1pos != "B.M4WDVH")  */
+/*  cbknslik  			svitype  != "SLIK" */
+ 
+cbolehpilih			(svitype == "LTV" && nhmperpok_3 > nhmmaxcair_3) ||
+				(svitype == "BUNGA" && nhmbgstd_3 < nhmangstd_3) ||
+				(svitype == "SLIK" && djoinsviposslik2 == 1 && lsvihasil2 == "DEVIASI") ||
+				(svitype == "TUNGGAL" && djoinsvipemohon == 1 && ljnspemohon == "TUNGGAL") ||
+                                (svitype == "PK" && (btmstr1 == "ORANGLAIN" && 
+                                (djoinsviwrn == 1 && (lsvistr1wrn == "MERAH" || lsvistr1wrn == "TACC"))) || djointbdmemo==1) || nhmprogjl_3 == "KARYAWANTOPUP"
+/*cBM4WMSPV			"B.M4WDVH"*/
+cBM4WQA  			"B.M4WCM"
+cBM4WCM  			"B.M4WCM"
+/*cBM4WCOO 			"B.M4WDVH"*/
+cBM4WMSPVx			svitype=="BUNGA"
+cBM4WQAx			svitype=="TUNGGAL" || (svitype=="LTV" && (svidf1-svidf4)<=5)
+cBM4WCMx			svitype=="LTV" && ((svidf1-svidf4)>5 || (svidf1>=85 && svidf1<=90))
+cBM4WCOOx		        svitype=="PK" 
+ctipeslik			svitype=="SLIK" && djoinsviposslik2==1
+
+MAP(mast2)
+astkode                         svistr1                         REPLACE
+astbrg                          svistr2                         REPLACE
+c00				svistr31			DO_CALC_IF cpjg0
+cA				svistr31			DO_CALC_IF cpjg1
+cB				svistr31			DO_CALC_IF cpjg2
+cC				svistr31			DO_CALC_IF cpjg3
+cD				svistr31			DO_CALC_IF cpjg4
+
+
+MAP(mmts2)
+btmnobuk		svinobuk		REPLACE
+
+MAP(mselisihltv)
+cselisihltv             svidf3                  DO_CALC
+
+MAP(misiaprx)
+cBM4WCM  		svistr3			DO_CALC_IF cBM4WMSPVx  
+cBM4WQA			svistr3			DO_CALC_IF cBM4WQAx
+cBM4WCM			svistr3			DO_CALC_IF cBM4WCMx
+cBM4WCM 		svistr3			DO_CALC_IF cBM4WCOOx
+lfinalslik		svistr3			REPLACE_IF ctipeslik
+
+MAP(misiltv)
+gt_deviasibr11		svidata			REPLACE
+btmnobuk		svinobuk                REPLACE
+btmplg			svikode			REPLACE
+
+
+CALCS()
+cdibawah90	svidf1 < 90 || nhmprogjl_3 == "KARYAWANTOPUP"
+cskipxx		g_grpnam!="B.M4WDVH" && g_grpnam!="B.M4WMSPV" && g_grpnam!="RI" && g_grpnam!="IT"
+cdjoinsviposapr0	djoinsviposapr == 0
+/*cdjoinsviposapr1	djoinsviposapr == 1*/
+
+cdjoinsgmrm		djoinsgmrm == 1 
+cnontruck               ljenis != "TRUCK" && ljenis != "PICKUP"
+ctruck                  ljenis == "TRUCK" || ljenis == "PICKUP"
+cTRUCK                  30
+cSJMB                   20
+cgabltv                 STRIP(lniprm)  
+cdeviasiltv		svitype == "LTV"
+/*crmddevltv1             djoinrmdltv2 == 1 */
+cMHEADa			"B.M4WMHEAD"
+
+HOOKS(tmptranst)
+BEFORE_INPUT                     cur_field=svistr1      DO_MAP SHOW misiltv        
+AFTER_INPUT                     cur_field=svistr1      DO_MAP SHOW mnhm        
+AFTER_INPUT                     cur_field=svidf2       DO_MAP SHOW mselisihltv
+AFTER_INPUT			cur_field=svitype	DO_MAP SHOW misiaprx   
+AFTER_INPUT			cur_keybd=EN		DO_MAP SHOW mselisihltv
+AFTER_INPUT			cur_keybd=EN		DO_MAP SHOW misiaprx   
+
+AFTER_INPUT			cur_field=svidf1	DO_MAP SHOW
+				IF cdibawah90 mdum
+				ELSE HKCURSOR STAY
+                     		HKMSG h.Tidakbolehdiatas90
+
+AFTER_INPUT			cur_field=svitype	DO_MAP SHOW
+				IF cbolehpilih mdum
+				ELSE HKCURSOR STAY
+				HKMSG t.BukanDeviasiIni
+
+BEFORE_INPUT			cur_field=svistr3	DO_SKIP_IF cskipxx
+
+CALCS()
+cseldev		svitype == "LTV" || svitype == "BUNGA" || svitype == "TUNGGAL" || svitype == "SLIK" || svitype == "PK"
+cdevltv0		(g_grpnam == "MKTSPV" || g_grpnam == "RI" || g_grpnam == "B.M4WADH" || g_grpnam == "B.M4WBM" || g_grpnam == "MT4W" || g_grpnam == "B.M4WRM")
+
+cdevltvopen		(svitype3 == "OPEN" || (g_grpnam == "B.M4WMSPV" || g_grpnam == "RI" || g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WCM"))  
+
+cdevdel  		g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "B.M4WDVH" || g_grpnam == "B.M4WCOO" || g_grpnam == "COO" || g_grpnam == "B.M4WCM"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_SELECT cseldev
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        svidatbuktyp gt_deviasibr11 btmnobuk
+
+SFL_MAP
+btmnobuk	svinobuk	REPLACE
+gt_deviasibr11	svidata		REPLACE
+l1		svinourt	REPLACE
+
+MAP(mmapmap1)
+lniprm                  lniprm          REPLACE_IF cdjoinsgmrm
+cSJMB                   ltypemobil      DO_CALC_IF cnontruck
+cTRUCK                  ltypemobil      DO_CALC_IF ctruck
+cgabltv                 lkodegab        DO_CALC_IF cdeviasiltv
+btmnobuk		lbtmnobuk	REPLACE
+btmplg			lbtmplg		REPLACE
+sviket			lsviket		REPLACE
+svidf1			lsvidf1		REPLACE
+svidf2			lsvidf2		REPLACE
+svidf3			lsvidf3		REPLACE
+svidf4			lsvidf4		REPLACE
+svidf5			lsvidf5dev		REPLACE
+svitype2		lsvitype2	REPLACE
+svitype3		lsvitype3	REPLACE
+svioto			lsvioto		REPLACE
+svitype			lsvitype	REPLACE
+svistr3			lsvistr3	REPLACE
+
+MAP(maddsvipos)
+btmnobuk		svinobuk	REPLACE
+gt_deviasibr11		svidata		REPLACE
+lPOSDEV			svitype		REPLACE
+l1			svinourt	REPLACE
+cMHEADa                 svistr1         DO_CALC
+cBLANKS			svistr4		DO_CALC
+DEBUG	ldum	ldum	REPLACE
+
+
+/*MAP(mupdsvipos)
+cBLANKS			svistr2		DO_CALC
+cMHEADa                  svistr1        DO_CALC_IF cjikaprcoo
+DEBUG	ldum	ldum	REPLACE
+*/
+
+
+MAP(mmapakhir)
+gt_deviasibr11		svidata		REPLACE
+lsvitype		svitype		REPLACE
+lbtmnobuk		svinobuk	REPLACE
+lbtmplg			svikode		REPLACE
+lsvidf1			svidf1		REPLACE
+lsvidf2			svidf2		REPLACE
+lsvidf3			svidf3		REPLACE
+lsvidf4			svidf4		REPLACE
+lsvistr1		svistr1		REPLACE
+lsvitype2		svitype2	REPLACE
+lsvitype3		svitype3	REPLACE
+lsviket			sviket		REPLACE
+lsvioto			svioto		REPLACE
+lsvidf5dev		svidf5		REPLACE
+lsvistr3		svistr3		REPLACE
+
+MAP(mmapnipbmltv)
+lsgmstr5bm      lsgmstr5bm      REPLACE_IF cjoinsgmbm
+
+
+SPCALCS(spaddmtstr1)
+	DO_LIB ap_dbclc(DNAME dmapmap1,DCOMMAND MAPMAP,DMAP mmapmap1);
+	DO_LIB_IF cdjoinsviposapr0   ap_dbclc(DNAME daddsvipos,DCOMMAND ADD,DFILE svi,DMAP maddsvipos);
+/*	DO_LIB_IF crmddevltv1  ap_ambts(lDELT,lkodegab,svidf2,svidf3,ltypemobil,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);*/
+	/*DO_LIB_IF cdjoinsviposapr1   ap_dbclc(DNAME dupdsvipos,DCOMMAND UPDATE_BUF3,DTARGET svidatbuktyp gt_deviasibr11 btmnobuk  lPOSDEV l1,DMAP mupdsvipos);*/
+  	DO_LIB ap_dbclc(DNAME dmapakhir,DCOMMAND MAPMAP,DMAP mmapakhir);
+	DO_LIB ap_dbclc(DNAME dmapnipbmltv,DCOMMAND MAPMAP,DMAP mmapnipbmltv);
+
+SPCALCS(spupdmtstr1)
+	DO_LIB ap_dbclc(DNAME dmapmap2,DCOMMAND MAPMAP,DMAP mmapmap1);
+	DO_LIB_IF cdjoinsviposapr0   ap_dbclc(DNAME daddsviposup,DCOMMAND ADD,DFILE svi,DMAP maddsvipos);
+/*	DO_LIB_IF crmddevltv1  ap_ambts(lDELT,lkodegab,svidf2,svidf3,ltypemobil,&lhasil1m,&lhasil2m,&lhasil3m,&lhasiltxt1,&lhasiltxt2);*/
+/*	DO_LIB_IF cdjoinsviposapr1   ap_dbclc(DNAME dupdsvipos1,DCOMMAND UPDATE_BUF3,DTARGET svidatbuktyp gt_deviasibr11 btmnobuk  lPOSDEV l1,DMAP mupdsvipos);*/
+
+POSTING(tmptrans)
+	PST_ADDCMD spaddmtstr1
+	PST_UPDCMD spupdmtstr1
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cdevltv0
+  PMT_UPDALL_COND  cdevltvopen
+  PMT_DEL_COND  cdevdel    
+
+
+
+
+

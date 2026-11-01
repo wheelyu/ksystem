@@ -1,0 +1,60 @@
+LOCAL
+PGM_FIELDS
+lhpupline	STRING		21
+lnamaupline	STRING		61
+lktpupline	STRING		21
+
+MAP(mjoinpsmupline)
+psmnama		lnamaupline	REPLACE
+psmktp		lktpupline	REPLACE
+
+DBCALCS(djoinpsmupline)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	psmkdtmp2
+	DBC_MAP		mjoinpsmupline
+
+MAP(mjoinconupline)
+conhp		lhpupline	REPLACE
+
+DBCALCS(djoinconupline)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx   lktpupline gv_INPG
+	DBC_MAP		mjoinconupline
+
+IMAGE(tmptranst)
+/--------------------------------------------\
+|t.NamaAgen    	_____________________        |
+|t.NoTelp      	_____________________        |
+|t.NamaUpline  	_____________________        |
+|t.NoUpline 	_____________________ __ __  |
+\--------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psmnama		ALLCAPS		INPUTRI	1
+psmkode		ALLCAPS		INPUTRI	2
+lnamaupline	ALLCAPS		INPUTRI	3
+lhpupline	ALLCAPS		INPUTRI 4
+psmkdtmp2	PROTECT UNSEEN	INPUTRI	5
+psmcab		PROTECT UNSEEN	INPUTRI	5
+
+CALCS()
+cdjoinconupline		djoinconupline == 1
+ckliknsconline		btmiklan == "KLIKNSCONLINE"
+cdjoinpsmupline		djoinpsmupline == 1
+
+EDITS(tmptranst)
+e.Validatecab		psmcab		VALIDATE	cabkodidx mcabagen 0
+
+MAP(mcabagen)
+lnamaupline	lnamaupline	REPLACE_IF cdjoinpsmupline
+lktpupline	lktpupline	REPLACE
+lhpupline	lhpupline	REPLACE_IF cdjoinconupline
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND      ckliknsconline
+SFL_TARGET
+psmdtskodidx   lDTAGEN gv_INPG lnohp

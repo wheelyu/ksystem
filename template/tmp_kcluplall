@@ -1,0 +1,75 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------\
+| ________________________________                           |
+|/--s.UPLOAD----------------------\/------------------------\|
+||			    	  ||t.KclKetUpl		    ||
+||                                ||i.Tgl     : __________  ||
+||                                ||t.OkUp    : __________  ||
+||                                ||t.Nippic  : __________  ||
+||			    	  ||t.KclKetAccCmbn	    ||
+||                                ||i.Nipacc  : __________  ||
+||                                ||t.Acccmbn : _________   ||
+||                                ||______________________  ||
+||			    	  ||t.KclKetAccLegal	    ||
+||                                ||t.NipLegal: __________  ||
+||                                ||t.AccLegal: _________   ||
+||                                ||______________________  ||
+||			    	  ||spasi		    ||
+|\--------------------------------/\------------------------/|
+\------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tmpket			PROTECT			INPUTRI 1
+psdtgl1                 PROTECT {DD-MM-YY}     	INPUTRI 2
+psdtype                 PROTECT                 INPUTRI 3
+psdstr1                 NOCHANGE		INPUTRI 4
+psdstr2                 PROTECT                 INPUTRI 5
+psdtype2                ALLCAPS                 INPUTRI 6
+psdket                  TEXTAREA ALLCAPS SCROLL INPUTRI 7
+psdstr3                 PROTECT                 INPUTRI 8
+psdtype3                ALLCAPS                 INPUTRI 9
+psdket2                 TEXTAREA ALLCAPS SCROLL INPUTRI 10
+
+DEFAULTS(tmptranst)
+psdtgl1		INIT			{g_tgltrn}
+psdtype2	DFALT_SCAN_BLANKS	ACC TACC
+psdtype3	DFALT_SCAN_BLANKS	ACC TACC
+psdstr1		INIT			{g_usrkode}
+
+EDITS(tmptranst)
+e.Mandatory	psdtype2	MANDATORY_IF cpsdacc2
+e.Mandatory	psdket		MANDATORY_IF cpsdtacc
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cpsdacc
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cpsdblmacc
+BEFORE_INPUT	cur_field=psdstr3	DO_SKIP_IF cbknmnglinp4
+BEFORE_INPUT	cur_field=psdtype3	DO_SKIP_IF cbknmnglinp4
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF cbknmnglinp4x
+AFTER_INPUT	cur_field=psdtype2	DO_MAP SHOW mupdnipacc
+AFTER_INPUT	cur_field=psdtype3	DO_MAP SHOW mupdnipacc
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_UPLFLD  psdpsmkode	psdkode
+SFL_UPLFLD_DBCALCS dupdpsdupl
+SFL_UPL_DELCOND caccblanks
+SFL_TARGET
+        psddatpsmkod tlmdata tlmnobuk tmpkode
+
+SFL_MAP
+tlmdata    	psddata		REPLACE
+tmpkode		psdkode		REPLACE
+tlmnobuk	psdpsmkode	REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cjoinpsdtmp0
+PMT_ADD_MSG	IF cbkninp2 t.HanyaSaatINP2
+		IF cbkninp4mngl	t.UbahMNGLHanyaSaatINP4
+		IF c1	t.TidakBolehTambah
+PMT_UPDALL_COND cjoinpsdtmp1
+PMT_DEL_COND    c0
+

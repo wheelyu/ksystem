@@ -1,0 +1,66 @@
+IMAGE(tmptranst)
+/---------------------------------\
+|/-------------------------------\|
+||t.NipInp  :____________________||
+||t.NoBuk   :____________________||
+||t.Sts     :____________________||
+||t.BtlY    :____________________||
+|\-------------------------------/|
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnoll         PROTECT         INPUTRI 1
+tkdnobuk        PROTECT         INPUTRI 2
+tkdsts          PROTECT         INPUTRI 2
+tkdjwbstr1      NOCHANGE        INPUTRI 3
+
+CALCS()
+cbknRi          g_grpnam!="RI"
+
+DEFAULTS(tmptranst)
+tkdnoll         INIT            {g_usrkode}
+tkdsts          INIT            OPEN
+tkdjwbstr1      DFALT_LIST      Y T
+tkddata         INIT            BTLAPR
+
+CALCS()
+cusr2a          tkdjwbstr1=="Y"
+cusr2b          tkdjwbstr1=="T"
+
+MAP(mbuktmptrans)
+tlmnobuk        tkdnobuk        REPLACE
+
+MAP(misitmptranst)
+gv_CLSD         tkdsts          REPLACE_IF cusr2a
+gv_BTL          tkdsts          REPLACE_IF cusr2b
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdjwbstr1    DO_MAP SHOW mbuktmptrans
+AFTER_INPUT     cur_field=tkdjwbstr1    DO_MAP SHOW misitmptranst
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+tkddatbukll     lBTLAPR tlmnobuk
+
+SFL_MAP
+tlmnobuk        tkdnobuk        REPLACE
+
+CALCS()
+ctmptrans       tkdsts==gv_CLSD
+ctmptrans3a     tkdsts==gv_CLSD && g_grpnam!="RI"
+
+MAP(mupdtlmtransa)
+/* gv_OPEN         tlmsts          REPLACE */
+cBLANKS         tlmstsapr       DO_CALC_IF cbknRi
+
+SPCALCS(spaddtmptrans)
+DO_LIB_IF ctmptrans      ap_dbclc(DNAME dupdtlmtransa,DCOMMAND UPDATE,DTARGET tlmbukidx tkdnobuk,DMAP mupdtlmtransa);
+DO_LIB_IF ctmptrans3a     ap_dbclc(DNAME ddelaprtransa,DCOMMAND DELETE_RANGE,DTARGET aprbukkeurt tlmnobuk);
+
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtmptrans
+

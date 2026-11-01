@@ -1,0 +1,71 @@
+IMAGE(tmptranst)
+/---------------------------------\
+ t.TambahDanUpload
+ /---------s.DOCUPLOAD-----------\
+
+
+
+ \-------------------------------/ 
+ /-------------------------------\
+  t.Upload      :___
+  t.Vendor      :________________
+  t.NamaVendor  :________________
+  t.NoTelpVendor:________________                                         
+  t.Pekerjaan   :________________                            
+  t.Spesifikasi :________________ 
+  t.AprGA       :________________ 
+  t.KetTacc     :________________ 
+                :________________                            
+ \-------------------------------/
+\---------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bidgrup   	PROTECT       		INPUTRI	1
+bidrekbia       ALLCAPS			INPUTRI	2
+lnamavendor	PROTECT    		INPUTRI	3
+lconemail  	PROTECT    		INPUTRI	4
+bidgrupbia	ALLCAPS SCROLL		INPUTRI	5
+bidket     	TEXTAREA ALLCAPS SCROLL	INPUTRI	6
+bidstr11	NOCHANGE		INPUTRI	7
+bidcab		ALLCAPS			INPUTRI	8
+lenter  	ALLCAPS 		INPUTRI	9
+
+DEFAULTS(tmptranst)
+lenter           INIT_LABEL	"ENTER"
+bidstr11	DFALT_SCAN	BLANKS
+				ACC " "
+				TACC " "
+
+EDITS(tmptranst)
+e.Mandatory	bidgrupbia MANDATORY
+e.Mandatory	bidket     MANDATORY
+e.Validate      bidrekbia  VALIDATE cmpsuptykod mcmpz scmp {Pgv_dtsup} {Pgv_DN}
+
+MAP(mcmpz)
+cmpkode         bidrekbia       REPLACE
+cBLANKS		lnamavendor	DO_CALC
+cBLANKS		lconemail  	DO_CALC
+cmpnama         lnamavendor     REPLACE
+lconemail	lconemail  	REPLACE_IF cdjoincon
+
+MAP(mupdbidven)
+cOK             bidgrup         DO_CALC
+g_tgltrn        bidtglfak       REPLACE
+DBCALCS(dupdbidven)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      bidotoidx bidoto
+        DBC_MAP         mupdbidven
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_DOCUPLFLD_DBCALCS dupdbidven
+SFL_DOCUPLFLD bidnobuk bidrekbia
+SFL_COND cvenpeng
+SFL_TARGET
+        bidbukstsidx mtsnobuk gv_INPG                        
+SFL_MAP
+	lDTBOQ		biddata		REPLACE
+	mtsnobuk	bidnobuk	REPLACE 
+	gv_INPG		bidsts 	REPLACE

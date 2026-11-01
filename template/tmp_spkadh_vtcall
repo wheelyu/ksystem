@@ -1,0 +1,254 @@
+LOCAL
+PGM_FIELDS
+lvervtcall	STRING  11
+ltombuplvtcall	STRING	11
+ltompjvtcall	STRING	21
+ltomdvhvtcall	STRING	21
+/*lrevhovt        STRING  11
+lrevdvhvt       STRING  11
+*/
+
+CALCS()
+ctkdvtcall	tkdnoll == "VTCALL"
+
+DBCALCS(djoinjamtkdvtcall)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tkdbukidx svinobuk gv_OPEN svinourt
+        DBC_SELECT      ctkdvtcall
+
+IMAGE(tmptranst)
+/------------------------------------\
+|/----------------------------------\|
+||t.VIRTUALCALL			    ||
+|\----------------------------------/|
+|/----------------------------------\|
+|		___		     |
+| t.Ket		_____________________|
+|				_____|			    
+|\----------------------------------/|
+
+|/----------------------------------\|
+| t.Ssvtcall                      ___|
+|\----------------------------------/|
+|/--------------UPLOAD--------------\|
+||                                  ||
+||                                  ||
+||                                  || 
+||                                  ||
+||                                  ||
+|\----------------------------------/|
+|			    _________|
+
+|/----------------------------------\|
+| t.RevHO       __________ __ _______|
+|               _____________________|
+| t.RevDVH      __ __________________|
+|               _____________________|
+| ________________  ________________ |
+|       __		  __	     |
+|\----------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svinourt	PROTECT		INPUTRI  1  /*No Urut*/
+sviket		TEXTAREA	INPUTRI  2  /*Keterangan*/
+lenter		ALLCAPS		INPUTRI	 3  /*Tombol Enter*/
+svistr2		PROTECT		INPUTRI  4  /*Tanda sudah Upload*/
+ltombuplvtcall  TOMBOL          INPUTRI  5  /*Tombol Upload OK*/
+
+svitype2        PROTECT         INPUTRI  6 /*NIP Rev HO*/
+svistr34        NOCHANGE        INPUTRI  7 /*ket Rev SPV*/
+lrevhovt        PROTECT         INPUTRI  8
+sviket2         TEXTAREA        INPUTRI  9 /*isi ket review HO*/
+svistr35        NOCHANGE        INPUTRI 10 /*ket Rev DVH*/
+lrevdvhvt       PROTECT         INPUTRI 11
+sviket3         TEXTAREA        INPUTRI 12 /*isi ket review DVH*/
+ltompjvtcall	TOMBOL		INPUTRI 13
+ltomdvhvtcall	TOMBOL		INPUTRI 15
+svistr36	PROTECT		INPUTRI 14
+svistr37	PROTECT		INPUTRI 16
+
+
+DEFAULTS(tmptranst)
+lvervtcall		INIT			2606.18v1
+svistr34                DFALT_SCAN_BLANKS       1 "ACC"
+                                                2 "TACC"
+svistr35                DFALT_SCAN_BLANKS       1 "ACC"
+                                                2 "TACC"
+ltombuplvtcall		INIT			"UPLOAD OK"
+ltompjvtcall		INIT			"SELESAI REV PJ HO"	
+ltomdvhvtcall		INIT			"SELESAI REV DVH"
+IF chnypjho svitype2    INIT_UPDATE             {g_usrkode}
+
+CALCS()
+cbtsuplvt		svidf1 < 1
+ctdvtcall		svidf1 + 1
+csdhuplvtcall		svidf1 == 1
+cmenitvtcall	 	tkdnourt == svinourt && djoinjamtkdvtcall==1 && svidf1 == 1 && svistr2 != "OK"
+cjoinurtvtcall0	 	djoinurutvtcall==0 && g_curcmd==1
+cjoinurtvtcall1		djoinurutvtcall==1 && g_curcmd==1
+curtvtcall1      	FLD_TO_STRING(svinourt) + "VTCALL"
+/*crev1vt        		svistr34 == "1" && svitype == "VTCALL"
+crev1avt       		svistr35 == "1" && svitype == "VTCALL"
+crev2vt        		svistr34 == "2" && svitype == "VTCALL"
+crev2avt	        svistr35 == "2" && svitype == "VTCALL"
+*/
+cpjhosdhrevvcall	svistr34 != BLANKS
+cdvhsdhrevvcall		svistr35 != BLANKS
+
+EDITS(tmptranst)
+e.Keterangan Harus Diisi	sviket		MANDATORY
+
+MAP(murutvtcall)
+l1		svinourt	REPLACE_IF cjoinurtvtcall0
+curut		svinourt	DO_CALC_IF cjoinurtvtcall1
+curtvtcall1	svistr4		DO_CALC
+
+/*MAP(mhslrevvt)
+cACC            lrevhovt        DO_CALC_IF crev1vt
+cTACC           lrevhovt        DO_CALC_IF crev2vt
+cACC            lrevdvhvt       DO_CALC_IF crev1avt
+cTACC           lrevdvhvt       DO_CALC_IF crev2avt
+*/
+
+/*===== upd menit di data tkd =====*/
+MAP(mupdtkdvt)
+l15             tkdjml3         REPLACE_IF cmenitvtcall
+
+MAP(mupdokvtcall)
+cOK             svistr2         DO_CALC_IF csdhuplvtcall
+
+MAP(mmapvcall)
+cnobukrevspk	lnobukrevspk		DO_CALC
+DEBUG		ldum	ldum		REPLACE
+
+
+MAP(mupdrevpjhovcall)
+ctam1		tkdjml		DO_CALC_IF csdhrevpjho1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG		ldum ldum	REPLACE
+DBCALCS(dupdrevpjhovcall)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+	DBC_MAP		mupdrevpjhovcall
+
+MAP(mupdrevdvhvcall)
+ctam1		tkdjml		DO_CALC_IF csdhrevdvh1
+ctamnip1        tkdjml2         DO_CALC_IF cnipbeda
+tkmplg          tkdtype         REPLACE_IF cfinreview
+DEBUG		ldum	ldum	REPLACE
+DBCALCS(dupdrevdvhvcall)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET      tkddatbukll lREVSPKADH lnobukrevspk g_usrkode
+	DBC_MAP         mupdrevdvhvcall
+
+MAP(muprevdpjhovcall1)
+lOK		svistr36		REPLACE_IF cpjhosdhrevvcall
+
+MAP(mupdrevdvhvcall1)
+lOK		svistr37		REPLACE_IF cdvhsdhrevvcall
+
+MAP(mupdrevabkpjhovtcall1)
+gv_CLSD         abksts                  REPLACE
+
+MAP(mupdrevabkdvhvtcall2)
+gv_CLSD         abksts                  REPLACE
+
+SPCALCS(spupdtkdvt)
+DO_LIB		ap_dbclc(DNAME dupdvtcall,DCOMMAND UPDATE_RANGE,DTARGET tkddatbukll svidata svinobuk lVTCALL21,DMAP mupdtkdvt);
+DO_LIB		ap_dbclc(DNAME dupdokvtcall,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupdokvtcall);
+
+SPCALCS(spupdrevpjho)
+DO_LIB 				ap_dbclc(DNAME dmapvcall1,DCOMMAND MAPMAP,DMAP mmapvcall);
+DO_LIB          		ap_dbclc(DNAME dupdokvtcall1,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP muprevdpjhovcall1);		
+dupdrevpjhovcall
+DO_LIB_IF cbukaabkrevpjho       ap_dbclc(DNAME dupdabkpjvtcall1,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkpjhovtcall1);
+
+SPCALCS(spupdrevdvh)
+DO_LIB          		ap_dbclc(DNAME dmapvcall2,DCOMMAND MAPMAP,DMAP mmapvcall);
+DO_LIB          		ap_dbclc(DNAME dupdokvtcall2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdrevdvhvcall1);
+dupdrevdvhvcall
+DO_LIB_IF cbukaabkrevdvh        ap_dbclc(DNAME dupabkdvhvtcall2,DCOMMAND UPDATE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG g_usrkode l968 g_tgltrn lnobukrevspk,DMAP mupdrevabkdvhvtcall2);
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=sviket		DO_MAP SHOW murutvtcall
+
+CLICKED		cur_field=ltombuplvtcall	DO_SPCALCS spupdtkdvt
+
+BEFORE_INPUT    cur_field=sviket        	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=lenter        	DO_SKIP_IF crevho
+BEFORE_INPUT    cur_field=ltombuplvtcall   	DO_SKIP_IF crevho
+
+BEFORE_INPUT    cur_field=svitype2     		DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr34      	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=lrevhovt      	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=sviket2       	DO_SKIP_IF cpjho
+BEFORE_INPUT    cur_field=svistr35      	DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=lrevdvhvt     	DO_SKIP_IF cdvh
+BEFORE_INPUT    cur_field=sviket3       	DO_SKIP_IF cdvh
+
+/*AFTER_INPUT     cur_field=svistr34      	DO_MAP SHOW mhslrevvt
+AFTER_INPUT     cur_field=svistr35      	DO_MAP SHOW mhslrevvt
+*/
+CLICKED         cur_field=ltompjvtcall        	DO_SPCALCS spupdrevpjho
+CLICKED         cur_field=ltomdvhvtcall        	DO_SPCALCS spupdrevdvh
+
+
+
+
+/*===== tanda sudah upload =====*/
+MAP(mupdsvivt)
+ctdvtcall       svidf1          DO_CALC_IF cbtsuplvt
+DBCALCS(dupdsvivt)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsvivt
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SHOW_NEXT
+SFL_UPL_DIRFLD tkmtgl
+SFL_UPLFLD 	svinobuk svistr4 /*upload bukti virtual call*/
+SFL_UPLFLD_DBCALCS dupdsvivt
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        svidatbuktyp    lSPKADH11 tkmnobuk lVTCALL
+SFL_MAP
+tkmnobuk        svinobuk
+lSPKADH11       svidata
+lVTCALL		svitype
+
+MAP(maddtkdvt)
+svinobuk        tkdnobuk        REPLACE
+svidata         tkddata         REPLACE
+lVTCALL21	tkdnoll		REPLACE
+gv_OPEN         tkdsts          REPLACE
+tkmplg          tkdstr1         REPLACE
+tkmtgl          tkdtgl          REPLACE
+svinourt        tkdnourt        REPLACE
+
+MAP(maddtkdrevvt)
+cnobukrevspk	tkdnobuk	DO_CALC
+lnobukrevspk	tkdnobuk	REPLACE
+g_usrkode       tkdnoll         REPLACE
+g_tgltrn	tkdtgl		REPLACE
+g_grpnam        tkdjenis        REPLACE
+l1	        tkdnourt        REPLACE
+lREVSPKADH	tkddata		REPLACE
+DEBUG		ldum	ldum	REPLACE
+
+
+SPCALCS(spaddtkdvt)
+DO_LIB          ap_dbclc(DNAME daddtkdvt,DCOMMAND ADD,DFILE tkd,DMAP maddtkdvt);
+
+SPCALCS(spupdtkdvt1)
+DO_LIB_IF cjointkdrev0      ap_dbclc(DNAME daddtkdvt1,DCOMMAND ADD,DFILE tkd,DMAP maddtkdrevvt);
+
+POSTING(tmptrans)
+PST_ADDCMD      spaddtkdvt
+PST_UPDCMD	spupdtkdvt1
+

@@ -1,0 +1,49 @@
+IMAGE(tmptranst)
+/-------------------t--------------t----------\
+|i.Kode             |i.Keterangan  |t.Potongan|
+\-------------------.--------------.----------/
+
+IMAGE(tmptrans)
+|___________________|______________|__________|
+FIELD(tmptrans)
+nhdkode			PROTECT	SCROLL			INPUTRI	1
+nhdkode2		ALLCAPS SCROLL			INPUTRI	1
+nhdhrg2			PROTECT	SCROLL			INPUTRI	3
+
+DEFAULTS(tmptrans)
+ljaminput1      INIT_ADD        SYSTIME
+ljaminput1      INIT_UPDATE     SYSTIME
+
+EDITS(tmptrans)
+e.Validate nhdkode	VALIDATE tbtdattypkod  mtbt31 stbtjenis {Pgv_dttabel} {Pgv_dttabel21} {Pgv_estimasi21} {Pgv_listrik}  {Slsegmen}
+e.validate nhdkode2     VALIDATE tbddatkodidx mtbd31 stbd {Pgv_dttabel} {Pgv_estimasi21} {Pgv_ganti21}
+e.Mandatory     nhdkode2  MANDATORY
+
+MAP(mtbd31)
+tbdkode		nhdkode2	REPLACE
+
+MAP(mtbt31)
+tbttbdkode      nhdkode REPLACE
+tbttot		nhdhrg2		REPLACE_IF cganti1
+tbtdf1		nhdhrg2         REPLACE_IF cganti2
+tbtdf2		nhdhrg2         REPLACE_IF cganti3
+ckosong		nhdhrg2		DO_CALC_IF cganti4
+
+HOOKS(tmptrans)
+AFTER_INPUT             cur_field=nhdkode2       DO_MAP SHOW mmapjaminput
+
+SUBFILE(tmptrans)
+SFL_LINES(1)        
+SFL_COND cadaunit
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+nhdbukidx   btmnobuk gv_estimasi l34	
+
+SPCALCS(splistrik713)
+DO_LIB ap_nxpst(l4461,lm4461det5);
+
+POSTING(tmptrans)
+        PST_ADDCMD splistrik713
+        PST_UPDCMD splistrik713
+

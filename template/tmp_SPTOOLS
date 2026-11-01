@@ -1,0 +1,61 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------------------------------------------------\
+|----t--------t-----t--------------------t-------------t------------------------------t-----t-------|
+|t.No|t.Nip   |t.PIT| t.Kategori         |t.Kode       |t.NamaTools                   |t.Fsk|t.Kds  |
+\----.--------.-----.--------------------.-------------.------------------------------.-----.-------/
+IMAGE(tmptrans)
+|____|________|____|____________________|_____________|_______________________________|_____|_______|
+
+
+FIELD(tmptrans)
+ketstr3                 PROTECT         INPUTRI 1 /*NO*/
+ketnama                 PROTECT         INPUTRI 2 /*NIP*/
+ketyt1                  PROTECT         INPUTRI 3 /*NO PIT*/
+ketisi                  PROTECT         INPUTRI 4 /*Kategori*/
+ketisi2                 PROTECT         INPUTRI 5 /*Kode*/
+ketstr4                 PROTECT         INPUTRI 6 /*NamaTools*/
+ketstr1                 ALLCAPS         INPUTRI 7 /*Fisik*/
+ketstr2                 ALLCAPS         INPUTRI 8 /*Kondisi*/
+
+
+DEFAULTS(tmptrans)
+ketstr1 		DFALT_SCAN	ADA 
+					TIDAK 
+ketstr2			DFALT_SCAN 	BAIK
+					RUSAK
+
+CALCS()
+cTDKada		 	ketstr1 == "TIDAK" || ketstr1 == BLANKS
+cadabaik3          	ketstr1 == "ADA"
+ctidak			ketstr1 == "TIDAK"
+/*cubah3d			ketnama == g_usrkode || g_grpnam == "IT" || g_grpnam == "AUDITHEAD"*/
+cOpIT			(tlmsts == "OPEN" || (tlmsts == "CLSD" && g_grpnam == "IT"))
+
+MAP(mtidak)
+lblanks			ketstr2		REPLACE_IF ctidak
+
+EDITS(tmptrans)
+e.Mandatory      ketstr2        MANDATORY_IF cadabaik3
+e.Mandatory1     ketstr1        MANDATORY
+
+
+SUBFILE(tmptrans)
+SFL_LINES(11)
+SFL_TITLE(tmptranst)
+SFL_COND csenahass
+SFL_SORT_BY_FIELD ketstr3 ketyt1
+/*SFL_SORT_UPDOWN UP*/
+SFL_TARGET
+        ketdatbukkod lNOS tlmnobuk lSPTOOLS21 
+SFL_MAP
+lSPTOOLS	tbdtblkode
+
+HOOKS(tmptrans)
+BEFORE_INPUT 	cur_field=ketstr2	DO_SKIP_IF cTDKada
+AFTER_INPUT	cur_field=ketstr1	DO_MAP SHOW mtidak 
+
+
+PERMIT(tmptrans)
+PMT_DEL_COND	cIT
+PMT_UPDALL_COND	cOpIT
+PMT_ADD_COND	c0

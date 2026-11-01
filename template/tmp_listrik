@@ -1,0 +1,193 @@
+LOCAL
+PGM_FIELDS
+lnobuklistrik	STRING		21
+
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||t.Pembayaran   : _____________  ||
+||t.IdPlg        : ______________ ||
+||t.NamaPelanggan: ______________ ||
+||t.JnsPembayaran: _____________  ||
+||t.Watt         : ______________ ||
+||t.HargaPerKwh  : ___________.__ ||
+||t.Longitude    : ______________ ||
+||t.Latitude     : ______________ ||
+||spasi				  ||
+||t.TglByrAkhir  : ______________ ||
+||t.Upload       : ______         ||
+||_____________      _____________||
+|\--------------------------------/|
+|/--UPLOAD------------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||t.AccGA      : ______           ||
+||t.NipAccTacc : _______  ________||
+||t.Ktacc      : ________________ ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tbtkolek	    NOCHANGE		    	INPUTRI 1   /*Pembayaran*/
+tbtkode             ALLCAPS                 	INPUTRI 2   /*IdPelanggan*/
+tbtket              ALLCAPS SCROLL          	INPUTRI 3   /*Nama Pelanggan*/
+tbtkat              NOCHANGE                	INPUTRI 4   /*JnsPembayaran*/
+tbtjml              NUMERIC                 	INPUTRI 5   /*Watt*/
+tbttot              NUMERIC                 	INPUTRI 6   /*HargaPerKwh*/
+tbtdf1		    PROTECT			INPUTRI 7   /*Longitude*/
+tbtdf2		    PROTECT			INPUTRI 8   /*Latitude*/
+tbttglcrt	    NONE {DD-MM-YYY} NOLIMIT	INPUTRI 9   /*Tgl Byr AKhir*/
+tbttblket	    PROTECT			INPUTRI 10  /*uploadok*/
+luploklis           TOMBOL                      INPUTRI 11  /*uploadfoto*/
+lGMAPS3             TOMBOL                      INPUTRI 12  /*gmaps*/
+tbtyt		    NOCHANGE			INPUTRI 13  /*Acc GA*/
+tbtkode2	    PROTECT 			INPUTRI 14  /*Nip Acc/Tacc*/
+lnamasdmlis	    PROTECT 			INPUTRI 15  /*Nama SDM*/	
+tbttbdket	    ALLCAPS SCROLL		INPUTRI 16  /*Keterangan TACC*/
+
+DEFAULT(tmptranst)
+tbtkolek	    DFALT_SCAN_BLANKS	     CABANG 
+					     SEMARANG 
+tbtkat              DFALT_SCAN_BLANKS        PRABAYAR 
+                                             PASCABAYAR
+tbtyt		    DFALT_SCAN_BLANKS        Y " " 
+					     T " " 
+tbtcab		    INIT		     "1"
+luploklis           INIT                     "UPLOAD OK"
+lGMAPS3             INIT      	             "GMAPS"
+                                             
+CALCS()
+cbyrcab		   tbtkolek=="CABANG"
+cbyrsmg		   tbtkolek=="SEMARANG" || tbtcab == BLANKS
+ctacclis	   tbtyt == "T"
+cacclis		   tbtyt == "Y" || tbtcab == "1"
+ctambah		   tbtcab == "1"
+cubhrek		   tbtcab == BLANKS
+cadakoordinat3     tbtdf1 != 0 && tbtdf2 != 0
+
+EDITS(tmptranst)
+e.Mandatory 		tbtkolek  MANDATORY
+e.Mandatory     	tbtkode   MANDATORY
+e.Mandatory     	tbtket    MANDATORY
+e.Mandatory     	tbtkat    MANDATORY_IF cbyrcab
+e.Mandatory     	tbtjml    MANDATORY_IF cbyrcab
+e.Mandatory 		tbttot    MANDATORY_IF cbyrcab
+e.MandatoryKetTacclis   tbttbdket MANDATORY_IF ctacclis
+e.Validate      	tbtkode2  VALIDATE psikodidx mpsinamasdmlis 0
+
+MAP(mpsinamasdmlis)
+psinama         lnamasdmlis        REPLACE
+
+MAP(macclis)
+g_usrkode	tbtkode2       	  REPLACE	
+psinama         lnamasdmlis       REPLACE
+
+MAP(mupdfotolis)
+cOK             tbttblket    DO_CALC
+
+SPCALCS(spgmaps3)
+DO_LIB_IF cadakoordinat3 ap_shmap(tbtdf2,tbtdf1);
+
+HOOKS(tmptranst)
+BEFORE_INPUT     cur_field=tbtkolek      DO_SKIP_IF cubhrek
+BEFORE_INPUT     cur_field=tbtkode       DO_SKIP_IF cubhrek
+BEFORE_INPUT     cur_field=tbtket        DO_SKIP_IF cubhrek
+BEFORE_INPUT     cur_field=tbtkat        DO_SKIP_IF cbyrsmg
+BEFORE_INPUT     cur_field=tbtjml        DO_SKIP_IF cbyrsmg
+BEFORE_INPUT     cur_field=tbttot        DO_SKIP_IF cbyrsmg
+BEFORE_INPUT     cur_field=tbttglcrt     DO_SKIP_IF cubhrek
+BEFORE_INPUT     cur_field=tbtyt         DO_SKIP_IF ctambah
+BEFORE_INPUT     cur_field=tbttbdket     DO_SKIP_IF cacclis
+
+AFTER_INPUT      cur_field=tbtyt         DO_MAP SHOW macclis
+
+CLICKED         cur_field=luploklis      DO_SPCALCS spupdfotolis
+CLICKED         cur_field=lGMAPS3        DO_SPCALCS spgmaps3
+
+MAP(mupdtbtfoto)
+g_fotolon1      tbtdf1       	REPLACE
+g_fotolat1      tbtdf2      	REPLACE
+cblanks		tbtcab		DO_CALC
+
+
+DBCALCS(dupdtbtfoto)
+        DCOMMAND UPDATE
+        DTARGET tbtprmidx tbtprm
+        DMAP mupdtbtfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD tbttbdkode tbtkode
+SFL_UPLFLD_DBCALCS dupdtbtfoto
+SFL_UPL_DIRFLD tbdtgl1
+SFL_TARGET
+        tbtdattypkod tbddata tmpkode tbddtmkode tbdtblkode tbdkode
+SFL_MAP
+        tbddata         tbtdata         REPLACE
+        tmpkode         tbttype         REPLACE
+        tbddtmkode      tbtdtmkode      REPLACE
+        tbdtblkode      tbttblkode      REPLACE
+        tbdkode         tbttbdkode      REPLACE
+
+
+/*DBCALCS(djoinabklistrik)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsen lnobuklistrik*/
+
+CALCS()
+/*cselabkga	abkkym2 == "APROV FOTO LISTRIK1D"*/
+cselabklis         abkkym2 == "UPL REK LISTRIK 3231"
+
+CALCS()
+cnobuklistrik		STRIP(tbdkode) + "3231LISTRIK"
+/*cjoinabklistrik1	djoinabklistrik == 1*/
+cyalis			tbtyt == "Y"
+/*ctdklis		tbtyt == "T"*/
+/*ctdklisga		tbtyt == "T"*/
+cabkoklis          	tbdkode == abknobuk
+
+MAP(mapmaplistrik)
+cnobuklistrik	lnobuklistrik	DO_CALC
+DEBUG		ldum 		ldum		REPLACE
+
+/*(mupdabklistrik)
+gv_CLSD		abksts		REPLACE
+DEBUG		ldum 		ldum		REPLACE*/
+
+/*MAP(mupdabklisinpg)
+gv_INPG		abksts		REPLACE*/
+
+MAP(mupdabklis)
+gv_CLSD         abksts          REPLACE_IF cabkoklis
+
+SPCALCS(spupdabklistrik)
+DO_LIB				ap_dbclc(DNAME dmapmaplistrik, DCOMMAND MAPMAP, DMAP mapmaplistrik);
+/*
+DO_LIB_IF cjoinabklistrik1	ap_dbclc(DNAME dupdabklistrik, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen lnobuklistrik, DMAP mupdabklistrik);
+DO_LIB_IF cyalis   		ap_dbclc(DNAME dupdabklistrik2, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen tbdkode, DMAP mupdabklistrik,DBC_COND cselabkga);
+DO_LIB_IF cyalis   		ap_dbclc(DNAME dupdabklistrik5, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen tbdkode, DMAP mupdabklistrik,DBC_COND cselabklis);
+DO_LIB_IF ctdklis               ap_dbclc(DNAME dupdabklistrik3, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen tbdkode, DMAP mupdabklisinpg,DBC_COND cselabklis);
+DO_LIB_IF ctdklisga             ap_dbclc(DNAME dupdabklistrik4, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lkunciabsen tbdkode, DMAP mupdabklistrik, DBC_COND cselabkga);
+DO_LIB_IF cyalis        	ap_dbclc(DNAME dupdabkdetlis,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tbdkode,DMAP mupdabk);
+*/
+DO_LIB_IF cyalis         ap_dbclc(DNAME dupdabkketlrst,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lketlis,DMAP mupdabklis);
+DO_LIB_IF cyalis         ap_dbclc(DNAME dupdabkketlrst2,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gt_RINP lketlis,DMAP mupdabklis);
+
+
+SPCALCS(spupdfotolis)
+        DO_LIB_IF cgpsoklis        ap_dbclc(DNAME dupdfotolis,DCOMMAND UPDATE, DTARGET tbtotoidx tbtoto,DMAP mupdfotolis);
+        DO_LIB_IF cgpsoklis        ap_dbclc(DNAME dupdabklis,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen tbdkode,DMAP mupdabk,DBC_COND cselabklis);
+        DO_LIB_IF cgpsoklis        ap_dbclc(DNAME daddabk106gaofflis,DCOMMAND ADD,DFILE abk,DMAP maddabk106gaofflis);
+        DO_LIB_IF cgpsoklis        ap_dbclc(DNAME daddabk106gaheadlis,DCOMMAND ADD,DFILE abk,DMAP maddabk106gaheadlis);
+
+POSTING(tmptrans)
+	PST_ADDCMD	spupdabklistrik
+	PST_UPDCMD	spupdabklistrik

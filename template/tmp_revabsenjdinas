@@ -1,0 +1,61 @@
+IMAGE(tmptranst)
+/----t----------t--------t---------t-------------t-------------t-------\
+|t.No| t.TglAbs |t.CabAwl|t.CabUbh |t.Shifta     |t.Shiftu     |t.Type |
+\----.----------.--------.---------.-------------.-------------.-------/
+
+
+IMAGE(tmptrans)
+!___ |__________|________|_________|_____________|_____________! ____  |
+
+FIELD(tmptrans)
+tldnourt     PROTECT                    INPUTRI          1
+tldtglfak    PROTECT NOLIMIT {DD-MM-YY} INPUTRI          2
+tldcab       PROTECT SCROLL             INPUTRI          3
+tldsat       ALLCAPS SCROLL             INPUTRI          4
+tldkat       PROTECT SCROLL             INPUTRI          5
+tldplg       ALLCAPS SCROLL             INPUTRI          6
+tldket       PROTECT SCROLL             INPUTRI          7
+
+DEFAULTS(tmptrans)
+tldsts		INIT_ADD	OPEN
+
+EDITS(tmptrans)
+t.MandatoryTgl  tldtglfak      MANDATORY
+t.MandatoryCab  tldsat         MANDATORY
+t.ValidateCab   tldsat         VALIDATE cabstskodidx mcab2 scab {Pgv_INPG}
+t.Mandatory	tldplg	       MANDATORY
+t.Validateshift	tldplg	       VALIDATE tbddatkodidx mtbd stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_shift21}
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=tldtglfak 		DO_MAP SHOW murut2
+
+AFTER_INPUT	cur_field=tldsat   		DO_MAP SHOW mjamshift
+   
+BEFORE_INPUT	cur_field=tldplg    		DO_SKIP_IF cnothrd
+AFTER_INPUT	cur_field=tldplg   		DO_MAP SHOW 
+		IF cSHIFT1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.ShiftHrsSesuai
+
+AFTER_INPUT	cur_field=tldsat   		DO_MAP SHOW 
+		IF cisidulucab1    mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.isidulucab1
+
+
+SUBFILE(tmptrans)
+SFL_SORT_BY_FIELD tldnourt
+SFL_LINES(6)
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+        tldbukurtidx   bkmnobuk
+
+SFL_MAP
+bkmnobuk             tldnobuk              	REPLACE
+bkmdata              tlddata                 	REPLACE
+/* bkmnomlpo 	     tldukrwrn			REPLACE */
+bkmkode		     tldlok2  			REPLACE
+bkmnobuk	     tldbrg			REPLACE 
+bkmnobuk	     tldukrwrn			REPLACE
+

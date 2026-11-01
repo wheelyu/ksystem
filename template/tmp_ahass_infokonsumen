@@ -1,0 +1,94 @@
+IMAGE(tmptranst)
+/--------------------------------------------------\
+|/------------------------------------------------\|
+|| __________      ________________               ||
+|| i.Alamat     : ______________________________  ||
+|| i.RT         : ____            i.RW   : ____   ||
+|| i.Propinsi   : ______________  ______________  ||
+|| i.Kota       : ______________  ______________  ||
+|| i.Kec        : ______________  ______________  ||
+|| i.Kel        : ______________  ______________  ||
+|| i.KodePos    : _______________                 ||
+||		  _______			  ||
+|| spasi                                          ||
+|\------------------------------------------------/|
+\--------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+almnama  	NOCHANGE	INPUTRI	1
+almbukoto  	PROTECT		INPUTRI	2
+almjalan        ALLCAPS         INPUTRI 4
+almrt		NUMERIC		INPUTRI	5
+almrw		NUMERIC		INPUTRI	6
+almprop         ALLCAPS         INPUTRI 7
+almnamprop      PROTECT         INPUTRI 8
+almkota         ALLCAPS         INPUTRI 9
+almnamkota      PROTECT         INPUTRI 10
+almkec          ALLCAPS         INPUTRI 11
+almnamkec       PROTECT         INPUTRI 12
+almkel          ALLCAPS         INPUTRI 13
+almnamkel       PROTECT         INPUTRI 14
+almkdpos	ALLCAPS		INPUTRI	15
+lenter          NOCHANGE        INPUTRI 16
+
+DEFAULTS(tmptranst)
+almnama       	DFALT_SCAN_BLANK
+                                PSMAHASS
+
+EDITS(tmptranst)
+e.Mandatory1	almnama	MANDATORY
+e.MandatoryJln  almjalan MANDATORY
+e.MandatoryRt	almrt MANDATORY
+e.MandatoryRw	almrw MANDATORY
+e.MandatoryProp almprop MANDATORY
+e.MandatoryKota almkota MANDATORY
+e.MandatoryKec  almkec MANDATORY
+e.MandatoryKel  almkel MANDATORY
+e.MandatoryPos	almkdpos MANDATORY
+
+t.validateRT    almrt VALIDATE tbddatkodidx mtbdrt3 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+t.validateRW    almrw VALIDATE tbddatkodidx mtbdrw3 stbd {Pgv_dttabel} {Pgv_personal} {Plkodert}
+
+e.ValidateProp  almprop VALIDATE dtmdtkodidx  mdtmProp3 sdtmProp {Pgv_dtkota}
+e.ValidateKota  almkota VALIDATE tbldtdtmkod  mtblKota3 stblKota {Pgv_dtkota} {Palmprop}
+e.ValidateKec   almkec VALIDATE tbddatkodidx  mtbdKec3 stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.ValidateKel   almkel VALIDATE tbtdattypkod  mtbtKel3 stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(mmapalmahass)
+btmplg		almbukoto	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=almnama	DO_MAP SHOW mmapalmahass
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+almdatbukidx    lPSMAHASS btmnobuk
+
+SFL_MAP
+lPSMAHASS       almdata         REPLACE
+btmnobuk        almnobuk        REPLACE
+
+MAP(mtbdrt3)
+tbdkode		almrt		REPLACE
+
+MAP(mtbdrw3)
+tbdkode		almrw		REPLACE
+
+MAP(mdtmProp3)
+dtmkode         almprop         REPLACE
+dtmket          almnamprop      REPLACE
+
+MAP(mtblKota3)
+tblkode         almkota         REPLACE
+tblket          almnamkota      REPLACE
+
+MAP(mtbdKec3)
+tbdkode         almkec          REPLACE
+tbdket          almnamkec       REPLACE
+
+MAP(mtbtKel3)
+tbtkode         almkel          REPLACE
+tbtket          almnamkel       REPLACE

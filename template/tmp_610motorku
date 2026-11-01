@@ -1,0 +1,139 @@
+LOCAL
+PGM_FIELDS
+ljabatansls	STRING		21
+ljabatanam	STRING		21
+lnamasls	STRING		61
+lnamahmcam	STRING		61	
+lcdjoinpsm	INT2		2
+lcdjoinconpsm	INT2		2
+lktpsales	STRING		21
+lnohpsales	STRING		21
+
+CALCS()
+cOK		"OK"
+
+MAP(mjoinpsmsales)
+psmktp		lktpsales	REPLACE
+
+DBCALCS(djoinpsmsales)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmkodidx	btmsales
+	DBC_MAP		mjoinpsmsales
+
+MAP(mjoinconpsm)
+conhp		lnohpsales	REPLACE
+
+DBCALCS(djoinconpsm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	conkodstsidx   lktpsales gv_INPG
+	DBC_MAP		mjoinconpsm
+
+MAP(mupdbtdfoto)
+cOK		btdsisbrg	DO_CALC
+
+DBCALCS(dupdbtdfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      btdprmidx       btdprm
+        DBC_MAP         mupdbtdfoto
+
+IMAGE(tmptranst)
+/--------------------------------\
+ /------------------------------\
+  t.NoHp	: ______________
+  t.StsDaf	: ______________
+  t.TglInput	: ______________
+  t.NipKry	: ____ _________
+  t.Jabatan	: ______________
+ /--------s.UPLOAD--------------\
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ |                              |
+ \------------------------------/
+ /------------------------------\
+  t.Upload      : _____
+  t.Sesuai      : ______________
+  t.NipKry      : ____ _________
+  t.Jabatan     : ______________
+ \------------------------------/
+\--------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btdnorangka	PROTECT		INPUTRI		1
+btdukrwrn	NOCHANGE	INPUTRI		2
+btdtgl1		PROTECT		INPUTRI		3
+btdkat		PROTECT		INPUTRI		4
+lnamasls	PROTECT		INPUTRI		5
+ljabatansls	PROTECT		INPUTRI		6
+
+btdsisbrg	PROTECT		INPUTRI		7
+btdbrg		NOCHANGE	INPUTRI		8
+btdnomesin	PROTECT		INPUTRI		9
+lnamahmcam	PROTECT		INPUTRI		10
+ljabatanam	PROTECT		INPUTRI		11
+
+CALCS()
+cjabxsls	g_usrkode != btmsales && g_grpnam != "PICMKT" && g_grpnam != "TLDHMC" && g_grpnam != "KDH" && g_grpnam != "NSOHEAD" && g_grpnam != "IT" && g_grpnam != "RAS" && g_grpnam != "ANSYSUAT"
+cjabAM		g_grpnam == "HMCAM"
+cjabxAM		g_grpnam != "HMCAM"
+cdjoinpsmsales	djoinpsmsales == 1
+cdjoinconpsm	djoinconpsm == 1
+cdjoinbtdmotorku	djoinbtdmotorku==0 && (g_usrkode == btmsales || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "KDH" || g_grpnam == "BUM" || g_grpnam == "IT" || g_grpnam == "RAS" || g_grpnam == "ANSYSUAT" || g_grpnam == "HMCAM")
+chmcamboleh	(g_grpnam == "HMCAM" || g_usrkode== btmsales || g_grpnam == "PICMKT" || g_grpnam == "TLDHMC" || g_grpnam == "KDH" || g_grpnam == "NSOHEAD" || g_grpnam == "IT" || g_grpnam == "RAS" || g_grpnam == "ANSYSUAT") && djoincadmd == 1 && lmd3105 != BLANKS && djointbdpkmd == 1
+
+DEFAULTS(tmptranst)
+lcdjoinpsm	INIT		{cdjoinpsmsales}
+lcdjoinconpsm	INIT		{cdjoinconpsm}
+btdnorangka	INIT		{lnohpsales}	
+btdukrwrn	DFALT_SCAN	BLANKS
+				SUDAH
+				BELUM
+btdbrg		DFALT_SCAN	BLANKS
+				SUDAH	
+				BELUM
+IF cjabAM	btdnomesin	INIT_UPDATE	{g_usrkode}
+
+EDITS(tmptranst)
+e.Validate1	btdkat		VALIDATE psikodidx mpsisales	0
+e.Validate2	btdnomesin	VALIDATE psikodidx mpsiam	0
+
+MAP(mpsisales)
+psinama		lnamasls	REPLACE
+psijabatan	ljabatansls	REPLACE
+
+MAP(mpsiam)
+psinama		lnamahmcam	REPLACE
+psijabatan	ljabatanam	REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=btdukrwrn	DO_SKIP_IF cjabxsls
+BEFORE_INPUT	cur_field=btdbrg	DO_SKIP_IF cjabxAM
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdbtdfoto
+SFL_UPLFLD	btdnobuk btdsat
+SFL_UPL_DIRFLD btmtgl
+SFL_TARGET	btdbuktypidx   btmnobuk lMOTORKU lMOTORKU l111
+SFL_MAP		
+btmnobuk	btdnobuk	REPLACE
+lMOTORKU	btddata		REPLACE
+lMOTORKU	btdsat		REPLACE
+lMOTORKU	btdlok		REPLACE
+gv_OPEN		btdsts		REPLACE
+l111		btdnourt	REPLACE
+g_usrkode	btdkat		REPLACE
+g_tgltrn	btdtgl1		REPLACE
+
+PERMIT(tmptrans)
+  PMT_UPDALL_COND chmcamboleh
+  PMT_DEL_COND  c0
+  PMT_ADD_COND  cdjoinbtdmotorku
+  PMT_ADD_MSG   Hanya bisa di tambah oleh TLDHMC, NSOHEAD, KDH , dan PICMKT
+

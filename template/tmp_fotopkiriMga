@@ -1,0 +1,80 @@
+LOCAL
+PGM_FIELDS
+lbukabkftomga18		STRING		21
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------\
+| /-------s.UPLOAD----------\|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         !|
+| |                         ||
+| \-------------------------/|
+| /-------------------------\|
+| |i.Ket : ________________ !|
+| |        ________________ !|
+| |        ___              !|
+| | _______________________ !|
+| |                         !|
+| |                         !|
+| |                         !|
+| \-------------------------/|
+\----------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+doctype                 PROTECT                 INPUTRI         1
+docnobuk 		NOCHANGE		INPUTRI		10
+doclok   		PROTECT         	INPUTRI		11
+ltombol			TOMBOL			INPUTRI		99
+
+CALCS()
+ctgluplisi18	doctgljadi!=BLANKS
+cstsuplisi18	doclok=="OK"
+cbukabkftomga18	STRIP(docnobuk) + FLD_TO_STRING(docnourt)
+
+MAP(mupddocktp18)
+/*cY              doclok          DO_CALC*/
+/*g_fotodate1   doctgljadi      REPLACE*/
+g_tgltrn        doctgljadi      REPLACE
+
+MAP(mupddocktp_18)
+cY		doclok		DO_CALC_IF ctgluplisi18
+cbukabkftomga18	lbukabkftomga18	DO_CALC
+
+DBCALCS(dupddocktp18)
+        DCOMMAND UPDATE
+        DTARGET docprmidx docprm
+        DMAP mupddocktp18
+
+CALCS()
+cKiriMga	tmpkode == "UPLBODYKIRI"
+
+MAP(mupdabkftomga18)
+gv_CLSD		abksts		REPLACE
+
+SPCALCS(spuplftomga18)
+DO_LIB	ap_dbclc(DNAME dupddocktp_18,DCOMMAND UPDATE,DTARGET docprmidx docprm,DMAP mupddocktp_18);
+DO_LIB_IF cstsuplisi18	ap_dbclc(DNAME dupdabkftomga18,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen lbukabkftomga18,DMAP mupdabkftomga18);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=ltombol		DO_SPCALCS spuplftomga18
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cKiriMga
+SFL_UPLFLD_DBCALCS dupddocktp18 
+SFL_UPLFLD  docnobuk doctype
+SFL_UPL_DELCOND csdh
+SFL_TARGET
+	docdatbukidx lUPGAD  btmnobuk lUPLBODYKIR l18 
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

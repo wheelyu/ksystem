@@ -1,0 +1,83 @@
+IMAGE(tmptranst) 
+/--------t-----------t----------------------t----t--------t-------t-----------t---------\
+| i.Typ  | i.Kode    |i.Keterangan          |i.BP|i.KodPiu|i.Rek  | i.Total   |i.PotUM  |
+\--------.-----------.----------------------.----.--------.-------.-----------.---------/
+
+IMAGE(tmptrans) 
+|________|___________|______________________|____|________|_______|___________|_________|
+    
+
+FIELD(tmptrans)
+ppstype       	PROTECT   	INPUTRI     1 
+ppsnobuk2       NOCHANGE       	INPUTRI     2 
+ppsket       	PROTECT SCROLL 	INPUTRI     3 
+ppskdpm     	NOCHANGE       	INPUTRI     4 
+ppsplg    	PROTECT SCROLL 	INPUTRI     5 
+ppsnobbm      	PROTECT SCROLL 	INPUTRI     6 
+ppstotal        PROTECT        	INPUTRI     7 
+ppshrg          PROTECT        	INPUTRI     8 
+
+DEFAULTS(tmptrans)
+ppsdata	      INIT			{gv_dtpiu}  
+ppsfr		INIT			F
+ppskdpm     DFALT_SCAN_BLANKS		BIA "Promo ini akan Jadi Biaya"
+					PIU "Promo Ini akan Jadi Piutang"
+/*ppstype       DFALT_SCAN_BLANKS	   	SUBSIDI "Subsidi"
+				   	CASHBACK "Cash Back"*/
+ppssts	      INIT			INPG
+ppssts	      INIT_UPDATE		INPG
+
+
+CALCS()
+cPIU	ppskdpm == "PIU"
+cBIA	ppskdpm == "BIA"
+
+EDITS(tmptrans)
+e.MandatoryKod ppsnobuk2 MANDATORY
+e.MandatoryKet ppsket MANDATORY
+e.MandatoryTot ppstotal MANDATORY
+e.MandatoryBiaPiu ppskdpm MANDATORY
+e.MandatoryType ppstype  MANDATORY
+e.MandatoryKodPiu ppsplg MANDATORY_IF cPIU
+e.MandatoryRekPiu ppsnobbm MANDATORY
+e.ValidatePiu ppsplg VALIDATE cmpplkodidx mcmp scmp2 {Pgv_DTPL} 
+/*e.ValidatePromo ppsnobuk2 VALIDATE tbddatkodidx mtbdPro stbdProBrg {Pgv_dttabel} {Pgv_promobrg21} {Pppstype} */
+e.ValidateBbm ppsnobbm VALIDATE_IF cBIA bbggolnoidx mbbgBia sbbg {Pgv_05}
+e.ValidateBbm ppsnobbm VALIDATE_IF cPIU bbgbbtnoidx mbbgBia sbbgBbt {Pgv_PL}
+
+MAP(mbbgBia)
+bbgno		ppsnobbm	REPLACE
+
+MAP(mcmp)
+cmpkode		ppsplg	REPLACE
+/*cmpbbmpl	ppsnobbm	REPLACE*/
+
+/*MAP(mtbdPro)
+tbdkode		ppsnobuk2		REPLACE
+tbdket		ppsket		REPLACE*/
+
+HOOKS(tmptrans)
+BEFORE_INPUT	cur_field=ppsplg 	DO_SKIP_IF cBIA
+
+SUBFILE(tmptrans)
+SFL_LINES(5)       /* Rumusnya : 22 - base_row trans */
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+ppsmstbukidx   ppmnoll         
+
+/*SFL_MAP
+ppmnobuk	ppsnomst
+ppmcab		ppscab	
+ppmdvs		ppsdvs
+ppmbisnis	ppsbisnis
+ppmtglfak	ppstglbuk
+ppmscr    	ppsscr
+ppdbrg_1   	ppsppdoto
+ppdoto_1   	ppsgrup  */
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	c0
+	PMT_UPDALL_COND	c0
+	PMT_DEL_COND	c0
+

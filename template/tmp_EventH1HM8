@@ -1,0 +1,97 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+ t.Tema Program
+/-----------------------------------\
+||i.Tema     : ____________________||
+||i.Program  : ____________________||
+||i.AHASS Berpartisipasi?: _______||
+\-----------------------------------/
+ /---------------------------------\
+  t.Info     : ___________________
+  t.Status   : ___________________
+  t.ACC/TACC : ___________________
+  t.NipApr1  : ___________________
+  t.AlsanTacc : ___________________
+  i.Enter    : _____
+  _________________________________
+ \---------------------------------/
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkdnam1      ALLCAPS		                        INPUTRI	1
+tkdnam2      ALLCAPS		                        INPUTRI	2
+tkdjenis 	ALLCAPS NOCHANGE                        INPUTRI	3
+tkdrek          PROTECT UNSEEN_IF cinfokosong  COLOR=cred,cyellow,cgreen  INPUTRI 3
+tkdsts          PROTECT                                 INPUTRI 3
+tkdjenisaw         ALLCAPS SCROLL                         INPUTRI 3
+tkdstr1         PROTECT                                 INPUTRI 3
+tkdket          TEXTAREA                                INPUTRI 3
+lenter          NOCHANGE                                INPUTRI 4
+ltombolhm8ok    TOMBOL UNSEEN_IF chidetomdetailok       INPUTRI 39
+
+DEFAULTS(tmptranst)
+tkdjenis        DFALT_LIST      YA TIDAK
+ltmpisidf1  	INIT            {tmpisidf1}
+labktype	INIT            {ctipedetail}
+tkdjenisaw         DFALT_LIST      ACC TACC
+
+EDITS(tmptranst)
+e.Mandatory             tkdnam1      MANDATORY
+e.Mandatory             tkdnam2      MANDATORY
+e.Mandatory             tkdjenis        MANDATORY
+e.Mandatory             tkdket          MANDATORY_IF camkawiltacc
+
+CALCS()
+cdetailhm8ok            tlmkode == g_usrkode && (tkdsts == gv_OPEN || tkdsts == gv_TACC) && tkdnam1 != "" && tkdnam2 != "" && tkdjenis != "" && tkdtotjsa == 1
+cpanjangprogramok       lpanjangprogram > 4
+cpanjangtemaok          lpanjangtema > 4
+cpanjangtema 			DO_LIB ap_strln(tkdnam1,&lpanjangtema);
+cpanjangprogram 		DO_LIB ap_strln(tkdnam2,&lpanjangprogram);
+
+MAP(mpanjangtema)
+cpanjangtema lpanjangtema DO_CALC
+
+MAP(mpanjangprogram)
+cpanjangprogram lpanjangprogram DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tkdnam1    DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdnam2    DO_SKIP_IF camkawil
+AFTER_INPUT     cur_field=tkdnam1    DO_MAP SHOW mpanjangtema
+AFTER_INPUT     cur_field=tkdnam2    DO_MAP SHOW mpanjangprogram
+
+AFTER_INPUT     cur_field=tkdnam1    DO_MAP
+                IF cpanjangtemaok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.tema minimal 5 karakter
+
+AFTER_INPUT     cur_field=tkdnam2    DO_MAP
+                IF cpanjangprogramok mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.program minimal 5 karakter
+
+BEFORE_INPUT    cur_field=tkdjenis    DO_SKIP_IF camkawil
+BEFORE_INPUT    cur_field=tkdjenisaw        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cpicnso
+BEFORE_INPUT    cur_field=tkdket        DO_SKIP_IF cisitacc
+CLICKED         cur_field=ltombolhm8ok  DO_SPCALCS spdetailokhm8
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        tkddatbukll lEVNBTLHM8 tlmnobuk 
+
+MAP(mupdinfodetailhm8)
+lISITEMADULU            tkdrek          REPLACE_IF ctkdjwbstr1kosong
+lDALAMPROSESREVIEW      tkdrek          REPLACE_IF cdetaildalamreview
+DEBUG ldum ldum REPLACE
+SPCALCS(spdetailokhm8)
+        DO_LIB_IF cdetailhm8ok          ap_dbclc(DNAME dupddetailreqhm8,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupddetailreq);
+        DO_LIB_IF cadakawilbelumacc     ap_dbclc(DNAME daddabkreviewkawilhm8, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewkawil);
+        DO_LIB_IF cadaambelumacc        ap_dbclc(DNAME daddabkreviewamhm8, DCOMMAND ADD, DFILE abk, DMAP maddabkreviewam);
+        DO_LIB_IF cdetailbelumacc       ap_dbclc(DNAME dupdinfodetailhm8,DCOMMAND UPDATE,DTARGET tkdprmidx tkdprm, DMAP mupdinfodetailhm8);
+
+POSTING(tmptrans)
+        PST_UPDCMD spubahdetailbaru

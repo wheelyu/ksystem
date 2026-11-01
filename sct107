@@ -1,0 +1,567 @@
+SCREEN 107 QUERY_TYPE t.MonSdm
+SCR_GRPMENU i.Monitoring
+SCR_LOGFLD psmktp 
+SCR_FILE psm
+SCR_AUTO_DET
+
+LOCAL
+PGM_FIELDS
+lGMAPS		STRING	11
+ltldjml		TIME 4
+lMEETDIR	STRING	11
+lMEETDIR21	STRING	21
+ltombol		STRING	21
+ltmpviewsdm21	STRING	21
+lkunciabsen	STRING	11
+lkuncitgt	STRING	11
+ltglakhbl	DATE	4
+ltgl3bln 	DATE	4
+ltomdet2_d 	STRING	31
+latasan         STRING  11
+lpsmkode        STRING  21
+lpsmnama        STRING  60
+lnamasdm        STRING  60
+ltglhariini	DATE	4
+la		STRING	5
+ltesc		STRING  5
+lsvifr          STRING  21
+lspst		STRING 11
+lthbl		STRING	21
+lthbl11		STRING	11
+lversi		STRING	11
+lHSLAUDIT	STRING	11
+lpsidept        STRING  21
+lpsidept2       STRING  21
+lpsidvs		STRING	21
+lcabuser        STRING  21
+lcabposuser     STRING  21
+
+lH1		STRING	21
+lM2W		STRING	21
+lPICMKT		STRING	21
+lBUM		STRING	21
+lKAWIL		STRING	21
+lMKTHMCDVH	STRING	21
+lMKTM2WDVH	STRING	21
+
+lpsicabskr	STRING	21
+lcabusaha	STRING	21
+lnippic		STRING	21
+lnipbum		STRING	21
+lpsikode	STRING	21
+/*
+lusrkode	STRING	21
+lusrgrp		STRING	21
+ltmptypjl	STRING	5
+*/
+lkomsurvey	STRING	11
+lhe		INT2	2
+lhe1		INT2	2
+lhestring	STRING	21
+/*lhekmrnint	INT2	2*/
+lwajibspk	STRING	11
+lKOMISIHRN	STRING	11
+
+lKOMCMS         STRING  21
+lKOMCMO         STRING  21
+lKOMAKL         STRING  21
+lKOMAHASS	STRING	11
+
+lVERSI		STRING	21
+ltgtsdm		STRING	11
+lINPH		STRING	5
+labkkym2	STRING	51
+
+lspkadhm4w	STRING	11
+lBUKUTAMU	STRING	11
+
+lCOEPIUTREM     STRING  11
+ldeskcall11	STRING	11
+lhisdesk	STRING	11
+l1		INT2	1
+
+CALCS()
+cthbl		THBLS(g_tgltrn)
+cblanks         BLANKS
+
+MAP(mjoinpsi)
+psicabskr	lpsicabskr	REPLACE
+psisdep		lpsidept	REPLACE
+psikode		lpsikode	REPLACE
+
+DBCALCS(djoinpsi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	psmkode
+	DBC_MAP		mjoinpsi
+
+MAP(mjoinpsiuser)
+psisdep         lpsidept2       REPLACE
+psicabskr       lcabuser        REPLACE
+psikode		lpsikode	REPLACE
+
+DBCALCS(djoinpsiuser)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx       g_usrkode
+        DBC_MAP         mjoinpsiuser
+
+/*
+MAP(mjoinusr)
+usrkode		lusrkode	REPLACE
+usrgrp		lusrgrp		REPLACE
+
+DBCALCS(djoinusr)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	usrkodidx	lpsikode
+	DBC_MAP 	mjoinusr
+*/
+
+MAP(mjointgm)
+tgmhreff		lhe		REPLACE
+
+DBCALCS(djointgm)
+	DBC_COMMAND 	JOIN
+	DBC_TARGET	tgmdattglidx	gv_dttgl ltglhariini	
+	DBC_MAP 	mjointgm
+
+MAP(mjoincabuser)
+cabpos          lcabposuser     REPLACE
+
+DBCALCS(djoincabuser)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cabkodidx       lcabuser
+        DBC_MAP         mjoincabuser
+
+MAP(mjoincab)
+cabusaha	lcabusaha	REPLACE
+DBCALCS(djoincab)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	cabkodidx	lpsicabskr
+	DBC_MAP		mjoincab
+
+MAP(mjoinsgmpic)
+sgmstr5		lnippic		REPLACE
+DBCALCS(djoinsgmpich1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth	gt_dtpiccab11 lH1 lpsicabskr lthbl11 lPICMKT
+	DBC_MAP		mjoinsgmpic
+
+DBCALCS(djoinsgmpicm2w)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth	gt_dtpiccab11 lM2W lpsicabskr lthbl11 lPICMKT
+	DBC_MAP		mjoinsgmpic
+
+MAP(mjoinsgmbum)
+sgmstr5		lnipbum		REPLACE
+DBCALCS(djoinsgmbumh1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth	gt_dtpiccab11 lH1 lpsicabskr lthbl11 lBUM
+	DBC_MAP		mjoinsgmbum
+
+DBCALCS(djoinsgmbumm2w)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	sgmdatplgth	gt_dtpiccab11 lM2W lpsicabskr lthbl11 lBUM
+	DBC_MAP		mjoinsgmbum
+
+IMAGE(master)
+/----------------------------------\
+ /--------------------------------\
+  t.Nip      : _______
+  t.Nama     : ___________________
+ \--------------------------------/
+    __________                
+\----------------------------------/
+
+FIELD(master)
+psmkode		ALLCAPS QMANDATORY        INPUTRI 1
+psmnama		PROTECT		INPUTRI	2
+ltombol		TOMBOL		INPUTRI	3
+
+DEFAULTS(master)
+lKOMCMS         INIT            KOMCMS
+lKOMCMO         INIT            KOMCMO
+lKOMAKL         INIT            KOMAKL
+
+ltombol         INIT                    1d.View
+lGMAPS          INIT                    GMAPS  
+ltmpviewsdm21	INIT			TMPVIEWSDM
+psmkode		INIT_QUERY		{g_usrkode}
+lkunciabsen	INIT			KUNCIABSEN
+lkuncitgt	INIT			KUNCITGT
+latasan         INIT                     ATASAN
+ltglhariini	INIT			{g_tgltrn}
+la		INIT			A
+ltesc		INIT			TES
+lthbl		INIT			{cthbl}
+lthbl11		INIT			{cthbl}
+lversi		INIT			190826
+lMEETDIR	INIT			MEETDIR
+lMEETDIR21	INIT			MEETDIR
+lHSLAUDIT	INIT			HSLAUDIT
+
+lH1		INIT			H1
+lM2W		INIT			M2W
+lPICMKT		INIT			PICMKT
+lBUM		INIT			BUM
+lKAWIL		INIT			KAWIL
+lMKTHMCDVH	INIT			MKTHMCDVH
+lMKTM2WDVH	INIT			MKTM2WDVH
+lkomsurvey	INIT			KOMSURVEY
+lwajibspk	INIT			WAJIBSPK
+lKOMISIHRN	INIT			KOMISIHRN
+lKOMAHASS	INIT			KOMAHASS
+
+lVERSI		INIT			25092023
+ltgtsdm		INIT			TGTSDM
+lINPH		INIT			INPH
+
+lspkadhm4w	INIT			SPKADH
+lBUKUTAMU	INIT			BUKUTAMU
+
+lCOEPIUTREM     INIT    		COEPIUTREM
+
+ldeskcall11	INIT			DESKCALL
+lhisdesk	INIT			HISDESK
+l1		INIT			1
+
+EDITS(master)
+e.ValidateCab   psmkode VALIDATE psmdtkodidx  mpsm spsm {Pgv_dtkaryawan} {Pgv_INPG}
+
+
+CALCS()
+ctglakhbl	DO_LIB ap_akhbl(g_tgltrn,&ltglakhbl);
+ctgl3bln	g_tgltrn - 90
+cbolehmasuk	g_usrkode == psmkode || g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "COO" || g_grpnam == "KAWIL" || g_grpnam == "MKTM2WDVH" || g_grpnam == "MKTHMCDVH" ||
+		(djoinpsi == 1 && djoincab == 1 &&
+		(g_grpnam == "PICMKT" && ((lcabusaha == "DEALER" && djoinsgmpich1 == 1) || (lcabusaha == "FINCO" && djoinsgmpicm2w == 1)) && lnippic == g_usrkode) ||
+		(g_grpnam == "BUM" && ((lcabusaha == "DEALER" && djoinsgmbumh1 == 1) || (lcabusaha == "FINCO" && djoinsgmbumm2w == 1)) && lnipbum == g_usrkode)
+		)
+cjikaHO         psmkode == g_usrkode 
+		|| (djoinpsi==1 && lpsidept=="AUDIT" && djoinpsiuser==1 && (djoincabuser==1 && (lcabposuser=="PST" || lpsidept2=="AUDIT")))
+		|| (djoinpsi==1 && lpsidept!="AUDIT" && g_grpnam != "PICGADAI" && g_grpnam != "ADMGADAI")
+cjointgm	djointgm == 1
+
+cjoinpsi	djoinpsi == 1
+chestr		FLD_TO_STRING(lhe1)
+cjikaCMOCMS     (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="ANSYSUAT" || g_grpnam=="ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam=="CREDITDVH" || g_grpnam=="CREDITHMCDVH" || g_grpnam=="CREDITM2WDVH" || g_usrkode==psmkode || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITHEAD")
+ckomcmocms	(rptkode2=="KOMCMO" || rptkode2=="KOMCMS")
+ckomskl         rptkode2=="KOMAKL"
+/*
+cselkom 		tmptypjl == g_grpnam
+*/
+ctglskrbsk		akttgl == g_tgltrn || akttgl == g_tgltrn + 1
+che1		lhe-1
+
+MAP(mpsm)
+psmkode         psmkode         REPLACE
+psmnama         psmnama         REPLACE
+psmkode         lpsmkode        REPLACE
+ctglakhbl	ltglakhbl	DO_CALC
+ctgl3bln	ltgl3bln	DO_CALC
+lpsicabskr	lpsicabskr	REPLACE_IF cjoinpsi
+lpsikode	lpsikode	REPLACE_IF cjoinpsi
+lhe		lhe		REPLACE_IF cjointgm
+che1		lhe1		DO_CALC
+chestr		lhestring	DO_CALC_IF cjointgm
+/*
+chekmrn		lhekmrnint	DO_CALC_IF cjointgm
+lpsicabskr	lpsicabskr	REPLACE_IF cjoinpsiuser
+lpsikode	lpsikode	REPLACE_IF cjoinpsiuser
+*/
+IMAGE(transt)
+/----------------------------------\
+|____________________              |
+|--------------------------------t-|
+| i.Keterangan                   | |
+\--------------------------------.-/
+FIELD(transt)
+ltomdet2_d               TOMBOL                          INPUTRI 1 
+
+DEFAULTS(transt)
+ltomdet2_d		INIT		"d.UntukMelihatDetil"  
+
+IMAGE(trans)
+|__________________________________|
+
+FIELD(trans)
+tmpket                  PROTECT SCROLL                  INPUTRI 4
+
+CALCS()
+cjabpicmso		(tmpkode == "GRADPICMSO" && (g_grpnam == "MSOHEAD" || g_grpnam == "PICMKTM2W" || g_grpnam == "IT" || g_grpnam == "RI")) || tmpkode != "GRADPICMSO"
+
+SUBFILE(trans)
+SFL_LINES(12)
+SFL_TITLE(transt)
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+
+SFL_SELECT cjabpicmso
+SFL_TARGET
+tmpdatkodurt   gv_dttemplate ltmpviewsdm21
+/*
+SFL_MAP
+tmptypjl	tmptypjl	REPLACE
+*/
+SUBFILE(trans2)
+SFL_TEMPLATE(tmp_viewsdmabsenhar)
+
+SUBFILE(trans2g1)
+SFL_TEMPLATE(tmp_viewsdmabsenakum)
+
+SUBFILE(trans2g2)
+SFL_TEMPLATE(tmp_viewsdmkunciabsen)
+
+SUBFILE(trans2g3)
+SFL_TEMPLATE(tmp_viewsdmarea)
+ 
+SUBFILE(trans2g4)
+SFL_TEMPLATE(tmp_viewpic)
+
+SUBFILE(trans2g5)
+SFL_TEMPLATE(tmp_viewrenckunciabsen)
+
+SUBFILE(trans2g6)
+SFL_TEMPLATE(tmp_viewrencabsen)
+
+SUBFILE(trans2g7)
+SFL_TEMPLATE(tmp_viewmsg)
+
+SUBFILE(trans2g8)
+SFL_TEMPLATE(tmp_viewproduktivitas)
+
+SUBFILE(trans2g9)
+SFL_TEMPLATE(tmp_viewFakturJual)
+
+SUBFILE(trans2g10)
+SFL_TEMPLATE(tmp_viewtgtsdm)
+
+SUBFILE(trans2g11)
+SFL_TEMPLATE(tmp_view203)
+
+SUBFILE(trans2g12)
+SFL_TEMPLATE(tmp_viewproduktivitasm4w)
+
+SUBFILE(trans2g13)
+SFL_TEMPLATE(tmp_viewkpi)
+
+SUBFILE(trans2g14)
+SFL_TEMPLATE(tmp_viewmeetdireksi)
+
+SUBFILE(trans2g15)
+SFL_TEMPLATE(tmp_viewproduktifdesk)
+
+SUBFILE(trans2g16)
+SFL_TEMPLATE(tmp_viewtgtharian)
+
+SUBFILE(trans2g17)
+SFL_TEMPLATE(tmp_viewspk)
+
+SUBFILE(trans2g19)
+SFL_TEMPLATE(tmp_komsvy)
+
+SUBFILE(trans2g20)
+SFL_TEMPLATE(tmp_komakl)
+
+SUBFILE(trans2g21)
+SFL_TEMPLATE(tmp_spkprioritas4w)
+
+SUBFILE(trans2g22)
+SFL_TEMPLATE(tmp_komisimktakum)
+
+SUBFILE(trans2g23)
+SFL_TEMPLATE(tmp_komisiahassakum)
+
+SUBFILE(trans2g24)
+SFL_TEMPLATE(tmp_totagen)
+
+SUBFILE(trans2g25)
+SFL_TEMPLATE(tmp_agenaktif)
+
+SUBFILE(trans2g26)
+SFL_TEMPLATE(tmp_viewagen)
+
+SUBFILE(trans2g27)
+SFL_TEMPLATE(tmp_spkadhm4w)
+
+SUBFILE(trans2g28)
+SFL_TEMPLATE(tmp_viewsdmkunciabsen2)
+
+SUBFILE(trans2g29)
+SFL_TEMPLATE(tmp_viewsdmkunciabsen3)
+
+SUBFILE(trans2g30)
+SFL_TEMPLATE(tmp_pencapaiangradpicmso)
+
+SUBFILE(trans2g31)
+SFL_TEMPLATE(tmp_viewpoinarsip)
+
+SUBFILE(trans2g32)
+SFL_TEMPLATE(tmp_viewnotdoneap)
+
+SUBFILE(trans2g33)
+SFL_TEMPLATE(tmp_viewjdwmeetpiurem)
+
+SUBFILE(trans2g34)
+SFL_TEMPLATE(tmp_deskhistoris107)
+
+CALCS()
+c0           0
+cadhhead     g_grpnam =="ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam=="SYOMAHEAD" || g_grpnam=="ANSYSUAT" || g_usrkode=="1027490" || g_usrkode == "1027492" || g_grpnam=="ADHDVH" || g_usrkode=="1736672" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam=="CRHMCSPV" || g_grpnam=="CRM2WSPV" || g_grpnam=="CREDITM2WSPV" || g_grpnam=="CREDITHMCSPV" || g_grpnam=="CREDITDCA" || g_grpnam=="CREDITSPV" || g_grpnam=="CREDITHEAD"
+csdm         g_usrkode==msguntuk
+
+
+PERMIT(master)
+PMT_ADD_COND	c0  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  c0
+
+PERMIT(trans)
+PMT_ADD_COND	c0  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  c0
+
+PERMIT(trans2)
+PMT_ADD_COND	c0  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  c0
+
+PERMIT(trans2g1)
+PMT_ADD_COND	c0  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  c0
+
+PERMIT(trans2g2)
+PMT_ADD_COND	c0  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  c0
+
+PERMIT(trans2g3)
+PMT_ADD_COND	cadhhead  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  cadhhead
+
+PERMIT(trans2g4)
+PMT_ADD_COND	cadhhead
+PMT_UPDALL_COND cadhhead
+PMT_DEL_COND  cadhhead
+
+PERMIT(trans2g5)
+PMT_ADD_COND	c0  
+PMT_UPDALL_COND c0
+PMT_DEL_COND  c0
+
+PERMIT(trans2g6)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g7)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND csdm
+PMT_DEL_COND    c0
+
+PERMIT(trans2g8)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g9)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g10)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g11)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g13)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g15)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g16)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g17)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g19)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND	c0
+
+/*
+PERMIT(trans2g20)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND	c0
+*/
+
+PERMIT(trans2g21)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND	c0
+
+PERMIT(trans2g24)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND	c0
+
+PERMIT(trans2g25)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND	c0
+
+PERMIT(trans2g27)
+PMT_ADD_COND	c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND	c0
+
+PERMIT(trans2g28)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND  	c0
+
+PERMIT(trans2g29)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g31)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g32)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g33)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+PERMIT(trans2g34)
+PMT_ADD_COND    c0
+PMT_UPDALL_COND c0
+PMT_DEL_COND    c0
+
+END_SCREEN
+
+
+

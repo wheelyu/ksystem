@@ -1,0 +1,112 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------------------------\
+|/------------------------------------------------------------------------------------------------\|
+|| t.NoUrt         : __										  ||
+|| t.Tanggal       : ________   t.Jam  : _________________          t.Menit  : ____________	  ||
+|| t.Nip           : ______________________ ___________________________________ _____________ 	  ||
+|| t.Sdmterlbt     : ______________________ ___________________________________ _____________	  ||
+|| t.Niptgjw       : ______________________ ___________________________________ _____________	  ||
+|| t.DetVerif1     : _______________________________________________________________________	  ||
+||                                               ___						  ||
+|| t.t												  ||
+|\------------------------------------------------------------------------------------------------/|
+\--------------------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketnourt                PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 1
+kettgl1                 PROTECT NOLIMIT {DD-MM-YY}      INPUTRI 2
+ketnama                 ALLCAPS SCROLL                  INPUTRI 3
+ketdf1                  ALLCAPS SCROLL                  INPUTRI 4
+ketkode                 PROTECT SCROLL                  INPUTRI 5
+lnama4                  PROTECT SCROLL                  INPUTRI 6
+ljabatan1               PROTECT SCROLL                  INPUTRI 7
+lniplb                  PROTECT SCROLL                  INPUTRI 8
+lnama5                  PROTECT SCROLL                  INPUTRI 9
+ljabatan2               PROTECT SCROLL                  INPUTRI 10
+lnipjw                  PROTECT SCROLL                  INPUTRI 11
+lnama6                  PROTECT SCROLL                  INPUTRI 12
+ljabatan3               PROTECT SCROLL                  INPUTRI 13
+ketisi                  TEXTAREA                        INPUTRI 14
+lOK                     ALLCAPS SCROLL                  INPUTRI 16
+
+
+DEFAULTS(tmptranst)
+lOK                     INIT            	OK
+kettgl1                 INIT            	{g_tgltrn}
+ketkode                 INIT            	{g_usrkode}
+kettgl1                 INIT_UPDATE             {g_tgltrn}
+ketkode                 INIT_UPDATE             {g_usrkode}
+ketnama                 DFALT_SCAN_BLANKS       08:30-09:00
+                                                09:00-10:00
+                                                10:00-11:00
+                                                11:00-12:00
+                                                13:00-14:00
+                                                14:00-15:00
+                                                15:00-16:00
+                                                16:00-17:00
+
+EDITS(tmptranst)
+e.Mandatory             ketnama        MANDATORY
+e.Mandatory             ketdf1         MANDATORY
+e.Mandatory             ketisi         MANDATORY
+e.Validatesdm           ketkode        VALIDATE psmkodidx mpsmaudit 0
+e.Validatesdm           ketkode        VALIDATE psikodidx mpsiaudit 0
+e.Validatesdm           lniplb         VALIDATE psikodidx mpsipel 0
+e.Validatesdm           lnipjw         VALIDATE psikodidx mpsijwb 0
+e.Validateurt           ketnourt       VALIDATE tldbukurtidx mnipd2 stld {Pketnobuk}
+
+MAP(mnipd2)
+tldplg                  lniplb          REPLACE
+tldgrup                 lnipjw          REPLACE
+
+MAP(mpsipel)
+psinama                 lnama5          REPLACE
+psijabatan              ljabatan2       REPLACE
+
+MAP(mpsijwb)
+psinama                 lnama6          REPLACE
+psijabatan              ljabatan3       REPLACE
+
+MAP(mpsmaudit)
+psmkode                 ketkode         REPLACE
+psmnama                 lnama4          REPLACE
+
+MAP(mpsiaudit)
+psikode                 ketkode         REPLACE
+psijabatan              ljabatan1       REPLACE
+
+CALCS()
+cdet4                   tlmsts != BLANKS
+ctambah11               g_curcmd == 1 && djoinket == 0
+ctambah21               g_curcmd == 1 && djoinket == 1
+cdet4g          	djoinket == 1 && tlmpst != "AUDHEAD"
+cdel4d          	djoindeld4 == 0 && tlmpst != "AUDHEAD"
+
+MAP(misiurut1)
+cno11                   ketnourt        DO_CALC_IF ctambah11
+curut2                  ketnourt        DO_CALC_IF ctambah21
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_keybd=EN            DO_MAP SHOW misiurut1
+AFTER_INPUT		cur_field=ketdf1	DO_MAP SHOW misiurut1
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD ketnourt
+SFL_COND        cdet4
+SFL_TARGET
+        ketdatbuktgl   tlmdata tlmnobuk laudit11
+
+SFL_MAP
+tlmdata         ketdata                 REPLACE
+tlmnobuk        ketnobuk                REPLACE
+laudit11        kettype                 REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0 /*cdet4s*/
+PMT_UPDALL_COND cdet4g
+PMT_DEL_COND    cdel4d
+

@@ -1,0 +1,71 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.InfoBpjsTk                                                             |
+|       /----------------------------------------------------\                   |
+|       !t.StsBpjs    : ______________________               !                   |
+|       !t.Pt         : _________                            !                   |
+|       !t.NoKrt      : ______________________               !                   |
+|       !t.Npp        : _______________                      !                   |
+|       !t.TglBpjs    : ______________________               !                   |
+|       !t.KetBpjs    : ________________________________     !                   |
+|       !t.User       : __________                           !                   |
+|       !t.TglInput   : ______________                       !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdstr4                 NOCHANGE SCROLL            INPUTRI 1
+lpt			PROTECT SCROLL		INPUTRI 2
+psdstr1                 ALLCAPS SCROLL          INPUTRI 3
+psdstr2                 ALLCAPS SCROLL          INPUTRI 4
+psdtgl1                  ALLCAPS NOLIMIT {DD-MM-YY} INPUTRI 5
+psdstr5			ALLCAPS SCROLL		INPUTRI 6
+psdtype2		PROTECT SCROLL		INPUTRI 7
+psdtgl2			PROTECT NOLIMIT {DD-MM-YY} INPUTRI 8
+
+DEFAULTS(tmptranst)
+psdstr4		DFALT_SCAN_BLANKS SDH_TERDAFTAR BLM_TERDAFTAR TDK_DIDAFTARKAN 
+
+CALCS()
+csdh_daftar	psdstr4=="SDH_TERDAFTAR"
+cktpisi     psdpsmkode != BLANKS  
+cbknkclkerja	tlmscr != "993"
+ckclkerja	tlmscr == "993"
+
+EDITS(tmptranst)
+t.Mandatory psdstr1 MANDATORY_IF csdh_daftar
+t.Mandatory psdstr2 MANDATORY_IF csdh_daftar
+t.Mandatory psdstr4 MANDATORY
+t.Mandatory psdtgl1 MANDATORY
+t.Mandatory psdstr5 MANDATORY
+t.Validate  psdstr2 VALIDATE tbddatkodidx mtbdnpp {Pgv_dttabel} {PlHRD} {PlMASTERPOTNPP}
+
+MAP(mtbdnpp)
+tbdkode     psdstr2 REPLACE
+tbdlv1      lpt     REPLACE
+
+MAP(misinip)
+hrmnip1		psdkode		REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW misinip
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_SELECT cktpisi
+SFL_LINES(1)
+SFL_COND cbolehakses
+SFL_TARGET_IF cbknkclkerja
+  psddatpsmkod	lDTBPJS hrmcab2
+SFL_TARGET_IF ckclkerja
+  psddatpsmkod	lDTBPJS tlmnoasal
+
+SFL_MAP
+lDTBPJS		psddata		REPLACE
+hrmcab2		psdpsmkode	REPLACE
+hrmnip1		psdkode		REPLACE
+lDTBPJS		psdtype		REPLACE
+g_usrkode	psdtype2	REPLACE
+g_tgltrn	psdtgl2		REPLACE

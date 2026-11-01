@@ -1,0 +1,51 @@
+IMAGE(tmptranst)
+/------------------------------------\
+| /---------------------------------\|
+| |t.TolakKbj	: ___  _____________!|
+| |t.Blh204	: ___		    !|
+| |i.Ket : _________________________!|
+| |                                 !|
+| \---------------------------------/|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketyt1		NOCHANGE			INPUTRI 1
+kettgl1		PROTECT NOLIMIT	{DD-MM-YYYY}	INPUTRI	2
+ketyt2		NOCHANGE			INPUTRI	3
+ketisi2		TEXTAREA 3			INPUTRI	4
+
+DEFAULT(tmptranst)
+ketyt1		DFALT_SCAN_BLANKS	Y T
+ketyt2		DFALT_SCAN_BLANKS	Y T
+
+CALCS()
+cisitlkkbjY	ketyt1 == "Y"
+cisitlkkbjbknY	ketyt1 != "Y"
+cisitlkkbjYtgl	(ketyt1 == "Y" && kettgl1 == BLANKS) || (ketyt1 == "Y" && ~ketyt1 != "Y")
+cTMPTLKKBJASS	tmpkode=="TLKKBJASS" && tlmbisnis == "FAKTUR" &&
+		((tlmkode=="LENGKAP" && (tlmsts=="892" || tlmsts=="CLSD")) ||
+		 (tlmkode=="TOLAK KBJ" && (tlmsts=="892" || tlmsts=="CLSD")))
+
+EDITS(tmptranst)
+t.MandatoryTlk		ketyt1	MANDATORY
+t.MandatoryBlh204	ketyt2	MANDATORY_IF cisitlkkbjY
+
+MAP(misitlkkbj)
+g_tgltrn	kettgl1		REPLACE_IF cisitlkkbjYtgl
+cTOLAKKBJ	ketnama		DO_CALC_IF cisitlkkbjY
+g_strksg	ketnama		REPLACE_IF cisitlkkbjbknY
+g_strksg	ketyt2		REPLACE_IF cisitlkkbjbknY
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=ketyt1        DO_MAP SHOW misitlkkbj
+BEFORE_INPUT	cur_field=ketyt2	DO_SKIP_IF cisitlkkbjbknY
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW misitlkkbj
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cTMPTLKKBJASS
+SFL_TARGET
+ketotoidx	ketoto_3

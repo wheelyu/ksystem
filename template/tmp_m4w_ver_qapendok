@@ -1,0 +1,63 @@
+
+DBCALCS(djoinabkpendok)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx lkunciabsenx btmnobuk
+
+
+IMAGE(tmptranst)
+/--------t----------------------------------------------------------------------t----------t-------t----------\
+|i.No    | i.Ket                                                                |t.Deadline|t.AprRM|t.FinalApr|
+\--------.----------------------------------------------------------------------.----------.-------.----------/
+
+
+IMAGE(tmptrans)
+|________|______________________________________________________________________|__________|_______|__________|
+
+FIELD(tmptrans)
+tkdnourt	PROTECT			INPUTRI		1
+tkdket		PROTECT			INPUTRI		2
+tkdtgl		NOLIMIT {DD-MM-YYYY}	INPUTRI		4
+tkdjwbstr2	NOCHANGE		INPUTRI		5
+tkdsisstr	NOCHANGE		INPUTRI		6
+
+DEFAULTS(tmptrans)
+tkdjwbstr2	DFALT_SCAN_BLANKS	ACC TACC
+tkdsisstr	DFALT_SCAN_BLANKS	ACC TACC
+lversi		INIT			030122v2
+
+CALCS()
+caprpendok	((tkdnourt==49 || tkdnourt==34) && g_grpnam != "COO" && g_usrkode != "1326445" && g_grpnam!="B.M4WCOO" && g_grpnam!="B.M4WDVH" && g_grpnam!="B.M4WADHDVH" && g_grpnam!="B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam!="RI") || 
+		((tkdnourt!=49 && tkdnourt!=34) && g_grpnam != "COO" && g_usrkode != "1326445" && g_grpnam!="B.M4WCOO" && g_grpnam!="B.M4WADHDVH" && g_grpnam!="B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam!="B.M4WDVH" && g_grpnam!="IT") ||
+		tkdjwbstr2!="ACC"
+caprpendokrm	g_grpnam!="B.M4WRM" && g_grpnam!="RAS" && g_grpnam!="B.M4WADHDVH" && g_grpnam!="B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD"
+cupdabkpendok	djoinabkpendok==1 && tkdsisstr=="ACC"
+cupdabkpendok1  djoinabkpendok==1
+cselabk1	abknoll==tkdjenis
+cVOID		"VOID"
+
+HOOKS(tmptrans)
+BEFORE_INPUT		cur_field=tkdjwbstr2	DO_SKIP_IF caprpendokrm
+BEFORE_INPUT		cur_field=tkdsisstr	DO_SKIP_IF caprpendok
+
+SUBFILE(tmptrans)
+SFL_LINES(8)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+	tkddatbukll lPDOK btmnobuk
+
+MAP(mupdabkpendok)
+tkdtgl		abktgl		REPLACE_IF cselabk1
+
+MAP(mupdabkpendok1)
+cVOID		abksts		DO_CALC_IF cselabk1
+
+
+SPCALCS(stmptrans)
+	DO_LIB_IF cupdabkpendok ap_dbclc(DNAME dupdabkpendok,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsenx btmnobuk,DMAP mupdabkpendok);
+
+SPCALCS(stmptransdel)
+	DO_LIB_IF cupdabkpendok1 ap_dbclc(DNAME dupdabkpendok1,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsenx btmnobuk,DMAP mupdabkpendok1);
+
+POSTING(tmptrans)
+	PST_UPDCMD stmptrans
+	PST_DELCMD stmptransdel

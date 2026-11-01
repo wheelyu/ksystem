@@ -1,0 +1,96 @@
+DBCALCS(djoinpsdnourt)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmurt lSAKITPJG hrmnobuk
+
+IMAGE(tmptranst)
+/----------------------------------------\
+|t.KetIsiHRD143a			 | 
+|t.KetIsiHRD143b			 | 
+|/--------------------------------------\|
+|| t.NoBuk 	: ____________________ 	||
+|| t.Nip	: ____________________ 	||
+|| t.Tgl	: ____________________ 	||
+|| t.Kondisi 	: ___________________  	||
+|| t.uplsrtsmbh	:			||
+|/---------s.UPLOAD---------------------\|
+||                       	        ||
+||                       	        ||
+||                       	        ||
+||                       	        ||
+||                       	        ||
+||                       	        ||
+|\--------------------------------------/|
+\----------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ psdpsmkode	NOCHANGE 			INPUTRI 1
+ psdstr1	PROTECT				INPUTRI	2
+ psdtgl1	PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI	2
+ psdstr2	NOCHANGE			INPUTRI	4
+
+DEFAULT(tmptranst)
+ psdstr1	INIT			{g_usrkode}
+ psdtgl1	INIT			{g_tgltrn}
+ psdstr2	DFALT_SCAN_BLANKS	SUDAH_SEMBUH
+					DALAM_PEMULIHAN
+ psddata	INIT			"SAKITPJG"
+ psdtype	INIT			"SAKITPJG"
+ psdsts 	INIT			{gv_INPG}
+
+CALCS()
+ cadd2		hrmdvs2 == lSAKITBERKEPANJANGAN 
+		&& hrmsts != gv_CLSD
+		&& (g_grpnam == "HRDSPV" || g_grpnam == "HRDER" || g_grpnam == "RI" || g_usrkode == "2550257")
+
+ cupd2		hrmdvs2 == lSAKITBERKEPANJANGAN 
+		&& hrmsts == gv_OPEN
+		&& psdsts == gv_INPG
+		&& (g_grpnam == "HRDSPV" || g_grpnam == "HRDER" || g_grpnam == "RI" || g_usrkode == "2550257")
+ 
+ cjoinpsdnourt0	djoinpsdnourt == 0
+ cjoinpsdnourt1	djoinpsdnourt == 1
+ c2		2
+ cpsdkode	FLD_TO_STRING(psdpsmkode) + "-" + FLD_TO_STRING(psdnourt)
+ cY      	"Y"
+ cuplpsd	hrmdvs2 == lSAKITBERKEPANJANGAN && hrmsts != gv_CLSD && psdstr2 == "SUDAH_SEMBUH"
+
+EDITS(tmptranst)
+ e.Mandatory	psdstr2		MANDATORY
+
+MAP(mtmpnobuk)
+ hrmnobuk 	psdpsmkode	REPLACE
+ hrmnip1	psdstr3		REPLACE
+ c1		psdnourt	DO_CALC_IF cjoinpsdnourt0
+ c2		psdnourt	DO_CALC_IF cjoinpsdnourt1
+ cpsdkode	psdkode		DO_CALC
+
+HOOKS(tmptranst)
+ BEFORE_INPUT	cur_field=psdpsmkode 	DO_MAP SHOW mtmpnobuk
+
+MAP(mupdpsdUPL)
+cY	psdtype2	DO_CALC
+
+DBCALCS(dupdpsdUPL)
+	DBC_COMMAND 	UPDATE
+	DBC_TARGET	psdprmidx   psdprm
+	DBC_MAP		mupdpsdUPL
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SORT_BY_FIELD psdnourt
+SFL_SORT_UPDOWN DOWN
+SFL_UPLFLD  psdpsmkode psdnourt
+SFL_UPLFLD_DBCALCS 	dupdpsdUPL
+SFL_UPL_COND		cuplpsd    	
+SFL_TARGET
+ psddatpsmurt lSAKITPJG hrmnobuk
+SFL_MAP
+  hrmnobuk	psdpsmkode	REPLACE
+
+PERMIT(tmptrans)
+ PMT_ADD_COND cadd2
+ PMT_UPDALL_COND cupd2
+ PMT_DEL_COND c0

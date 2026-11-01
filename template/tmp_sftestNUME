@@ -1,0 +1,58 @@
+IMAGE(tmptranst)
+/-------------------------------------------------------------------------------------\
+| /---\ /--s.UPLOAD--------------------------------------------\/--------------------\|
+| |   | |                                                      ||t.WaktuMenit        ||
+| |___| |                                                      ||  ________          ||
+| \---/ |                                                      ||spasi               ||
+|       |                                                      || ___________________||
+|       |                                                      || ___________        ||
+|       |                                                      |\--------------------/|
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       |                                                      |                      |
+|       \------------------------------------------------------/                      |
+\-------------------------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+   sgmurt       PROTECT                 INPUTRI          1
+   sgmhrg2	PROTECT			INPUTRI		 2
+   sgmstr4      DIGITS                  INPUTRI          3
+   lenter	NOCHANGE		INPUTRI		 4
+
+EDITS(tmptranst)
+e.Mandatory    sgmstr4  MANDATORY
+
+CALCS()
+cdjoinsgm101      ((djoinsgm10 == 1 || g_grpnam=="RI" || g_grpnam=="HRDREC" || g_grpnam=="HRDRECAREA" || g_grpnam=="HRDSPV") && btmstsdata=="OPEN") || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD" 
+clewat_jam7	  (djoinsgmnumetime == 1 && sgmjam <= lsgmjamnumA) || djoinpsd9nume==1 || djoinsgmnumetime == 0
+cjoinsgmNUM       djoinsgmnumetime==1
+ctambahjamnum     lsgmjamnum + l0010
+
+MAP(mwaktu_numeric)
+cSYSTIME	sgmjam		DO_CALC
+ctambahjamnum   lsgmjamnumA DO_CALC_IF cjoinsgmNUM
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=sgmstr4	DO_MAP SHOW mwaktu_numeric
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW maddtgltes
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW 
+		IF clewat_jam7 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.WaktuTesSudahBerahkir
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD     sgmstr2
+SFL_UPLREADONLY
+SFL_COND        cdjoinsgm101
+SFL_TARGET
+        sgmdabrplgtb   gv_testkry11   btmnobuk ltest_nume
+

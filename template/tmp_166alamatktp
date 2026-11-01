@@ -1,0 +1,125 @@
+IMAGE(tmptranst)
+/-------------------------------------------------\
+|/--t.Alamatktp----------------------------------\|
+||spasi                                          ||
+||t.Alm       : _________________________________||
+||t.RtRw      : ___     ___                      ||
+||t.Prop      : __________  _____________________||
+||t.Kota      : __________  _____________________||
+||t.Kec       : __________  _____________________||
+||t.Kel       : __________  _____________________||
+||t.KdPos     : ___________                      ||
+|\-----------------------------------------------/|
+\-------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+almjalan      ALLCAPS                 INPUTRI         1
+
+almrt         ALLCAPS                 INPUTRI         2
+almrw         ALLCAPS                 INPUTRI         3
+
+almprop       ALLCAPS                 INPUTRI         4
+almnamprop    PROTECT                 INPUTRI         5
+almkota       ALLCAPS                 INPUTRI         6
+almnamkota    PROTECT                 INPUTRI         7
+almkec        ALLCAPS                 INPUTRI         8
+almnamkec     PROTECT                 INPUTRI         9
+almkel        ALLCAPS                 INPUTRI         10
+almnamkel     PROTECT                 INPUTRI         11
+almkdpos      ALLCAPS                 INPUTRI         12
+
+EDITS(tmptranst)
+e.MandatoryProp almprop MANDATORY
+e.MandatoryKota almkota MANDATORY
+e.MandatoryKec  almkec  MANDATORY
+e.Mandatory     almkdpos MANDATORY
+e.Mandatory     almjalan MANDATORY
+e.Mandatory     almrt MANDATORY
+e.Mandatory     almrw MANDATORY
+e.ValidateProp  almprop VALIDATE dtmdtkodidx  mdtmProp sdtmProp {Pgv_dtkota}
+e.ValidateKota  almkota VALIDATE tbldtdtmkod  mtblKota stblKota {Pgv_dtkota} {Palmprop}
+e.ValidateKec   almkec VALIDATE tbddatkodidx  mtbdKec stbd {Pgv_dtkota} {Palmprop} {Palmkota}
+e.ValidateKel   almkel VALIDATE tbtdattypkod  mtbtKel stbt {Pgv_dtkota} {Pgv_dtkota21} {Palmprop} {Palmkota} {Palmkec}
+
+MAP(mdtmProp)
+dtmkode                 almprop               	REPLACE
+dtmket                  almnamprop              REPLACE
+
+MAP(mtblKota)
+tblkode                 almkota                 REPLACE
+tblket                  almnamkota              REPLACE
+
+MAP(mtbdKec)
+tbdkode                 almkec                  REPLACE
+tbdket                  almnamkec               REPLACE
+
+MAP(mtbtKel)
+tbtkode                 almkel                  REPLACE
+tbtket                  almnamkel               REPLACE
+tbtkat			almkdpos		REPLACE
+
+CALCS()
+cbisa    	hrmket1=="PENGKINIAN_DATA"
+crt           	lpanjangrt == 3
+crw           	lpanjangrw == 3
+cpos           	lpanjangpos == 5
+cpjgrt         	DO_LIB ap_strln(almrt,&lpanjangrt);
+cpjgrw         	DO_LIB ap_strln(almrw,&lpanjangrw);
+cpjgpos        	DO_LIB ap_strln(almkdpos,&lpanjangpos);
+
+MAP(mcaripjgrt)
+cpjgrt         		lpanjangrt        	DO_CALC
+
+MAP(mcaripjgrw)
+cpjgrw         		lpanjangrw        	DO_CALC
+
+MAP(mcaripjgpos)
+cpjgpos        		lpanjangpos        	DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=almrt        DO_MAP SHOW mcaripjgrt
+AFTER_INPUT     cur_field=almrw        DO_MAP SHOW mcaripjgrw
+AFTER_INPUT     cur_field=almkdpos     DO_MAP SHOW mcaripjgpos
+AFTER_INPUT     cur_field=almrt        DO_MAP SHOW
+                IF crt mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRT3
+
+AFTER_INPUT     cur_field=almrw        DO_MAP SHOW
+                IF crw mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRW3
+
+AFTER_INPUT     cur_field=almkdpos     DO_MAP SHOW
+                IF cpos mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKdPos5
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF crt mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRT3
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF crw mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRW3
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF cpos mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKdPos5
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_SELECT	cbisa
+SFL_TARGET
+        almdatotobuk   gv_psmktp 	hrmnobuk 
+
+SFL_MAP
+gv_psmktp     	almdata         REPLACE
+hrmnobuk  	almbukoto       REPLACE
+

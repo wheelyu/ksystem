@@ -1,0 +1,282 @@
+IMAGE(tmptranst)
+/---------------------------------------------------------\
+ /-------------------------------------------------------\
+  t.NoUrt		  ___
+  t.Cab			  ______
+  t.TglBerubah		  _______________
+  t.Sts			  _______________
+  t.Indikator		  _______________
+  t.IsiLama		  _______________
+  t.IsiBaru		  _______________
+  t.SesuaiAPI		  _______________
+  t.AlasanSesuaiAPI	  _______________
+  t.PerluPerubahan	  _______________
+  t.SdhPerubahan	  _______________
+  t.AlasanBlmUbah	  _______________ 
+ \-------------------------------------------------------/ 
+ /-------------------------------------------------------\
+  t.UplPengajuanPerubahan
+ \-------------------------------------------------------/
+      /--------------S.UPLOAD-------------\/------------\
+					    t.StsUpl  ___	
+
+
+
+
+      \-----------------------------------/\------------/
+
+
+spasi
+ /-------------------------------------------------------\
+  t.BerhasilBerubah	  ______________
+  t.TglRevisi		  _______________ t.H+___
+ \-------------------------------------------------------/
+ /-------------------------------------------------------\
+  t.UplBerubah
+ \-------------------------------------------------------/
+      /--------------S.UPLOAD2------------\/------------\
+					    t.StsUpl  ___	
+
+
+
+
+      \-----------------------------------/\------------/
+
+ /-------------------------------------------------------\
+  t.SdhBacaCRM		____
+  t.SdhBacaNSOH		____
+  t.SdhBacaAM		____
+			____
+ \-------------------------------------------------------/
+spasi
+\---------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldnourt		PROTECT				INPUTRI	1
+tldcab			PROTECT				INPUTRI	2
+tldtglfak		PROTECT				INPUTRI	3		/* tanggal berubah */
+tldsts			PROTECT				INPUTRI	4		/* status */
+tldbrg			PROTECT				INPUTRI	5		/* indikator */
+tldket2			PROTECT				INPUTRI	6		/* isi lama */
+tldket			PROTECT				INPUTRI	7		/* isi baru */
+tldlok			NOCHANGE			INPUTRI	8		/* kiriman api sesuai */
+lisi			TEXTAREA			INPUTRI	9		/* isi */
+tldkat			NOCHANGE			INPUTRI	10		/* perlu perubahan */
+tldkirim		NOCHANGE			INPUTRI	11		/* sdh perubahan */
+tldgrup2		TEXTAREA			INPUTRI	12		/* alasan */
+tldstr4			PROTECT				INPUTRI	13		/* tanda upload 1 */
+
+tldsat			NOCHANGE			INPUTRI	14		/* berhasil */
+tldtgl2			PROTECT NOLIMIT {DD-MM-YYYY}	INPUTRI	15		/* tanggal revisi */
+tldjml2			PROTECT				INPUTRI	16
+
+tldstr5			PROTECT				INPUTRI	17		/* tanda upload 2 */
+
+tldstr2			NOCHANGE			INPUTRI	18		/* sudah baca CRM */
+tldstr1			NOCHANGE			INPUTRI	19		/* sudah baca NSOH */
+tldstr3			NOCHANGE			INPUTRI	20		/* sudah baca AM */
+lenter			NOCHANGE			INPUTRI	21
+
+DEFAULTS(tmptranst)
+tldkat			DFALT_SCAN_BLANKS		YA
+							TIDAK
+tldkirim		DFALT_SCAN_BLANKS		SUDAH
+							BELUM
+tldsat			DFALT_SCAN_BLANKS		BERHASIL
+							BELUM
+tldlok			DFALT_SCAN_BLANKS		SESUAI
+							TIDAK_SESUAI
+
+tldstr1			DFALT_SCAN_BLANKS		Y
+tldstr2			DFALT_SCAN_BLANKS		Y
+tldstr3			DFALT_SCAN_BLANKS		Y
+
+
+CALCS()
+/*
+cberhasil		tldsat == "YA"
+cxberhasil		tldsat == "TIDAK"
+cbesok			g_tgltrn + 1
+*/
+ctldopen		tldsts == "OPEN"
+
+DBCALCS(dcekket)
+DBC_COMMAND		JOIN
+DBC_TARGET		ketbukurtidx	tlddata	tldnobuk tldnourt
+
+CALCS()
+ckosong			dcekket == 0
+ckosong2		dcekket == 0 && lisi == BLANKS
+ckosong3		dcekket == 0 && lisi != BLANKS
+cisi			dcekket == 1 && tldlok != "SESUAI"
+cperluberubah	tldkat == "YA"
+cxperluberubah	tldkat == "TIDAK"
+cupdateapi	tldlok == "SESUAI"
+cxupdateapi	tldlok == "TIDAK_SESUAI"
+cdoperubahan	tldkirim == "SUDAH"
+cxdoperubahan	tldkirim == "BELUM"
+cberhasilubah	tldsat == "BERHASIL"
+cxberhasilubah	tldsat == "BELUM"
+
+EDITS(tmptranst)
+Wajib isi perlu perubahan atau tidak			tldkat		MANDATORY_IF	ctldopen
+Wajib mengisi field isi					lisi		MANDATORY_IF	cxupdateapi
+
+Wajib isi field sudah melakukan perubahan		tldkirim	MANDATORY_IF	cperluberubah
+Wajib mengisi alasan belum ubah				tldgrup2	MANDATORY_IF	cxdoperubahan
+Wajib mengisi field berhasil berubah			tldsat		MANDATORY_IF	cdoperubahan
+Wajib isi sesuai/tidak pengiriman API			tldlok		MANDATORY
+
+e.ValidateIsi		tldnourt	VALIDATE_IF cisi	ketbukurtidx	misi	{Ptlddata} {Ptldnobuk}
+e.ValidateIsi		tldcab		VALIDATE_IF ckosong2	cabkodidx	misi2	0
+
+MAP(misi)
+ketisi			lisi		REPLACE_IF cisi
+
+MAP(misi2)
+cBLANKS			lisi		DO_CALC_IF ckosong
+
+/*
+MAP(mtglrevisi)
+cbesok			tldtgl2				DO_CALC_IF cxdoperubahan
+cBLANKS			tldtgl2				DO_CALC_IF cdoperubahan
+*/
+/*
+CALCS()
+cTIDAK			"TIDAK_SESUAI"
+cSESUAI			"SESUAI"
+MAP(mubahupdateapi)
+cTIDAK			tldlok				DO_CALC_IF cberhasilubah
+cSESUAI			tldlok				DO_CALC_IF cxperluberubah
+*/
+/*
+MAP(mubahberhasil)
+cBLANKS			tldsat				DO_CALC
+cBLANKS			tldlok				DO_CALC
+
+MAP(mubahberhasil2)
+cBLANKS			tldkirim			DO_CALC
+cBLANKS			tldsat				DO_CALC
+cBLANKS			tldgrup2			DO_CALC
+
+MAP(mubahberhasil3)
+cBLANKS			tldlok				DO_CALC
+*/
+
+CALCS()
+cA			"A"
+MAP(mtanda)
+cA			tlddk				DO_CALC
+
+CALCS()
+chps1			tldlok == "SESUAI"
+chps2			tldkirim == "SUDAH"
+chps3			tldkirim == "BELUM"
+MAP(mhpsket)
+cBLANKS			lisi				DO_CALC_IF chps1
+MAP(mhpsket2)
+cBLANKS			tldgrup2			DO_CALC_IF chps2
+cBLANKS			tldsat				DO_CALC_IF chps3
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=tldstr1		DO_SKIP_IF		cbukanNSOH
+BEFORE_INPUT		cur_field=tldstr2		DO_SKIP_IF		cbukanCRM
+BEFORE_INPUT		cur_field=tldstr3		DO_SKIP_IF		cbukanAM
+
+BEFORE_INPUT		cur_field=tldkat		DO_SKIP_IF		cbukancx
+BEFORE_INPUT		cur_field=tldkirim		DO_SKIP_IF		cbukancx
+BEFORE_INPUT		cur_field=tldsat		DO_SKIP_IF		cbukancx
+BEFORE_INPUT		cur_field=tldgrup2		DO_SKIP_IF		cbukancx
+BEFORE_INPUT		cur_field=tldlok		DO_SKIP_IF		cbukancx
+BEFORE_INPUT		cur_field=lisi			DO_SKIP_IF		cbukancx
+
+/*AFTER_INPUT		cur_field=tldsat		DO_MAP SHOW mtglrevisi*/
+BEFORE_INPUT		cur_field=tldkirim		DO_SKIP_IF		cxperluberubah
+BEFORE_INPUT		cur_field=tldsat		DO_SKIP_IF		cxperluberubah
+BEFORE_INPUT		cur_field=tldgrup2		DO_SKIP_IF		cxperluberubah
+/*BEFORE_INPUT		cur_field=tldlok		DO_SKIP_IF		cxperluberubah*/
+
+BEFORE_INPUT		cur_field=tldsat		DO_SKIP_IF		cxdoperubahan
+/*BEFORE_INPUT		cur_field=tldlok		DO_SKIP_IF		cxdoperubahan*/
+BEFORE_INPUT		cur_field=lisi			DO_SKIP_IF		cxdoperubahan
+
+/*AFTER_INPUT		cur_field=tldsat		DO_MAP SHOW mubahupdateapi*/
+BEFORE_INPUT		cur_field=tldgrup2		DO_SKIP_IF		cberhasilubah
+/*BEFORE_INPUT		cur_field=tldlok		DO_SKIP_IF		cberhasilubah*/
+
+
+BEFORE_INPUT		cur_field=tldgrup2		DO_SKIP_IF		cxberhasilubah
+/*BEFORE_INPUT		cur_field=tldlok		DO_SKIP_IF		cxberhasilubah*/
+BEFORE_INPUT		cur_field=lisi			DO_SKIP_IF		cxberhasilubah
+
+BEFORE_INPUT		cur_field=lisi			DO_SKIP_IF		cupdateapi
+BEFORE_INPUT		cur_field=tldgrup2		DO_SKIP_IF		cdoperubahan
+AFTER_INPUT		cur_field=tldlok		DO_MAP SHOW mhpsket
+AFTER_INPUT		cur_field=tldkirim		DO_MAP SHOW mhpsket2
+
+/*
+AFTER_INPUT		cur_field=tldkirim		DO_MAP SHOW
+							IF cxdoperubahan mubahberhasil
+AFTER_INPUT		cur_field=tldkat		DO_MAP SHOW
+							IF cxperluberubah mubahberhasil2
+AFTER_INPUT		cur_field=tldsat		DO_MAP SHOW
+							IF cxberhasilubah mubahberhasil3
+*/
+AFTER_INPUT		cur_keybd=EN			DO_MAP SHOW mtanda
+							
+MAP(mdoneupload)
+cok			tldstr4		DO_CALC
+
+DBCALCS(dupload)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	tldprmidx	tldprm
+	DBC_MAP		mdoneupload
+
+MAP(mdoneupload2)
+cok                     tldstr5         DO_CALC
+
+DBCALCS(dupload2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx       tldprm
+        DBC_MAP         mdoneupload2
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+
+SFL_UPL_DIRFLD		tldtglfak
+SFL_UPLFLD		tlddata tldoto
+SFL_UPLFLD_DBCALCS	dupload
+SFL_UPL_COND		cPICGMBdetail
+SFL_UPL_DELCOND		c0
+/*SFL_DOCUPL_DELCOND 	c0*/
+
+SFL_UPL_DIRFLD2         tldtglfak
+SFL_UPLFLD2             tldbrg tldoto
+SFL_UPLFLD2_DBCALCS     dupload2
+
+
+SFL_LINES(1)
+SFL_TARGET
+tldbukbbmidx		spknobuk	lSTDGMB121
+
+
+MAP(maddket)
+tldnobuk		ketnobuk	REPLACE
+tlddata			ketdata		REPLACE
+tldnourt		ketnourt	REPLACE
+DEBUG lisi			ketisi		REPLACE
+
+SPCALCS(spisibaru)
+DO_LIB_IF ckosong3	ap_dbclc(DNAME daddket,DCOMMAND ADD,DFILE ket,DMAP maddket);
+DO_LIB_IF cisi		ap_dbclc(DNAME dupdket,DCOMMAND UPDATE,DTARGET ketbukurtidx tlddata tldnobuk tldnourt,DMAP maddket);
+
+
+POSTING(tmptrans)
+PST_ADDCMD		spisibaru
+PST_UPDCMD		spisibaru
+
+

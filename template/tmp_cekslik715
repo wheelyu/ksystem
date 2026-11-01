@@ -1,0 +1,368 @@
+LOCAL
+PGM_FIELDS
+lenter		STRING		11
+ldum		STRING		2
+lsvidtmkode	STRING		21
+lf1d1		STRING		3
+lf1d2		STRING		3
+lf1d3		STRING		3
+ln1             INT2    2
+ln2             INT2    2
+ln3             INT2    2
+	
+
+IMAGE(tmptranst)
+
+/-----------------------------------\
+|/---------------------------------\|
+||spasi                            ||
+||t.TekanU                         ||
+||t.AdaSlik       : ___  _______   ||
+||t.PlafonEff     : _____________ _|| 
+||t.BakiDebet     : _____________ _|| 
+||spasi                            ||
+||t.BankUmum      : ___            ||
+||t.BprBprs       : ___            ||
+||t.LembagaPembia : ___            ||
+||t.Lainnya       : ___            ||
+||spasi                            ||
+||t.Lancar        : ___            ||
+||t.Nunggak30     : ___            ||
+||t.Nunggak3060   : ___            ||
+||t.Nunggak60     : ___            ||
+||t.PinjLunas     : ___            ||
+||spasi                            ||
+||t.Analisa                        ||
+|| ________________________________||
+||spasi                            || 
+||t.Rekomendasi   : _____          ||
+||                      _______    ||
+||t.Nip : ________  ______________ ||
+|\---------------------------------/|
+| t.UplFotoSlik                     |
+|/-------s.UPLOAD------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+sviyt1		NOCHANGE		INPUTRI		1
+lsviyt1		PROTECT			INPUTRI		1
+svidf1		NUMERIC			INPUTRI		2
+svinobuk        PROTECT UNSEEN        INPUTRI         3
+svidf2		NUMERIC			INPUTRI		4
+svikode         PROTECT UNSEEN          INPUTRI         4
+
+
+svistr1		NUMERIC			INPUTRI		5
+svistr2		NUMERIC                 INPUTRI         6
+svistr3		NUMERIC                 INPUTRI         7
+svistr4		NUMERIC                 INPUTRI         8
+
+svistr9		NUMERIC			INPUTRI		9
+svistr5		NUMERIC                 INPUTRI         10
+svistr6         NUMERIC                 INPUTRI         10
+svistr7		NUMERIC                 INPUTRI         11
+svistr8		NUMERIC			INPUTRI		12
+sviket		TEXTAREA ALLCAPS	INPUTRI		13
+svitype2	NOCHANGE		INPUTRI		14
+lenter		NOCHANGE		INPUTRI		15
+svidtmkode	PROTECT			INPUTRI		16
+lsvidtmkode	PROTECT			INPUTRI		17
+
+DEFAULTS(tmptranst)
+sviyt1	DFALT_SCAN BLANKS
+			Y " "
+			T " "
+svitype2 DFALT_SCAN BLANKS ACC "ACC"
+			   TACC "TACC"
+
+lenter		INIT	"ENTER"
+ln1             INIT    1
+ln2		INIT	2
+ln3		INIT	3
+
+CALCS()
+cYA		"YA"
+cTIDAK		"TIDAK"
+ciya		sviyt1=="Y"
+ctidak		sviyt1=="T"
+cselainbm	g_grpnam!="BM"
+
+EDITS(tmptranst)
+e.Mandatory	svidf1	MANDATORY_IF ciya
+e.Mandatory	svidf2	MANDATORY_IF ciya
+e.Mandatory	sviyt1	MANDATORY
+e.Mandatory	sviket	MANDATORY_IF cselainbm
+e.Mandatory	svitype2 MANDATORY_IF cselainbm
+e.validate	svikode	VALIDATE btmbukidx mbtm
+e.Validate	svidtmkode VALIDATE psikodidx mpsi
+
+
+MAP(mbtm)
+cYA             lsviyt1         DO_CALC_IF ciya
+cTIDAK          lsviyt1         DO_CALC_IF ctidak
+cBLANKS		lsvidtmkode	DO_CALC
+
+MAP(mpsi)
+psinama		lsvidtmkode	REPLACE
+
+CALCS()
+ctidakadaslik	sviyt1=="T"
+
+MAP(mkosong)
+/*
+cBLANKS		svidf1		DO_CALC
+cBLANKS		svidf2		DO_CALC
+cBLANKS		svistr1		DO_CALC
+cBLANKS		svistr2		DO_CALC
+cBLANKS		svistr3		DO_CALC
+cBLANKS		svistr4		DO_CALC
+cBLANKS		svistr5		DO_CALC
+cBLANKS		svistr6		DO_CALC
+cBLANKS		svistr7		DO_CALC
+cBLANKS		svistr8		DO_CALC
+cBLANKS		svistr9		DO_CALC
+cBLANKS		sviket		DO_CALC
+cBLANKS		svitype2	DO_CALC
+*/
+g_usrkode       svidtmkode      REPLACE
+g_tgltrn        svitgl1         REPLACE
+
+
+CALCS()
+cinibuh		(svistr10=="715" && (g_grpnam=="BM" || g_grpnam=="BUH" || g_grpnam=="ARDVH" || g_grpnam=="BOM"|| g_grpnam=="ANSYSUAT" || g_grpnam=="ROOT" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="DCOOOPR" || g_grpnam=="DCOOADH" || g_grpnam=="COO" || g_grpnam=="SPVAREA" || g_grpnam=="CRHMCSPV" || g_grpnam=="COLLAREASP" || g_grpnam=="CREDITDVH")) ||
+		(svistr10=="721" && (g_grpnam=="SPVAREA" || g_grpnam=="CRHMCSPV" || g_grpnam=="COLLAREASP" || g_grpnam=="ANSYSUAT" || g_grpnam=="ROOT" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="DCOOOPR" || g_grpnam=="DCOOADH" || g_grpnam=="COO" || g_grpnam=="BUH" || g_grpnam=="ARDVH" || g_grpnam=="CREDITDVH"))
+cbm		g_grpnam=="BM"
+
+cf1d1   DO_LIB ap_amstr(svistr1,ln1,ln1,&lf1d1);
+cf1d2   DO_LIB ap_amstr(svistr1,ln2,ln1,&lf1d2);
+cf1d3   DO_LIB ap_amstr(svistr1,ln3,ln1,&lf1d3);
+
+cf2d1   DO_LIB ap_amstr(svistr2,ln1,ln1,&lf1d1);
+cf2d2   DO_LIB ap_amstr(svistr2,ln2,ln1,&lf1d2);
+cf2d3   DO_LIB ap_amstr(svistr2,ln3,ln1,&lf1d3);
+
+cf3d1   DO_LIB ap_amstr(svistr3,ln1,ln1,&lf1d1);
+cf3d2   DO_LIB ap_amstr(svistr3,ln2,ln1,&lf1d2);
+cf3d3   DO_LIB ap_amstr(svistr3,ln3,ln1,&lf1d3);
+
+cf4d1   DO_LIB ap_amstr(svistr4,ln1,ln1,&lf1d1);
+cf4d2   DO_LIB ap_amstr(svistr4,ln2,ln1,&lf1d2);
+cf4d3   DO_LIB ap_amstr(svistr4,ln3,ln1,&lf1d3);
+
+cf5d1   DO_LIB ap_amstr(svistr5,ln1,ln1,&lf1d1);
+cf5d2   DO_LIB ap_amstr(svistr5,ln2,ln1,&lf1d2);
+cf5d3   DO_LIB ap_amstr(svistr5,ln3,ln1,&lf1d3);
+
+cf6d1   DO_LIB ap_amstr(svistr6,ln1,ln1,&lf1d1);
+cf6d2   DO_LIB ap_amstr(svistr6,ln2,ln1,&lf1d2);
+cf6d3   DO_LIB ap_amstr(svistr6,ln3,ln1,&lf1d3);
+
+cf7d1   DO_LIB ap_amstr(svistr7,ln1,ln1,&lf1d1);
+cf7d2   DO_LIB ap_amstr(svistr7,ln2,ln1,&lf1d2);
+cf7d3   DO_LIB ap_amstr(svistr7,ln3,ln1,&lf1d3);
+
+cf8d1   DO_LIB ap_amstr(svistr8,ln1,ln1,&lf1d1);
+cf8d2   DO_LIB ap_amstr(svistr8,ln2,ln1,&lf1d2);
+cf8d3   DO_LIB ap_amstr(svistr8,ln3,ln1,&lf1d3);
+
+cf9d1   DO_LIB ap_amstr(svistr9,ln1,ln1,&lf1d1);
+cf9d2   DO_LIB ap_amstr(svistr9,ln2,ln1,&lf1d2);
+cf9d3   DO_LIB ap_amstr(svistr9,ln3,ln1,&lf1d3);
+
+cdigitok	(lf1d1=="" || lf1d1=="1" || lf1d1=="2" || lf1d1=="3" || lf1d1=="4" || lf1d1=="5" || lf1d1=="6" || lf1d1=="7" || lf1d1=="8" || lf1d1=="9" || lf1d1=="0") &&
+		(lf1d2=="" || lf1d2=="1" || lf1d2=="2" || lf1d2=="3" || lf1d2=="4" || lf1d2=="5" || lf1d2=="6" || lf1d2=="7" || lf1d2=="8" || lf1d2=="9" || lf1d2=="0")
+/*		(lf1d3=="" || lf1d3=="1" || lf1d3=="2" || lf1d3=="3" || lf1d3=="4" || lf1d3=="5" || lf1d3=="6" || lf1d3=="7" || lf1d3=="8" || lf1d3=="9" || lf1d3=="0")*/
+
+
+MAP(mdumm)
+ldum		ldum	REPLACE
+
+MAP(mcekdigit1)
+cf1d1           lf1d1            DO_CALC
+cf1d2		lf1d2            DO_CALC
+cf1d3		lf1d3            DO_CALC
+
+
+MAP(mcekdigit2)
+cf2d1           lf1d1            DO_CALC
+cf2d2           lf1d2            DO_CALC
+cf2d3           lf1d3            DO_CALC
+
+MAP(mcekdigit3)
+cf3d1           lf1d1            DO_CALC
+cf3d2           lf1d2            DO_CALC
+cf3d3           lf1d3            DO_CALC
+
+MAP(mcekdigit4)
+cf4d1           lf1d1            DO_CALC
+cf4d2           lf1d2            DO_CALC
+cf4d3           lf1d3            DO_CALC
+
+MAP(mcekdigit5)
+cf5d1           lf1d1            DO_CALC
+cf5d2           lf1d2            DO_CALC
+cf5d3           lf1d3            DO_CALC
+
+MAP(mcekdigit6)
+cf6d1           lf1d1            DO_CALC
+cf6d2           lf1d2            DO_CALC
+cf6d3           lf1d3            DO_CALC
+
+MAP(mcekdigit7)
+cf7d1           lf1d1            DO_CALC
+cf7d2           lf1d2            DO_CALC
+cf7d3           lf1d3            DO_CALC
+
+MAP(mcekdigit8)
+cf8d1           lf1d1            DO_CALC
+cf8d2           lf1d2            DO_CALC
+cf8d3           lf1d3            DO_CALC
+
+MAP(mcekdigit9)
+cf9d1           lf1d1            DO_CALC
+cf9d2           lf1d2            DO_CALC
+cf9d3           lf1d3            DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=sviyt1       DO_MAP SHOW mkosong
+
+AFTER_INPUT             cur_field=svistr1       DO_MAP SHOW mcekdigit1
+AFTER_INPUT             cur_field=svistr2       DO_MAP SHOW mcekdigit2
+AFTER_INPUT             cur_field=svistr3       DO_MAP SHOW mcekdigit3
+AFTER_INPUT             cur_field=svistr4       DO_MAP SHOW mcekdigit4
+AFTER_INPUT             cur_field=svistr5       DO_MAP SHOW mcekdigit5
+AFTER_INPUT             cur_field=svistr6       DO_MAP SHOW mcekdigit6
+AFTER_INPUT             cur_field=svistr7       DO_MAP SHOW mcekdigit7
+AFTER_INPUT             cur_field=svistr8       DO_MAP SHOW mcekdigit8
+AFTER_INPUT             cur_field=svistr9       DO_MAP SHOW mcekdigit9
+
+BEFORE_INPUT cur_field=svidf1		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svidf2		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr1 		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr2 		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr3		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr4		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr5		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr6		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr7		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr8		DO_SKIP_IF ctidakadaslik
+BEFORE_INPUT cur_field=svistr9          DO_SKIP_IF ctidakadaslik
+
+BEFORE_INPUT cur_field=sviket           DO_SKIP_IF cbm
+BEFORE_INPUT cur_field=svitype2		DO_SKIP_IF cbm
+
+AFTER_INPUT cur_field=svistr1 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr2 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr3 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr4 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr5 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr6 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr7 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr8 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+AFTER_INPUT cur_field=svistr9 DO_MAP SHOW
+        IF cdigitok    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhHurufAngkaSaja
+
+
+
+AFTER_INPUT cur_field=sviyt1 DO_MAP SHOW
+        IF cinibuh    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhUbh
+
+AFTER_INPUT cur_keybd=EN DO_MAP SHOW
+        IF cinibuh    mdumm
+        ELSE HKCURSOR STAY
+        HKMSG t.TdkBlhUbh
+
+
+CALCS()
+cOK		"OK"
+c715		"715"
+cacd34		svistr10=="" && btmflag1=="ACD3" || btmflag1=="ACD4"
+c721		"721"
+cdari721	svistr10=="" && btmflag1!="ACD3" && btmflag1!="ACD4"
+
+MAP(mupdfotoslik)
+cOK		svitype3	DO_CALC
+c715		svistr10	DO_CALC_IF cacd34
+c721		svistr10	DO_CALC_IF cdari721
+
+
+DBCALCS(dupdfotoslik)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviotoidx   svioto
+	DBC_MAP		mupdfotoslik
+
+CALCS()
+cselain630		btmbichek!="SL" && btmbichek!="SO" && (btmbichek=="" || btmbichek =="IN" || btmbichek=="SN")
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND	cselain630
+SFL_UPL_DELCOND c0
+SFL_UPLFLD_DBCALCS dupdfotoslik
+SFL_UPLFLD svikode svidata
+SFL_TARGET
+	svidatkodtyp   lCEKSLIK btmnobuk lCEKSLIK gv_INPG
+
+SFL_MAP
+lCEKSLIK        svidata         REPLACE
+lCEKSLIK        svitype         REPLACE
+btmnobuk        svinobuk        REPLACE
+gv_INPG         svists          REPLACE
+btmnobuk        svikode         REPLACE
+l1              svinourt        REPLACE
+
+CALCS()
+cdjoinsvi0	btmsts=="715" && djoinsvi==0
+cdjoinsvi1	btmsts=="715" && djoinsvi==1
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cdjoinsvi0
+  PMT_UPDALL_COND cdjoinsvi1
+  PMT_DEL_COND  c0
+

@@ -1,0 +1,72 @@
+LOCAL
+PGM_FIELDS
+lnmrbj		STRING		21
+
+DBCALCS(djoinppsbj)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppsbukidx lnmrbj
+
+IMAGE(tmptranst)  
+/---------------------t-------------------------------------t-----------------t--------------------\
+| i.Kode              | i.Ket                               |  i.Feebased     |  i.Biurus          |
+\---------------------.-------------------------------------.-----------------.--------------------/
+
+IMAGE(tmptrans) 
+|_____________________|_____________________________________|______________.__|_________________.__|
+    
+FIELD(tmptrans)
+nhdkode			PROTECT SCROLL		INPUTRI 1
+nhdkode2		PROTECT SCROLL		INPUTRI 2
+nhdhrg1			NOCHANGE		INPUTRI 3
+nhdhrg2			NOCHANGE		INPUTRI 4
+
+
+
+CALCS()
+cbiroada		nhmkrepok_3 > 0 && btmytbiro != "T" 
+
+SUBFILE(tmptrans)
+SFL_LINES(10)        
+SFL_COND cbiroada
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	nhdbukidx   btmnobuk gv_dtbirojasa
+
+
+
+CALCS()
+ckurangbj		nhmkrepok_3 - (nhdhrg1 + nhdhrg2)
+chapusbj		nhmcairpinj_3 + (nhdhrg1 + nhdhrg2)
+ckurangfeebj		btmdf2 - nhdhrg1
+cnmrbj			STRIP(btmnobuk)+"BJ"
+cjoinppsbj		djoinppsbj == 1
+
+MAP(mupdnhm_delbj)
+ckurangbj		nhmkrepok_3		DO_CALC
+chapusbj		nhmcairpinj_3		DO_CALC
+
+MAP(mupdbtm_delbj)
+ckurangfeebj		btmdf2			DO_CALC
+
+MAP(mapnmrbj)
+cnmrbj			lnmrbj			DO_CALC
+
+SPCALCS(spdeltrans_biro)
+	DO_LIB		ap_dbclc(DNAME dupdnhmbiro2,DCOMMAND UPDATE,DTARGET nhmprmidx_3 nhmprm_3,DMAP mupdnhm_delbj);
+	DO_LIB		ap_dbclc(DNAME dupdbtmbiro2,DCOMMAND UPDATE,DTARGET btmprmidx btmprm,DMAP mupdbtm_delbj);
+	DO_LIB		ap_dbclc(DNAME dmapnmrbj,DCOMMAND MAPMAP,DMAP mapnmrbj);
+	DO_LIB_IF cjoinppsbj ap_dbclc(DNAME ddelnmrbj,DCOMMAND DELETE,DTARGET ppsbukidx lnmrbj);
+
+POSTING(tmptrans)
+   	PST_AFT_DELCMD  spdeltrans_biro
+
+
+CALCS()
+ctmpbiroup_pro1		btmsts == "643" || btmsts == "BTLK" || (btmsts == "705"  && (btmflag1 == "OPE1" || btmflag1 == "OPE2") && g_grpnam == "ADHSPV"|| g_grpnam == "B.M4WQA" || g_grpnam == "ADHDVH" || g_grpnam == "ADHHEAD" || g_grpnam == "ADHAM" || g_grpnam == "B.M4WADHSPV" || g_grpnam == "B.M4WADHDVH" || g_grpnam == "B.M4WADHHEAD")
+
+PERMIT(tmptrans)
+  	PMT_ADD_COND  	c0
+  	PMT_UPDALL_COND	c0
+  	PMT_DEL_COND  	ctmpbiroup_pro1
+

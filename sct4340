@@ -1,0 +1,129 @@
+SCREEN 4340 APP_TYPE t.PostKrmMtr
+
+LOCAL
+PGM_FIELDS
+loto		STRING		21
+lnobuk		STRING		21
+lmnext		STRING		31
+lnoscr		INT2		2
+l4887                   INT2    2
+lm4887                  STRING  15
+lm4887clsd                  STRING  15
+lbtmrekomen		STRING	21
+lbtmsoa    		STRING	21
+lppmnoll   		STRING	21
+lmtdsts			STRING	11
+ldum            STRING  1
+lHISKLIKNS		STRING	11
+lbtmiklan		STRING	21
+
+IMAGE(master)
+/--------------------------------------------------------------------------------\
+|No Oto  : _________________    No. Bukti  : _________________                   |
+|-----------t--------------t-----------t---------t-------t-------t---------------|
+|No.Faktur  |  Kode Barang | Jml Unit  |  Tgl DO |Lokasi |Status |  Sisa Unit    |
+\-----------.--------------.-----------.---------.-------.-------.---------------/
+
+FIELD(master)
+loto		ALLCAPS			INPUTRI		1
+lnobuk		ALLCAPS			INPUTRI		2
+
+DEFAULTS(master)
+loto		INIT		{r_string1}
+lnobuk		INIT		{r_string2}
+lmnext			INIT	mnext
+l4887           INIT    4887
+lm4887          INIT    m4887
+lm4887clsd      INIT    m4887clsd
+lHISKLIKNS		INIT	"HISKLIKNS"
+
+
+MAP(mnext)
+mtdoto        r_string1	REPLACE
+
+IMAGE(trans)
+|___________|______________|______________|___________|_________|_______|______|
+
+FIELD(trans)
+mtdnobuk		NOCHANGE		INPUTRI		1
+mtdnoll			NOCHANGE		INPUTRI		2
+mtdgrup			NOCHANGE		INPUTRI		2
+mtdbrg			PROTECT			INPUTRI		3
+mtdlok			PROTECT			INPUTRI		4
+mtdjml			PROTECT			INPUTRI		5
+btmlokjual		PROTECT			INPUTRI		6
+
+SUBFILE(trans)
+SFL_LINES(1)
+SFL_TARGET
+	mtdotoidx	loto
+
+
+MAP(mmapbtm)
+btmrekomen		lbtmrekomen		REPLACE
+btmsoa			lbtmsoa			REPLACE
+
+DBCALCS(djoinbtm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	btmbukidx          lppmnoll
+	DBC_MAP		mmapbtm
+
+MAP(mmapppm)
+ppmnoll		lppmnoll		REPLACE
+
+DBCALCS(djoinppm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ppmbukidx	   mtdplg
+	DBC_MAP		mmapppm
+
+DBCALCS(djoinpsi_0)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	lbtmrekomen
+
+CALCS()
+cOPEN      mtdsts=="OPEN"
+cRCLS      mtdsts=="INPG"
+c4382      4382
+c4383      4383
+c4340A	   "4340A"
+c4340B	   "4340B"
+cpk_klikopen       mtdsts!="CLSD" && djoinppm==1 && djoinbtm==1 && (lbtmrekomen != BLANKS || lbtmiklan == "ADS") && djoinpsi_0 == 0
+cpk_klikclsd       mtdsts=="CLSD" && djoinppm==1 && djoinbtm==1 && (lbtmrekomen != BLANKS || lbtmiklan == "ADS") && djoinpsi_0 == 0
+
+cmulaikirim		   lmtdsts=="OPEN"
+cdriverkembali		mtdsts=="CLSD" && mtdket=="TERKIRIM"
+/* cdriverkembali	lmtdsts=="CLSD" && mtdsisbrg=="OK" */
+
+MAP(mmapscr)
+c4382		lnoscr		DO_CALC_IF cOPEN
+c4383		lnoscr		DO_CALC_IF cRCLS
+
+MAP(m4887)
+mtdgrup         r_string24      REPLACE
+mtdnoll         r_string25      REPLACE
+/*mtdscr          r_string26      REPLACE*/
+c4340A		r_string26	DO_CALC_IF cmulaikirim
+DEBUG           ldum            ldum    REPLACE
+
+MAP(m4887clsd)
+mtdgrup         r_string24      REPLACE
+mtdnoll         r_string25      REPLACE
+c4340B		r_string27	DO_CALC_IF cdriverkembali
+DEBUG           ldum            ldum    REPLACE
+
+MAP(mmapmap)
+mtdoto          mtdoto	REPLACE
+mtdsts		lmtdsts	REPLACE
+
+SPCALCS(sptrans)
+DO_LIB ap_dbclc(DNAME dmapmap,  DCOMMAND MAPMAP,DMAP mmapmap);
+DO_LIB ap_dbclc(DNAME dmapscr,DCOMMAND MAPMAP,DMAP mmapscr);
+DO_LIB_IF cOPEN   	ap_nxpst(lnoscr,lmnext);
+DO_LIB_IF cRCLS   	ap_nxpst(lnoscr,lmnext);
+DO_LIB_IF cpk_klikopen   ap_nxpst(l4887,lm4887);
+DO_LIB_IF cpk_klikclsd   ap_nxpst(l4887,lm4887clsd);
+
+POSTING(trans)
+PST_COMMAND sptrans
+
+END_SCREEN

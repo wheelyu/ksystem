@@ -1,0 +1,110 @@
+LOCAL
+PGM_FIELDS
+lklikok8                STRING          31
+l4			INT2            2
+
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/----------------------------------\
+|/--------s.UPLOAD----------------\|
+||                                ||
+||                         	  ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+|/--------------------------------\|
+||i.Ket   : ______________________||
+||          _____ _______         ||
+!!t.TglFt : __________            ||
+!!t.Jam   : __________            ||
+!!t.Lat   : ___.__________________||
+!!t.Lon   : ___.__________________||
+||          _______________      _||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svinama                 PROTECT                 INPUTRI         1
+sviyt1			NOCHANGE		INPUTRI		2 
+sviyt2			NOCHANGE		INPUTRI		3 
+svitgl2                 PROTECT {DD-MM-YYYY}    INPUTRI         4
+ljamfoto		PROTECT			INPUTRI		5	
+g_fotolat1		PROTECT NUMERIC {99,999999999}		INPUTRI		6 
+g_fotolon1		PROTECT NUMERIC {99,999999999}		INPUTRI		7 
+lklikok8                TOMBOL                  INPUTRI         8
+svinobuk		PROTECT	UNSEEN		INPUTRI		9
+
+DEFAULTS(tmptranst)
+lcount          INIT    {tmpnourt}
+lklikok8        INIT    "UPLOAD OK"
+l4		INIT	4
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msviftpjmesgn
+
+MAP(msviftpjmesgn)
+cBLANKS         ljamfoto        DO_CALC
+svidf8          ljamfoto        REPLACE
+
+CALCS()
+cok8             "OK"
+cadalonlat8      svidf7!=0 && (g_fotodate1==g_tgltrn || g_grpnam=="RI" || g_grpnam=="IT")
+csdhupload8      sviyt1=="Y"
+cnamapjmesgn	"FOTO PENJAMIN SAAT ESIGNING"
+
+MAP(mupdsviftpjmesgn)
+cnamapjmesgn	svinama		DO_CALC
+cY              sviyt1          DO_CALC
+cSYSTIME         svidf8          DO_CALC
+g_tgltrn        svitgl2         REPLACE
+
+DBCALCS(dupdsviftpjmesgn)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftpjmesgn
+
+MAP(mupdsviftpjmesgnok)
+g_fotolat1      svidf6          REPLACE
+g_fotolon1      svidf7          REPLACE
+cok8            sviyt2          DO_CALC_IF cadalonlat8
+
+DBCALCS(dupdsviftpjmesgnok)
+        DCOMMAND        UPDATE
+        DTARGET         sviprmidx sviprm
+        DMAP            mupdsviftpjmesgnok
+
+SPCALCS(spcalftpjmesgnok)
+dupdsviftpjmesgnok
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lklikok8       DO_SPCALCS IF csdhupload8 spcalftpjmesgnok
+
+
+CALCS()
+cftspjmesgn	tmpkode == "FTSAATESPJM" && 
+		((/* lkodeotp != BLANKS &&*/ btdsisbrg == BLANKS  && btdbrg=="1") ||
+		(/*lkodeotp != BLANKS && */(btdbrg == "1" || (btdbrg == "4" && (btdsisbrg=="1" || btdsisbrg=="3") ))))
+cftspjmesgn1	sviyt1 != "Y"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cftspjmesgn
+SFL_UPL_DIRFLD btdtgl1
+SFL_UPLFLD_DBCALCS dupdsviftpjmesgn
+SFL_UPLFLD btmnobuk     svikode
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND cftspjmesgn1
+
+SFL_TARGET
+	svidatbuktyp   gv_datasurvey btmnobuk lPJMESGN728 l4
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  c0
+  PMT_UPDALL_COND  c0
+  PMT_DEL_COND  c0
+

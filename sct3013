@@ -1,0 +1,656 @@
+SCREEN 3013 QUERY_TYPE s.DaftarTemplate
+SCR_FILE dtm
+SCR_LOGFLD dtmkode  
+
+LOCAL
+PGM_FIELDS
+ltomdet_d    		STRING		30
+ltomdet_2d    		STRING		30
+lgab_field    		STRING		100
+lenter 			STRING	        4
+lesc   			STRING	        4
+
+lfile_dtm		STRING	        4
+lfile_tmp		STRING	        4
+lfile_tbl		STRING	        4
+lfile_tbt		STRING	        4
+lfile_rmd		STRING	        4
+
+lcalc_dtm		STRING	        30
+lcalc_tmp		STRING	        30
+lcalc_tbl		STRING	        30
+lcalc_tbt		STRING	        30
+lcalc_rmd		STRING	        30
+
+ldelimiter		INT2   		2
+ldefdte   		INT2  		2
+lrata                   INT2            2
+ltomdet1		STRING		31
+
+IMAGE(master) 
+/--------------------------------------------------------------------------------------------------\
+| /----------------------------------------------------------------------------------------------\ |
+| | i.Data         : __________                    i.YtRek : __                                  | |
+| | i.Type         : __________                                                                  | |
+| | i.KodeData     : ____________________                                                        | |
+| | i.Keterangan   : ______________________________                                              | |
+| \----------------------------------------------------------------------------------------------/ |
+|  ______________________  ___________________                                                     |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+|                                                                                                  |
+\--------------------------------------------------------------------------------------------------/
+
+FIELD(master)
+dtmdata           PROTECT QPROTECT	INPUTRI   	 1 
+dtmytppn          NOCHANGE         	INPUTRI          2 
+dtmtype           NOCHANGE         	INPUTRI          3 
+dtmkode           ALLCAPS          	INPUTRI          4 
+dtmket            ALLCAPS          	INPUTRI          5 
+ltomdet_d  	  TOMBOL	 	INPUTRI     	 6 /* Tombol Detil d*/
+ltomdet_2d  	  TOMBOL	 	INPUTRI     	 7 /* Tombol Detil d*/
+
+DEFAULTS(master)
+ltomdet_d    	INIT   		"1d.Input Perincian Template"
+ltomdet_2d    	INIT   		"2d.Input Tabel Template"
+dtmdata         INIT            DTTEMPLATE
+dtmdata     	INIT_QUERY	DTTEMPLATE
+dtmtype		DFALT_SCAN	TAMPILAN "Tamplate untuk menentukan Tampilan Detil"
+                      		ISIAN "Tamplate untuk Pengisian Data "
+dtmscr          INIT            {g_scrnumstr} 
+dtmusrcrt	INIT		{g_usrkode}
+dtmytppn	DFALT_SCAN	T Y
+
+EDITS(master)
+i.Mandatory dtmkode MANDATORY
+i.Dupkey dtmkode DUPKEY dtmdtkodidx {Pdtmdata} 
+i.Mandatory dtmket MANDATORY
+
+IMAGE(transt)
+/----t------t-------t--------------t-------------------t--------t---------t---------t----------t------t-------t----t---t----\
+|i.No|i.Dvs |t.TypJl| i.Kode       | i.Keterangan      |i.Typ   |i.Rek    |i.NamTran|i.NamTran2|t.ket |t.kode |t.Nl|t.%|t.Nw|
+\----.------.-------.--------------.-------------------.--------.---------.---------.----------.------.-------.----.---.----/
+
+IMAGE(trans)
+|____|______|_______|______________|___________________|________|_________|_________|__________|______|_______|____|___|____|
+
+FIELD(trans)
+tmpnourt                PROTECT                          INPUTRI         1
+tmpdvs                  ALLCAPS  SCROLL                  INPUTRI         2
+tmptypjl                NOCHANGE SCROLL                  INPUTRI         3
+tmpkode                 ALLCAPS  SCROLL                  INPUTRI         4
+tmpket                  PROTECT  SCROLL                  INPUTRI         5
+tmptypisi               NOCHANGE SCROLL                  INPUTRI         6
+tmpisistr3              ALLCAPS  SCROLL                  INPUTRI         7
+tmpisistr1              NONE SCROLL                      INPUTRI         8
+tmpisistr2              ALLCAPS  SCROLL                  INPUTRI         9
+tmpisiket1		ALLCAPS  SCROLL			 INPUTRI	 10
+tmpisistr4		ALLCAPS SCROLL			INPUTRI 	11
+tmpisidf1               NUMERIC		                 INPUTRI         12
+tmpisistr5		ALLCAPS SCROLL			 INPUTRI	 13
+tmpisidf4              ALLCAPS  SCROLL                  INPUTRI         14
+
+DEFAULTS(trans)
+tmptypisi       DFALT_LIST      INPUT RUMUS KODE TANGGAL
+tmptypjl        DFALT_LIST      BLANKS T K
+tmpcrtusr       INIT            {g_usrkode}
+tmpdvs          DUP_INIT
+
+CALCS()
+crekY           dtmytppn == "Y"
+crekbknY        dtmytppn != "Y" && dtmkode != "TMPKPI"
+ctmpkpi		dtmkode == "TMPKPI"
+ctmpkpi1	dtmkode != "TMPKPI" 
+
+EDITS(trans)
+i.Mandatory tmpkode MANDATORY
+i.Mandatory tmpket  MANDATORY
+/*i.Mandatory tmpdvs MANDATORY*/
+i.Mandatory tmpisistr3 MANDATORY_IF crekY
+i.Dupkey tmpkode DUPKEY tmpdatdvskod {Pdtmdata} {Pdtmkode} {Ptmpdvs} {Ptmptypjl}
+e.ValidateDvs tmpdvs VALIDATE_BUF3_IF ctmpkpi1 dtmdtkodidx mdtmDV sdtm {Pgv_bisnis}
+e.ValidateJab tmpdvs VALIDATE_BUF3_IF ctmpkpi tbddatkodidx mtbdJab stbdSDEP {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+e.ValidateTmp tmpkode VALIDATE_BUF3 tbldtdtmkod mtbl stbl {Pdtmdata} {Pdtmkode}
+e.ValidateBbm  tmpisistr3 VALIDATE_IF ctmpkpi1 bbgnoidx mbbg sbbg
+e.ValidateTmp2 tmpisistr3 VALIDATE_BUF3_IF ctmpkpi tbldtdtmkod mtbl3 stbl {Pdtmdata} {Pdtmkode}
+/*e.ValidateTmp3 tmpisiket1 VALIDATE_BUF3_IF ctmpkpi tbldtdtmkod mtbl4 stbl {Pdtmdata} {Pdtmkode}*/
+
+MAP(mbbg)
+bbgno           tmpisistr3      REPLACE
+
+MAP(mtbl)
+#tblkode        tmpkode         REPLACE
+#tblket         tmpket          REPLACE
+#tbllv1         tmptypisi       REPLACE
+#tblnourt       tmpnourt        REPLACE
+#tblnamsfl      tmpisistr1      REPLACE
+#tbllv2         tmpisistr2      REPLACE_IF ctmpkpi1
+#tbljml		tmpisidf1	REPLACE
+#tbljml2	tmpisidf2	REPLACE
+
+MAP(mtbl3)
+#tblkode        tmpisistr3      REPLACE
+
+/*MAP(mtbl4)
+#tblkode	tmpisiket1	REPLACE*/
+
+MAP(mdtmDV)
+#dtmkode        tmpdvs          REPLACE
+
+MAP(mtbdJab)
+#tbdkode        tmpdvs          REPLACE
+
+HOOKS(trans)
+BEFORE_INPUT    cur_field=tmpisistr3    DO_SKIP_IF crekbknY
+
+CALCS()
+cisian  	dtmtype == "ISIAN"
+
+SUBFILE(trans)
+SFL_LINES(10)
+SFL_TITLE(transt)
+SFL_COND cisian
+
+SFL_TARGET
+tmpdatkodurt   dtmdata dtmkode
+
+SFL_MAP
+dtmdata             tmpdata       REPLACE
+dtmkode             tmpdtmkode    REPLACE
+dtmscr              tmpscr        REPLACE
+
+IMAGE(transg1t)
+/------------------------------------------------------------------------------------------------------------------------\
+| _____________________                                                                                                  |
+|-----t---------t----t-----t--------------t----------------t------------------t------------t-----------t--------t--------|
+|i.No |i.Dvs    |i.Tk|i.Typ|    i.Kode    | i.Keterangan   |t.Filter          |i.NamTran   |i.NamTran2 | i.jml1 | i.jml2 |
+\-----.---------.----.-----.--------------.----------------.------------------.------------.-----------.--------.--------/
+
+IMAGE(transg1)
+|_____|_________|____|_____|______________|________________|__________________|____________|___________|________|________|
+
+
+FIELD(transg1t)
+ltomdet1                TOMBOL                          INPUTRI         1
+
+FIELD(transg1)
+tmpnourt                PROTECT                         INPUTRI         1
+tmpdvs                  ALLCAPS SCROLL                  INPUTRI         2
+tmptypjl                ALLCAPS SCROLL                  INPUTRI         3
+tmptype                 NOCHANGE                        INPUTRI         3
+tmpkode                 ALLCAPS SCROLL                  INPUTRI         4
+tmpket                  PROTECT SCROLL                  INPUTRI         5
+tmpisistr3              ALLCAPS SCROLL                  INPUTRI         8
+tmpisistr1              PROTECT SCROLL                  INPUTRI         6
+tmpisistr2              PROTECT SCROLL                  INPUTRI         7
+tmpisidf1               PROTECT SCROLL                  INPUTRI         9
+tmpisidf2               PROTECT SCROLL                  INPUTRI         10
+
+DEFAULTS(transg1)
+tmpcrtusr		INIT			{g_usrkode}
+/*tmptypjl		DFALT_LIST		T K*/
+tmptype 		DFALT_LIST		HUT PEN
+tmpdvs			DUP_INIT
+ltomdet1		INIT			"1d. Detail"
+
+CALCS()
+cbkndtkry		dtmkode != "DTKARYAWAN"
+
+EDITS(transg1)
+i.Mandatory tmpkode MANDATORY
+i.Mandatory tmpket  MANDATORY
+i.Mandatory tmpdvs MANDATORY
+/*i.Dupkey tmpkode DUPKEY tmpdatdvskod {Pdtmdata} {Pdtmkode} {Ptmpdvs}*/
+e.ValidateDvs tmpdvs VALIDATE_BUF3_IF cbkndtkry dtmdtkodidx mdtmDV sdtm {Pgv_bisnis}
+e.ValidateTmp tmpkode VALIDATE_BUF3 tbldtdtmkod mtbl2 stbl {Pdtmdata} {Pdtmkode} 
+
+MAP(mtbl2)
+#tblkode	tmpkode		REPLACE
+#tblket 	tmpket  	REPLACE
+#tbllv1         tmptypisi       REPLACE
+#tblnamsfl	tmpisistr1	REPLACE
+#tbllv2    	tmpisistr2	REPLACE
+#tblnourt	tmpnourt	REPLACE
+#tbljml		tmpisidf1	REPLACE
+#tbljml2	tmpisidf2	REPLACE
+
+
+CALCS()
+ctampilan	dtmtype == "TAMPILAN"
+
+SUBFILE(transg1)
+SFL_LINES(20) 
+SFL_TITLE(transg1t)
+SFL_COND ctampilan
+/*SFL_SORT_BY_FIELD tmpnourt*/
+
+SFL_TARGET
+tmpdatkodurt   dtmdata dtmkode 
+
+SFL_MAP
+dtmdata             tmpdata       REPLACE
+dtmkode             tmpdtmkode    REPLACE
+dtmscr              tmpscr        REPLACE
+
+IMAGE(transat) 
+/-----t--------------t------------------------------t----------t------------t-----------t--------t--------\
+|i.No | i.Kode       | i.Keterangan                 |i.Typ     |i.NamTran   |i.NamTran2 | i.jml1 | i.jml2 |
+\-----.--------------.------------------------------.----------.------------.-----------.--------.--------/
+
+IMAGE(transa) 
+|_____|______________|______________________________|__________|____________|___________|________|________|
+    
+FIELD(transa)
+tblnourt		NUMERIC       			INPUTRI 	1
+tblkode			ALLCAPS SCROLL			INPUTRI 	2
+tblket			ALLCAPS SCROLL			INPUTRI 	3
+tbllv1			NOCHANGE SCROLL			INPUTRI 	4
+tblnamsfl		NONE SCROLL			INPUTRI 	5
+tbllv2    	        NONE SCROLL			INPUTRI 	6
+tbljml			NUMERIC				INPUTRI		7
+tbljml2			NUMERIC				INPUTRI		8
+
+DEFAULTS(transa)
+tbllv1	DFALT_LIST	INPUT RUMUS KODE KETERANGAN TANGGAL
+tblusrcrt		INIT			{g_usrkode}
+
+EDITS(transa)
+i.Mandatory tblnourt MANDATORY
+i.Mandatory tblkode MANDATORY
+i.Mandatory tblket  MANDATORY
+i.Dupkey tblkode DUPKEY tbldtdtmkod {Pdtmdata} {Pdtmkode}
+
+SUBFILE(transa)
+SFL_LINES(10) 
+SFL_TITLE(transat)
+
+SFL_TARGET
+tbldatkodurt   dtmdata dtmkode 
+
+SFL_MAP
+dtmdata             tbldata       REPLACE
+dtmkode             tbldtmkode    REPLACE
+dtmscr              tblscr        REPLACE
+
+IMAGE(trans2t) 
+/-----t--------------t-----------t------------------------------\
+|i.No | i.Kode       |i.Lv1      | i.Keterangan                 |
+\-----.--------------.-----------.------------------------------/
+
+IMAGE(trans2) 
+|_____|______________|________.__|______________________________|
+    
+FIELD(trans2)
+tbtnourt		NUMERIC       			INPUTRI 	1
+tbtkode			ALLCAPS SCROLL			INPUTRI 	2
+tbtdf1 			NUMERIC				INPUTRI 	3
+tbtket			ALLCAPS SCROLL			INPUTRI 	4
+
+
+DEFAULTS(trans2)
+tbtusrcrt		INIT			{g_usrkode}
+
+EDITS(trans2)
+i.Mandatory tbtnourt MANDATORY
+i.Mandatory tbtkode MANDATORY
+i.Mandatory tbtket  MANDATORY
+i.Dupkey tbtkode DUPKEY tbtdattypkod {Ptmpdata} {Ptmpdvs} {Ptmpdtmkode} {Ptmpkode} {Ptmpkode} 
+
+CALCS()
+cKODE 		tmptypisi == "KODE"
+
+SUBFILE(trans2)
+SFL_LINES(10) 
+SFL_TITLE(trans2t)
+SFL_COND cKODE 
+
+SFL_TARGET
+tbtdaturtidx   dtmdata tmpdvs tmpdtmkode tmpkode 
+
+SFL_MAP
+dtmdata             tbtdata       	REPLACE
+tmpdvs              tbttype   		REPLACE
+dtmkode             tbtdtmkode    	REPLACE
+tmpkode             tbttblkode    	REPLACE
+tmpkode             tbttbdkode    	REPLACE
+dtmscr              tbtscr        	REPLACE
+
+IMAGE(trans2g1t) 
+/----------t---------t-------t-------t-------t-------t-------t--------t--------t--------t--------t--------t--------t--------\
+| i.Kode   | i.Kode2 |i.Kode3|i.Kode4|i.Bts1 |i.Bts2 |i.Bts3 |i.Hasil1|i.Hasil2|i.Hasil3|i.Hasil1|i.Hasil2|i.TglAwl|i.TglAkh|
+\----------.---------.-------.-------.-------.-------.-------.--------.--------.--------.--------.--------.--------.--------/
+
+IMAGE(trans2g1) 
+|__________|_________|_______|_______|_._____|_._____|_______|_____.__|________|________|________|________|________|________|
+   
+FIELD(trans2g1)
+rmdkode		PROTECT SCROLL	  INPUTRI 	1
+rmdkode2	ALLCAPS SCROLL	  INPUTRI       1
+rmdkode3	ALLCAPS	SCROLL	  INPUTRI	2
+rmdkode4	ALLCAPS	SCROLL	  INPUTRI	3
+rmdbts1		NUMERIC		  INPUTRI	4
+rmdbts2		NUMERIC		  INPUTRI	5
+rmdbts3		NUMERIC		  INPUTRI	6
+rmdtotal1	NUMERIC		  INPUTRI	7
+rmdtotal2	NUMERIC		  INPUTRI	8
+rmdtotal3	NUMERIC		  INPUTRI	9
+rmdtext1        ALLCAPS           INPUTRI	10
+rmdtext2        ALLCAPS           INPUTRI	11
+rmdtglawl       NONE {DD-MM-YYYY}  NOLIMIT  INPUTRI 12
+rmdtglakh       NONE {DD-MM-YYYY}  NOLIMIT  INPUTRI 13   
+
+DEFAULTS(trans2g1)
+rmdsts	INIT	INPG
+rmdkode 	INIT		{tmpkode}
+rmdkode		INIT_UPDATE	{tmpkode}
+rmdkode2	DUP_INIT
+rmdkode3	DUP_INIT
+rmdkode4	DUP_INIT
+rmdbts1		DUP_INIT
+rmdbts2		DUP_INIT
+rmdbts3		DUP_INIT	
+rmdtotal1	DUP_INIT
+rmdtotal2	DUP_INIT
+rmdtotal3	DUP_INIT
+rmdtext1	DUP_INIT
+rmdtext2	DUP_INIT
+
+EDITS(trans2g1)
+i.Mandatory rmdkode  MANDATORY
+
+CALCS()
+cgab		STRIP(rmdkode) + STRIP(rmdkode2) + STRIP(rmdkode3) + STRIP(rmdkode4)
+
+MAP(mgab)
+cgab		rmdgab		DO_CALC
+
+HOOKS(trans2g1)
+AFTER_INPUT	cur_keybd=EN	DO_MAP SHOW mgab
+
+CALCS()
+cRUMUS		tmptypisi == "RUMUS"
+
+SUBFILE(trans2g1)
+SFL_LINES(16) 
+SFL_TITLE(trans2g1t)
+SFL_COND cRUMUS
+
+SFL_TARGET
+rmdstskodgab   gv_INPG tmpkode 
+
+SFL_MAP
+tmpkode             rmdkode       	REPLACE
+
+IMAGE(trans2g2t)
+/-----t--------------t-----------------------t---------t--------t---------t--------t---------t------------t-------t---------\
+|i.No | i.Kode       | i.Keterangan          |t.kode2  |i.Typ   |i.Nil    | t.nil2 | t.kode3 | i.Rek      |i.YtDet| t.kode4 |
+\-----.--------------.-----------------------.---------.--------.---------.--------.---------.------------.-------.---------/
+
+IMAGE(trans2g2)
+|_____|______________|_______________________|_________|________|______.__|_____.__|_________|____________|  __    |________|
+
+FIELD(trans2g2)
+tbtnourt                NUMERIC                         INPUTRI         1
+tbtkode                 ALLCAPS SCROLL                  INPUTRI         2
+tbtket                  ALLCAPS SCROLL                  INPUTRI         3
+tbtkode2		ALLCAPS	SCROLL			INPUTRI		4
+tbtkat                  NOCHANGE                        INPUTRI         5
+tbtdf1                  NUMERIC                         INPUTRI         6
+tbtdf2                  NUMERIC                         INPUTRI         6
+tbtcab			ALLCAPS SCROLL			INPUTRI		7
+tbtkolek                ALLCAPS SCROLL                  INPUTRI         8
+tbtyt                   NOCHANGE                        INPUTRI         9
+tbttbdket		ALLCAPS				INPUTRI		10
+
+DEFAULTS(trans2g2)
+tbtusrcrt               INIT                    {g_usrkode}
+tbtkat                  DFALT_LIST              INPUT RUMUS
+tbtyt                   DFALT_SCAN              T Y
+
+EDITS(trans2g2)
+i.Mandatory tbtnourt MANDATORY
+i.Mandatory tbtkode MANDATORY
+i.Mandatory tbtket  MANDATORY
+i.Dupkey tbtkode DUPKEY tbtdattypkod {Ptmpdata} {Ptmpdvs} {Ptmpdtmkode} {Ptmpkode} {Ptmpkode} SHOWALL
+i.Validate tbtkolek VALIDATE bbgnoidx mbbgGolPll sbbgGolPll
+
+MAP(mbbgGolPll)
+bbgno           tbtkolek        REPLACE
+bbgbbantu       tbtcab          REPLACE
+
+CALCS()
+cINPUT          tmptypisi == "INPUT"
+
+SUBFILE(trans2g2)
+SFL_LINES(10)
+SFL_TITLE(trans2g2t)
+SFL_COND cINPUT
+
+SFL_TARGET
+tbtdaturtidx   dtmdata dtmkode tmpkode tmpkode tmpdvs
+
+SFL_MAP
+dtmdata             tbtdata             REPLACE
+tmpdvs              tbttype             REPLACE
+dtmkode             tbtdtmkode          REPLACE
+tmpkode             tbttblkode          REPLACE
+tmpkode             tbttbdkode          REPLACE
+dtmscr              tbtscr              REPLACE
+
+IMAGE(trans2g3t)
+/-----t--------------t--------------------------------------------t-------\
+|i.No | i.Kode       | i.Keterangan                               |i.YtDet|
+\-----.--------------.--------------------------------------------.-------/
+
+IMAGE(trans2g3)
+|_____|______________|____________________________________________|_______|
+
+FIELD(trans2g3)
+ketnourt	NUMERIC		INPUTRI	1
+ketkode		ALLCAPS		INPUTRI	2
+ketisi		TEXTAREA	INPUTRI	3
+ketyt1		ALLCAPS		INPUTRI	4
+
+DEFAULTS(trans2g3)
+ketyt1		DFALT_LIST	Y T
+
+EDITS(trans2g3)
+i.Mandatory ketnourt MANDATORY
+i.Mandatory ketkode  MANDATORY
+i.Mandatory ketisi   MANDATORY
+
+CALCS()
+cKET		tmptypisi == "KETERANGAN"	
+
+SUBFILE(trans2g3)
+SFL_LINES(1)
+SFL_TITLE(trans2g3t)
+SFL_COND cKET  
+
+SFL_TARGET
+ketdatbukkod	dtmdata tmpkode
+
+SFL_MAP
+dtmdata		ketdata		REPLACE
+tmpkode		ketnobuk	REPLACE
+dtmscr		ketscr		REPLACE
+
+IMAGE(trans2g4t)
+/----------t---------t-------t-------t-------t--------t--------t--------t--------t--------t--------t--------\
+| i.Kode   | i.Kode2 |i.Kode3|i.Bts1 |i.Bts2 |i.Hasil1|i.Hasil2|i.Hasil1|i.TglAwl|i.TglAkh|t.Tgl1  | t.Tgl2 |
+\----------.---------.-------.-------.-------.--------.--------.--------.--------.--------.--------.--------/
+
+IMAGE(trans2g4)
+|__________|_________|_______|_______|_______|_____.__|________|________|________|________|________|________|
+
+FIELD(trans2g4)
+rmdkode         PROTECT SCROLL    INPUTRI       1
+rmdkode2        ALLCAPS SCROLL    INPUTRI       1
+rmdkode3        ALLCAPS SCROLL    INPUTRI       2
+rmdbts1         NUMERIC           INPUTRI       4
+rmdbts2         NUMERIC           INPUTRI       5
+rmdtotal1       NUMERIC           INPUTRI       7
+rmdtotal2       NUMERIC           INPUTRI       8
+rmdtext1        ALLCAPS           INPUTRI       10
+rmdtglawl       NONE {DD-MM-YYYY}  NOLIMIT  INPUTRI 12
+rmdtglakh       NONE {DD-MM-YYYY}  NOLIMIT  INPUTRI 13
+rmdtgl		NONE {DD-MM-YYYY}  NOLIMIT  INPUTRI 14
+rmdtglcrt	NONE {DD-MM-YYYY]  NOLIMIT  INPUTRI 15
+
+DEFAULTS(trans2g4)
+rmdsts  INIT    INPG
+rmdkode         INIT            {tmpkode}
+rmdkode         INIT_UPDATE     {tmpkode}
+rmdkode2        DUP_INIT
+rmdkode3        DUP_INIT
+rmdbts1         DUP_INIT
+rmdbts2         DUP_INIT
+rmdtotal1       DUP_INIT
+rmdtotal2       DUP_INIT
+rmdtext1        DUP_INIT
+
+EDITS(trans2g4)
+i.Mandatory rmdkode  MANDATORY
+
+CALCS()
+cgabtgl		STRIP(rmdkode) + STRIP(rmdkode2) + STRIP(rmdkode3) + STRIP(rmdkode4)
+
+MAP(mgabtgl)
+cgabtgl		rmdgab          DO_CALC
+
+HOOKS(trans2g4)
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW mgabtgl
+
+CALCS()
+cTANGGAL	tmptypisi == "TANGGAL"
+
+SUBFILE(trans2g4)
+SFL_LINES(16)
+SFL_TITLE(trans2g4t)
+SFL_COND cTANGGAL
+
+SFL_TARGET
+rmdstskodgab   gv_INPG tmpkode
+
+SFL_MAP
+tmpkode             rmdkode             REPLACE
+
+CALCS()
+cITonly			((g_grpnam == "ROOT" || g_grpnam == "RI" || g_grpnam == "IT") || 
+			(tmpkode == "PROGRAMM2W" && (g_grpnam == "ROOT" || g_grpnam == "RI" || g_grpnam == "IT" || g_grpnam == "RASDVH")))
+
+PERMIT(master)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(trans)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(transg1)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(transa)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(trans2)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(trans2g1)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(trans2g2)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(trans2g3)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+PERMIT(trans2g4)
+PMT_ADD_COND	cITonly
+PMT_UPDALL_COND	cITonly
+PMT_DEL_COND	cITonly
+
+
+IMAGE(report) 
+/------------------------------------------------------\                      
+|   i.Enter     : ________________                     |
+|                                                      |
+|   i.Esc       : _                                    |
+\------------------------------------------------------/
+
+FIELD(report)
+    lenter          NOCHANGE           INPUTRI ZERO     10
+    lesc            NOCHANGE           INPUTRI ZERO     11
+
+
+DEFAULTS(report)
+ldelimiter	INIT      	1
+ldefdte		DFALT_LIST	1 
+lrata		DFALT_LIST	0
+
+CALCS()
+cdtm       	"dtm"
+ctmp       	"tmp"
+ctbl       	"tbl"
+ctbt       	"tbt"
+crmd       	"rmd"
+cBLANKS		BLANKS
+cdtm_ok		dtmdata == gv_dttemplate
+ctmp_ok		tmpdata == gv_dttemplate
+ctbl_ok		tbldata == gv_dttemplate
+ctbt_ok		tbtdata == gv_dttemplate
+crmd_ok		rmddata == gv_dttemplate
+cldtm 		"cdtm_ok"
+cltmp 		"ctmp_ok"
+cltbl 		"ctbl_ok"
+cltbt 		"ctbt_ok"
+clrmd 		"crmd_ok"
+
+MAP(mmap)
+cdtm       lfile_dtm       DO_CALC
+cldtm	   lcalc_dtm	   DO_CALC
+ctmp       lfile_tmp       DO_CALC
+cltmp	   lcalc_tmp	   DO_CALC
+ctbl       lfile_tbl       DO_CALC
+cltbl	   lcalc_tbl	   DO_CALC
+ctbt       lfile_tbt       DO_CALC
+cltbt	   lcalc_tbt	   DO_CALC
+crmd       lfile_rmd       DO_CALC
+clrmd	   lcalc_rmd	   DO_CALC
+
+HOOKS(report)
+AFTER_INPUT	cur_field=lenter	DO_MAP SHOW mmap
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_dtm,ldelimiter,ldefdte,lrata,lcalc_dtm,lgab_field,g_scrnumstr,g_scrnumstr,lrata);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tmp,ldelimiter,ldefdte,lrata,lcalc_tmp,lgab_field,g_scrnumstr,g_scrnumstr,lrata);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tbl,ldelimiter,ldefdte,lrata,lcalc_tbl,lgab_field,g_scrnumstr,g_scrnumstr,lrata);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_tbt,ldelimiter,ldefdte,lrata,lcalc_tbt,lgab_field,g_scrnumstr,g_scrnumstr,lrata);
+AFTER_INPUT	cur_field=lenter	DO_LIB ap_flexp(lfile_rmd,ldelimiter,ldefdte,lrata,lcalc_rmd,lgab_field,g_scrnumstr,g_scrnumstr,lrata);
+
+END_SCREEN

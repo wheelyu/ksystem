@@ -1,0 +1,129 @@
+SCREEN  3039  QUERY_TYPE t.LupaPassword            
+SCR_FILE hrm
+SCR_LOGFLD hrmnobuk
+SCR_NXT_MAP mnext
+SCR_NXT_POSTING 4295
+SCR_NXT_COND cOPEN_OK
+SCR_APR capprove
+SCR_APR_COND cstsOPEN
+SCR_APRFLD hrmnobuk
+
+LOCAL
+PGM_FIELDS
+lnama		STRING		31
+lkodebukti              STRING          21
+lnamacab	STRING		31
+lnamafldsts             STRING          30
+lnamafldfak             STRING          30
+lnamaidxfak             STRING          30
+lyturutapr              STRING          3
+
+IMAGE(master)
+/-------t.LupaPassword------------\
+|/-------------------------------\|
+||t.Tgl   : __________ _______   ||
+||t.NoBuk : ____________________ ||  
+||t.Sts   : ______ ___           ||
+||t.Nip   : __________           ||
+||t.Nama  : __________________   ||
+||t.Cab   : _____ ____________   ||
+||t.Dvs   : _____                ||
+||t.Jab   : ___________          || 
+||t.Ket   : _________________    || 
+|\-------------------------------/|
+|/-------------------------------\|
+||t.KdApr : _______________      ||
+||          ___________          ||
+|\-------------------------------/|
+\---------------------------------/
+
+FIELD(master)
+   hrmtgl             PROTECT NOLIMIT {DD-MM-YY}  INPUTRI          1 /* user name */
+   hrmdata            PROTECT QPROTECT          INPUTRI          2 /* user name */
+   hrmnobuk           PROTECT          INPUTRI              3 /* user group */
+   hrmsts             PROTECT          INPUTRI             4 /* user password */
+   hrmstsapr	      PROTECT	       INPUTRI		5 
+   hrmnip1            ALLCAPS          INPUTRI             6 /* user password */
+   lnama              PROTECT	       INPUTRI		7
+   hrmcab	      PROTECT          INPUTRI		8
+   lnamacab	      PROTECT	       INPUTRI		9
+   hrmdvs	      PROTECT	       INPUTRI		10
+   hrmkep	      PROTECT	       INPUTRI		11 
+   hrmket1	      TEXTAREA ALLCAPS INPUTRI		12
+   hrmkodeapr	      PROTECT	       INPUTRI		13
+   hrmusrapr	      PROTECT	       INPUTRI		14
+
+DEFAULTS(master)
+hrmdata		INIT_QUERY	       LUPAPWD
+hrmdata		INIT_ADD	       LUPAPWD	
+hrmtgl		INIT_ADD	       {g_tgltrn}
+hrmnip1		INIT_ADD	       {g_usrkode}
+hrmsts		INIT_ADD	       OPEN
+hrmscr          INIT                    {g_scrnumstr}
+lnamafldsts     INIT                    "hrmstsapr"
+lnamafldfak     INIT                    "hrmnobuk"
+lnamaidxfak     INIT                    "hrmbukidx"
+lyturutapr      INIT                    Y
+
+EDITS(master)
+t.ValidateNip   hrmnip1 VALIDATE psikodidx mpsix 0
+t.ValidateCab   hrmcab VALIDATE cabkodidx mcab  
+t.ValidateTbd   hrmkep VALIDATE tbddatkodidx mtbd  {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+t.MandatoryNip  hrmnip1 MANDATORY
+t.Mandatory hrmket1 MANDATORY
+
+CALCS()
+cstsOPEN        hrmsts == "OPEN" && hrmstsapr == ""
+cOPEN_OK        hrmsts=="OPEN" && hrmstsapr=="OK"
+capprove        DO_LIB ap_aprmt(hrmnobuk,gv_aprumum,hrmcab,hrmkodeapr,hrmdf1,lnamafldsts,lnamafldfak,lnamaidxfak,hrmjmltlk,lyturutapr,g_usrstr,g_usrstr);
+
+MAP(mnext)
+hrmnobuk        r_string1       REPLACE
+ 
+MAP(mpsix)
+psikode		hrmnip1		REPLACE
+psinama		lnama		REPLACE
+psidvs		hrmdvs		REPLACE
+psijabatan	hrmkep		REPLACE
+psicabskr	hrmcab		REPLACE
+
+MAP(mcab)
+cabkode		hrmcab		REPLACE
+cabnama		lnamacab	REPLACE
+
+MAP(mtbd)
+tbdrekbrg	hrmkodeapr	REPLACE
+
+CALCS()
+cotY		g_curcmd==1
+ckodebukti      DO_LIB ap_amdvs(hrmdvs,hrmscr,lkodebukti);
+ckode           STRIP(lkodebukti) + STRIP(cabkdfak) + THBLS(hrmtgl)
+cdvs1           hrmdvs != BLANKS
+cbknivan	g_usrkode!="1802178"
+
+MAP(mkode)
+ckodebukti      lkodebukti      DO_CALC_IF cdvs1
+ckode           hrmnobuk        DO_CALC_IF cotY    
+
+HOOKS(master)
+AFTER_INPUT	cur_field=hrmdvs	DO_MAP SHOW mkode
+AFTER_INPUT	cur_keybd=EN		DO_LIB_IF cbknivan ap_ceksj(hrmnip1);
+
+MAP(maddbuk)
+hrmnobuk        hrmnobuk        REPLACE
+
+SPCALCS(sadd)
+DO_LIB_IF cotY          ap_dbclc(DNAME daddbuk,DCOMMAND ADD_SUB,DFILE hrm,DLTARGET hrmbukidx hrmnobuk,DLLEN {stspjbuk},DMAP maddbuk);
+
+POSTING(master)
+        PST_SUB_ADDCMD  sadd
+
+CALCS()
+cboleh			hrmsts=="OPEN"
+c0			0
+
+PERMIT(master)
+PMT_UPDALL_COND		cboleh
+PMT_DEL_COND		c0
+
+END_SCREEN

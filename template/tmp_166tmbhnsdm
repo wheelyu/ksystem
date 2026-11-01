@@ -1,0 +1,60 @@
+IMAGE(tmptranst)
+/------------------------------------------\
+|/----------------------------------------\|
+||t.TambhnSDM                             ||
+||t.GolDrh     : ____ 			  ||
+||t.NoHPAktif  : ________________         ||
+||t.NamaIbuKdg : ________________         ||
+||spasi                                   ||
+|\----------------------------------------/|
+\------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdstr1                 NOCHANGE			    INPUTRI	1
+psdstr2                 DIGITS			        INPUTRI	2
+psdket                  ALLCAPS                 INPUTRI 3
+
+DEFAULT(tmptranst)
+psdstr1                 DFALT_SCAN	            BLANKS A B AB O
+
+EDITS(tmptranst)
+e.Mandatory		        psdstr1                 MANDATORY
+e.Mandatory		        psdstr2                 MANDATORY
+e.Mandatory		        psdket                  MANDATORY
+
+CALCS()
+cpanjangnomhp             DO_LIB ap_strln(psdstr2,&ljumlahnomorhp);
+
+MAP(mpanjangnomhp)
+cpanjangnomhp             ljumlahnomorhp            DO_CALC
+
+HOOKS(tmptranst)
+AFTER_INPUT             cur_field=psdstr2         DO_LIB ap_amstr(psdstr2,ln1ia,ln1a,&ldigit1a);
+AFTER_INPUT             cur_field=psdstr2         DO_LIB ap_amstr(psdstr2,ln2ib,ln1a,&ldigit2b);
+AFTER_INPUT             cur_field=psdstr2         DO_MAP SHOW mpanjangnomhp
+
+AFTER_INPUT             cur_field=psdstr2 DO_MAP SHOW
+                        IF cbukannohp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT             cur_keybd=EN DO_MAP SHOW
+                        IF cbukannohp mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND    cblhlhtinfotmbh
+SFL_TARGET
+         psddatpsmkod   lINFOTBH166 hrmnobuk
+
+SFL_MAP
+lINFOTBH166             psddata                 REPLACE
+hrmnobuk                psdpsmkode              REPLACE
+hrmnip1                 psdkode                 REPLACE
+lINFOTBH166             psdtype                 REPLACE
+gv_OPEN                 psdsts                  REPLACE

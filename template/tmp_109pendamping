@@ -1,0 +1,386 @@
+LOCAL
+PGM_FIELDS
+lSPK		STRING 21
+lRANGENILAI	STRING 21
+lFOTOSDMBARU	STRING 21
+lFOTOAKTVITAS	STRING 21
+lEVENT		STRING 11
+ltkmtype	STRING 21
+ltkmkode	STRING 21
+ltkmplg		STRING 21
+ltkmsts		STRING 5
+lnamaSlap	STRING 61
+lcabSlap	STRING 21
+ltgmke		INT2	2
+ln3		INT2	2
+ltglawlbln	DATE	4
+ltglM3bln	DATE	4
+lnobukspk	STRING	21
+lnobukpendamping STRING 21
+ljmlpap		INT2	2
+ljmlskm		INT2	2
+ljmlgpr		INT2	2
+lENTER2         STRING  11
+l4996		INT2	2
+lm4996		STRING	11
+lDATANG		STRING	11
+ljabatanSlap	STRING	21
+ltglmasukSlap	DATE	4
+lstatusSlap	STRING	5
+lPESERTA	STRING	21
+lTERLAMBAT	STRING	11
+
+MAP(mjoinpsi878)
+psinama		lnamaSlap	REPLACE
+psicabskr	lcabSlap	REPLACE
+psijabatan	ljabatanSlap	REPLACE
+psitglawl	ltglmasukSlap	REPLACE
+psists		lstatusSlap	REPLACE
+
+DBCALCS(djoinpsi878)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx	spkkode2
+	DBC_MAP		mjoinpsi878
+
+MAP(mjointkm878)
+tkmkode		ltkmkode	REPLACE
+tkmtype		ltkmtype	REPLACE
+tkmsts		ltkmsts		REPLACE
+tkmplg		ltkmplg		REPLACE
+
+DBCALCS(djointkm878)
+	DBC_COMMAND	JOIN
+	DBC_TARGET 	tkmbukidx	spknoasal
+	DBC_MAP		mjointkm878
+
+MAP(mjointgm)
+tgmke		ltgmke		REPLACE
+
+DBCALCS(djointgm)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tgmdattglidx	gv_TGL g_tgltrn
+	DBC_MAP		mjointgm
+
+CALCS()
+cpeserta	tldplg == spkkode2
+
+DBCALCS(djointldpeserta)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrglok	tlmnobuk lPESERTA lPESERTA
+	DBC_SELECT	cpeserta
+
+CALCS()
+ceventpap	djointldpeserta == 1 && (tlmsts == "INPG" || tlmsts == "CLSD") && tlmdari == "PAP" && tlmdvs == "M2W" && tlmtgljtp >= g_tgltrn
+ceventskm	djointldpeserta == 1 && (tlmsts == "INPG" || tlmsts == "CLSD") && tlmdari == "SKM" && tlmdvs == "M2W" && tlmtgljtp >= g_tgltrn
+ceventgpr	djointldpeserta == 1 && (tlmsts == "INPG" || tlmsts == "CLSD") && tlmdari == "GPR" && tlmdvs == "M2W" && tlmtgljtp >= g_tgltrn
+
+MAP(mscantlm821)
+gv_int1		ljmlpap		REPLACE_IF ceventpap
+gv_int1		ljmlskm		REPLACE_IF ceventskm
+gv_int1		ljmlgpr		REPLACE_IF ceventgpr
+
+DBCALCS(dscantlm821)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET	tlmdatplgtgl	lEVENT lcabSlap ltglM3bln
+	DBC_LAST_TARGET	tlmdatplgtgl	lEVENT lcabSlap g_tgltrn
+	DBC_SUM_MAP	mscantlm821
+
+DBCALCS(djoinabdspk)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abdtglkymidx	g_tgltrn spkkode2 lDATANG
+
+DBCALCS(djoinhrm160)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	hrmdatniptgl	lTERLAMBAT spkkode2 g_tgltrn
+
+IMAGE(tmptranst)
+/-----------------------------------------------------\
+|/---------------------------------------------------\|
+||t.NamaSlap	: __________________                 ||
+||t.NipSlap	: __________________                 ||
+||t.NobukSpk	: __________________                 ||
+||t.JenisSpk	: __________________		     ||
+||t.Sumber	: __________________		     ||
+||______					     ||
+||spasi				                     ||
+|\---------------------------------------------------/|
+||spasi				                     ||
+||t.InfoPenilaian				     ||
+|/---------------------------------------------------\|
+||t.PenilaianSdm			      ______ ||
+||t.PemahamanSdm			      ______ ||	
+||t.KemampuanKomunikasi			      ______ ||
+||t.KemampuanClosing			      ______ ||
+||t.Kedisiplinan			      ______ ||
+||t.ApakahLckMampuMempraktikan		      ______ ||
+||spasi				                     ||
+|\---------------------------------------------------/|
+|/---------------------------------------------------\|
+||t.AktivitasTandemYgDilakukan			     ||
+||__________________________			     ||
+||t.FeedbackKepadaLckBaru			     ||
+||__________________________			     ||
+||t.ApaYangDijelaskanKepadaSdm			     ||
+||__________________________			     ||
+||t.KendalaSelamaPendampingan			     ||
+||__________________________			     ||
+||______					     ||
+|\---------------------------------------------------/|
+||spasi				                     ||
+||t.FotoDgnSdmBaru	    t.FotoAktivitas	     ||
+|/----S.UPLOAD------------\/----S.UPLOAD2------------\|
+||			  ||			     ||
+||			  ||			     ||
+||			  ||			     ||
+||			  ||			     ||
+||			  ||			     ||
+||			  ||			     ||
+|\------------------------/\-------------------------/|
+|/---------------------------------------------------\|
+||t.Lat : ________	    t.Lat : ________	     ||
+||t.Lon : ________	    t.Lon : ________	     ||_
+|\---------------------------------------------------/|
+\-----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+CALCS()
+cspkpendamping		abknoll == "SPKPENDAMPING" && abkkym2 == "CLSD SPK PENDAMPING"
+cdjoinpsi878		djoinpsi878 == 1
+cdjointkm878		djointkm878 == 1
+cdscantlm821		dscantlm821 >= 0
+ctglawlbln		ststglprjgl + 1
+ctglM3bln		DO_LIB ap_tambl(ltglawlbln,ln3,&ltglM3bln);
+cstatusspk		djointkm878 == 1 && ltkmsts == "OPEN"
+cjadwalspk		djointgm == 1 && djoinpsi878 == 1 && djointkm878 == 1 && 
+			((dscantlm821 >= 0 && (ltkmkode == "FU_EVENT" && ((ltgmke == 1 && ltkmtype == "PAMERAN" && ljmlpap >= 1) || (ltgmke == 2 && ltkmtype == "SERKAM" && ljmlskm >= 1) || (ltgmke == 5 && ljmlgpr >= 1 && (ltkmtype == "GREBEK_PAS" || ltkmtype == "GREBEK_PASAR"))) ||
+			 (((ltgmke == 1 && ljmlpap == 0) || (ltgmke == 2 && ljmlskm == 0) || (ltgmke == 5 && ljmlgpr == 0)) && (ltkmkode == "GCI" || ltkmkode == "FU_WB" || ltkmkode == "FU_TOPUP"))))) || 
+			(ltgmke == 3 && (ltkmkode == "GCI" || ltkmkode == "FU_WB" || ltkmkode == "FU_TOPUP")) ||
+			(ltgmke == 4 && ltkmkode == "CR_AGEN")
+cnipspk			djointkm878 == 1 && ltkmplg == spkkode2
+
+cdjoinspkpendampinglck	djoinspkpendampinglck == 0
+cdjoinspkpendampinglck1	djoinspkpendampinglck == 1
+
+cpenilaian		spkkat != BLANKS || spkkat2 != BLANKS || spkkat3 != BLANKS || spkkat4 != BLANKS || spkkat5 != BLANKS || spkkat6 != BLANKS ||
+                        spkket != BLANKS || spkket2 != BLANKS || spkket3 != BLANKS || spkreview != BLANKS
+
+csaleshadir		djoinabdspk == 1 || djoinhrm160 == 1
+charussales		djoinpsi878 == 1 && (ljabatanSlap == "SALESDTN" || ljabatanSlap == "MKTLAPANGANM2W" || ljabatanSlap == "SALESREFIMOTOR") && lcabSlap == lpsicabskr
+csales1bulan		djoinpsi878 == 1 && ((g_tgltrn - ltglmasukSlap) >= 30 && (g_tgltrn - ltglmasukSlap) < 60)
+csalesinpg		djoinpsi878 == 1 && lstatusSlap == "INPG"
+csdhisispk		djoinspkpendampinglck == 1 && lspkfoto != BLANKS && lspkfoto2 != BLANKS
+cabkreview		abkkym2 == "109 REVIEW SPK"
+
+DEFAULT(tmptranst)
+lSPK			INIT	        SPK
+lEVENT			INIT	        EVENT
+lRANGENILAI		INIT	        RANGENILAI
+lFOTOSDMBARU		INIT	        FOTOSDMBARU
+lFOTOAKTVITAS		INIT	        FOTOAKTVITAS
+lENTER2                 INIT            ENTER
+ln3			INIT	        -3
+ltglawlbln		INIT	        {ctglawlbln}
+spktgl                  INIT_UPDATE     {g_tgltrn}
+l4996			INIT		4996
+lm4996			INIT		m4996
+lDATANG			INIT		DATANG
+lPESERTA		INIT		PESERTA
+lTERLAMBAT		INIT		TERLAMBAT
+
+FIELD(tmptranst)
+lnamaSlap		PROTECT		INPUTRI 1
+spkkode2		ALLCAPS		INPUTRI 2
+spknoasal		ALLCAPS		INPUTRI 3
+ltkmkode		PROTECT		INPUTRI 4
+ltkmtype		PROTECT		INPUTRI 5
+lENTER2			NOCHANGE	INPUTRI 5
+
+spkkat			ALLCAPS		INPUTRI 6
+spkkat2			ALLCAPS		INPUTRI 7
+spkkat3			ALLCAPS		INPUTRI 8
+spkkat4			ALLCAPS		INPUTRI 9
+spkkat5			ALLCAPS		INPUTRI 10
+spkkat6			ALLCAPS		INPUTRI 11
+
+spkket			TEXTAREA	INPUTRI 11
+spkket2			TEXTAREA	INPUTRI 12
+spkket3			TEXTAREA	INPUTRI 13
+spkreview		TEXTAREA	INPUTRI 14
+lENTER			NOCHANGE	INPUTRI 15
+
+spklat			PROTECT		INPUTRI 16
+spklat2			PROTECT		INPUTRI 17
+spklon			PROTECT		INPUTRI 18
+spklon2			PROTECT		INPUTRI 19
+spkkode			UNSEEN		INPUTRI 20
+
+EDITS(tmptranst)
+t.MandatoryNobukSpk	spknoasal	MANDATORY
+t.MandatoryPenilaianSdm	spkkat  	MANDATORY_IF cpenilaian
+t.MandatoryPemahamanSdm	spkkat2		MANDATORY_IF cpenilaian
+t.MandatoryKemampuanKom	spkkat3		MANDATORY_IF cpenilaian
+t.MandatoryKemampuanCls	spkkat4		MANDATORY_IF cpenilaian
+t.MandatoryKedisiplinan	spkkat5		MANDATORY_IF cpenilaian
+t.MandatoryApakahMampu	spkkat6		MANDATORY_IF cpenilaian
+t.MandatoryAktfTandem	spkket		MANDATORY_IF cpenilaian
+t.MandatoryFeedback	spkket2		MANDATORY_IF cpenilaian
+t.MandatoryApaJelaskan	spkket3		MANDATORY_IF cpenilaian
+t.MandatoryKendala	spkreview	MANDATORY_IF cpenilaian
+
+e.ValidateNip		spkkode		VALIDATE psikodidx mpsiSpk
+e.Validate1		spkkat		VALIDATE tbddatkodidx mtbdV1 stbd {Pgv_dttabel} {PlSPK} {PlRANGENILAI} 
+e.Validate2		spkkat2		VALIDATE tbddatkodidx mtbdV2 stbd {Pgv_dttabel} {PlSPK} {PlRANGENILAI} 
+e.Validate3		spkkat3		VALIDATE tbddatkodidx mtbdV3 stbd {Pgv_dttabel} {PlSPK} {PlRANGENILAI} 
+e.Validate4		spkkat4		VALIDATE tbddatkodidx mtbdV4 stbd {Pgv_dttabel} {PlSPK} {PlRANGENILAI} 
+e.Validate5		spkkat5		VALIDATE tbddatkodidx mtbdV5 stbd {Pgv_dttabel} {PlSPK} {PlRANGENILAI} 
+e.Validate6		spkkat6		VALIDATE tbddatkodidx mtbdV6 stbd {Pgv_dttabel} {PlSPK} {PlRANGENILAI} 
+
+MAP(mpsiSpk)
+psikode			spkkode		REPLACE
+lnamaSlap		lnamaSlap	REPLACE_IF cdjoinpsi878
+lcabSlap		lcabSlap	REPLACE_IF cdjoinpsi878
+ltkmkode		ltkmkode	REPLACE_IF cdjointkm878
+ltkmtype		ltkmtype	REPLACE_IF cdjointkm878
+ctglM3bln		ltglM3bln	DO_CALC
+ljmlpap			ljmlpap		REPLACE_IF cdscantlm821
+ljmlskm			ljmlskm		REPLACE_IF cdscantlm821
+ljmlgpr			ljmlgpr		REPLACE_IF cdscantlm821
+
+MAP(mtbdV1)
+tbdkode			spkkat		REPLACE
+
+MAP(mtbdV2)
+tbdkode			spkkat2		REPLACE
+
+MAP(mtbdV3)
+tbdkode			spkkat3		REPLACE
+
+MAP(mtbdV4)
+tbdkode			spkkat4		REPLACE
+
+MAP(mtbdV5)
+tbdkode			spkkat5		REPLACE
+
+MAP(mtbdV6)
+tbdkode			spkkat6		REPLACE
+
+MAP(mnobuk878)
+spknoasal		lnobukspk	REPLACE
+spknobuk		lnobukpendamping REPLACE
+
+MAP(m4996)
+spknobuk		r_string1	REPLACE
+abkscr			r_string2	REPLACE
+abkoto			r_string3	REPLACE
+spknoasal		r_string4	REPLACE
+DEBUG	ldum		ldum		REPLACE
+
+MAP(mupdabkreview)
+gv_INPG			abksts		REPLACE_IF cabkreview
+
+SPCALCS(spuplreview)
+	DO_LIB_IF csdhisispk		ap_dbclc(DNAME updabkreview, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN abknobuk, DMAP mupdabkreview);
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=spkkode2	DO_SKIP_IF csaleshadir
+BEFORE_INPUT            cur_field=spknoasal     DO_SKIP_IF cdjoinspkpendampinglck1
+BEFORE_INPUT            cur_field=lENTER2     	DO_SKIP_IF cdjoinspkpendampinglck1
+
+BEFORE_INPUT		cur_field=spkkat	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkkat2	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkkat3	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkkat4	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkkat5	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkkat6	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkket	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkket2	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkket3	DO_SKIP_IF cdjoinspkpendampinglck
+BEFORE_INPUT		cur_field=spkreview	DO_SKIP_IF cdjoinspkpendampinglck
+	
+AFTER_INPUT		cur_field=spknoasal	DO_MAP SHOW mnobuk878
+
+AFTER_INPUT		cur_field=spkkode2	DO_MAP SHOW
+			IF csalesinpg	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.SalesTidakINPG
+
+AFTER_INPUT		cur_field=spkkode2	DO_MAP SHOW
+			IF csaleshadir	mdum		
+			ELSE HKCURSOR STAY
+			HKMSG t.SalesTidakHadir
+
+AFTER_INPUT		cur_field=spkkode2	DO_MAP SHOW
+			IF csales1bulan	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.HarusSalesUsia1Bulan
+
+AFTER_INPUT		cur_field=spkkode2	DO_MAP SHOW
+			IF charussales	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.HarusJabatanSalesdanAreaSama
+
+AFTER_INPUT		cur_field=spknoasal	DO_MAP SHOW
+			IF cstatusspk	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.StatusSpkTidakBolehCLSDatauINPG
+
+AFTER_INPUT		cur_field=spknoasal	DO_MAP SHOW
+			IF cjadwalspk	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.InputSpkSesuaiJadwal
+
+AFTER_INPUT		cur_field=spknoasal	DO_MAP SHOW
+			IF cnipspk	mdum
+			ELSE HKCURSOR STAY
+			HKMSG t.HarusSpkDenganNipYangDitentukan
+
+AFTER_INPUT		cur_field=spkreview	DO_SPCALCS spuplreview
+
+MAP(mupdspkfoto1)
+lFOTOSDMBARU		spkfoto		REPLACE
+g_fotolat1		spklat		REPLACE
+g_fotolon1		spklon		REPLACE
+
+DBCALCS(dupdspkfoto1)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	spkprmidx   spkprm
+	DBC_MAP		mupdspkfoto1
+
+MAP(mupdspkfoto2)
+lFOTOAKTVITAS		spkfoto2	REPLACE
+g_fotolat1		spklat2		REPLACE
+g_fotolon1		spklon2		REPLACE
+
+DBCALCS(dupdspkfoto2)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	spkprmidx   spkprm
+	DBC_MAP		mupdspkfoto2
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND cspkpendamping
+SFL_UPL_DIRFLD abktgltrn
+SFL_UPLFLD spknobuk spkfoto
+SFL_UPLFLD2 spknobuk spkfoto2
+SFL_UPLFLD_DBCALCS dupdspkfoto1
+SFL_UPLFLD2_DBCALCS dupdspkfoto2
+SFL_DEL_COND c0
+SFL_TARGET
+	spkdatbuktyp	lPENDAMPING abknobuk lSPKATASAN
+
+MAP(mupdtkm878)
+gv_int1		tkmnil6		REPLACE
+
+SPCALCS(sptmppendamping)
+	DO_LIB				 ap_dbclc(DNAME dupdtkm878, DCOMMAND UPDATE, DTARGET tkmbukidx spknoasal, DMAP mupdtkm878);
+	DO_LIB_IF cdjoinspkpendampinglck ap_nxpst(l4996, lm4996);
+
+POSTING(tmptrans)
+        PST_UPDCMD sptmppendamping
+
+PERMIT(tmptrans)
+PMT_ADD_COND            c0
+PMT_UPDALL_COND         cnipkunci2
+PMT_DEL_COND            c0

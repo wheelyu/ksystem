@@ -1,0 +1,65 @@
+DBCALCS(djointldfinal)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldbukbrglok tlmnobuk lfinal
+
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||t.KorHead    ___________         ||
+||t.Ket        ___________________ ||
+||t.OkUp       ___________         ||
+|\---------------------------------/|
+|/---DOCUPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg   	NOCHANGE         	INPUTRI		1
+tldket2  	ALLCAPS SCROLL   	INPUTRI		2 
+tldtydis 	PROTECT          	INPUTRI		1
+
+CALCS()
+cadafinal	djointldfinal == 1
+
+DEFAULT(tmptranst)
+tldbrg  	DFALT_SCAN_BLANKS	REV_INT "REVISI INTERNAL"
+					FINAL   "FINAL LEGAL"
+
+IF cadafinal tldbrg  	DFALT_SCAN_BLANKS	REV_INT "REVISI INTERNAL"
+					KOR_EKS "KOREKSI EKSTERNAL"
+					FINAL   "FINAL LEGAL"
+
+CALCS()
+cbolehhead      (g_grpnam == "ADHHEAD" || g_grpnam == "LEGALHEAD" || g_grpnam == "RI" || g_grpnam == "IT")
+
+
+EDIT(tmptranst)
+e.Mandatory	tldbrg   	MANDATORY_IF chead  
+e.Mandatory	tldket2   	MANDATORY_IF chead  
+
+MAP(mupdtldnashead)
+gv_ok           tldtydis        REPLACE
+DBCALCS(dupdtldnashead)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tldprmidx tldprm
+        DBC_MAP         mupdtldnashead
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_DOCUPLFLD tlmnobuk tldbrg
+SFL_DOCUPLFLD_DBCALCS dupdtldnashead  
+SFL_COND cbolehhead
+SFL_TARGET
+tldprmidx    tldprm        
+
+
+

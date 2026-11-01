@@ -1,0 +1,192 @@
+IMAGE(tmptranst)
+/----------------------------------\
+| /-------------------------------\|
+| |                               ||_ _
+| |            _________ _________||
+| |             __________________||
+| |t.LTV        __________________||
+| |t.Kategori   __________________||
+| |t.kt         __________________||
+| |             __________________||
+| |t.UplodOk    _____  ___________||_ _
+| |             __________________||
+| |t.accrm      _____             ||
+| |             __________________||
+| |            _                  ||
+| \-------------------------------/|
+| /-------s.UPLOAD----------------\|
+| |                               !|
+| |                               !!
+| |                               !!
+| |                               !!
+| |                               |!
+| \-------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+        svinobuk        PROTECT                   INPUTRI 1
+        svikode         PROTECT                   INPUTRI 2
+        svists          PROTECT                   INPUTRI 3
+        svistr5         PROTECT                   INPUTRI 4
+        svidtmkode      NOCHANGE  QPROTECT UNSEEN INPUTRI 5
+        svidf1          NOCHANGE                  INPUTRI 6
+        svistr31        NOCHANGE                  INPUTRI 7
+        lketisib        TEXTAREA 2 ALLCAPS         INPUTRI 8
+        lketisi2b       TEXTAREA 2 ALLCAPS         INPUTRI 9
+        svistr1         NOCHANGE                  INPUTRI 10
+        svitgl1         PROTECT {DD-MM-YYYY}      INPUTRI 11
+        svinobuk        PROTECT UNSEEN            INPUTRI 12
+        svitblkode      PROTECT UNSEEN            INPUTRI 13
+        lupld2          TOMBOL                    INPUTRI 14       
+        svistr33        ALLCAPS                   INPUTRI 15
+        svistr7         TEXTAREA 2 ALLCAPS        INPUTRI 16
+        lketisi2        NOCHANGE                  INPUTRI 17
+
+EDITS(tmptranst)
+e.stsbukan707     svikode         VALIDATE ftmdatbukidx mftm3 sftm6 {PlMULTI4W}
+e.isiket          lketisib        MANDATORY
+e.ket             svitblkode      VALIDATE ketdatbukkod mket2  0     {Psvidata} {Psvinobuk}
+e.isiaccrm        svistr33        MANDATORY_IF cinpgd
+e.isiket          svistr7         MANDATORY_IF crmT
+
+
+DEFAULTS(tmptranst)
+svistr33           DFALT_SCAN_BLANKS Y T
+
+
+MAP(mket2)
+lketisib        ketisi            REPLACE_IF cadaket1b
+cBLANKS         lketisib          DO_CALC
+ketisi          lketisib          REPLACE
+lketisi2b       ketisi2            REPLACE_IF cadaket1b
+cBLANKS         lketisi2b          DO_CALC
+ketisi2         lketisi2b          REPLACE
+
+
+MAP(mftm3)
+ftmhrg2         svidf1          REPLACE
+ftmkode7        svistr31        REPLACE
+
+MAP(mupdsviftmandx2)
+cIN             svistr1         DO_CALC_IF cksong2
+g_tgltrn        svitgl1         REPLACE
+gv_INPG         svists          REPLACE_IF cinpg
+
+MAP(mapr2)
+gv_OPEN         svists          REPLACE_IF cksong
+cOKRM           svistr34        DO_CALC_IF crmok
+ctKRM           svistr34        DO_CALC_IF crmT
+gv_TACC         svists          REPLACE_IF crmT
+
+
+DBCALCS(dbftupl2)
+        DCOMMAND UPDATE
+        DTARGET sviprmidx sviprm
+        DMAP mupdsviftmandx2
+
+
+MAP(maddket2)
+svinobuk        ketnobuk          REPLACE
+svidata         ketdata           REPLACE
+svitype         ketkode           REPLACE
+lketisib        ketisi            REPLACE_IF cadaket0
+lketisi2b       ketisi2           REPLACE_IF cadaket0
+
+
+MAP(mupdsvi2)
+lketisib        ketisi            REPLACE_IF cadaket1b
+cBLANKS         lketisib          DO_CALC
+ketisi          lketisib          REPLACE
+lketisi2b       ketisi2            REPLACE_IF cadaket1b
+cBLANKS         lketisi2b          DO_CALC
+ketisi2         lketisi2b          REPLACE
+
+MAP(mupload2)
+g_tgltrn        svitgl1         REPLACE_IF cuplok
+cOK             svistr1         DO_CALC_IF cuplok
+
+MAP(mmapmap2a)
+ldum            ldum              REPLACE
+svinourt        lurt              REPLACE
+ckuncidev1      lkunci2           DO_CALC
+
+MAP(mkuncirm2a)
+gv_CLSD         abksts           REPLACE_IF cnipsama
+
+MAP(mkuncirm22)
+gv_CLSD         abksts           REPLACE
+
+
+SPCALCS(saddket2)
+DO_LIB                 ap_dbclc(DNAME dmapmap2a,DCOMMAND MAPMAP,DMAP mmapmap2a);
+DO_LIB_IF cadaket0     ap_dbclc(DNAME dket2,DCOMMAND ADD,DFILE ket,DMAP maddket2);
+DO_LIB_IF cadaket1     ap_dbclc(DNAME dupdsvi2,DCOMMAND UPDATE,DTARGET ketdatbukkod svidata svinobuk svitblkode,DMAP mupdsvi2);
+
+SPCALCS(sdelket2)
+DO_LIB_IF cadaket1     ap_dbclc(DNAME ddelket2,DCOMMAND DELETE,DTARGET ketdatbukkod svidata svinobuk svitblkode); 
+
+SPCALCS(suploadd2)
+DO_LIB                 ap_dbclc(DNAME dmapupl2,DCOMMAND MAPMAP,DMAP mmapmap2a);
+DO_LIB_IF crm          ap_dbclc(DNAME ddevb2,DCOMMAND ADD,DFILE abk,DMAP madddevrm);
+DO_LIB                 ap_dbclc(DNAME dupload2d,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP mupload2);
+
+SPCALCS(sbkkunci2)
+DO_LIB                 ap_dbclc(DNAME dmapmaprm2,DCOMMAND MAPMAP,DMAP mmapmap1a);
+DO_LIB_IF crmok2       ap_dbclc(DNAME dupdrmok2,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci2 l643,DMAP mkuncirm2a);
+DO_LIB_IF crmT2        ap_dbclc(DNAME dupdrmT2,DCOMMAND UPDATE_RANGE,DTARGET abkdatstsky2 lkunciabsen gv_INPG lkunci2 l643,DMAP mkuncirm22);
+DO_LIB_IF cdvh         ap_dbclc(DNAME ddeve2,DCOMMAND ADD,DFILE abk,DMAP madddevdvh);
+
+
+HOOKS(tmptranst)
+CLICKED         cur_field=lupld2        DO_SPCALCS suploadd2
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mapr2
+AFTER_INPUT     cur_keybd=EN            DO_SPCALCS sbkkunci2
+AFTER_INPUT     cur_field=lketisib      DO_MAP SHOW mketcab
+AFTER_INPUT     cur_field=lketisib       DO_MAP
+                IF ccabisib mdum
+                ELSE HKCURSOR STAY
+                HKMSG harus 200 karabker
+BEFORE_INPUT    cur_field=svistr33      DO_SKIP_IF copend
+BEFORE_INPUT    cur_field=svistr7       DO_SKIP_IF copend
+BEFORE_INPUT    cur_field=lketisib      DO_SKIP_IF cinpgd
+BEFORE_INPUT    cur_field=lketisi2b     DO_SKIP_IF cinpgd
+BEFORE_INPUT    cur_field=svidf1        DO_SKIP_IF cinpgd
+BEFORE_INPUT    cur_field=svistr31      DO_SKIP_IF cinpgd
+BEFORE_INPUT    cur_field=svistr1       DO_SKIP_IF cinpgd
+
+
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dbftupl2
+SFL_UPLFLD tlmnobuk     svitype
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPL_DELCOND c0
+SFL_SELECT   ckodedev
+SFL_TARGET
+        svidatbuktyp   tlmdata   tlmnobuk     
+SFL_MAP
+tlmnobuk        svinobuk        REPLACE
+tlmuntuk        svidtmkode      REPLACE
+tlmnoasal       svikode         REPLACE
+tlmdata         svidata         REPLACE
+tmpkode         svitype         REPLACE
+tmpnourt        svinourt        REPLACE
+tmpkode         svitblkode      REPLACE
+
+POSTING(tmptrans)
+        PST_ADDCMD saddket2
+        PST_UPDCMD saddket2
+        PST_DELCMD sdelket2
+
+
+PERMIT(tmptrans)
+  PMT_ADD_COND  cdjoindevslik
+  PMT_UPDALL_COND  cdevopen
+  PMT_DEL_COND  cdevopen 
+
+
+
+

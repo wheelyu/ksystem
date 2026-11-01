@@ -1,0 +1,81 @@
+IMAGE(tmptranst) 
+/-----------t----------t-------------------------------------t----------t----------------t------------t------------\
+|t.NoOto    | i.Kode   |i.Ket                                |i.Type    | i.Total        |t.Tanggal   |t.Tgl2      |
+\-----------.----------.-------------------------------------.----------.----------------.------------.------------/
+
+IMAGE(tmptrans) 
+| __________|__________|_____________________________________|__________|_______________ |____________|____________|
+
+FIELD(tmptrans)
+   gjmnourt     NOCHANGE         	INPUTRI          1
+   gjmkodegj    ALLCAPS         	INPUTRI          3
+   tbdket       ALLCAPS SCROLL         	INPUTRI          4
+   gjmtype      PROTECT SCROLL         	INPUTRI          5
+   gjmnilai     NUMERIC          	INPUTRI          6
+   gjmtgl1      NONE {DD-MM-YYYY}	INPUTRI          7
+   gjmtgl2      NONE {DD-MM-YYYY}	INPUTRI          8
+
+
+EDITS(tmptrans)
+e.Validate gjmkodegj VALIDATE tbddatkodidx mtbdkodegj  {Pgv_dttabel} {Pgv_personal}  {PlKODEGAJI} 
+
+MAP(mtbdkodegj)
+tbdket	tbdket	REPLACE
+tbdlv1	gjmtype	REPLACE
+
+DEFAULTS(tmptrans)
+gjmdata		INIT	{gt_DTGAJI}
+gjmnourt	DFALT_SCAN_BLANKS 1 "Kelompok Paling Pertama"
+			    	  2 "Kelompok Paling Kedua"
+			    	  3 "Kelompok Paling Ketiga"
+			    	  4 "Kelompok Paling Keempat"
+			    	  5 "Kelompok Paling Kelima"
+			    	  6 "Kelompok Paling Keenam"
+			    	  7 "Kelompok Paling Ketujuh"
+gjmtgl1		INIT		{g_tgltrn}
+gjmtgl1		INIT_UPDATE	{g_tgltrn}
+
+
+CALCS()
+coke		
+(
+psicabskr != "PST10" &&
+psicabskr != "PST20" &&
+psicabskr != "PST30" &&
+psicabskr != "PST40" &&
+psicabskr != "PST50" &&
+psicabskr != "PST60" &&
+psicabskr != "PST70" &&
+psicabskr != "PST80" &&
+psicabskr != "PST90" &&
+psicabskr != "KGW50" &&
+psicabskr != "072" &&
+psicabskr != "SMG30"   
+) || g_usrkode != "1009176"
+
+c150a ((gjmkodegj == "UM/HARI" && gjmnilai <= 150000) || gjmkodegj != "UM/HARI")
+
+HOOKS(tmptrans)
+AFTER_INPUT     cur_field=gjmnilai       DO_MAP SHOW
+                IF c150a mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.UmHariMax150000
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF c150a mdum
+                ELSE HKCURSOR STAY
+                     HKMSG t.UmHariMax150000
+
+MAP(mdum)
+ldum	ldum	REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(10)   
+SFL_TITLE(tmptranst)
+SFL_COND  coke
+SFL_TARGET
+gjmkodgjidx   psikode gt_DTGAJI 
+
+SFL_MAP  
+    psikode              gjmkode
+
+

@@ -1,0 +1,116 @@
+LOCAL
+PGM_FIELDS
+ltypejd 		STRING	40
+laprusr			STRING	21
+
+MAP(mjoinaprMD)
+aprusr                laprusr         REPLACE
+
+DBCALCS(djoinaprMD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      aprbukkeurt   hrmnobuk
+        DBC_MAP         mjoinaprMD
+
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.Alasan         :___________________________     ||
+||                  ________________________________||
+||t.YgDisukai      :________________________________||
+||t.Saran          :________________________________||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.UplSuratMD                                      ||
+|\--------------------------------------------------/|
+|/-------------s.UPLOAD-----------------------------\|
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+ketkode  		ALLCAPS                	INPUTRI 1
+ketnama  		TEXTAREA ALLCAPS                	INPUTRI 1
+ketisi   		TEXTAREA ALLCAPS                	INPUTRI 2
+ketisi2   		TEXTAREA ALLCAPS                	INPUTRI 2
+
+EDITS(tmptranst)
+e.Mandatory ketkode  	MANDATORY
+e.Mandatory ketnama  	MANDATORY
+e.Mandatory ketisi   	MANDATORY
+e.Mandatory ketisi2   	MANDATORY
+
+
+DEFAULTS(tmptranst)
+ketkode    DFALT_SCAN		SK "SAKIT / KESEHATAN"
+				DP "DAPAT PEKERJAAN "
+				PP "MELANJUTKAN PENDIDIKAN"
+				KL "MASALAH KELUARGA "
+				NK "MENIKAH "
+				MT "TIDAK MAU DI MUTASI"
+				TC "TIDAK CAPAI TARGET"
+				MS "MASALAH DENGAN ATASAN/REKA KERJA"
+				MM "MASALAH DENGAN MANAGEMENT"
+				ML "MASALAH LINGKUNGAN KERJA" 
+				PD "PENDAPATAN TIDAK MEMUASKAN "
+				LL "LAIN-LAIN "
+ltypejd		INIT		JD
+kettype		INIT_ADD	ALASAN
+
+
+CALCS()
+cY		"Y"
+
+MAP(mupdketfoto)
+cY              ketyt1          DO_CALC
+
+DBCALCS(dupdketfoto)
+        DBC_COMMAND     UPDATE
+        DTARGET         ketprmidx ketprm 
+        DMAP            mupdketfoto
+
+CALCS()
+cutk_OPEN 	hrmsts=="OPEN"
+calasanMD	((tmpkode=="ALASANMD" && ((djoinaprMD == 1 && laprusr == g_usrkode) || hrmnip2 == g_usrkode || hrmnip1 == g_usrkode || hrmusrapr == g_usrkode ||g_grpnam=="CMBNHEAD" || g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam =="KAWIL" || g_grpnam=="CMBNSPV" || g_grpnam=="HRDDVH" || g_grpnam=="HRDSPV" || g_grpnam=="HRD" || g_grpnam=="HRDHEAD" || g_grpnam=="SUPPORT" || g_grpnam=="RAS" || g_grpnam=="RASMGR" || g_grpnam=="RASMGR" || g_grpnam=="B.IVAROHRD" || g_grpnam=="HRDODTM" || g_grpnam=="ODTMHEAD" || g_grpnam=="IRLEGALHD" || g_grpnam=="IRLEGAL" || g_grpnam=="LEGALSPV" || g_grpnam=="HRDER" || g_flyfrom==120))|| tmpkode=="ALASANKL" || tmpkode=="ALASANTL") && hrmtgl <20220325 
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst) 
+SFL_COND calasanMD
+SFL_UPL_DELCOND cutk_OPEN  
+SFL_UPL_DIRFLD hrmdata
+SFL_UPLFLD_DBCALCS dupdketfoto
+SFL_UPLFLD hrmnobuk 
+SFL_LINES(1)
+
+SFL_TARGET
+	ketdatbuktgl 	hrmdata     hrmnobuk	lALASAN 
+
+
+SFL_MAP
+hrmnobuk        ketnobuk        REPLACE
+hrmdata         ketdata         REPLACE
+
+CALCS()
+cOPEN_SAJA		hrmsts=="OPEN"    
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    cOPEN_SAJA
+        PMT_UPDALL_COND cOPEN_SAJA
+        PMT_DEL_COND    cOPEN_SAJA
+
+

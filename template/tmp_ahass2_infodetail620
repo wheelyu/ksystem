@@ -1,0 +1,128 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+|| t.NoPol   :__________          ||
+|| t.NoKtp   :______________  ___ ||
+|| t.Jenis   :___________         ||
+|| t.Nama    :______________      ||
+|| t.Alamat  :___________________ ||
+|| t.NoHp    :______________      ||
+|| t.NoRangka:________________    ||
+|| t.NoMesin :________________    ||
+|| t.TypMtr  :_______________     ||
+|| t.Series  :________________    ||
+|| t.NsNon   :___  ______         ||
+|| t.TglM    :_____________       ||
+|| t.Usia    :___ t.Bln ___ t.Hr  ||
+|| t.KdPot   :___________________ ||
+||           :___________________ ||
+||                        _______ ||
+|\--------------------------------/|
+\----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+btmkdsam        NOCHANGE                        INPUTRI 1 /* Nopol */
+btmplg          NOCHANGE                        INPUTRI 2 /* NIK ktp */
+btmytbiro       PROTECT                         INPUTRI 3 /* Type ktp */
+btmguna         PROTECT                         INPUTRI 4 /* Jenis Instansi / Perorangan */
+lpsmnama        PROTECT                         INPUTRI 5 /* Nama Pemilik */
+lalmjalan1      PROTECT                         INPUTRI 6 /* Alamat Pemilik */
+lconhp          PROTECT                         INPUTRI 7 /* No HP Pemilik */
+lastnorangka    PROTECT                         INPUTRI 8 /* No Rangka */
+lastnomesin     PROTECT                         INPUTRI 9 /* No Mesin */
+btmtypmtr       NOCHANGE                        INPUTRI 10 /* Tipe motor */
+lnamabarang     PROTECT                         INPUTRI 11 /* Series Motor */
+lastnsnon       PROTECT                         INPUTRI 15 /* Type NS / Non NS */
+lketastns       PROTECT                         INPUTRI 16 /* Ket Type NS / Non NS */
+btmjtppjk       NOCHANGE {DD-MM-YY} NOLIMIT     INPUTRI 17 /* Tanggal Beli Motor */
+btmjml          PROTECT                         INPUTRI 18 /* usia bulan*/
+btmum           PROTECT                         INPUTRI 19 /* usia hari */
+btmiklan        ALLCAPS SCROLL                  INPUTRI 20 /* Kode Promo */
+lketisi         PROTECT                         INPUTRI 21 /* Keluhan */
+lenter          NOCHANGE                        INPUTRI 22 /* Enter */
+
+
+CALCS()
+cdjoinalm1      djoinalm1 == 1
+
+EDITS(tmptranst)
+e.Mandatory     btmjtppjk       MANDATORY
+e.MandatorySpk  btmiklan        MANDATORY_IF cSPKSALES
+
+e.validate      btmplg          VALIDATE psmktpidx mpsma
+e.ValidateBrg   btmtypmtr       VALIDATE brgstdtkatbr mbrgM2 sbrgahs {Pgv_INPG} {Pgv_dtbarang} {Plspm}
+e.ValidateSpk   btmiklan        VALIDATE tkmdatbukidx mtkm {PlSPK} {Pgv_CLSD}
+
+MAP(mtkm)
+tkmnobuk        btmiklan        REPLACE
+tkmtotal        ltkmtotal       REPLACE
+
+MAP(mbrgM2)
+brgkode         btmtypmtr      REPLACE
+brgnama         lnamabarang    REPLACE
+
+MAP(mktp)
+lpsmnama              btmass          REPLACE_IF cdjoinpsm1
+lasttgl               btmjtppjk       REPLACE_IF cdjoinast1
+cN                    btmytbiro       DO_CALC_IF cdjoinast0
+cO                    btmytbiro       DO_CALC_IF cdjoinast1
+lpsmins               btmguna         REPLACE_IF cdjoinpsmprgins
+cKaryawan             btmguna         DO_CALC_IF cdjoinpsmkry
+lconhp                btmjnsdeb       REPLACE_IF cdjoincon
+lalmjalan1            lalmjalan1      REPLACE_IF cdjoinalm1
+
+MAP(mpsma)
+lpsmnama        lpsmnama        REPLACE_IF cdjoinpsm1
+lpsmins         btmguna         REPLACE_IF cdjoinpsmprgins
+cKaryawan       btmguna         DO_CALC_IF cdjoinpsmkry
+lalmjalan1      lalmjalan1      REPLACE_IF cdjoinalm1
+lconhp          lconhp          REPLACE_IF cdjoincon
+lastnorangka    lastnorangka    REPLACE_IF cdjoinast2
+lastnomesin     lastnomesin     REPLACE_IF cdjoinast2
+lastnsnon       lastnsnon       REPLACE_IF cdjoinast2
+lasttgl         btmjtppjk 	REPLACE_IF cdjoinast1
+cN              btmytbiro       DO_CALC_IF cdjoinast0
+cO              btmytbiro       DO_CALC_IF cdjoinast1
+cNS             lketastns       DO_CALC_IF casthrg1
+cNNS            lketastns       DO_CALC_IF casthrg2
+
+
+HOOKS(tmptranst)
+AFTER_INPUT   cur_field=btmplg        DO_MAP SHOW mktp
+AFTER_INPUT   cur_field=btmplg        DO_MAP SHOW mpanjangktp
+AFTER_INPUT   cur_field=btmkdsam      DO_MAP SHOW mpanjangnopol
+AFTER_INPUT   cur_field=btmjtppjk     DO_MAP SHOW misinya
+AFTER_INPUT   cur_field=btmjtppjk     DO_LIB_IF ctglok  ap_slshr(&lDD,btmtgl,btmjtppjk,lplus3,lmin3,&ljmlbln,&ljmlhari);
+AFTER_INPUT   cur_field=btmjtppjk     DO_MAP SHOW mselisihbl
+AFTER_INPUT   cur_field=btmjtppjk     DO_MAP SHOW mrmdgab
+AFTER_INPUT   cur_field=btmjtppjk     DO_MAP SHOW IF cbtmstr1ya mhasilnya
+AFTER_INPUT   cur_field=btmjtppjk     DO_SCAN dbscanbrca
+AFTER_INPUT   cur_field=btmjtppjk     DO_MAP SHOW mtotal2
+AFTER_INPUT   cur_field=btmplg        DO_MAP SHOW
+              IF cpjgktp mdumstr
+              ELSE HKCURSOR STAY
+              HKMSG t.KtpBlmSesuai
+
+AFTER_INPUT   cur_field=btmplg        DO_MAP SHOW
+              IF cdjoincon mdumstr
+              ELSE HKCURSOR btmplg
+              HKMSG t.IsiNoHp3201
+
+BEFORE_INPUT    cur_field=btmiklan      DO_SKIP_IF cbukan_darispk
+
+AFTER_INPUT     cur_field=btmiklan      DO_MAP SHOW
+                IF cpromo_spk mdumstr
+                ELSE HKCURSOR btmiklan
+                HKMSG NoSpkSales Tidak ada Promo Ahass !!!
+
+AFTER_INPUT   cur_field=btmjtppjk     DO_MAP SHOW
+              IF ctgla mdumstr
+              ELSE HKCURSOR btmjtppjk
+              HKMSG Tgl tdk boleh lebih dari hari ini atau jarak tanggal terlalu jauh!
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+btmbukidx       btmnobuk

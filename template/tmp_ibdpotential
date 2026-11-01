@@ -1,0 +1,182 @@
+IMAGE(tmptranst)
+/------t---------------------------t------t--------------t------------t----------t-------t--------t---------t----\
+|t.Kode|  t.IBDPotential           | t.Tgt| t.SesuaiTidak| t.PubahTgt |t.AccKawil|t.AccHO|t.SdhBlm|t.Jtp    | __ |
+\------.---------------------------.------.--------------.------------.----------.-------.--------.---------.----/
+IMAGE(tmptrans)
+|______|___________________________|___.__|______________|_________.__|__________|_______|________|_________|____|
+
+
+FIELDS(tmptranst)
+ltomsdhbca2	TOMBOL				INPUTRI	1
+
+FIELDS(tmptrans)
+tldstr4         PROTECT NOCHANGE                INPUTRI 1       /* IBD PERFORMANCE */
+lket            PROTECT NOCHANGE                INPUTRI 2
+tldjml          NUMERIC		                ZERO 3       /* HASIL MATRIKS TGT */
+tldstr1         ALLCAPS NOCHANGE                INPUTRI 4       /* SESUAI ATAU TIDAK */
+tldstr5         NUMERIC                          INPUTRI 5       /* PERUBAHAN TGT */
+tldstr2         ALLCAPS NOCHANGE                INPUTRI 6       /* ACC KAWIL */
+tldstr3         ALLCAPS NOCHANGE                INPUTRI 7       /* ACC HO */
+tldsat      	NOCHANGE                        INPUTRI 8       /* SUDAH/BELUM ADA TGT */
+tldtgl2         NONE {DD-MM-YY} NOLIMIT      	INPUTRI 9       /* TANGGAL JTP TGT */
+lenterd2    	NOCHANGE                	INPUTRI 10   /* TOMBOL ENTER */
+
+
+DEFAULTS(tmptrans)
+tldstr1                 DFALT_SCAN              BLANKS
+                                                SESUAI          ""
+                                                TIDAK_SESUAI    ""
+tldstr2                 DFALT_SCAN              BLANKS
+                                                T               ""
+tldstr3                 DFALT_SCAN              BLANKS
+                                                T               ""
+tldsat              	DFALT_SCAN                      BLANKS
+                                                        BELUM
+
+CALCS()
+cslct2          tbdkode == tldstr4 && tbdkettype == g_usrkode
+
+DBCALCS(dpotentialhocx)
+DBC_COMMAND     JOIN
+DBC_SELECT      cslct2
+DBC_TARGET      tbddatkodidx lDTTABEL lCUSTOMEREXPERIENCE lKODEMATRIKSIBDB
+
+CALCS()
+/*cselectnobukdpotential        tldcab == tlmcab && tldbrg == lPOTENTIAL && tlddata == tlmdata && tldth == tlmtype2*/
+cselectpotential  (tlmnoasal == BLANKS && tldcab == tlmcab && tldbrg == lPOTENTIAL && tlddata == tlmdata && (tldthbl == tlmtype2 || tldth == tlmtype2) &&
+                    (
+		    ( 
+                        /*(tlmsts == "INPG" && tlmjml2 > 0 && tldstr2 == "T") || (tlmsts == "INPG" && tlmjml2 <= 0) || (tlmsts != "INPG") || g_usrkode != tlmplg*/ 
+                        (tlmsts == "OPEN" && tlmsts2 != "CTGT") ||
+			(tlmsts == "INPG" && tlmsts2 == "RCLS" && tldsat == "BELUM") ||
+                        (tlmsts == "INPG" && tlmdari == g_usrkode) ||
+                        (tlmsts == "INPG" && tlmplg == g_usrkode && dcekkuncian == 1 && tlmbisnis == BLANKS && tlmkode == BLANKS && tldstr2 == "T") ||
+                        (tlmsts == "INPG" && dpotentialhocx == 1 && tlmplg != g_usrkode && tlmdari != g_usrkode) ||
+                        (tlmsts == "INPG" && tlmsts2 != "RCLS" && (tlmplg == g_usrkode || tlmdari == g_usrkode) && dcekkuncian == 1 && tlmbisnis != BLANKS && tlmkode != BLANKS) ||
+                        (tlmsts == "CLSD")
+                    )	&& (dcekdetailygbarusudah == 0 || (tlmsts == "INPG" && tlmsts2 == "RCLS" && tldsat == "BELUM"))
+		    ) ||
+		    ( tlmsts2 != "RCLS" &&
+			tldsat == BLANKS && tldnoll != BLANKS && tldcab == tlmcab && tldbrg == lPOTENTIAL && tlddata == tlmdata && tldth == tlmtype2 &&
+			dcekdetailygbarusudah == 1 &&
+                                                (
+                                                        (tlmsts == "INPG" && (tlmplg != g_usrkode && tlmdari != g_usrkode) && dpotentialhocx == 1) ||
+                                                        (tlmplg == g_usrkode || tlmdari == g_usrkode)
+                                                )
+
+		    )
+		   ) ||
+                        (
+                                tlmnoasal != BLANKS && tldcab == tlmcab && tldbrg == lPOTENTIAL && tlddata == tlmdata && (tldthbl == tlmtype2 || tldth == tlmtype2) && tldbisnis == tlmnobuk
+                        ) ||
+		  ((g_grpnam == "IT" || g_grpnam == "RI" || g_grpnam == "RAS") &&
+			tldcab == tlmcab && tldbrg == lPOTENTIAL && tlddata == tlmdata && (tldthbl == tlmtype2 || tldth == tlmtype2)
+		  )
+ctgtsesuai2          (tlmsts == "OPEN" && tldstr1 == "SESUAI") ||
+                    (tlmsts == "INPG" && tldstr2 == "Y" && tlmplg == g_usrkode) ||
+                    (tlmsts == "INPG" && /*tlmjml2 < 1 && */tlmdari == g_usrkode && tlmsts2 != "RVS1") ||
+		(tlmsts2 == "RCLS")
+
+/*ctgttdksesuai2       (tlmsts == "OPEN" && tldstr1 == "TIDAK_SESUAI")*/
+
+ctgtdirubah2         ((~tldjml2 != tldjml2) || (~tldstr5 != tldstr5)) && (tlmdari == g_usrkode || dloginhocx == 1 || dloginhohmc == 1 || dloginhohmc2 == 1)
+ctgtdirubahKawil2    ((~tldjml2 != tldjml2) || (~tldstr5 != tldstr5)) && tlmdari == g_usrkode && tldjml2 != tldjml
+/*
+ctgtdirubahHO2       (~tldjml2 != tldjml2) && (dloginhocx == 1 || dloginhohmc == 1 || dloginhohmc2 == 1)
+*/
+
+MAP(my2)
+tldstr5		    tldjml2	REPLACE
+ct                  tldstr2     DO_CALC_IF ctgtdirubahKawil2
+cTDKSESUAI          tldstr1     DO_CALC_IF cTGTberubah
+ct                  tldstr3     DO_CALC_IF cTGTberubahHO
+
+c0                                      tldjml2         DO_CALC_IF ctldstr5blank
+cBLANKS                                 tldstr1         DO_CALC_IF ctldstr5blankam
+cBLANKS                                 tldstr1         DO_CALC_IF ctldstr5blankam2
+cBLANKS                                 tldstr2         DO_CALC_IF ctldstr5blankkawil
+cBLANKS                                 tldstr3         DO_CALC_IF ctldstr5blankho
+cBLANKS                                 tldstr3         DO_CALC_IF ctldstr5blankho2
+
+MAP(mtandabaca2)
+cy                              tlmdvs                DO_CALC_IF cblhy
+
+SPCALCS(standabaca2)
+DO_LIB_IF cDcekKuncian          ap_dbclc(DNAME dtandabaca2, DCOMMAND UPDATE, DTARGET tlmprmidx tlmprm, DMAP mtandabaca2);
+DO_LIB_IF cduadetail            ap_dbclc(DNAME dUpdACCam2, DCOMMAND UPDATE, DTARGET tlmprmidx tlmprm, DMAP mupdaccam);
+DO_LIB_IF cduadetail            ap_dbclc(DNAME dUpdACCama2, DCOMMAND UPDATE_RANGE, DTARGET ketdatbukkod gt_extra tlmnobuk, DMAP mupdaccama);
+DO_LIB_IF cdetail2            ap_dbclc(DNAME dUpdACCHOCX, DCOMMAND UPDATE, DTARGET tlmprmidx tlmprm, DMAP mupdaccam);
+
+
+HOOKS(tmptrans)
+BEFORE_INPUT                    cur_field=tldsat        DO_SKIP_IF      cstsctgt2
+BEFORE_INPUT                    cur_field=tldjml        DO_SKIP_IF      cstsctgt
+BEFORE_INPUT            cur_field=tldstr5   DO_SKIP_IF  ctgtsesuai2
+BEFORE_INPUT            cur_field=tldstr1   DO_SKIP_IF  c1
+BEFORE_INPUT            cur_field=tldstr2   DO_SKIP_IF  cYangLoginAM
+BEFORE_INPUT            cur_field=tldstr3   DO_SKIP_IF  cYangLoginAM
+BEFORE_INPUT            cur_field=tldstr1   DO_SKIP_IF  cYangLoginKawil
+BEFORE_INPUT            cur_field=tldstr3   DO_SKIP_IF  cYangLoginKawil
+BEFORE_INPUT            cur_field=tldstr1   DO_SKIP_IF  cYangLoginHO
+BEFORE_INPUT            cur_field=tldstr1   DO_SKIP_IF  crevisi
+BEFORE_INPUT            cur_field=tldstr2   DO_SKIP_IF  cYangLoginHO
+BEFORE_INPUT            cur_field=tldstr2   DO_SKIP_IF  ctgtdirubah2
+BEFORE_INPUT            cur_field=tldstr2   DO_SKIP_IF      cinpgrvs1
+BEFORE_INPUT            cur_field=tldstr3   DO_SKIP_IF  ctgtdirubah2
+BEFORE_INPUT            cur_field=tldstr3   DO_SKIP_IF      cYangLoginHO
+/*BEFORE_INPUT		cur_field=tldstr5   DO_SKIP_IF	cTGTblm*/
+AFTER_INPUT             cur_field=tldstr5   DO_MAP      SHOW my2 
+AFTER_INPUT                     cur_field=tldtgl2       DO_MAP SHOW
+                                IF ckrgtgl10            mdum
+                                ELSE HKCURSOR STAY
+                                HKMSG Tanggal input minimal tanggal 27 bulan sesuai THBL atau maksimal tanggal 10 bulan depannya
+
+AFTER_INPUT                     cur_field=tldsat        DO_MAP SHOW     mblanktgl
+AFTER_INPUT                     cur_field=tldjml        DO_MAP SHOW     mblanktgl
+BEFORE_INPUT                    cur_field=tldtgl2       DO_SKIP_IF      cstsctgt3
+AFTER_INPUT                     cur_field=tldstr5       DO_MAP          SHOW mhpsblm
+
+HOOKS(tmptranst)
+CLICKED			cur_field=ltomsdhbca2	DO_SPCALCS standabaca2
+
+EDITS(tmptrans)
+/*e.PerubahanTgtHrsDiisi          tldstr5                 MANDATORY_IF    ctgttdksesuai2*/
+e.ValidateKet           tldstr4  VALIDATE        tbddatkodidx     mketPotential                     {PlDTTABEL}        {PlCUSTOMEREXPERIENCE} {PlKODEMATRIKSIBDB}
+e.WajibMengisiTGLEstimasi       tldtgl2         MANDATORY_IF    ctgtblm
+
+
+MAP(mketPotential)
+tbdket                  lket            REPLACE
+
+/*
+DBCALCS(dceknobukdetail2)
+DBC_COMMAND     JOIN
+DBC_SELECT      cselectnobukdpotential
+DBC_TARGET      tldbukbrgoto    tlmnobuk
+
+CALCS()
+cnobukdetailtdkketemu2   dceknobukdetail2 == 0
+cnobukdetailketemu2      dceknobukdetail2 == 1
+*/
+
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_SELECT 	cselectpotential
+SFL_TARGET_IF ctlmnoasalblank
+tldbukurtidx    tlmnobuk
+SFL_TARGET_IF ctlmnoasalisi
+tldbukurtidx    tlmnoasal
+/*
+SFL_TARGET_IF cnobukdetailtdkketemu2
+tldstsbrgukr    tlmdata
+*/
+
+SFL_MAP
+tlmdata		tlddata
+tlmnobuk	tldnobuk
+lPOTENTIAL    	tldbrg                  /*PEMBEDA ANTARA PERFORMANCE DENGAN POTENTIAL*/
+tlmcab          tldcab                  /*PEMBEDA TGT BONUS DEALER CABANG 1 DENGAN CABANG LAINNYA*/
+tlmtype2        tldthbl                 /*PEMBEDA TGT BONUS DEALER CABANG 1 DENGAN CABANG LAINNYA*/
+tlmtype2        tldth                 /*PEMBEDA TGT BONUS DEALER CABANG 1 DENGAN CABANG LAINNYA*/

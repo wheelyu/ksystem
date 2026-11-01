@@ -1,0 +1,105 @@
+IMAGE(tmptranst)
+/--------------------------------------\
+/--------------------------------------\
+||t.TipeFURO	   : _________________||
+||t.NamaKons	   : _________________||
+||t.NoTelp	   : _________________||
+||t.AmtTgh	   : _________________||
+||t.Provinsi	   : _________________||
+||t.Kota	   : _________________||
+||t.Kecamatan	   : _________________||
+||t.Kelurahan	   : _________________||
+||t.RT		   : _________________||
+||t.RW		   : _________________||
+||t.SisAngsur      : _________________||
+||t.KodeKerja	   : _________________||
+||t.NamaPekerjaan  : _________________||
+||t.Tglakhirbyr	   : _________________||
+||t.NamaKend	   : _________________||
+||t.KdMtr  	   : _________________||
+||t.ThnMotor	   : _________________||
+||t.TipeDebitur	   : _________________||
+||t.Harpas	   : _________________||
+||t.Estcair	   : _________________||
+||t.NominalAng	   : _________________||
+||t.SisLunas	   : _________________||
+||t.Grading	   : _________________||
+\--------------------------------------/
+\--------------------------------------/
+__
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmkode		PROTECT				INPUTRI	1
+spknama		PROTECT				INPUTRI	2
+spknohp		PROTECT				INPUTRI	3
+lalmjalan	PROTECT				INPUTRI	4
+lalmprop	PROTECT				INPUTRI	5
+lalmkota	PROTECT				INPUTRI	6
+lalmkec		PROTECT				INPUTRI	7
+lalmkel		PROTECT				INPUTRI	8
+lalmrt		PROTECT				INPUTRI	9
+lalmrw		PROTECT				INPUTRI	10
+lsisangsur	NUMERIC PROTECT			INPUTRI	11
+lpekerjaanpm	PROTECT				INPUTRI	12
+lpekerjaan1a	PROTECT				INPUTRI	13
+lpiktglbyrakh	PROTECT				INPUTRI	14
+lbrgnama	PROTECT				INPUTRI	16
+lbtmtypmtr	PROTECT				INPUTRI	15
+lbtmthn		PROTECT				INPUTRI	17
+lpsmstsbill	PROTECT				INPUTRI	18
+lnhmhrgpasar	PROTECT				INPUTRI	19
+lestcair	PROTECT				INPUTRI	21
+lpikangbl	PROTECT				INPUTRI	22
+lsislns		PROTECT				INPUTRI	23
+spkkode8	PROTECT				INPUTRI	24
+spkkode		QPROTECT UNSEEN			INPUTRI	20
+
+EDITS(tmptranst)
+e.validate	spkkode		VALIDATE psmktpidx mpsmro 0
+e.validate	lpekerjaanpm	VALIDATE tbldtdtmkod minforo 0 {Pgv_dttabel} {Pgv_pekerjaan21}
+
+CALCS()
+cdjoinpikro		djoinpikro == 1
+cdjoinbtmpik		djoinbtmpik == 1 && djoinbrg2 == 1
+cdjoinpsmro		djoinpsmro == 1
+cdjoinnhmpik		djoinnhmpik == 1
+cdjoinsvipemohon	djoinsvipemohon == 1
+csisangsur		lpiklama - lpikke
+cfuro			tkmkode == "FU_WB" || tkmkode == "FU_TOPUP"
+chrg80persen		lnhmhrgpasar * 0.8
+cestcair		lnhmhrgpasar - lpiksispok
+csislns			lpikangbl * (lpiklama - lpikke)
+
+MAP(mpsmro)
+lalmjalan       lalmjalan       REPLACE_IF cdjoinalmtagih
+lpiktglbyrakh 	lpiktglbyrakh 	REPLACE_IF cdjoinpikro
+lpiksispok	lpiksispok	REPLACE_IF cdjoinpikro
+lpiklama	lpiklama	REPLACE_IF cdjoinpikro
+lpikke		lpikke		REPLACE_IF cdjoinpikro
+lpikangbl	lpikangbl	REPLACE_IF cdjoinpikro
+csisangsur      lsisangsur      DO_CALC_IF cdjoinpikro
+lbtmtypmtr      lbtmtypmtr      REPLACE_IF cdjoinbtmpik
+lbrgnama      	lbrgnama      	REPLACE_IF cdjoinbtmpik
+lnhmhrgpasar    lnhmhrgpasar    REPLACE_IF cdjoinnhmpik
+chrg80persen	lnhmhrgpasar	DO_CALC
+cestcair	lestcair	DO_CALC
+csislns		lsislns		DO_CALC
+lpsmstsbill     lpsmstsbill     REPLACE_IF cdjoinpsmro
+lpekerjaanpm    lpekerjaanpm    REPLACE_IF cdjoinsvipemohon
+
+MAP(minforo)
+tblkode		lpekerjaanpm	REPLACE
+tblket          lpekerjaan1a    REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cfuro
+SFL_TARGET	spkdatbuktyp   lSPKLCK tkmnobuk lHASILSPK
+
+PERMIT(tmptrans)
+	PMT_ADD_COND    c0
+	PMT_UPDALL_COND c0
+	PMT_DEL_COND    c0

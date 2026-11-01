@@ -1,0 +1,426 @@
+LOCAL 
+PGM_FIELDS
+lBPK			STRING		21
+lJETKAL			STRING		21
+lJARAK			STRING		21
+lmerkmobil		STRING		21
+lgabsvi			STRING		61
+ljenismbl		STRING		21
+lkatmbl			STRING		21
+lmerkmbl		STRING		21
+ltypembl		STRING		21
+ltahunmbl		DFLOAT		8
+lltv			DFLOAT		8
+lstatusrumah		STRING		21
+/* lpenghasilan		DFLOAT		8 */
+llamatinggal		DFLOAT		8
+lbm			STRING		11
+ltmpcaa			STRING		21
+lIIR			DFLOAT		8
+lno1			INT2		2
+lkodejarak		DFLOAT		8
+
+DBCALCS(djoinsviceklist)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   lHASILSCOR btmnobuk lbm    
+
+CALCS()
+cjikaIIR 		sviket == "IIR"
+
+MAP(mjoinsvihasil)
+svidf1                  lIIR                    REPLACE
+
+DBCALCS(djoinsvihasil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lDT704 btmnobuk lHASILBM              
+        DBC_SELECT	cjikaIIR
+	DBC_MAP         mjoinsvihasil
+
+
+MAP(msvirumah)
+svidf5                  lkodejarak              REPLACE
+
+DBCALCS(djoinsvirumah)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   lFOTOSVY btmnobuk lFOTORUMAH lno1
+        DBC_MAP         msvirumah
+
+
+
+
+IMAGE(tmptranst) 
+/---------------------------------------------------------------------------------------------------\
+ /------------------------------------------------------------------------------------------------\
+ |i.Tanggal     : ________                         i.NoBuk       : _____________________________  |
+ \------------------------------------------------------------------------------------------------/
+|------------------------------------------t----------------t----------------t----------------------| 
+|i.Ket                                     |  t.Isian1      |  t.t           | t.t                  |
+\------------------------------------------.----------------.----------------.----------------------/
+
+FIELD(tmptranst)
+btmtgl			PROTECT {DD-MM-YYYY}		INPUTRI 3
+btmnobuk		PROTECT SCROLL			INPUTRI 5	/* no buk	*/
+
+IMAGE(tmptrans)
+|__________________________________________|_________________|__             |                  |
+
+FIELD(tmptrans)
+tbtket			PROTECT SCROLL		INPUTRI 3
+tbtcab			ALLCAPS SCROLL		INPUTRI 4
+tbttot			UNSEEN PROTECT			INPUTRI 5
+
+CALCS()
+ckodebpkb		tbtkode == "BPKB"
+cjaraksurvey		tbtkode == "JARAK"
+cjenismbl		tbtkode == "JENISMBL"
+ckategorimbl		tbtkode == "KATMBL"
+ctahunmbl		tbtkode == "THMBL"
+cltv			tbtkode == "LTV"
+clamakerja		tbtkode == "LAMAKERJA"
+cmerkmbl		tbtkode == "MERKMBL"
+ctypemobil		tbtkode == "TYPEMBL"
+cpenjamin		tbtkode == "PENJAMIN"
+cpemilikrumah		tbtkode == "RUMAH"
+cpenghasilan            tbtkode == "IIR" && djoinsvihasil == 1
+cIIR                    tbtkode == "IIR"                         
+clamatinggal		tbtkode == "LMTINGGAL"
+csoa			tbtkode == "SOA"
+ctenor			tbtkode == "TENOR"
+cusiadebitur		tbtkode == "USIADEB"
+ctypedebitur		tbtkode == "TYPE "
+cjoinsvirmh             tbtkode == "JARAK" && djoinsvirumah == 1
+
+
+
+DEFAULTS(tmptrans)
+lJETKAL		INIT		JETKAL
+lJARAK		INIT		JARAK
+lbm		INIT		BM
+lBPK		INIT		BPKB
+ltmpcaa		INIT		TMPCAA
+lHASILSCOR	INIT		HASILSCOR
+lHASILBM	INIT		HASILBM
+lDT702          INIT            DT702
+lFOTOSVY	INIT		FOTOSVY
+lFOTORUMAH	INIT		FOTORUMAH
+lLAMAKERJA	INIT		LAMAKERJA
+lno1		INIT		1
+
+
+EDITS(tmptrans)
+e.Mandatoryisi		tbtcab		MANDATORY
+e.Validatebpkb		tbtcab		VALIDATE_IF ckodebpkb tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validateth		tbtcab		VALIDATE_IF ctahunmbl tbddatkodidx 	mtbdth stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_tahun}
+e.Validatejenis		tbtcab		VALIDATE_IF cjenismbl tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validatekategori	tbtcab		VALIDATE_IF ckategorimbl tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validatelamakerja	tbtcab		VALIDATE_IF clamakerja tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validatemerk		tbtcab		VALIDATE_IF cmerkmbl	tbddatkodidx	mtblmerk stbd {Pgv_dttabel} {Pgv_barang} {Pgv_MERK}  
+e.Validatetype		tbtcab		VALIDATE_BUF3_IF ctypemobil	tbtdatkodtyp    mtbttype stbt {Pgv_dttabel} {Pgv_barang} {Pgv_MERK} {Plmerkmobil} {Pgv_m4w21}
+e.Validatepenjamin	tbtcab		VALIDATE_IF cpenjamin tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validaterumah		tbtcab		VALIDATE_IF cpemilikrumah tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validatepenjamin	tbtcab		VALIDATE_IF cpenjamin tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validatesoa		tbtcab		VALIDATE_IF csoa  tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {Ptbtkode}
+e.Validatelamatinggal	tbtcab		VALIDATE_IF clamatinggal tbddatkodidx	mtbdcek stbd {Pgv_dttabel} {Pgv_ceklistdebitur21} {PlLAMAKERJA}
+
+MAP(mtbttype)
+#tbtkode			tbtcab		REPLACE
+
+MAP(mtblmerk)
+tbdkode			tbtcab		REPLACE
+
+MAP(mtbdcek)
+tbdkode			tbtcab		REPLACE
+tbdkode			tbttot		REPLACE_IF clamakerja
+tbdkode			tbttot		REPLACE_IF clamatinggal
+
+MAP(mtbdth)
+tbdkode			tbtcab		REPLACE
+
+MAP(mnilaicmo)
+lkodejarak              tbtcab          REPLACE_IF cjaraksurvey
+lkodejarak              tbttot          REPLACE_IF cjaraksurvey
+
+nhmperpok_3		tbtcab		REPLACE_IF cltv
+nhmperpok_3		tbttot		REPLACE_IF cltv
+nhmperpok_3		lltv		REPLACE_IF cltv
+
+lIIR                    tbtcab          REPLACE_IF cpenghasilan
+lIIR                    tbttot          REPLACE_IF cpenghasilan
+
+
+nhmtenor_3		tbtcab		REPLACE_IF ctenor
+nhmtenor_3		tbttot		REPLACE_IF ctenor
+
+tbtcab			tbttot		REPLACE_IF cusiadebitur
+
+btmtypdeb		tbtcab		REPLACE_IF ctypedebitur
+tbtcab			tbttot		REPLACE_IF ctahunmbl
+tbtcab			lmerkmobil	REPLACE_IF cmerkmbl
+
+HOOKS(tmptrans)
+BEFORE_INPUT		cur_field=tbtcab		DO_MAP SHOW mnilaicmo
+AFTER_INPUT		cur_field=tbtcab		DO_MAP SHOW mnilaicmo
+
+CALCS()
+cbelumceklist		djoinsviceklist == 0
+
+SUBFILE(tmptrans)
+SFL_LINES(17)       
+SFL_COND cbelumceklist
+SFL_APP_TYPE
+SFL_TITLE(tmptranst)
+
+SFL_TARGET
+	tbtdaturtidx   gv_dttemplate ltmpcaa gv_ceklistdeb21 gv_ceklistdeb21 btmdvs 
+
+
+CALCS()
+cgab001			STRIP(btmcab) + "BPKB" + STRIP(tbtcab)
+cgab002			STRIP(btmcab) + "JARAK"
+cgab003			STRIP(btmcab) + "JETKAL" + STRIP(ljenismbl) /* + STRIP(lkatmbl) */
+cgab004			STRIP(btmcab) + "LAMAKERJA"
+cgab005			STRIP(btmcab) + "MERKTYPE" + STRIP(lmerkmbl) /*  + STRIP(ltypembl) */
+cgab006			STRIP(btmcab) + "RPL" + STRIP(lstatusrumah)
+cgab007			STRIP(btmcab) + "SOA" + STRIP(tbtcab)
+cgab008			STRIP(btmcab) + "TENOR"
+cgab009			STRIP(btmcab) + "PENJAMIN" + STRIP(tbtcab)
+cgab010			STRIP(btmcab) + "TYPE" + STRIP(tbtcab)
+cgab011			STRIP(btmcab) + "USIADEB"
+cgab012                 STRIP(btmcab) + "LAMA" /* + STRIP(llamatinggal) */                      /*done*/
+cgab013                 STRIP(btmcab) + "IIR" /* IIR */                                         /*done*/
+cgab014                 STRIP(btmcab) + "KAT" + STRIP(lkatmbl)                               /*done*/
+cgab015                 STRIP(btmcab) + "THN"                                                /*done*/
+cgab016                 STRIP(btmcab) + "LTV"                                                /*done*/
+
+
+
+MAP(mmapmaptranscd)
+ldum			ldum		REPLACE
+tbtcab			lmerkmobil	REPLACE_IF cmerkmbl
+
+tbttot			ltahunmbl	REPLACE_IF ctahunmbl
+
+tbtcab			lstatusrumah	REPLACE_IF cpemilikrumah
+/* tbtcab			lpenghasilan	REPLACE_IF cpenghasilan */
+tbtcab			llamatinggal	REPLACE_IF clamatinggal
+
+tbtcab			ljenismbl	REPLACE_IF cjenismbl
+tbtcab			lkatmbl		REPLACE_IF ckategorimbl
+
+tbtcab			lmerkmbl	REPLACE_IF cmerkmbl
+tbtcab			ltypembl	REPLACE_IF ctypemobil
+
+cgab001			lgabsvi		DO_CALC_IF ckodebpkb
+cgab002			lgabsvi		DO_CALC_IF cjaraksurvey
+cgab003			lgabsvi		DO_CALC_IF cjenismbl
+cgab004			lgabsvi		DO_CALC_IF clamakerja
+cgab005			lgabsvi		DO_CALC_IF ctypemobil
+cgab006			lgabsvi		DO_CALC_IF cpemilikrumah
+cgab007			lgabsvi		DO_CALC_IF csoa
+cgab008			lgabsvi		DO_CALC_IF ctenor
+cgab009			lgabsvi		DO_CALC_IF cpenjamin
+cgab010			lgabsvi		DO_CALC_IF ctypedebitur
+cgab011			lgabsvi		DO_CALC_IF cusiadebitur
+cgab012                 lgabsvi         DO_CALC_IF clamatinggal
+cgab013                 lgabsvi         DO_CALC_IF cIIR        
+cgab014                 lgabsvi         DO_CALC_IF ckategorimbl
+cgab015                 lgabsvi         DO_CALC_IF ctahunmbl   
+cgab016                 lgabsvi         DO_CALC_IF cltv        
+
+
+
+
+CALCS()
+cdari706		g_scrnumstr == "701" 
+c2			2
+c3			3
+cMERKTYPE		"MERKTYPE"
+cSOA			"SOA"
+cTENOR			"TENOR"
+cPENJAMIN		"PENJAMIN"
+cTYPE			"TYPE"
+cUSIADEB		"USIADEB"
+
+MAP(maddsvibm001)
+lHASILSCOR       	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+l1	          	svinourt		REPLACE
+tbtcab            	svistr1			REPLACE
+lgabsvi           	svinama			REPLACE
+lBPK			svistr6			REPLACE
+
+MAP(maddsvibm002)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c2	          	svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+lkodejarak              svidf1                  REPLACE_IF cjoinsvirmh
+lgabsvi                 svinama                 REPLACE
+lJARAK                  svistr6                 REPLACE
+
+
+
+MAP(maddsvibm003)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c3			svinourt		DO_CALC
+ljenismbl            	svistr1			REPLACE
+/* lkategoris		svistr2			REPLACE */
+lgabsvi           	svinama			REPLACE
+lJETKAL			svistr6			REPLACE
+/*
+ltahunmbl		svidf1			REPLACE
+nhmperpok		svidf2			REPLACE
+*/
+
+MAP(maddsvibm004)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c4			svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+lLAMAKERJA		svistr6			REPLACE
+tbttot    		svidf1			REPLACE
+
+
+MAP(maddsvibm005)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c5			svinourt		DO_CALC
+lmerkmobil          	svistr1			REPLACE
+/* ltypemobil		svistr2			REPLACE */
+lgabsvi           	svinama			REPLACE
+cMERKTYPE		svistr6			DO_CALC
+
+MAP(maddsvibm006)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c6			svinourt		DO_CALC
+lstatusrumah          	svistr1			REPLACE
+lgabsvi           	svinama			REPLACE
+cpemilikrumah		svistr6			DO_CALC
+
+MAP(maddsvibm007)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c7			svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+cSOA			svistr6			DO_CALC
+tbtcab     		svistr1			REPLACE
+
+MAP(maddsvibm008)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c8			svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+cTENOR			svistr6			DO_CALC
+tbttot  		svidf1			REPLACE
+
+
+MAP(maddsvibm009)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c9			svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+cPENJAMIN		svistr6			DO_CALC
+tbtcab   	 	svistr1			REPLACE
+
+
+MAP(maddsvibm010)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c10			svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+cTYPE    		svistr6			DO_CALC
+tbtcab   	 	svistr1			REPLACE
+
+
+MAP(maddsvibm011)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c11			svinourt		DO_CALC
+lgabsvi           	svinama			REPLACE
+cUSIADEB    		svistr6			DO_CALC
+tbttot      		svidf1			REPLACE
+
+MAP(maddsvibm012)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c12			svinourt		DO_CALC
+lstatusrumah          	svistr1			REPLACE
+lgabsvi           	svinama			REPLACE
+clamatinggal		svistr6			DO_CALC
+llamatinggal		svidf1			REPLACE
+
+MAP(maddsvibm013)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c13			svinourt		DO_CALC
+/* lstatusrumah          	svistr1			REPLACE */
+lgabsvi           	svinama			REPLACE
+cIIR                    svistr6                 DO_CALC
+lIIR                    svidf1                  REPLACE                 
+
+MAP(maddsvibm014)
+lHASILSCOR           	svidata			REPLACE
+lbm 	           	svitype			REPLACE_IF cdari706
+btmnobuk           	svinobuk		REPLACE
+c14			svinourt		DO_CALC
+lkatmbl	        	svistr1			REPLACE
+lgabsvi           	svinama			REPLACE
+tbtcab 			svistr6			REPLACE
+c0          		svidf1 			DO_CALC 
+
+MAP(maddsvibm015)
+lHASILSCOR                  svidata             REPLACE
+lbm                     svitype                 REPLACE_IF cdari706
+btmnobuk                svinobuk                REPLACE
+c15                     svinourt                DO_CALC
+ltahunmbl               svistr1                 REPLACE
+lgabsvi                 svinama                 REPLACE
+ltahunmbl               svidf1                  REPLACE
+
+MAP(maddsvibm016)
+lHASILSCOR                  svidata             REPLACE
+lbm                     svitype                 REPLACE_IF cdari706
+btmnobuk                svinobuk                REPLACE
+c16                     svinourt                DO_CALC
+cltv                    svistr1                 DO_CALC
+lgabsvi                 svinama                 REPLACE
+lltv	                svidf1                  REPLACE
+
+SPCALCS(sptranscd)
+	DO_LIB	ap_dbclc(DNAME dmapmaptranscd,DCOMMAND MAPMAP,DMAP mmapmaptranscd);
+	DO_LIB_IF ckodebpkb ap_dbclc(DNAME ddelsviscrca,DCOMMAND DELETE_RANGE,DTARGET svidatbuktyp   lHASILSCOR btmnobuk lbm);
+	DO_LIB_IF ckodebpkb ap_dbclc(DNAME daddsvibm001,DCOMMAND ADD,DFILE svi,DMAP maddsvibm001);
+	DO_LIB_IF cjaraksurvey ap_dbclc(DNAME daddsvibm002,DCOMMAND ADD,DFILE svi,DMAP maddsvibm002);
+	DO_LIB_IF cjenismbl ap_dbclc(DNAME daddsvibm003,DCOMMAND ADD,DFILE svi,DMAP maddsvibm003);
+	DO_LIB_IF clamakerja ap_dbclc(DNAME daddsvibm004,DCOMMAND ADD,DFILE svi,DMAP maddsvibm004);
+	DO_LIB_IF ctypemobil ap_dbclc(DNAME daddsvibm005,DCOMMAND ADD,DFILE svi,DMAP maddsvibm005);
+	DO_LIB_IF cpemilikrumah ap_dbclc(DNAME daddsvibm006,DCOMMAND ADD,DFILE svi,DMAP maddsvibm006);
+	DO_LIB_IF csoa ap_dbclc(DNAME daddsvibm007,DCOMMAND ADD,DFILE svi,DMAP maddsvibm007);
+	DO_LIB_IF ctenor ap_dbclc(DNAME daddsvibm008,DCOMMAND ADD,DFILE svi,DMAP maddsvibm008);
+	DO_LIB_IF cpenjamin ap_dbclc(DNAME daddsvibm009,DCOMMAND ADD,DFILE svi,DMAP maddsvibm009);
+	DO_LIB_IF ctypedebitur ap_dbclc(DNAME daddsvibm010,DCOMMAND ADD,DFILE svi,DMAP maddsvibm010);
+	DO_LIB_IF cusiadebitur ap_dbclc(DNAME daddsvibm011,DCOMMAND ADD,DFILE svi,DMAP maddsvibm011);
+	DO_LIB_IF clamatinggal ap_dbclc(DNAME daddsvi012,DCOMMAND ADD,DFILE svi,DMAP maddsvibm012);
+        DO_LIB_IF cIIR         ap_dbclc(DNAME daddsvi013,DCOMMAND ADD,DFILE svi,DMAP maddsvibm013);
+        DO_LIB_IF ckategorimbl ap_dbclc(DNAME daddsvi014,DCOMMAND ADD,DFILE svi,DMAP maddsvibm014);
+        DO_LIB_IF ctahunmbl    ap_dbclc(DNAME daddsvi015,DCOMMAND ADD,DFILE svi,DMAP maddsvibm015);
+        DO_LIB_IF cltv         ap_dbclc(DNAME daddsvi016,DCOMMAND ADD,DFILE svi,DMAP maddsvibm016);
+	
+	
+POSTING(tmptrans)
+	PST_COMMAND	sptranscd

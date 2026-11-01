@@ -1,0 +1,164 @@
+IMAGE(tmptranst)
+/----------------------------------------------------------\
+|/--------------------------------------------------------\|
+||t.ApakahMotorSdhDiterima        _____________________   ||__
+||t.SiapaTerimaMotor              ______________________  ||  
+||t.ApaBonusLengkap               _____________________   ||  
+||t.ApaDriver/AklMintaTip         _____________________   ||  
+||t.SiapaNmKryMntImbln            ______________________  ||
+||t.Tipe                          ______________________  ||
+||t.NoGsm                         ______________________  ||
+||t.NoWa                          ______________________  || 
+||t.BerapaDpYgDibayar             ______________________  ||  
+|\--------------------------------------------------------/|
+|/--------S.UPLOAD----------------------------------------\|
+||                                                        ||
+||                                                        ||
+||                                                        ||
+||                                                        ||
+||                                                        ||
+||                                                        ||
+||                                                        ||
+||                                                        ||
+||                                                        ||
+|\--------------------------------------------------------/|
+\----------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr1		NOCHANGE      			INPUTRI		1
+svinobuk	PROTECT				INPUTRI		2
+svinama		ALLCAPS SCROLL			INPUTRI		3
+svistr2		NOCHANGE      			INPUTRI		4
+svistr3		NOCHANGE      			INPUTRI		5
+svistr5         ALLCAPS                         INPUTRI         6
+svistr6         NOCHANGE                        INPUTRI         7
+svistr7         DIGITS                          INPUTRI         8
+svistr8         DIGITS                          INPUTRI         9 
+svidf1 		NUMERIC       			INPUTRI		10 
+
+
+DEFAULTS(tmptranst)
+svitgl1         INIT_ADD                {g_tgltrn}
+svitgl1         INIT_UPDATE             {g_tgltrn}
+svistr1		DFALT_SCAN_BLANKS	Y ""
+					T ""
+svistr2		DFALT_SCAN_BLANKS	Y ""
+					T ""
+svistr3		DFALT_SCAN_BLANKS	Y ""
+					T ""
+svistr6         DFALT_SCAN              BLANKS
+                                        NO_GSM
+                                        NO_WA
+                                        ALL
+
+CALCS()
+ctipYb          svistr3 == "Y"
+ctipTb          svistr3 == "T"
+cplhgsm_2         svistr6 == "NO_GSM" || svistr6 == "ALL"
+cplhgsm2_2        svistr6 == "NO_GSM"
+cplhwa_2          svistr6 == "NO_WA" || svistr6 == "ALL"
+cplhwa2_2         svistr6 == "NO_WA"
+csamanomor_2	svistr6 == "ALL" && svistr7 != BLANKS
+
+cpanjangnom_2     DO_LIB ap_strln(svistr7,&ljumlahnomor_2);
+
+cpanjangnomwa_2     DO_LIB ap_strln(svistr8,&ljumlahnomorwa_2);
+
+EDITS(tmptranst)
+e.Mandatory		svistr1		MANDATORY
+e.Mandatory		svinama		MANDATORY
+e.Mandatory		svistr2		MANDATORY
+e.Mandatory		svistr3		MANDATORY
+e.Mandatory             svistr5         MANDATORY_IF ctipYb
+e.Mandatory		svidf1 		MANDATORY
+e.Mandatory             svistr6         MANDATORY
+e.Mandatory             svistr7         MANDATORY_IF cplhgsm_2
+e.Mandatory             svistr8         MANDATORY_IF cplhwa_2
+
+CALCS()
+cblmkrm         lstskrm == "KR"
+csdhY2          sviyt1 == "Y"
+
+cbukan08_2        (ldigit1_2=="0" && ldigit2_2=="8" && ljumlahnomor_2>=11 && ljumlahnomor_2<=13 && (svistr6 == "NO_GSM" || svistr6 == "ALL")) || svistr6 == "NO_WA"
+cbukan08wa_2	(ldigit1wa_2=="0" && ldigit2wa_2=="8" && ljumlahnomorwa_2>=11 && ljumlahnomorwa_2<=13 && (svistr6=="NO_WA" || svistr6 == "ALL")) || svistr6 == "NO_GSM"
+
+MAP(mpanjangnom_ubah_2)
+cpanjangnom_2     ljumlahnomor_2            DO_CALC
+
+MAP(mpanjangnom_ubah2_2)
+cpanjangnomwa_2     ljumlahnomorwa_2            DO_CALC
+
+MAP(msananomor2)
+svistr7		svistr8		REPLACE_IF csamanomor_2
+
+MAP(mblank)
+cBLANKS		svistr7		DO_CALC_IF cplhwa2_2
+cBLANKS		svistr8		DO_CALC_IF cplhgsm2_2
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=svistr7       DO_SKIP_IF cplhwa2_2
+BEFORE_INPUT            cur_field=svistr8       DO_SKIP_IF cplhgsm2_2
+
+AFTER_INPUT		cur_field=svistr6	DO_MAP SHOW mblank
+
+AFTER_INPUT cur_field=svistr7       DO_LIB ap_amstr(svistr7,ln1i,ln1,&ldigit1_2);
+AFTER_INPUT cur_field=svistr7       DO_LIB ap_amstr(svistr7,ln2i,ln1,&ldigit2_2);
+
+AFTER_INPUT cur_field=svistr8       DO_LIB ap_amstr(svistr8,ln1i,ln1,&ldigit1wa_2);
+AFTER_INPUT cur_field=svistr8       DO_LIB ap_amstr(svistr8,ln2i,ln1,&ldigit2wa_2);
+
+AFTER_INPUT             cur_field=svistr7       DO_MAP SHOW mpanjangnom_ubah_2
+AFTER_INPUT             cur_field=svistr8       DO_MAP SHOW mpanjangnom_ubah2_2
+
+AFTER_INPUT cur_field=svistr7		DO_MAP SHOW msananomor2
+
+AFTER_INPUT             cur_field=svistr7 DO_MAP SHOW
+                        IF cbukan08_2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor Telepon 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+AFTER_INPUT             cur_field=svistr8 DO_MAP SHOW
+                        IF cbukan08wa_2 mdum
+                        ELSE HKCURSOR STAY
+                        HKMSG Nomor WA 2 Digit Didepan Harus 08 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+BEFORE_INPUT    cur_field=svistr5       DO_SKIP_IF ctipTb
+BEFORE_INPUT	cur_field=svistr1	DO_MAP SHOW
+                IF cblmkrm  mdum    
+                ELSE HKCURSOR STAY
+                HKMSG i.MtrBlmKirimKirimDahulu
+BEFORE_INPUT	cur_keybd=EN     	DO_MAP SHOW
+                IF cblmkrm  mdum    
+                ELSE HKCURSOR STAY
+                HKMSG i.MtrBlmKirimKirimDahulu
+
+MAP(mupdsviupl2)
+gv_Y            sviyt1          REPLACE
+g_tgltrn        svitgl2         REPLACE
+DBCALCS(dupdsviupl2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      sviprmidx       sviprm
+        DBC_MAP         mupdsviupl2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND csdhY2
+SFL_UPLFLD_DBCALCS dupdsviupl2
+SFL_UPL_DIRFLD btmtgl  
+SFL_UPLFLD      svinobuk
+/*SFL_UPL_DIRFLD  g_tgltrn*/
+SFL_TARGET
+svidatbuktyp   	gv_veradh11 lnofak   
+
+SFL_MAP
+lnofak          svinobuk        REPLACE
+gv_veradh11     svidata         REPLACE
+lVERKIRIMCAIR   svikode         REPLACE
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cadd  
+PMT_UPDALL_COND cboleh
+PMT_DEL_COND    c0    
+

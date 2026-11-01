@@ -1,0 +1,35 @@
+IMAGE(tmptranst)
+/------------------------------------\
+|t.HpsApr                            |
+|____________________________________|
+\------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lenter          NOCHANGE        INPUTRI         1
+
+DEFAULTS(tmptranst)
+lenter          INIT            "Tekan ENTER untuk mulai menghapus approval"
+
+CALCS()
+chapusapr       (tlmtype1 == "BPKB_SLSH" || tlmtype1 == "BPKB_MD" || tlmtype1 == "SLSH_CAB" || tlmtype1 == "POL_JAKSA" || tlmtype1 == "POLDA_CAB" || tlmtype1 == "STNK_SLSH" || tlmtype1 == "SLSH_CSTNK" || tlmtype1 == "NOTI_SLSH" || tlmtype1 == "STNOTI_SLS")  && tlmstsapr == "TL"
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_APP_TYPE
+SFL_COND chapusapr
+SFL_SHOW_NEXT
+SFL_TARGET tlmbukidx       tlmnobuk
+
+MAP(mupdtlmc)
+lblanks         tlmstsapr       REPLACE
+lblanks         tlmusrapr       REPLACE
+
+SPCALCS(sphapusapr)
+DO_LIB          ap_dbclc(DNAME dupdtlmc, DCOMMAND UPDATE, DTARGET tlmbukidx tlmnobuk, DMAP mupdtlmc);
+DO_LIB          ap_dbclc(DNAME ddelapr, DCOMMAND DELETE_RANGE, DTARGET aprbukkeurt tlmnobuk);
+
+POSTING(tmptrans)
+PST_COMMAND sphapusapr

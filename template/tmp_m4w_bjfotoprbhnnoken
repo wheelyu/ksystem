@@ -1,0 +1,117 @@
+LOCAL
+PGM_FIELDS
+lUBAH		STRING		11
+ldtbirojasa	STRING		11
+
+MAP(mnhdub)
+nhdkode         lnhdkode        REPLACE
+nhdkode2        lnhdkode2       REPLACE
+
+
+DBCALCS(djoinnhdub)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      nhdbukidx  tlmnobbm ldtbirojasa
+        DBC_MAP         mnhdub
+  
+DBCALCS(djoinsviprb0)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      svidatbuktyp   tlmdata tlmnobuk lUBAH  
+
+DBCALCS(djoinast4)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      astdatkodidx   gv_dtassets svistr8  gv_bpkb svikode
+  
+
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------\
+|/-----------------------------------------------------------------------\ |
+||t.t                                                                    | |
+||t.Nobuk        : _____________________                                 | |
+||t.kdasset      : ___________                                           | |
+||t.NoPolLama    : ______________________   t.NoPolBaru    : ___________ | |
+|\-----------------------------------------------------------------------/ |
+|/----------s.UPLOAD-----------------------------------------------------\ |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+||                                                                       | |
+|\-----------------------------------------------------------------------/ |
+\--------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svidtmkode              NOCHANGE SCROLL                  INPUTRI         1
+svikode                 ALLCAPS SCROLL                  INPUTRI         2
+svistr1                 PROTECT                         INPUTRI         7 /*nopollama*/
+svistr3                 ALLCAPS SCROLL                  INPUTRI         8 /*nopolbaru*/
+
+DEFAULT(tmptranst)
+svitype                 INIT                    UBAH
+lUBAH                   INIT                    UBAH
+ldtbirojasa		INIT			DTBIROJASA
+
+EDITS(tmptranst)
+e.Mandatory		svidtmkode		MANDATORY
+e.Mandatory		svikode   		MANDATORY
+e.Mandatory		svistr3   		MANDATORY
+
+e.Validate              svidtmkode              VALIDATE btmbukidx mbtmubah 0
+e.Validate              svikode                 VALIDATE astdatkodidx  mastubah  sast {Pgv_dtassets} {Ptlmplg} {Pgv_bpkb} 
+
+MAP(mastubah)
+astkode			svikode			REPLACE
+astnopol		svistr1			REPLACE
+
+MAP(mbtmubah)
+btmnobuk                svidtmkode              REPLACE
+
+CALCS()
+cubah   		djoinsviprb0 == 1 || ( djoinnhdub == 1 && lnhdkode == "BJ007" )
+cdjoinast4              djoinast4  == 1 && tlmsts == "CLS3"
+
+MAP(misitmptrans)
+tlmnobbm		svidtmkode		REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT		cur_field=svidtmkode	DO_MAP SHOW misitmptrans
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tlmnobuk svitype
+SFL_SELECT cubah    
+SFL_TARGET
+        svidatbuktyp ldtbiro tlmnobuk lUBAH  
+
+SFL_MAP
+tlmnobbm                svidtmkode      REPLACE
+tlmnobuk                svinobuk        REPLACE
+tlmnobuk                svitblkode      REPLACE
+tlmdata                 svidata         REPLACE
+nhdkode                 svistr2         REPLACE
+tlmplg			svistr8		REPLACE
+
+MAP(mupdastdeb4)
+svistr3         astnopol        REPLACE
+
+SPCALCS(spupdsvi5)
+        DO_LIB_IF cdjoinast4 ap_dbclc(DNAME dupdastde4,DCOMMAND UPDATE,DTARGET astprmidx astprm,DMAP mupdastdeb4);
+
+POSTING(tmptrans)
+        PST_ADDCMD spupdsvi5
+        PST_UPDCMD spupdsvi5
+
+PERMIT(tmptrans)
+  PMT_UPDALL_COND c0
+  PMT_DEL_COND  c0
+
+

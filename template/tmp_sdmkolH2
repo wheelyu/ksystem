@@ -1,0 +1,54 @@
+DBCALCS(djointld2)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tldplgbrgidx tlmdata gv_OPEN psikode lREMHARIAN tlmnobuk lREMHARIAN
+
+IMAGE(tmptranst)
+/------------t------------------------------\
+|t.NipKol    |t.Nama                        |
+\------------.------------------------------/
+
+IMAGE(tmptrans)
+|____________|______________________________|
+
+FIELDS(tmptrans)
+psikode         NOCHANGE        INPUTRI 1
+psinama         PROTECT         INPUTRI 2
+
+CALCS()
+cStsOpen3       tlmgrup2==BLANKS
+
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cStsOpen3
+SFL_SELECT cjabatankolrem
+SFL_APP_TYPE
+SFL_TARGET
+	psicbskrsts   tlmcab gv_INPG       
+
+CALCS()
+cjointld2_0	djointld2==0
+cREMHR		"REMHARIAN"
+
+MAP(maddtld2)
+tlmdata		tlddata		REPLACE
+gv_OPEN		tldsts		REPLACE
+tlmnobuk	tldnobuk	REPLACE
+tlmnobuk	tldukrwrn	REPLACE
+cREMHR		tldsat		DO_CALC
+cREMHR		tldbrg		DO_CALC
+tlmtgl		tldtglfak	REPLACE
+psikode		tldplg		REPLACE
+psinama		tldket		REPLACE
+
+MAP(mupdtlmtrans2)
+cREMHR		tlmtype2	DO_CALC
+
+SPCALCS(sptmptrans)
+DO_LIB_IF cjointld2_0 ap_dbclc(DNAME daddtld2,DCOMMAND ADD,DFILE tld,DMAP maddtld2);
+DO_LIB               ap_dbclc(DNAME dupdtlmy2,DCOMMAND UPDATE,DTARGET tlmotoidx tlmoto, DMAP mupdtlmtrans2);
+
+POSTING(tmptrans)
+PST_COMMAND     sptmptrans
+

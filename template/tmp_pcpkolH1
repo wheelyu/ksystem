@@ -1,0 +1,93 @@
+IMAGE(tmptranst)
+/--------t--------------------t--------t------------t--------t------------t--------t------------t--------t------------\
+|t.NipKol|t.Nama              |t.UnitZ1|t.SipokZ1   |t.UnitZ2|t.SipokZ2   |t.UnitZ4|t.SipokZ4   |t.UnitZ6|t.SipokZ6   |
+\--------.--------------------.--------.------------.--------.------------.--------.------------.--------.------------/
+
+IMAGE(tmptrans)
+|________|____________________|________|____________|________|____________|________|____________|________|____________|
+
+FIELDS(tmptrans)
+        tldplg          PROTECT                         INPUTRI         1
+	tldket 		PROTECT				INPUTRI		2
+	tldperdis 	PROTECT				INPUTRI		3
+	tldperdis1      PROTECT				INPUTRI 	4
+	tldperdis2      PROTECT                         INPUTRI         5
+        tldperdis3      PROTECT                         INPUTRI         6
+	tldperdis4      PROTECT                         INPUTRI         7
+        tldperdis5      PROTECT                         INPUTRI         8
+	tldperdis6      PROTECT                         INPUTRI         9
+        tldperdis7      NOCHANGE                        INPUTRI         10
+
+
+EDITS(tmptrans)
+t.ValidatePsm tldplg  VALIDATE psmkodidx    mpsm 0
+
+MAP(mpsm)
+psmnama                 psmnama                 REPLACE
+
+CALCS()
+cStsOpen2		tlmgrup=="KOLHARIAN"
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cStsOpen2
+SFL_APP_TYPE
+SFL_TARGET
+        tldbukbrgoto   tlmnobuk gv_OPEN lKOLHARIAN
+
+MAP(mscanpikpcpc)
+c1                      lactunitz1              DO_CALC_IF cactz1
+piksispokabl            lactsipokz1             REPLACE_IF cactz1
+
+c1                      lactunitz2              DO_CALC_IF cactz2
+piksispokabl            lactsipokz2             REPLACE_IF cactz2
+
+c1                      lactunitz4              DO_CALC_IF cactz4
+piksispokabl            lactsipokz4             REPLACE_IF cactz4
+
+c1                      lactunitz6              DO_CALC_IF cactz6
+piksispokabl            lactsipokz6             REPLACE_IF cactz6
+
+DEBUG		ldum		ldum		REPLACE
+
+MAP(mhitungpcpkol)
+lactunitz1              lactunitz1              REPLACE
+lactsipokz1             lactsipokz1             REPLACE
+
+lactunitz2              lactunitz2              REPLACE
+lactsipokz2             lactsipokz2             REPLACE
+
+lactunitz4              lactunitz4              REPLACE
+lactsipokz4             lactsipokz4             REPLACE
+
+lactunitz6              lactunitz6              REPLACE
+lactsipokz6             lactsipokz6             REPLACE
+
+DEBUG		ldum		ldum		REPLACE
+
+MAP(mupdtldkol)
+lactunitz1              tldperdis               REPLACE
+lactsipokz1             tldperdis1              REPLACE
+
+lactunitz2              tldperdis2              REPLACE
+lactsipokz2             tldperdis3              REPLACE
+
+lactunitz4              tldperdis4              REPLACE
+lactsipokz4             tldperdis5              REPLACE
+ 
+lactunitz6              tldperdis6              REPLACE
+lactsipokz6             tldperdis7              REPLACE
+
+CALCS()
+cjointld_1		djointld==1
+
+SPCALCS(sptmptrans)
+DO_LIB ap_dbclc(DNAME dbscanpikpcp,DCOMMAND SCANSCAN,DBC_TARGET pikkolstsidx tldplg,DBC_SUM_MAP mscanpikpcpc);
+DO_LIB ap_dbclc(DNAME dmaphitungpcpkol,DCOMMAND MAPMAP,DMAP mhitungpcpkol);
+DO_LIB_IF cjointld_1 ap_dbclc(DNAME dupdtldkol,DCOMMAND UPDATE,DTARGET tldotoidx   tldoto
+/*tldplgbrgidx tlmdata gv_OPEN tldplg lKOLHARIAN tlmnobuk lKOLHARIAN*/,DMAP mupdtldkol);
+
+
+POSTING(tmptrans)
+PST_COMMAND     sptmptrans
+

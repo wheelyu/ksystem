@@ -1,0 +1,88 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       t.UbhNipHrdTgg                                                           |
+|       /----------------------------------------------------\                   |
+|       !_____________________                               !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.User       : _________ _________________          !                   |
+|       !t.Pil        : ________________                     !                   |
+|       !t.NipSblm    : _________ _________________          !                   |
+|       !t.NipSsdh    : _________ _________________          !                   |
+|       !t.Ket        : ____________________________________ !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL          INPUTRI 1
+psdtgl1          PROTECT NOLIMIT {DD-MM-YY}                 INPUTRI 2
+psdstr1         ALLCAPS SCROLL          INPUTRI 3
+luser2           PROTECT SCROLL          INPUTRI 4
+
+psdstr2         NOCHANGE SCROLL         INPUTRI 5
+psdstr3         PROTECT SCROLL          INPUTRI 6
+lsebelum        PROTECT SCROLL          INPUTRI 7
+
+psdstr4         ALLCAPS SCROLL          INPUTRI 8
+lsesudah        PROTECT SCROLL          INPUTRI 9
+
+psdket          TEXTAREA ALLCAPS        INPUTRI 10
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD        {g_tgltrn}
+psdstr1         INIT_ADD        {g_usrkode}
+psdstr2		DFALT_SCAN_BLANKS UBAH_REC_HEAD
+				  UBAH_HRD_REKRUT
+
+EDITS(tmptranst)
+t.Validate psdstr1 VALIDATE psikodidx mpsiy
+t.Validate psdstr3 VALIDATE psikodidx mpsiy1
+t.Validate psdstr4 VALIDATE psikodidx mpsiy2
+t.Mandatory psdstr4 MANDATORY
+t.Mandatory psdstr2 MANDATORY
+t.Mandatory psdket  MANDATORY
+
+MAP(mpsiy)
+psikode         psdstr1 REPLACE
+psinama         luser2  REPLACE
+
+MAP(mpsiy1)
+psikode         psdstr3 REPLACE
+psinama         lsebelum	REPLACE
+
+MAP(mpsiy2)
+psikode         psdstr4 REPLACE
+psinama         lsesudah  REPLACE
+
+CALCS()
+cjoinpsd2_0        djoinpsd2==0 && g_curcmd==1
+cjoinpsd2_1        djoinpsd2==1 && g_curcmd==1
+ctbh12           lurut2+1
+
+MAP(msebelum2)
+c1              psdnourt        DO_CALC_IF cjoinpsd2_0
+ctbh12           psdnourt        DO_CALC_IF cjoinpsd2_1
+
+MAP(mkodeurut2)
+ckode            psdkode         DO_CALC
+
+MAP(mkodeurut2x)
+amtstr8_1	psdstr3		REPLACE_IF cubahhead
+amtstr7_1	psdstr3		REPLACE_IF cubahrekrut
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=psdstr2       DO_MAP SHOW msebelum2
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW mkodeurut2x
+AFTER_INPUT     cur_field=psdket        DO_MAP SHOW mkodeurut2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+psddatpsmkod    lUBAHHRD   hrmnobuk
+
+SFL_MAP
+lUBAHHRD        psddata REPLACE
+hrmnobuk        psdpsmkode      REPLACE
+

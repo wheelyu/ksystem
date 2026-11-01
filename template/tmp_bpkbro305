@@ -1,0 +1,73 @@
+IMAGE(tmptranst)
+/----------------------------------\
+|/--------------------------------\|
+||spasi                           ||
+||i.Kat      : __________________ ||
+||i.NoPol    : __________________ ||
+||i.Rangka   : __________________ ||
+||i.Mesin    : __________________ ||
+||i.Mtr      : __________________ ||
+||i.NoBuk    : __________________ ||
+||i.Tahun    : __________________ ||
+||i.JtpStnk  : __________________ ||
+||t.JtpNotis : __________________ ||
+||t.Atsnm    : __________________ ||
+||i.Alamat   : __________________ ||
+||t.NoBPKB   : __________________ ||
+||t.LoksiBP  : _________________  ||
+||spasi                           ||
+|\--------------------------------/|
+|/---UPLOAD-----------------------\|
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+||                                ||
+|\--------------------------------/|
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+jmnjnsikat  PROTECT           INPUTRI       1
+jmnnopol    NOCHANGE          INPUTRI       2
+jmnspec2    PROTECT           INPUTRI       3
+jmnspec1    PROTECT           INPUTRI       4
+btmtypmtr   PROTECT           INPUTRI       5
+jmnno       NOCHANGE          INPUTRI       5
+jmnth       PROTECT           INPUTRI       7
+jmntgl      PROTECT           INPUTRI       8
+jmntglklr   PROTECT           INPUTRI       9
+jmnnama     PROTECT           INPUTRI       10
+jmnalamat   PROTECT           INPUTRI       11
+jmnkota     ALLCAPS           INPUTRI       12
+jmnlok      ALLCAPS           INPUTRI       13
+
+EDITS(tmptranst)
+e.MandatoryNoBPKB       jmnkota MANDATORY_IF cnotgad
+e.MandatoryLokasiBPKB   jmnlok  MANDATORY_IF cnotgad
+e.ValidateLokasi        jmnlok VALIDATE_IF clokbpkbs tbddtmstidx mtbdlok stbdcab {Pgv_dttabel} {Pgv_barang} {Pgv_lokjmn} {Pljm} {Plgedung}
+e.Validatebukutamu      jmnno VALIDATE btmbukidx mbtm2 0
+
+CALCS()
+cfotobpkbro       tmpkode == "FOTOBPKBRO"
+
+HOOKS(tmptranst)
+BEFORE_INPUT            cur_field=jmnkota     DO_SKIP_IF cloksmg
+BEFORE_INPUT            cur_field=jmnlok      DO_SKIP_IF cloksmg
+
+AFTER_INPUT     cur_keybd=EN          DO_MAP SHOW
+                IF ctransit mdum
+                ELSE HKCURSOR STAY
+                HKMSG Lokasi BPKB Tidak Boleh TRANSIT / DOZ ,Cek 3210
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND cfotobpkbro
+SFL_UPLFLD piknobtm
+SFL_UPL_DIRFLD bkmtgl3
+SFL_UPL_READONLY
+SFL_TARGET jmnnoidx   bkmnobs
+

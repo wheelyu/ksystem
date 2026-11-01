@@ -1,0 +1,175 @@
+LOCAL
+PGM_FIELDS
+ljmlhecair	DFLOAT	8
+lsisahari	DFLOAT	8
+lkunciabsen	STRING	11
+lnipadh		STRING	21
+ladh		STRING	21
+lm4w		STRING	21
+lthbl		STRING	21
+lhitket		INT2	2
+lKETBLMCAIR	STRING	21
+lketcair	STRING	31
+
+DBCALCS(djoinkunci)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abkdatbukidx  lkunciabsen btmnobuk
+
+MAP(mjoinadh)
+sgmstr5         lnipadh         REPLACE
+
+DBCALCS(djoinadh)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstrbrg   gv_dtpiccab lm4w ladh lthbl btmcab btmcab
+        DBC_MAP         mjoinadh
+
+CALCS()
+cjmlhecair	tkdtgl2	- tkdtgl
+csisahari	(ltglawalest - g_tgltrn) + 5
+curut		lurutest + 1
+curut0		djoinest==0 && g_curcmd==1
+curut1		djoinest==1 && g_curcmd==1
+cketkunciest	"ESTIMASI CAIR 705" 
+ctypekunciest   "705EST"
+cjoinkunci0	djoinkunci==0 && djoinadh==1 && lnipadh!=BLANKS
+cjoinkunci	djoinkunci==1
+cbukakunci	tkdtgl2>g_tgltrn && abkkym2=="ESTIMASI CAIR 705" && tkdjwbstr2=="ACC"
+ctaccx		tkdjenis=="TACC" && abkkym2=="ESTIMASI CAIR 705"
+ctacc		tkdjenis=="TACC"
+cbatash7	tkdtgl2>tkdtgl && ((djointkdawal==1 && tkdtgl2<=(ltglawalest+5)) || (djointkdawal==0 && tkdtgl2<=(tkdtgl+5)))
+cbatasket	lhitket>=250
+cthbl		THBLS(g_tgltrn)
+cadatglrev	tkdtgl2!=BLANKS
+cskipho		g_grpnam=="B.M4WADH" || g_grpnam=="B.M4WBM"
+cfaktox1	btmjnsdeb=="TO" || btmjnsdeb=="ROTO"
+cfaktox0	btmjnsdeb!="TO" && btmjnsdeb!="ROTO"
+chitket		 DO_LIB ap_strln(tkdket,&lhitket);
+cskipapr	g_grpnam!="B.M4WRM" && g_grpnam!="B.M4WADHSPV" && g_grpnam!="B.M4WADHHEAD" && g_grpnam!="B.M4WADHDVH" && g_grpnam!="RI" && g_grpnam!="ADHSPV" 
+
+IMAGE(tmptranst)
+/------------------------------------------\
+ /----------------------------------------\
+  i.NoBuk      ___ _______________________
+  i.Jnsdebitur ___________
+  t.TanggalAct ___________
+  t.TanggalRev ___________
+  t.JmlHECair  ___________
+  t.HariSsTACC ___________
+  t.LokBpkb    ___________________________
+  t.KetBlmCair ___ _______________________
+  t.Ket        ___________________________
+  t.Approval   ___________
+ \----------------------------------------/
+ /----------------------------------------\
+  t.TACCHO     ___________
+               ___________
+ \----------------------------------------/
+\------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tkdnourt	NOCHANGE		INPUTRI		1
+tkdnobuk	PROTECT			INPUTRI		2
+btmjnsdeb	PROTECT			INPUTRI		3
+tkdtgl		PROTECT	{DD-MM-YYYY}	INPUTRI		4
+tkdtgl2		NOLIMIT {DD-MM-YYYY}	INPUTRI		5
+ljmlhecair	PROTECT			INPUTRI		6
+lsisahari	PROTECT			INPUTRI		7
+tkdsisstr	ALLCAPS			INPUTRI		8
+tkdjwbstr1	ALLCAPS			INPUTRI		9
+lketcair	PROTECT			INPUTRI		10
+tkdket		TEXTAREA ALLCAPS	INPUTRI		11
+tkdjwbstr2	NOCHANGE		INPUTRI		12
+tkdjenis	NOCHANGE		INPUTRI		13
+lenter		ALLCAPS			INPUTRI		14
+
+DEFAULTS(tmptranst)
+lkunciabsen	INIT			KUNCIABSEN
+lm4w		INIT			M4W
+ladh		INIT			ADH
+tkdjenis	DFALT_SCAN_BLANKS	TACC
+lKETBLMCAIR	INIT			KETBLMCAIR
+lketcair	INIT			BLANKS
+tkdjwbstr2	DFALT_SCAN_BLANKS	ACC
+
+EDITS(tmptranst)
+e.Validate	tkdnobuk	VALIDATE btmbukidx mbtmest 0
+e.Validate	tkdjwbstr1	VALIDATE tbldtdtmkod mtblest stbl {Pgv_dttabel} {PlKETBLMCAIR}
+e.Mandatory	tkdtgl2		MANDATORY
+e.Mandatory	tkdsisstr	MANDATORY_IF cfaktox1
+e.MANDATORY	tkdket		MANDATORY
+
+MAP(mbtmest)
+btmnobuk	tkdnobuk	REPLACE
+ltglawalest	ltglawalest	REPLACE_IF cjointkdawal
+cjmlhecair	ljmlhecair	DO_CALC_IF cadatglrev
+csisahari	lsisahari	DO_CALC
+cthbl		lthbl		DO_CALC
+
+MAP(mtblest)
+tblkode		tkdjwbstr1	REPLACE
+tblket		lketcair	REPLACE
+
+MAP(misiest)
+btmnobuk	tkdnobuk	REPLACE
+l1		tkdnourt	REPLACE_IF curut0
+curut		tkdnourt	DO_CALC_IF curut1
+g_tgltrn	tkdtgl		REPLACE_IF curut0
+ltglrevest	tkdtgl		REPLACE_IF curut1
+
+MAP(mhitket)
+chitket		lhitket		DO_CALC
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=tkdjwbstr2	DO_SKIP_IF cskipapr
+AFTER_INPUT	cur_field=tkdnourt	DO_MAP SHOW misiest
+BEFORE_INPUT	cur_field=tkdsisstr	DO_SKIP_IF cfaktox0
+BEFORE_INPUT	cur_field=tkdjenis	DO_SKIP_IF cskipho
+AFTER_INPUT     cur_field=tkdtgl2  DO_MAP SHOW
+                IF cbatash7 mdum
+                ELSE HKCURSOR STAY
+                HKMSG TGLREV MAKSIMAL H+7 DARI TGLACT
+AFTER_INPUT	cur_field=tkdket  DO_MAP SHOW mhitket
+AFTER_INPUT     cur_field=tkdket  DO_MAP SHOW
+                IF cbatasket mdum
+                ELSE HKCURSOR STAY
+                HKMSG KETERANGAN MINIMUM 250 KARAKTER
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_TARGET
+tkdbukidx btmnobuk l705
+SFL_MAP
+btmnobuk	tkdnobuk	REPLACE
+l705		tkdsts		REPLACE
+lESTIMASI	tkddata		REPLACE
+
+MAP(mupdkunci)
+tkdtgl2		abktgl		REPLACE_IF cbukakunci
+gt_RINP		abksts		REPLACE_IF cbukakunci
+gv_CLSD		abksts		REPLACE_IF ctaccx
+
+MAP(maddkunci)
+btmnobuk        abknobuk        REPLACE
+lkunciabsen     abkdata         REPLACE
+lnipadh         abkkym          REPLACE
+g_tgltrn        abktgl          REPLACE
+gv_INPG         abksts          REPLACE
+cketkunciest    abkkym2         DO_CALC
+ctypekunciest   abktype         DO_CALC
+l705            abkscr          REPLACE
+
+MAP(mupdbtm)
+gv_TACC		btmsts		REPLACE
+
+SPCALCS(stmptrans)
+	DO_LIB_IF cjoinkunci0 ap_dbclc(DNAME daddkunci,DCOMMAND ADD,DFILE abk,DMAP maddkunci);
+	DO_LIB_IF cjoinkunci ap_dbclc(DNAME dupdkunci,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lkunciabsen btmnobuk,DMAP mupdkunci);
+	DO_LIB_IF ctacc ap_dbclc(DNAME dupdbtm,DCOMMAND UPDATE,DTARGET btmbukidx btmnobuk,DMAP mupdbtm);
+
+POSTING(tmptrans)
+	PST_UPDCMD	stmptrans
+	PST_ADDCMD	stmptrans

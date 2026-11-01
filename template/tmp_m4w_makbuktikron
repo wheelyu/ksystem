@@ -1,0 +1,61 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------\
+|/---------------------------------------------------------------------------\|
+||t.Kronologis                                                               ||
+||                                                                           ||
+|| _________________________________________________________________________ ||
+||t.Bukti                                                                    ||
+||                                                                           ||
+|| _________________________________________________________________________ ||
+||t.Userinput :_______  ______________________________     _________________ ||
+||t.TglInput  :___________                                                   ||
+|\---------------------------------------------------------------------------/|
+\-----------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+sviket		TEXTAREA ALLCAPS		INPUTRI		1
+sviket2		TEXTAREA ALLCAPS		INPUTRI		1
+svikode		NOCHANGE			INPUTRI		2
+lnamausrdet	PROTECT				INPUTRI		3
+svistr1    	PROTECT				INPUTRI		3
+svitgl1		PROTECT	{DD-MM-YYYY}		INPUTRI		4
+
+DEFAULTS(tmptranst)
+svikode		INIT_ADD	{g_usrkode}
+svikode		INIT_UPDATE	{g_usrkode}
+svitgl1		INIT_ADD	{g_tgltrn}
+svistr1		INIT_ADD	{g_grpnam}
+svitgl1		INIT_UPDATE	{g_tgltrn}
+
+EDITS(tmptranst)
+NAMA USER TIDAK ADA	svikode		VALIDATE psmkodidx mpsmusrdet
+KRONOLOGIS HARUS DIISI	sviket		MANDATORY
+BUKTI HARUS DIISI	sviket2		MANDATORY
+
+MAP(mpsmusrdet)
+psmnama		lnamausrdet		REPLACE
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+svidatbuktyp   tlmdata tlmnobuk lBUKTIKRON 
+SFL_MAP
+tlmnobuk	svinobuk	REPLACE
+tlmdata		svidata		REPLACE
+lBUKTIKRON 	svitype		REPLACE
+
+DBCALCS(djointmptrans)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	svidatbuktyp   tlmdata tlmnobuk lBUKTIKRON
+
+CALCS()
+caddtmptrans	tlmsts=="OPEN" && tlmsts2==BLANKS && djointmptrans==0
+cupdtmptrans	tlmsts=="OPEN" && tlmsts2==BLANKS
+
+PERMIT(tmptrans)
+	PMT_ADD_COND	caddtmptrans
+	PMT_UPDALL_COND cupdtmptrans
+	PMT_DEL_COND	c0

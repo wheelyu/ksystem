@@ -1,0 +1,105 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.NamaAktiva :__________________|
+ |t.Kepemilikan:__________________|
+ |t.KodeAktiva :__________  ______|
+ |t.Nip        :__________        |
+ |t.Nama       :__________________|
+ |t.Jabatan    :__________________|
+ |t.KetAbsen   :__________________|
+ |t.HasilSensus:______  __________|
+ |t.Lantai     :__________________|
+ |t.KodeRuangan:__________________|
+ |t.TgtTgl     :___________       |
+ |t.SudahSesuai:____              |
+ |t.Ket        :__________________|
+ |             :__________________|
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tldsat          PROTECT                         INPUTRI         1
+        lbrgsat4        PROTECT                         INPUTRI         2
+        tldbrg          PROTECT                         INPUTRI         3
+        tldcab          PROTECT                         INPUTRI         4
+        tldppdoto       PROTECT                         INPUTRI         5
+        lnamapjinven    PROTECT                         INPUTRI         6
+        ljabatanpj      PROTECT                         INPUTRI         7
+        labdtype        PROTECT                         INPUTRI         8
+        tldjasbrg       PROTECT                         INPUTRI         9
+        tldkat          PROTECT                         INPUTRI         10
+        tldgrup2        PROTECT                         INPUTRI         11 
+        tldgrup         PROTECT                         INPUTRI         12 
+	tldtglfak	NONE NOLIMIT {DD-MM-YY}		INPUTRI		13
+	tldsisbrg	NOCHANGE			INPUTRI		14
+        tldket          TEXTAREA ALLCAPS SCROLL         INPUTRI         15
+        lenter          ALLCAPS                         INPUTRI         16
+
+DEFAULTS(tmptranst)
+tldsisbrg	DFALT_SCAN	BLANKS
+				Y "SESUAI"
+				T "TIDAK SESUAI"
+
+CALCS()
+csesuai		tldsisbrg=="Y"
+ctidaksesuai	tldsisbrg=="T" || tldtglfak!=tlmtgl  
+cdjoinabd2	djoinabd2==1
+ctanggalsama	tldtglfak==tlmtgl  
+
+EDITS(tmptranst)
+e.Mandatory	tldsisbrg	MANDATORY_IF ctanggalsama
+e.Mandatory	tldket		MANDATORY_IF ctidaksesuai
+e.Validate	tldbrg 		VALIDATE brgdatkodidx mbrg {Pgv_dtaktiva}
+e.Validate	tldppdoto	VALIDATE psikodidx mpsiz 
+e.Validate	tldcab 		VALIDATE cabkodidx mcaba
+e.Validate      tldgrup2        VALIDATE_IF cnotkhusus tbtdattypkod mtbt  stbt {Pgv_dttabel} {Pgv_gedung} {Pgv_infoumum} {Pgv_gedung} {Plcabtwr}
+e.Validate      tldgrup         VALIDATE_IF cnotkhusus tbedattypkod mtbe  stbeon {Pgv_dttabel} {Pgv_gedung} {Pgv_gedung} {Plcabtwr} {Ptldgrup2}
+e.Validate      tldgrup2        VALIDATE_IF ckhusus    tbtdattypkod mtbt  stbt {Pgv_dttabel} {Pgv_gedung} {Pgv_infoumum} {Pgv_gedung} {Plcabtwr2}
+e.Validate      tldgrup         VALIDATE_IF ckhusus    tbedattypkod mtbe  stbeon {Pgv_dttabel} {Pgv_gedung} {Pgv_gedung} {Plcabtwr2} {Ptldgrup2}
+
+CALCS()
+cdatang		djoinabd2==1 && labdtype=="DATANG"
+cmaxh1		tldtglfak<=(g_tgltrn+1)
+cBLANKS		BLANKS
+
+MAP(mpsiz)
+psikode		tldppdoto	REPLACE
+psinama		lnamapjinven	REPLACE
+psijabatan	ljabatanpj	REPLACE
+cBLANKS		labdtype	DO_CALC
+labdtype	labdtype	REPLACE_IF cdjoinabd2
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldtglfak     DO_SKIP_IF cdatang
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF csesuai
+AFTER_INPUT     cur_field=tldjasbrg     DO_MAP SHOW mket
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW mpanjangket
+AFTER_INPUT	cur_field=tldtglfak	DO_MAP
+		IF cmaxh1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.MaxH1
+AFTER_INPUT	cur_keybd=EN       	DO_MAP
+		IF cmaxh1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.MaxH1
+AFTER_INPUT     cur_field=tldket        DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cminim mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        cmasukv
+SFL_TARGET
+        tldbukurtidx tlmnobuk 
+SFL_MAP
+        tlmnobuk        tldnobuk        REPLACE
+        tlmdata         tlddata         REPLACE

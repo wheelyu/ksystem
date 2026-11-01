@@ -1,0 +1,89 @@
+LOCAL
+PGM_FIELDS
+luplverok2      STRING          21
+lpsdtot2	INT2		2
+
+MAP(mjoittlskr)
+psdtot		lpsdtot2	REPLACE
+
+DBCALCS(djoittlskr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddatpsmkod lttlsdm tlmdari tlmdari lttlsdm
+        DBC_MAP         mjoittlskr
+
+
+
+IMAGE(tmptranst)
+/------------------------------------------------\
+|/---UPLOAD-------------------------------------\|
+||                                              ||
+||                                              ||
+||                                              ||
+||                                              ||
+||                                              ||
+||                                              ||
+||                                              ||
+||                                              ||
+|\----------------------------------------------/|
+|/----------------------------------------------\|
+||t.JnsTTL     : _____________                  ||
+||t.UploadOk   : _____  __________________      ||
+|\----------------------------------------------/|
+\------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+tldjml2     	ALLCAPS                 	INPUTRI 1
+tlmtypbrg     	NOCHANGE                        INPUTRI 2
+luplverok2      TOMBOL                          INPUTRI 3
+
+CALCS()
+cttl		djoittlskr == 1 && (tldjml2 > lpsdtot2)
+
+cttl3		djoittlskr == 1 && (lpsdtot2 != 3 && tldjml2 >= 3 )
+c3		3
+
+DEFAULT(tmptranst)
+tldjml2              DFALT_SCAN_BLANKS       1 "TTL1"
+                                        2 "TTL2"
+                                        3 "TTL3"
+
+
+MAP(misi3)
+c3		tldjml2		DO_CALC_IF cttl3
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=tldjml2 DO_MAP SHOW
+                IF cttl mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TidakBolehKecilDrSkrg
+
+AFTER_INPUT     cur_field=tldjml2 DO_MAP SHOW misi3
+
+CALCS()
+cpindah		tlmtype1 == "PMTAHASS"
+
+MAP(mupdfotob2)
+gv_ok         tlmtypbrg      REPLACE
+
+
+DBCALCS(dupdfotob2)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      tlmprmidx   tlmprm
+        DBC_MAP         mupdfotob2
+
+
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_COND   cpindah
+SFL_UPLFLD tldnobuk 
+SFL_UPLFLD_DBCALCS dupdfotob2
+SFL_TARGET
+tldbukurtidx    tlmnoasal
+
+
+PERMIT(tmptrans)
+PMT_ADD_COND    c0
+PMT_DEL_COND    c0

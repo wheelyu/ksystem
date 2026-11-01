@@ -1,0 +1,114 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/---------------------------------\|
+||i.No         : ________________  ||
+||i.Ket        : ________________  ||
+||i.Tanggal    : ________________  ||
+||i.Total      : ________________  ||
+||i.Rek        : ________________  ||
+||i.KetRek     : ________________  ||
+|\---------------------------------/|
+|/--s.UPLOAD-----------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+bkdurt   		PROTECT                	INPUTRI 1
+bkdket   		TEXTAREA ALLCAPS       	INPUTRI 2
+bkdtgl    		NOLIMIT {DD-MM-YY}     	INPUTRI 3
+bkdjml    		NUMERIC                	INPUTRI 4
+bkdnobbm  		ALLCAPS                	INPUTRI 5
+bbgket    		ALLCAPS                	INPUTRI 6
+
+
+DEFAULTS(tmptranst)
+lbkdjml		INIT_UPDATE		{bkdjml}
+bkdnobbm        INIT_ADD                {lREKJLND}
+bkdsts          INIT_ADD                OPEN
+
+MAP(mbbg)
+bbgno           bkdnobbm        REPLACE
+bbgket          bbgket          REPLACE
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=bkdket    DO_MAP SHOW murut
+
+EDITS(tmptranst)
+e.Mandatory bkdket  	MANDATORY
+e.Mandatory bkdtgl   	MANDATORY
+e.Mandatory bkdjml  	MANDATORY
+e.ValidateBbm   bkdnobbm        VALIDATE bbggolnoidx mbbg sbbgRL {Pgv_05}
+
+MAP(mupdbkdbilain)
+cY			bkdfl 		DO_CALC
+
+DBCALCS(dupdbkdbilain)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	bkdprmidx	bkdprm
+	DMAP		mupdbkdbilain
+
+CALCS()
+cBILAIN          	tmpkode=="BIAYALAIN"
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)  
+SFL_LINES(1)
+SFL_COND cBILAIN
+SFL_UPLFLD         bkmnobuk   bkdbukll
+SFL_UPLFLD_DBCALCS dupdbkdbilain
+
+SFL_TARGET
+	bkdbuklloto    bkmnobuk   lBILAIN
+
+SFL_MAP
+bkmdata         bkddata         REPLACE
+bkmnobuk        bkdnobuk        REPLACE
+lBILAIN		bkdbukll  	REPLACE
+lBILAIN		bkdgrup   	REPLACE
+
+CALCS()
+ctotalbi		bkdjml + bkmbia
+ctotalbi2		bkmbia - lbkdjml + bkdjml
+ctotalbi3		bkmbia - bkdjml
+cbkmpend3                bkmbia - bkmpokok
+
+MAP(mupdbkma)
+ctotalbi		bkmbia		DO_CALC
+cbkmpend3		bkmpend		DO_CALC_IF cPBS
+
+MAP(mupdbkma2)
+ctotalbi2		bkmbia		DO_CALC
+cbkmpend3		bkmpend		DO_CALC_IF cPBS
+
+MAP(mupdbkma3)
+ctotalbi3		bkmbia		DO_CALC
+cbkmpend3		bkmpend		DO_CALC_IF cPBS
+
+SPCALCS(spcaladd2)
+DO_LIB ap_dbclc(DNAME dupdbkmadd1,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma);
+
+SPCALCS(spcalupd2)
+DO_LIB ap_dbclc(DNAME dupdbkmupd1,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma2);
+
+SPCALCS(spcaldel2)
+DO_LIB ap_dbclc(DNAME dupdbkmdel1,DCOMMAND UPDATE,DTARGET bkmprmidx bkmprm,DMAP mupdbkma3);
+
+POSTING(tmptrans)
+        PST_ADDCMD      spcaladd2
+        PST_UPDCMD      spcalupd2
+        PST_DELCMD      spcaldel2
+
+PERMIT(tmptrans)
+        PMT_ADD_COND    cOPEN_SAJA
+        PMT_UPDALL_COND  cOPEN_SAJA
+        PMT_DEL_COND     cOPEN_SAJA
+
+

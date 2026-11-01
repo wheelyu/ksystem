@@ -1,0 +1,105 @@
+IMAGE(tmptranst)
+/------------------------------------------------------------------\
+ /----------------------------------------------------------------\
+ | t.Enter ____        t.NipUser_______                           |
+ \----------------------------------------------------------------/
+                             t.736HrIni
+ t.Dvs    t.Awal        t.CLSD          t.Blm       t.Fraud
+ t.Hmc  _____________ _____________ _____________ _____________  
+ t.M2W  _____________ _____________ _____________ _____________  
+
+\------------------------------------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+lenter                  NOCHANGE                INPUTRI 1
+lvariant                NOCHANGE                INPUTRI 1
+
+lawlhmc			PROTECT			INPUTRI 2
+lclsdhmc		PROTECT			INPUTRI 3
+lblmhmc			PROTECT			INPUTRI 4
+lfraudhmc		PROTECT			INPUTRI 5
+
+lawlm2w                 PROTECT                 INPUTRI 2
+lclsdm2w                PROTECT                 INPUTRI 3
+lblmm2w                 PROTECT                 INPUTRI 4
+lfraudm2w               PROTECT                 INPUTRI 5
+
+
+
+DEFAULTS(tmptranst)
+lvariant                INIT            {tlmcab}
+lenter                  INIT            TAB
+
+ltglawl                 INIT            {cawlbln}
+lthbl5			INIT		{cthbl}
+
+lawlhmc                 INIT		BLANKS
+lclsdhmc                INIT		BLANKS
+lblmhmc                 INIT		BLANKS
+lfraudhmc               INIT		BLANKS
+
+lawlm2w                 INIT		BLANKS
+lclsdm2w                INIT		BLANKS
+lblmm2w                 INIT		BLANKS
+lfraudm2w               INIT		BLANKS
+
+
+CALCS()
+cawlakumhmc	mtscab==tlmcab && mtsdvs=="HMC" 
+cawlakumm2w	mtscab==tlmcab && mtsdvs=="M2W" 
+
+cclsdakumhmc	mtscab==tlmcab && mtsdvs=="HMC" && mtssts=="CLSD" 
+cclsdakumm2w	mtscab==tlmcab && mtsdvs=="M2W" && mtssts=="CLSD" 
+
+cblmakumhmc	mtscab==tlmcab && mtsdvs=="HMC" && mtssts!="CLSD" 
+cblmakumm2w	mtscab==tlmcab && mtsdvs=="M2W" && mtssts!="CLSD" 
+
+cfraudakumhmc	mtscab==tlmcab && mtsdvs=="HMC" && mtsgrup=="FRAUD" 
+cfraudakumm2w	mtscab==tlmcab && mtsdvs=="M2W" && mtsgrup=="FRAUD" 
+
+MAP(mscanmtsresurveyakum)
+c1		lawlhmc			DO_CALC_IF cawlakumhmc 
+c1		lawlm2w			DO_CALC_IF cawlakumm2w
+
+c1		lclsdhmc		DO_CALC_IF cclsdakumhmc
+c1		lclsdm2w		DO_CALC_IF cclsdakumm2w
+
+c1              lblmhmc                 DO_CALC_IF cblmakumhmc
+c1              lblmm2w                 DO_CALC_IF cblmakumm2w
+
+c1              lfraudhmc               DO_CALC_IF cfraudakumhmc
+c1              lfraudm2w               DO_CALC_IF cfraudakumm2w
+
+DBCALCS(dbscanmtsresurveyakum)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      mtsdattglidx   lresurvey ltglawl
+        DBC_LAST_TARGET mtsdattglidx   lresurvey tlmtgl
+        DBC_SUM_MAP     mscanmtsresurveyakum
+
+
+MAP(mhitungresurveyakum)
+lawlhmc         lawlhmc                 REPLACE
+lawlm2w         lawlm2w                 REPLACE
+
+lclsdhmc        lclsdhmc                REPLACE
+lclsdm2w	lclsdm2w                REPLACE
+
+lblmhmc		lblmhmc                 REPLACE
+lblmm2w		lblmm2w                 REPLACE
+
+lfraudhmc	lfraudhmc               REPLACE
+lfraudm2w	lfraudm2w               REPLACE
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=lenter        DO_SCAN dbscanmtsresurveyakum
+AFTER_INPUT     cur_field=lenter        DO_MAP SHOW mhitungresurveyakum
+
+SUBFILE(tmptrans)
+SFL_APP_TYPE
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        cabkodidx   tlmcab
+

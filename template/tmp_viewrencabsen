@@ -1,0 +1,34 @@
+IMAGE(tmptranst)
+/---------t----------t-----------t---------------t---------------------------------------\
+|t.Tgl    |t.Type    |t.CabAbsen |t.Shift        |t.Ket                                  |
+\---------.----------.-----------.---------------.---------------------------------------/
+IMAGE(tmptrans)
+|_________|__________|___________|_______________|______________ ________________________|
+
+FIELD(tmptrans)
+abdtgl          PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+abdtype         PROTECT                    INPUTRI 2
+abdcab          PROTECT SCROLL             INPUTRI 3
+abdshift        PROTECT SCROLL             INPUTRI 4
+abdkettlb       PROTECT SCROLL             INPUTRI 5
+abdket          PROTECT SCROLL             INPUTRI 6
+
+DBCALCS(djoinabdrenc)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abdkymststgl    psmkode gv_OPEN
+
+CALCS()
+cadarencabd     djoinabdrenc == 1 && psmkode == g_usrkode
+                || (djoinpsi==1 && lpsidept=="AUDIT" && djoinpsiuser==1 && (djoincabuser==1 && (lcabposuser=="PST" || lpsidept2=="AUDIT")))
+                || (djoinpsi==1 && lpsidept!="AUDIT")
+chariesok       abdtgl > g_tgltrn
+
+SUBFILE(tmptrans)
+SFL_LINES(10)
+SFL_TITLE(tmptranst)
+SFL_COND cadarencabd
+SFL_SELECT chariesok
+SFL_SORT_BY_FIELD abdtgl
+
+SFL_TARGET    
+abdkymststgl    psmkode gv_OPEN

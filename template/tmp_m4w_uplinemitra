@@ -1,0 +1,1007 @@
+LOCAL
+PGM_FIELDS
+lstsupl		STRING		5
+lstspsiinpg     STRING		5
+lKUNCIABSEN	STRING		11
+lnip		STRING		21
+ljabatanmitra	STRING		21
+lpsinpwp    	STRING		21
+lpsistst	STRING		5
+lJABATANMITRA21	STRING		21
+lfreelance      STRING          21
+lagen           STRING          21
+lmakelar        STRING          21
+lmitra          STRING          21
+lpsdtype2	STRING		21
+lh1             STRING          21
+lm2w            STRING          21
+lsgmstr5        STRING          21
+lthbl		STRING		11
+lpicmkt		STRING		21
+lbum   		STRING		21
+lHMC11		STRING		11
+lM2W11		STRING		11
+lM4W11		STRING		11
+lUMROH11	STRING		11
+lttlkba         INT2            2
+lketaktif       STRING          21
+lketpoten       STRING          21
+lketacc		STRING		21
+lkettipe	STRING		21
+lketshowroom	STRING		21
+lversi2		STRING		21
+lcabupl		STRING		21
+lstsmitra	STRING		5
+l3209		STRING		5
+lKETMITRA	STRING		11
+lpsdket2	STRING		61
+lpsdpsmkode	STRING		21
+lpsdtype	STRING		11
+lpsdstr2	STRING		21
+lpsdstr1	STRING		21
+lpsdstr3a	STRING		21
+lpsdket		STRING		61
+lpsdtot5	INT2		2
+lpsdtot6	INT2		2
+lpsdtot7	INT2		2
+lpsdtgl1	DATE		4
+ltombolupd	STRING		21
+lFOTOKTP        STRING		25
+lREKENING       STRING		25
+lSELFMITRA      STRING		25
+lPERJANJIAN     STRING		25
+lNPWP           STRING		25
+
+
+lpsdtot4b	INT2	2
+lpsdtot4c	INT2	2
+lpsdtot4d	INT2	2
+lpsdtot4e	INT2	2
+laprktp		STRING	5
+laprrek		STRING	5
+laprselfi	STRING	5
+laprjanji	STRING	5
+laprnpwp	STRING	5
+lno1		INT2	2
+lno2		INT2	2
+lno3		INT2	2
+lno4		INT2	2
+lno5		INT2	2
+lenterapr	STRING		11
+
+
+CALCS()
+caktif0         psdtot2 == BLANKS
+caktif1         psdtot2 == 1
+caktif2         psdtot2 == 2
+caktif3         psdtot2 == 3
+caktif4         psdtot2 == 4
+caktif5         psdtot2 == 5
+caktif6         psdtot2 == 6
+cpoten0         psdtot3 == BLANKS
+cpoten1         psdtot3 == 1
+cpoten2         psdtot3 == 2
+cpoten3         psdtot3 == 3
+cpoten4         psdtot3 == 4
+cjl20           "JL>=20"
+cjl15           "JL>=15"
+cjl10           "JL>=10"
+cjl5            "JL>=5"
+cjl1            "JL>=1-4"
+ctdkjual        "TDK_JUAL"
+cnew            "NEW"
+cjl5a           "JL>5"
+cjl10a          "JL>10"
+cjl20a          "JL>20"
+cadakba         psijabatan == "T.LEADERKBA" || psijabatan == "KOORDAGENM2W" ||
+                psijabatan == "KBANMCOFFICER" || psijabatan == "KOORDAGENHMC"
+cthbl		THBLS(g_tgltrn)
+cmitra4w	psdtype =="M4W"
+/*csdmclsd	psists != "INPG"
+*/
+MAP(mjoinpsi)
+psijabatan	ljabatanmitra	REPLACE
+psinpwp		lpsinpwp	REPLACE
+psists		lpsistst	REPLACE
+DEBUG		ldum	ldum	REPLACE
+
+DBCALCS(djoinpsi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx psmkode 
+	DBC_MAP		mjoinpsi
+
+MAP(mjoinpsm1)
+psmstssup	lstsmitra	REPLACE
+DBCALCS(djoinpsm1)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psmktpidx psdpsmkode
+	DBC_MAP		mjoinpsm1
+
+DBCALCS(djoinpsdket)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddatpsmurt lKATMITRA psdpsmkode
+	DBC_SELECT	cmitra4w
+
+/*DBCALCS(djoinpsiupl)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psikodidx psdkode
+	DBC_SELECT	csdmclsd
+*/
+DBCALCS(djointbd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	tbddatkodidx gv_dttabel gv_infoumum lJABATANMITRA21 ljabatan
+
+MAP(mjoinsgmpicx)
+sgmstr5         lsgmstr5        REPLACE
+
+DBCALCS(djoinsgmpich1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth     gv_dtpiccab lh1 psmcab lthbl lpicmkt
+        DBC_MAP         mjoinsgmpicx
+
+DBCALCS(djoinsgmpicm2w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth     gv_dtpiccab lm2w psmcab lthbl lpicmkt
+        DBC_MAP         mjoinsgmpicx
+
+DBCALCS(djoinsgmbumh1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth     gv_dtpiccab lh1 psmcab lthbl lbum
+        DBC_MAP         mjoinsgmpicx
+
+DBCALCS(djoinsgmbumm2w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth     gv_dtpiccab lm2w psmcab lthbl lbum
+        DBC_MAP         mjoinsgmpicx
+
+MAP(mscanpsi)
+gv_int1         lttlkba         REPLACE_IF cadakba
+DBCALCS(dscanpsi)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      psicbskrsts     psmcab gv_INPG
+        DBC_SUM_MAP     mscanpsi
+
+MAP(mjoinpsiinpg)
+psists          lstspsiinpg     REPLACE
+DBCALCS(djoinpsiinpg)
+        DBC_COMMAND     JOIN 
+        DBC_TARGET      psikodidx    psmkode
+        DBC_MAP         mjoinpsiinpg
+
+CALCS()
+cytnotblank	ketyt1 != BLANKS
+
+MAP(mketimgktp)
+ketyt1		laprktp		REPLACE_IF cytnotblank
+DBCALCS(djoinketktp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketbukurtidx lIMGKTP psdpsmkode lno1
+	DBC_MAP		mketimgktp
+
+MAP(mketimgrek)
+ketyt1		laprrek		REPLACE_IF cytnotblank
+ketdf1		lpsdtot4b	REPLACE
+DBCALCS(djoinketrek)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketbukurtidx lIMGREK psdpsmkode lno2
+	DBC_MAP		mketimgrek
+
+MAP(mketimgselfi)
+ketyt1		laprselfi	REPLACE_IF cytnotblank
+ketdf1		lpsdtot4c	REPLACE
+DBCALCS(djoinketselfi)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketbukurtidx lIMGSELF psdpsmkode lno3
+	DBC_MAP		mketimgselfi
+
+MAP(mketimgjanji)
+ketyt1		laprjanji	REPLACE_IF cytnotblank
+ketdf1		lpsdtot4d	REPLACE
+DBCALCS(djoinketjanji)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketbukurtidx lIMGJANJI psdpsmkode lno4
+	DBC_MAP		mketimgjanji
+
+MAP(mketimgnpwp)
+ketyt1		laprnpwp	REPLACE_IF cytnotblank
+ketdf1		lpsdtot4e	REPLACE
+DBCALCS(djoinketnpwp)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	ketbukurtidx lIMGNPWP psdpsmkode lno5
+	DBC_MAP		mketimgnpwp
+
+
+IMAGE(tmptranst)
+/-----------------------------------------\
+|/---------------------------------------\|
+||t.Ktp       __________________________ ||
+||t.KodeApr   __________________________ ||
+||t.StsMitra  ___________ ______________ ||
+||t.Divisi    __________________________ ||
+||t.JnsKomisi __________________________ ||
+||t.TipeMitra __________________________ ||
+||t.KatMitra  _________ ___  ___________ ||
+||t.KatMitra  _____________  ___________ ||
+||t.NipUpline _________ _________________||
+||t.NamaUpline___________________________||
+||t.RekMitra  __________________________ ||
+||t.Bank      ______  ______             ||
+||t.AtasNama  __________________________ ||
+||t.Npwp      __________________________ ||
+||t.AccBUM    ______  ______             ||
+||t.Tipe      __ _______________________ ||
+||t.Showroom  __ _______________________ ||
+||t.Tanggal   ______________		 ||
+||t.Enter     ______  ________________   ||
+|\---------------------------------------/|
+\-----------------------------------------/
+/-----------------------------------------------------------------\
+|  ___					  		  	  |
+|/----s.UPLOAD---------------------------\/----------------------\|
+||                                       ||		  	 ||
+||                                       ||   		  	 ||
+||                                       ||  t.kt	  	 ||
+||                                       ||  ____________________||
+||                                       ||  	  		 ||
+||                                       ||  	  		 ||
+||                                       ||  t.Approval  	 ||
+||                                       ||  ____________________||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+|\---------------------------------------/\----------------------/|
+\-----------------------------------------------------------------/
+
+/-----------------------------------------------------------------\
+|  ___					  		  	  |
+|/----s.UPLOAD2--------------------------\/----------------------\|
+||                                       ||		  	 ||
+||                                       ||   		  	 ||
+||                                       ||  t.kt	  	 ||
+||                                       ||  ____________________||
+||                                       ||  	  	 	 ||
+||                                       ||  	  	 	 ||
+||                                       ||  t.Approval  	 ||
+||                                       ||  ____________________||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+|\---------------------------------------/\----------------------/|
+\-----------------------------------------------------------------/
+
+/-----------------------------------------------------------------\
+|  ___					  		  	  |
+|/----s.UPLOAD3--------------------------\/----------------------\|
+||                                       ||		  	 ||
+||                                       ||   		  	 ||
+||                                       ||  t.kt	  	 ||
+||                                       ||  ____________________||
+||                                       ||  	  		 ||
+||                                       ||  	  		 ||
+||                                       ||  t.Approval  	 ||
+||                                       ||  ____________________||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+|\---------------------------------------/\----------------------/|
+\-----------------------------------------------------------------/
+
+/-----------------------------------------------------------------\
+|  ___					  		  	  |
+|/----s.UPLOAD4--------------------------\/----------------------\|
+||                                       ||		  	 ||
+||                                       ||   		  	 ||
+||                                       ||  t.kt	  	 ||
+||                                       ||  ____________________||
+||                                       ||  	  	 	 ||
+||                                       ||  	  	 	 ||
+||                                       ||  t.Approval  	 ||
+||                                       ||  ____________________||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+|\---------------------------------------/\----------------------/|
+\-----------------------------------------------------------------/
+
+/-----------------------------------------------------------------\
+|  ___					  		  	  |
+|/----s.UPLOAD5--------------------------\/----------------------\|
+||                                       ||		  	 ||
+||                                       ||   		  	 ||
+||                                       ||  t.kt	  	 ||
+||                                       ||  ____________________||
+||                                       ||  	  	 	 ||
+||                                       ||  	  	 	 ||
+||                                       ||  t.Approval  	 ||
+||                                       ||  ____________________||
+||                                       ||  _________   	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+||                                       ||		  	 ||
+|\---------------------------------------/\----------------------/|
+\-----------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdpsmkode      PROTECT SCROLL  INPUTRI 1
+psdstr4         PROTECT         INPUTRI 2
+psdtype3	NOCHANGE	INPUTRI	1
+psdsts		NOCHANGE	INPUTRI 1
+psdtype		ALLCAPS		INPUTRI	1
+psdstr5		NOCHANGE	INPUTRI	1
+psdstr2         ALLCAPS SCROLL  INPUTRI 1
+psdstr1         ALLCAPS         INPUTRI 2
+psdtot2		PROTECT		INPUTRI	2
+lketaktif	PROTECT		INPUTRI	2
+psdtot3		PROTECT		INPUTRI	3
+lketpoten	PROTECT		INPUTRI	3
+psdkode         ALLCAPS         INPUTRI 3
+ljabatan        PROTECT         INPUTRI 3
+lnamaupl        PROTECT         INPUTRI 3
+psdket2         NUMERIC         INPUTRI 4
+lpsdtype2	ALLCAPS		INPUTRI 5
+psdtype2	PROTECT 	INPUTRI	5
+psdstr3		ALLCAPS		INPUTRI	6
+psdket		ALLCAPS		INPUTRI 6
+psdtot5         NOCHANGE        INPUTRI 6
+lketacc         PROTECT         INPUTRI 6
+psdtot6		NOCHANGE	INPUTRI	7
+lkettipe	PROTECT		INPUTRI	8 
+psdtot7		NOCHANGE	INPUTRI 9 
+lketshowroom	PROTECT		INPUTRI 10
+psdtgl1		PROTECT NONE {DD-MM-YYYY} INPUTRI 11
+lenter          ALLCAPS         INPUTRI 12
+ltombolupd	TOMBOL		INPUTRI 13
+psdtot4		PROTECT		INPUTRI	15
+
+lFOTOKTP	PROTECT		INPUTRI 16 /*KET FOTO KTP*/
+laprktp		NOCHANGE	INPUTRI 17 /*APPROVE KTP*/
+
+lpsdtot4b	PROTECT		INPUTRI 18 /*TANDA UPLOAD REKENING*/
+lREKENING	PROTECT		INPUTRI 19 /*KET REKENING*/
+laprrek		NOCHANGE	INPUTRI 20 /*APPROVE REKENING*/
+
+lpsdtot4c	PROTECT		INPUTRI 21 /*TANDA UPLOAD SELFI MITRA*/
+lSELFMITRA	PROTECT		INPUTRI 22 /*KET SELFI MITRA*/
+laprselfi	NOCHANGE	INPUTRI 23 /*APPROVE SELFI MITRA*/
+
+lpsdtot4d	PROTECT		INPUTRI 24 /*TANDA UPLOAD PERJANJIAN KERJA*/
+lPERJANJIAN	PROTECT		INPUTRI 25 /*KET PERJANJIAN KERJA*/
+laprjanji	NOCHANGE	INPUTRI 26 /*APPROVE PERJANJIAN KERJA*/
+
+lpsdtot4e	PROTECT		INPUTRI 27 /*TANDA UPLOAD NPWP*/
+lNPWP		PROTECT		INPUTRI 28 /*KET NPWP*/
+laprnpwp	NOCHANGE	INPUTRI 29 /*APPROVE NPWP*/
+lenterapr	NOCHANGE	INPUTRI 30 /*ENTER APPROVAL*/
+
+DBCALCS(djoinpsdhmc)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddattypidx lKATMITRA lHMC11 psmktp
+
+DBCALCS(djoinpsdm2w)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddattypidx lKATMITRA lM2W11 psmktp
+
+DBCALCS(djoinpsdm4w)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddattypidx lKATMITRA lM4W11 psmktp
+
+DBCALCS(djoinpsdumroh)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	psddattypidx lKATMITRA lUMROH11 psmktp
+
+CALCS()
+cjoinpsi	(djoinpsi == 1 && (psdstr2 == "INTERNALM4W" || psdstr2 == "SALESM4W") &&  
+		(ljabatanmitra == "CMO4W" || ljabatanmitra == "SALESM4W" || ljabatanmitra == "ADHSPVM4W" || 
+		ljabatanmitra == "BRANCHMANAGERM4W" || ljabatanmitra == "MKTGOFF" || ljabatanmitra == "ADMALLM4W" || ljabatanmitra == "ADHSPV"))
+
+cjoinpsi1       djointbd == 1 || (psdstr2 =="AGENHMC" || psdstr2=="AGENM2W" || psdstr2=="FREELANCEHMC" || psdstr2=="FREELANCEM2W" || psdstr2=="MAKELAR")      
+cjoinpsi1a	g_curcmd == 2 && djointbd == 1 && lstsupl == "INPG"
+cjoinpsi2       ((dscanpsi != 0 || dscanpsi == 0) && lttlkba >= 1 && lstsupl == "INPG" && (ljabatan == "KBANMCOFFICER" || ljabatan == "KOORDAGENHMC" || lcabupl == "PST30" || lcabupl == "PST10") &&
+                (psdstr2 =="AGENHMC" || psdstr2=="FREELANCEHMC")) || (psdstr2 !="AGENHMC" && psdstr2!="FREELANCEHMC") ||
+                ((dscanpsi != 0 || dscanpsi == 0) && lttlkba == 0 && (psdstr2 =="AGENHMC" || psdstr2=="FREELANCEHMC"))
+cjoinpsi3       ((dscanpsi != 0 || dscanpsi == 0) && lttlkba >= 1 && lstsupl == "INPG" && (ljabatan == "T.LEADERKBA" || ljabatan == "KOORDAGENM2W" || lcabupl == "PST30" || lcabupl == "PST10") && 
+                (psdstr2 =="AGENM2W" || psdstr2=="FREELANCEM2W")) || (psdstr2 !="AGENM2W" && psdstr2!="FREELANCEM2W") ||
+                ((dscanpsi != 0 || dscanpsi == 0) && lttlkba == 0 && (psdstr2 =="AGENM2W" || psdstr2=="FREELANCEM2W"))
+cjoinpsi4       (lstsupl == "INPG" && (ljabatan == "SALESNMC" || ljabatan == "SALESMANHMC" || ljabatan == "COUNTERSALESNMC" || ljabatan == "SALESREFIMOTOR" ||
+                ljabatan == "SALESDTN" || ljabatan == "CTRSALESREFIMOTOR") && psdstr2 =="MAKELAR") || psdstr2!="MAKELAR"
+cjoinpsi5       ((dscanpsi != 0 || dscanpsi == 0) && lttlkba == 0 && (((djoinsgmpich1 == 1 || djoinsgmpicm2w == 1 || 
+		(djoinsgmpicm2w == 0 && djoinsgmpich1 == 0 && (djoinsgmbumm2w == 1 || djoinsgmbumh1 == 1))) && 
+		lsgmstr5 ==psdkode) || (lcabupl == "PST30" || lcabupl == "PST10")) &&
+                (psdstr2 == "AGENM2W" || psdstr2 == "FREELANCEM2W" || psdstr2 =="AGENHMC" || psdstr2=="FREELANCEHMC")) ||
+                (psdstr2 !="AGENM2W" && psdstr2!="FREELANCEM2W" && psdstr2 !="AGENHMC" && psdstr2!="FREELANCEHMC") ||
+                ((dscanpsi != 0 || dscanpsi == 0) && lttlkba >= 1 && 
+                (psdstr2 == "AGENM2W" || psdstr2 == "FREELANCEM2W" || psdstr2 =="AGENHMC" || psdstr2=="FREELANCEHMC"))
+cjoinpsi6       lstsupl == "INPG"
+
+cjoinpsmkar	(psmdatakry == "DTKARYAWAN" && psmsts == "INPG" && (psdstr2 == "INTERNALGROUP" || psdstr2 == "INTERNALM4W" || 
+		psdstr2 == "SALESM4W")) || 
+		(((psmdatakry == "DTKARYAWAN" && psmsts != "INPG") || psmdatakry == BLANKS || psmdatakry == "DTCLNKRY") && 
+		(djoinpsi ==0 || (djoinpsi==1 && lpsistst!="INPG")) &&  (psdstr2 == "EKSTERNAL" || psdstr2 == "PPIU")) ||
+		(((psmdatakry == "DTKARYAWAN" && (psmsts == "INPG" || psmsts =="CLSD")) || (psmdatakry == BLANKS && (psmsts == BLANKS || 
+		psmsts != BLANKS))) && (djoinpsi ==0 || (djoinpsi==1 && lpsistst=="CLSD")) &&  ( psdstr2=="AGENHMC" || psdstr2=="AGENM2W")) ||      /* Murni Dari External */
+		(((psmdatakry == "DTKARYAWAN" && (psmsts == "INPG" || psmsts == "CLSD")) || psmdatakry == BLANKS) && djoinpsi ==1 && (lpsinpwp =="FREELANCE" || lpsistst == "CLSD") &&
+                (psdstr2 == "FREELANCEHMC" || psdstr2=="FREELANCEM2W")) || /* Bekas sales yang di jadikan Freelance */
+                (psdstr2 == "MAKELAR")
+
+cjoinpsiinpg    djoinpsiinpg  == 1 && lstspsiinpg == "INPG" && g_grpnam != "B.M4WMSPV"
+
+cjoinpsm1	djoinpsm1 == 1
+cjoinpsm2	djoinpsm1 == 1 && lstsmitra == "INPG"
+cjoinpsdket	djoinpsdket == 1 
+cpsdm4w		psdtype == "M4W"
+cpsdm2w		psdtype == "M2W"
+cpsdhmc		psdtype == "HMC"
+cpsdumroh	psdtype == "UMROH"
+cbknm4w		g_curcmd == 2 && (psdtype == "HMC" || psdtype == "M2W")
+/*cbkndvsm4w	psmdvs != "M4W"*/
+ctunai		psdstr5 == "TUNAI" || psdtype == BLANKS || psdtype == "M2W" || psdtype == "HMC"
+ctunaix		(psmcab != "PST30" && g_grpnam != "RI" && g_grpnam != "DIGMKTDVH" && g_grpnam != "MKTM2WDVH" && g_grpnam != "IT" && (psdstr5 == "TUNAI" || psdtype == BLANKS || psdtype == "M2W" || psdtype == "HMC")) || (psmcab == "PST30" && psdstr5 == "TUNAI") 
+ctunai1		psdstr5 == "TUNAI"
+cbknpst		psmcab != "PST30" || psdtype == "M4W" || psdtype == "UMROH"
+cheadm4w	(psdtype=="M4W" && g_grpnam != "B.M4WMSPV") || (psdtype=="UMROH" && g_grpnam!="B.UMROHADHSPV")
+cada		(g_curcmd == 1 && (((psdtype == "HMC" || psdtype == "M2W") && djoinpsdm2w == 0 && djoinpsdhmc == 0) || 
+		(psdtype == "M4W" && djoinpsdm4w == 0) || (psdtype == "UMROH" && djoinpsdumroh==0) )) || (g_curcmd == 2) /* && (djoinpsdhmc == 1 || djoinpsdm2w == 1 || djoinpsdm4w == 1 || djoinpsdumroh==1))*/
+ctf		(psdtype != "M4W" && psdstr5 == "TRANSFER") || psdtype == "M4W"
+ctfx		(psdtype != "M4W" && psdstr5 == "TRANSFER") || (psdtype == "M4W" && (djoinpsi == 0 || (djoinpsi == 1 && lpsistst == "CLSD"))) 
+cpsdstr1	psdstr1 == BLANKS
+cpilacc         psdtot5 == 1
+cpiltacc        psdtot5 == 2
+cketacc         "ACC"
+ckettacc        "TACC"
+cbknhak         (g_grpnam != "RI" && g_grpnam != "IT" && g_grpnam != "BUM" && g_grpnam != "BUMM2W" && g_grpnam != "BM") || psdtot4 == BLANKS
+cbknINPG	psmstssup == "OPEN" || psmstssup == "DAFT"
+cm4wx		psdtype=="M4W"
+ctipe1		"MITRA BIASA"
+ctipe2		"MITRA HO"
+cshowroom1	"SHOWROOM T"
+cshowroom2	"SHOWROOM Y - BIROJASA Y"
+cshowroom3	"SHOWROOM Y - BIROJASA T"
+ctipe1x		psdtot6==1
+ctipe2x		psdtot6==2
+cshowroom1x	psdtot7==1
+cshowroom2x	psdtot7==2
+cshowroom3x	psdtot7==3
+chox0		g_grpnam!="B.M4WDVH" && g_grpnam!="RI" && g_grpnam!="B.UMROHADHSPV"
+chox1		g_grpnam=="B.M4WDVH" || g_grpnam =="IT"|| g_grpnam=="RI" || g_grpnam=="B.M4WMSPV" || g_grpnam=="B.UMROHADHSPV"
+cAPR_UMREKSTERNAL	"APR_UMREKSTERNAL"
+cAPR_UMRPPIU		"APR_UMRPPIU"
+cAPR_UMRRETAIL		"APR_UMRRETAIL"
+cAPR_MITRA		"APR_MITRA"
+cmitraeksternal	psdtype=="UMROH" && psdstr2=="EKSTERNAL"
+cmitrappiu	psdtype=="UMROH" && psdstr2=="PPIU"
+cmitraretail	psdtype=="UMROH" && psdstr2=="INTERNALGROUP" || psdstr2=="INTERNALM4W"
+cmitram4wxx	psdtype=="M4W"
+cjoinaprm4w	djoinapr==1 && psdtype=="M4W"
+cjoinaprumrok	psdtype=="UMROH" && (
+	/*retail*/(djoinaprumr1==1 && /*djoinaprumr2==0 &&*/ djoinaprumr2a==0 && /*djoinaprumr3==0 &&*/ djoinaprumr3a==0 && djoinaprumr3b==0 && lstsaprumr1=="OK" ) ||
+	/*corp*/  (djoinaprumr1==0 && /*djoinaprumr2==1 &&*/ djoinaprumr2a==1 && /*djoinaprumr3==0 &&*/ djoinaprumr3a==0 && djoinaprumr3b==0 && /*lstsaprumr2=="OK" &&*/ lstsaprumr2a=="OK") ||
+	/*ppiu*/  (djoinaprumr1==0 && /*djoinaprumr2==0 &&*/ djoinaprumr2a==0 && /*djoinaprumr3==1 &&*/ djoinaprumr3a==1 && djoinaprumr3b==1 && /*lstsaprumr3=="OK" &&*/ lstsaprumr3a=="OK" && lstsaprumr3b=="OK"))
+					
+cjoinaprumrtl	psdtype=="UMROH" && (
+	/*retail*/	(djoinaprumr1==1 && /*djoinaprumr2==0 &&*/ djoinaprumr2a==0 && /*djoinaprumr3==0 &&*/ djoinaprumr3a==0 && djoinaprumr3b==0 && lstsaprumr1=="TL") ||
+	/*corp*/	(djoinaprumr1==0 && /*djoinaprumr2==1 &&*/ djoinaprumr2a==1 && /*djoinaprumr3==0 &&*/ djoinaprumr3a==0 && djoinaprumr3b==0 && lstsaprumr2a=="TL") ||
+	/*ppiu*/	(djoinaprumr1==0 && /*djoinaprumr2==0 &&*/ djoinaprumr2a==0 && /*djoinaprumr3==1 &&*/ djoinaprumr3a==1 && djoinaprumr3b==1 && lstsaprumr3b=="TL"))	
+cjoinaprm4wok	psdtype=="M4W" && djoinaprm4w1==1 && lstsaprm4w1=="OK"
+cjoinaprm4wtl	psdtype=="M4W" && djoinaprm4w1==1 && lstsaprm4w1=="TL"
+
+cbknkaryawan    (psdtype=="M4W" && (djoinpsi==0 || (djoinpsi==1 && lpsistst == "CLSD"))) || psdtype != "M4W"
+caprroverm	(g_curcmd == 1  && g_grpnam != "B.M4WRM" && g_grpnam != "IT" && g_grpnam != "RI") ||
+                (g_curcmd == 2  && psdsts == "OK") ||
+                (g_curcmd == 2  && psdsts != "OK" && g_grpnam != "B.M4WRM")
+
+cjikarm		g_grpnam == "B.M4WRM"
+cketktp0		djoinketktp   == 0 && g_curcmd == 1
+cketrek0		djoinketrek   == 0 && g_curcmd == 1
+cketselfi0		djoinketselfi == 0 && g_curcmd == 1
+cketjanji0		djoinketjanji == 0 && g_curcmd == 1
+cketnpwp0		djoinketnpwp  == 0 && g_curcmd == 1
+cketktp1		djoinketktp   == 1
+cketrek1		djoinketrek   == 1
+cketselfi1		djoinketselfi == 1
+cketjanji1		djoinketjanji == 1
+cketnpwp1		djoinketnpwp  == 1
+
+DEFAULTS(tmptranst)
+IF cpsdm4w psdstr2         DFALT_SCAN_BLANKS       CRO ""
+                                        EKSTERNAL ""
+                                        INTERNALGROUP ""
+                                        INTERNALM4W ""
+                                        SALESM4W ""
+				
+IF cpsdm2w psdstr2	DFALT_SCAN	BLANKS
+					AGENM2W ""
+                                        FREELANCEM2W ""
+					MAKELAR ""
+IF cpsdhmc psdstr2	DFALT_SCAN	BLANKS
+					AGENHMC ""
+					FREELANCEHMC ""
+					MAKELAR
+
+IF cpsdumroh psdstr2    DFALT_SCAN_BLANKS     PPIU ""
+                                        EKSTERNAL ""
+                                        INTERNALGROUP ""
+
+psdstr1			DFALT_SCAN	BLANKS ""
+					ONYX ""
+					OPAL "" 
+					PEARL ""
+					AMETHYST ""
+					AQUAMARINE ""
+					ZAMRUD ""
+					TOPAZ ""
+					RUBY ""
+					DIAMOND ""
+IF cmitram4w	psdtype	DFALT_SCAN	BLANKS ""
+					HMC "HMC"
+					M2W "M2W"
+					M4W "M4W"
+					UMROH "UMROH"
+IF cmitraumroh	psdtype DFALT_SCAN	BLANKS ""
+					UMROH "UMROH"
+psdstr5			DFALT_SCAN	BLANKS ""
+					TUNAI ""
+					TRANSFER ""
+psdtot5                 DFALT_SCAN      BLANKS
+					1 "ACC"
+                                        2 "TACC"
+
+IF chox0 psdtot6	DFALT_SCAN_BLANKS	1 "MITRA BIASA" 
+IF chox1 psdtot6	DFALT_SCAN_BLANKS	1 "MITRA BIASA" 
+						2 "MITRA HO"
+psdtot7			DFALT_SCAN_BLANKS	1 "SHOWROOM T"
+						2 "SHOWROOM Y - BIROJASA Y"
+						3 "SHOWROOM Y - BIROJASA T"
+
+laprktp			DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+laprrek			DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+laprselfi		DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+laprjanji		DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+laprnpwp		DFALT_SCAN_BLANKS	Y "YA"
+						T "TIDAK"
+
+psdstr1         INIT_ADD                ONYX
+IF cpsdstr1 psdstr1         INIT_UPDATE             ONYX
+lJABATANMITRA21	INIT		JABATANMITRA
+lfreelance      INIT            FREELANCE
+lagen           INIT            AGEN
+lmakelar        INIT            MAKELAR
+lmitra          INIT            MITRA
+lh1             INIT            H1
+lm2w            INIT            M2W
+lHMC11		INIT		HMC
+lM2W11		INIT		M2W
+lM4W11  	INIT		M4W  
+lUMROH11	INIT		UMROH
+lpicmkt		INIT		PICMKT
+lbum		INIT		BUM   
+lthbl		INIT		{cthbl}
+lKUNCIABSEN	INIT		KUNCIABSEN
+lversi2		INIT		051225v1
+l3209		INIT		3209
+lKETMITRA	INIT		KETMITRA
+psdtgl1		INIT		{g_tgltrn}
+ltombolupd	INIT		"UPDATE"
+lFOTOKTP        INIT            "FOTO KTP"
+lREKENING       INIT            "REKENING"
+lSELFMITRA      INIT            "FOTO SELFI DGN MITRA"
+lPERJANJIAN     INIT            "SURAT PERJANJIAN KERJA"
+lNPWP           INIT            "NPWP" 
+	
+lno1		INIT		1
+lno2		INIT		2
+lno3		INIT		3
+lno4		INIT		4
+lno5		INIT		5
+lenterapr	INIT		ENTER
+
+EDITS(tmptranst)
+e.Validatecab		psdstr5			VALIDATE cabkodidx mcabupl 0
+e.ValidateBank  	lpsdtype2               VALIDATE tbddatkodidx mtbdbank stbd {Pgv_dttabel} {Pgv_infoumum} {Pgv_BANK}
+e.Validatepsd		psdpsmkode		VALIDATE psmktpidx mpsm
+e.Validatepsi   	psdkode                 VALIDATE psikodidx mpsi
+
+e.Mandataory    	psdstr2                 MANDATORY
+e.Mandatory		psdket2			MANDATORY_IF ctfx
+e.Mandatory		psdtype2		MANDATORY_IF ctfx
+e.Mandatory		psdstr3			MANDATORY_IF ctf
+e.Mandatory		psdtype			MANDATORY
+e.Mandatory		psdket			MANDATORY_IF cbknkaryawan
+e.Mandatory		psdtot6			MANDATORY_IF cm4wx
+e.Mandatory		psdtot7			MANDATORY_IF cm4wx
+/* e.Mandatory		psdstr5			MANDATORY_IF cbknm4w */
+e.Wajib isi approval	laprktp			MANDATORY_IF cjikarm
+e.Wajib isi approval	laprrek			MANDATORY_IF cjikarm
+e.Wajib isi approval	laprselfi		MANDATORY_IF cjikarm
+e.Wajib isi approval	laprjanji		MANDATORY_IF cjikarm
+
+MAP(mcabupl)
+cabkode			psdstr5			REPLACE
+lstsapr         	psdsts          	REPLACE_IF cjoinaprm4w
+lOK			psdsts			REPLACE_IF cjoinaprumrok
+lTL			psdsts			REPLACE_IF cjoinaprumrtl
+laprktp			laprktp			REPLACE_IF cketktp1
+lpsdtot4b		lpsdtot4b		REPLACE_IF cketrek1
+lpsdtot4c		lpsdtot4c		REPLACE_IF cketselfi1
+lpsdtot4d		lpsdtot4d		REPLACE_IF cketjanji1
+lpsdtot4e 		lpsdtot4e		REPLACE_IF cketnpwp1
+
+MAP(mtbdbank)
+tbdkode		lpsdtype2	REPLACE
+lpsdtype2	psdtype2	REPLACE
+psdtype2	lpsdtype2	REPLACE
+
+MAP(mpsi)
+psijabatan      ljabatan        REPLACE
+psinama		lnamaupl        REPLACE
+psists		lstsupl		REPLACE
+psicabskr	lcabupl		REPLACE
+cketacc         lketacc         DO_CALC_IF cpilacc
+ckettacc        lketacc         DO_CALC_IF cpiltacc
+ctipe1          lkettipe        DO_CALC_IF ctipe1x
+ctipe2          lkettipe        DO_CALC_IF ctipe2x
+cshowroom1      lketshowroom    DO_CALC_IF cshowroom1x
+cshowroom2      lketshowroom    DO_CALC_IF cshowroom2x
+cshowroom3      lketshowroom    DO_CALC_IF cshowroom3x
+
+MAP(mpsm)
+cBLANKS         lketaktif       DO_CALC_IF caktif0
+cBLANKS         lketpoten       DO_CALC_IF cpoten0
+cjl20           lketaktif       DO_CALC_IF caktif1
+cjl15           lketaktif       DO_CALC_IF caktif2
+cjl10           lketaktif       DO_CALC_IF caktif3
+cjl5            lketaktif       DO_CALC_IF caktif4
+cjl1            lketaktif       DO_CALC_IF caktif5
+ctdkjual        lketaktif       DO_CALC_IF caktif6
+cnew            lketpoten       DO_CALC_IF cpoten1
+cjl5a           lketpoten       DO_CALC_IF cpoten2
+cjl10a          lketpoten       DO_CALC_IF cpoten3
+cjl20a          lketpoten       DO_CALC_IF cpoten4
+psmrekbank      psdket2         REPLACE_IF cjoinpsiinpg
+psmbank         psdtype2        REPLACE_IF cjoinpsiinpg
+psmnpwp         psdket          REPLACE_IF cjoinpsiinpg
+
+MAP(mktp)
+psmkode		lnip		REPLACE
+
+MAP(mtunai)
+cBLANKS         psdket2         DO_CALC
+cBLANKS         lpsdtype2       DO_CALC
+cBLANKS         psdtype2        DO_CALC 
+cBLANKS         psdstr3		DO_CALC 
+
+MAP(mtipe)
+ctipe1		lkettipe	DO_CALC_IF ctipe1x
+ctipe2		lkettipe	DO_CALC_IF ctipe2x
+
+MAP(mshowroom)
+cshowroom1	lketshowroom	DO_CALC_IF cshowroom1x
+cshowroom2	lketshowroom	DO_CALC_IF cshowroom2x
+cshowroom3	lketshowroom	DO_CALC_IF cshowroom3x
+
+MAP(misiapr)
+cAPR_UMREKSTERNAL	psdstr4		DO_CALC_IF cmitraeksternal
+cAPR_UMRPPIU		psdstr4		DO_CALC_IF cmitrappiu
+cAPR_UMRRETAIL		psdstr4		DO_CALC_IF cmitraretail
+cAPR_MITRA		psdstr4		DO_CALC_IF cmitram4wxx
+
+MAP(mupdstsaprumr)
+lOK	psdsts		REPLACE_IF cjoinaprumrok
+lTL	psdsts		REPLACE_IF cjoinaprumrtl
+gv_INPG	psdtype3	REPLACE_IF cjoinaprumrok
+gv_CLSD	psdtype3	REPLACE_IF cjoinaprumrtl
+DEBUG           ldum    ldum            REPLACE
+DBCALCS(dupdstsaprumr)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psdprmidx psdprm	 
+	DBC_MAP		mupdstsaprumr
+
+
+MAP(mupdstsaprm4w)
+lOK	psmstsapr		REPLACE_IF cjoinaprm4wok
+lTL	psmstsapr		REPLACE_IF cjoinaprm4wtl
+DBCALCS(dupdstsaprm4w)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psmktpidx psdpsmkode
+	DBC_MAP		mupdstsaprm4w
+
+
+SPCALCS(supdstsapr)
+dupdstsaprumr
+dupdstsaprm4w
+
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdstr5       DO_MAP SHOW IF ctunai1 mtunai
+AFTER_INPUT	cur_field=psdstr2	DO_MAP SHOW
+		IF cjoinpsmkar mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TidakBolehMitraIni
+BEFORE_INPUT	cur_field=psdkode	DO_SKIP_IF cjoinpsi
+BEFORE_INPUT    cur_field=psdket2       DO_SKIP_IF cjoinpsiinpg
+BEFORE_INPUT    cur_field=psdtype2      DO_SKIP_IF cjoinpsiinpg
+BEFORE_INPUT    cur_field=lpsdtype2     DO_SKIP_IF cjoinpsiinpg
+BEFORE_INPUT    cur_field=psdket        DO_SKIP_IF cjoinpsiinpg
+AFTER_INPUT	cur_field=psdkode	DO_MAP SHOW 
+		IF cjoinpsi1 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.NipUplineHanyaBoleh4Jabatan
+AFTER_INPUT	cur_field=psdkode	DO_MAP SHOW 
+		IF cjoinpsi2 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.NipUplineHanyaBolehHmcInpg
+AFTER_INPUT	cur_field=psdkode	DO_MAP SHOW 
+		IF cjoinpsi3 mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.NipUplineHanyaBolehM2wInpg
+AFTER_INPUT     cur_field=psdkode       DO_MAP SHOW
+                IF cjoinpsi4 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.NipUplineMakelarCtrSlsInpg
+AFTER_INPUT     cur_field=psdkode       DO_MAP SHOW
+                IF cjoinpsi5 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.KbaCabTdkAdaIsiPic
+AFTER_INPUT     cur_field=psdkode       DO_MAP SHOW
+                IF cjoinpsi6 mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.StatusSdmTdkInp
+AFTER_INPUT	cur_field=psdtype	DO_MAP SHOW 
+		IF cada mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.UplineSdhAda
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW 
+		IF cada mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.UplineSdhAda
+BEFORE_INPUT	cur_field=psdstr2	DO_MAP SHOW mktp
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cheadm4w
+BEFORE_INPUT 	cur_field=psdkode	DO_SKIP_IF cjoinpsi1a
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF ctunaix 
+BEFORE_INPUT	cur_field=lpsdtype2	DO_SKIP_IF ctunaix 
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF ctunaix 
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF ctunai 
+BEFORE_INPUT	cur_field=psdstr3	DO_SKIP_IF ctunaix 
+BEFORE_INPUT    cur_field=psdtot5       DO_SKIP_IF cbknhak
+BEFORE_INPUT	cur_field=psdtype	DO_SKIP_IF cbknm4w
+BEFORE_INPUT	cur_field=psdstr5	DO_SKIP_IF cbknpst
+AFTER_INPUT	cur_field=psdtot6	DO_MAP SHOW mtipe
+AFTER_INPUT	cur_field=psdtot7	DO_MAP SHOW mshowroom
+AFTER_INPUT 	cur_field=psdstr2	DO_MAP SHOW misiapr
+CLICKED         cur_field=ltombolupd   DO_SPCALCS supdstsapr
+
+BEFORE_INPUT	cur_field=psdstr1	DO_SKIP_IF cjikarm
+BEFORE_INPUT 	cur_field=psdkode	DO_SKIP_IF cjikarm
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdtype3	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdsts	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdket	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdtot6	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdtot7	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=lpsdtype2	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdket2	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=lenter	DO_SKIP_IF cjikarm 
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cjikarm
+BEFORE_INPUT	cur_field=psdstr3	DO_SKIP_IF cjikarm 
+BEFORE_INPUT    cur_field=psdtot5       DO_SKIP_IF cjikarm
+BEFORE_INPUT	cur_field=psdtype	DO_SKIP_IF cjikarm
+BEFORE_INPUT	cur_field=psdstr5	DO_SKIP_IF cjikarm
+BEFORE_INPUT	cur_field=ltombolupd	DO_SKIP_IF cjikarm
+BEFORE_INPUT	cur_field=laprktp	DO_SKIP_IF caprroverm
+BEFORE_INPUT	cur_field=laprrek	DO_SKIP_IF caprroverm
+BEFORE_INPUT	cur_field=laprselfi	DO_SKIP_IF caprroverm
+BEFORE_INPUT	cur_field=laprjanji	DO_SKIP_IF caprroverm
+BEFORE_INPUT	cur_field=laprnpwp	DO_SKIP_IF caprroverm
+
+MAP(mupdpsdfoto)
+gv_int1         psdtot4                 REPLACE
+
+DBCALCS(dupdpsdfoto)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      psdprmidx psdprm
+        DBC_MAP         mupdpsdfoto
+
+MAP(mupdketimgrek)
+gv_int1         ketdf1                 REPLACE
+gv_int1		lpsdtot4b	       REPLACE
+DBCALCS(dupdketimgrek)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      ketbukurtidx lIMGREK psdpsmkode lno2
+        DBC_MAP         mupdketimgrek
+
+MAP(mupdketimgself)
+gv_int1         ketdf1                 REPLACE
+gv_int1		lpsdtot4c	       REPLACE
+DBCALCS(dupdketimgself)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      ketbukurtidx lIMGSELF psdpsmkode lno3
+        DBC_MAP         mupdketimgself
+
+MAP(mupdketimgjanji)
+gv_int1         ketdf1                 REPLACE
+gv_int1		lpsdtot4d	       REPLACE
+DBCALCS(dupdketimgjanji)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      ketbukurtidx lIMGJANJI psdpsmkode lno4
+        DBC_MAP         mupdketimgjanji
+
+MAP(mupdketimgnpwp)
+gv_int1         ketdf1                 REPLACE
+gv_int1		lpsdtot4e	       REPLACE
+DBCALCS(dupdketimgnpwp)
+        DBC_COMMAND     UPDATE
+        DBC_TARGET      ketbukurtidx lIMGNPWP psdpsmkode lno5
+        DBC_MAP         mupdketimgnpwp
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD psmtgl
+SFL_UPLFLD_DBCALCS dupdpsdfoto		/*Tanda Sudah Upload Foto KTP*/
+SFL_UPLFLD2_DBCALCS dupdketimgrek	/*Tanda Sudah Upload Foto REKENING*/
+SFL_UPLFLD3_DBCALCS dupdketimgself	/*Tanda Sudah Upload Foto SELFI*/
+SFL_UPLFLD4_DBCALCS dupdketimgjanji	/*Tanda Sudah Upload Foto PERJANJIAN*/
+SFL_UPLFLD5_DBCALCS dupdketimgnpwp	/*Tanda Sudah Upload Foto NPWP*/
+SFL_UPLFLD psdpsmkode
+SFL_UPLFLD2 psdpsmkode lIMGREK
+SFL_UPLFLD3 psdpsmkode lIMGSELF
+SFL_UPLFLD4 psdpsmkode lIMGJANJI
+SFL_UPLFLD5 psdpsmkode lIMGNPWP
+SFL_UPL_COND	cbknINPG
+SFL_TARGET
+psddatpsmurt   lKATMITRA psmktp l1
+
+SFL_MAP
+psmktp          psdpsmkode      REPLACE
+lKATMITRA       psddata         REPLACE
+l1              psdnourt        REPLACE
+psmcab		psdstr5		REPLACE
+
+CALCS()
+cjoinpsd	(djoinpsdhmc == 0 && djoinpsdm2w == 0) || djoinpsdm4w == 0
+cjoinpsd1       (psmstssup == "OPEN" && 
+		(g_grpnam == "RI" 	|| g_grpnam == "B.M4WMSPV" || g_grpnam == "B.M4WADH" 	  || g_grpnam == "B.M4WSALES" || 
+		 g_grpnam == "B.M4WCMO" || g_grpnam == "B.M4WADH"  || g_grpnam == "B.UMROHADHSPV" || g_grpnam == "B.M4WRM")) || 
+		
+		g_grpnam == "B.M4WMSPV"     || g_grpnam == "IT"       || g_grpnam == "RI" || g_grpnam == "B.M4WMSPV" || djointml3117upd ==1 || 
+		g_grpnam == "B.UMROHADHSPV" || g_grpnam == "B.M4WRM"
+/*cfreelance      psdstr2 == "FREELANCEHMC" || psdstr2 == "FREELANCEM2W"
+cagen           psdstr2 == "AGENHMC" || psdstr2 == "AGENM2W"
+cmakelar        psdstr2 == "MAKELAR"*/
+cmitra          psdstr2 == "CRO" || psdstr2 == "EKSTERNAL" || psdstr2 == "INTERNALGROUP" || psdstr2 == "INTERNALM4W" || psdstr2 == "SALESM4W"
+csudahisi       (psdket2 != BLANKS && djoinpsi == 1 && lpsistst == "CLSD") || (psdket2 != BLANKS && djoinpsi == 0)
+csudahisix      (psdtype2 != BLANKS && djoinpsi == 1 && lpsistst == "CLSD") || (psdtype2 != BLANKS && djoinpsi == 0)
+csudahisiy      (psdket != BLANKS && djoinpsi == 1 && lpsistst == "CLSD") || (psdket != BLANKS && djoinpsi == 0)
+cUbah		(g_curcmd == 2 && psdtype=="UMROH" && psdsts == "TL" && psdtype3 == "CLSD" && (g_grpnam=="RI" || g_grpnam=="IT" || g_grpnam=="B.UMROHADHSPV"))
+
+PERMIT(tmptrans)
+PMT_ADD_COND	cjoinpsd
+PMT_UPDALL_COND cjoinpsd1
+PMT_DEL_COND 	c0
+
+MAP(mmappsd)
+psdkode		lpsdkode	REPLACE_IF cjoinpsdket
+psdpsmkode	lpsdpsmkode	REPLACE_IF cjoinpsdket
+psdket2		lpsdket2	REPLACE_IF cjoinpsdket
+psdtype		lpsdtype	REPLACE_IF cjoinpsdket
+psdstr2		lpsdstr2	REPLACE_IF cjoinpsdket
+psdstr1		lpsdstr1	REPLACE_IF cjoinpsdket
+psdstr3		lpsdstr3a	REPLACE_IF cjoinpsdket
+psdket		lpsdket		REPLACE_IF cjoinpsdket
+psdtot5		lpsdtot5	REPLACE_IF cjoinpsdket
+psdtot6		lpsdtot6	REPLACE_IF cjoinpsdket
+psdtot7		lpsdtot7	REPLACE_IF cjoinpsdket
+psdtgl1		lpsdtgl1	REPLACE_IF cjoinpsdket
+
+MAP(mupdpsmmitra)
+psdket2		psmrekbank	REPLACE_IF csudahisi
+psdtype2	psmbank		REPLACE_IF csudahisix
+psdket		psmnpwp		REPLACE_IF csudahisiy
+/*psdtype	psmdvs		REPLACE_IF cbkndvsm4w
+lfreelance      psmtype         REPLACE_IF cfreelance
+lagen           psmtype         REPLACE_IF cagen
+lmakelar        psmtype         REPLACE_IF cmakelar*/
+lmitra          psmtype         REPLACE_IF cmitra
+
+MAP(mupdabk)
+gv_CLSD         abksts          REPLACE
+
+MAP(mupdpsdket)
+lpsdpsmkode	psdkode		REPLACE
+lpsdkode	psdpsmkode	REPLACE
+lpsdket2	psdket2		REPLACE
+lpsdtype	psdtype		REPLACE
+lpsdstr2	psdstr2		REPLACE
+lpsdstr1	psdstr1		REPLACE
+lpsdstr3a	psdstr3		REPLACE
+lpsdket		psdket		REPLACE
+lpsdtot5	psdtot5		REPLACE
+lpsdtot6	psdtot6		REPLACE
+lpsdtot7	psdtot7		REPLACE
+lpsdtgl1	psdtgl1		REPLACE
+DEBUG	ldum	ldum 		REPLACE
+
+MAP(mupdpsdu)
+cBLANKS         psdsts       DO_CALC
+cBLANKS		psdtype3	DO_CALC
+
+MAP(maddfotoktp)
+lIMGKTP		ketdata		REPLACE
+psmktp		ketnobuk	REPLACE
+lno1		ketnourt	REPLACE
+lFOTOKTP	ketstr1		REPLACE
+
+MAP(maddfotorek)
+lIMGREK		ketdata		REPLACE
+psmktp		ketnobuk	REPLACE
+lno2		ketnourt	REPLACE
+lREKENING	ketstr1		REPLACE
+
+MAP(maddfotoselfi)
+lIMGSELF	ketdata		REPLACE
+psmktp		ketnobuk	REPLACE
+lno3		ketnourt	REPLACE
+lSELFMITRA	ketstr1		REPLACE
+
+MAP(maddfotojanji)
+lIMGJANJI	ketdata		REPLACE
+psmktp		ketnobuk	REPLACE
+lno4		ketnourt	REPLACE
+lPERJANJIAN	ketstr1		REPLACE
+
+MAP(maddfotonpwp)
+lIMGNPWP	ketdata		REPLACE
+psmktp		ketnobuk	REPLACE
+lno5		ketnourt	REPLACE
+lNPWP		ketstr1		REPLACE
+
+MAP(mupdfotoktp)
+laprktp		ketyt1		REPLACE
+
+MAP(mupdfotorek)
+laprrek		ketyt1		REPLACE
+
+MAP(mupdfotoselfi)
+laprselfi	ketyt1		REPLACE
+
+MAP(mupdfotojanji)
+laprjanji	ketyt1		REPLACE
+
+MAP(mupdfotonpwp)
+laprnpwp	ketyt1		REPLACE
+DEBUG ldum ldum REPLACE
+
+SPCALCS(spupdatepsm)
+	DO_LIB 			ap_dbclc(DNAME dmappsd,DCOMMAND MAPMAP,DMAP mmappsd);
+	DO_LIB_IF cjoinpsm1 	ap_dbclc(DNAME dupdpsmmitra,DCOMMAND UPDATE,DTARGET psmktpidx psdpsmkode,DMAP mupdpsmmitra);
+	DO_LIB_IF cjoinpsm2 	ap_dbclc(DNAME dupdabkupl,DCOMMAND UPDATE_RANGE,DTARGET abkdatstskym lKUNCIABSEN gv_INPG psdkode l3209,DMAP mupdabk);
+	DO_LIB			ap_dbclc(DNAME dupdketmitra,DCOMMAND UPDATE_RANGE,DTARGET psddatkodidx lKETMITRA psdpsmkode,DMAP mupdpsdket);
+
+	DO_LIB_IF cUbah      	ap_dbclc(DNAME dupdpsdu,DCOMMAND UPDATE,DTARGET psdprmidx psdprm,DMAP mupdpsdu);
+
+	DO_LIB_IF cketktp0	ap_dbclc(DNAME daddfotoktp,DCOMMAND ADD,DFILE ket,DMAP maddfotoktp);	
+	DO_LIB_IF cketrek0	ap_dbclc(DNAME daddfotorek,DCOMMAND ADD,DFILE ket,DMAP maddfotorek);
+	DO_LIB_IF cketselfi0	ap_dbclc(DNAME daddfotoselfi,DCOMMAND ADD,DFILE ket,DMAP maddfotoselfi);
+	DO_LIB_IF cketjanji0	ap_dbclc(DNAME daddfotojanji,DCOMMAND ADD,DFILE ket,DMAP maddfotojanji);
+	DO_LIB_IF cketnpwp0	ap_dbclc(DNAME daddfotonpwp,DCOMMAND ADD,DFILE ket,DMAP maddfotonpwp);
+
+	DO_LIB_IF cketktp1	ap_dbclc(DNAME dupdfotoktp,DCOMMAND UPDATE,DTARGET ketbukurtidx lIMGKTP psdpsmkode lno1,DMAP mupdfotoktp);
+	DO_LIB_IF cketrek1	ap_dbclc(DNAME dupdfotorek,DCOMMAND UPDATE,DTARGET ketbukurtidx lIMGREK psdpsmkode lno2,DMAP mupdfotorek);
+	DO_LIB_IF cketselfi1	ap_dbclc(DNAME dupdfotoselfi,DCOMMAND UPDATE,DTARGET ketbukurtidx lIMGSELF psdpsmkode lno3,DMAP mupdfotoselfi);
+	DO_LIB_IF cketjanji1	ap_dbclc(DNAME dupdfotojanji,DCOMMAND UPDATE,DTARGET ketbukurtidx lIMGJANJI psdpsmkode lno4,DMAP mupdfotojanji);
+	DO_LIB_IF cketnpwp1	ap_dbclc(DNAME dupdfotonpwp,DCOMMAND UPDATE,DTARGET ketbukurtidx lIMGNPWP psdpsmkode lno5,DMAP mupdfotonpwp);
+
+
+POSTING(tmptrans)
+PST_ADDCMD	spupdatepsm
+PST_UPDCMD	spupdatepsm

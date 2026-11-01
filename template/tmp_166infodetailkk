@@ -1,0 +1,155 @@
+IMAGE(tmptranst)
+/-----------------------------------------------------------------------------------------\
+|t.uplkksdm                                                                               |
+|t.166Ketf                                                                                |
+|t.166Ketg                                                                                |
+|/--s.UPLOAD----------------------\/-----------------------------------------------------\|
+||                                ||i.Tgl        : __________ __________                 ||
+||                                ||t.Jab        : _____________________                 ||
+||                                ||t.NomorKK    : _____________________                 ||
+||                                ||t.NamaKepala : ____________________________________  ||
+||                                ||t.Alamat     : ____________________________________  ||
+||                                ||t.Kel        : _________________  _________________  ||
+||                                ||t.Kec        : _________________  _________________  ||
+||                                ||t.Kota       : _________________  _________________  ||
+||                                ||t.Propinsi   : _________________  _________________  ||
+||                                ||t.RtRw       : ____ i.2 ____                         ||
+||                                ||t.KodePos    : ______                                ||
+||                                ||t.JmlAnggota : ____                                  ||
+||                                ||t.OkUp       : __________                            ||
+|\--------------------------------/|                                                     ||
+|                                  |		     : _________________________             ||
+|                                  |t.KetTacc	 : _________________________             ||
+|                                  |                                                     ||
+|                                  |               __________________                    ||
+|                                  \-----------------------------------------------------/|
+\-----------------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tkmtgl1         PROTECT {DD-MM-YY}      INPUTRI 1 /*Tgl*/
+tkmsts          PROTECT                 INPUTRI 2 /*Sts*/
+lpsijabatan     NOCHANGE                INPUTRI 3 /*Jab*/
+tkmlok1         DIGITS                  INPUTRI 4 /*NoKK*/
+tkmket          ALLCAPS                 INPUTRI 5 /*NamaKepala*/
+tkmnama         ALLCAPS SCROLL          INPUTRI 6 /*Alamat*/
+tkmcab          ALLCAPS SCROLL          INPUTRI 7 /*Kel*/
+lkel1x          PROTECT SCROLL          INPUTRI 8 /*NamaKel*/
+tkmplg          ALLCAPS SCROLL          INPUTRI 9 /*Kec*/
+lkec1x          PROTECT SCROLL          INPUTRI 10 /*NamaKec*/
+tkmbuk2         ALLCAPS SCROLL          INPUTRI 11 /*Kota*/
+lkota1x         PROTECT SCROLL          INPUTRI 12 /*NamaKota*/
+tkmbuk1         ALLCAPS SCROLL          INPUTRI 13 /*Prop*/
+lpropinsi1x     PROTECT SCROLL          INPUTRI 14 /*NamaProp*/
+tkmdvs          DIGITS  SCROLL          INPUTRI 15 /*Rt*/
+tkmlokjl        DIGITS  SCROLL          INPUTRI 16 /*Rw*/
+tkmlok2         ALLCAPS SCROLL          INPUTRI 17 /*Kodepos*/
+tkmnil2         PROTECT SCROLL          INPUTRI 18 /*JmlAnggota*/
+tkmnil1         NOCHANGE SCROLL         INPUTRI 19 /*OkUpload*/
+tkmnobuk        PROTECT SCROLL          INPUTRI 23 /*Nobuk*/
+lkettaccx       PROTECT SCROLL          INPUTRI 24 /*KetTacc*/
+ltomboly        TOMBOL  SCROLL          INPUTRI 25
+
+DEFAULTS(tmptranst)
+tkmtgl1         INIT_ADD        {g_tgltrn}
+tkmtgl1         INIT_UPDATE     {g_tgltrn}
+l_count1        INIT            1
+ltomboly        INIT            HAPUS APPROVAL TL
+
+EDITS(tmptranst)
+e.mandatoryNoKK         tkmlok1 MANDATORY
+e.mandatoryNamaKplKlrg  tkmket  MANDATORY
+e.mandatoryAlamat       tkmnama MANDATORY
+e.mandatoryPropinsi1    tkmbuk1 MANDATORY
+e.mandatoryKota1        tkmbuk2 MANDATORY
+e.mandatoryKec1         tkmplg MANDATORY
+e.mandatoryKel1         tkmcab MANDATORY
+e.mandatoryRt           tkmdvs MANDATORY
+e.mandatoryRw           tkmlokjl MANDATORY
+e.mandatoryKodePos      tkmlok2 MANDATORY
+e.mandatoryJmlAnggota   tkmnil2 MANDATORY
+
+e.ValidateTbd2          lpsijabatan VALIDATE tbddatkodidx mtbd2xx  {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan}
+e.validatePropinsi1     tkmbuk1 VALIDATE dtmdtkodidx  mdtmb sdtm {Pgv_dtkota}
+/*e.validateKota1       tkmbuk2 VALIDATE tbldtdtmkod mtblb stbl {Pgv_dtkota} {Ptkmbuk1}*/
+e.validateKota1         tkmbuk2 VALIDATE tbldtkodidx mtblb stbl {Pgv_dtkota}
+e.validateKec1          tkmplg VALIDATE tbddatkodidx mtbdb stbd {Pgv_dtkota} {Ptkmbuk1} {Ptkmbuk2}
+/*e.validateKel1        tkmcab VALIDATE tbtdattypkod mtbtb stbt {Pgv_dtkota} {Pgv_dtkota21} {Ptkmbuk1} {Ptkmbuk2} {Ptkmplg}*/
+e.validateKel1          tkmcab VALIDATE_SEARCH tbtkodeidx mtbtb stbtkel
+
+CALCS()
+cnobuktmptransa2g1      STRIP(hrmnobuk)
+
+MAP(mnobuktmptransa2g1)
+cnobuktmptransa2g1      tkmnobuk                DO_CALC_IF cotY
+
+HOOKS(tmptranst)
+CLICKED         cur_field=ltomboly      DO_SPCALCS supddelapr
+AFTER_INPUT     cur_field=tkmlok1       DO_MAP SHOW mcaripjgkkx
+AFTER_INPUT     cur_field=tkmdvs        DO_MAP SHOW mcaripjgrtb
+AFTER_INPUT     cur_field=tkmlokjl      DO_MAP SHOW mcaripjgrwb
+AFTER_INPUT     cur_field=tkmlok2       DO_MAP SHOW mcaripjgposb
+AFTER_INPUT     cur_field=tkmlok1        DO_MAP SHOW mnobuktmptransa2g1
+
+AFTER_INPUT     cur_field=tkmlok1       DO_MAP SHOW
+                IF ckkx mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKK16
+
+AFTER_INPUT     cur_field=tkmdvs        DO_MAP SHOW
+                IF crtkkb mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRT3
+
+AFTER_INPUT     cur_field=tkmlokjl      DO_MAP SHOW
+                IF crwkkb mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRW3
+
+AFTER_INPUT     cur_field=tkmlok2       DO_MAP SHOW
+                IF cposkkb mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKdPos5
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW
+                IF ckkx mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKK16
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF crtkkb mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRT3
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF crwkkb mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgRW3
+
+AFTER_INPUT     cur_keybd=EN           DO_MAP SHOW
+                IF cposkkb mdumx
+                ELSE HKCURSOR STAY
+                HKMSG t.PjgKdPos5
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mnobuktmptransa2g1
+
+SUBFILE(tmptrans)
+SFL_TITLE(tmptranst)
+SFL_LINES(1)
+SFL_DEL_COND caccblanks
+SFL_SORT_BY_FIELD tkmnobuk
+SFL_SORT_UPDOWN DOWN
+SFL_UPL_COND cbisaupl
+SFL_UPL_DIRFLD hrmdvs2
+SFL_UPLFLD  tkmoto lUPLKK166
+SFL_UPLFLD_DBCALCS dupdtkmkksdm21
+SFL_UPL_DELCOND caccblanks
+SFL_COND        cpengkiniankk
+SFL_TARGET
+         tkmdtkdstlok   lUPLKK166 hrmnobuk
+
+SFL_MAP
+lUPLKK166               tkmdata         REPLACE
+hrmnobuk                tkmkode         REPLACE
+gv_OPEN                 tkmsts          REPLACE

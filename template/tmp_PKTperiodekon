@@ -1,0 +1,230 @@
+IMAGE(tmptranst)
+/----------------------------------------------------\
+|/--------------------------------------------------\|
+||t.User           :___________________________     ||
+||t.Nama           :________________________________||
+||t.Periode        :________________                ||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.AccGmDiv       :____ _________ ________________ ||
+||t.Ket            :__________________________      ||
+||t.AccGmHrd       :____ _________ ________________ ||
+||t.AccLegalIr	   :____ _________ ________________ ||
+||t.Ket            :__________________________      ||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.User      	   :__________ ____________________ ||
+||t.TglKontrak	   :___________ t.s/d _____________ ||
+|\--------------------------------------------------/|
+|/--------------------------------------------------\|
+||t.UplPengajuanKontrak  _____                      ||
+|\--------------------------------------------------/|
+|/-------------s.UPLOAD-----------------------------\|
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+|\--------------------------------------------------/|
+\----------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+psdstr1		PROTECT		INPUTRI 	1
+lnamauser2	PROTECT		INPUTRI		2
+psdstr2		NOCHANGE	INPUTRI		3
+
+
+psdtype2	NOCHANGE	INPUTRI		4
+psdstr3  	NOCHANGE	INPUTRI		5
+lnamaacc1	PROTECT		INPUTRI		6
+psdket		TEXTAREA ALLCAPS	INPUTRI	7
+
+psdstr5		NOCHANGE	INPUTRI		8
+lnipgmhrd	NOCHANGE	INPUTRI		9
+lnamagmhrd	PROTECT		INPUTRI		10
+
+psdtype3	NOCHANGE	INPUTRI		11
+psdstr4		NOCHANGE	INPUTRI		12
+lnamaacc2	PROTECT		INPUTRI		13
+psdket2		TEXTAREA ALLCAPS	INPUTRI 14
+
+psdkode		PROTECT			INPUTRI 15
+lnamaacc3	NOCHANGE		INPUTRI 16
+psdtgl1		ALLCAPS NOLIMIT {DD-MM-YY}	INPUTRI 17
+psdtgl2		ALLCAPS NOLIMIT {DD-MM-YY}	INPUTRI 18
+
+psdtot 		PROTECT			INPUTRI 19
+
+DEFAULTS(tmptranst)
+psdstr1		INIT_ADD	{g_usrkode}
+psdtype2	DFALT_SCAN_BLANKS Y T
+psdtype3	DFALT_SCAN_BLANKS Y T
+psdstr5		DFALT_SCAN_BLANKS Y T
+
+CALCS()
+cbukanPIC       hrmdvs2!="ACC_KTRK_PIC"
+cbukanGM        hrmdvs2!="ACC_KTRK_GMDIV"
+cbukanLGL       hrmdvs2!="ACC_KTRK_LGL" 
+cbukanER        hrmdvs2!="ACC_KTRK_ER" 
+cbukanGMHRD	hrmdvs2!="ACC_KTRK_GMHRD"
+
+cjikaPIC        hrmdvs2=="ACC_KTRK_PIC"
+cjikaGMHRD      hrmdvs2=="ACC_KTRK_GMHRD"
+cjikaGM         hrmdvs2=="ACC_KTRK_GMDIV"
+cjikaLGL        hrmdvs2=="ACC_KTRK_LGL"
+cjikaER		hrmdvs2=="ACC_KTRK_ER"
+cjikaGMtacc     hrmdvs2=="ACC_KTRK_GMDIV" && psdtype2=="T"
+cjikaLGLtacc    hrmdvs2=="ACC_KTRK_LGL" && psdtype3=="T"
+ctanggalbenar	(hrmdvs2=="ACC_KTRK_ER" && psdtgl1>=ltglkont && psdtgl2>ltglkont) || hrmdvs2!="ACC_KTRK_ER" || psdtype3=="T"	
+ctanggalbesar	(hrmdvs2=="ACC_KTRK_ER" && psdtgl2>psdtgl1) || hrmdvs2!="ACC_KTRK_ER" || psdtype3=="T"	
+cT		"T"
+cY		"Y"
+cada_tacc	psdtype2=="T" || psdtype3=="T"
+cada_accy	(psdtype2=="Y" && hrmdvs2=="ACC_KTRK_GMDIV") || (psdtype3=="Y" && hrmdvs2=="ACC_KTRK_ER")
+cjoinpsigm	djointlddis==1 && djoinpsigmhrd==1
+
+EDITS(tmptranst)
+t.Mandatory	psdstr2	MANDATORY_IF cjikaPIC
+t.Mandatory	psdstr5	MANDATORY_IF cjikaGMHRD
+t.Mandatory	psdtype2 MANDATORY_IF cjikaGM
+t.Mandatory 	psdket MANDATORY_IF cjikaGMtacc
+t.Mandatory	psdtype3 MANDATORY_IF cjikaLGL 
+t.Mandatory 	psdket2 MANDATORY_IF cjikaLGLtacc
+t.Mandatory	psdtgl1	MANDATORY_IF cjikaER
+t.Mandatory	psdtgl2	MANDATORY_IF cjikaER
+
+t.Validate	psdstr1	VALIDATE psikodidx mpsiper1
+t.Validate	psdstr3	VALIDATE psikodidx mpsiper3
+t.Validate	psdstr4	VALIDATE psikodidx mpsiper4
+t.Validate	psdkode VALIDATE psikodidx mpsiper5
+t.Validate	psdstr2	VALIDATE tbddatkodidx mtbd_bulan stbd {Pgv_dttabel} {Pgv_personal} {PlBULAN176} 
+
+MAP(mtbd_bulan)
+tbdkode		psdstr2		REPLACE
+
+MAP(mpsiper1)
+psikode		psdstr1		REPLACE
+psinama		lnamauser2	REPLACE
+lnipgmhrd	lnipgmhrd	REPLACE_IF cada_dis
+lnamagmhrd	lnamagmhrd	REPLACE_IF cjoinpsigm
+
+MAP(mpsiper3)
+psikode		psdstr3		REPLACE
+psinama		lnamaacc1 	REPLACE
+
+MAP(mpsiper4)
+psikode		psdstr4		REPLACE
+psinama		lnamaacc2 	REPLACE
+
+MAP(mpsiper5)
+psikode		psdkode		REPLACE
+psinama		lnamaacc3 	REPLACE
+
+CALCS()
+cjika1bulan	psdstr2=="1BULAN"
+cjika3bulan	psdstr2=="3BULAN"
+cjika6bulan	psdstr2=="6BULAN"
+cada_legal	djoinsgmlegal==1
+ctglakhir1bulan	DO_LIB ap_tambl(ltglkont,ltbh1,&ltglakhir);	
+ctglakhir3bulan	DO_LIB ap_tambl(ltglkont,ltbh3,&ltglakhir);	
+ctglakhir6bulan	DO_LIB ap_tambl(ltglkont,ltbh6,&ltglakhir);	
+cakhirmin1	ltglakhir - 1
+ctanggal1sama	(psdtgl1==ltglkont && hrmdvs2=="ACC_KTRK_ER") || hrmdvs2!="ACC_KTRK_ER"
+ctanggal2sama	(psdtgl2==ltglakhirx && hrmdvs2=="ACC_KTRK_ER") || hrmdvs2!="ACC_KTRK_ER"
+
+MAP(muserinput)
+g_usrkode	psdkode		REPLACE
+ltglkont	ltglkont	REPLACE
+ctglakhir1bulan	ltglakhir	DO_CALC_IF cjika1bulan
+ctglakhir3bulan	ltglakhir	DO_CALC_IF cjika3bulan
+ctglakhir6bulan	ltglakhir	DO_CALC_IF cjika6bulan
+cakhirmin1	ltglakhirx	DO_CALC
+
+MAP(mnipatasan)
+lnipgm		psdstr3		REPLACE_IF cada_acc
+lnip_legal	psdstr4		REPLACE_IF cada_legal
+cY		psdsts		DO_CALC_IF cada_accy
+cT		psdsts		DO_CALC_IF cada_tacc
+
+HOOKS(tmptranst)
+BEFORE_INPUT	cur_field=psdstr2	DO_SKIP_IF cbukanPIC
+
+BEFORE_INPUT	cur_field=psdtype2	DO_SKIP_IF cbukanGM
+BEFORE_INPUT	cur_field=psdket  	DO_SKIP_IF cbukanGM
+BEFORE_INPUT	cur_field=psdstr5	DO_SKIP_IF cbukanGMHRD
+BEFORE_INPUT	cur_field=psdtype3	DO_SKIP_IF cbukanLGL
+BEFORE_INPUT	cur_field=psdket2  	DO_SKIP_IF cbukanLGL
+BEFORE_INPUT	cur_field=psdtgl1  	DO_SKIP_IF cbukanER 
+BEFORE_INPUT	cur_field=psdtgl2  	DO_SKIP_IF cbukanER 
+BEFORE_INPUT	cur_field=psdtgl1	DO_MAP SHOW muserinput
+AFTER_INPUT	cur_field=psdstr2	DO_MAP SHOW mnipatasan
+AFTER_INPUT	cur_keybd=EN     	DO_MAP SHOW mnipatasan
+AFTER_INPUT	cur_field=psdtgl1	DO_MAP SHOW
+		IF ctanggal1sama mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglAwalHrsSesuai
+
+AFTER_INPUT	cur_field=psdtgl2	DO_MAP SHOW
+		IF ctanggal2sama mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglAkhirHrsSesuai
+
+AFTER_INPUT	cur_field=psdtgl2	DO_MAP SHOW 
+		IF ctanggalbenar mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglTdkBolehKurang	
+
+AFTER_INPUT	cur_field=psdtgl2	DO_MAP SHOW
+		IF ctanggalbesar mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglTdkBolehSama
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF ctanggalbesar mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.TglTdkBolehSama
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF ctanggalbenar mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglTdkBolehKurang
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF ctanggal1sama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglAwalHrsSesuai
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+                IF ctanggal2sama mdum
+                ELSE HKCURSOR STAY
+                HKMSG t.TglAkhirHrsSesuai
+
+MAP(mupdpsdfoto)
+c1 			psdtot 		DO_CALC_IF cjikaPIC
+
+DBCALCS(dupdpsdfoto)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	psdprmidx	psdprm
+	DBC_MAP		mupdpsdfoto
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPL_DIRFLD hrmtgl
+SFL_UPLFLD psdpsmkode
+SFL_UPLFLD_DBCALCS dupdpsdfoto
+SFL_UPL_DELCOND c0
+SFL_TARGET
+        psddattypidx   lPERKONTRAK lPERKONTRAK hrmnobuk 
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+lPERKONTRAK     psddata         REPLACE
+lPERKONTRAK     psdtype         REPLACE
+

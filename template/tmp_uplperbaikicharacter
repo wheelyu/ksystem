@@ -1,0 +1,89 @@
+IMAGE(tmptranst) {NO_CLS} {LSTFLD_ADVANCE} {FRSFLD_BACKUP} {BASE_ROW=7}
+/--------------------------------------\
+|/--------s.UPLOAD--------------------\|
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+||                                    ||
+|\------------------------------------/|
+|/------------------------------------\|
+||t.KlikUploadOkSemua                 ||
+||t.HasilVerif: ____________          ||
+||              ______________________||
+||t.NipVerif  : ________  ____________||
+||t.TglVer    : ___________           ||
+||t.JamVerif  : ______                ||
+||              _______________      _||
+|\------------------------------------/|
+\--------------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+svistr7                 NOCHANGE                INPUTRI         8
+svistr9                 ALLCAPS                 INPUTRI         9
+svistr10                PROTECT                 INPUTRI         10
+lnipver                 PROTECT                 INPUTRI         11
+ltglverif               PROTECT {DD-MM-YYYY}            INPUTRI         13
+ljamverif               PROTECT                 INPUTRI         14
+luplokokktp		TOMBOL			INPUTRI		14
+svinobuk                PROTECT UNSEEN          INPUTRI         15
+
+EDITS(tmptranst)
+e.Validate      svinobuk        VALIDATE btmbukidx msvift724bc
+e.Validate      svistr10        VALIDATE psikodidx mpsi724bc
+e.Mandatory	svistr9		MANDATORY_IF cfototkdsesuaiktp
+
+MAP(mpsi724bc)
+psikode         svistr10        REPLACE
+psinama         lnipver         REPLACE
+
+MAP(msvift724bc)
+cblanks         ljamfoto714     DO_CALC
+svidf8          ljamfoto714     REPLACE
+cblanks         ljamverif       DO_CALC
+svidf8          ljamfoto714     REPLACE
+svidf7          ljamverif       REPLACE
+svitype2     	ltglverif       REPLACE
+
+MAP(mupdsviperbaikanc)
+cBLANKS		svistr7		DO_CALC
+cBLANKS         svitblkode      DO_CALC
+cBLANKS         svidf7          DO_CALC
+cBLANKS         svistr10        DO_CALC
+cBLANKS         svistr9         DO_CALC
+
+DBCALCS(dupdsviperbaikanb)
+	DBC_COMMAND	UPDATE
+	DBC_TARGET	sviotoidx	svioto
+	DBC_MAP		mupdsviperbaikanc
+
+MAP(mupdsviperbaikanklik2)
+cBLANKS		sviyt2		DO_CALC
+
+MAP(mupdabktgjawab2)
+gv_CLSD		abksts		REPLACE_IF cbukakunci
+gv_CLSD		abksts		REPLACE_IF cbukakunciktp
+
+SPCALCS(spcalcuploadokb)
+DO_LIB_IF csudahuploadulangktp ap_dbclc(DNAME dupdsviperbaikanklik2,DCOMMAND UPDATE,DTARGET sviotoidx svioto,DMAP mupdsviperbaikanklik2);
+DO_LIB_IF csudahuploadulangktp ap_dbclc(DNAME dupdabktgjawab2,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN btmnobuk,DMAP mupdabktgjawab2);
+DO_LIB_IF csudahuploadulangktp ap_dbclc(DNAME daddabkam2,DCOMMAND ADD,DFILE abk,DMAP maddabkam);
+
+HOOKS(tmptranst)
+CLICKED         cur_field=luplokokktp       DO_SPCALCS IF csudahuploadulangktp  spcalcuploadokb
+ 
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_UPLFLD_DBCALCS dupdsviperbaikanb
+SFL_COND cperbaikanktp 
+SFL_UPL_DELCOND c0
+SFL_UPL_DIRFLD btmtgl
+SFL_UPLFLD btmnobuk svikode
+SFL_TARGET
+        svidatbuktyp   gv_datasurvey btmnobuk gv_characterH1
+

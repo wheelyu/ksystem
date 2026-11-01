@@ -1,0 +1,188 @@
+IMAGE(tmptranst)
+/-------------------------------------\
+ /---s.UPLOAD------------------------\
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ |                                   |
+ \-----------------------------------/
+ /-----------------------------------\
+ | t.JmlCair        : ____           |
+ | t.TotCair        : ______________ |
+ \-----------------------------------/
+ /-----------------------------------\ __
+ | t.TglCair        : ______________ |
+ | t.Ok             : ___ ______ ___ |
+ | t.AprADHAM       : _____  _______ |
+ |                    ______________ |
+ | t.Ket            : ______________ |
+ | t.AprFin         : ______ _______ |
+ |                    ______________ |
+ | t.Ket            : ______________ |
+ | t.Nominal1       : ____________   |
+ | t.NoHL1          : ______________ |
+ | t.Nominal2       : ____________   |
+ | t.NoHL2          : ______________ |
+ | t.Nominal3       : ____________   |
+ | t.NoHL3          : ______________ |
+ \-----------------------------------/
+\-------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELDS(tmptranst)
+svidf1		PROTECT 	INPUTRI 99
+svidf2		PROTECT		INPUTRI 99
+
+svinobuk	PROTECT UNSEEN		INPUTRI 99
+
+svitgl1		NOCHANGE {DD-MM-YYYY}	INPUTRI 1
+luplokcair	TOMBOL			INPUTRI 2
+ltblreset	TOMBOL			INPUTRI 99
+sviyt2		PROTECT			INPUTRI 2
+svistr1		NOCHANGE SCROLL		INPUTRI 4
+svistr5		PROTECT SCROLL		INPUTRI 5
+lnamaam		PROTECT SCROLL		INPUTRI 5
+sviket		TEXTAREA SCROLL		INPUTRI 5
+svistr2		NOCHANGE SCROLL		INPUTRI 6
+svistr6	PROTECT SCROLL		INPUTRI 7
+lnamafins	PROTECT SCROLL		INPUTRI 7
+sviket2		TEXTAREA SCROLL		INPUTRI 7
+
+svidf6		NUMERIC		INPUTRI 8
+svistr8		ALLCAPS	SCROLL	INPUTRI 9
+svidf7		NUMERIC		INPUTRI 10
+svistr9		ALLCAPS	SCROLL	INPUTRI 11
+svidf8		NUMERIC		INPUTRI 12
+svistr10	ALLCAPS	SCROLL	INPUTRI 13
+
+CALCS()
+cgiliranfin	svistr1 == "ACC" && svistr2 == "ACC"
+cisix		svistr5 != BLANKS
+cisix2		svistr6 != BLANKS
+
+EDITS(tmptranst)
+e.ValidateFaktur svinobuk VALIDATE tkmbukidx mtkmC 0
+e.MandatoryNom1 svidf6 MANDATORY_IF cgiliranfin
+e.MandatoryHL1 svistr8 MANDATORY_IF cgiliranfin
+e.ValidateDL1 svistr8 VALIDATE_IF cgiliranfin ppsbukidx mppsC 0
+e.Validate svistr9 VALIDATE_IF cisix psikodidx mpsiy 0 
+e.Validate svistr10 VALIDATE_IF cisix2 psikodidx mpsiy2 0 
+
+MAP(mpsiy)
+psinama		lnamaam		REPLACE
+
+MAP(mpsiy2)
+psinama		lnamafins	REPLACE
+
+MAP(mtkmC)
+tkmnobuk	svinobuk	REPLACE
+
+MAP(mppsC)
+ppsnobuk	svistr8		REPLACE
+
+DEFAULTS(tmptranst)
+svikode		INIT	CAIR
+svitgl1		INIT	{g_tgltrn}
+svistr2		DFALT_SCAN	BLANKS	ACC	TACC
+svistr1		DFALT_SCAN	BLANKS	ACC	TACC
+ltblreset	INIT	"RESET"
+luplokcair	INIT	"APR"
+
+CALCS()
+ckonrpt2	tkmsts != "OPEN" && (tkmkode == "CAIR_JASA" || tkmkode == "CAIR_OLI" || tkmkode == "CAIR_GARANSI" || tkmkode == "CAIR_VOUCHER")
+/*cfintacc	svistr2 == "TACC"*/
+cfinacc		svistr2 == "ACC"
+cnonadham	g_grpnam != "IT"  && g_grpnam != "RI"  && g_grpnam != "ADHAM" && g_grpnam != "ADHHEAD" && g_grpnam != "ADHDVH"
+cadhacc		svistr1	== "ACC"
+cgrpfin		tkmsts != "RINP" && g_grpnam != "IT" && g_grpnam != "RI" && g_usrkode != "1005191" && g_usrkode != "1307782" && g_usrkode != "1912466"
+ckonreset	svistr1 != BLANKS
+cketapram	"APPROVAL PENCAIRAN"
+cADHAM		"ADHAM"
+cblmklik	sviyt1 == "OK" && djoinabkam == 0
+csdhklik	sviyt1 == "OK"
+cmauapr		sviyt2 == "OK" && svistr1 == ""
+
+MAP(msvireset)
+cBLANKS		svitgl1	DO_CALC
+cBLANKS		sviket	DO_CALC
+cBLANKS		svistr1	DO_CALC
+
+MAP(mtkmreset)
+cBLANKS		tkmlok2	DO_CALC
+
+SPCALCS(spreset)
+DO_LIB_IF ckonreset ap_dbclc(DNAME dtkmreset,DCOMMAND UPDATE_RANGE,DTARGET tkmbukidx tkmnobuk,DMAP mtkmreset);
+DO_LIB_IF ckonreset ap_dbclc(DNAME dsvireset,DCOMMAND UPDATE_RANGE,DTARGET svidatbuktgl tkmdata tkmnobuk,DMAP msvireset);
+
+MAP(maddabkapram)
+lkunciabsen	abkdata		REPLACE
+tkmnobuk	abknobuk	REPLACE
+gv_INPG		abksts		REPLACE
+g_tgltrn	abktgl		REPLACE
+lsgmstr5	abkkym		REPLACE_IF cdjoinsgm
+c624		abkscr		DO_CALC
+cketapram	abkkym2		DO_CALC
+cADHAM		abknoll		DO_CALC
+
+MAP(msdhklik)
+sviyt1		sviyt2		REPLACE
+
+MAP(maprin)
+cIN		tkmlok2	DO_CALC
+
+CALCS()
+camisi		svistr1 != BLANKS
+cfinisi		svistr2 != BLANKS
+
+MAP(mnipams)
+g_usrkode	svistr5	REPLACE_IF camisi
+
+MAP(mnipfins)
+g_usrkode	svistr6	REPLACE_IF cfinisi
+
+SPCALCS(spok)
+DO_LIB_IF cblmklik ap_dbclc(DNAME daddabkapram,DCOMMAND ADD,DFILE abk,DMAP maddabkapram);
+DO_LIB_IF csdhklik ap_dbclc(DNAME dsdhklik,DCOMMAND UPDATE,DTARGET sviprmidx sviprm,DMAP msdhklik);
+DO_LIB_IF cmauapr ap_dbclc(DNAME dsdhok,DCOMMAND UPDATE,DTARGET tkmprmidx tkmprm,DMAP maprin);
+
+HOOKS(tmptranst)
+CLICKED		cur_field=luplokcair DO_SPCALCS spok
+CLICKED		cur_field=ltblreset DO_SPCALCS spreset
+BEFORE_INPUT	cur_field=sviket2 DO_SKIP_IF cfinacc
+BEFORE_INPUT	cur_field=svistr1 DO_SKIP_IF cnonadham
+BEFORE_INPUT	cur_field=sviket DO_SKIP_IF cadhacc
+BEFORE_INPUT	cur_field=svistr2 DO_SKIP_IF cgrpfin
+BEFORE_INPUT	cur_field=svidf6 DO_SKIP_IF cgrpfin
+BEFORE_INPUT	cur_field=svistr8 DO_SKIP_IF cgrpfin
+BEFORE_INPUT	cur_field=svidf7 DO_SKIP_IF cgrpfin
+BEFORE_INPUT	cur_field=svistr9 DO_SKIP_IF cgrpfin
+BEFORE_INPUT	cur_field=svidf8 DO_SKIP_IF cgrpfin
+BEFORE_INPUT	cur_field=svistr10 DO_SKIP_IF cgrpfin
+AFTER_INPUT	cur_field=svistr1 DO_MAP SHOW mnipams
+AFTER_INPUT	cur_field=svistr2 DO_MAP SHOW mnipfins
+
+MAP(mjoinrpt6242)
+cOK		sviyt1	DO_CALC
+DBCALCS(djoinrpt6242)
+DBC_COMMAND	UPDATE
+DBC_TARGET	sviprmidx sviprm
+DBC_MAP		mjoinrpt6242
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND ckonrpt2
+SFL_UPLFLD svioto svinobuk
+SFL_UPL_DIRFLD svitgl1
+SFL_UPLFLD_DBCALCS djoinrpt6242
+SFL_UPL_DELCOND c0
+SFL_SORT_BY_FIELD svitgl1
+SFL_SORT_UPDOWN DOWN
+SFL_TARGET
+svidatbuktyp tkmdata tkmnobuk

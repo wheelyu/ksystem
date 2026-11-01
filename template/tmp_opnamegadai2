@@ -1,0 +1,112 @@
+IMAGE(tmptranst)
+/-----------------------------------\
+|/----s.UPLOAD---------------------\|
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+||                                 ||
+|\---------------------------------/|
+|/---------------------------------\|
+|| i.KodeBrg   	:______________	   ||
+|| t.NoKont    	:______________    ||
+|| t.Lokasi	:______________	   ||
+|| t.ItemBrg	:______________	   ||
+|| t.Kelengkapan:______________	   ||
+|| t.StatusFoto	:______________    ||
+|| t.TglFt     	:______________    ||
+|| t.NipAblFoto :______________	   ||
+|\---------------------------------/|
+\-----------------------------------/
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+tldbrg          PROTECT         INPUTRI         1
+tkdnoll		PROTECT		INPUTRI		2
+tldlok		PROTECT		INPUTRI		3
+tkdjenis	PROTECT		INPUTRI		4
+tkdrek		NOCHANGE	INPUTRI		5
+tkdjwbstr1	PROTECT		INPUTRI		7
+tkdtgl	        PROTECT {DD-MM-YYYY}    INPUTRI 8
+tkdjwbstr2      PROTECT		INPUTRI         9
+
+
+CALCS()
+clain2gadai	tkdjenis!=lcekbrggadai
+csdhuplgadai	tkdjwbstr1=="OK" && tkdjenis!=lcekbrggadai
+csdhcekgadai	tkdrek=="ADA" && tkdjenis!=lcekbrggadai
+cbrggadailengkap	"LENGKAP"
+cbrggadaitdklengkap	"TDK_LENGKAP"
+ccekbrggadailengkap	ldetil2gadai==ldetil2gadaiada && tkdrek=="ADA"
+ccekbrggadaitdklengkap	(ldetil2gadai!=ldetil2gadaiada) || tkdrek=="TDK_ADA"
+ccekuplgadaiok	ldetil2gadaiada==ldetil2gadaiok && tkdjwbstr1=="OK"
+cgabdirfotogad	STRIP(tlmnobuk) + STRIP(tldplg) + STRIP(tkdjenis)
+cbkndiubah	g_curcmd != 2
+cblmupldetso	tkdjwbstr1!="OK"
+csdhupldetso	tkdjwbstr1=="OK"
+
+DEFAULTS(tmptranst)
+IF cblmupldetso	tkdrek		DFALT_SCAN_BLANKS	TDK_ADA "TIDAK ADA"
+IF csdhupldetso	tkdrek		DFALT_SCAN_BLANKS	ADA "ADA"
+							TDK_ADA "TIDAK ADA"
+
+EDITS(tmptranst)
+e.ValidateBrg	tkdnoll	VALIDATE tldplgbrgidx mtldSOmga2 0 {PlOPNAME} {Pgv_INPG} {Stldbrg} {Stldukrwrn} {Stldsat}
+
+MAP(mtldSOmga2)
+tldbrg		tldbrg		REPLACE
+tldlok		tldlok		REPLACE
+tldoto		ltldoto		REPLACE
+tkdjenis	lcekbrggadai	REPLACE
+cgabdirfotogad	tldket		DO_CALC_IF cbkndiubah		/*map no replace untuk dir lok upload*/
+
+MAP(mupdfotosomga2)
+g_tgltrn	tkdtgl		REPLACE
+g_usrkode	tkdjwbstr2	REPLACE
+cOK		tkdjwbstr1	DO_CALC
+
+DBCALCS(dupdfotomga2)                                                                                                                     
+DBC_COMMAND     UPDATE
+DBC_TARGET	tkdprmidx	tkdprm
+DBC_MAP         mupdfotosomga2
+
+MAP(mscantkdgadai2)
+c1	ldetil2gadai	DO_CALC_IF clain2gadai
+c1	ldetil2gadaiok	DO_CALC_IF csdhuplgadai
+c1	ldetil2gadaiada	DO_CALC_IF csdhcekgadai
+
+MAP(misilocalgadai2)
+DEBUG	tkdjenis	lcekbrggadai	REPLACE
+
+HOOKS(tmptranst)
+AFTER_INPUT	cur_field=tkdrek	DO_MAP SHOW misilocalgadai2
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND   cMGASO3
+SFL_UPL_DIRFLD tlmtgl
+SFL_UPLFLD tldket
+SFL_UPLFLD_DBCALCS dupdfotomga2
+SFL_UPL_CAMERAONLY
+SFL_UPL_DELCOND cnodel
+SFL_TARGET
+	tkdbukllsts	tlmnobuk tldplg gv_INPG
+
+MAP(mupdtldsogadai)
+cbrggadailengkap	tldkat		DO_CALC_IF ccekbrggadailengkap
+cbrggadaitdklengkap	tldkat		DO_CALC_IF ccekbrggadaitdklengkap
+cOK			tldsisbrg	DO_CALC_IF ccekuplgadaiok
+g_fotolat1      	tldperdis1      REPLACE
+g_fotolon1      	tldperdis2      REPLACE
+
+SPCALCS(sp2updsogadai)
+DO_LIB ap_dbclc(DNAME dscantkdgadai,DCOMMAND SCANSCAN,DTARGET tkdbukllsts tlmnobuk tldplg gv_INPG,DBC_SUM_MAP mscantkdgadai2);
+DO_LIB ap_dbclc(DNAME dupdtldsogadai,DCOMMAND UPDATE,DTARGET tldotoidx ltldoto,DMAP mupdtldsogadai);
+
+POSTING(tmptrans)
+        PST_UPDCMD      sp2updsogadai

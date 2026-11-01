@@ -1,0 +1,161 @@
+IMAGE(tmptranst)
+/----------------------------------\
+ /--------------------------------\
+ |t.NamaAktiva :__________________|
+ |t.Kepemilikan:__________________|
+ |t.KodeAktiva :__________  ______|
+ |t.Nip        :__________        |
+ |t.PIT        :______            |
+ |t.HasilSensus:______  __________|
+ |t.Ket        :__________________|
+ |t.Merk       :__________________|
+ |t.Lantai     :__________________|
+ |t.KodeRuangan:__________________|
+ |             :__________________|
+ |t.UplOk      :_____             |
+  /-----s.UPLOAD-----------------\
+  |                              |
+  |                              |
+  |                              |
+  |                              |
+  |                              |
+  |                              |
+  |                              |
+  |                              |
+  \------------------------------/
+ \--------------------------------/
+\----------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+        tldsat          PROTECT                         INPUTRI         1
+        lbrgsat4        PROTECT                         INPUTRI         2
+        tldbrg          PROTECT                         INPUTRI         3
+        tldcab          PROTECT                         INPUTRI         4
+        tldppdoto       PROTECT                         INPUTRI         5
+        tldstr1		NOCHANGE                        INPUTRI         6
+        tldjasbrg       NOCHANGE                        INPUTRI         8
+        tldkat          PROTECT                         INPUTRI         9
+        tldket          TEXTAREA ALLCAPS SCROLL         INPUTRI         11
+        tldket2         ALLCAPS SCROLL         		INPUTRI         11
+        tldgrup2        ALLCAPS                         INPUTRI         12
+        tldgrup         ALLCAPS                         INPUTRI         13
+        lenter          ALLCAPS                         INPUTRI         14
+        tldsisbrg	NOCHANGE                        INPUTRI         15
+
+DEFAULTS(tmptranst)
+tldjasbrg       DFALT_SCAN_BLANKS       1 "ADA LENGKAP"
+                                        2 "ADA RUSAK"
+                                        3 "HILANG SEBAGIAN"
+                                        4 "HILANG SEMUA"
+tldstr1		DFALT_SCAN_BLANKS	1	2	3	4	5	6	7	8	9
+
+/*
+CALCS()
+cwajibscan      (tldukrwrn=="1" && djoinbrg==1 && lbrgkat!="TC2401" && lbrgkat!="TA2211" && lbrgkat!="TA2200" && lbrgkat!="TA2205" && lbrgkat!="TA2174" && lbrgkat!="TA2256" && lbrgkat!="TA2204" && lbrgkat!="TA2203" && lbrgkat!="TA2202" && lbrgkat!="TF2101" && lbrgkat!="TF2105" && lbrgkat!="TG1201" && lbrgkat!="01001" && lbrgkat!="Y02" && lbrgkat!="TG1201" && lbrgkat!="GEDUNG" && lbrgkat!="TANAH" && djoincab==1 && lcabtwr!="PST" && tldjasbrg!="C")
+cadax           tldjasbrg!="C"
+*/
+CALCS()
+cselainbaik     tldjasbrg=="1"
+cselainbaikx    (lpanjangket>=10 && (tldjasbrg=="2" || tldjasbrg=="3") || tldjasbrg=="1")
+cpil1		tldjasbrg=="1"
+cpil2		tldjasbrg=="2"
+cpil3		tldjasbrg=="3"
+cpil4		tldjasbrg=="4"
+cpil1x		"ADA LENGKAP"
+cpil2x		"ADA RUSAK"
+cpil3x		"HILANG SEBAGIAN"
+cpil4x		"HILANG SEMUA"
+
+EDITS(tmptranst)
+/*e.Mandatory     tldukrwrn       MANDATORY*/
+e.Mandatory     tldjasbrg       MANDATORY
+e.Mandatory     tldket          MANDATORY_IF cAC
+/*e.Mandatory     tldplg          MANDATORY_IF cwajibscan*/
+e.Mandatory     tldgrup         MANDATORY_IF cadax
+e.Mandatory     tldgrup2        MANDATORY_IF cadax
+/*e.Validate      tldbrg          VALIDATE brgdatkodidx mbrg2 {Pgv_dtaktiva}*/
+e.Validatetldbrg	tldbrg          VALIDATE aktbukotoidx makt {Saktbukoto} {Sakturt}
+e.Validatetldcab	tldcab          VALIDATE cabkodidx mcaba1
+e.Validatetldgrup2	tldgrup2        VALIDATE tbedattypkod mtbex stbe {Pgv_dttabel} {Pgv_gedung} {PlLANTAI} {Plcabtwr} {Stbekode}
+e.Validatetldgrup	tldgrup         VALIDATE tbedattypkod mtbe2 stbeon {Pgv_dttabel} {Pgv_gedung} {PlLANTAI} {Plcabtwr} {Ptldgrup2}
+e.Mandatory	tldket2		MANDATORY
+
+MAP(mcaba1)
+cabkode         tldcab          REPLACE
+cabtwr          lcabtwr2        REPLACE
+
+MAP(makt)
+aktnobuk	tldbrg		REPLACE
+aktbrg		tldsat		REPLACE
+aktcrtusr	tldppdoto	REPLACE
+aktkode		lbrgsat4	REPLACE
+
+/*
+MAP(mbrg2)
+brgsat4         lbrgsat4        REPLACE
+brgytblnol      tldukrwrn       REPLACE_IF csudah
+brgkode         tldplg          REPLACE_IF csudah
+brgnip          tldppdoto       REPLACE
+brgcab          tldcab          REPLACE
+brgkat2         tlddvs          REPLACE
+cfisika         tldkat          DO_CALC_IF cfisikax
+cfisikb         tldkat          DO_CALC_IF cfisikbx
+cfisikc         tldkat          DO_CALC_IF cfisikcx
+cfisikd         tldkat          DO_CALC_IF cfisikdx
+cfisike         tldkat          DO_CALC_IF cfisikex
+*/
+
+MAP(mket1)
+ckodea          lketkode        DO_CALC_IF ckodeax
+ckodeb          lketkode        DO_CALC_IF ckodebx
+cfisika         tldkat          DO_CALC_IF cfisikax
+cfisikb         tldkat          DO_CALC_IF cfisikbx
+cfisikc         tldkat          DO_CALC_IF cfisikcx
+cfisikd         tldkat          DO_CALC_IF cfisikdx
+cfisike         tldkat          DO_CALC_IF cfisikex
+cpil1x		tldkat		DO_CALC_IF cpil1
+cpil2x		tldkat		DO_CALC_IF cpil2
+cpil3x		tldkat		DO_CALC_IF cpil3
+cpil4x		tldkat		DO_CALC_IF cpil4
+
+MAP(mpanjangket1)
+cpanjangket     lpanjangket     DO_CALC
+
+/*
+CALCS()
+clewatscan      (djoinbrg==1 && (lbrgkat=="01001" || lbrgkat=="02001" || lbrgkat=="03012" || lbrgkat=="06047" || lbrgkat=="GEDUNG" || lbrgkat=="TANAH" || lbrgkat=="TA2174" || lbrgkat=="TA2200" || lbrgkat=="TA2202" || lbrgkat=="TA2203" || lbrgkat=="TA2204" || lbrgkat=="TA2205" || lbrgkat=="TA2211" || lbrgkat=="TA2256" || lbrgkat=="TANAH" || lbrgkat=="TC1103" || lbrgkat=="TC1105" || lbrgkat=="TC1106" || lbrgkat=="TC1111" || lbrgkat=="TC1112" || lbrgkat=="TC1113" || lbrgkat=="TC1114" || lbrgkat=="TC1115" || lbrgkat=="TC116" || lbrgkat=="TC1117" || lbrgkat=="TC1118"|| lbrgkat=="TC1311" || lbrgkat=="TC1312" || lbrgkat=="TC1313" || lbrgkat=="TC1415" || lbrgkat=="TC2401" || lbrgkat=="TC3301" || lbrgkat=="TE2701" || lbrgkat=="TF2101" || lbrgkat=="TF2105" || lbrgkat=="TG1201" || lbrgkat=="Y02" || lbrgkat==" "))
+*/
+
+HOOKS(tmptranst)
+BEFORE_INPUT    cur_field=tldket        DO_SKIP_IF cselainbaik
+/*BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF cselainbaik
+BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF clewatscan*/
+/*BEFORE_INPUT    cur_field=tldukrwrn     DO_SKIP_IF csudah*/
+/*BEFORE_INPUT    cur_field=tldplg        DO_SKIP_IF csudah*/
+AFTER_INPUT     cur_field=tldjasbrg     DO_MAP SHOW mket1
+AFTER_INPUT     cur_field=tldket        DO_MAP SHOW mpanjangket1
+AFTER_INPUT     cur_field=tldket        DO_MAP
+                IF cselainbaikx mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+AFTER_INPUT     cur_keybd=EN            DO_MAP
+                IF cselainbaikx mdum
+                ELSE HKCURSOR STAY
+                HKMSG Minimal 10 Karakter
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_COND        csentoolsx
+SFL_UPL_DIRFLD  tldtglfak
+SFL_UPL_CAMERAONLY
+SFL_UPLFLD      tldnobuk tldbrg
+SFL_UPLFLD_DBCALCS      dupdatedet1
+SFL_TARGET
+        tldbukurtidx tlmnobuk
+SFL_MAP
+        tlmnobuk        tldnobuk        REPLACE
+        tlmdata         tlddata         REPLACE
+

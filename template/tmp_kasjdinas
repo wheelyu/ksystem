@@ -1,0 +1,66 @@
+IMAGE(tmptranst)
+/---------t----t----------t---------t-------t------t----------t-------------t-----t-------t-----------t-----\
+|i.Nippst |i.Ty| i.NoCek  |i.KasBank| i.Cab |Card  |t.Tgl     |   i.Nilai   |i.Mtu|i.Kurs |i.NilAs    |t.Cab|
+\---------.----.----------.---------.-------.------.----------.-------------.-----.-------.-----------.-----/
+
+IMAGE(tmptrans)
+|_________|____|__________|_________|_______|______|__________|_____________|_____|_____._|_________._|_____|
+
+FIELD(tmptrans)
+   tcmcrtusr     NOCHANGE		    INPUTRI    1
+   tcmtype       NOCHANGE                   INPUTRI    2 /* Type O/S */
+   tcmnocek      PROTECT                    INPUTRI    3 /* nomor cek */
+   tcmnobbm      ALLCAPS                    INPUTRI    4 /* Kode Rekening */
+   tcmcab        ALLCAPS                    INPUTRI    5 /* Keterangan */
+   tcmnocard     PROTECT                    INPUTRI    7 /* Keterangan */
+   tcmtgl        NONE NOLIMIT {DD-MM-YY}    INPUTRI    8 /* Tanggal jt */
+   tcmtotal      NUMERIC                    INPUTRI    9 /* Nilai Cek */
+   tcmmua        PROTECT                    INPUTRI    10 /* Mata Uang Terima */
+   tcmkurs       PROTECT                    INPUTRI    11 /* Mata Uang Terima */
+   tcmtotas      PROTECT                    INPUTRI    12 /* Mata Uang Terima */
+   tcmgrup       PROTECT SCROLL             INPUTRI    13 /* Kode Rekening */
+
+
+DEFAULTS(tmptrans)
+tcmdk		INIT_ADD		K
+tcmtgl		INIT_UPDATE		{g_tgltrn}
+tcmtype		DFALT_SCAN		TN
+					TB
+tcmcrtusr	INIT_UPDATE		{g_usrkode}
+
+EDITS(tmptrans)
+t.Mandatory tcmnobbm MANDATORY
+t.Mandatory tcmcab   MANDATORY
+e.ValidateBbm   tcmnobbm        VALIDATE bbgnoidx mbbgtransb sbbg
+t.ValidateCab   tcmcab         VALIDATE cabstskodidx mcab3 scab {Pgv_INPG}
+
+
+
+HOOKS(tmptrans)
+AFTER_INPUT	cur_field=tcmnobbm 		DO_MAP SHOW 
+		IF ckas1   mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.HanyaKas
+
+AFTER_INPUT	cur_field=tcmtotal 		DO_MAP SHOW 
+		IF csaldokas   mdum
+		ELSE HKCURSOR STAY
+		HKMSG t.SaldoKasTdkCukup
+
+
+SUBFILE(tmptrans)
+SFL_LINES(7)        /* Jml record yang kelihatan di layar */
+SFL_COND	cadaKBS
+SFL_TITLE(tmptranst)
+SFL_TRANS2_FIELD tmpisistr1
+SFL_TRANS2_FIELD2 tmpisistr2
+
+SFL_TARGET
+        tcmbukurtidx            bkmnobuk
+
+SFL_MAP
+bkmnobuk             tcmnobuk              	REPLACE
+bkmnobuk	     tcmnocek			REPLACE 
+bkmjns		     tcmtype2			REPLACE
+bkmdvs		     tcmdvs			REPLACE
+bkmbisnis	     tcmbisnis			REPLACE	

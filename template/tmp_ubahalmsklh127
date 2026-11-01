@@ -1,0 +1,120 @@
+IMAGE(tmptranst)
+/--------------------------------------------------------------------------------\
+|       /----------------------------------------------------\                   |
+|       !t.UbahDtSklh                                        !                   |
+|       !t.Tgl        : ___________                          !                   |
+|       !t.NipUbah    : ___________                          !                   |
+|       !t.Ubah       : ___________                          !                   |
+|       !t.AlmtSklh   : _______________________              !                   |
+|       !t.Prov       : _______________________              !                   |
+|       !t.Kab        : _______________________              !                   |
+|       !t.Kec        : _______________________              !                   |
+|       !t.Kel        : _______________________              !                   |
+|       !t.Rt/Rw      : _______ _______                      !                   |
+|       !t.AccHrd     : _______                              !                   |
+|       !t.Ket        : _____________________________________!                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(tmptrans)
+
+FIELD(tmptranst)
+psdtgl1         PROTECT NOLIMIT {DD-MM-YY} INPUTRI 1
+psdstr1         PROTECT                 INPUTRI 2
+psdstr2         NOCHANGE                INPUTRI 3
+almjalan_2      TEXTAREA ALLCAPS        INPUTRI 4
+almprop_2       NOCHANGE                INPUTRI 4
+almkota_2       NOCHANGE               	INPUTRI 4
+almkec_2        NOCHANGE                INPUTRI 4
+almkel_2	NOCHANGE		INPUTRI 4
+almrt_2		DIGITS			INPUTRI 4
+almrw_2		DIGITS			INPUTRI 4
+psdtype3        NOCHANGE                INPUTRI 5
+psdstr5         ALLCAPS SCROLL          INPUTRI 6
+
+DEFAULTS(tmptranst)
+psdtgl1         INIT_ADD                {g_tgltrn}
+psdstr1         INIT_ADD                {g_usrkode}
+psdstr2         DFALT_SCAN_BLANKS       ALAMAT
+					PROVINSI
+                                        KABUPATEN
+                                        KECAMATAN
+                                        KELURAHAN
+                                        RT/RW
+psdtype3        DFALT_SCAN_BLANKS       ACC TACC
+
+CALCS()
+calm            psdstr2=="ALAMAT"
+cprov           psdstr2=="PROVINSI"
+ckab	        psdstr2=="KABUPATEN"
+ckec		psdstr2=="KECAMATAN"
+ckel		psdstr2=="KELURAHAN"
+crt		psdstr2=="RT/RW"
+
+cbknalm         psdstr2!="ALAMAT"
+cbknprov        psdstr2!="PROVINSI"
+cbknkab         psdstr2!="KABUPATEN"
+cbknkec         psdstr2!="KECAMATAN"
+cbknkel         psdstr2!="KELURAHAN"
+cbknrt          psdstr2!="RT/RW"
+
+EDITS(tmptranst)
+t.Mandatory  psdtgl1   MANDATORY
+t.Mandatory  psdstr1   MANDATORY
+t.Mandatory  psdstr2   MANDATORY
+t.Mandatory  almjalan_2    MANDATORY_IF calm
+t.Mandatory  almprop_2   MANDATORY_IF cprov
+t.Mandatory  almkota_2   MANDATORY_IF ckab
+t.Mandatory  almkec_2   MANDATORY_IF ckec
+t.Mandatory  almkel_2   MANDATORY_IF ckel
+t.Mandatory  almrt_2   MANDATORY_IF crt
+t.Mandatory  almrw_2   MANDATORY_IF crt
+e.ValidateProp  almprop_2 VALIDATE dtmdtkodidx  mdtmProp2 sdtmProp {Pgv_dtkota}
+e.ValidateKota  almkota_2 VALIDATE tbldtdtmkod  mtblKota2 stblKota {Pgv_dtkota} {Palmprop_2}
+e.ValidateKec   almkec_2 VALIDATE tbddatkodidx  mtbdKec2 stbd {Pgv_dtkota} {Palmprop_1} {Palmkota_2}
+e.ValidateKel   almkel_2 VALIDATE tbtdattypkod  mtbdKel2 stbt  {Pgv_dtkota} {Pgv_dtkota21} {Palmprop_2} {Palmkota_2} {Palmkec_2}
+t.Mandatory  psdtype3   MANDATORY
+t.Mandatory  psdstr5   MANDATORY
+
+MAP(mdtmProp2)
+dtmkode almprop_2         REPLACE
+
+MAP(mtblKota2)
+tblkode almkota_2        REPLACE
+
+MAP(mtbdKec2)
+tbdkode almkec_2         REPLACE
+
+MAP(mtbdKel2)
+tbtkode almkel_2          REPLACE
+
+
+MAP(mpsd)
+almjalan_2	psdkode         REPLACE_IF calm
+almprop_2	psdkode         REPLACE_IF cprov
+almkota_2	psdkode         REPLACE_IF ckab
+almkec_2	psdkode         REPLACE_IF ckec
+almkel_2	psdkode         REPLACE_IF ckel
+almrt_2		psdkode         REPLACE_IF crt
+almrw_2		psdkode         REPLACE_IF crt
+
+HOOKS(tmptranst)
+AFTER_INPUT     cur_field=psdtype3      DO_MAP SHOW     mpsd
+BEFORE_INPUT    cur_field=almjalan_2       DO_SKIP_IF cbknalm
+BEFORE_INPUT    cur_field=almprop_2	   DO_SKIP_IF cbknprov
+BEFORE_INPUT    cur_field=almkota_2	   DO_SKIP_IF cbknkab
+BEFORE_INPUT    cur_field=almkec_2         DO_SKIP_IF cbknkec
+BEFORE_INPUT    cur_field=almkel_2         DO_SKIP_IF cbknkel
+BEFORE_INPUT    cur_field=almrt_2          DO_SKIP_IF cbknrt
+BEFORE_INPUT    cur_field=almrw_2          DO_SKIP_IF cbknrt
+
+SUBFILE(tmptrans)
+SFL_LINES(1)
+SFL_TITLE(tmptranst)
+SFL_TARGET
+        psddatpsmkod lUBHALMS127 hrmnobuk
+
+SFL_MAP
+lUBHALMS127             psddata         REPLACE
+hrmnobuk                psdpsmkode      REPLACE
+
