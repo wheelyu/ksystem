@@ -1,13 +1,11 @@
 IMAGE(tmptranst)
 /-------------------------------------------\
-
   /---------------------------------------\
     i.NamaPsrt : ________________________
     i.NoHp     : ________________________
   \---------------------------------------/
  t.Bukti Blast WA
   /--s.UPLOAD-----------------------------\
-  |                                       |
   |                                       |
   |                                       |
   |                                       |
@@ -23,9 +21,9 @@ IMAGE(tmptranst)
   |                                       |
   |                                       |
   |                                       |
-  |                                       |
   \---------------------------------------/
-|| i.BuktiFUCallSsui : _________________ ||
+|| i.KonsMinat        : ________________ ||
+|| i.BuktiFUCallSsui  : ________________ ||
 || i.NipAcc           : ________________ ||
 || i.Enter           : __________        ||
 \-------------------------------------------/
@@ -33,12 +31,13 @@ IMAGE(tmptrans)
 
 FIELD(tmptranst)
 tldkat      PROTECT     INPUTRI 1
-tldsat      PROTECT     INPUTRI 2
-tlddvs      ALLCAPS     INPUTRI 1
-tldukrwrn   PROTECT     INPUTRI 2
-tldcab      ALLCAPS     INPUTRI 3
-tldnobbm    PROTECT     INPUTRI 4
-lenter      ALLCAPS     INPUTRI 5
+tldsat      PROTECT     INPUTRI 1
+tlddvs      ALLCAPS     INPUTRI 2
+tldukrwrn   PROTECT     INPUTRI 3
+tldtydis    ALLCAPS     INPUTRI 3
+tldcab      ALLCAPS     INPUTRI 4
+tldnobbm    PROTECT     INPUTRI 5
+lenter      ALLCAPS     INPUTRI 6
 MAP(mupdtlda1)
 lBLASTWAUDGSE             tldstr4       		REPLACE
 gv_int1                 tldjmlren       REPLACE
@@ -50,16 +49,19 @@ gv_int1                 tldjmlpos       REPLACE
 MAP(mmapmaptlddet)
 tlddvs  laccblast REPLACE
 tldcab  laccfucall REPLACE
-
+tldtydis ltldtydis      REPLACE
 CALCS()
-chm2 tkmjml == 1
-chm1 tkmjml == 2
+chm2 tkmjml == 1 && tkmplg != g_usrkode
+chm1 tkmjml == 2 && tkmplg != g_usrkode
+cupdminatT tkmjml == 2 && tldtydis == "T"
 
 MAP(mupdtlddet)
 laccblast tlddvs REPLACE
 laccfucall tldcab   REPLACE
+ltldtydis  tldtydis     REPLACE
 g_usrkode tldukrwrn REPLACE_IF chm2
 g_usrkode tldnobbm REPLACE_IF chm1
+lT      tldstr1 REPLACE_IF cupdminatT
 
 DBCALCS(dupdtlda1)
         DBC_COMMAND     UPDATE
@@ -72,21 +74,21 @@ DBCALCS(dupdtlda2)
         DBC_MAP         mupdtlda2
 
 DEFAULTS(tmptranst)
-tlddvs         DFALT_LIST      YA TIDAK
-tldcab         DFALT_LIST      YA TIDAK
-
+tlddvs         DFALT_LIST      ACC TACC
+tldcab         DFALT_LIST      ACC TACC
+tldtydis       DFALT_LIST      Y T
 EDITS(tmptranst)
 e.Mandatory             tlddvs          MANDATORY_IF chm2
 e.Mandatory             tldcab          MANDATORY_IF chm1
-
 
 HOOKS(tmptranst)
 BEFORE_INPUT    cur_field=tldcab        DO_SKIP_IF chm2
 BEFORE_INPUT    cur_field=tlddvs        DO_SKIP_IF cudgseT
 BEFORE_INPUT    cur_field=tlddvs        DO_SKIP_IF chm1
 BEFORE_INPUT    cur_field=tldcab        DO_SKIP_IF cudgseT
-BEFORE_INPUT    cur_field=tldukrwrn        DO_SKIP_IF cudgseT
-BEFORE_INPUT    cur_field=tldnobbm        DO_SKIP_IF cudgseT
+BEFORE_INPUT    cur_field=tldukrwrn     DO_SKIP_IF cudgseT
+BEFORE_INPUT    cur_field=tldnobbm      DO_SKIP_IF cudgseT
+BEFORE_INPUT    cur_field=tldtydis      DO_SKIP_IF chm2
  
 SUBFILE(tmptrans)
 SFL_LINES(1)
@@ -102,7 +104,7 @@ SFL_UPL_COND    cudgseT
 SFL_UPL_DELCOND c0
 SFL_COND ctkmkodeudgse
 SFL_TARGET
-        tldbukurtidx tkmnobuk
+        tldotoidx   tldoto
 
 
 SPCALCS(sptmptrans)

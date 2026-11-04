@@ -1,0 +1,403 @@
+SCREEN 4901 APP_TYPE t.Post130 
+
+LOCAL
+PGM_FIELDS
+lawl          STRING		  21
+labdjam1        TIME            4
+labdjam2        TIME            4
+labdsts		STRING		5
+lINPG  		STRING		5
+lINCL  		STRING		5
+labdtype	STRING		11
+lcab    	STRING		21
+labdshift	STRING		21
+ldum    	STRING		2 
+labdnil		INT2		2
+ltanpasdkjari	INT2		2
+l1		INT2		2
+labdtgl		DATE		4
+ltgl		DATE		4
+lpsitglawl	DATE		4
+lpsijabatan   STRING              21
+lusrgrp         STRING          21
+lkunciabsen     STRING          11
+lharike       INT2                2
+
+/*lhrmnobuk168            STRING          21*/
+lCABNOSJ        STRING          21
+lNIPWJBSJ       STRING          21
+ljam          TIME                4
+ljam8        TIME                4
+ljam9        TIME                4
+ljam830         TIME            4
+ljam730         TIME            4
+ljam630         TIME            4
+ljam09          TIME            4
+ljam10          TIME            4
+ljam11          TIME            4
+ljam12          TIME            4
+ljam13          TIME            4
+
+ltbdjam1        TIME            4
+ltbdjam2        TIME            4
+ltbdjam3        TIME            4
+
+
+lABSAWHBL       STRING          21
+lcabkdjam       STRING          21
+
+llat            DFLOAT          8
+llon            DFLOAT          8
+llatGD          DFLOAT          8
+llongGD         DFLOAT          8
+lupd		STRING		11
+lscr		STRING		11
+lada168		DFLOAT		8
+lSIDIKJARI      STRING          11
+ltlmnobuk722    STRING  	21
+ldtcmocab       STRING  	11
+
+
+IMAGE(master) 
+/----------------------s.AbsenKaryawan--------------------------\
+| /-----------------------------------------------------------\ |
+| | i.Nip           : ____________                            | |
+| \-----------------------------------------------------------/ |                   
+\---------------------------------------------------------------/                                       
+
+FIELD(master)
+   lawl            ALLCAPS             INPUTRI             1 
+
+EDITS(master)
+t.MandatoryNip lawl MANDATORY
+t.ValidatePsi lawl VALIDATE psikodidx mpsi 0
+t.ValidateUsr lawl VALIDATE usrkodidx musr 0
+
+
+MAP(mjoinabd)
+abdjam1         labdjam1                REPLACE
+abdjam2         labdjam2                REPLACE
+abdsts          labdsts                 REPLACE
+abdtype         labdtype                REPLACE
+abdshift        labdshift               REPLACE
+abdnil          labdnil                 REPLACE
+abdcab          lcab                    REPLACE
+abdtgl          labdtgl                 REPLACE
+
+DBCALCS(djoinabd)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abdkymtglidx     lawl ltgl
+        DBC_MAP         mjoinabd
+
+MAP(mjoincab)
+cabkdjam                lcabkdjam       REPLACE
+
+DBCALCS(djoincab)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cabkodidx       lcab
+        DBC_MAP         mjoincab
+
+CALCS()
+charike6    lharike == 6
+
+MAP(mjointbd)
+tbdjam1         ltbdjam1        REPLACE
+tbdjam2         ltbdjam2        REPLACE
+tbdjam3         ltbdjam2        REPLACE_IF charike6
+tbdjam3         ltbdjam3        REPLACE
+
+DBCALCS(djointbdSH)
+      DBC_COMMAND     JOIN
+      DBC_TARGET      tbddatkodidx    gv_dttabel gv_infoumum gv_shift labdshift
+      DBC_MAP         mjointbd
+
+DBCALCS(djointlmcmo722)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmbukidx ltlmnobuk722
+
+CALCS()
+cjoinabd1		djoinabd==1
+cjoincab1		djoincab==1
+cjointbd        	djoinabd==1 && djointbdSH==1
+c0			0
+cjointbd_ke6    djointbdSH==1 && lharike == 6
+c4554           lscr == "4554"
+
+MAP(mpsi)
+psijabatan      lpsijabatan     REPLACE
+psitglawl       lpsitglawl      REPLACE
+
+lcab		lcab		REPLACE_IF cjoinabd1
+lcabkdjam       lcabkdjam       REPLACE_IF cjoincab1
+
+c0              ltbdjam1        DO_CALC
+c0              ltbdjam2        DO_CALC
+c0              ltbdjam3        DO_CALC
+ltbdjam1        ltbdjam1        REPLACE_IF cjointbd
+ltbdjam2        ltbdjam2        REPLACE_IF cjointbd
+ltbdjam3        ltbdjam3        REPLACE_IF cjointbd
+ltbdjam3        ltbdjam2        REPLACE_IF cjointbd_ke6
+
+
+MAP(musr)
+usrkode         lawl            REPLACE
+usrgrp          lusrgrp         REPLACE
+
+
+DEFAULTS(master)
+lawl 	        INIT		{r_string1}
+lscr		INIT		{r_string2}
+l1		INIT		{r_count1}
+lharike		INIT		{r_count1}
+llat		INIT		{r_float1}
+llon		INIT		{r_float2}
+llatGD		INIT		{r_float3}
+llongGD		INIT		{r_float4}
+lkunciabsen	INIT		KUNCIABSEN
+ltgl		INIT		{g_tgltrn}
+lINPG		INIT		INPG
+lINCL		INIT		INCL
+lCABNOSJ        INIT    	CABNOSJ
+lNIPWJBSJ       INIT    	NIPWJBSJ
+
+ljam            INIT            1031
+IF c4554        ljam            INIT	        {r_time2}
+ljam8           INIT            0800
+ljam9           INIT            0900
+ljam10          INIT            1000
+ljam630         INIT            0630
+ljam730         INIT            0730
+ljam830         INIT            0830
+ljam09          INIT            0900
+ljam11          INIT            1100
+ljam12          INIT            1200
+ljam13          INIT            1300
+
+lABSAWHBL       INIT    	ABSENAWLBLN
+lSIDIKJARI      INIT    	SIDIKJARI
+lupd		INIT		03112025a
+ldtcmocab       INIT    	DTCMOCAB
+
+
+CALCS()
+c1              1
+cmasukperiode	hrmsts == "CLSD" && g_tgltrn >= hrmtgl1 && g_tgltrn <= hrmtgl2
+
+
+MAP(mdumstr)
+ldum		ldum		REPLACE
+
+MAP(mscanhrm168)
+c1               lada168        DO_CALC_IF cmasukperiode
+
+DBCALCS(dbscanhrm168)
+        DBC_COMMAND             SCANSCAN
+        DBC_TARGET              hrmdatniptgl   lSIDIKJARI  lawl
+        DBC_SUM_MAP             mscanhrm168
+
+DBCALCS(djoinhrm168)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              hrmdatniptgl   lSIDIKJARI  lawl
+
+DBCALCS(djointbdSJ)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lCABNOSJ psicab
+
+DBCALCS(djointbdWJBSJ)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lNIPWJBSJ lawl
+
+DBCALCS(djoinabdDTG)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abdkymststgl     lawl lINPG ltgl
+        DBC_MAP         mjoinabd
+
+DBCALCS(djoinabdOPEN)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abdkymststgl     lawl gv_OPEN ltgl
+        DBC_MAP         mjoinabd
+
+DBCALCS(djoinabdPLG)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abdkymststgl     lawl lINPG
+        DBC_MAP         mjoinabd
+
+DBCALCS(djoinabdPLG2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      abdkymststgl     lawl lINCL
+        DBC_MAP         mjoinabd
+
+
+
+CALCS()
+csj_ok		ltanpasdkjari ==1
+cbukan168       (((djoinhrm168==1 && ((dbscanhrm168==1 || dbscanhrm168==0) && lada168 == 0)) || djoinhrm168==0) &&
+		(djointbdSJ == 0 || (djointbdSJ == 1 && djointbdWJBSJ == 1)) && lscr != "878" && lscr != "4554")
+
+ctdk_sj		(djoinhrm168==1 && ((dbscanhrm168==1 || dbscanhrm168==0) && lada168 > 0)) || (djointbdSJ == 1 && djointbdWJBSJ == 0) || lscr == "878" || lscr == "4554"
+
+MAP(misiawal)
+gv_int1		ltanpasdkjari		REPLACE_IF ctdk_sj  
+
+
+HOOKS(master)
+AFTER_INPUT 	cur_field=lawl	   DO_MAP SHOW misiawal   
+AFTER_INPUT     cur_field=lawl     DO_LIB_IF cbukan168 ap_ceksj(lawl);
+
+AFTER_INPUT     cur_field=lawl       DO_MAP SHOW
+                IF csj_ok   mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.SidikJariTdkCocok
+
+
+
+DBCALCS(djoinabk)
+      DBC_COMMAND     JOIN
+      DBC_TARGET      abkdatstskym    lkunciabsen   lINPG         lawl
+
+
+DBCALCS(djointbdABSABL)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lABSAWHBL psidep
+
+DBCALCS(djointbdABSABL2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lABSAWHBL lcab
+
+
+
+
+CALCS()
+/*cSYSTIME        SYSTIME*/
+cDATANG         "DATANG"
+cHADIR          "HADIR"
+cdjoinabk0      djoinabk==0
+cdjoinabk0x      djoinabk==0 && lscr == "4554"
+cdjoinabk1      djoinabk==1
+cblanks		BLANKS
+cH		"H"
+ckunciabs       "KUNCI ABSEN"
+csecurity       djoinabk==0 && (lpsijabatan =="SECURITY" || lpsijabatan =="ITHARDWARE" || lpsijabatan=="SATPAM" || lusrgrp=="SALES" || lusrgrp=="ADM01" || lusrgrp=="ADM02" || lusrgrp=="ADM03" || lusrgrp=="ADM04" || lusrgrp=="ADM05")
+
+c2ok        djoinabdPLG == 1 && (labdtype == "DATANG" || labdtype == "HADIR129") 
+
+cket10          "TERLAMBAT10"
+cket30          "TERLAMBAT30"
+cket150         "TERLAMBAT150"
+
+ctelat10        (l1==1 && ljam > ltbdjam1 && ljam - ltbdjam1 >= 1 && ljam - ltbdjam1 <= 10
+                /* 8.31 sd 8.40 */   && ltgl != 20220709 && ltgl != (ststglprjgl + 1) &&
+                (djointbdABSABL==1 || djointbdABSABL==0 || djointbdABSABL2==1 || djointbdABSABL2==0)) && labdtype != "J1"
+ctelat30        (l1==1 && ljam > ltbdjam1 && ljam - ltbdjam1 > 10 && ljam - ltbdjam1 <= 30
+                /* 8.41 sd 9.00 */ && ltgl != 20220709 && ltgl != (ststglprjgl + 1) &&
+                (djointbdABSABL==1 || djointbdABSABL==0 || djointbdABSABL2==1 || djointbdABSABL2==0)) && labdtype != "J1"
+ctelat150       (l1==1 && ljam > ltbdjam1 && ljam - ltbdjam1 > 30 
+                /* 9.01 sd 11.00 */ && ltgl != 20220709 && ltgl != (ststglprjgl + 1) &&
+                (djointbdABSABL==1 || djointbdABSABL==0 || djointbdABSABL2==1 || djointbdABSABL2==0)) && labdtype != "J1"
+ctelat10abl     (l1==1 && ljam > ltbdjam1 && ljam - ltbdjam1 >= 1 && ljam - ltbdjam1 <= 10 
+                /* 8.31 sd 8.40 */ && ltgl == (ststglprjgl + 1) && djointbdABSABL==0 && djointbdABSABL2==0) && labdtype != "J1"
+ctelat30abl     (l1==1 && ljam > ltbdjam1 && ljam - ltbdjam1 > 10 && ljam - ltbdjam1 <= 30 
+                /* 8.41 sd 9.00 */ && ltgl == (ststglprjgl + 1) && djointbdABSABL==0 && djointbdABSABL2==0) && labdtype != "J1"
+ctelat150abl    (l1==1 && ljam > ltbdjam1 && ljam - ltbdjam1 > 30 
+                /* 9.01 sd 11.00 */ && ltgl == (ststglprjgl + 1) && djointbdABSABL==0 && djointbdABSABL2==0) && labdtype != "J1"
+ctelat10abl2	(l1==1 && ((lcabkdjam=="WIB" && ljam > ltbdjam1 && ljam > ljam10 && ltbdjam1 < ljam10 && ljam - ljam10 >= 1 && ljam - ljam10 <= 10) || (lcabkdjam=="WITA" && ljam > ltbdjam1 && ljam > ljam9 && ltbdjam1 < ljam9 && ljam - ljam9 >= 1 && ljam - ljam9 <= 10) ||
+                (lcabkdjam=="WIT" && ljam > ltbdjam1 && ljam > ljam8 && ltbdjam1 < ljam8 && ljam - ljam8 >= 1 && ljam - ljam8 <= 10)) 
+                /* 8.31 sd 8.40 */ && ltgl == (ststglprjgl + 1) && (djointbdABSABL==1 || djointbdABSABL2==1)) && labdtype != "J1"
+ctelat30abl2	(l1==1 && ((lcabkdjam=="WIB" && ljam > ltbdjam1 && ljam > ljam10 && ltbdjam1 < ljam10 && ljam - ljam10 > 10 && ljam - ljam10 <= 30) || (lcabkdjam=="WITA" && ljam > ltbdjam1 && ljam > ljam9 && ltbdjam1 < ljam9 && ljam - ljam9 > 10 && ljam - ljam9 <= 30) ||
+                (lcabkdjam=="WIT" && ljam > ltbdjam1 && ljam > ljam8 && ltbdjam1 < ljam8 && ljam - ljam8 > 10 && ljam - ljam8 <= 30)) 
+                /* 8.41 sd 9.00 */ && ltgl == (ststglprjgl + 1) && (djointbdABSABL==1 || djointbdABSABL2==1)) && labdtype != "J1"
+ctelat150abl2   (l1==1 && ((lcabkdjam=="WIB" && ljam > ltbdjam1 && ljam > ljam10 && ltbdjam1 < ljam10 && ljam - ljam10 > 30) || (lcabkdjam=="WITA" && ljam > ltbdjam1 && ljam > ljam9 && ltbdjam1 < ljam9 && ljam - ljam9 > 30) ||
+                (lcabkdjam=="WIT" && ljam > ltbdjam1 && ljam > ljam8 && ltbdjam1 < ljam8 && ljam - ljam8 > 30)) 
+                /* 9.01 sd 11.00 */ && ltgl == (ststglprjgl + 1) && (djointbdABSABL==1 || djointbdABSABL2==1)) && labdtype != "J1"
+
+clat0		llat == 0
+ctlmnobuk722    "PC" + THBLS(g_tgltrn) + THBLS_DD(g_tgltrn) + STRIP(lawl)
+
+MAP(mupdabd)
+/*cSYSTIME      abdjam1       DO_CALC_IF c1*/ /*_IF c1bknCMO */
+ljam		abdjam1		REPLACE_IF c1
+g_ipname      abdipawl      REPLACE_IF c1
+cblanks         abdipawl        DO_CALC_IF c4554
+cblanks       labdtype      DO_CALC
+labdtype       labdtype      REPLACE_IF cjoinabd1
+cDATANG       abdtype       DO_CALC_IF c1
+lINPG       abdsts          REPLACE_IF c1
+g_scrnumstr   abdcab2       REPLACE
+
+
+cket10          abdkettlb       DO_CALC_IF ctelat10
+cket30          abdkettlb       DO_CALC_IF ctelat30
+cket150         abdkettlb       DO_CALC_IF ctelat150
+cket10          abdkettlb       DO_CALC_IF ctelat10abl
+cket30          abdkettlb       DO_CALC_IF ctelat30abl
+cket150         abdkettlb       DO_CALC_IF ctelat150abl
+cket10          abdkettlb       DO_CALC_IF ctelat10abl2
+cket30          abdkettlb       DO_CALC_IF ctelat30abl2
+cket150         abdkettlb       DO_CALC_IF ctelat150abl2
+cblanks         labdshift       DO_CALC
+llat            abdlat          REPLACE
+llon            abdlon          REPLACE
+llatGD          abdlat          REPLACE_IF clat0
+llongGD         abdlon          REPLACE_IF clat0
+lpsijabatan	abdjabatan	REPLACE
+
+
+MAP(mupdabd2)
+/*cSYSTIME      abdjam2       DO_CALC_IF cdjoinabk0*/
+ljam		abdjam2		REPLACE_IF cdjoinabk0
+g_ipname      abdipakh      REPLACE_IF cdjoinabk0
+cblanks      abdipakh      DO_CALC_IF cdjoinabk0x
+cblanks       labdshift     DO_CALC_IF cdjoinabk0
+g_tgltrn      abdtgl2       REPLACE_IF cdjoinabk0
+cHADIR        abdtype       DO_CALC_IF cdjoinabk0
+cH            abdhari       DO_CALC_IF cdjoinabk0
+gv_CLSD       abdsts        REPLACE_IF csecurity
+g_scrnumstr   abdcab2       REPLACE_IF cdjoinabk0
+ckunciabs     abdcab2       DO_CALC_IF cdjoinabk1
+
+
+MAP(mupdpsi)
+g_tgltrn                psitglabs               REPLACE
+c0			ltanpasdkjari           DO_CALC
+
+MAP(mmapawl)
+ctlmnobuk722		ltlmnobuk722		DO_CALC
+DEBUG			ldum		ldum		REPLACE
+
+MAP(maddtlmcmocab)
+ltlmnobuk722    tlmnobuk        REPLACE
+ldtcmocab       tlmdata         REPLACE
+lawl            tlmuntuk        REPLACE
+lcab            tlmplg          REPLACE
+g_tgltrn        tlmtgl          REPLACE
+gv_OPEN         tlmsts          REPLACE
+lpsijabatan     tlmdari         REPLACE
+g_scrnumstr     tlmnoasal       REPLACE
+ljam		tlmjam1		REPLACE
+llat		tlmtothrg	REPLACE
+llon		tlmtotdis	REPLACE
+llatGD          tlmtothrg       REPLACE_IF clat0
+llongGD         tlmtotdis       REPLACE_IF clat0
+
+CALCS()
+c1joinabd   (ltanpasdkjari==1 || r_long8==1)  && l1==1 && djoinabdDTG == 1  && labdtype != "DATANG" && labdtype != "HADIR129" && labdtype != "HADIR"              /*&& ltbdjam1 != BLANKS */
+c1joinabdopen   (ltanpasdkjari==1 || r_long8==1)  && l1==1 &&  djoinabdOPEN ==1 && labdtype != "DATANG" && labdtype != "HADIR129" && labdtype != "HADIR"              /* Kondisi ADH abd sts OPEN  */
+
+c2          (ltanpasdkjari==1 || r_long8==1)  && l1==2 && ((djoinabdPLG == 1 && (labdtype == "DATANG" || labdtype=="HADIR129")) || djoinabdPLG2 == 1) 	
+c2psi       (ltanpasdkjari==1 || r_long8==1)  
+cjointlmcmo0    (ltanpasdkjari==1 || r_long8==1) && djointlmcmo722==0 && lusrgrp=="CMO"
+
+SPCALCS(spmaster)
+DO_LIB              ap_dbclc(DNAME dmapawl,DCOMMAND MAPMAP,DMAP mmapawl);
+DO_LIB_IF c1joinabd ap_dbclc(DNAME dupdabd,DCOMMAND UPDATE,DTARGET abdkymststgl lawl lINPG ltgl,DMAP mupdabd);
+DO_LIB_IF c1joinabdopen ap_dbclc(DNAME dupdabdopen,DCOMMAND UPDATE,DTARGET abdkymststgl lawl gv_OPEN ltgl,DMAP mupdabd);
+DO_LIB_IF c2        ap_dbclc(DNAME dupdabd2,DCOMMAND UPDATE_RANGE,DTARGET abdkymststgl lawl lINPG,DMAP mupdabd2,DBC_COND c2ok);
+DO_LIB_IF c2        ap_dbclc(DNAME dupdabd2incl,DCOMMAND UPDATE_RANGE,DTARGET abdkymststgl lawl lINCL,DMAP mupdabd2);
+DO_LIB_IF c2psi     ap_dbclc(DNAME dupdpsi,DCOMMAND UPDATE,DTARGET psikodidx lawl,DMAP mupdpsi);
+
+DO_LIB_IF cjointlmcmo0 ap_dbclc(DNAME daddtlmcmo,DCOMMAND ADD,DFILE tlm,DMAP maddtlmcmocab);
+
+POSTING(master)
+PST_COMMAND spmaster
+
+END_SCREEN

@@ -1,0 +1,153 @@
+
+DBCALCS(djoinaktudgse)
+        DBC_COMMAND	JOIN
+        DBC_TARGET	aktkod2typid tldstr3 lUDGSE lthbl21
+
+IMAGE(tmptranst)
+/---------------t-------------t-------------t--------t-------t-------t-------t---------t-------------t---\
+|t.Nama         |t.Notelp     |t.Alamat     |t.Kota  |t.Kec  | t.Kel | t.mnt | t.hdrse | t.alstdkhdr |   |
+\---------------.-------------.-------------.--------.-------.-------.-------.---------.-------------.---/
+IMAGE(tmptrans)
+|_______________|_____________|_____________|________|_______|_______|_______|_________|_________________|
+
+FIELD(tmptrans)
+tldkat         ALLCAPS                 INPUTRI 1 /* nama*/
+tldsat         ALLCAPS SCROLL          INPUTRI 2 /* no telp*/
+tldket         ALLCAPS                 INPUTRI 3 /* alamat */
+tldgrup2       ALLCAPS                 INPUTRI 5 /* KOTA */
+tldlok         ALLCAPS                 INPUTRI 6 /* kecamatan */
+tldlok2        ALLCAPS                 INPUTRI 7 /* kelurahan*/
+tldstr1        ALLCAPS SCROLL                INPUTRI 8 /* minat */
+tlddk          ALLCAPS                 INPUTRI 9 /* hadir*/
+tldstr2        ALLCAPS                 INPUTRI 10 /* alasan tidak hadir  */
+
+
+CALCS()
+cjoinaktudgse djoinaktudgse == 1
+charih tkmsts == "INPG"
+cbelummulai tkmtgl != g_tgltrn
+cmasiopen tkmsts == "OPEN"
+chadirisi   tlddk != ""
+csudahok lsudahisi == ltotalrecord
+cupd tldjml == 1 || tkmsts == "INPG"
+chadir tlddk == "Y"
+ctdkhdr tlddk == "T" && aktjml < 3
+cbukan08        (ldigit1tld=="0" && ldigit2tld=="8" && ljumlahnomortld>=10 && ljumlahnomortld<=13 ) || (ldigit1tld=="6" && ldigit2tld=="2"  && ldigit3tld=="8" && ljumlahnomortld>=10  && ljumlahnomortld<=13)
+cpanjangnomtld     DO_LIB ap_strln(tldsat,&ljumlahnomortld);
+MAP(mpanjangnom)
+cpanjangnomtld             ljumlahnomortld            DO_CALC
+
+MAP(mkecudgse)
+tbdkode         tldlok               REPLACE
+
+MAP(mlokasiudgse)
+tbtkode         tldlok2              REPLACE
+
+/*MAP(mdtmudgse)
+dtmkode      	tldgrup       REPLACE*/
+
+MAP(mtbludgse)
+tblkode      	tldgrup2     	REPLACE
+
+CALCS()
+cBLANKS2 BLANKS
+MAP(mblanksalasan)
+cBLANKS2 tldstr2 DO_CALC_IF chadir
+HOOKS(tmptrans)
+BEFORE_INPUT cur_field=tldkat DO_SKIP_IF cupd
+BEFORE_INPUT cur_field=tldsat DO_SKIP_IF cupd
+BEFORE_INPUT cur_field=tldket DO_SKIP_IF cupd
+BEFORE_INPUT cur_field=tldlok DO_SKIP_IF cupd
+BEFORE_INPUT cur_field=tldlok2 DO_SKIP_IF cupd
+/*BEFORE_INPUT cur_field=tldgrup DO_SKIP_IF cupd*/
+BEFORE_INPUT cur_field=tldgrup2 DO_SKIP_IF cupd
+BEFORE_INPUT cur_field=tldstr1 DO_SKIP_IF charih
+BEFORE_INPUT cur_field=tldstr2 DO_SKIP_IF chadir
+BEFORE_INPUT cur_field=tlddk DO_SKIP_IF cmasiopen
+BEFORE_INPUT cur_field=tldstr2 DO_SKIP_IF cmasiopen
+AFTER_INPUT  cur_field=tlddk DO_MAP SHOW mblanksalasan
+AFTER_INPUT     cur_field=tldsat       DO_LIB ap_amstr(tldsat,ln1itld,ln1tld,&ldigit1tld);
+AFTER_INPUT     cur_field=tldsat       DO_LIB ap_amstr(tldsat,ln2itld,ln1tld,&ldigit2tld);
+AFTER_INPUT     cur_field=tldsat       DO_LIB ap_amstr(tldsat,ln3itld,ln1tld,&ldigit3tld);
+AFTER_INPUT     cur_field=tldsat       DO_MAP SHOW mpanjangnom
+
+AFTER_INPUT     cur_field=tldsat DO_MAP SHOW
+                IF cbukan08 mdum
+                ELSE HKCURSOR STAY
+                HKMSG Nomor Telepon 2 Digit Didepan Harus 08/62 Dan Harus Lebih Dari 10 Dan Kurang Dari 14
+
+DEFAULTS(tmptrans)
+tldstr1     DFALT_LIST BLANKS Y T
+tlddk       DFALT_LIST BLANKS Y T
+
+
+MAP(malasanse)
+tbdkode         	tldstr2         	REPLACE
+
+EDITS(tmptrans)
+e.WajibIsiNama tldkat MANDATORY
+e.WajibIsiNotelp tldsat MANDATORY
+e.WajibIsiAlamat tldket MANDATORY
+
+/*e.WajibIsiPropinsi tldgrup MANDATORY*/
+e.WajibIsiKota tldgrup2 MANDATORY
+e.WajibIsiKecamatan tldlok MANDATORY
+e.WajibIsiKelurahan tldlok2 MANDATORY
+e.WajibIsiAlasan tldstr2 MANDATORY_IF ctdkhdr
+
+e.validate              tldstr2         VALIDATE tbddatkodidx malasanse stbd {Pgv_dttabel} {PlSPK21} {PlALASAN2}
+/*e.validatePropinsi1     tldgrup		VALIDATE dtmdtkodidx  mdtmudgse sdtm {Pgv_dtkota}*/
+e.validateKota1         tldgrup2	VALIDATE tbldtdtmkod  mtbludgse stbl {Pgv_dtkota} {Ptldsat}
+e.validateKec    tldlok  VALIDATE tbddatkodidx mkecudgse stbd {Pgv_dtkota} {Ptldsat} {Ptldgrup2}
+e.validateKel1   tldlok2 VALIDATE tbtdattypkod mlokasiudgse stbt {Pgv_dtkota} {Pgv_dtkota21} {Ptldsat} {Ptldgrup2} {Ptldlok}
+
+SUBFILE(tmptrans)
+SFL_LINES(5)
+SFL_TITLE(tmptranst)
+SFL_COND ctkmkodeudgse
+SFL_TARGET
+        tldbukurtidx tkmnobuk
+SFL_MAP
+        tkmnobuk tldnobuk
+
+MAP(mmapmap)
+tldstr1 ltldstr1 REPLACE
+tldstr2 ltldstr2 REPLACE
+tlddk   ltlddk  REPLACE
+
+MAP(mupdtld)
+ltldstr1        tldstr1         REPLACE
+ltldstr2         tldstr2         REPLACE
+ltlddk          tlddk           REPLACE
+DEBUG   ldum    ldum REPLACE
+
+MAP(mupdaktudgse)
+gv_INPG         aktlok          REPLACE_IF ctdkhdr
+gv_CLSD         aktlok          REPLACE_IF chadir
+DEBUG ldum ldum REPLACE
+MAP(mupdabkudgse)
+gv_CLSD         abksts          REPLACE
+
+MAP(mcekscan)
+gv_int1 ltotalrecord    REPLACE
+gv_int1 lsudahisi       REPLACE_IF chadirisi
+DEBUG   ldum    ldum REPLACE
+SPCALCS(spupdudgse)
+        DO_LIB                  ap_dbclc(DNAME dupdtldudgse2,DCOMMAND MAPMAP, DMAP mmapmap);
+        DO_LIB                  ap_dbclc(DNAME dupdtldudgse,DCOMMAND UPDATE, DTARGET tldprmidx tldprm, DMAP mupdtld);
+        DO_LIB                  ap_dbclc(DNAME dscanscan, DCOMMAND SCANSCAN, DTARGET tldbukurtidx tkmnobuk, DBC_SUM_MAP mcekscan);
+        DO_LIB_IF cjoinaktudgse ap_dbclc(DNAME dupdakt, DCOMMAND UPDATE_RANGE, DTARGET aktkod2typid tldstr3 lUDGSE lthbl21, DMAP mupdaktudgse);
+        DO_LIB_IF csudahok      ap_dbclc(DNAME dupdtkmudgse,DCOMMAND UPDATE, DTARGET tkmprmidx tkmprm, DMAP mupdtkmmaster);
+        DO_LIB_IF csudahok      ap_dbclc(DNAME dupdabkudgse, DCOMMAND UPDATE_RANGE, DTARGET abkdatbukidx lKUNCIABSEN tkmnobuk, DMAP mupdabkudgse);
+        
+
+POSTING(tmptrans)
+        PST_UPDCMD spupdudgse
+
+PERMIT(tmptrans)
+PMT_ADD_COND    cudgseT
+PMT_ADD_MSG     IF charih tidakBisaTambahHariH
+PMT_UPDALL_COND cudgse
+PMT_UPD_MSG     IF cbelummulai EventBelumMulaiTidakBisaUbah
+PMT_DEL_COND    c0
+

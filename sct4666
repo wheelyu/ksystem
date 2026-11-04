@@ -6,9 +6,21 @@ LOCAL
 PGM_FIELDS
 lspknohp9	STRING		21
 lkodebukti      STRING  	21
+lhrmnobuk       STRING  	21
+lkodebukti160      STRING  	21
 lversi          STRING          21
+l160					STRING		11
 lahmurt2x       STRING          21
+labdshift               STRING      21
 l1		INT2		2
+ljam0830     	TIME    4
+ljam1100        TIME    4
+lamtstr1		STRING		21
+lamtstr2		STRING		21
+lamtstr3                STRING          21
+lamtstr4                STRING          21
+lamtstr6        STRING          21
+lamtstr7        STRING          21
 /*
 ltanggalhm1	DATE 		4
 ltanggalspk 	DATE 		4 */
@@ -17,6 +29,7 @@ ltbdkode2       STRING          21
 ltbdket         STRING          21
 lpekerjaan      STRING          21   
 lcabpst		STRING		21
+lcabkdfak       STRING          21
 lLISTJAGAH1 	STRING		21
 lidevent        STRING          51
 lPKAGEN		STRING		11
@@ -385,6 +398,10 @@ DBCALCS(djointbddgi)
         DBC_TARGET      tbddatkodidx     gv_dttabel gv_infoumum lAPIMD lcabapi
         DBC_MAP         mjointbddgi
 
+DBCALCS(djoinhrm160x)
+      	DBC_COMMAND     JOIN
+      	DBC_TARGET      hrmbukidx		lhrmnobuk
+
 DBCALCS(djointbldgi)
         DBC_COMMAND     JOIN
         DBC_TARGET      tbldtdtmkod     gv_dttabel gv_personal lPEKERJAANDGI
@@ -576,6 +593,7 @@ cabnobbm2	lcabnobbm2	REPLACE
 cabusaha	lcabusaha	REPLACE
 cabpst2		lcabdlr		REPLACE
 cabpst		lcabpst		REPLACE
+cabkdfak        lcabkdfak       REPLACE
 
 DBCALCS(djoincab)
         DBC_COMMAND     JOIN
@@ -1002,6 +1020,7 @@ DBCALCS(djointbtkelurahan)
 
 MAP(mcekabsen)
 abdtype		labdtype	REPLACE
+abdshift        labdshift       REPLACE
 
 DBCALCS(djoinabdtkmplg)
 	DBC_COMMAND    JOIN
@@ -1081,13 +1100,16 @@ ltkmtgl  	PROTECT {DD-MM-YYYY}	INPUTRI 2
 
 DEFAULTS(master)
 l1              INIT            1
-lversi          INIT            "27102026v3"
+lversi          INIT            "04112026v3"
 lPKAGEN		INIT		PKAGEN
 lDTREFF		INIT		DTREFF
+l160					INIT	160
 lEVENT		INIT		EVENT
 lLISTJAGAH1	INIT		LISTJAGAH1
 lKDH		INIT		KDH
 lREVPICKBA	INIT		REVPICKBA
+ljam0830        INIT            083100
+ljam1100        INIT            110000
 lSPKONLINE      INIT            SPKONLINE
 lMASTERFLDP	INIT		MASTERFLDP
 lMASTERFLDP11	INIT		MASTERFLDP
@@ -1105,7 +1127,7 @@ lKERJAMITRAx	INIT		KERJAMITRA
 lKRITEMITRA 	INIT		KRITEMITRA
 lSMST		INIT		SMST
 lareasales	INIT		AREASALES
-lsystime	INIT		SYSTIME
+lsystime	INIT		102000
 ldtreff11	INIT		DTREFF
 lPICMKT         INIT            PICMKT
 lPICMKTM2W	INIT		PICMKTM2W
@@ -2514,6 +2536,20 @@ ltkmnobuk       tbllv3          REPLACE
 g_usrkode       tblusrcrt       REPLACE
 DEBUG		ldum ldum	REPLACE
 
+
+MAP(mjoinatasan12)
+amtstr1         lamtstr1        REPLACE
+amtstr2         lamtstr2        REPLACE
+amtstr3         lamtstr3        REPLACE
+amtstr4         lamtstr4        REPLACE
+amtstr6         lamtstr6        REPLACE
+amtstr7         lamtstr7        REPLACE
+
+DBCALCS(djoinamtatasan12)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      amtdatotoidx gv_dtplengkap hrmnip1
+        DBC_MAP         mjoinatasan12
+
 /******************************************************/
 
 CALCS()
@@ -2521,9 +2557,40 @@ cpic           	g_usrkode == BLANKS /* (tkmsts == "CLSD" || tkmsts == "JDPK") &&
 cdjoinaktspk	tkmsts == "OPEN" && djoinaktspk == 0 && g_tgltrn >= 20251111
 cdjoinaktspk1	g_tgltrn >= 2025111 && djoinaktspk == 1 && tkmsts == "JDPK" && (djoinspk==1 && lspkkat7=="Y" && ltkmjmltlk !=3) &&
 		(lcabusaha == "FINCO" || (lcabusaha == "DEALER" && (djointbdapi == 0 || djointlmDgi==1 || (djointbdapi==1 && lDGI==BLANKS))))
-
+ctelat          (djoinabdtkmplg == 0 || (djoinabdtkmplg == 1 && labdtype != "DATANG" && labdtype != "HADIR129" && labdtype != "HADIR")) &&
+		(
+                        (tkmkode == "GCI" && 
+                                (
+                                        ((lpsijabatan == "MKTLAPANGANHMC") && lusia >= 180 && lsystime > ljam0830 && lsystime < ljam1100  )  || 
+                                        ((lpsijabatan == "SALESNMC" || lpsijabatan == "SALESMANHMC") && lsystime > ljam0830 && lsystime < ljam1100 )
+                                ) && 
+                                (
+                                        (lpulau == "JAWA" && ljarak <= 1000) || 
+                                        (lpulau != "JAWA" && ljarak <= 2500)
+                                )
+                        ) || 
+                        (tkmkode == "FU_EVENT" && djointlmDgi == 1 && ltlmtgljtp >= g_tgltrn && 
+                                (ltlmdari == "PTH" || ltlmdari == "PPR" || ltlmdari == "PMR" || ltlmdari == "ROADSHOW") && ltlmsts != "OPEN" && ltlmsts != "VOID" && djointldpeserta == 1
+                        )
+                ) 
 cabsen		(djoinabdtkmplg == 0 || (djoinabdtkmplg == 1 && labdtype != "DATANG" && labdtype != "HADIR129" && labdtype != "HADIR")) &&
-		((tkmkode == "GCI" && ((lpsijabatan == "MKTLAPANGANM2W" && lusia >= 180) || (lpsijabatan == "SALESREFIMOTOR" || lpsijabatan == "SALESDTN")) && ((lpulau == "JAWA" && ljarak <= 1000) || (lpulau != "JAWA" && ljarak <= 2500))) || (tkmkode == "FU_EVENT" && djointlmDgi == 1 && ltlmtgljtp >= g_tgltrn && (ltlmdari == "GPR" || ltlmdari == "SKM" || ltlmdari == "GREBEK_PASAR" || ltlmdari == "SERBU_KAMPUNG" || ltlmdari == "GREBEK_PAS" || ltlmdari == "SERKAM") && ltlmsts != "OPEN" && ltlmsts != "VOID" && djointldpeserta == 1)) && g_usrkode == BLANKS
+		(
+                        (tkmkode == "GCI" && 
+                                (
+                                        ((lpsijabatan == "MKTLAPANGANM2W") && lusia >= 180) || 
+                                        (lpsijabatan == "SALESREFIMOTOR" || lpsijabatan == "SALESDTN" ) ||
+                                        ((lpsijabatan == "MKTLAPANGANHMC") && lusia >= 180 && lsystime <= ljam0830)  || 
+                                        ((lpsijabatan == "SALESNMC" || lpsijabatan == "SALESMANHMC") && lsystime <= ljam0830)
+                                ) && 
+                                (
+                                        (lpulau == "JAWA" && ljarak <= 1000) || 
+                                        (lpulau != "JAWA" && ljarak <= 2500)
+                                )
+                        ) || 
+                        (tkmkode == "FU_EVENT" && djointlmDgi == 1 && ltlmtgljtp >= g_tgltrn && 
+                                (ltlmdari == "GPR" || ltlmdari == "SKM" || ltlmdari == "GREBEK_PASAR" || ltlmdari == "SERBU_KAMPUNG" || ltlmdari == "GREBEK_PAS" || ltlmdari == "SERKAM" || ltlmdari == "PTH" || ltlmdari == "PPR" || ltlmdari == "PMR" || ltlmdari == "ROADSHOW") && ltlmsts != "OPEN" && ltlmsts != "VOID" && djointldpeserta == 1
+                        )
+                )
 
 csudah10hmcm2w  ltkmsts == "OPEN" && (ltkmnil6 == BLANKS || ltkmnil6 == 0) && spkkat7 != "Y" && djoinaktspk == 1 &&
 		(((ltkmkode1 == "FU_WB" || ltkmkode1 == "FU_TOPUP" || ltkmkode1 == "FU_NODEAL_CTR_MINAT" || ltkmkode1 == "FU_NODEAL_CTR") && (djoinpsi == 1 && ((lpsidvs != "M2W" && lpsidvs != "M2W4W") || ((lpsidvs == "M2W" || lpsidvs == "M2W4W") && djoinpik == 1 && djoinpsmktp2 == 1 && lpsmstsbill == "PLATINUM"))) /* aturan baru, di pindah untuk sales conter m2w bahan ro */) ||
@@ -2590,7 +2657,7 @@ ctdkminat       djoinspkfuagen == 1 && ((lspkkat5 == "1" && lspkkat6 == "2") ||
 cusia		ltkmtgl - lpsitglawl
 cjoinkel	djointbtkelurahan == 1 && djoinspk == 1
 chitlat		DO_LIB	ap_dsGPS(llat,llon,lspklat4,lspklon4,&ljarak,&llat1save,&llon1save,&llat2save,&llon2save);
-
+c800 800
 cspkpendamping  ltkmnil6 == 1 && djoinspkpendampinglck == 1
 creviewpendamping abkkym2 == "109 REVIEW SPK" && djoinspkpendamping == 1 && lspkket2 != BLANKS
 caddfukons	tkmsts == "CLSD" && (ltkmkode1 == "FU_AGEN" || ltkmkode1 == "FU_ADS1" || ltkmkode1 == "FU_UPLINE2" || ltkmkode1 == "FU_CP" || ltkmkode1 == "FU_EVENT" || ltkmkode1 == "FU_GCI" ||
@@ -2604,10 +2671,12 @@ chanyafu	ltkmkode1 == "FU_AGEN" || ltkmkode1 == "FU_ADS1" || ltkmkode1 == "FU_UP
 cvia		"VIA GSM/WA"
 cketemu		"KETEMU LANGSUNG"
 cterhubungx	"TERHUBUNG"
+ckodebukti      	DO_LIB ap_amdvs(lpsidvs,l160,lkodebukti160);
+cnomer          	STRIP(lkodebukti160) + STRIP(lcabkdfak) + THBLS(g_tgltrn) + "-"
 cminat 		lspkkat8 != "TIDAK_MINAT" && (spktglft != BLANKS || spktglft == "") && ltkmlok2 == "MINATHMC" && (spkkode != "" || spkkode != BLANKS)
 ckond1		ltkmkode1 == "FU_AGEN" && djoinspkfuagen == 1 && (lspkkode2 != BLANKS || lspkkode3 != BLANKS)
 ckond2		ltkmkode1 == "FU_ADS1" || ltkmkode1 == "FU_UPLINE2"
-ckond3		(ltkmkode1 == "FU_CP" || ltkmkode1 == "FU_EVENT" || ltkmkode1 == "FU_GCI" || ltkmkode1 == "FU_NODEAL" || ltkmkode1 == "FU_PROSPEK" || ltkmkode1 == "FU_REFF" || ltkmkode1 == "FU_SPK1" || 
+ckond3		(ltkmkode1 == "FU_CP" || ltkmkode1 == "FU_EVENT" || ltkmkode1 == "FGU_GCI" || ltkmkode1 == "FU_NODEAL" || ltkmkode1 == "FU_PROSPEK" || ltkmkode1 == "FU_REFF" || ltkmkode1 == "FU_SPK1" || 
 		ltkmkode1 == "FU_SPK2" || ltkmkode1 == "FU_TOPUP" || ltkmkode1 == "FU_WB") && djoinspk == 1 && lspktgg3 != BLANKS
 ckond4		djoinspk == 1 && lspktgg4 != BLANKS
 ckond5		ltkmkode1 == "FU_UPLINE2"
@@ -2630,7 +2699,14 @@ ctglminatnd	ltkmlok2 == "MINATM2W" && ltkmbuk2 == "MINATM2W" && djoinspk == 1 &&
 ctglnd		ltkmbuk2 == "TIDAK" && djoinspk == 1 && lspkkat7 != "Y"
 cpro		((ltkmlok2 == "MINATM2W" && ltkmbuk2 == "MINATM2W" && djoinspk == 1 && lspkkat7 != "Y") || (ltkmbuk2 == "TIDAK" && djoinspk == 1 && lspkkat7 != "Y")) && (ltkmkode1 == "FU_WB" || ltkmkode1 == "FU_TOPUP") && 
                 djoinpsi == 1 && (lpsidvs == "M2W" || lpsidvs == "M2W4W") && (lpsijabatan == "MKTCOUNTERM2W" || lpsijabatan == "CTRSALESREFIMOTOR" || lpsijabatan == "COUNTERM2W4W" || lpsijabatan == "MKTCOUNTERM2W4W")
+/* CTELAT */
 
+cdjoinamtatasan121      djoinamtatasan12==1
+cadaatasan1     djoinhrm160x == 1 && djoinamtatasan12==1 && lamtstr1!=BLANKS && lsystime > ljam0830 && lsystime < ljam1100
+cadaatasan2     djoinhrm160x == 1 && djoinamtatasan12==1 && lamtstr2!=BLANKS && lsystime > ljam0830 && lsystime < ljam1100
+c160atas1       "ATASAN 1 ACC 160"
+c160atas2       "ATASAN 2 ACC 160"
+cketterlambat   "TERLAMBAT"
 /***********************************/
 /*** DGI 1.3 ***/
 cdjointbddgi1x  djointbddgi==1                                                                                                                                                                                 
@@ -2778,9 +2854,72 @@ lpsitglawl      lpsitglawl      REPLACE_IF cjoinpsiok
 cusia		lusia		DO_CALC
 ljarak		ljarak		REPLACE_IF cjoinkel
 chitlat		ljarak		DO_CALC_IF cjoinkel
+c800            ljarak          DO_CALC
 lcabkota	lcabkota	REPLACE_IF cjoincabprop
 lpulau		lpulau		REPLACE_IF cjoinprov
 DEBUG	ldum	ldum		REPLACE
+
+
+MAP(mmapnobuk160)
+ckodebukti      lkodebukti160      DO_CALC
+cnomer          hrmnobuk        DO_CALC
+DEBUG   ldum ldum       REPLACE
+
+MAP(maddhrm160)
+lTERLAMBAT		hrmdata			REPLACE
+hrmnobuk		        hrmnobuk		REPLACE
+gv_INPG			hrmsts			REPLACE
+g_tgltrn        	        hrmtgl			REPLACE
+lsales		        hrmnip1			REPLACE
+lsystime		        hrmjam			REPLACE
+lpsicab 		hrmcab			REPLACE
+lpsidvs			        hrmdvs			REPLACE
+labdshift		hrmdvs2			REPLACE
+cketterlambat                   hrmket1          DO_CALC
+
+MAP(mmapmaster)
+cblanks			lamtstr1		DO_CALC
+cblanks			        lamtstr2		DO_CALC
+cblanks			                lamtstr3		DO_CALC
+cblanks			                        lamtstr4		DO_CALC
+cblanks        	                                        lamtstr6                DO_CALC
+cblanks        	                                                lamtstr7                DO_CALC
+lamtstr1		                                lamtstr1		REPLACE_IF cdjoinamtatasan121
+lamtstr2                                        lamtstr2                REPLACE_IF cdjoinamtatasan121
+lamtstr3 		                lamtstr3                REPLACE_IF cdjoinamtatasan121
+lamtstr4                        lamtstr4                REPLACE_IF cdjoinamtatasan121
+lamtstr6                lamtstr6                REPLACE_IF cdjoinamtatasan121
+lamtstr7        lamtstr7                REPLACE_IF cdjoinamtatasan121
+hrmnobuk        lhrmnobuk       REPLACE
+
+
+MAP(maddamtatasan)	
+gt_absen11		amtdata		REPLACE
+hrmnobuk		amtbukoto	REPLACE
+lamtstr1                amtstr1         REPLACE
+lamtstr2                amtstr2         REPLACE
+lamtstr3                amtstr3         REPLACE
+lamtstr4                amtstr4         REPLACE
+lamtstr6                amtstr6         REPLACE
+lamtstr7                amtstr7         REPLACE
+
+MAP(maddabkatasan1)
+hrmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lamtstr1        abkkym          REPLACE
+c160atas1       abkkym2         DO_CALC
+hrmtgl          abktgl          REPLACE
+gv_INPG         abksts          REPLACE
+l160            abkscr          REPLACE
+
+MAP(maddabkatasan2)
+hrmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lamtstr2        abkkym          REPLACE
+c160atas2       abkkym2         DO_CALC
+hrmtgl          abktgl          REPLACE
+gv_INPG         abksts          REPLACE
+l160            abkscr          REPLACE
 
 MAP(mupdspkpendamping)
 csystime        spkjam2         DO_CALC
@@ -3035,7 +3174,13 @@ SPCALCS(sptrans)
 /****SCAN TKM 878****/
 	DO_LIB                  ap_dbclc(DNAME dbscantkm, DCOMMAND SCANSCAN, DTARGET tkmdatplgtgl ldata lsales g_tgltrn, DBC_SUM_MAP mscantkm);
 	DO_LIB   		ap_dbclc(DNAME dcektkmplg, DCOMMAND MAPMAP, DMAP mcekabsentkm);
-        DO_LIB_IF cabsen        ap_nxpst(l4901,lm4901);
+        DO_LIB_IF cabsen        ap_nxpst(l4901,lm4901); 
+        DO_LIB_IF ctelat        ap_dbclc(DNAME dmapmap160,DCOMMAND MAPMAP,DMAP mmapnobuk160);
+        DO_LIB_IF ctelat        ap_dbclc(DNAME daddbuk,DCOMMAND ADD,DFILE hrm,DLTARGET hrmbukidx hrmnobuk,DLLEN {stspjbuk},DMAP maddhrm160);
+        DO_LIB_IF ctelat        ap_dbclc(DNAME dmapmaster,DCOMMAND MAPMAP,DMAP mmapmaster);
+        DO_LIB_IF ctelat        ap_dbclc(DNAME daddamtatasan, DCOMMAND ADD, DFILE amt, DMAP maddamtatasan);
+        DO_LIB_IF cadaatasan1   ap_dbclc(DNAME daddabkatasan1, DCOMMAND ADD, DFILE abk, DMAP maddabkatasan1);
+        DO_LIB_IF cadaatasan2   ap_dbclc(DNAME daddabkatasan2, DCOMMAND ADD, DFILE abk, DMAP maddabkatasan2);
 
 /****BTM BTD DGI****/
         DO_LIB_IF cDGI          ap_dbclc(DNAME dupdbtmDGI1, DCOMMAND UPDATE, DTARGET btmbukidx ltlmnoasal, DMAP mupdbtmDGI);

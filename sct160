@@ -1,0 +1,1358 @@
+SCREEN 160 QUERY_TYPE t.DatangTelat
+SCR_FILE hrm
+SCR_LOGFLD hrmnobuk
+SCR_QRYCMD_IGNORE_CABDVS
+SCR_APRFLD hrmnobuk
+SCR_NXT_POSTING 4265
+SCR_NXT_MAP mnext
+SCR_NXT_COND cstsOPEN
+SCR_NXT_MSG     IF cbatas1      t.AccBelumLengkap
+		IF cbatas2	t.MaksPostingINPG150Mnt
+
+/*SCR_JOIN_FILE1 amtdatotoidx gt_absen11 hrmnobuk*/
+
+SCR_AUTO_QRYFLD hrmnobuk
+SCR_AUTO_EQLFLD r_string1
+SCR_AUTO_QRYFLD_FLYONLY
+
+LOCAL
+PGM_FIELDS
+lABSEN160		STRING		21
+lTERLAMBAT		STRING		11
+lamtstr1		STRING		21
+lamtstr2		STRING		21
+lamtstr3                STRING          21
+lamtstr4                STRING          21
+lamtstr6        STRING          21
+lamtstr7        STRING          21
+
+lamtstr1abs             STRING          21
+lamtstr2abs             STRING          21
+lamtstr3abs		STRING		21
+lamtstr4abs		STRING		21
+lKUNCIABSEN		STRING		11
+lPICMKTM2W              STRING          21
+lCMS                    STRING          21
+lDCOOAREA               STRING  21
+lcabpst2                STRING  21
+lKAWIL                  STRING  21
+lcabang			STRING	21
+lnamasdm		STRING 	21
+lgrup_login		STRING 	21
+lthbl21                 STRING  21
+lthbl11                 STRING  11
+lHMC                    STRING  21
+lH1                     STRING  21
+lnipdcoo                STRING  21
+lnipdcoohmc             STRING  21
+lnipdcooh1              STRING  21
+ljamkosong		TIME	4
+lhrmtgl2		DATE	4
+ljam_plg		DFLOAT  8
+ljam_plg6		DFLOAT  8
+ljam_input		DFLOAT  8
+lada_input		INT2	2
+lnamafldsts             STRING  30
+lnamafldfak             STRING  30
+lnamaidxfak             STRING  30
+lyturutapr              STRING  3
+ldumstr                 STRING  3
+ljamdtg			TIME    4
+ljamplg			TIME  	4 
+labdtype		STRING	21
+lkodebukti              STRING  21
+ljabatan		STRING	21
+labdshift		STRING	21
+lpsists             	STRING  21
+lpsmsuffix              STRING  11
+ltbdjamdtg              TIME    4 
+ltbdjamplg              TIME    4 
+ltbdjamplg6             TIME    4 
+lsystime                TIME    4
+lharike                 INT2    2
+lMASTERTARGET           STRING  21
+lCABNONRM               STRING  21
+lM4W                    STRING  21
+lversi                  STRING  11
+ltbdusrcrt		STRING	21
+lusrgrp   		STRING	21
+ltgawlbl		DATE	4
+/*ltelatall		INT2	2*/
+lgedung       		STRING  11
+lgedung21     		STRING  21
+lcab       		STRING	21
+lcabtwr       		STRING	21
+lcabnama		STRING	31
+lipcomp       		STRING  21
+lipoke        		STRING  21
+lipgedung       	STRING  21
+lABSENSLP       	STRING  21
+ljabikutslp        	STRING  21
+ltitik1         	INT2    2
+ltitik2         	INT2    2
+ltitik3         	INT2    2
+ltitik4         	INT2	2
+
+ltitikstr1              STRING  21
+ltitikstr2              STRING  21
+ltitikstr3              STRING  21
+ltitikstr4              STRING  21
+langka1       		INT2	2
+llatGD          	DFLOAT  8
+llongGD         	DFLOAT  8
+lpanjangip      	INT2    2
+lCABNOSJ        	STRING  21
+
+lenter			STRING	21
+lenter2			STRING	21
+
+lpenandaip      STRING          21
+lSIDIKJARI      STRING          11
+lada168		INT2		2
+lHRD            STRING          21
+lAPRKHSHRD      STRING          21
+lkodeaprkhs     STRING          21
+lcabpos         STRING          21
+lnamainput      STRING          21
+lUBHSTS160      STRING         11
+lUBHSTS16021    STRING         21
+lUBHNIP160      STRING          11
+
+ltomdet_d       STRING          31
+ltomdet_2d       STRING          31
+l4265           INT2            2
+lm4265          STRING          15
+
+lapr1		STRING		21
+lapr2		STRING		21
+
+ltotubhnip1     INT2            2
+ltotubhnip2     INT2            2
+lnourtnip       INT2            2
+lnamaats        STRING          21
+l160            STRING          11
+
+ltelatm0       	DFLOAT          8
+ltelatm1       	DFLOAT          8
+
+ltglawlblm1     DATE            4
+ltglakhblm1     DATE            4
+ltglawlblm0     DATE            4
+ltglakhblm0     DATE            4
+ltglakhblm0x    DATE            4
+
+lmin1           INT2            2
+l1           	INT2            2
+
+lABSAWHBL       STRING          21
+
+lKETSAKIT       STRING          11
+lintjam830x     DFLOAT          8
+ladakunj        INT2            2
+ladakunj2       INT2            2
+lKUNJUNGAN      STRING          11
+lJAB129KOL      STRING          21
+
+MAP(mtbdshift)
+tbdjam1         ltbdjamdtg      REPLACE
+tbdjam2         ltbdjamplg      REPLACE
+tbdjam3         ltbdjamplg6     REPLACE
+
+DBCALCS(djointbdshift)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel gv_infoumum gv_shift hrmdvs2
+        DBC_MAP         mtbdshift
+
+DBCALCS(djointbdabsen160)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lABSEN160       hrmnip1
+
+CALCS()
+c1              1
+cmasukperiode   hrmsts == "CLSD" && g_tgltrn >= hrmtgl1 && g_tgltrn <= hrmtgl2
+cstsOPEN        (hrmsts==gv_OPEN && (djointbdshift==1 && lsystime - ltbdjamdtg <=150)) || (hrmsts=="INPG" && ((hrmnip2!=BLANKS && hrmcab2!=BLANKS) || hrmnip2=="TACC" || hrmcab2=="TACC"))
+cbatas1         hrmsts=="INPG" && (hrmnip2==BLANKS || hrmcab2==BLANKS)
+cbatas2         hrmsts==gv_OPEN && (djointbdshift==1 && lsystime - ltbdjamdtg>150)
+/*ctdkblhubhnip   (g_grpnam != "HRDSPV" && g_grpnam != "HRDER" && g_usrkode != "1604848" && g_usrkode != "2221048" &&
+                g_usrkode != "2450640" && g_usrkode!="2492032" && g_usrkode != "2550257") */
+
+DBCALCS(djoinhrm168)
+        DBC_COMMAND             JOIN
+        DBC_TARGET              hrmdatniptgl   lSIDIKJARI  hrmnip1
+
+MAP(mscanhrm168)
+c1               lada168        DO_CALC_IF cmasukperiode
+
+DBCALCS(dbscanhrm168)
+        DBC_COMMAND             SCANSCAN
+        DBC_TARGET              hrmdatniptgl   lSIDIKJARI  hrmnip1
+        DBC_SUM_MAP             mscanhrm168
+
+MAP(mjointbdSJ)
+tbdkode2                lpenandaip      REPLACE
+
+DBCALCS(djointbdSJ)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lCABNOSJ lcab
+        DBC_MAP         mjointbdSJ
+
+MAP(mjoinpsi)
+psists		lpsists		REPLACE
+
+DBCALCS(djoinpsi)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psikodidx hrmnip1
+	DBC_MAP		mjoinpsi
+
+MAP(mmapusr)
+usrgrp          lusrgrp         REPLACE
+
+DBCALCS(djoinusr)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      usrkodidx       hrmnip1
+        DBC_MAP		mmapusr
+
+MAP(mmapcabkawil)
+cabpst2         lcabpst2                REPLACE
+
+DBCALCS(djoincabkawil)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cabkodidx       lcabang
+        DBC_MAP         mmapcabkawil
+
+MAP(mmapsgmkawil)
+sgmbrg          lcabang         REPLACE
+
+DBCALCS(djoinsgmkwl)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatstr215            gv_dtpiccab     lthbl21         lKAWIL     hrmnip1
+        DBC_MAP         mmapsgmkawil
+
+MAP(mmapsgmdcooareaHMC)
+sgmstr5         lnipdcoohmc             REPLACE
+
+DBCALCS(djoinsgmdcooHMC)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth gv_dtpiccab    lHMC    lcabpst2   lthbl11     lDCOOAREA
+        DBC_MAP         mmapsgmdcooareaHMC
+MAP(mmapsgmdcooareaH1)
+sgmstr5         lnipdcooh1              REPLACE
+
+DBCALCS(djoinsgmdcooH1)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth gv_dtpiccab    lH1    lcabpst2   lthbl11     lDCOOAREA
+        DBC_MAP         mmapsgmdcooareaH1
+
+
+MAP(mnext)
+hrmnobuk		r_string1		REPLACE
+
+DBCALCS(djoincabnonrm)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdattypkod gv_dttabel lMASTERTARGET lMASTERTARGET lM4W lCABNONRM hrmcab
+
+MAP(mjointbtGD)
+tbtcab                  lgedung         REPLACE
+tbtcab                  lgedung21       REPLACE
+tbtkode                 lipgedung       REPLACE
+
+DBCALCS(djointbtGD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbtdatkod2id    gv_dttabel      lipoke
+        DBC_MAP         mjointbtGD
+
+CALCS()
+cjoingedung		djointbtGD==1
+chittelatall    	abdkettlb =="TERLAMBAT10" || abdkettlb=="TERLAMBAT30" || abdkettlb=="TERLAMBAT150"
+
+MAP(mjointbdGD)
+tbddf1                  llongGD         REPLACE
+tbddf2                  llatGD          REPLACE
+
+DBCALCS(djointbdGD)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel gv_infoumum gv_gedung lgedung21
+        DBC_COND        cjoingedung
+        DBC_MAP         mjointbdGD
+
+MAP(mjointbdJab3)
+tbdkode                 ljabikutslp	REPLACE
+
+DBCALCS(djointbdJab3)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx	gv_dttabel gv_personal lABSENSLP ljabatan
+        DBC_MAP         mjointbdJab3
+
+DBCALCS(djoinpsdubhsts)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      psddatpsmkod    lUBHSTS160 lUBHSTS16021 hrmnobuk
+
+MAP(mscanabdm1)
+c1                      ltelatm1        DO_CALC_IF chittelatall    
+
+DBCALCS(dbscanabdm1)
+        DBC_COMMAND             SCANSCAN
+        DBC_TARGET              abdkymtglidx hrmnip1 ltglawlblm1
+        DBC_LAST_TARGET         abdkymtglidx hrmnip1 ltglakhblm1
+        DBC_SUM_MAP             mscanabdm1
+
+
+MAP(mscanabdm0)
+c1                   	ltelatm0       	DO_CALC_IF chittelatall
+
+DBCALCS(dbscanabdm0)
+        DBC_COMMAND             SCANSCAN
+        DBC_TARGET              abdkymtglidx hrmnip1 ltglawlblm0
+        DBC_LAST_TARGET         abdkymtglidx hrmnip1 ltglakhblm0
+        DBC_SUM_MAP             mscanabdm0
+
+
+DBCALCS(djointbdABSABL)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lABSAWHBL psidep
+
+DBCALCS(djointbdABSABL2)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx    gv_dttabel      gv_personal     lABSAWHBL lcab
+
+CALCS()
+cadaaktif               hrmdvs2=="SAKITBERKEPANJANGAN" && (hrmsts=="OPEN" || hrmsts=="INPG")
+
+DBCALCS(djoinhrmsktkpj)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      hrmdatniptgl   lKETSAKIT hrmnip1
+        DBC_SELECT      cadaaktif
+
+IMAGE(master) {BASE_ROW=2} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
+/-------------------------------------------\
+|/-----------------------------------------\|
+||t.Data      _________                    ||
+||i.NoBuk     _______________________      ||      
+||i.Tgl       _________                    ||
+||i.Sts       _________ _____________      ||
+||i.Nip       _________ _____________      ||
+||i.Cab       _________                    ||
+||t.Dvs       _________                    ||
+||i.Jabatan   _______________________      ||
+||t.Shift     _______________________      ||
+||i.Ket       _______________________      ||
+||t.Gedungjwl      _______                 ||
+||t.Gedungabs      _______                 ||
+||i.Ip        _______________________      ||
+||t.TelatBlnIni    __                      ||
+||t.TelatBlnKmrn   __                      ||
+|\-----------------------------------------/|        
+|/-----------------------------------------\|       
+||t.NipAtsn1  :_________ ____________      ||
+||t.AccAtasan1:_____                       ||
+||t.NipAtsn2  :_________ ____________      ||
+||t.AccAtasan2:_____                       ||
+||             _____                       ||
+||spasi		                           ||
+||t.Ket160	                           ||
+||t.Ket160b	                           ||
+||spasi		                           ||
+||_____________	 ______________            ||
+|\-----------------------------------------/|
+\-------------------------------------------/
+
+
+FIELD(master)
+hrmdata        	PROTECT QPROTECT     	INPUTRI 1
+hrmnobuk       	PROTECT              	INPUTRI 2
+hrmtgl         	PROTECT  {DD-MM-YY}  	INPUTRI 3 
+hrmsts         	PROTECT              	INPUTRI 4
+hrmjam	       	PROTECT			INPUTRI 5
+hrmnip1        	ALLCAPS              	INPUTRI 6 
+lnamasdm       	PROTECT              	INPUTRI 7 
+hrmcab         	PROTECT              	INPUTRI 8 
+hrmdvs         	PROTECT             	INPUTRI 9 
+ljabatan       	PROTECT           	INPUTRI 10
+hrmdvs2        	PROTECT              	INPUTRI 11
+hrmket1        	TEXTAREA SCROLL         INPUTRI 12
+lcabtwr		PROTECT			INPUTRI	13
+lgedung		PROTECT			INPUTRI	14
+lipcomp		PROTECT			INPUTRI	15
+ltelatm0	PROTECT			INPUTRI	16
+ltelatm1	PROTECT			INPUTRI	17
+lamtstr1abs     PROTECT                 INPUTRI 18
+lamtstr3abs     PROTECT                 INPUTRI 19
+hrmnip2		NOCHANGE		INPUTRI	20	
+lamtstr2abs     PROTECT                 INPUTRI 21
+lamtstr4abs     PROTECT                 INPUTRI 22
+hrmcab2		NOCHANGE		INPUTRI	23
+lenter		NOCHANGE		INPUTRI	24
+ltomdet_d       TOMBOL                  INPUTRI 25
+ltomdet_2d      TOMBOL                  INPUTRI 26
+
+MAP(mmaptbdjabatan)
+tbdusrcrt		ltbdusrcrt		REPLACE
+
+DBCALCS(djointbdjabatan)
+DBC_COMMAND    			 JOIN
+DBC_TARGET      		 tbddatkodidx    gv_dttabel      gv_personal     gv_jabatan    ljabatan  
+DBC_MAP				 mmaptbdjabatan 
+
+CALCS()
+ctambah1	  hrmtgl + 1
+cAPRM4W4WSUPRM          "APRM4W_4W&SUPRM"
+caprm4wnonrm            tbdrekbrg=="APRM4W_4W&SUP" && djoincabnonrm==1
+cBLANKS			BLANKS
+cAPRHMC_SPVCRM		"APRHMC_SPVCRM"
+caprhmcspvcrm		ljabatan=="SOCIALMEDIADESIGNER"
+cAPRM4W_4CMOBM		"APRM4W_4CMOBM"
+cAPRM4W_4CMOBM2		"APRM4W_4CMOBM2"
+caprm4w4cmobm			ljabatan=="CMO4W" && lgrup_login=="B.M4WBM"
+caprm4w4cmobm2			ljabatan=="CMO4W" && lgrup_login=="B.M4WBM" && djoincabnonrm==1
+cgruplogin_beda		djointbdjabatan==1 && djoinusr ==1 && ltbdusrcrt != lusrgrp
+capr_beda		"APRHRD_" + STRIP(lusrgrp)
+cbukandari120	r_string1==BLANKS
+ckodebukti      DO_LIB ap_amdvs(hrmdvs,hrmscr,lkodebukti);
+cnomer          STRIP(lkodebukti) + STRIP(cabkdfak) + THBLS(g_tgltrn) + "-"
+cbisdvs1        hrmdvs != BLANKS
+cadd_otY        g_curcmd == 1 
+ckondkawil1             psijabatan=="KAWIL" && djoinsgmkwl ==1 && djoincabkawil==1 && djoinsgmdcooHMC ==1
+ckondkawil2             psijabatan=="KAWIL" && djoinsgmkwl ==1 && djoincabkawil==1 && djoinsgmdcooH1 ==1
+ckawil                  psijabatan=="KAWIL"
+cAPRJJD_KAWIL2          "APRNSW_KAWIL" + STRIP(lnipdcoo)
+cthblini                THBLS(g_tgltrn)
+
+
+MAP(mjoinatasan12)
+amtstr1         lamtstr1        REPLACE
+amtstr2         lamtstr2        REPLACE
+amtstr3         lamtstr3        REPLACE
+amtstr4         lamtstr4        REPLACE
+amtstr6         lamtstr6        REPLACE
+amtstr7         lamtstr7        REPLACE
+
+DBCALCS(djoinamtatasan12)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      amtdatotoidx gv_dtplengkap hrmnip1
+        DBC_MAP         mjoinatasan12
+
+
+MAP(mjoinamtabs)
+amtstr1         lamtstr1abs        REPLACE
+amtstr2         lamtstr2abs        REPLACE
+amtstr3         lamtstr3abs        REPLACE
+amtstr4         lamtstr4abs        REPLACE
+
+DBCALCS(djoinamtabs)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      amtdatotoidx gt_absen11 hrmnobuk
+        DBC_MAP         mjoinamtabs
+
+
+CALCS()
+cdjoinamtatasan121      djoinamtatasan12==1
+/*
+cdjoinpsi11             djoinamtatasan12==1 && djoinpsi1==1
+cdjoinpsi21             djoinamtatasan12==1 && djoinpsi2==1
+*/
+clewat210		(djointbdshift==1 && lsystime - ltbdjamdtg>210)
+ckurang210              (djointbdshift==1 && lsystime - ltbdjamdtg<=210)
+
+DEFAULTS(master)
+lABSEN160	INIT		ABSEN160
+lTERLAMBAT	INIT		TERLAMBAT
+/*
+IF cdjoinamtatasan121	amtstr1_1	INIT_ADD 	{lamtstr1}
+IF cdjoinamtatasan121   amtstr2_1       INIT_ADD        {lamtstr2}
+
+IF cdjoinpsi11 amtstr3_1	INIT_ADD	{lpsinama1}
+IF cdjoinpsi21 amtstr4_1	INIT_ADD	{lpsinama2}
+*/
+IF ckurang210	hrmnip2		DFALT_SCAN	BLANKS ACC TACC
+IF ckurang210	hrmcab2		DFALT_SCAN	BLANKS ACC TACC
+IF clewat210 	hrmnip2         DFALT_SCAN      BLANKS ACC 
+IF clewat210	hrmcab2         DFALT_SCAN      BLANKS ACC 
+
+lKUNCIABSEN	INIT		KUNCIABSEN
+lSIDIKJARI      INIT            SIDIKJARI
+lPICMKTM2W      INIT            PICMKTM2W
+lCMS            INIT            CMS
+lcabang         INIT                    BLANKS
+lDCOOAREA       INIT                    DCOOAREA
+lHMC            INIT                    HMC
+lH1             INIT                    H1
+hrmdata         INIT_ADD	TERLAMBAT
+hrmdata         INIT_QUERY      TERLAMBAT
+hrmdf1          INIT_ADD        5
+hrmsts          INIT_ADD        INPG
+hrmtgl          INIT_QUERY        {g_tgltrn}
+hrmtgl          INIT_ADD        {g_tgltrn}
+IF cbukandari120 hrmnip1                INIT_QUERY      {g_usrkode}
+lnamafldsts     INIT            "hrmstsapr"
+lnamafldfak     INIT            "hrmnobuk"
+lnamaidxfak     INIT            "hrmbukidx"
+lyturutapr      INIT            Y
+hrmscr          INIT            {g_scrnumstr}
+hrmjam          INIT            SYSTIME
+lsystime        INIT            SYSTIME
+lMASTERTARGET   INIT            MASTERTARGET
+lCABNONRM       INIT            CABNONRM
+lM4W            INIT            M4W
+lversi          INIT            16092026
+ljamkosong      INIT            0000
+lABSENSLP	INIT		ABSENSLP
+lipcomp         INIT            {g_ipname}
+langka1		INIT		1
+lCABNOSJ        INIT    	CABNOSJ
+lenter		INIT_LABEL	Enter
+lHRD            INIT            HRD
+lAPRKHSHRD      INIT            APRKHSHRD
+lUBHSTS160      INIT            UBHSTS160
+lUBHSTS16021   	INIT            UBHSTS160
+l4265           INIT            4265
+lm4265          INIT            m4265
+ltomdet_d       INIT            "1d.Mundur Status"
+ltomdet_2d      INIT            "2d.Ubah NIP Atasan"
+lUBHNIP160      INIT            UBHNIP160
+l160            INIT            "160"
+lmin1           INIT            -1
+l1           	INIT            1
+lABSAWHBL       INIT    	ABSENAWLBLN
+lKETSAKIT       INIT    	KETSAKIT
+lintjam830x     INIT            183000
+lKUNJUNGAN      INIT            KUNJUNGAN
+lJAB129KOL      INIT            JAB129KOL
+
+IF 
+CALCS()
+cinpgatasan1	hrmsts=="INPG" && g_usrkode==lamtstr1abs
+cinpgatasan2	hrmsts=="INPG" && g_usrkode==lamtstr2abs && (lamtstr1abs!=lamtstr2abs)
+
+EDITS(master)
+e.Mandatory hrmnip2 MANDATORY_IF cinpgatasan1
+e.Mandatory hrmcab2 MANDATORY_IF cinpgatasan2
+
+e.ValidatePsm hrmnip1  VALIDATE psmkodidx mpsm 0
+e.ValidatePsi hrmnip1  VALIDATE psikodidx mpsi 0
+e.ValidateUsr hrmnip1  VALIDATE usrkodidx musr 0
+e.ValidateTbd2 ljabatan VALIDATE tbddatkodidx mtbd2  {Pgv_dttabel} {Pgv_personal} {Pgv_jabatan} 
+t.ValidateTbd hrmdvs2 VALIDATE tbddatkodidx mtbd3 {Pgv_dttabel} {Pgv_infoumum} {Pgv_shift}
+e.ValidateCab hrmcab VALIDATE cabkodidx mcabx 0
+i.Mandatory hrmket1 MANDATORY
+
+DBCALCS(djoinsgmcms)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth gt_dtpiccab11    hrmdvs    hrmcab   lthbl11     lCMS
+
+DBCALCS(djoinsgmpic)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      sgmdatplgth gt_dtpiccab11    hrmdvs    hrmcab   lthbl11     lPICMKTM2W
+
+MAP(mjointbdaprkhs)
+tbdkode2        lkodeaprkhs     REPLACE
+
+DBCALCS(djointbdaprkhs)
+DBC_COMMAND    			 JOIN
+DBC_TARGET      		 tbddatkodidx    gv_dttabel      lHRD     lAPRKHSHRD    ljabatan  
+DBC_MAP				 mjointbdaprkhs 
+
+
+CALCS()
+caprcredit              "APRHMC_CRDTOFF"
+caprmktg                "APRM2W_M2WSTAF"
+ccrdttdkadacms          hrmdvs!="M2W4W" && djoinusr==1 && lusrgrp=="CMO" && djoinsgmcms==0
+cmktgtdkadapic          hrmdvs=="M2W" && djoinusr==1 && (lusrgrp=="SALESM2W" || lusrgrp=="COUNTER") && djoinsgmpic==0
+cAPRKLIKSPV             "APRHRD_KLIKSPV"
+
+cklikspv                ljabatan=="KLIKNSCHMCSPV" || ljabatan=="KLIKNSCM2WSPV"
+cjointbdaprkhs          djointbdaprkhs==1
+
+cAPRGR_HMCNSO           "APRGR_HMCNSO"
+cAPRGR_HMCAM            "APRGR_HMCAM"
+cAPRCRM_CRMHO           "APRCRM_CRMHO"
+cgrpnso                 djoinusr==1 && (lusrgrp=="NSOHEAD" || lusrgrp=="BUM")
+cgrphmcam               djoinusr==1 && lusrgrp=="HMCAM"
+cadmcrm                 ljabatan=="ADMCRM" && lcabpos=="PST"
+
+
+MAP(mtbd2)
+tbdrekbrg       	hrmkodeapr      REPLACE
+cthblini                lthbl21         DO_CALC
+cthblini                lthbl11         DO_CALC
+caprcredit              hrmkodeapr      DO_CALC_IF ccrdttdkadacms
+caprmktg                hrmkodeapr      DO_CALC_IF cmktgtdkadapic
+
+cBLANKS         	lnipdcoo        DO_CALC
+lnipdcoohmc     	lnipdcoohmc     REPLACE_IF ckondkawil1
+lnipdcooh1      	lnipdcooh1      REPLACE_IF ckondkawil2
+lnipdcoohmc     	lnipdcoo        REPLACE
+lnipdcooh1      	lnipdcoo        NO_REPLACE
+cAPRJJD_KAWIL2          hrmkodeapr      DO_CALC_IF ckawil
+
+cAPRM4W4WSUPRM          hrmkodeapr      DO_CALC_IF caprm4wnonrm
+cAPRHMC_SPVCRM		hrmkodeapr	DO_CALC_IF caprhmcspvcrm
+cAPRM4W_4CMOBM		hrmkodeapr	DO_CALC_IF caprm4w4cmobm
+cAPRM4W_4CMOBM2		hrmkodeapr	DO_CALC_IF caprm4w4cmobm2
+capr_beda		hrmkodeapr	DO_CALC_IF cgruplogin_beda
+cAPRKLIKSPV             hrmkodeapr      DO_CALC_IF cklikspv
+lkodeaprkhs             hrmkodeapr      REPLACE_IF cjointbdaprkhs
+cAPRGR_HMCNSO           hrmkodeapr      DO_CALC_IF cgrpnso
+cAPRGR_HMCAM            hrmkodeapr      DO_CALC_IF cgrphmcam
+cAPRCRM_CRMHO           hrmkodeapr      DO_CALC_IF cadmcrm
+
+
+MAP(mtbd3)
+tbdkode		hrmdvs2		REPLACE
+tbdjam2		ljam_plg	REPLACE
+tbdjam3		ljam_plg6	REPLACE
+
+MAP(mmapabd)
+abdtype		labdtype	REPLACE
+abdjam1		ljamdtg		REPLACE
+abdjam2		ljamplg		REPLACE
+abdshift	labdshift	REPLACE
+abdcab		lcab		REPLACE
+
+DBCALCS(djoinabd)
+	DBC_COMMAND	JOIN
+	DBC_TARGET	abdkymtglidx		hrmnip1   hrmtgl
+	DBC_MAP		mmapabd
+
+MAP(mjoincab)
+cabnama                 lcabnama        REPLACE
+cabtwr                  lcabtwr         REPLACE
+
+DBCALCS(djoincab)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      cabkodidx       lcab
+        DBC_MAP         mjoincab
+
+CALCS()
+cbenarkunj      mtsperdisd <= lintjam830x && mtsperdisd!=0 && mtssts !="VOID" && mtssts !="TACC" && mtssts !="OPEN" && mtsuntuk!="07" && mtsuntuk!="08"
+cbenarkunj2     mtssts !="VOID" && mtssts !="TACC" && mtssts !="OPEN"
+
+MAP(mscankunj)
+c1              ladakunj        DO_CALC_IF cbenarkunj
+c1              ladakunj2       DO_CALC_IF cbenarkunj2
+DEBUG           ldumstr    ldumstr    REPLACE
+
+
+DBCALCS(dbscanmts)                                                                                                                                                                     
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      mtsdatplgtgl   lKUNJUNGAN hrmnip1 g_tgltrn
+        DBC_SUM_MAP     mscankunj
+
+DBCALCS(djointbdjab129kol)                                                                                                                                                             
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tbddatkodidx gv_dttabel gv_kunjungan21 lJAB129KOL ljabatan
+
+
+CALCS()
+cjoinabd	djoinabd==1
+cjoinabdblmabsen	djoinabd==1  && labdtype!="DATANG" && labdtype!="HADIR129"
+cjoincab1       djoincab==1
+cdjoinamtabs0	djoinamtabs==0
+cdjoinamtabs1	djoinamtabs==1
+
+ctglawlblm0     ststglprjgl + 1
+ctglakhblm0x    DO_LIB ap_tambl(ltglawlblm0,l1,&ltglakhblm0x);
+ctglakhblm0     ltglakhblm0x - 1
+ctglawlblm1     DO_LIB ap_tambl(ltglawlblm0,lmin1,&ltglawlblm1);
+ctglakhblm1     ststglprjgl
+cdbscanabdm1    (dbscanabdm1!=0 || dbscanabdm1==0)
+cdbscanabdm0    (dbscanabdm0!=0 || dbscanabdm0==0)
+cdbscanmts      dbscanmts >= 0
+
+MAP(mpsi)
+labdshift	hrmdvs2		REPLACE_IF cjoinabd
+psidvs		hrmdvs		REPLACE
+psijabatan	ljabatan	REPLACE
+psicabskr	hrmcab		REPLACE
+psinama		lnamasdm	REPLACE
+ctambah1	lhrmtgl2	DO_CALC
+g_strksg	lcab		REPLACE
+lcab		lcab		REPLACE_IF cjoinabd
+g_strksg        lcabtwr         REPLACE
+lcabtwr         lcabtwr         REPLACE_IF cjoincab1
+
+cBLANKS         lamtstr1abs     DO_CALC
+cBLANKS         lamtstr2abs     DO_CALC
+cBLANKS         lamtstr3abs     DO_CALC
+cBLANKS         lamtstr4abs     DO_CALC
+
+lamtstr1abs	lamtstr1abs	REPLACE_IF cdjoinamtabs1
+lamtstr2abs     lamtstr2abs     REPLACE_IF cdjoinamtabs1
+lamtstr3abs     lamtstr3abs     REPLACE_IF cdjoinamtabs1
+lamtstr4abs     lamtstr4abs     REPLACE_IF cdjoinamtabs1
+
+cBLANKS         ltglawlblm1     DO_CALC
+cBLANKS         ltglakhblm1     DO_CALC
+cBLANKS         ltglawlblm0     DO_CALC
+cBLANKS         ltglakhblm0     DO_CALC
+cBLANKS         ltelatm1        DO_CALC
+cBLANKS         ltelatm0        DO_CALC
+cBLANKS         ltglakhblm0     DO_CALC
+ctglawlblm0     ltglawlblm0     DO_CALC
+ctglakhblm0x    ltglakhblm0x    DO_CALC
+ctglakhblm0     ltglakhblm0     DO_CALC
+ctglawlblm1     ltglawlblm1     DO_CALC
+ctglakhblm1     ltglakhblm1     DO_CALC
+ltelatm1        ltelatm1        REPLACE_IF cdbscanabdm1
+ltelatm0        ltelatm0        REPLACE_IF cdbscanabdm0
+ladakunj        ladakunj        REPLACE_IF cdbscanmts
+ladakunj2       ladakunj2       REPLACE_IF cdbscanmts
+
+MAP(musr)
+usrkode		psikode		REPLACE
+cBLANKS		lgrup_login	DO_CALC
+usrgrp		lgrup_login	REPLACE
+
+MAP(mpsm)
+psmkode		hrmnip1		REPLACE
+psmsuffix	lpsmsuffix	REPLACE
+
+MAP(mcabx)
+cabkode		hrmcab		REPLACE
+cabpos          lcabpos         REPLACE
+
+MAP(mscanhrm)
+c1			lada_input		DO_CALC
+
+DBCALCS(dbscanhrm)
+	DBC_COMMAND	SCANSCAN
+	DBC_TARGET      hrmdatniptgl    lTERLAMBAT hrmnip1         g_tgltrn
+        DBC_SUM_MAP     mscanhrm
+
+CALCS()
+cada_abd		hrmtgl<g_tgltrn || (djoinabd==1 && (labdtype == "WFO" || labdtype == "WFH" || labdtype == "J1" || labdtype == "R" || labdtype=="MANGKIR")) || (hrmsts=="INPG" && g_curcmd==2)
+csdm_mkr		djoinabd==1 && labdtype!="MANGKIR"
+csdm_sakit      	djoinhrmsktkpj==0 || g_curcmd==2
+csdh_absen		hrmtgl<g_tgltrn || (djoinabd==1 && ljamdtg==ljamkosong)
+cbatas			g_curcmd == 2 || ((dbscanhrm==0 || dbscanhrm!=0) && lada_input == 0)
+cbatas_dtg		(djointbdshift==1 && lsystime - ltbdjamdtg <=150) || g_curcmd==2  || djointbdabsen160==1
+cbatas_dtg2		(djointbdshift==1 && lsystime - ltbdjamdtg > 0 && hrmtgl != 20260401 /*(ststglprjgl + 1)*/) || 
+			((djointbdshift==1 && lsystime - ltbdjamdtg > 0) && hrmtgl == 20260401 /*(ststglprjgl + 1)*/ && djointbdABSABL==0 && djointbdABSABL2==0) || 
+			((djointbdshift==1 && lsystime - ltbdjamdtg > 90) && hrmtgl == 20260401 /*(ststglprjgl + 1)*/ && (djointbdABSABL==1 || djointbdABSABL2==1)) || g_curcmd==2
+
+cver3031		lpsmsuffix == "Y"
+csdminpg		djoinpsi==1 && lpsists=="INPG"
+ctgawlbl                ststglprjgl + 1
+/*ckuotamsh		(dbscanabdtlt==0 || dbscanabdtlt!=0) && ltelatall>=6*/
+ccaboke			(djoinabd==1 && 
+			(
+			 (djointbtGD==1 && lgedung != BLANKS && (lgedung==lcabtwr)) ||
+                   	 (lgedung=="SLP" && djointbdJab3==1 && (ljabatan==ljabikutslp)) ||
+			 (djoinabd==1 && djointbdSJ==1 && lpenandaip=="NOIP" && labdtype == "WFH") ||
+                         (djointbdjab129kol == 1 && ladakunj2 > 0)
+			)) ||  g_curcmd==2
+cipmin1                 lpanjangip - 1
+cipmin2                 lpanjangip - 2
+cipmin3                 lpanjangip - 3
+cipmin4                 lpanjangip - 4
+cmin1titik      	ltitikstr1 == "."
+cmin2titik      	ltitikstr2 == "." && ltitikstr1 != "."
+cmin3titik      	ltitikstr3 == "." && ltitikstr1 != "." && ltitikstr2 != "."
+cmin4titik      	ltitikstr4 == "." && ltitikstr1 != "." && ltitikstr2 != "." && ltitikstr3 != "."
+cjointbdGD      	djointbdGD == 1
+cipaktif		g_curcmd==1 && (((djoinhrm168==1 && ((dbscanhrm168==1 || dbscanhrm168==0) && lada168 == 0)) || djoinhrm168==0)) && (djoinabd==1 || djoinabd==0) && djointbdSJ == 0 &&  ((djointbdjab129kol == 1 && ladakunj2 == 0 ) ||djointbdjab129kol == 0)
+catasansama		lamtstr1abs==lamtstr2abs
+
+MAP(mnobuk)
+ckodebukti      lkodebukti      DO_CALC_IF cbisdvs1
+cnomer          hrmnobuk        DO_CALC_IF cadd_otY
+hrmjam		ljam_input	REPLACE_IF cadd_otY
+ctgawlbl	ltgawlbl	DO_CALC_IF cadd_otY
+lipoke          lipoke          REPLACE
+g_strksg        lgedung         REPLACE
+lgedung         lgedung         REPLACE_IF cjoingedung
+lgedung21       lgedung21       REPLACE_IF cjoingedung
+llatGD          llatGD          REPLACE_IF cjointbdGD
+llongGD         llongGD         REPLACE_IF cjointbdGD
+
+MAP(mnobuk2)
+hrmjam          ljam_input      REPLACE_IF cadd_otY
+ctgawlbl        ltgawlbl        DO_CALC_IF cadd_otY
+lipoke          lipoke          REPLACE
+g_strksg        lgedung         REPLACE
+lgedung         lgedung         REPLACE_IF cjoingedung
+lgedung21       lgedung21       REPLACE_IF cjoingedung
+llatGD          llatGD          REPLACE_IF cjointbdGD
+llongGD         llongGD         REPLACE_IF cjointbdGD
+
+MAP(mkode2)
+lharike         hrmdf2          REPLACE
+
+MAP(mdumstr)
+ldumstr         ldumstr         REPLACE
+
+MAP(mcariip)
+cipmin1         ltitik1         DO_CALC
+cipmin2         ltitik2         DO_CALC
+cipmin3         ltitik3         DO_CALC
+cipmin4         ltitik4         DO_CALC
+
+MAP(matssama)
+hrmnip2		hrmcab2		REPLACE_IF catasansama
+hrmnip2		lapr1		REPLACE
+hrmnip2		lapr2		REPLACE_IF catasansama
+
+MAP(misiapr)
+hrmcab2		lapr2		REPLACE
+
+CALCS()
+ctdkopen	hrmsts=="CLSD" || g_curcmd!=1
+/*ctdkopen2	hrmsts=="CLSD"*/
+cmasihopen	hrmsts=="OPEN"
+cmasihopen2	hrmsts=="OPEN" || lamtstr1abs == lamtstr2abs
+
+cbukanatasan1	g_usrkode!=lamtstr1abs
+cbukanatasan2	g_usrkode!=lamtstr2abs
+
+ctaccpulang	hrmnip2!="TACC"
+ctaccpulang2	hrmcab2!="TACC" || lamtstr1abs==lamtstr2abs
+
+
+HOOKS(master)
+BEFORE_INPUT    cur_field=hrmnip1 DO_SKIP_IF ctdkopen
+BEFORE_INPUT    cur_field=hrmket1 DO_SKIP_IF ctdkopen
+BEFORE_INPUT    cur_field=hrmnip2 DO_SKIP_IF cmasihopen 
+BEFORE_INPUT    cur_field=hrmcab2 DO_SKIP_IF cmasihopen2
+
+BEFORE_INPUT    cur_field=hrmnip2 DO_SKIP_IF cbukanatasan1
+BEFORE_INPUT    cur_field=hrmcab2 DO_SKIP_IF cbukanatasan2
+
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB ap_strln(g_ipname,&lpanjangip);
+BEFORE_INPUT    cur_field=hrmnip1  DO_MAP SHOW mcariip
+
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB ap_amstr(g_ipname,ltitik1,langka1,&ltitikstr1);
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB ap_amstr(g_ipname,ltitik2,langka1,&ltitikstr2);
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB ap_amstr(g_ipname,ltitik3,langka1,&ltitikstr3);
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB ap_amstr(g_ipname,ltitik4,langka1,&ltitikstr4);
+
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB_IF cmin1titik DO_LIB ap_amstr(g_ipname,langka1,ltitik1,&lipoke);
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB_IF cmin2titik DO_LIB ap_amstr(g_ipname,langka1,ltitik2,&lipoke);
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB_IF cmin3titik DO_LIB ap_amstr(g_ipname,langka1,ltitik3,&lipoke);
+BEFORE_INPUT    cur_field=hrmnip1  DO_LIB_IF cmin4titik DO_LIB ap_amstr(g_ipname,langka1,ltitik4,&lipoke);
+
+BEFORE_INPUT    cur_field=lenter  DO_LIB ap_amstr(g_ipname,ltitik1,langka1,&ltitikstr1);
+BEFORE_INPUT    cur_field=lenter  DO_LIB ap_amstr(g_ipname,ltitik2,langka1,&ltitikstr2);
+BEFORE_INPUT    cur_field=lenter  DO_LIB ap_amstr(g_ipname,ltitik3,langka1,&ltitikstr3);
+BEFORE_INPUT    cur_field=lenter  DO_LIB ap_amstr(g_ipname,ltitik4,langka1,&ltitikstr4);
+
+BEFORE_INPUT    cur_field=lenter  DO_LIB_IF cmin1titik DO_LIB ap_amstr(g_ipname,langka1,ltitik1,&lipoke);
+BEFORE_INPUT    cur_field=lenter  DO_LIB_IF cmin2titik DO_LIB ap_amstr(g_ipname,langka1,ltitik2,&lipoke);
+BEFORE_INPUT    cur_field=lenter  DO_LIB_IF cmin3titik DO_LIB ap_amstr(g_ipname,langka1,ltitik3,&lipoke);
+BEFORE_INPUT    cur_field=lenter  DO_LIB_IF cmin4titik DO_LIB ap_amstr(g_ipname,langka1,ltitik4,&lipoke);
+
+AFTER_INPUT	cur_field=lenter	DO_MAP SHOW mnobuk2
+AFTER_INPUT	cur_field=hrmnip1	DO_MAP SHOW mnobuk
+AFTER_INPUT     cur_field=hrmnip1	DO_LIB ap_hrike(hrmtgl,&lharike);
+AFTER_INPUT	cur_field=hrmnip1	DO_MAP SHOW mkode2
+AFTER_INPUT	cur_field=hrmnip2	DO_MAP SHOW matssama
+AFTER_INPUT	cur_field=hrmcab2	DO_MAP SHOW misiapr
+AFTER_INPUT     cur_field=hrmnip1	DO_MAP SHOW
+                IF csdminpg  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.StatusSdmTdkInpg
+
+AFTER_INPUT     cur_field=hrmnip1   DO_MAP SHOW
+                IF csdh_absen  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.SdhAbsenDtng    
+
+AFTER_INPUT     cur_field=hrmnip1   DO_MAP SHOW
+                IF csdm_mkr  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.SdmMangkirHubHRDER
+
+AFTER_INPUT     cur_field=hrmnip1   DO_MAP SHOW
+                IF csdm_sakit mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.SdmSakitKpjHubHRDER
+
+AFTER_INPUT	cur_field=hrmnip1	DO_MAP SHOW
+		IF cbatas_dtg2 mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.AbsenBlmTelat
+/*
+AFTER_INPUT     cur_field=hrmnip1	DO_MAP SHOW
+                IF ckuotamsh  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.MshAdaKuotaAbs130
+*/
+AFTER_INPUT     cur_field=hrmnip1	DO_MAP SHOW
+                IF cver3031 mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.Ver3031         
+
+AFTER_INPUT     cur_field=hrmnip1	DO_MAP SHOW
+                IF ccaboke mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.CabTdkSesuai
+
+AFTER_INPUT	cur_field=hrmnip1	DO_MAP SHOW
+		IF cbatas mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.SdhPernahInputHariIni
+
+AFTER_INPUT	cur_field=hrmnip1	DO_MAP SHOW
+		IF cbatas_dtg mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.MaksTelat150Mnt
+
+AFTER_INPUT     cur_field=hrmnip1   DO_MAP SHOW
+                IF cada_abd  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.AbsBlmAda
+
+AFTER_INPUT     cur_field=hrmnip2   DO_MAP SHOW
+                IF ctaccpulang  mdumstr
+                ELSE HKCURSOR NOSTAY
+                 HKMSG t.TaccSdmPulang
+
+AFTER_INPUT     cur_field=hrmcab2   DO_MAP SHOW
+                IF ctaccpulang2  mdumstr
+                ELSE HKCURSOR NOSTAY
+                 HKMSG t.TaccSdmPulang
+
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbatas_dtg mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.MaksTelat150Mnt
+
+AFTER_INPUT     cur_keybd=EN        DO_MAP SHOW
+                IF cbatas mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.SdhPernahInputHariIni
+
+AFTER_INPUT     cur_keybd=EN   DO_MAP SHOW
+                IF cada_abd  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.AbsBlmAda
+
+AFTER_INPUT     cur_keybd=EN   DO_MAP SHOW
+                IF csdh_absen  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.SdhAbsenDtng
+
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW mnobuk
+AFTER_INPUT     cur_keybd=EN            DO_LIB_IF cipaktif ap_ceksj(hrmnip1);
+
+AFTER_INPUT     cur_keybd=EN            DO_MAP SHOW 
+                IF cver3031 mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.Ver3031         
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF csdm_mkr  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.SdmMangkirHubHRDER
+
+AFTER_INPUT     cur_keybd=EN    DO_MAP SHOW
+                IF csdm_sakit mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.SdmSakitKpjHubHRDER
+
+AFTER_INPUT	cur_keybd=EN		DO_MAP SHOW
+		IF cbatas_dtg2 mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG t.AbsenBlmTelat
+
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF csdminpg  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.StatusSdmTdkInpg
+
+/*
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ckuotamsh  mdumstr
+                ELSE HKCURSOR STAY
+                 HKMSG t.MshAdaKuotaAbs130
+*/
+AFTER_INPUT     cur_keybd=EN		DO_MAP SHOW
+                IF ccaboke mdumstr
+                ELSE HKCURSOR STAY
+                HKMSG t.CabTdkSesuai
+
+
+IMAGE(master2) 
+|/-------------------------------------\|
+||i.NoBuk     _______________________  ||
+||i.Tgl       _________                ||
+||i.Sts       _________ _____________  ||
+||i.Nip       _________ _____________  ||
+|\-------------------------------------/|
+
+FIELD(master2)
+hrmnobuk        PROTECT                 INPUTRI 2
+hrmtgl          PROTECT  {DD-MM-YY}     INPUTRI 3
+hrmsts          PROTECT                 INPUTRI 4
+hrmjam          PROTECT                 INPUTRI 5
+hrmnip1         ALLCAPS                 INPUTRI 6
+lnamasdm        PROTECT                 INPUTRI 7
+
+
+IMAGE(transt)
+/--------------------------------------------------------------------------------\
+|       t.HisUbhSts                                                              |
+|       /----------------------------------------------------\                   |
+|       !_____________________ ___                           |                   |
+|       !t.User       : ___________ _______________________  !                   |
+|       !t.StsSblm    : ________                             !                   |
+|       !t.StsSdh     : ________                             !                   |
+|       !t.Ket        : __________________________ ________  !                   |
+|       \----------------------------------------------------/                   |
+\--------------------------------------------------------------------------------/
+
+IMAGE(trans)
+
+
+FIELD(transt)
+psdkode         PROTECT SCROLL          INPUTRI 1
+psdnourt        PROTECT SCROLL          INPUTRI 2
+psdstr3         PROTECT SCROLL          INPUTRI 3
+lnamainput      PROTECT SCROLL          INPUTRI 4
+psdstr1         PROTECT SCROLL          INPUTRI 5
+psdstr2         NOCHANGE SCROLL         INPUTRI 6
+psdket          TEXTAREA                INPUTRI 7
+lenter          NOCHANGE                INPUTRI 8
+
+EDITS(transt)
+t.Validate psdstr3      VALIDATE psikodidx mpsiubah 0
+t.Mandatory psdstr2     MANDATORY
+t.Mandatory psdket      MANDATORY
+
+MAP(mpsiubah)
+psikode         psdtype         REPLACE
+psinama         lnamainput      REPLACE
+
+DEFAULTS(transt)
+psdstr2      DFALT_SCAN_BLANKS INPG VOID
+lenter2          INIT    ENTER
+
+MAP(mnourtx)
+c1              psdnourt            DO_CALC
+hrmsts          psdstr1             REPLACE
+g_usrkode       psdstr3             REPLACE
+
+HOOKS(transt)
+BEFORE_INPUT    cur_field=psdstr2    DO_MAP SHOW mnourtx
+
+
+SUBFILE(trans)
+SFL_LINES(1)
+SFL_TITLE(transt)
+SFL_TARGET
+psddatpsmkod    lUBHSTS160 lUBHSTS16021 hrmnobuk
+
+SFL_MAP
+hrmnobuk         psdkode         REPLACE
+lUBHSTS160       psddata         REPLACE
+lUBHSTS16021     psdpsmkode      REPLACE
+
+
+IMAGE(transat)
+/--------------------------------------\
+|t.UbhNipAtasan                        |
+|/------------------------------------\|
+||i.NipInput    :________________     ||
+||t.Tgl         :________________	  ||
+||t.Pilihan     :________________	  ||
+||t.NipSebelum  :________________	  ||
+||t.NipSesudah  :________________	  ||
+|\------------------------------------/|
+\--------------------------------------/
+
+IMAGE(transa)
+
+FIELDS(transat)
+psdstr3		PROTECT                        INPUTRI         1
+psdtgl1 	PROTECT NOLIMIT	{DD-MM-YY}     INPUTRI         2
+psdtype 	NOCHANGE                       INPUTRI         3
+psdstr1		PROTECT                        INPUTRI         4
+psdstr2		ALLCAPS                        INPUTRI         5
+
+DEFAULTS(transat)
+psdstr3     INIT        {g_usrkode}
+psdtgl1     INIT        {g_tgltrn}
+psdtype     DFALT_SCAN_BLANKS   ATASAN1
+                                ATASAN2
+
+CALCS()
+cubhnip1	psdtype == "ATASAN1"
+cubhnip2	psdtype == "ATASAN2"
+
+MAP(mscanpsdubhnip)
+c1      ltotubhnip1      DO_CALC_IF cubhnip1
+c1      ltotubhnip2      DO_CALC_IF cubhnip2
+c1      lnourtnip        DO_CALC
+
+DBCALCS(dbscanpsdubhnip)
+        DBC_COMMAND     SCANSCAN
+        DBC_TARGET      psddatpsmurt   lUBHNIP160 hrmnobuk
+        DBC_SUM_MAP     mscanpsdubhnip
+
+CALCS()
+
+cblhubhnip      (g_grpnam == "HRDSPV" || g_grpnam == "HRDER" || g_usrkode == "1604848" || g_usrkode == "2221048" ||
+                g_usrkode == "2450640" || g_usrkode=="2492032" || g_usrkode == "2550257") && (hrmsts=="OPEN" || hrmsts=="INPG")
+cats1blmacc     psdtype=="ATASAN1" && hrmnip2==BLANKS || psdtype!="ATASAN1"
+cats2blmacc     psdtype=="ATASAN2" && hrmcab2==BLANKS || psdtype!="ATASAN2"
+cbisaubhats1    (psdtype=="ATASAN1" && (dbscanpsdubhnip==0 || dbscanpsdubhnip!=0) && ltotubhnip1<1) || psdtype!="ATASAN1" || g_grpnam!="tutupdulu"
+cbisaubhats2    (psdtype=="ATASAN2" && (dbscanpsdubhnip==0 || dbscanpsdubhnip!=0) && ltotubhnip2<1) || psdtype!="ATASAN2" || g_grpnam!="tutupdulu"
+cbukannipsendiri        psdstr2!=hrmnip1
+cnourutubhnip   (dbscanpsdubhnip==0 || dbscanpsdubhnip!=0) 
+cnobukurt       STRIP(hrmnobuk)+FLD_TO_STRING(psdnourt)
+
+EDITS(transat)
+t.ValidateNip   psdstr2  VALIDATE psikodidx mpsiubhnip spsiINPG
+
+MAP(mpsiubhnip)
+psikode         psdstr2         REPLACE
+psinama         lnamaats        REPLACE
+
+MAP(misinipatasan)
+lamtstr1abs     lamtstr1abs     REPLACE_IF cdjoinamtabs1
+lamtstr1abs     psdstr1     REPLACE_IF cubhnip1
+lamtstr2abs    psdstr1     REPLACE_IF cubhnip2
+lnourtnip       psdnourt        REPLACE_IF cnourutubhnip
+cnobukurt       psdkode         DO_CALC
+
+
+HOOKS(transat)
+AFTER_INPUT     cur_field=psdtype       DO_MAP SHOW misinipatasan
+
+AFTER_INPUT     cur_field=psdtype       DO_MAP SHOW
+		IF cbisaubhats1 mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Max 1 Kali Ubah Atasan 1
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+		IF cbisaubhats1 mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Max 1 Kali Ubah Atasan 1
+
+AFTER_INPUT     cur_field=psdtype       DO_MAP SHOW
+		IF cbisaubhats2 mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Max 1 Kali Ubah Atasan 2
+
+AFTER_INPUT     cur_keybd=EN      DO_MAP SHOW
+		IF cbisaubhats2 mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Max 1 Kali Ubah Atasan 2
+
+AFTER_INPUT     cur_field=psdtype       DO_MAP SHOW
+		IF cats1blmacc mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Atasan 1 Sudah Acc
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+		IF cats1blmacc mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Atasan 1 Sudah Acc
+
+AFTER_INPUT     cur_field=psdtype       DO_MAP SHOW
+		IF cats2blmacc mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Atasan 2 Sudah Acc
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+		IF cats2blmacc mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Atasan 2 Sudah Acc
+
+AFTER_INPUT     cur_field=psdstr2       DO_MAP SHOW
+		IF cbukannipsendiri mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Tidak Bisa Input NIP Sendiri
+
+AFTER_INPUT     cur_keybd=EN       DO_MAP SHOW
+		IF cbukannipsendiri mdumstr
+		ELSE HKCURSOR STAY
+		HKMSG Tidak Bisa Input NIP Sendiri
+
+
+SUBFILE(transa)
+SFL_LINES(1)
+SFL_TITLE(transat)
+SFL_TARGET
+psddatpsmurt   lUBHNIP160 hrmnobuk
+
+SFL_MAP
+hrmnobuk        psdpsmkode      REPLACE
+lUBHNIP160      psddata         REPLACE
+
+
+CALCS()
+cotY            g_curcmd ==1   
+cdoneacc	g_usrkode=="TUTUPDULU" && hrmsts=="INPG" && hrmnip2=="ACC" && hrmcab2=="ACC"
+cWFO		"WFO"
+cALPA		"ALPA"
+clewathari	hrmtgl<g_tgltrn
+
+MAP(maddbuk)
+hrmnobuk        hrmnobuk        REPLACE
+
+MAP(m4265)
+hrmnobuk        r_string1       REPLACE
+
+MAP(mupdhrmapr) /*Untuk counter acc hilang saat enter*/
+lapr1		hrmnip2		REPLACE
+lapr2		hrmcab2		REPLACE
+
+MAP(mupdabdmdr)
+cWFO		abdtype		DO_CALC
+cALPA		abdtype		DO_CALC_IF clewathari
+cBLANKS		abdjam1		DO_CALC
+cBLANKS		abdkettlb	DO_CALC
+cBLANKS		abdket		DO_CALC
+
+MAP(mupdhrm160)
+psdstr2		hrmsts		REPLACE
+
+CALCS()
+csudaacctacc	(g_usrkode==lamtstr1abs && g_usrkode==abkkym) || (g_usrkode==lamtstr2abs && g_usrkode==abkkym)
+
+MAP(mupdabk_clsd)
+gv_CLSD		abksts		REPLACE_IF csudaacctacc
+
+MAP(mupdabk_void)
+gv_CLSD		abksts		REPLACE
+
+MAP(mmapmaster)
+cBLANKS		lamtstr1	DO_CALC
+cBLANKS		lamtstr2	DO_CALC
+cBLANKS		lamtstr3	DO_CALC
+cBLANKS		lamtstr4	DO_CALC
+lamtstr1	lamtstr1	REPLACE_IF cdjoinamtatasan121
+lamtstr2        lamtstr2        REPLACE_IF cdjoinamtatasan121
+lamtstr3 	lamtstr3 	REPLACE_IF cdjoinamtatasan121
+lamtstr4        lamtstr4        REPLACE_IF cdjoinamtatasan121
+
+lamtstr6        lamtstr6        REPLACE_IF cdjoinamtatasan121
+lamtstr7        lamtstr7        REPLACE_IF cdjoinamtatasan121
+
+MAP(maddamtatasan)	
+gt_absen11		amtdata		REPLACE
+hrmnobuk		amtbukoto	REPLACE
+lamtstr1                amtstr1         REPLACE
+lamtstr2                amtstr2         REPLACE
+lamtstr3                amtstr3         REPLACE
+lamtstr4                amtstr4         REPLACE
+lamtstr6                amtstr6         REPLACE
+lamtstr7                amtstr7         REPLACE
+
+CALCS()
+catasan1	g_usrkode==lamtstr1abs
+catasan2	g_usrkode==lamtstr2abs
+cnipatasanubh      (psdtype=="ATASAN1" && abkkym2=="ATASAN 1 ACC 160") || (psdtype=="ATASAN2" && abkkym2=="ATASAN 2 ACC 160")
+
+cadaatasan1     djoinamtatasan12==1 && lamtstr1!=BLANKS
+cadaatasan2     djoinamtatasan12==1 && lamtstr2!=BLANKS
+
+c160atas1       "ATASAN 1 ACC 160"
+c160atas2       "ATASAN 2 ACC 160"
+
+cdiVoid		psdstr2=="VOID"
+
+MAP(mupdamtatasanacc)
+lsystime		amtjam		REPLACE_IF catasan1
+lsystime                amtjam2         REPLACE_IF catasan2
+
+MAP(maddamtatasanacc)
+gt_absen11              amtdata         REPLACE
+hrmnobuk                amtbukoto       REPLACE
+psdstr2         amtstr1         REPLACE_IF cubhnip1
+lnamaats        amtstr3         REPLACE_IF cubhnip1
+psdstr2         amtstr2         REPLACE_IF cubhnip2
+lnamaats        amtstr4         REPLACE_IF cubhnip2
+
+MAP(mupdamtnipats)
+psdstr2         amtstr1         REPLACE_IF cubhnip1
+lnamaats        amtstr3         REPLACE_IF cubhnip1
+psdstr2         amtstr2         REPLACE_IF cubhnip2
+lnamaats        amtstr4         REPLACE_IF cubhnip2
+
+MAP(mupdabkubhnip)
+psdstr2         abkkym          REPLACE_IF cnipatasanubh
+
+MAP(maddabkatasan1)
+hrmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lamtstr1        abkkym          REPLACE
+c160atas1       abkkym2         DO_CALC
+hrmtgl          abktgl          REPLACE
+gv_INPG         abksts          REPLACE
+l160            abkscr          REPLACE
+
+MAP(maddabkatasan2)
+hrmnobuk        abknobuk        REPLACE
+lKUNCIABSEN     abkdata         REPLACE
+lamtstr2        abkkym          REPLACE
+c160atas2       abkkym2         DO_CALC
+hrmtgl          abktgl          REPLACE
+gv_INPG         abksts          REPLACE
+l160            abkscr          REPLACE
+
+
+SPCALCS(sadd)
+DO_LIB_IF cotY          ap_dbclc(DNAME daddbuk,DCOMMAND ADD_SUB,DFILE hrm,DLTARGET hrmbukidx hrmnobuk,DLLEN {stspjbuk},DMAP maddbuk);
+
+SPCALCS(saddlagi)
+DO_LIB ap_dbclc(DNAME dmapmaster,DCOMMAND MAPMAP,DMAP mmapmaster);
+DO_LIB ap_dbclc(DNAME daddamtatasan, DCOMMAND ADD, DFILE amt, DMAP maddamtatasan);
+DO_LIB_IF cadaatasan1 ap_dbclc(DNAME daddabkatasan1, DCOMMAND ADD, DFILE abk, DMAP maddabkatasan1);
+DO_LIB_IF cadaatasan2 ap_dbclc(DNAME daddabkatasan2, DCOMMAND ADD, DFILE abk, DMAP maddabkatasan2);
+/*DO_LIB ap_dbclc(DNAME dupdamtatasan,DCOMMAND UPDATE,DTARGET amtdatotoidx gv_absen11 hrmnobuk, DMAP mupdamtatasan);*/
+
+SPCALCS(supd)
+DO_LIB_IF cdoneacc  	ap_nxpst(l4265,lm4265);
+DO_LIB		       ap_dbclc(DNAME dupdhrmapr,DCOMMAND UPDATE,DTARGET hrmbukidx hrmnobuk, DMAP mupdhrmapr);
+DO_LIB ap_dbclc(DNAME dupdabk_clsd,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN hrmnobuk,DMAP mupdabk_clsd);
+DO_LIB ap_dbclc(DNAME dupdamtatasanacc,DCOMMAND UPDATE,DTARGET amtdatotoidx gt_absen11 hrmnobuk, DMAP mupdamtatasanacc);
+
+
+SPCALCS(saddtrans)
+DO_LIB_IF cjoinabdblmabsen     ap_dbclc(DNAME dupdabdmdr,DCOMMAND UPDATE,DTARGET abdkymtglidx hrmnip1 hrmtgl, DMAP mupdabdmdr);
+DO_LIB		       ap_dbclc(DNAME dupdhrm160,DCOMMAND UPDATE,DTARGET hrmbukidx hrmnobuk, DMAP mupdhrm160);
+DO_LIB_IF cdiVoid      ap_dbclc(DNAME dupdabk_void,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN hrmnobuk,DMAP mupdabk_void);
+
+SPCALCS(saddtransa)
+DO_LIB_IF cdjoinamtabs0 ap_dbclc(DNAME daddamtatasanacc,DCOMMAND ADD,DFILE amt,DMAP maddamtatasanacc);
+DO_LIB_IF cdjoinamtabs1  ap_dbclc(DNAME dupdamtnipats,DCOMMAND UPDATE,DTARGET amtdatotoidx gt_absen11 hrmnobuk, DMAP mupdamtnipats);
+DO_LIB ap_dbclc(DNAME dupdabkubhnip,DCOMMAND UPDATE_RANGE,DTARGET abkdatbukidx lKUNCIABSEN hrmnobuk,DMAP mupdabkubhnip);
+
+
+POSTING(master)
+        PST_SUB_ADDCMD  sadd
+	PST_ADDCMD	saddlagi
+	PST_UPDCMD	supd
+
+POSTING(trans)
+	PST_ADDCMD	saddtrans
+
+POSTING(transa)
+        PST_ADDCMD      saddtransa
+
+CALCS()
+/*cOPEN		(hrmsts == "OPEN" && g_usrkode==hrmnip1) || (hrmsts=="INPG" && (g_usrkode==lamtstr1abs || g_usrkode==lamtstr2abs))*/
+
+cOPEN		(hrmsts == "OPEN" && g_usrkode==hrmnip1) || (hrmsts=="INPG" && g_usrkode==lamtstr1abs) || (hrmsts=="INPG" && g_usrkode==lamtstr2abs && hrmnip2!=BLANKS)
+c0		0
+cER		((g_grpnam=="HRDER" && hrmtgl==g_tgltrn) || g_grpnam=="HRDSPV" || g_usrkode=="2221048" || g_grpnam=="HRDER") && (hrmsts=="CLSD" || hrmsts=="INPG") && djoinpsdubhsts==0
+
+PERMIT(master)
+	PMT_UPDALL_COND	cOPEN
+	PMT_DEL_COND	c0
+
+
+PERMIT(trans)
+	PMT_ADD_COND	cER
+	PMT_UPDALL_COND	c0
+	PMT_DEL_COND	c0
+
+PERMIT(transa)
+	PMT_ADD_COND	cblhubhnip
+	PMT_UPDALL_COND	c0
+	PMT_DEL_COND	c0
+
+
+END_SCREEN
