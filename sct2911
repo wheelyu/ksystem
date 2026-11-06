@@ -3,6 +3,7 @@ SCR_TGLTRN_PASS_OK
 
 LOCAL
 PGM_FIELDS
+lPESERTA        STRING          21
 lpmbdatapph     STRING          11
 lKOST21		STRING		21
 lketprom	STRING		21
@@ -21,6 +22,7 @@ ltglakh		DATE		4
 ltglkmrn	DATE		4
 ltglkunci       DATE            4
 lMULTI2WHEELS	STRING		21
+lrmdusialck	STRING		61
 lPGSR		STRING		5
 lcabusaha	STRING		21
 lpmbnollthr	STRING		21
@@ -33,6 +35,7 @@ ljam10a		TIME		4
 ljam12		TIME		4
 ljam17x		TIME		4
 ljam2359	TIME		4
+ljam19		TIME		4
 lnos128         STRING          21
 lgrplogin       STRING          21
 lpersonal       STRING          21
@@ -210,6 +213,7 @@ lsaldorek       DFLOAT          11
 lMANGKIR        STRING          11
 l301            STRING          11
 ltgmke          INT2            3
+ltgmkex         INT2            3
 ltgmhreff	INT2		2
 ltgmhreffs      STRING          3
 ltgmhreffs1     STRING         	2
@@ -241,6 +245,7 @@ ltmpurut        STRING          21
 lsdh		INT2		2
 lsdhgci		INT2		2
 lsdhsmst	INT2		2
+l821sls		INT2		2
 lpsicabskr      STRING		21
 lkunciabsen	STRING		11
 lprotokol	STRING	        21
@@ -467,7 +472,12 @@ ljamdf		DFLOAT		8
 lRPTHR		DFLOAT		8
 lRPPPH21        DFLOAT          8
 lupd		STRING		11
-
+lkategori		STRING		21
+lhasilstr2		STRING		21
+lhasilusia		DFLOAT		8
+lhasil2			DFLOAT		8
+lhasil3			DFLOAT		8
+lthblmsk		DFLOAT		8
 lpsmnambank2	STRING		15
 lpsmrekbank	STRING		21
 lpsmbank   	STRING		21
@@ -805,6 +815,8 @@ ljam13          DFLOAT		8
 ljam15          DFLOAT		8
 lnipadhlalu	STRING		21
 lkelsales	STRING		21
+lkelsalesx	STRING		21
+lkelsales1	STRING		21
 lareabisnis     STRING  	21
 lSLSAREA	STRING		11
 lnobuk150       STRING          21
@@ -816,6 +828,7 @@ lkodeapr314	STRING		21
 lnamafldfak  	STRING          30
 lnamaidxfak  	STRING          30
 lyturutapr   	STRING          3
+lGCI		STRING		21
 	
 CALCS()
 c0		0
@@ -1157,6 +1170,7 @@ DBC_MAP         mjointgm
 
 MAP(mjointgmhr)
 tgmke           ltgmke          REPLACE
+tgmke           ltgmkex          REPLACE
 tgmtype         ltgmtype        REPLACE
 tgmhreff	ltgmhreff	REPLACE
 
@@ -1167,6 +1181,7 @@ DBC_MAP         mjointgmhr
 
 MAP(mjointgmbesok)
 tgmtype         ltgmtype        REPLACE
+tgmke		ltgmke		REPLACE
 
 DBCALCS(djointgmbesok)
 DBC_COMMAND     JOIN
@@ -1272,6 +1287,9 @@ DBCALCS(djoinpsiabk)
         DBC_TARGET      psikodidx       abkkym2
         DBC_MAP         mjoinpsi
 
+DBCALCS(djoinrmdusia)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      rmdstsgabidx    gv_INPG lrmdusialck
 MAP(mjoinpsi30)
 psidvs                  lpsidvs         REPLACE
 psidep                  lpsidep         REPLACE
@@ -1600,6 +1618,7 @@ ckel2           lsubpil == 2
 ckel3           lsubpil == 3
 ckel4           lsubpil == 4
 ckel5           lsubpil == 5
+ckel6		lsubpil == 6
 
 MAP(mscantlm806a)
 c1		lscantlm806a	DO_CALC
@@ -2069,6 +2088,14 @@ ctglini         tbetglcrt == ltanggal
 MAP(mscantbe)
 tbetbdkode		lkelsales	REPLACE_IF ctglini
 
+MAP(mjointbearea)
+tbetbdkode		lkelsales1	REPLACE_IF ctglini
+DBCALCS(djointbearea)
+       DBC_COMMAND      JOIN
+       DBC_TARGET       tbedattypkod lSLSAREA lsales lareabisnis
+       DBC_COND         ctglini
+       DBC_MAP          mjointbearea
+
 IMAGE(master) {BASE_ROW=1} {FRSFLD_BACKUP} {LSTFLD_ADVANCE}
 /------------------------------------------------------------------------------------------------\
                    i.Pil   : ___  ____________           t.14012026
@@ -2108,6 +2135,7 @@ lsubpil         DFALT_SCAN      1 "Pilihan 1 sd 15"
                                 3 "Pilihan 31 sd 45"
                                 4 "Pilihan 46 sd 60"
                                 5 "Pilihan 61 sd 75"
+				6 "Pilihan 76 sd 90"
 
 IF ckel1 lpil	DFALT_SCAN     1 "SETOR_BANK_SIANG_301_WIT"
                                2 "SETOR_BANK_SIANG_301_WITA"
@@ -2184,10 +2212,20 @@ IF ckel5 lpil	DFALT_SCAN     61 "Proses Cab SDM Bisnis"
 			       73 "Proses Ganti Nip Promosi"
 			       74 "Proses Eval ConCo by KPI & Absensi"
 			       75 "Proses CLSD Abk Kunjungan H"
-			       76 "Proses apr err HRM pertanggal"
+IF ckel6 lpil 	DFALT_SCAN     76 "Proses apr err HRM pertanggal"
 			       77 "Proses apr err MTS pertanggal"
 			       78 "SPK GCI SALES M2W"
 			       79 "SPK GCI CTR M2W"
+			       80 "SPK GCI SALES HMC + 2"
+			       81 "SPK GCI SALES HMC + 3"
+			       82 "SPK GCI SALES HMC + 4"
+			       83 "SPK GCI SALES HMC + 5"
+			       84 "SPK GCI SALES HMC + 6"
+			       85 "SPK GCI CTR HMC + 2"
+			       86 "SPK GCI CTR HMC + 3"
+			       87 "SPK GCI CTR HMC + 4"
+			       88 "SPK GCI CTR HMC + 5"
+			       89 "SPK GCI CTR HMC + 6"
 
 lrekPPH21       INIT	"511.01.1201"
 lketprom        INIT	"EVALUASI SDM PLTJAB"
@@ -2203,6 +2241,10 @@ lall            INIT 	"ALL"
 lsop		INIT	"SOP"
 lAUDITORJR	INIT	"AUDITORJR"
 ltgtsabtu	INIT	"360"
+lkategori	INIT	""
+lhasilstr2      INIT    ""
+lhasil2         INIT    0
+lhasil3         INIT    0
 l2911		INIT	2911
 lrekHUT         INIT	251.11.2202
 lTHR		INIT	THR
@@ -2222,6 +2264,7 @@ ljam17x		INIT	1700
 ljam12		INIT	1200
 ljam00          INIT	0000
 ljam2359	INIT	235900
+ljam19		INIT	1900
 lALASAN         INIT 	ALASAN
 lHISTTEST       INIT 	HISTTEST
 lPENANDASDM     INIT 	PENANDASDM
@@ -2383,7 +2426,7 @@ lT              INIT    T
 lKK             INIT    KK
 lJM             INIT    JM
 lnamamap        INIT    "mbukti"
-lversi		INIT	160926
+lversi		INIT	041126a
 lDTCONCO	INIT	DTCONCO
 lREVIEW		INIT	REVIEW
 lfotovaksin	INIT	FOTOVAKSIN
@@ -2408,6 +2451,7 @@ lPAWNING&MICROFINANCI	INIT		PAWNING&MICROFINANCI
 lBMMGADAI		INIT		BMMGADAI
 lMKTHEAD 		INIT		MKTHEAD 
 lSHIFTOB		INIT		SHIFTOB
+lGCI		INIT	GCI
 
 lT1             INIT 	1
 lT2             INIT 	2
@@ -2510,11 +2554,13 @@ ljam13          INIT	230000
 ljam15          INIT	250000
 
 lSLSAREA	INIT	SLSAREA
+lPESERTA	INIT	PESERTA
 
 lnamafldsts     INIT 	"bkmstsapr"
 lnamafldfak     INIT 	"bkmnobuk"
 lnamaidxfak     INIT 	"bkmbukidx"
 lyturutapr      INIT	Y
+
 
 EDITS(master)
 e.Mandatory lstring5 MANDATORY_IF cisistr5
@@ -2526,7 +2572,12 @@ cpil3    	lpil==3
 cWIT     	"WIT"
 cWITA    	"WITA"
 cWIB     	"WIB"
-ctglbesok       g_tgltrn + 1
+ctglbesok       ltglskr + 1
+ctglbesok2	ltglskr + 2
+ctglbesok3	ltglskr + 3
+ctglbesok4	ltglskr + 4
+ctglbesok5	ltglskr + 5
+ctglbesok6	ltglskr + 6
 cok30		lpil==30
 cok3031		lpil==30 || lpil==31 || lpil==49 || lpil==69 || lpil==70
 cok31		lpil==31
@@ -2566,6 +2617,13 @@ cok70y          (ltgl_skrg=="25" || ltgl_skrg=="26" || ltgl_skrg=="27" || ltgl_s
 cok71		lpil==71
 cok73		lpil==73
 cok74		lpil==74
+
+cpil8085	(lpil == 80 || lpil == 85)
+cpil8186	(lpil == 81 || lpil == 86)
+cpil8287	(lpil == 82 || lpil == 87)
+cpil8388	(lpil == 83 || lpil == 88)
+cpil8489	(lpil == 84 || lpil == 89)
+
 
 chitung         lhitung + 1
 /*cstopkirim	lhitung >= 2*/
@@ -2622,11 +2680,30 @@ cjam10t		ljam10		DO_CALC
 cjam10ta	ljam10a		DO_CALC
 ltgl	 	ltglll		REPLACE
 ctglbesok     	ltglbesok	DO_CALC
+
+ctglbesok2	ltglbesok	DO_CALC_IF cpil8085
+ctglbesok3	ltglbesok	DO_CALC_IF cpil8186
+ctglbesok4	ltglbesok	DO_CALC_IF cpil8287
+ctglbesok5	ltglbesok	DO_CALC_IF cpil8388
+ctglbesok6	ltglbesok	DO_CALC_IF cpil8489
+
+ctglbesok2	ltglkunci	DO_CALC_IF cpil8085
+ctglbesok3	ltglkunci	DO_CALC_IF cpil8186
+ctglbesok4	ltglkunci	DO_CALC_IF cpil8287
+ctglbesok5	ltglkunci	DO_CALC_IF cpil8388
+ctglbesok6	ltglkunci	DO_CALC_IF cpil8489
+
 cawlbulan	ltgl1		DO_CALC_IF cok34
 cawlbulandpn	lawalblndepan	DO_CALC_IF cok34 
 cakhbulan	ltgl2		DO_CALC_IF cok34
 g_tgltrn	ltanggal	REPLACE
 cthbl		lthbl5		DO_CALC
+
+ctglbesok2	ltanggal	DO_CALC_IF cpil8085
+ctglbesok3	ltanggal	DO_CALC_IF cpil8186
+ctglbesok4	ltanggal	DO_CALC_IF cpil8287
+ctglbesok5	ltanggal	DO_CALC_IF cpil8388
+ctglbesok6	ltanggal	DO_CALC_IF cpil8489
 
 ctglkrg2	ltgl2		DO_CALC_IF cok38
 ctglkrg7	ltgl1		DO_CALC_IF cok38
@@ -2801,12 +2878,12 @@ psicabskr       PROTECT  SCROLL         INPUTRI 2
 cabnobbm2       PROTECT  SCROLL         INPUTRI 2
 
 CALCS()
-cutkpsi3        lpil == 6 || lpil == 79
+cutkpsi3        lpil == 6 || lpil == 79 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89
 csel56          djointbdpsi == 1 && (ltanggal - psitglawl >=5)
-                && ((lpil == 5 && (psijabatan == "SALESNMC" || psijabatan == "SALESMANHMC" || psijabatan=="MKTLAPANGANHMC") && (ltanggal - psitglawl >=8)) || 
-		(lpil == 6 && (psijabatan == "COUNTERSALESNMC" || psijabatan=="MKTCOUNTERHMC")&& (ltanggal - psitglawl >=8)) || 
-		(lpil == 78 && (psijabatan == "SALESDTN" || psijabatan == "MKTLAPANGANM2W" || psijabatan == "SALESREFIMOTOR")) || 
-		(lpil == 79 && (psijabatan == "MKTCOUNTERM2W" || psijabatan == "CTRSALESREFIMOTOR")))
+                && (((lpil == 5 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84) && (psijabatan == "SALESNMC" || psijabatan == "SALESMANHMC" || psijabatan=="MKTLAPANGANHMC") && (ltanggal - psitglawl >=8)) || 
+		((lpil == 6 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89) && (psijabatan == "COUNTERSALESNMC" || psijabatan=="MKTCOUNTERHMC")&& (ltanggal - psitglawl >=8)) || 
+		(lpil == 78 && (psijabatan == "SALESDTN" || psijabatan == "MKTLAPANGANM2W" || psijabatan == "SALESREFIMOTOR" || psijabatan == "MKTLAPANGANM2W4W")) || 
+		(lpil == 79 && (psijabatan == "MKTCOUNTERM2W" || psijabatan == "CTRSALESREFIMOTOR" || psijabatan == "COUNTERM2W4W" || psijabatan == "MKTCOUNTERM2W4W")))
 EDITS(transg2)
 e.Validate      psicabskr       VALIDATE cabkodidx mcab3
 
@@ -2827,7 +2904,7 @@ tmpdtmkode              NOCHANGE SCROLL         INPUTRI         1
 tmpkode                 PROTECT  SCROLL         INPUTRI         2
 
 CALCS()
-cpilgci		lpil == 6 || lpil == 79
+cpilgci		lpil == 6 || lpil == 79 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89
 cselgci		tmpnourt <= 40
 
 SUBFILE(trans2g2)
@@ -3956,7 +4033,7 @@ cjointbtsilverCRE djoinpsi30==1 && djointbtbobot==1 && djoinpsi30==1 && lpsidep=
 cjointbtsilverCOL djoinpsi30==1 && djointbtbobot==1 && djoinpsi30==1 && lpsidep=="COLLECTIONDIVISION"
 cjointbtsilverHMC djoinpsi30==1 && djointbtbobot==1 && djoinpsi30==1 && lpsidep=="NEWMOTORCYCLE"
 cjointbtsilverM2W djoinpsi30==1 && djointbtbobot==1 && djoinpsi30==1 && lpsidep=="MULTI2WHEELS"
-
+cdjoinrmdusia 	(lpil == 5 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84) && lrmdusialck != BLANKS && djoinrmdusia == 1
 cgabkat1	STRIP(lkat)+"1"
 cgabkat2	STRIP(lkat)+"2"
 cada959		tlmsts!=gv_VOID && tlmpst==lthbl30
@@ -4643,10 +4720,24 @@ FIELD(transg31)
 
 
 CALCS()
-cpil5ax         lpil == 5 || lpil == 78
-cpil5a          lpil == 5 || lpil == 57 || lpil == 78
+cpil5bx 	lpil == 5 || lpil == 78
+cpil5ax         lpil == 5 || lpil == 78 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84
+cpil5a          lpil == 5 || lpil == 57 || lpil == 78 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84
+cpil5           lpil == 5 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84
+cpil7879	lpil == 78 || lpil == 79
 cpil51a         lpil == 51
-cpil5dan6	lpil == 5 || lpil == 6 || lpil == 78 || lpil == 79
+cpil5dan6	lpil == 5 || lpil == 6 || lpil == 78 || lpil == 79 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89
+cpil80		lpil == 80
+cpil81		lpil == 81
+cpil82		lpil == 82
+cpil83		lpil == 83
+cpil84		lpil == 84
+
+cpil85 		lpil == 85
+cpil86 		lpil == 86
+cpil87 		lpil == 87
+cpil88 		lpil == 88
+cpil89		lpil == 89
 
 SUBFILE(transg31)
 SFL_LINES(15)
@@ -6680,6 +6771,10 @@ DBCALCS(djoinabk843)
 DBC_COMMAND     JOIN
 DBC_TARGET      abkdatbukidx   lKUNCIABSEN ltlmnobuk843
 
+DBCALCS(djointlm821)
+        DBC_COMMAND     JOIN
+        DBC_TARGET      tlmbukidx   tldnobuk 
+
 
 CALCS()
 cnobuk50        "DCA" + STRIP(psikode) + THBLS(ltglskr)
@@ -6995,6 +7090,8 @@ cbkdket         "SETORAN BANK " + STRIP(bbccab)
 cbankcab        "121.00.1002"
 cjointbdlogin   djoinusrlogin == 1
 ctglmin2g12     (g_tgltrn+3 == rmdtglawl) && (lnippicmkt != BLANKS || lnipmsohead2 != BLANKS || lniptlddtn != BLANKS)
+cjointlm821     djointlm821 == 1 && tlmtgl >= ltglkunci && tlmtgljtp <= ltglkunci && (tlmdari == "RSM" || tlmdari == "PTH" || tlmdari == "PPR") && tlmsts == "INPG"
+
 
 MAP(mmap21)
 cthbl21         lthbl_string    DO_CALC
@@ -7180,6 +7277,10 @@ bkmjns          rtmkode3        REPLACE
 bkmpst          rtmtype2        REPLACE
 DEBUG ldum	ldum            REPLACE
 
+MAP(mscantld)
+c1              l821sls     	DO_CALC_IF cjointlm821
+
+
 CALCS()
 /* crmdgab	"
 
@@ -7187,17 +7288,17 @@ CALCS()
 crmdgabctr	"MAKSIMALSPK" + STRIP(psidvs) + STRIP(ljab) + "BLNK" + STRIP(lUSIACTR)
 cdjointbdpsi	djointbdpsi==1
 cdjoinrmd	djoinrmd==1
-cpil5x1        	(lpil == 5 || (lpil == 57 && lkodekel!=BLANKS) || lpil == 78) && lusia>=5 && djoinpsi1x==1 && (lsdh < lbtsspk) && ((djoinrpt875==1 && ltbdjabatan == "SALESHMC" && lrptbl11 < 15) || (ltbdjabatan == "SALESM2W") || (djoinrpt875==0))
-cpil5x2        	(lpil == 5 || (lpil == 57 && lkodekel!=BLANKS) || lpil == 78) && lusia>=5 && djoinpsi1x==1 && lpsicabskr != "MLG11" && lpsicabskr != "BLW11" && lpsicabskr != "SIN11" && lpsicabskr != "PAJ11" && (lsdh < lbtsspk) && ((djoinrpt875==1 && ltbdjabatan == "SALESHMC" && lrptbl11 < 15) || (ltbdjabatan == "SALESM2W") || (djoinrpt875==0))
+cpil5x1        	(lpil == 5 || (lpil == 57 && lkodekel!=BLANKS) || lpil == 78 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84) && lusia>=5 && djoinpsi1x==1 && (lsdh < lbtsspk) && ((djoinrpt875==1 && ltbdjabatan == "SALESHMC" && lrptbl11 < 15) || (ltbdjabatan == "SALESM2W") || (djoinrpt875==0))
+cpil5x2        	(lpil == 5 || (lpil == 57 && lkodekel!=BLANKS) || lpil == 78 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84) && lusia>=5 && djoinpsi1x==1 && lpsicabskr != "MLG11" && lpsicabskr != "BLW11" && lpsicabskr != "SIN11" && lpsicabskr != "PAJ11" && (lsdh < lbtsspk) && ((djoinrpt875==1 && ltbdjabatan == "SALESHMC" && lrptbl11 < 15) || (ltbdjabatan == "SALESM2W") || (djoinrpt875==0)) 
 cpil51x1       	lpil == 51 && lusia>=5 && (lpsijabatan=="SALESREFIMOTOR" || lpsijabatan=="SALESDTN") && (lsdhsmst < 4)
 cpil51x2       	lpil == 51 && lusia>=5 && (lpsijabatan=="SALESREFIMOTOR" || lpsijabatan=="SALESDTN") && (lsdhsmst < 4)
 cpil51x1a	ltkmnobuk != BLANKS
-cpil6x1         (lpil == 6 || lpil == 79) && psidvs!= "M2W4W" && lsdh < lbtsspk
-cpil6x2         (lpil == 6 || lpil == 79) && psidvs!= "M2W4W" && lsdh < lbtsspk
+cpil6x1         (lpil == 6 || lpil == 79 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89) && lsdh < lbtsspk
+cpil6x2         (lpil == 6 || lpil == 79 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89) && lsdh < lbtsspk
 cnobuk878C      "SPC" + THBLS_DD(ltanggal) + THBLS_MM(ltanggal) + THBLS_YY(ltanggal)
 cnobuk878E      "SPE" + THBLS_DD(ltanggal) + THBLS_MM(ltanggal) + THBLS_YY(ltanggal)
 cnobuk878F      "SPF" + THBLS_DD(ltanggal) + THBLS_MM(ltanggal) + THBLS_YY(ltanggal)
-cpil6		lpil == 6 || lpil == 79
+cpil6		lpil == 6 || lpil == 79 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89
 c878            "878"
 cket878         "878 CLSD"
 csdh10          tkmplg!=BLANKS && tkmkode!="FU_REFF" && tkmkode!="FU_GCI" && (tkmnil9 == BLANKS || tkmnil9==0)
@@ -7214,6 +7315,7 @@ cdjoinpsi1x1	djoinpsi1x==1
 cdjoincabsmst	djoincabsmst==1
 cKU_SAMSAT	"KU_SAMSAT"
 cSAMSAT		"SAMSAT"
+cEVENT		"EVENT"
 ckba		psijabatan=="T.LEADERKBA" || psijabatan=="KBANMCOFFICER"
 cSALES		ltbdjabatan=="SALESM2W" || ltbdjabatan=="SALES" || ltbdjabatan=="SALESHMC"
 counter		ltbdjabatan=="CTRDTN" || ltbdjabatan=="COUNTER" || ltbdjabatan=="CTRHMC"
@@ -7223,6 +7325,21 @@ cM2W		psidvs== "M2W"
 cAREAHMC	"AREAHMC"
 cAREAM2W	"AREAM2W"
 ctdkkosong      ltgl1 != BLANKS
+crmdusia	        "USIALCK" + STRIP(lthbl21)
+cthblmsk	        THBLN(psitglawl)
+c01 "01"
+c08 "08"
+c1str "1"
+c2str "2"
+c3str "3"
+c6str "6"
+cusia0     		(psidvs == "H1" || psidvs == "HMC" ) && ljab == "SALES" && lhasilusia == 1
+cusia1sls  		(psidvs == "H1" || psidvs == "HMC" ) && ljab == "SALES" && lhasilusia == 2
+cusia2sls  		(psidvs == "H1" || psidvs == "HMC" ) && ljab == "SALES" && lhasilusia >= 3
+cusia5sls  		(psidvs == "H1" || psidvs == "HMC" ) && ljab == "SALES" && lhasilusia >= 6
+cusia08         	(psidvs == "H1" || psidvs == "HMC" ) && ljab == "SALES" && lhasilusia == 0 && g_tgltrn - psitglawl >= 8
+cusia07         	(psidvs == "H1" || psidvs == "HMC" ) && ljab == "SALES" && lhasilusia == 0 && g_tgltrn - psitglawl < 8
+ctld821			l821sls > 0 && (lpil == 5 || lpil == 6 || lpil == 78 || lpil == 79 || lpil == 80 || lpil == 81 || lpil == 82 || lpil == 83 || lpil == 84 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89)
 
 MAP(mscantkm)
 c1		lsdh		DO_CALC_IF csdh10
@@ -7251,15 +7368,33 @@ cusia           lusia           DO_CALC
 
 l8              lUSIACTR	REPLACE_IF cusia8
 l15             lUSIACTR	REPLACE_IF cusia15
+
+c01             lUSIACTR        DO_CALC_IF cusia07
+c08             lUSIACTR        DO_CALC_IF cusia08
+c1str           lUSIACTR        DO_CALC_IF cusia0
+c2str           lUSIACTR        DO_CALC_IF cusia1sls
+c3str           lUSIACTR        DO_CALC_IF cusia2sls
+c6str           lUSIACTR        DO_CALC_IF cusia5sls
+
 crmdgabctr	lrmdgab         DO_CALC
 
 lbtsspk         lbtsspk         REPLACE_IF cdjoinrmd
 DEBUG ldum	ldum		REPLACE
 
+MAP(mapmap2g32)
+crmdusia	lrmdusialck	DO_CALC
+cthblmsk        lthblmsk        DO_CALC
+
 MAP(mapmapGci5) /*SALES*/
+
 cBLANK		ltkmnobuk	DO_CALC
 cBLANK		lkodekel	DO_CALC
 ctglbesok       ltglkunci       DO_CALC
+ctglbesok2	ltglkunci	DO_CALC_IF cpil80
+ctglbesok3	ltglkunci	DO_CALC_IF cpil81
+ctglbesok4	ltglkunci	DO_CALC_IF cpil82
+ctglbesok5	ltglkunci	DO_CALC_IF cpil83
+ctglbesok6	ltglkunci	DO_CALC_IF cpil84
 ltgl1           ltglkunci       REPLACE_IF ctdkkosong
 cnobuk878C      tkmnobuk        DO_CALC_IF cpil5a
 cnobuk878F      tkmnobuk        DO_CALC_IF cpil51a
@@ -7271,7 +7406,12 @@ lpsicabskr      lpsicabskr      REPLACE_IF cdjoinpsi1x1
 lcabnobbm2	lcabnobbm2	REPLACE_IF cdjoincabsmst
 cAREAHMC	lareabisnis     DO_CALC_IF cM2Wx
 cAREAM2W	lareabisnis     DO_CALC_IF cM2W
-ctglbesok       ltanggal        DO_CALC_IF cpil5ax
+ctglbesok       ltanggal        DO_CALC_IF cpil5bx
+ctglbesok2	ltanggal	DO_CALC_IF cpil80
+ctglbesok3	ltanggal	DO_CALC_IF cpil81
+ctglbesok4	ltanggal	DO_CALC_IF cpil82
+ctglbesok5	ltanggal	DO_CALC_IF cpil83
+ctglbesok6	ltanggal	DO_CALC_IF cpil84
 DEBUG ldum	ldum		REPLACE
 
 CALCS()
@@ -7284,9 +7424,17 @@ psicabskr       lpsicabskr      REPLACE
 cusia           lusia           DO_CALC
 cthblstr        ltglstr         DO_CALC
 ctglbesok       ltglkunci       DO_CALC
+ctglbesok2	ltglkunci	DO_CALC_IF cpil85
+ctglbesok3	ltglkunci	DO_CALC_IF cpil86
+ctglbesok4	ltglkunci	DO_CALC_IF cpil87
+ctglbesok5	ltglkunci	DO_CALC_IF cpil88
+ctglbesok6	ltglkunci	DO_CALC_IF cpil89
 ltgl1           ltglkunci       REPLACE_IF ctdkkosong
 
 cBLANK 		lbtsspk 	DO_CALC
+cBLANK 		lkelsales 	DO_CALC
+cBLANK 		lkelsales1	DO_CALC
+cBLANK 		lkelsalesx 	DO_CALC
 cBLANK 		lUSIACTR 	DO_CALC
 ltbdjabatan	ltbdjabatan	REPLACE_IF cdjointbdpsi
 lpsicabskr      lpsicabskr      REPLACE_IF cdjoinpsi1x1
@@ -7302,7 +7450,8 @@ lbtsspk         lbtsspk         REPLACE_IF cdjoinrmd
 
 CALCS()
 cblmada         "BLM ADA AREA"
-ctdkada         (lpil == 6 && lkelsales==BLANKS) || (lpil == 57 && lkodekel==BLANKS)
+ctdkada         ((lpil == 6 || lpil == 85 || lpil == 86 || lpil == 87 || lpil == 88 || lpil == 89) && lkelsalesx==BLANKS) || (lpil == 57 && lkodekel==BLANKS)
+ckosong         lkelsales==" " && djointbearea==1
 
 MAP(maddtkmGci)
 tkmnobuk        tkmnobuk        REPLACE
@@ -7319,10 +7468,14 @@ ljam11df	ljamdf		REPLACE_IF cbaru1
 ljam13		ljamdf		REPLACE_IF cbaru2
 ljam15		ljamdf		REPLACE_IF cbaru3
 ljamdf		tkmjam		REPLACE
-lkelsales	tkmbuk1		REPLACE
+lkelsales       lkelsalesx      REPLACE
+lkelsales1      lkelsalesx      REPLACE_IF ckosong
+lkelsalesx	tkmbuk1		REPLACE
 lkodekel	tkmbuk1		REPLACE_IF cpil57a
 cblmada         tkmbuk1         DO_CALC_IF ctdkada
+lGCI		tkmkode		REPLACE_IF cpil7879
 cKU_SAMSAT	tkmkode		DO_CALC_IF cpil51a
+cEVENT		tkmkode		DO_CALC_IF ctld821
 cSAMSAT		tkmtype		DO_CALC_IF cpil51a
 tkmnobuk	ltkmnobuk	REPLACE
 gv_int1		tkmnil1		REPLACE
@@ -8493,8 +8646,9 @@ cjoinamt170x1	djoinamt170x==1 && lbentukpromx=="REGULER"
 cjoinamt170x2	djoinamt170x==1 && (lbentukpromx=="PLT" || lbentukpromx=="DISPOSISI")
 cakhplus15      ltglprom + 15
 cjoinhrm170	djoinhrm170==1
-ctgmjalan	djointgm == 1 && ((ltgmke != 0 && ltgmke != BLANKS))
-ctgmbesok       (djointgmbesok == 1 && ltgmtype == "HK") || g_usrkode == "2510855"
+ctgmjalan	djointgm == 1 && ((ltgmke != 0 && ltgmke != BLANKS)) /*&& ((lSYSTIME <= ljam19) || (lSYSTIME >= ljam19 && g_usrkode == "2570324"))*/
+ctgmbesok       (djointgmhr == 1 && (djointgmbesok == 1 && ltgmtype == "HK")) || g_grpnam == "IT"
+/*ctgmbesok       (djointgmhr == 1 && ltgmkex == 0 && (djointgmbesok == 1 && ltgmtype == "HK")) || g_grpnam == "IT"*/
 
 MAP(mupdabk770)
 gv_CLSD         abksts          REPLACE
@@ -8630,6 +8784,7 @@ SPCALCS(sptransg2)
 SPCALCS(sptrans2g2)
 	DO_LIB_IF cpil6        ap_dbclc(DNAME dmapmappil6a, DCOMMAND MAPMAP, DMAP mapmapGci6);
         DO_LIB		       ap_dbclc(DNAME dbscantkm6a, DCOMMAND SCANSCAN, DTARGET tkmdatplgtgl lSPK11 lsales ltglkunci, DBC_SUM_MAP mscantkm);
+	DO_LIB                 ap_dbclc(DNAME dbscantld, DCOMMAND SCANSCAN, DTARGET tldstskodbrg lEVENT gv_OPEN lsales lPESERTA lthbl21, DBC_SUM_MAP mscantld);
         DO_LIB_IF cpil6        ap_dbclc(DNAME dbscantbe6, DCOMMAND SCANSCAN, DTARGET tbedattypkod lSLSAREA lsales lareabisnis, DBC_MAP mscantbe);
         DO_LIB_IF cpil6x1      ap_dbclc(DNAME daddtkm6, DCOMMAND ADD, DFILE tkm, DLTARGET tkmbukidx tkmnobuk, DLLEN {stspjbuk}, DMAP maddtkmGci);
         DO_LIB_IF cpil6x2      ap_dbclc(DNAME daddabk8786 DCOMMAND ADD, DFILE abk, DMAP maddabk878Gci);
@@ -8830,12 +8985,15 @@ SPCALCS(sptrans2g8)
 	DO_LIB_IF ckurangHE ap_dbclc(DNAME daddabk905RINP,DCOMMAND ADD,DFILE abk,DMAP maddabk905RINP);
 
 SPCALCS(sptransg31)
+        DO_LIB_IF cpil5         ap_dbclc(DNAME dmapmap2g52, DCOMMAND MAPMAP, DMAP mapmap2g32);          
+        DO_LIB_IF cdjoinrmdusia  ap_ambts(gv_INPG, lrmdusialck, lthblmsk, lNOL,  lNOL, &lhasilusia,&lhasil2,&lhasil3,lkategori,lhasilstr2);
         DO_LIB          ap_dbclc(DNAME dmapmapg30, DCOMMAND MAPMAP, DMAP mapmaptg2);
 
 SPCALCS(sptrans2g9)
         DO_LIB		ap_dbclc(DNAME dmapmappil5a, DCOMMAND MAPMAP, DMAP mapmapGci5);
         DO_LIB          ap_dbclc(DNAME dbscantbe5, DCOMMAND SCANSCAN, DTARGET tbedattypkod lSLSAREA lsales lareabisnis, DBC_MAP mscantbe);
         DO_LIB		ap_dbclc(DNAME dbscantkm5, DCOMMAND SCANSCAN, DTARGET tkmdatplgtgl lSPK11 lsales ltglkunci, DBC_SUM_MAP mscantkm);
+	DO_LIB          ap_dbclc(DNAME dbscantld2, DCOMMAND SCANSCAN, DTARGET tldstskodbrg lEVENT gv_OPEN lsales lPESERTA lthbl21, DBC_SUM_MAP mscantld);
         DO_LIB_IF cpil5x1      	ap_dbclc(DNAME daddtkm2g9, DCOMMAND ADD, DFILE tkm, DLTARGET tkmbukidx tkmnobuk, DLLEN {stspjbuk}, DMAP maddtkmGci);
         DO_LIB_IF cpil5x2     	ap_dbclc(DNAME daddabk8782g9, DCOMMAND ADD, DFILE abk, DMAP maddabk878Gci);
         
